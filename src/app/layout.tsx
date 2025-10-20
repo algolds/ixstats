@@ -88,8 +88,8 @@ const RootLayout = ({
           publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
           signInUrl={signInPath}
           signUpUrl={signUpPath}
-          afterSignInUrl={dashboardPath}
-          afterSignUpUrl={dashboardPath}
+          signInFallbackRedirectUrl={dashboardPath}
+          redirectUrl={dashboardPath}
         >
           <AuthProvider>
             <AppContent />

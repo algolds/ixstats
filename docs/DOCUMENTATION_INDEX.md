@@ -1,182 +1,68 @@
-# IxStats Documentation Index
+# IxStats Documentation Index (2025 Refresh)
 
-**Version**: 1.1.1 Production Release
-**Last Updated**: October 17, 2025
+This index mirrors the new documentation structure. Use it as the canonical map when authoring, reviewing, or discovering guidance.
 
-Welcome to the IxStats comprehensive documentation. This index provides quick access to all technical documentation, guides, and architectural specifications.
+## Quick Links
+- **Project Overview** – [`docs/overview/platform.md`](overview/platform.md)
+- **Feature Map** – [`docs/overview/feature-map.md`](overview/feature-map.md)
+- **API Reference** – [`docs/reference/api.md`](reference/api.md)
+- **Database Reference** – [`docs/reference/database.md`](reference/database.md)
+- **Environment Reference** – [`docs/operations/environments.md`](operations/environments.md)
+- **Help System Authoring** – [`docs/systems/help.md`](systems/help.md)
 
-## 📚 Documentation Structure
+## Category Breakdown
 
-### Essential Documentation
-- **[Main README](../README.md)** - Project overview, quick start, and commands (v1.1.1)
-- **[CHANGELOG.md](../CHANGELOG.md)** - Version history and release notes (v1.0.0 → v1.1.0) ✨ NEW
-- **[CLAUDE.md](../CLAUDE.md)** - Development guidelines for AI assistance (v1.1.0)
-- **[IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md)** - Feature completion matrix (100% complete) ✨ NEW
-- **[GETTING_STARTED.md](./GETTING_STARTED.md)** - 5-minute setup guide for new developers ✨ NEW
-- **[SYSTEMS_GUIDE.md](./SYSTEMS_GUIDE.md)** - Comprehensive guide to all systems (v1.1.0) ⭐
-- **[DOCUMENTATION_SUMMARY_V1.1.md](./DOCUMENTATION_SUMMARY_V1.1.md)** - Complete documentation overview ✨ NEW
+### Overview
+| Document | Summary |
+| --- | --- |
+| [`overview/platform.md`](overview/platform.md) | Product focus, personas, and release positioning |
+| [`overview/feature-map.md`](overview/feature-map.md) | Inventory of routes, components, hooks, routers, and supporting scripts |
 
-### Master Documentation (v1.1.0)
-- **[API_REFERENCE.md](./API_REFERENCE.md)** - Complete tRPC API catalog (304 endpoints, 36 routers) ✨ NEW
-- **[ATOMIC_COMPONENTS_GUIDE.md](./ATOMIC_COMPONENTS_GUIDE.md)** - Atomic government system guide (106 components) ✨ NEW
-- **[FORMULAS_AND_CALCULATIONS.md](./FORMULAS_AND_CALCULATIONS.md)** - Economic calculation engine (15+ systems) ✨ NEW
-- **[DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md)** - Glass physics UI framework and component library ✨ NEW
-- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Production deployment and environment setup ✨ NEW
-- **[TESTING_GUIDE.md](./TESTING_GUIDE.md)** - Testing strategies and test coverage ✨ NEW
+### Architecture
+| Document | Summary |
+| --- | --- |
+| [`architecture/frontend.md`](architecture/frontend.md) | App Router layout, design system, and UI composition guidelines |
+| [`architecture/backend.md`](architecture/backend.md) | tRPC composition patterns, middleware, rate limits, and auth context |
+| [`architecture/data.md`](architecture/data.md) | Prisma schema domains, migrations, seed/backup routines |
 
-### System Deep Dive Guides (v1.1.0)
-- **[SOCIAL_PLATFORM_GUIDE.md](./SOCIAL_PLATFORM_GUIDE.md)** - ThinkPages/ThinkShare/ThinkTanks complete guide ✨ NEW
-- **[MYCOUNTRY_SYSTEM.md](./MYCOUNTRY_SYSTEM.md)** - Executive intelligence and command center (8 tabs) ✨ NEW
-- **[BUILDER_SYSTEM.md](./BUILDER_SYSTEM.md)** - Country builder system (7-step workflow) ✨ NEW
-- **[INTELLIGENCE_SYSTEM.md](./INTELLIGENCE_SYSTEM.md)** - Intelligence operations and analytics ✨ NEW
+### Systems
+| Document | Summary |
+| --- | --- |
+| [`systems/mycountry.md`](systems/mycountry.md) | Executive dashboard, compliance tooling, and analytics orchestration |
+| [`systems/intelligence.md`](systems/intelligence.md) | Live intelligence feeds, diplomatic briefings, and forecasting services |
+| [`systems/diplomacy.md`](systems/diplomacy.md) | Embassy network, mission lifecycle, cultural exchanges, and influence metrics |
+| [`systems/economy.md`](systems/economy.md) | Economic indicators, projections, and builder integration |
+| [`systems/defense.md`](systems/defense.md) | Strategic defense initiative modules, readiness scores, and crisis response |
+| [`systems/social.md`](systems/social.md) | ThinkPages, ThinkShare, activity feeds, and collaborative research tools |
+| [`systems/achievements.md`](systems/achievements.md) | Achievement unlock logic, leaderboards, notifications, and analytics |
+| [`systems/builder.md`](systems/builder.md) | Nation creation flows, atomic components, wiki importers |
+| [`systems/help.md`](systems/help.md) | Help center architecture, article conventions, and synchronization with `/help` |
 
-### Refactoring & Governance (v1.1.0)
-- **[REFACTORING_PLAN_V1.1.md](./REFACTORING_PLAN_V1.1.md)** - Component consolidation roadmap (12-week plan) ✨ NEW
-- **[COMPONENT_CONSOLIDATION_GUIDE.md](./COMPONENT_CONSOLIDATION_GUIDE.md)** - Migration guide for shared components ✨ NEW
-- **[SINGLE_SOURCE_OF_TRUTH.md](./SINGLE_SOURCE_OF_TRUTH.md)** - Architecture governance and best practices ✨ NEW
+### Operations & Processes
+| Document | Summary |
+| --- | --- |
+| [`operations/environments.md`](operations/environments.md) | Environment tiers, base paths, service toggles, and secret requirements |
+| [`operations/deployment.md`](operations/deployment.md) | Build pipeline, scripts, hosting expectations, and rollback plan |
+| [`operations/monitoring.md`](operations/monitoring.md) | Error logging, Discord webhooks, audit scripts, and health checks |
+| [`processes/testing.md`](processes/testing.md) | Test strategy, coverage goals, fixtures, and nightly automation |
+| [`processes/contributing.md`](processes/contributing.md) | Contribution workflow, review protocol, release cadence |
 
-### Developer Experience Guides (v1.1.0)
-- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Contribution guidelines and development workflow ✨ NEW
-- **[CODE_STANDARDS.md](./CODE_STANDARDS.md)** - Code quality standards and best practices ✨ NEW
-- **[ENVIRONMENT_VARIABLES.md](./ENVIRONMENT_VARIABLES.md)** - Complete environment configuration reference ✨ NEW
-- **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** - Common issues and solutions ✨ NEW
+### Reference
+| Document | Summary |
+| --- | --- |
+| [`reference/api.md`](reference/api.md) | Generated table of routers, procedures, input/output, and auth requirements |
+| [`reference/database.md`](reference/database.md) | Prisma models, relations, derived views, and data ownership |
+| [`reference/events.md`](reference/events.md) | WebSocket channels, notification payloads, cron/scheduled jobs |
 
-### System-Specific Documentation
+## Legacy Material
+- All previous documentation remains available under [`docs/archive/v1`](archive/v1/)
+- Each legacy file retains original metadata for historical audits
+- When migrating content, copy authoritative sections into the new structure and link the legacy file in the "History" appendix of the new doc
 
-#### Feature READMEs (In-App Systems)
-- **[Achievements & Leaderboards](../src/app/achievements/README.md)** - Achievement tracking, global rankings (90%)
-- **[Help System](../src/app/help/README.md)** - In-app documentation system (95%)
-- **[Wiki Integration](../src/app/wiki/README.md)** - MediaWiki import & sync (85%)
-- **[MyCountry Intelligence](../src/app/mycountry/README.md)** - Executive dashboard (95%)
-- **[Country Builder](../src/app/builder/README.md)** - Nation creation and customization (v1.1.0)
-- **[Economic Components](../src/app/countries/_components/economy/README.md)** - Economic UI components
+## Maintenance Checklist
+1. Update the relevant category table when adding, renaming, or archiving docs
+2. Keep "Quick Links" aligned with the most-used references (review quarterly)
+3. Ensure new modules have a corresponding entry in both the `systems` guide and the `/help` center
+4. Link to automation outputs (JSON/CSV) when generating references via scripts in `scripts/audit`
 
-### Technical Documentation (`/technical/`)
-
-#### Government Systems
-- [ATOMIC_SYSTEM_ARCHITECTURE.md](./technical/ATOMIC_SYSTEM_ARCHITECTURE.md) - Revolutionary 24-component system
-- [ATOMIC_COMPONENTS_AND_FORMULAS.md](./technical/ATOMIC_COMPONENTS_AND_FORMULAS.md) - Component mathematics
-
-#### Economic Systems
-- [ECONOMIC_SYSTEMS_README.md](./technical/ECONOMIC_SYSTEMS_README.md) - Tier-based economic modeling
-- [ECONOMY_BUILDER_ARCHITECTURE.md](./technical/ECONOMY_BUILDER_ARCHITECTURE.md) - Builder architecture
-
-#### Diplomatic & Intelligence
-- [DIPLOMATIC_SYSTEMS_GUIDE.md](./technical/DIPLOMATIC_SYSTEMS_GUIDE.md) - International relations platform
-- [DIPLOMATIC_INTELLIGENCE_SYSTEM_ARCHITECTURE.md](./technical/DIPLOMATIC_INTELLIGENCE_SYSTEM_ARCHITECTURE.md) - Intelligence architecture
-
-#### Social & Collaboration
-- [THINKPAGES_META_EXPERIENCE_DESIGN.md](./technical/THINKPAGES_META_EXPERIENCE_DESIGN.md) - Social platform UX
-- [QUICK_ACTIONS_SYSTEM.md](./technical/QUICK_ACTIONS_SYSTEM.md) - Quick actions framework
-- [QUICK_ACTIONS_IMPLEMENTATION.md](./technical/QUICK_ACTIONS_IMPLEMENTATION.md) - Meetings & policies
-
-#### Integration & Security
-- [WIKI_INTEGRATION_ARCHITECTURE.md](./technical/WIKI_INTEGRATION_ARCHITECTURE.md) - MediaWiki integration
-- [WIKI_CACHE_OPTIMIZATION.md](./technical/WIKI_CACHE_OPTIMIZATION.md) - Wiki cache performance optimization
-- [SECURITY_SYSTEM_IMPLEMENTATION.md](./technical/SECURITY_SYSTEM_IMPLEMENTATION.md) - Defense system
-
-#### Infrastructure & Performance
-- [IMAGE_REPOSITORY_INTEGRATION.md](./technical/IMAGE_REPOSITORY_INTEGRATION.md) - Image repository architecture
-- [IMAGE_UPLOAD_IMPLEMENTATION.md](./technical/IMAGE_UPLOAD_IMPLEMENTATION.md) - Image upload system
-- [LAZY_LOADING_IMPLEMENTATION.md](./technical/LAZY_LOADING_IMPLEMENTATION.md) - Lazy loading optimization
-- [LOG_CLEANUP_SYSTEM.md](./technical/LOG_CLEANUP_SYSTEM.md) - Automated log cleanup
-
-### Root-Level Docs (`/docs/technical/` and `/docs/`)
-- [EMBASSY_NETWORK_SYSTEM.md](./technical/EMBASSY_NETWORK_SYSTEM.md) - Embassy management
-- [SECURE_DIPLOMATIC_CHANNELS.md](./technical/SECURE_DIPLOMATIC_CHANNELS.md) - Encrypted messaging
-- [MYCOUNTRY_DEFENSE_SYSTEM.md](./technical/MYCOUNTRY_DEFENSE_SYSTEM.md) - Defense operations
-- [DEFENSE_SYSTEM_INTEGRATION_SUMMARY.md](./technical/DEFENSE_SYSTEM_INTEGRATION_SUMMARY.md) - Integration status
-
-### Future Features (`/future-features/`)
-- [STRATCOMM_IMPLEMENTATION_GUIDE.md](./future-features/STRATCOMM_IMPLEMENTATION_GUIDE.md) - Strategic Communications (v2.0)
-- [Vexel System](./future-features/labs/vexel/) - Heraldic design system (planned)
-
-### Archived Documentation (`/archived/`)
-Historical implementation summaries and completed fixes (reference only)
-
----
-
-## 🎯 Quick Navigation by Role
-
-### For New Developers
-1. Start with [README.md](../README.md) for setup and overview
-2. Review [CLAUDE.md](../CLAUDE.md) for development guidelines
-3. Check [IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md) for current status (100%)
-4. Read archived [V1 Compliance Audit](./archived/audits/V1_COMPLIANCE_AUDIT_REPORT.md) for security
-
-### For Understanding Major Systems
-- **Government**: [Atomic System Architecture](./technical/ATOMIC_SYSTEM_ARCHITECTURE.md)
-- **Economy**: [Economic Systems](./technical/ECONOMIC_SYSTEMS_README.md)
-- **Diplomacy**: [Diplomatic Guide](./technical/DIPLOMATIC_SYSTEMS_GUIDE.md)
-- **Intelligence**: [MyCountry README](../src/app/mycountry/README.md)
-- **Social**: [ThinkPages Design](./technical/THINKPAGES_META_EXPERIENCE_DESIGN.md)
-- **Achievements**: [Achievements README](../src/app/achievements/README.md)
-- **Help**: [Help System README](../src/app/help/README.md)
-
-### For Feature Implementation
-- Review feature-specific README in `/src/app/[feature]/`
-- Check `/docs/technical/` for architecture guides
-- Consult [SYSTEMS_GUIDE.md](./SYSTEMS_GUIDE.md) for comprehensive overview
-
-### For Deployment
-- Production ready for v1.0
-- Base path: `/projects/ixstats`
-- Ports: 3550 (prod), 3000 (dev)
-- See [README.md](../README.md) deployment section
-
----
-
-## 🚀 Current Status (v1.1.1)
-
-**Overall Completion: 100% (Grade A+ - v1.1.1 Complete)**
-
-### Production-Ready Infrastructure
-- ✅ 36 tRPC routers with 304 endpoints (162 queries, 142 mutations)
-- ✅ 131 database models across 9 migrations
-- ✅ Authentication with 13 security fixes applied
-- ✅ 62.9% live data integration (all critical paths operational)
-- ✅ 100+ UI components with glass physics design
-- ✅ Redis rate limiting with in-memory fallback
-- ✅ Discord webhook monitoring and alerts
-
-### Major Systems Status
-- **Core Platform** (100%): Infrastructure, auth, database operational
-- **Economic Engine** (95%): Tier-based modeling, calculations, projections
-- **Intelligence** (95%): Executive dashboard, briefings, analytics
-- **Government** (90%): Traditional + atomic systems integrated
-- **Diplomacy** (90%): Embassies, missions, cultural exchange
-- **Social Platform** (85%): ThinkPages, ThinkTanks, collaboration
-- **Achievements** (90%): Tracking, leaderboards, notifications
-- **Help System** (95%): Comprehensive in-app documentation
-
-### Remaining for v1.1
-- Budget system UI integration
-- ECI/SDI admin dashboard polish
-- Advanced mobile performance optimizations
-- PWA features and offline support
-
----
-
-## 📝 Documentation Maintenance
-
-**Last Major Update**: October 17, 2025 (v1.1.1)
-- ✅ Added 22 comprehensive documentation guides (8,000+ lines)
-- ✅ Complete API reference for all 304 endpoints
-- ✅ Atomic component guide for 106 components
-- ✅ Economic formulas documentation for 15+ systems
-- ✅ Design system specification complete
-- ✅ System guides for all major features
-- ✅ Refactoring roadmap and consolidation plan
-- ✅ Developer onboarding and contribution guides
-
-**Documentation Coverage**: 92% (excellent)
-- API Documentation: 100% (304/304 endpoints)
-- Component Documentation: 100% (106/106 components)
-- Formula Documentation: 100% (15/15 systems)
-- System Coverage: 92% (13/18 major systems fully documented)
-
-**Next Review**: v1.2.0 release (Q1 2026)
-
----
-
-*This documentation index is maintained as part of regular documentation updates. Add new major documentation files to this index when created.*
+This index should always reflect the active documentation landscape. Treat it as part of definition-of-done for every feature landing in IxStats.

@@ -7,6 +7,7 @@ import type {
   WebSocketIntelligenceEvent,
   IntelligenceWebSocketHookOptions
 } from './types';
+import { BASE_PATH } from '~/lib/base-path';
 
 // Dynamic import for socket.io-client to avoid SSR issues
 let io: any = null;
@@ -47,6 +48,15 @@ export class IntelligenceWebSocketClient {
     // Ensure we're in browser environment
     if (typeof window === 'undefined') {
       throw new Error('WebSocket client can only run in browser environment');
+    }
+
+    // Check if WebSocket should be enabled based on environment
+    const isProduction = process.env.NODE_ENV === 'production';
+    const websocketEnabled = process.env.NEXT_PUBLIC_ENABLE_WEBSOCKET === 'true';
+    
+    if (!isProduction && !websocketEnabled) {
+      console.log('[IntelligenceWebSocketClient] WebSocket disabled in development mode');
+      return;
     }
 
     // Wait for socket.io-client to load
@@ -122,7 +132,8 @@ export class IntelligenceWebSocketClient {
   private getServerUrl(): string {
     if (typeof window !== 'undefined') {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      return `${protocol}//${window.location.host}`;
+      const basePath = BASE_PATH || '';
+      return `${protocol}//${window.location.host}${basePath}`;
     }
     // Use the same port as Next.js server (3000 dev, 3550 prod)
     return process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3000';

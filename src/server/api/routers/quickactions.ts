@@ -22,7 +22,8 @@ import { notificationHooks } from "~/lib/notification-hooks";
 // INPUT VALIDATION SCHEMAS
 // ============================================================================
 
-const governmentOfficialInputSchema = z.object({
+// Base schema for government officials
+const governmentOfficialBaseSchema = z.object({
   governmentStructureId: z.string().optional(),
   departmentId: z.string().optional(),
   name: z.string().min(1, "Name is required"),
@@ -36,7 +37,14 @@ const governmentOfficialInputSchema = z.object({
   termEndDate: z.date().optional().nullable(),
   responsibilities: z.array(z.string()).optional(),
   priority: z.number().int().min(0).max(100).default(50),
+  isActive: z.boolean().default(true),
 });
+
+// Create schema - all required fields with defaults
+const governmentOfficialCreateSchema = governmentOfficialBaseSchema;
+
+// Update schema - all fields optional
+const governmentOfficialUpdateSchema = governmentOfficialBaseSchema.partial();
 
 const meetingInputSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -59,7 +67,8 @@ const meetingInputSchema = z.object({
   })).optional().default([]),
 });
 
-const policyInputSchema = z.object({
+// Base schema for policies
+const policyBaseSchema = z.object({
   name: z.string().min(1, "Policy name is required"),
   description: z.string().min(10, "Description is required (min 10 characters)"),
   policyType: z.enum(['economic', 'social', 'diplomatic', 'infrastructure', 'governance']),
@@ -83,7 +92,14 @@ const policyInputSchema = z.object({
   taxRevenueEffect: z.number().default(0),
   customEffects: z.record(z.string(), z.number()).optional(),
   approvalRequired: z.boolean().default(false),
+  isActive: z.boolean().default(true),
 });
+
+// Create schema - all required fields with defaults
+const policyCreateSchema = policyBaseSchema;
+
+// Update schema - all fields optional
+const policyUpdateSchema = policyBaseSchema.partial();
 
 const activityScheduleInputSchema = z.object({
   activityType: z.enum(['meeting', 'policy_review', 'economic_review', 'diplomatic_event', 'custom']),
@@ -173,7 +189,7 @@ export const quickActionsRouter = createTRPCRouter({
   createOfficial: protectedProcedure
     .input(z.object({
       countryId: z.string(),
-      official: governmentOfficialInputSchema,
+      official: governmentOfficialCreateSchema,
     }))
     .mutation(async ({ ctx, input }) => {
       // Get government structure
@@ -215,7 +231,7 @@ export const quickActionsRouter = createTRPCRouter({
   updateOfficial: protectedProcedure
     .input(z.object({
       officialId: z.string(),
-      updates: governmentOfficialInputSchema.partial(),
+      updates: governmentOfficialUpdateSchema,
     }))
     .mutation(async ({ ctx, input }) => {
       const { governmentStructureId, departmentId, responsibilities, ...safeUpdates } = input.updates;
@@ -538,7 +554,7 @@ export const quickActionsRouter = createTRPCRouter({
     .input(z.object({
       countryId: z.string(),
       userId: z.string(),
-      policy: policyInputSchema,
+      policy: policyCreateSchema,
     }))
     .mutation(async ({ ctx, input }) => {
       // Get current IxTime
@@ -783,7 +799,7 @@ export const quickActionsRouter = createTRPCRouter({
   updatePolicy: protectedProcedure
     .input(z.object({
       policyId: z.string(),
-      updates: policyInputSchema.partial().extend({
+      updates: policyUpdateSchema.extend({
         status: z.enum(['draft', 'proposed', 'active', 'expired', 'repealed']).optional(),
       }),
     }))

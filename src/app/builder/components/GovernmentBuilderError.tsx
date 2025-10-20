@@ -14,6 +14,7 @@ import {
   Info
 } from 'lucide-react';
 import type { GovernmentValidationResult } from '../utils/governmentValidation';
+import { createAbsoluteUrl } from '~/lib/url-utils';
 
 interface GovernmentBuilderErrorProps {
   validation: GovernmentValidationResult;
@@ -33,7 +34,7 @@ export function GovernmentBuilderError({
       onNavigateToBuilder();
     } else {
       // Default navigation to government builder
-      window.location.href = '/builder?section=government';
+      window.location.href = createAbsoluteUrl('/builder?section=government');
     }
   };
 

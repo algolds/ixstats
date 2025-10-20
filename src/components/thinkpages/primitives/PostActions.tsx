@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import { cn } from '~/lib/utils';
 import { 
   Heart, 
@@ -15,10 +16,18 @@ import { Button } from '~/components/ui/button';
 import { api } from '~/trpc/react';
 import { toast } from 'sonner';
 import { ReactionPopup } from '../ReactionPopup';
+import { RepostModal } from '../RepostModal';
 
 interface PostActionsProps {
   postId: string;
   currentUserAccountId: string;
+  post: any;
+  accounts: any[];
+  countryId: string;
+  isOwner: boolean;
+  onAccountSelect?: (account: any) => void;
+  onAccountSettings?: (account: any) => void;
+  onCreateAccount?: () => void;
   isLiked?: boolean;
   isReposted?: boolean;
   likeCount?: number;
@@ -39,6 +48,13 @@ interface PostActionsProps {
 export function PostActions({
   postId,
   currentUserAccountId,
+  post,
+  accounts,
+  countryId,
+  isOwner,
+  onAccountSelect,
+  onAccountSettings,
+  onCreateAccount,
   isLiked = false,
   isReposted = false,
   likeCount = 0,
@@ -56,6 +72,22 @@ export function PostActions({
   className = ''
 }: PostActionsProps) {
   const [showReactionPopup, setShowReactionPopup] = useState(false);
+  const [showRepostModal, setShowRepostModal] = useState(false);
+  const reactionButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Close reaction popup when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showReactionPopup && reactionButtonRef.current && !reactionButtonRef.current.contains(event.target as Node)) {
+        setShowReactionPopup(false);
+      }
+    };
+
+    if (showReactionPopup) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showReactionPopup]);
 
   const addReactionMutation = api.thinkpages.addReaction.useMutation({
     onSuccess: () => {
@@ -73,16 +105,6 @@ export function PostActions({
     },
     onError: (error) => {
       toast.error(error.message || 'Failed to remove reaction');
-    }
-  });
-
-  const createPostMutation = api.thinkpages.createPost.useMutation({
-    onSuccess: () => {
-      toast.success('Post reposted successfully!');
-      onRepost?.(postId);
-    },
-    onError: (error) => {
-      toast.error(error.message || 'Failed to repost');
     }
   });
 
@@ -120,26 +142,13 @@ export function PostActions({
     }
   }, [postId, currentUserAccountId, reactions, addReactionMutation, removeReactionMutation, onLike]);
 
-  const handleRepost = useCallback(async () => {
+  const handleRepost = useCallback(() => {
     if (!currentUserAccountId) {
       toast.error('Please select an account to interact');
       return;
     }
-
-    const comment = prompt('Add a comment to your repost (optional):');
-    
-    try {
-      await createPostMutation.mutateAsync({
-        accountId: currentUserAccountId,
-        content: comment || '',
-        repostOfId: postId,
-        hashtags: comment ? extractHashtags(comment) : [],
-        mentions: comment ? extractMentions(comment) : [],
-      });
-    } catch (error) {
-      // Error handled in mutation
-    }
-  }, [postId, currentUserAccountId, createPostMutation]);
+    setShowRepostModal(true);
+  }, [currentUserAccountId]);
 
   const handleReaction = useCallback(async (reactionType: string) => {
     if (!currentUserAccountId) {
@@ -203,18 +212,6 @@ export function PostActions({
   const iconSize = size === 'sm' ? 'h-3 w-3' : size === 'lg' ? 'h-5 w-5' : 'h-4 w-4';
   const buttonPadding = size === 'sm' ? 'p-1' : size === 'lg' ? 'p-3' : 'p-2';
 
-  const extractHashtags = (text: string): string[] => {
-    const hashtagRegex = /#([a-zA-Z0-9_]+)/g;
-    const matches = text.match(hashtagRegex);
-    return matches ? matches.map(tag => tag.slice(1)) : [];
-  };
-
-  const extractMentions = (text: string): string[] => {
-    const mentionRegex = /@([a-zA-Z0-9_]+)/g;
-    const matches = text.match(mentionRegex);
-    return matches ? matches.map(mention => mention.slice(1)) : [];
-  };
-
   return (
     <div className={cn("flex items-center justify-between", className)}>
       <div className="flex items-center gap-4">
@@ -234,7 +231,6 @@ export function PostActions({
         {/* Repost Button */}
         <button
           onClick={handleRepost}
-          disabled={createPostMutation.isPending}
           className={cn(
             "flex items-center gap-1 transition-colors group",
             isReposted ? "text-green-500" : "text-muted-foreground hover:text-green-500"
@@ -251,6 +247,7 @@ export function PostActions({
         {/* Like/Reaction Button */}
         <div className="relative">
           <button
+            ref={reactionButtonRef}
             onClick={(e) => {
               e.stopPropagation();
               setShowReactionPopup(!showReactionPopup);
@@ -269,13 +266,20 @@ export function PostActions({
           </button>
 
           <AnimatePresence>
-            {showReactionPopup && (
-              <div className="relative z-50">
+            {showReactionPopup && typeof window !== 'undefined' && createPortal(
+              <div 
+                className="fixed z-[99999]"
+                style={{
+                  top: reactionButtonRef.current ? reactionButtonRef.current.getBoundingClientRect().top - 10 : 0,
+                  left: reactionButtonRef.current ? reactionButtonRef.current.getBoundingClientRect().left : 0,
+                }}
+              >
                 <ReactionPopup
                   onSelectReaction={handleReaction}
                   postReactionCounts={reactionCounts}
                 />
-              </div>
+              </div>,
+              document.body
             )}
           </AnimatePresence>
         </div>
@@ -290,6 +294,27 @@ export function PostActions({
           </div>
         </button>
       </div>
+
+      {/* Repost Modal */}
+      {showRepostModal && createPortal(
+        <RepostModal
+          open={showRepostModal}
+          onOpenChange={setShowRepostModal}
+          originalPost={post}
+          countryId={countryId}
+          selectedAccount={accounts.find(acc => acc.id === currentUserAccountId)}
+          accounts={accounts}
+          onAccountSelect={onAccountSelect}
+          onAccountSettings={onAccountSettings}
+          onCreateAccount={onCreateAccount}
+          isOwner={isOwner}
+          onPost={() => {
+            onRepost?.(postId);
+            setShowRepostModal(false);
+          }}
+        />,
+        document.body
+      )}
     </div>
   );
 }

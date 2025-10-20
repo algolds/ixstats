@@ -142,9 +142,9 @@ export function CountryActionsMenu({
     }
 
     establishEmbassyMutation.mutate({
-      hostCountryId: viewerCountryId,
-      guestCountryId: targetCountryId,
-      name: `Embassy of ${targetCountryName}`,
+      hostCountryId: targetCountryId,
+      guestCountryId: viewerCountryId,
+      name: `Embassy in ${targetCountryName}`,
       location: "Capital District"
     });
   }, [viewerCountryId, targetCountryId, targetCountryName, establishEmbassyMutation]);

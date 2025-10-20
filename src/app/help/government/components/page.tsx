@@ -1,21 +1,47 @@
 "use client";
-import React, { useEffect } from "react";
-import Link from "next/link";
-import { ArrowLeft, Blocks, ChevronRight } from "lucide-react";
-export default function ComponentsPage() {
-  useEffect(() => { document.title = "Atomic Components - Help Center"; }, []);
+
+import { ListTree, Puzzle, Library } from "lucide-react";
+import { ArticleLayout, Section, InfoBox } from "../../_components/ArticleLayout";
+
+export default function AtomicComponentCatalogArticle() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-slate-950 dark:via-blue-950 dark:to-slate-900">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Link href="/help" className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-6 transition-colors"><ArrowLeft className="w-4 h-4" />Back to Help Center</Link>
-        <div className="mb-8"><div className="flex items-center gap-3 mb-4"><Blocks className="w-8 h-8 text-purple-600 dark:text-purple-400" /><h1 className="text-4xl font-bold text-slate-900 dark:text-white">24 Atomic Components</h1></div><p className="text-xl text-slate-600 dark:text-slate-300">Complete reference for all government building blocks</p></div>
-        <div className="prose prose-slate dark:prose-invert prose-blue max-w-none"><div className="bg-white border border-slate-200 dark:bg-white/5 dark:border-white/10 rounded-xl p-8 backdrop-blur-xl space-y-6">
-          <section><h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Executive Components</h2><p className="text-slate-700 dark:text-slate-300 mb-4">Leadership and executive authority structures:</p><ul className="space-y-2 text-slate-700 dark:text-slate-300"><li className="flex gap-2"><span className="text-purple-600 dark:text-purple-400">•</span><span><strong>Presidential Executive:</strong> Single elected president with direct mandate</span></li><li className="flex gap-2"><span className="text-purple-600 dark:text-purple-400">•</span><span><strong>Parliamentary Cabinet:</strong> Cabinet drawn from legislature, collective responsibility</span></li><li className="flex gap-2"><span className="text-purple-600 dark:text-purple-400">•</span><span><strong>Monarchical Authority:</strong> Hereditary executive power</span></li><li className="flex gap-2"><span className="text-purple-600 dark:text-purple-400">•</span><span><strong>Directorial Council:</strong> Collective executive leadership (Swiss model)</span></li><li className="flex gap-2"><span className="text-purple-600 dark:text-purple-400">•</span><span><strong>Technocratic Board:</strong> Expert-led executive governance</span></li><li className="flex gap-2"><span className="text-purple-600 dark:text-purple-400">•</span><span><strong>Military Junta:</strong> Armed forces leadership structure</span></li></ul></section>
-          <section><h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Legislative Components</h2><ul className="space-y-2 text-slate-700 dark:text-slate-300"><li className="flex gap-2"><span className="text-blue-600 dark:text-blue-400">•</span><span><strong>Unicameral Parliament:</strong> Single-chamber legislature</span></li><li className="flex gap-2"><span className="text-blue-600 dark:text-blue-400">•</span><span><strong>Bicameral System:</strong> Two legislative chambers with checks and balances</span></li><li className="flex gap-2"><span className="text-blue-600 dark:text-blue-400">•</span><span><strong>Direct Democracy:</strong> Citizens vote directly on legislation</span></li><li className="flex gap-2"><span className="text-blue-600 dark:text-blue-400">•</span><span><strong>Consultative Assembly:</strong> Advisory body without binding power</span></li><li className="flex gap-2"><span className="text-blue-600 dark:text-blue-400">•</span><span><strong>Corporate Representation:</strong> Industry and sector-based representation</span></li></ul></section>
-          <section><h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Next Steps</h2><div className="grid gap-3"><Link href="/help/government/synergy" className="group flex items-center justify-between p-4 bg-blue-50 border border-blue-200 dark:bg-blue-500/10 dark:border-blue-500/30 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-all"><span className="text-slate-900 dark:text-white font-medium">Component Synergies</span><ChevronRight className="w-5 h-5 text-blue-600 dark:text-blue-400 group-hover:translate-x-1 transition-transform" /></Link></div></section>
-        </div></div>
-        <div className="mt-8 flex justify-between items-center"><Link href="/help/government/atomic" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">← Previous: Atomic Government</Link><Link href="/help/government/synergy" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">Next: Synergies →</Link></div>
-      </div>
-    </div>
+    <ArticleLayout
+      title="Atomic Component Catalog"
+      description="Reference guide for every government component, including stats and synergy notes."
+      icon={ListTree}
+    >
+      <Section title="How Components Are Defined">
+        <ul className="list-disc pl-6 space-y-2">
+          <li>Component metadata resides in `src/components/government/atoms/AtomicGovernmentComponents.tsx`.</li>
+          <li>Each entry includes effectiveness, costs, synergies, conflicts, prerequisites, and theming.</li>
+          <li>Prisma enums mirror the component IDs, ensuring database consistency.</li>
+        </ul>
+      </Section>
+
+      <Section title="Using the Catalog">
+        <InfoBox title="Tips">
+          <ul className="list-disc pl-6 space-y-1">
+            <li>Use the filter/search UI in builder/editor to find components by category or keyword.</li>
+            <li>Hover or click components to view detailed descriptions and synergy hints.</li>
+            <li>Link to this article or `docs/systems/builder.md` from campaign documents to educate players.</li>
+          </ul>
+        </InfoBox>
+      </Section>
+
+      <Section title="Maintaining the Library">
+        <ul className="list-disc pl-6 space-y-2">
+          <li>When adding new components, update TypeScript definitions, Prisma enums, and help docs simultaneously.</li>
+          <li>Provide example policy hooks or ThinkPages prompts to contextualise gameplay effects.</li>
+          <li>Run through compliance and achievements to ensure new components integrate correctly.</li>
+        </ul>
+      </Section>
+
+      <InfoBox title="Reference Docs">
+        <ul className="list-disc pl-6 space-y-1">
+          <li><Puzzle className="inline h-4 w-4" /> `/help/government/atomic` – overview of how components combine.</li>
+          <li><Library className="inline h-4 w-4" /> `docs/reference/database.md` – schema notes for component storage.</li>
+        </ul>
+      </InfoBox>
+    </ArticleLayout>
   );
 }

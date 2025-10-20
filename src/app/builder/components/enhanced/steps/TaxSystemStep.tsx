@@ -17,6 +17,7 @@ interface TaxSystemStepProps {
   onUpdate: (taxSystem: TaxBuilderState) => Promise<void>;
   onCreate: (taxSystem: TaxBuilderState) => Promise<void>;
   onRefetch: () => Promise<void>;
+  onDraftChange?: (taxSystem: TaxBuilderState) => void;
 }
 
 export function TaxSystemStep({
@@ -29,6 +30,7 @@ export function TaxSystemStep({
   onUpdate,
   onCreate,
   onRefetch,
+  onDraftChange,
 }: TaxSystemStepProps) {
   const handleSave = async (taxSystem: TaxBuilderState) => {
     if (!countryId) {
@@ -71,6 +73,7 @@ export function TaxSystemStep({
         initialData={activeTaxSystemData || undefined}
         onChange={(taxSystem: TaxBuilderState) => {
           console.log('[TaxSystemStep] Tax system updated', taxSystem);
+          onDraftChange?.(taxSystem);
         }}
         onSave={handleSave}
         economicData={{

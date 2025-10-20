@@ -2,6 +2,7 @@
 // FIXED: Complete countries router with proper functionality and optimizations
 
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure, protectedProcedure, executiveProcedure, countryOwnerProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig, CONFIG_CONSTANTS } from "~/lib/config-service";
@@ -209,6 +210,47 @@ const economicDataSchema = z.object({
 });
 
 const countriesRouter = createTRPCRouter({
+  getSelectList: publicProcedure
+    .input(
+      z.object({
+        search: z.string().optional(),
+        limit: z.number().optional().default(500),
+      }).optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const where = input?.search
+        ? {
+            OR: [
+              { name: { contains: input.search, mode: "insensitive" } },
+              { slug: { contains: input.search, mode: "insensitive" } },
+            ],
+          }
+        : undefined;
+
+      const countries = await ctx.db.country.findMany({
+        where,
+        take: input?.limit,
+        orderBy: { name: "asc" },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          flag: true,
+          coatOfArms: true,
+          economicTier: true,
+        },
+      });
+
+      return countries.map((country) => ({
+        id: country.id,
+        name: country.name,
+        slug: country.slug ?? undefined,
+        flagUrl: country.flag ?? undefined,
+        coatOfArmsUrl: country.coatOfArms ?? undefined,
+        economicTier: country.economicTier ?? undefined,
+      }));
+    }),
+
   // Get all countries with basic info + total count
   getAll: publicProcedure
     .input(
@@ -2250,6 +2292,20 @@ const countriesRouter = createTRPCRouter({
         console.error("Infobox parsing failed:", error);
         throw new Error("Failed to parse country infobox");
       }
+    }),
+
+  getWikiInfobox: publicProcedure
+    .input(z.object({
+      name: z.string(),
+      site: z.enum(['ixwiki', 'iiwiki', 'althistory']).optional().default('ixwiki'),
+    }))
+    .query(async ({ input }) => {
+      const { parseCountryInfobox } = await import("~/lib/wiki-search-service");
+      const data = await parseCountryInfobox(input.name, input.site);
+      if (!data) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: `No wiki infobox found for ${input.name}` });
+      }
+      return data;
     }),
 
   getIntelligenceBriefings: publicProcedure

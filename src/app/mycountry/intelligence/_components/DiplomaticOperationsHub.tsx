@@ -421,6 +421,22 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
     { embassyId: selectedEmbassy || '' },
     { enabled: upgradeEmbassyOpen && !!selectedEmbassy }
   );
+  const { data: countryOptionsData, isLoading: countriesLoading } = api.countries.getSelectList.useQuery();
+
+  const hostCountryOptions = useMemo(
+    () => (countryOptionsData ?? []).filter((country) => country.id !== countryId),
+    [countryOptionsData, countryId]
+  );
+
+  const existingGuestEmbassyHosts = useMemo(() => {
+    if (!embassies || embassies.length === 0) return new Set<string>();
+    return new Set(
+      embassies
+        .filter((embassy: any) => embassy.guestCountryId === countryId || embassy.role === 'guest')
+        .map((embassy: any) => embassy.hostCountryId)
+        .filter((id: string | undefined): id is string => Boolean(id))
+    );
+  }, [embassies, countryId]);
 
   useEffect(() => {
     if (!upgradeEmbassyOpen || !availableUpgrades || availableUpgrades.length === 0) return;
@@ -429,13 +445,33 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
     }
   }, [availableUpgrades, upgradeEmbassyOpen, selectedUpgradeType]);
 
+  useEffect(() => {
+    if (!establishEmbassyOpen || hostCountryOptions.length === 0) return;
+    setNewEmbassyData((prev) => {
+      if (prev.hostCountry && hostCountryOptions.some((option) => option.id === prev.hostCountry)) {
+        return prev;
+      }
+
+      const availableOption = hostCountryOptions.find((option) => !existingGuestEmbassyHosts.has(option.id)) || hostCountryOptions[0];
+      if (!availableOption) return prev;
+
+      return {
+        ...prev,
+        hostCountry: availableOption.id,
+        name: `Embassy of ${countryName} in ${availableOption.name}`,
+      };
+    });
+  }, [establishEmbassyOpen, hostCountryOptions, existingGuestEmbassyHosts, countryName]);
+
   // Mutations
   const establishEmbassyMutation = api.diplomatic.establishEmbassy.useMutation({
-    onSuccess: () => {
-      toast.success('Embassy Established', { description: 'Your new embassy has been successfully established!' });
+    onSuccess: (data) => {
+      toast.success('Embassy Established', {
+        description: `Your embassy is now active in ${(data as any).hostCountryName || 'the host nation'}.`,
+      });
       setEstablishEmbassyOpen(false);
       setNewEmbassyData({ hostCountry: '', name: '', location: '', ambassador: '' });
-      refetchEmbassies();
+      void refetchEmbassies();
     },
     onError: (error) => {
       toast.error('Failed to Establish Embassy', { description: error.message });
@@ -508,8 +544,61 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
   });
 
   // Handlers
+  const handleHostCountrySelect = useCallback(
+    (value: string) => {
+      const selected = hostCountryOptions.find((option) => option.id === value);
+      setNewEmbassyData((prev) => {
+        const shouldOverrideName =
+          !prev.name || prev.name.startsWith(`Embassy of ${countryName} in `);
+        return {
+          ...prev,
+          hostCountry: value,
+          name:
+            selected && shouldOverrideName
+              ? `Embassy of ${countryName} in ${selected.name}`
+              : prev.name,
+        };
+      });
+    },
+    [hostCountryOptions, countryName]
+  );
+
+  useEffect(() => {
+    if (!establishEmbassyOpen || hostCountryOptions.length === 0) return;
+    setNewEmbassyData((prev) => {
+      if (prev.hostCountry && hostCountryOptions.some((option) => option.id === prev.hostCountry)) {
+        return prev;
+      }
+      const firstAvailable =
+        hostCountryOptions.find((option) => !existingGuestEmbassyHosts.has(option.id)) ||
+        hostCountryOptions[0];
+      if (!firstAvailable) return prev;
+      return {
+        ...prev,
+        hostCountry: firstAvailable.id,
+        name: `Embassy of ${countryName} in ${firstAvailable.name}`,
+      };
+    });
+  }, [establishEmbassyOpen, hostCountryOptions, existingGuestEmbassyHosts, countryName]);
+
   const handleEstablishEmbassy = useCallback(() => {
-    if (!newEmbassyData.hostCountry || !newEmbassyData.name) {
+    if (!newEmbassyData.hostCountry) {
+      toast.error('Missing Information', { description: 'Please select a host country.' });
+      return;
+    }
+
+    const selectedHost = hostCountryOptions.find(
+      (option) => option.id === newEmbassyData.hostCountry
+    );
+
+    const embassyName =
+      newEmbassyData.name && newEmbassyData.name.trim().length > 0
+        ? newEmbassyData.name
+        : selectedHost
+          ? `Embassy of ${countryName} in ${selectedHost.name}`
+          : '';
+
+    if (!embassyName) {
       toast.error('Missing Information', { description: 'Please provide host country and embassy name.' });
       return;
     }
@@ -517,11 +606,11 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
     establishEmbassyMutation.mutate({
       hostCountryId: newEmbassyData.hostCountry,
       guestCountryId: countryId,
-      name: newEmbassyData.name,
+      name: embassyName,
       location: newEmbassyData.location || undefined,
       ambassadorName: newEmbassyData.ambassador || undefined
     });
-  }, [newEmbassyData, countryId, establishEmbassyMutation]);
+  }, [newEmbassyData, countryId, establishEmbassyMutation, hostCountryOptions, countryName]);
 
   const handleStartMission = useCallback(() => {
     if (!selectedEmbassy) {
@@ -1010,12 +1099,26 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="host-country">Host Country *</Label>
-              <Input
-                id="host-country"
-                placeholder="Country ID or name"
+              <Select
                 value={newEmbassyData.hostCountry}
-                onChange={(e) => setNewEmbassyData({ ...newEmbassyData, hostCountry: e.target.value })}
-              />
+                onValueChange={handleHostCountrySelect}
+                disabled={countriesLoading || hostCountryOptions.length === 0}
+              >
+                <SelectTrigger id="host-country">
+                  <SelectValue placeholder={countriesLoading ? 'Loading countries...' : 'Select a country'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {hostCountryOptions.map((option) => (
+                    <SelectItem
+                      key={option.id}
+                      value={option.id}
+                      disabled={existingGuestEmbassyHosts.has(option.id)}
+                    >
+                      {option.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="embassy-name">Embassy Name *</Label>
@@ -1049,7 +1152,10 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
             <Button variant="outline" onClick={() => setEstablishEmbassyOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleEstablishEmbassy} disabled={establishEmbassyMutation.isPending}>
+            <Button
+              onClick={handleEstablishEmbassy}
+              disabled={establishEmbassyMutation.isPending || hostCountryOptions.length === 0}
+            >
               {establishEmbassyMutation.isPending ? 'Establishing...' : 'Establish Embassy'}
             </Button>
           </DialogFooter>

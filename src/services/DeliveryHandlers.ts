@@ -9,6 +9,7 @@ import type {
   DeliveryMethod,
   NotificationPriority,
 } from '~/types/unified-notifications';
+import { createAbsoluteUrl } from '~/lib/url-utils';
 
 // Base interface for all delivery handlers
 export interface DeliveryHandler {
@@ -212,7 +213,7 @@ export class DynamicIslandDeliveryHandler implements DeliveryHandler {
             achievement: '/mycountry/achievements',
           };
           const route = routes[notification.category as keyof typeof routes] || '/mycountry/new';
-          window.location.href = route;
+          window.location.href = createAbsoluteUrl(route);
         }
       });
     }

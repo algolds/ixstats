@@ -418,6 +418,7 @@ export class EconomyIntegrationService {
         gig: 5.5,
         informal: 3.0
       },
+      averageAnnualIncome: Math.max(0, Math.round(42000 * (impacts.wageGrowth || 1))),
       
       averageWorkweekHours: 38.5,
       averageOvertimeHours: 3.2,

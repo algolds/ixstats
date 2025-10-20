@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '~/trpc/react';
+import { buildTaxSyncPayload } from '../../utils/taxSync';
 
 export function useEconomySyncStatus(
   countryId: string | undefined,
@@ -60,15 +61,10 @@ export function useEconomySyncStatus(
 
     const syncWithTax = async () => {
       try {
+        const taxPayload = buildTaxSyncPayload(taxSystemData);
         await syncTaxMutation.mutateAsync({
           countryId,
-          taxData: {
-            personalIncomeTaxRates: JSON.stringify(taxSystemData.personalIncomeTaxRates || {}),
-            corporateTaxRates: JSON.stringify(taxSystemData.corporateTaxRates || {}),
-            salesTaxRate: taxSystemData.salesTaxRate || 0,
-            propertyTaxRate: taxSystemData.propertyTaxRate || 0,
-            payrollTaxRate: taxSystemData.payrollTaxRate || 0
-          }
+          taxData: taxPayload
         });
       } catch (error) {
         console.warn('Tax sync failed:', error);

@@ -167,6 +167,11 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
   const [showUpgradesPanel, setShowUpgradesPanel] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'missions' | 'upgrades' | 'economics'>('overview');
   const networkContainerRef = useRef<HTMLDivElement>(null);
+  const [selectedHostCountryId, setSelectedHostCountryId] = useState<string>("");
+  const [newEmbassyName, setNewEmbassyName] = useState<string>("");
+  const [newEmbassyLocation, setNewEmbassyLocation] = useState<string>("");
+  const [newAmbassadorName, setNewAmbassadorName] = useState<string>("");
+  const [embassyFormError, setEmbassyFormError] = useState<string | null>(null);
 
   // Fetch live diplomatic relationships
   const { data: liveRelations, isLoading, error } = api.diplomatic.getRelationships.useQuery(
@@ -192,12 +197,71 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
     { enabled: !!primaryCountry.id && viewMode === 'game' }
   );
 
+  const { data: embassyList, refetch: refetchEmbassyList } = api.diplomatic.getEmbassies.useQuery(
+    { countryId: primaryCountry.id },
+    { enabled: !!primaryCountry.id, refetchInterval: 60000 }
+  );
+
+  const { data: countryOptionsData, isLoading: countryOptionsLoading } = api.countries.getSelectList.useQuery();
+
+  const hostCountryOptions = useMemo(
+    () => (countryOptionsData ?? []).filter((country) => country.id !== primaryCountry.id),
+    [countryOptionsData, primaryCountry.id]
+  );
+
+  const existingEmbassyHosts = useMemo(() => {
+    if (!embassyList || embassyList.length === 0) return new Set<string>();
+    return new Set(
+      embassyList
+        .filter((embassy: any) => embassy.guestCountryId === primaryCountry.id || embassy.role === 'guest')
+        .map((embassy: any) => embassy.hostCountryId)
+        .filter((id: string | undefined): id is string => Boolean(id))
+    );
+  }, [embassyList, primaryCountry.id]);
+
+  useEffect(() => {
+    if (!showEstablishEmbassy || hostCountryOptions.length === 0) return;
+
+    setEmbassyFormError(null);
+    setSelectedHostCountryId((current) => {
+      if (current && hostCountryOptions.some((option) => option.id === current)) {
+        return current;
+      }
+
+      const preferred = selectedRelation?.countryId;
+      const relationOption = preferred
+        ? hostCountryOptions.find((option) => option.id === preferred)
+        : undefined;
+
+      const availableOption = relationOption && !existingEmbassyHosts.has(relationOption.id)
+        ? relationOption
+        : hostCountryOptions.find((option) => !existingEmbassyHosts.has(option.id)) || hostCountryOptions[0];
+
+      if (!availableOption) return '';
+
+      setNewEmbassyName(`Embassy of ${primaryCountry.name} in ${availableOption.name}`);
+      return availableOption.id;
+    });
+    setNewEmbassyLocation('');
+    setNewAmbassadorName('');
+  }, [showEstablishEmbassy, hostCountryOptions, existingEmbassyHosts, primaryCountry.name, selectedRelation]);
+
   // Game action mutations
   const establishEmbassyMutation = api.diplomatic.establishEmbassy.useMutation({
     onSuccess: (data) => {
-      toast.success(`Embassy established in ${(data as any).targetCountryName}!`, {
-        description: `Your new Level ${(data as any).level} embassy is now operational.`
+      toast.success(`Embassy established`, {
+        description: `Embassy now active in ${(data as any).hostCountryName || 'the host nation'}.`,
       });
+      setShowEstablishEmbassy(false);
+      setSelectedHostCountryId("");
+      setNewEmbassyName("");
+      setNewEmbassyLocation("");
+      setNewAmbassadorName("");
+      setEmbassyFormError(null);
+      void refetchEmbassyList();
+      if (onEstablishEmbassy) {
+        onEstablishEmbassy((data as any).hostCountryId || selectedHostCountryId);
+      }
     },
     onError: (error) => {
       toast.error('Failed to establish embassy', {
@@ -205,6 +269,48 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
       });
     }
   });
+
+  const handleHostCountrySelect = useCallback(
+    (value: string) => {
+      setSelectedHostCountryId(value);
+      const selected = hostCountryOptions.find((option) => option.id === value);
+      setEmbassyFormError(null);
+      if (selected) {
+        setNewEmbassyName((current) => {
+          if (!current || current.startsWith(`Embassy of ${primaryCountry.name} in `)) {
+            return `Embassy of ${primaryCountry.name} in ${selected.name}`;
+          }
+          return current;
+        });
+      }
+    },
+    [hostCountryOptions, primaryCountry.name]
+  );
+
+  const handleEstablishEmbassySubmit = useCallback(() => {
+    if (!selectedHostCountryId) {
+      setEmbassyFormError('Please select a host country.');
+      return;
+    }
+
+    const selected = hostCountryOptions.find((option) => option.id === selectedHostCountryId);
+    const embassyName = newEmbassyName.trim() || (selected ? `Embassy of ${primaryCountry.name} in ${selected.name}` : '');
+
+    if (!embassyName) {
+      setEmbassyFormError('Embassy name is required.');
+      return;
+    }
+
+    setEmbassyFormError(null);
+
+    establishEmbassyMutation.mutate({
+      hostCountryId: selectedHostCountryId,
+      guestCountryId: primaryCountry.id,
+      name: embassyName,
+      location: newEmbassyLocation.trim() || undefined,
+      ambassadorName: newAmbassadorName.trim() || undefined,
+    });
+  }, [selectedHostCountryId, hostCountryOptions, newEmbassyName, newEmbassyLocation, newAmbassadorName, establishEmbassyMutation, primaryCountry.id, primaryCountry.name]);
 
   const startMissionMutation = api.diplomatic.startMission.useMutation({
     onSuccess: (data) => {
@@ -284,29 +390,74 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
 
   // Transform embassy data
   const embassies = useMemo(() => {
-    if (!embassyData) return [];
-    return (embassyData as any).map((embassy: any) => ({
-      id: embassy.id,
-      targetCountryId: embassy.targetCountryId,
-      targetCountryName: embassy.targetCountry || 'Unknown',
-      level: embassy.level || 1,
-      experience: embassy.experience || 0,
-      influence: embassy.influence || 0,
-      budget: embassy.budget || 0,
-      maintenanceCost: embassy.maintenanceCost || 1000,
-      staffCount: embassy.staffCount || 10,
-      location: embassy.location || 'Diplomatic Quarter',
-      ambassador: embassy.ambassador || 'TBD',
-      securityLevel: embassy.securityLevel as 'LOW' | 'MEDIUM' | 'HIGH' | 'MAXIMUM',
-      status: embassy.status as 'ACTIVE' | 'MAINTENANCE' | 'SUSPENDED' | 'CLOSED',
-      specializations: embassy.specializations || [],
-      establishedAt: embassy.establishedAt,
-      lastMaintenance: embassy.lastMaintenance,
-      nextMaintenance: embassy.nextMaintenance,
-      availableMissions: availableMissions?.filter((m: any) => m.embassyId === embassy.id) || [],
-      availableUpgrades: availableUpgrades?.filter((u: any) => u && u.embassyId === embassy.id) || []
-    }));
-  }, [embassyData, availableMissions, availableUpgrades]);
+    if (viewMode === 'game' && embassyData) {
+      return (embassyData as any).map((embassy: any) => ({
+        id: embassy.id,
+        targetCountryId: embassy.targetCountryId,
+        targetCountryName: embassy.targetCountry || 'Unknown',
+        level: embassy.level || 1,
+        experience: embassy.experience || 0,
+        influence: embassy.influence || 0,
+        budget: embassy.budget || 0,
+        maintenanceCost: embassy.maintenanceCost || 1000,
+        staffCount: embassy.staffCount || 10,
+        location: embassy.location || 'Diplomatic Quarter',
+        ambassador: embassy.ambassador || 'TBD',
+        securityLevel: embassy.securityLevel as 'LOW' | 'MEDIUM' | 'HIGH' | 'MAXIMUM',
+        status: embassy.status as 'ACTIVE' | 'MAINTENANCE' | 'SUSPENDED' | 'CLOSED',
+        specializations: embassy.specializations || [],
+        establishedAt: embassy.establishedAt,
+        lastMaintenance: embassy.lastMaintenance,
+        nextMaintenance: embassy.nextMaintenance,
+        availableMissions: availableMissions?.filter((m: any) => m.embassyId === embassy.id) || [],
+        availableUpgrades: availableUpgrades?.filter((u: any) => u && u.embassyId === embassy.id) || []
+      }));
+    }
+
+    if (embassyList && embassyList.length > 0) {
+      return embassyList.map((embassy: any) => {
+        const normalizedSecurity = (() => {
+          const level = (embassy.securityLevel || '').toString().toUpperCase();
+          if (level === 'LOW' || level === 'MEDIUM' || level === 'HIGH' || level === 'MAXIMUM') {
+            return level as 'LOW' | 'MEDIUM' | 'HIGH' | 'MAXIMUM';
+          }
+          return 'MEDIUM' as const;
+        })();
+
+        const normalizedStatus = (() => {
+          const status = (embassy.status || '').toString().toUpperCase();
+          if (status === 'ACTIVE' || status === 'MAINTENANCE' || status === 'SUSPENDED' || status === 'CLOSED') {
+            return status as 'ACTIVE' | 'MAINTENANCE' | 'SUSPENDED' | 'CLOSED';
+          }
+          return 'ACTIVE' as const;
+        })();
+
+        return {
+          id: embassy.id,
+          targetCountryId: embassy.countryId,
+          targetCountryName: embassy.country,
+          level: embassy.level || 1,
+          experience: embassy.experience || 0,
+          influence: embassy.influence || 0,
+          budget: embassy.budget || 0,
+          maintenanceCost: embassy.maintenanceCost || 0,
+          staffCount: embassy.staffCount || 0,
+          location: embassy.location || 'Diplomatic Quarter',
+          ambassador: embassy.ambassadorName || 'TBD',
+          securityLevel: normalizedSecurity,
+          status: normalizedStatus,
+          specializations: embassy.specialization ? [embassy.specialization] : [],
+          establishedAt: embassy.establishedAt,
+          lastMaintenance: embassy.lastMaintenance,
+          nextMaintenance: embassy.nextMaintenance,
+          availableMissions: [],
+          availableUpgrades: [],
+        };
+      });
+    }
+
+    return [];
+  }, [embassyData, embassyList, viewMode, availableMissions, availableUpgrades]);
 
   // Filter and sort relations
   const filteredRelations = useMemo(() => {
@@ -1067,19 +1218,43 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
                   <h4 className="font-semibold text-foreground mb-4">Embassy Details</h4>
                   
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Target Country</label>
-                    <select className="w-full bg-white/10 dark:bg-black/20 border border-white/20 rounded-lg px-3 py-2 text-foreground">
-                      <option value="">Select a country...</option>
-                      <option value="caphiria">Caphiria</option>
-                      <option value="urcea">Urcea</option>
-                      <option value="burgundie">Burgundie</option>
+                    <label className="block text-sm font-medium text-foreground mb-2">Host Country</label>
+                    <select
+                      className="w-full bg-white/10 dark:bg-black/20 border border-white/20 rounded-lg px-3 py-2 text-foreground"
+                      value={selectedHostCountryId}
+                      onChange={(event) => handleHostCountrySelect(event.target.value)}
+                      disabled={countryOptionsLoading || hostCountryOptions.length === 0}
+                    >
+                      <option value="">{countryOptionsLoading ? 'Loading countries...' : 'Select a country...'}</option>
+                      {hostCountryOptions.map((option) => (
+                        <option
+                          key={option.id}
+                          value={option.id}
+                          disabled={existingEmbassyHosts.has(option.id)}
+                        >
+                          {option.name}
+                        </option>
+                      ))}
                     </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">Embassy Name</label>
+                    <input
+                      type="text"
+                      value={newEmbassyName}
+                      onChange={(event) => setNewEmbassyName(event.target.value)}
+                      placeholder={`Embassy of ${primaryCountry.name}`}
+                      className="w-full bg-white/10 dark:bg-black/20 border border-white/20 rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground"
+                    />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">Embassy Location</label>
                     <input
                       type="text"
+                      value={newEmbassyLocation}
+                      onChange={(event) => setNewEmbassyLocation(event.target.value)}
                       placeholder="e.g., Diplomatic Quarter, Capital City"
                       className="w-full bg-white/10 dark:bg-black/20 border border-white/20 rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground"
                     />
@@ -1089,10 +1264,16 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
                     <label className="block text-sm font-medium text-foreground mb-2">Ambassador Name</label>
                     <input
                       type="text"
+                      value={newAmbassadorName}
+                      onChange={(event) => setNewAmbassadorName(event.target.value)}
                       placeholder="e.g., Ambassador John Smith"
                       className="w-full bg-white/10 dark:bg-black/20 border border-white/20 rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground"
                     />
                   </div>
+
+                  {embassyFormError && (
+                    <p className="text-sm text-red-500">{embassyFormError}</p>
+                  )}
                 </div>
 
                 <div className="flex gap-3 pt-4">
@@ -1103,14 +1284,14 @@ const EmbassyNetworkVisualizationComponent: React.FC<EmbassyNetworkVisualization
                     Cancel
                   </button>
                   <button
-                    onClick={() => {
-                      // Handle embassy establishment
-                      onEstablishEmbassy?.('selected-country-id');
-                      setShowEstablishEmbassy(false);
-                    }}
-                    className="flex-1 bg-[--intel-gold]/20 hover:bg-[--intel-gold]/30 text-[--intel-gold] px-4 py-2 rounded-lg font-medium transition-colors"
+                    onClick={handleEstablishEmbassySubmit}
+                    disabled={establishEmbassyMutation.isPending || hostCountryOptions.length === 0}
+                    className={cn(
+                      "flex-1 bg-[--intel-gold]/20 hover:bg-[--intel-gold]/30 text-[--intel-gold] px-4 py-2 rounded-lg font-medium transition-colors",
+                      (establishEmbassyMutation.isPending || hostCountryOptions.length === 0) && "opacity-60 cursor-not-allowed"
+                    )}
                   >
-                    Establish Embassy
+                    {establishEmbassyMutation.isPending ? 'Establishing...' : 'Establish Embassy'}
                   </button>
                 </div>
               </div>

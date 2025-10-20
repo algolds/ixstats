@@ -1,14 +1,37 @@
 "use client";
 
-// Refactored from main CountryPage - displays economic data tabs (overview, economy, government, labor, demographics)
-import React, { Suspense } from "react";
-import dynamic from "next/dynamic";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { Card, CardContent } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "~/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Button } from "~/components/ui/button";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { TrendingUp, BarChart3, Building, Users, Globe, Activity, Crown, MapPin, Heart } from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import {
+  TrendingUp,
+  BarChart3,
+  Building,
+  Users,
+  Globe,
+  Activity,
+  PieChart,
+  Briefcase,
+} from "lucide-react";
+import { MyCountryIcon } from "~/components/ui/mycountry-logo";
+import { NationalIdentityDisplay } from "~/components/countries/NationalIdentityDisplay";
 import { createUrl } from "~/lib/url-utils";
 import type {
   CoreEconomicIndicatorsData,
@@ -18,44 +41,136 @@ import type {
   GovernmentSpendingData,
 } from "~/types/economics";
 import type { CountryInfobox } from "~/lib/mediawiki-service";
-import { NationalIdentityDisplay } from "~/components/countries/NationalIdentityDisplay";
+import { GdpDetailsModal } from "~/components/modals/GdpDetailsModal";
+import { GdpPerCapitaDetailsModal } from "~/components/modals/GdpPerCapitaDetailsModal";
+import { PopulationDetailsModal } from "~/components/modals/PopulationDetailsModal";
 
-// Dynamic imports for chart-heavy components
-const LaborEmployment = dynamic(
-  () => import("~/app/countries/_components/economy").then((mod) => ({ default: mod.LaborEmployment })),
-  {
-    ssr: false,
-    loading: () => <div className="text-center py-8 text-muted-foreground">Loading labor data...</div>,
+const compactNumberFormatter = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+const compactCurrencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
+
+function formatCompactNumber(
+  value: number | null | undefined,
+  fallback = "N/A"
+): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return fallback;
   }
-);
-const Demographics = dynamic(
-  () => import("~/app/countries/_components/economy").then((mod) => ({ default: mod.Demographics })),
-  {
-    ssr: false,
-    loading: () => <div className="text-center py-8 text-muted-foreground">Loading demographics...</div>,
+  return compactNumberFormatter.format(value);
+}
+
+function formatCompactCurrency(
+  value: number | null | undefined,
+  fallback = "N/A"
+): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return fallback;
   }
-);
-const GovernmentSpending = dynamic(
-  () => import("~/app/countries/_components/economy").then((mod) => ({ default: mod.GovernmentSpending })),
-  {
-    ssr: false,
-    loading: () => <div className="text-center py-8 text-muted-foreground">Loading spending data...</div>,
+  return compactCurrencyFormatter.format(value);
+}
+
+function formatCurrency(
+  value: number | null | undefined,
+  fallback = "N/A"
+): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return fallback;
   }
-);
-const FiscalSystemComponent = dynamic(
-  () => import("~/app/countries/_components/economy").then((mod) => ({ default: mod.FiscalSystemComponent })),
-  {
-    ssr: false,
-    loading: () => <div className="text-center py-8 text-muted-foreground">Loading fiscal data...</div>,
+  return currencyFormatter.format(value);
+}
+
+function formatPercent(
+  value: number | null | undefined,
+  fallback = "N/A",
+  digits = 1
+): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return fallback;
   }
-);
-const CountryAtGlance = dynamic(
-  () => import("~/app/countries/_components/detail").then((mod) => ({ default: mod.CountryAtGlance })),
-  {
-    ssr: false,
-    loading: () => <div className="text-center py-8 text-muted-foreground">Loading economic indicators...</div>,
+  const normalized = Math.abs(value) <= 1 ? value * 100 : value;
+  return `${normalized.toFixed(digits)}%`;
+}
+
+function formatYears(
+  value: number | null | undefined,
+  fallback = "N/A"
+): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return fallback;
   }
-);
+  return `${value.toFixed(1)} yrs`;
+}
+
+function formatHours(
+  value: number | null | undefined,
+  fallback = "N/A"
+): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return fallback;
+  }
+  return `${value.toFixed(1)} hrs`;
+}
+
+const PUBLIC_POLICY_FLAGS: Array<{
+  key: keyof GovernmentSpendingData;
+  label: string;
+  description: string;
+}> = [
+  {
+    key: "universalHealthcare",
+    label: "Universal Healthcare",
+    description: "Nationwide public health coverage",
+  },
+  {
+    key: "freeEducation",
+    label: "Free Education",
+    description: "Tuition-free education for citizens",
+  },
+  {
+    key: "renewableEnergyTransition",
+    label: "Renewable Energy",
+    description: "National transition toward clean energy",
+  },
+  {
+    key: "publicTransportExpansion",
+    label: "Transit Expansion",
+    description: "Major investments in public transport",
+  },
+  {
+    key: "disasterPreparedness",
+    label: "Disaster Preparedness",
+    description: "Coordinated response & resilience planning",
+  },
+  {
+    key: "infrastructureBankFund",
+    label: "Infrastructure Bank",
+    description: "Dedicated infrastructure innovation fund",
+  },
+  {
+    key: "carbonNeutrality",
+    label: "Carbon Neutrality",
+    description: "Long-term commitment to net-zero emissions",
+  },
+  {
+    key: "affordableHousing",
+    label: "Affordable Housing",
+    description: "Public housing and affordability programs",
+  },
+];
 
 interface CountryEconomicPanelProps {
   country: {
@@ -114,388 +229,957 @@ export function CountryEconomicPanel({
   economicsData,
   governmentStructure,
   wikiInfobox,
-  currentIxTime,
+  currentIxTime: _currentIxTime,
   isOwnCountry,
-  isMounted,
 }: CountryEconomicPanelProps) {
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Economic & Government Profile</h2>
-          <p className="text-muted-foreground">
-            {isOwnCountry
-              ? "Public data visible to all countries"
-              : "Public information about this country"}
-          </p>
-        </div>
-        {isOwnCountry && (
-          <Link href={createUrl("/mycountry")}>
-            <Button variant="outline" size="sm">
-              <Activity className="h-4 w-4 mr-2" />
-              Manage in Dashboard
-            </Button>
-          </Link>
-        )}
-      </div>
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "economy" | "government" | "labor" | "demographics"
+  >("overview");
+  const [isPopulationModalOpen, setIsPopulationModalOpen] = useState(false);
+  const [isGdpModalOpen, setIsGdpModalOpen] = useState(false);
+  const [isGdpPerCapitaModalOpen, setIsGdpPerCapitaModalOpen] =
+    useState(false);
+  const [isGrowthModalOpen, setIsGrowthModalOpen] = useState(false);
 
-      {/* Tabbed Interface */}
-      <Tabs defaultValue="overview" className="w-full">
+  const highlightMetrics = useMemo(
+    () => [
+      {
+        label: "Population",
+        value: formatCompactNumber(country.currentPopulation),
+        detail: `${country.currentPopulation.toLocaleString()} citizens`,
+        onClick: () => setIsPopulationModalOpen(true),
+      },
+      {
+        label: "GDP per Capita",
+        value: formatCompactCurrency(country.currentGdpPerCapita),
+        detail: "Nominal USD per citizen",
+        onClick: () => setIsGdpPerCapitaModalOpen(true),
+      },
+      {
+        label: "Total GDP",
+        value: formatCompactCurrency(country.currentTotalGdp),
+        detail: "Nominal GDP (annual)",
+        onClick: () => setIsGdpModalOpen(true),
+      },
+      {
+        label: "Growth Trend",
+        value: formatPercent(country.adjustedGdpGrowth, "N/A", 2),
+        detail: "Adjusted GDP growth rate",
+        onClick: () => setIsGrowthModalOpen(true),
+      },
+    ],
+    [
+      country.currentPopulation,
+      country.currentGdpPerCapita,
+      country.currentTotalGdp,
+      country.adjustedGdpGrowth,
+      setIsPopulationModalOpen,
+      setIsGdpPerCapitaModalOpen,
+      setIsGdpModalOpen,
+      setIsGrowthModalOpen,
+    ]
+  );
+
+  const overviewHighlights = useMemo(
+    () => [
+      {
+        label: "Continent",
+        value: country.continent ?? "N/A",
+      },
+      {
+        label: "Region",
+        value: country.region ?? "N/A",
+      },
+      {
+        label: "Economic Tier",
+        value: country.economicTier ?? "N/A",
+      },
+      {
+        label: "Population Tier",
+        value: country.populationTier ?? "N/A",
+      },
+      {
+        label: "Population Density",
+        value:
+          country.populationDensity !== null &&
+          country.populationDensity !== undefined
+            ? `${country.populationDensity.toFixed(1)} / km²`
+            : "N/A",
+      },
+      {
+        label: "GDP Density",
+        value:
+          country.gdpDensity !== null && country.gdpDensity !== undefined
+            ? `${formatCompactCurrency(country.gdpDensity)} / km²`
+            : "N/A",
+      },
+    ],
+    [
+      country.continent,
+      country.region,
+      country.economicTier,
+      country.populationTier,
+      country.populationDensity,
+      country.gdpDensity,
+    ]
+  );
+
+  const economyHighlights = useMemo(
+    () => [
+      {
+        label: "Nominal GDP",
+        value: formatCompactCurrency(economicsData.core.nominalGDP),
+        detail: "Current-year GDP output",
+      },
+      {
+        label: "Real GDP Growth",
+        value: formatPercent(economicsData.core.realGDPGrowthRate, "N/A", 2),
+        detail: "Inflation-adjusted growth",
+      },
+      {
+        label: "Inflation Rate",
+        value: formatPercent(economicsData.core.inflationRate),
+        detail: "Consumer price index",
+      },
+      {
+        label: "GDP per Capita",
+        value: formatCompactCurrency(economicsData.core.gdpPerCapita),
+        detail: "Average output per citizen",
+      },
+    ],
+    [
+      economicsData.core.nominalGDP,
+      economicsData.core.realGDPGrowthRate,
+      economicsData.core.inflationRate,
+      economicsData.core.gdpPerCapita,
+    ]
+  );
+
+  const fiscalHighlights = useMemo(
+    () => [
+      {
+        label: "Tax Revenue",
+        value: formatPercent(economicsData.fiscal.taxRevenueGDPPercent),
+        detail: "Share of GDP captured as revenue",
+      },
+      {
+        label: "Government Revenue",
+        value: formatCompactCurrency(economicsData.fiscal.governmentRevenueTotal),
+        detail: "Annual public revenue",
+      },
+      {
+        label:
+          economicsData.fiscal.budgetDeficitSurplus >= 0
+            ? "Budget Surplus"
+            : "Budget Deficit",
+        value: formatCompactCurrency(
+          economicsData.fiscal.budgetDeficitSurplus
+        ),
+        detail: "Revenue minus expenditures",
+      },
+      {
+        label: "Debt-to-GDP",
+        value: formatPercent(economicsData.fiscal.totalDebtGDPRatio),
+        detail: "Total public debt burden",
+      },
+    ],
+    [
+      economicsData.fiscal.taxRevenueGDPPercent,
+      economicsData.fiscal.governmentRevenueTotal,
+      economicsData.fiscal.budgetDeficitSurplus,
+      economicsData.fiscal.totalDebtGDPRatio,
+    ]
+  );
+
+  const topSpendingCategories = useMemo(() => {
+    const sorted = [...(economicsData.spending.spendingCategories ?? [])].sort(
+      (a, b) => (b.amount ?? 0) - (a.amount ?? 0)
+    );
+    return sorted.slice(0, 3);
+  }, [economicsData.spending.spendingCategories]);
+
+  const leadershipDetails = useMemo(() => {
+    const details = [
+      {
+        label: "Government Name",
+        value: governmentStructure?.governmentName ?? "Not Published",
+      },
+      {
+        label: "Government Type",
+        value:
+          governmentStructure?.governmentType ??
+          country.governmentType ??
+          "Not Published",
+      },
+      {
+        label: "Head of State",
+        value: governmentStructure?.headOfState ?? "Not Published",
+      },
+      {
+        label: "Head of Government",
+        value: governmentStructure?.headOfGovernment ?? "Not Published",
+      },
+      {
+        label: "Legislature",
+        value: governmentStructure?.legislatureName ?? "Not Published",
+      },
+      {
+        label: "Executive Branch",
+        value: governmentStructure?.executiveName ?? "Not Published",
+      },
+      {
+        label: "Judicial Branch",
+        value: governmentStructure?.judicialName ?? "Not Published",
+      },
+    ];
+
+    return details.filter(
+      (detail, index) => index < 3 || detail.value !== "Not Published"
+    );
+  }, [
+    governmentStructure?.governmentName,
+    governmentStructure?.governmentType,
+    governmentStructure?.headOfState,
+    governmentStructure?.headOfGovernment,
+    governmentStructure?.legislatureName,
+    governmentStructure?.executiveName,
+    governmentStructure?.judicialName,
+    country.governmentType,
+  ]);
+
+  const featuredPolicies = useMemo(() => {
+    const policies = PUBLIC_POLICY_FLAGS.filter(
+      (policy) => economicsData.spending[policy.key]
+    ).map(({ label, description }) => ({ label, description }));
+    return policies.slice(0, 4);
+  }, [economicsData.spending]);
+
+  const laborHighlights = useMemo(
+    () => [
+      {
+        label: "Labor Force Participation",
+        value: formatPercent(economicsData.labor.laborForceParticipationRate),
+      },
+      {
+        label: "Employment Rate",
+        value: formatPercent(economicsData.labor.employmentRate),
+      },
+      {
+        label: "Unemployment Rate",
+        value: formatPercent(economicsData.labor.unemploymentRate),
+      },
+      {
+        label: "Total Workforce",
+        value: formatCompactNumber(economicsData.labor.totalWorkforce),
+      },
+    ],
+    [
+      economicsData.labor.laborForceParticipationRate,
+      economicsData.labor.employmentRate,
+      economicsData.labor.unemploymentRate,
+      economicsData.labor.totalWorkforce,
+    ]
+  );
+
+  const laborSectorBreakdown = useMemo(
+    () => [
+      {
+        label: "Agriculture",
+        value: formatPercent(economicsData.labor.employmentBySector.agriculture),
+      },
+      {
+        label: "Industry",
+        value: formatPercent(economicsData.labor.employmentBySector.industry),
+      },
+      {
+        label: "Services",
+        value: formatPercent(economicsData.labor.employmentBySector.services),
+      },
+    ],
+    [
+      economicsData.labor.employmentBySector.agriculture,
+      economicsData.labor.employmentBySector.industry,
+      economicsData.labor.employmentBySector.services,
+    ]
+  );
+
+  const laborTypeBreakdown = useMemo(
+    () => [
+      {
+        label: "Full Time",
+        value: formatPercent(economicsData.labor.employmentByType.fullTime),
+      },
+      {
+        label: "Part Time",
+        value: formatPercent(economicsData.labor.employmentByType.partTime),
+      },
+      {
+        label: "Self Employed",
+        value: formatPercent(
+          economicsData.labor.employmentByType.selfEmployed
+        ),
+      },
+      {
+        label: "Informal Economy",
+        value: formatPercent(economicsData.labor.employmentByType.informal),
+      },
+    ],
+    [
+      economicsData.labor.employmentByType.fullTime,
+      economicsData.labor.employmentByType.partTime,
+      economicsData.labor.employmentByType.selfEmployed,
+      economicsData.labor.employmentByType.informal,
+    ]
+  );
+
+  const laborSupportHighlights = useMemo(
+    () => [
+      {
+        label: "Average Workweek",
+        value: formatHours(economicsData.labor.averageWorkweekHours),
+      },
+      {
+        label: "Average Annual Income",
+        value: formatCurrency(economicsData.labor.averageAnnualIncome),
+      },
+      {
+        label: "Minimum Wage",
+        value: formatCurrency(economicsData.labor.minimumWage),
+      },
+      {
+        label: "Paid Vacation Days",
+        value:
+          economicsData.labor.socialProtection.paidVacationDays !== null &&
+          economicsData.labor.socialProtection.paidVacationDays !== undefined
+            ? `${economicsData.labor.socialProtection.paidVacationDays} days`
+            : "N/A",
+      },
+    ],
+    [
+      economicsData.labor.averageWorkweekHours,
+      economicsData.labor.averageAnnualIncome,
+      economicsData.labor.minimumWage,
+      economicsData.labor.socialProtection.paidVacationDays,
+    ]
+  );
+
+  const demographicsHighlights = useMemo(
+    () => [
+      {
+        label: "Life Expectancy",
+        value: formatYears(economicsData.demographics.lifeExpectancy),
+      },
+      {
+        label: "Literacy Rate",
+        value: formatPercent(economicsData.demographics.literacyRate),
+      },
+      {
+        label: "Urban Population",
+        value: formatPercent(economicsData.demographics.urbanRuralSplit.urban),
+      },
+      {
+        label: "Rural Population",
+        value: formatPercent(economicsData.demographics.urbanRuralSplit.rural),
+      },
+    ],
+    [
+      economicsData.demographics.lifeExpectancy,
+      economicsData.demographics.literacyRate,
+      economicsData.demographics.urbanRuralSplit.urban,
+      economicsData.demographics.urbanRuralSplit.rural,
+    ]
+  );
+
+  const educationHighlights = useMemo(() => {
+    const topLevels = (economicsData.demographics.educationLevels ?? []).slice(
+      0,
+      3
+    );
+    return topLevels.map((level) => ({
+      label: level.level,
+      value: formatPercent(level.percent),
+    }));
+  }, [economicsData.demographics.educationLevels]);
+
+  const citizenshipBreakdown = useMemo(() => {
+    const statuses = (economicsData.demographics.citizenshipStatuses ?? []).slice(
+      0,
+      3
+    );
+    return statuses.map((status) => ({
+      label: status.status,
+      value: formatPercent(status.percent),
+    }));
+  }, [economicsData.demographics.citizenshipStatuses]);
+
+  const ageDistributionHighlights = useMemo(() => {
+    const groups = (economicsData.demographics.ageDistribution ?? []).slice(0, 4);
+    return groups.map((group) => ({
+      label: group.group,
+      value: formatPercent(group.percent),
+    }));
+  }, [economicsData.demographics.ageDistribution]);
+
+  const tabConfig: Array<{
+    value: typeof activeTab;
+    label: string;
+    shortLabel: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }> = [
+    { value: "overview", label: "Overview", shortLabel: "Over", icon: TrendingUp },
+    { value: "economy", label: "Economy", shortLabel: "Econ", icon: BarChart3 },
+    { value: "government", label: "Government", shortLabel: "Gov", icon: Building },
+    { value: "labor", label: "Labor", shortLabel: "Labor", icon: Briefcase },
+    { value: "demographics", label: "Demographics", shortLabel: "Demo", icon: PieChart },
+  ];
+
+  return (
+    <div className="space-y-8">
+      <Card className="relative overflow-hidden border-none bg-gradient-to-br from-amber-50 via-white to-rose-50 shadow-xl dark:from-amber-900/30 dark:via-slate-950 dark:to-rose-950/40">
+        <CardContent className="space-y-6 p-6 md:p-8">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-4">
+              <div className="rounded-3xl bg-white/80 p-4 shadow-inner backdrop-blur-sm dark:bg-slate-900/70">
+                <MyCountryIcon size="lg" animated={false} />
+              </div>
+              <div>
+                <Badge
+                  variant="secondary"
+                  className="mb-2 bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200"
+                >
+                  MyCountry® Public View
+                </Badge>
+                <h2 className="text-2xl font-bold md:text-3xl">
+                  {country.name.replace(/_/g, " ")}
+                </h2>
+                <p className="text-sm text-muted-foreground md:text-base">
+                  Curated MyCountry® snapshot featuring public-facing intelligence for international audiences.
+                </p>
+              </div>
+            </div>
+            {isOwnCountry && (
+              <Link href={createUrl("/mycountry")}>
+                <Button className="gap-2 bg-amber-500 text-white shadow-md hover:bg-amber-600" size="sm">
+                  <Activity className="h-4 w-4" />
+                  Manage in MyCountry
+                </Button>
+              </Link>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {highlightMetrics.map((metric) => (
+              <button
+                key={metric.label}
+                type="button"
+                onClick={metric.onClick}
+                className="rounded-2xl border border-white/60 bg-white/70 p-4 text-left shadow-sm backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-amber-400/80 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 dark:border-white/10 dark:bg-slate-950/40"
+              >
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {metric.label}
+                </p>
+                <p className="mt-2 text-2xl font-semibold">{metric.value}</p>
+                {metric.detail && (
+                  <p className="mt-1 text-xs text-muted-foreground">{metric.detail}</p>
+                )}
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Alert className="border border-amber-200/60 bg-amber-50/80 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+        <AlertDescription>
+          This MyCountry® panel features the public intelligence stack only. Operational tooling, advanced analytics,
+          and classified dashboards remain available exclusively inside the authenticated MyCountry experience.
+        </AlertDescription>
+      </Alert>
+
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
         <div className="overflow-x-auto">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-5 min-w-fit bg-muted/50">
-            <TabsTrigger
-              value="overview"
-              className="flex items-center gap-2 data-[state=active]:bg-background"
-            >
-              <TrendingUp className="h-4 w-4" />
-              <span className="hidden sm:inline">Overview</span>
-              <span className="sm:hidden">Over</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="economy"
-              className="flex items-center gap-2 data-[state=active]:bg-background"
-            >
-              <BarChart3 className="h-4 w-4" />
-              <span className="hidden sm:inline">Economy</span>
-              <span className="sm:hidden">Econ</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="government"
-              className="flex items-center gap-2 data-[state=active]:bg-background"
-            >
-              <Building className="h-4 w-4" />
-              <span className="hidden sm:inline">Government</span>
-              <span className="sm:hidden">Gov</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="labor"
-              className="flex items-center gap-2 data-[state=active]:bg-background"
-            >
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Labor</span>
-              <span className="sm:hidden">Lab</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="demographics"
-              className="flex items-center gap-2 data-[state=active]:bg-background"
-            >
-              <Globe className="h-4 w-4" />
-              <span className="hidden sm:inline">Demographics</span>
-              <span className="sm:hidden">Demo</span>
-            </TabsTrigger>
+          <TabsList className="flex w-full min-w-fit justify-start gap-2 rounded-full bg-muted/40 p-1">
+            {tabConfig.map((tab) => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition data-[state=active]:bg-background data-[state=active]:shadow-sm sm:text-sm"
+              >
+                <tab.icon className="h-4 w-4" />
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.shortLabel}</span>
+              </TabsTrigger>
+            ))}
           </TabsList>
         </div>
 
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4 mt-6">
-          <CountryAtGlance
-            country={{
-              id: country.id,
-              name: country.name,
-              continent: country.continent ?? null,
-              region: country.region ?? null,
-              governmentType: country.governmentType ?? null,
-              religion: country.religion ?? null,
-              leader: country.leader ?? null,
-              landArea: country.landArea ?? null,
-              currentPopulation: country.currentPopulation,
-              currentGdpPerCapita: country.currentGdpPerCapita,
-              currentTotalGdp: country.currentTotalGdp,
-              populationGrowthRate: country.populationGrowthRate ?? 0,
-              adjustedGdpGrowth: country.adjustedGdpGrowth ?? 0,
-              maxGdpGrowthRate: 0.05,
-              populationDensity: country.populationDensity ?? null,
-              gdpDensity: country.gdpDensity ?? null,
-              economicTier: country.economicTier,
-              populationTier: country.populationTier,
-              lastCalculated:
-                (country as any).lastCalculated instanceof Date
-                  ? (country as any).lastCalculated.getTime()
-                  : ((country as any).lastCalculated ?? Date.now()),
-              baselineDate:
-                (country as any).baselineDate instanceof Date
-                  ? (country as any).baselineDate.getTime()
-                  : ((country as any).baselineDate ?? Date.now()),
-              localGrowthFactor: 1.0,
-              nationalIdentity: (country as any).nationalIdentity || null,
-            }}
-            currentIxTime={currentIxTime}
-            isLoading={false}
-          />
-        </TabsContent>
-
-        {/* Economy Tab */}
-        <TabsContent value="economy" className="space-y-4 mt-6">
-          {!isMounted ? (
-            <Card className="backdrop-blur-sm bg-card/50">
-              <CardContent className="py-12">
-                <div className="text-center text-muted-foreground">Loading fiscal data...</div>
-              </CardContent>
-            </Card>
-          ) : economicsData?.fiscal ? (
-            <Suspense
-              fallback={
-                <div className="text-center py-8 text-muted-foreground">Loading fiscal data...</div>
-              }
-            >
-              <FiscalSystemComponent
-                fiscalData={economicsData.fiscal}
-                nominalGDP={country.currentTotalGdp}
-                totalPopulation={country.currentPopulation}
-                countryId={country.id}
-                onFiscalDataChange={() => {}}
-                isReadOnly={true}
-              />
-            </Suspense>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">No fiscal data available</div>
-          )}
-        </TabsContent>
-
-        {/* Government Tab */}
-        <TabsContent value="government" className="space-y-4 mt-6">
-          {/* National Identity Display */}
-          <NationalIdentityDisplay 
-            nationalIdentity={country?.nationalIdentity}
-            wikiInfobox={wikiInfobox}
-            showTitle={true}
-          />
-
-          <Card className="backdrop-blur-sm bg-card/50">
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {(governmentStructure?.governmentName || country?.nationalIdentity?.officialName) && (
-                  <div className="flex items-start gap-3">
-                    <Building className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Government</p>
-                      <p className="font-semibold">
-                        {governmentStructure?.governmentName || country?.nationalIdentity?.officialName}
-                      </p>
-                    </div>
+        <TabsContent value="overview" className="mt-6 space-y-6">
+          <Card className="border border-border/50 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                <TrendingUp className="h-5 w-5 text-amber-500" />
+                Nation At A Glance
+              </CardTitle>
+              <CardDescription>
+                National identity signals and macro posture pulled from the MyCountry® public profile.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {overviewHighlights.map((item) => (
+                  <div key={item.label} className="rounded-xl border border-dashed border-muted/40 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {item.label}
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-foreground">{item.value}</p>
                   </div>
-                )}
-
-                {(governmentStructure?.governmentType ||
-                  country?.governmentType ||
-                  country?.nationalIdentity?.governmentType) && (
-                  <div className="flex items-start gap-3">
-                    <Crown className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Government Type</p>
-                      <p className="font-semibold">
-                        {governmentStructure?.governmentType ||
-                          country?.governmentType ||
-                          country?.nationalIdentity?.governmentType}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {(governmentStructure?.headOfState || country?.leader) && (
-                  <div className="flex items-start gap-3">
-                    <Users className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Head of State</p>
-                      <p className="font-semibold">
-                        {governmentStructure?.headOfState || country?.leader}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {governmentStructure?.headOfGovernment && (
-                  <div className="flex items-start gap-3">
-                    <Users className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Head of Government</p>
-                      <p className="font-semibold">{governmentStructure.headOfGovernment}</p>
-                    </div>
-                  </div>
-                )}
-
-                {(country?.nationalIdentity?.capitalCity || wikiInfobox?.capital) && (
-                  <div className="flex items-start gap-3">
-                    <MapPin className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Capital</p>
-                      <p className="font-semibold">
-                        {country?.nationalIdentity?.capitalCity || wikiInfobox?.capital}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {country?.religion && (
-                  <div className="flex items-start gap-3">
-                    <Heart className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Religion</p>
-                      <p className="font-semibold">{country.religion}</p>
-                    </div>
-                  </div>
-                )}
-
-                {(country?.nationalIdentity?.currency || wikiInfobox?.currency) && (
-                  <div className="flex items-start gap-3">
-                    <Globe className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Currency</p>
-                      <p className="font-semibold">
-                        {country?.nationalIdentity?.currency || wikiInfobox?.currency}
-                        {country?.nationalIdentity?.currencySymbol
-                          ? ` (${country.nationalIdentity.currencySymbol})`
-                          : ""}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {governmentStructure?.legislatureName && (
-                  <div className="flex items-start gap-3">
-                    <Building className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Legislature</p>
-                      <p className="font-semibold">{governmentStructure.legislatureName}</p>
-                    </div>
-                  </div>
-                )}
-
-                {governmentStructure?.executiveName && (
-                  <div className="flex items-start gap-3">
-                    <Building className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Executive</p>
-                      <p className="font-semibold">{governmentStructure.executiveName}</p>
-                    </div>
-                  </div>
-                )}
-
-                {governmentStructure?.judicialName && (
-                  <div className="flex items-start gap-3">
-                    <Building className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-1">Judiciary</p>
-                      <p className="font-semibold">{governmentStructure.judicialName}</p>
-                    </div>
-                  </div>
-                )}
+                ))}
               </div>
-
-              {(country?.nationalIdentity?.motto || wikiInfobox?.motto) && (
-                <div className="mt-6 pt-6 border-t">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-                    National Motto
-                  </p>
-                  <p className="text-base italic text-muted-foreground border-l-4 border-primary/30 pl-4">
-                    &ldquo;{country?.nationalIdentity?.motto || wikiInfobox?.motto}&rdquo;
-                  </p>
+              {(country.nationalIdentity || wikiInfobox) && (
+                <div className="mt-6">
+                  <NationalIdentityDisplay
+                    nationalIdentity={country.nationalIdentity ?? undefined}
+                    wikiInfobox={wikiInfobox ?? undefined}
+                    showTitle={false}
+                  />
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Government Spending */}
-          {!isMounted ? (
-            <Card className="backdrop-blur-sm bg-card/50">
-              <CardContent className="py-12">
-                <div className="text-center text-muted-foreground">Loading spending data...</div>
-              </CardContent>
-            </Card>
-          ) : economicsData?.spending ? (
-            <Suspense
-              fallback={
-                <div className="text-center py-8 text-muted-foreground">Loading spending data...</div>
-              }
-            >
-              <GovernmentSpending
-                {...economicsData.spending}
-                nominalGDP={country.currentTotalGdp}
-                totalPopulation={country.currentPopulation}
-                onSpendingDataChangeAction={() => {}}
-                isReadOnly={true}
-              />
-            </Suspense>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">No spending data available</div>
-          )}
         </TabsContent>
 
-        {/* Labor Tab */}
-        <TabsContent value="labor" className="space-y-4 mt-6">
-          {!isMounted ? (
-            <Card className="backdrop-blur-sm bg-card/50">
-              <CardContent className="py-12">
-                <div className="text-center text-muted-foreground">Loading labor data...</div>
-              </CardContent>
-            </Card>
-          ) : economicsData?.labor ? (
-            <Suspense
-              fallback={
-                <div className="text-center py-8 text-muted-foreground">Loading labor data...</div>
-              }
-            >
-              <LaborEmployment
-                laborData={economicsData.labor}
-                totalPopulation={country.currentPopulation}
-                onLaborDataChangeAction={() => {}}
-                isReadOnly={true}
-                showComparison={false}
-              />
-            </Suspense>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">No labor data available</div>
-          )}
+        <TabsContent value="economy" className="mt-6 space-y-6">
+          <Card className="border border-border/50 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                <BarChart3 className="h-5 w-5 text-emerald-500" />
+                Economic Snapshot
+              </CardTitle>
+              <CardDescription>
+                Public economic telemetry sourced from the MyCountry® economy builder.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {economyHighlights.map((metric) => (
+                  <div key={metric.label} className="rounded-xl border border-muted/40 bg-muted/15 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {metric.label}
+                    </p>
+                    <p className="mt-2 text-lg font-semibold text-foreground">
+                      {metric.value}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">{metric.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border/50 shadow-sm">
+            <CardContent className="grid gap-6 lg:grid-cols-2">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">
+                  Fiscal Outlook
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Revenue posture and macro-fiscal balance as declared publicly.
+                </p>
+                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {fiscalHighlights.map((metric) => (
+                    <div key={metric.label} className="rounded-xl border border-dashed border-muted/50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {metric.label}
+                      </p>
+                      <p className="mt-2 text-lg font-semibold text-foreground">
+                        {metric.value}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {metric.detail}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-base font-semibold text-foreground">
+                  Top Public Investments
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Primary budget categories advertised through national communications.
+                </p>
+                <div className="mt-4 space-y-3">
+                  {topSpendingCategories.length > 0 ? (
+                    topSpendingCategories.map((category) => (
+                      <div
+                        key={category.category}
+                        className="flex items-start justify-between rounded-xl border border-muted/40 bg-background/90 p-4 shadow-sm"
+                      >
+                        <div>
+                          <p className="text-sm font-semibold">{category.category}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatPercent(category.percent)} of public budget
+                          </p>
+                        </div>
+                        <span className="text-sm font-semibold">
+                          {formatCompactCurrency(category.amount)}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No category-level spending disclosures published.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        {/* Demographics Tab */}
-        <TabsContent value="demographics" className="space-y-4 mt-6">
-          {!isMounted ? (
-            <Card className="backdrop-blur-sm bg-card/50">
-              <CardContent className="py-12">
-                <div className="text-center text-muted-foreground">Loading demographic data...</div>
-              </CardContent>
-            </Card>
-          ) : economicsData?.demographics ? (
-            <Suspense
-              fallback={
-                <div className="text-center py-8 text-muted-foreground">Loading demographic data...</div>
-              }
-            >
-              <Demographics
-                demographicData={economicsData.demographics}
-                totalPopulation={country.currentPopulation}
-                onDemographicDataChangeAction={() => {}}
-                isReadOnly={true}
-                showComparison={false}
-              />
-            </Suspense>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">No demographic data available</div>
-          )}
+        <TabsContent value="government" className="mt-6 space-y-6">
+          <Card className="border border-border/50 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                <Building className="h-5 w-5 text-indigo-500" />
+                Government Leadership
+              </CardTitle>
+              <CardDescription>
+                Structural overview aligned with the MyGovernment preview experience.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {leadershipDetails.map((detail) => (
+                  <div key={detail.label} className="rounded-xl border border-muted/40 bg-muted/15 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {detail.label}
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-foreground">
+                      {detail.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border/50 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                <Users className="h-5 w-5 text-indigo-500" />
+                Featured Public Programs
+              </CardTitle>
+              <CardDescription>
+                High-visibility national initiatives highlighted for the international community.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {featuredPolicies.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {featuredPolicies.map((policy) => (
+                    <div
+                      key={policy.label}
+                      className="rounded-xl border border-dashed border-indigo-200/80 bg-indigo-50/60 p-4 text-indigo-900 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-100"
+                    >
+                      <p className="text-sm font-semibold">{policy.label}</p>
+                      <p className="mt-1 text-xs">{policy.description}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  This country has not published any flagship programs in MyCountry®.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="labor" className="mt-6 space-y-6">
+          <Card className="border border-border/50 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                <Briefcase className="h-5 w-5 text-emerald-500" />
+                Workforce Overview
+              </CardTitle>
+              <CardDescription>
+                Labor market signals and workforce health indicators safe for public distribution.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {laborHighlights.map((item) => (
+                  <div key={item.label} className="rounded-xl border border-muted/40 bg-muted/15 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {item.label}
+                    </p>
+                    <p className="mt-2 text-lg font-semibold text-foreground">
+                      {item.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border/50 shadow-sm">
+            <CardContent className="grid gap-6 lg:grid-cols-3">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">
+                  Employment By Sector
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Public workforce distribution across primary sectors.
+                </p>
+                <div className="mt-4 space-y-3">
+                  {laborSectorBreakdown.map((sector) => (
+                    <div
+                      key={sector.label}
+                      className="flex items-center justify-between rounded-xl border border-dashed border-muted/40 bg-background/90 p-3"
+                    >
+                      <span className="text-sm font-semibold">{sector.label}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {sector.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-base font-semibold text-foreground">
+                  Employment Types
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Additional segmentation of the labor force mix.
+                </p>
+                <div className="mt-4 space-y-3">
+                  {laborTypeBreakdown.map((type) => (
+                    <div
+                      key={type.label}
+                      className="flex items-center justify-between rounded-xl border border-dashed border-muted/40 bg-background/90 p-3"
+                    >
+                      <span className="text-sm font-semibold">{type.label}</span>
+                      <span className="text-sm text-muted-foreground">{type.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-base font-semibold text-foreground">
+                  Workforce Support
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Public benefits and protections communicated by the nation.
+                </p>
+                <div className="mt-4 space-y-3">
+                  {laborSupportHighlights.map((support) => (
+                    <div
+                      key={support.label}
+                      className="flex items-center justify-between rounded-xl border border-dashed border-muted/40 bg-background/90 p-3"
+                    >
+                      <span className="text-sm font-semibold">{support.label}</span>
+                      <span className="text-sm text-muted-foreground">{support.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="demographics" className="mt-6 space-y-6">
+          <Card className="border border-border/50 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                <PieChart className="h-5 w-5 text-rose-500" />
+                Population Profile
+              </CardTitle>
+              <CardDescription>
+                Topline demographic signals curated for diplomatic and trade audiences.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {demographicsHighlights.map((item) => (
+                  <div key={item.label} className="rounded-xl border border-muted/40 bg-muted/15 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {item.label}
+                    </p>
+                    <p className="mt-2 text-lg font-semibold text-foreground">
+                      {item.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border/50 shadow-sm">
+            <CardContent className="grid gap-6 lg:grid-cols-3">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">
+                  Age Distribution
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Share of population by primary age brackets.
+                </p>
+                <div className="mt-4 space-y-3">
+                  {ageDistributionHighlights.length > 0 ? (
+                    ageDistributionHighlights.map((group) => (
+                      <div
+                        key={group.label}
+                        className="flex items-center justify-between rounded-xl border border-dashed border-muted/40 bg-background/90 p-3"
+                      >
+                        <span className="text-sm font-semibold">{group.label}</span>
+                        <span className="text-sm text-muted-foreground">{group.value}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Age distribution data is not currently published.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-base font-semibold text-foreground">
+                  Education Attainment
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Reported share of citizens by highest completed education level.
+                </p>
+                <div className="mt-4 space-y-3">
+                  {educationHighlights.length > 0 ? (
+                    educationHighlights.map((level) => (
+                      <div
+                        key={level.label}
+                        className="flex items-center justify-between rounded-xl border border-dashed border-muted/40 bg-background/90 p-3"
+                      >
+                        <span className="text-sm font-semibold">{level.label}</span>
+                        <span className="text-sm text-muted-foreground">{level.value}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Education-level reporting has not been published.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-base font-semibold text-foreground">
+                  Citizenship Status
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Public distribution of residents by legal status categories.
+                </p>
+                <div className="mt-4 space-y-3">
+                  {citizenshipBreakdown.length > 0 ? (
+                    citizenshipBreakdown.map((status) => (
+                      <div
+                        key={status.label}
+                        className="flex items-center justify-between rounded-xl border border-dashed border-muted/40 bg-background/90 p-3"
+                      >
+                        <span className="text-sm font-semibold">{status.label}</span>
+                        <span className="text-sm text-muted-foreground">{status.value}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No citizenship breakdown data is currently available.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
-      {/* Owner Call to Action */}
-      {isOwnCountry && (
-        <Alert className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-800/30 mt-6">
-          <Activity className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          <AlertDescription className="text-amber-900 dark:text-amber-100">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <span className="text-sm">
-                This tab shows read-only public economic data. To manage your country and access
-                private features, use the full MyCountry dashboard.
-              </span>
-              <Link href={createUrl("/mycountry")}>
-                <Button size="sm" variant="default" className="whitespace-nowrap">
-                  Open Full Dashboard
-                </Button>
-              </Link>
+      <PopulationDetailsModal
+        isOpen={isPopulationModalOpen}
+        onClose={() => setIsPopulationModalOpen(false)}
+        countryId={country.id}
+        countryName={country.name}
+      />
+      <GdpPerCapitaDetailsModal
+        isOpen={isGdpPerCapitaModalOpen}
+        onClose={() => setIsGdpPerCapitaModalOpen(false)}
+        countryId={country.id}
+        countryName={country.name}
+      />
+      <GdpDetailsModal
+        isOpen={isGdpModalOpen}
+        onClose={() => setIsGdpModalOpen(false)}
+        countryId={country.id}
+        countryName={country.name}
+      />
+      <Dialog open={isGrowthModalOpen} onOpenChange={setIsGrowthModalOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Growth Momentum</DialogTitle>
+            <DialogDescription>
+              Public GDP growth telemetry sourced from the MyCountry® economy builder.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-lg border border-muted/40 bg-muted/10 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Adjusted GDP Growth
+              </p>
+              <p className="mt-2 text-xl font-semibold text-foreground">
+                {formatPercent(country.adjustedGdpGrowth, "N/A", 2)}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Platform-adjusted growth rate accounting for external modifiers.
+              </p>
             </div>
-          </AlertDescription>
-        </Alert>
-      )}
+            <div className="rounded-lg border border-muted/40 bg-muted/10 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Real GDP Growth
+              </p>
+              <p className="mt-2 text-xl font-semibold text-foreground">
+                {formatPercent(economicsData.core.realGDPGrowthRate, "N/A", 2)}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Inflation-adjusted growth as reported for public audiences.
+              </p>
+            </div>
+            <div className="rounded-lg border border-muted/40 bg-muted/10 p-4 sm:col-span-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Supporting Signals
+              </p>
+              <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
+                <li>
+                  • Nominal GDP:{" "}
+                  <span className="font-semibold">
+                    {formatCompactCurrency(economicsData.core.nominalGDP)}
+                  </span>
+                </li>
+                <li>
+                  • Inflation Rate:{" "}
+                  <span className="font-semibold">
+                    {formatPercent(economicsData.core.inflationRate, "N/A", 2)}
+                  </span>
+                </li>
+                <li>
+                  • Growth messaging is limited to high-level signals in this public view.
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            For deeper forecasting, premium scenario planning, and executive toolsets, access the full MyCountry®
+            dashboard.
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

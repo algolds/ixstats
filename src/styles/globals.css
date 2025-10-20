@@ -270,6 +270,18 @@
    COMPREHENSIVE Z-INDEX SYSTEM
    ==================================== */
 
+/* 
+   THINKPAGES Z-INDEX HIERARCHY (Low to High):
+   z-1    → glass-hierarchy-parent (base cards)
+   z-2    → glass-hierarchy-child (account manager, nested cards)
+   z-3    → glass-hierarchy-interactive (buttons, hover states)
+   z-40   → tooltips, hover previews
+   z-50   → post options menu
+   z-100  → reaction popups (PRIORITY: must be above all content)
+   z-9998 → dialog overlays
+   z-9999 → dialog content, dropdowns
+*/
+
 /* Ensure ALL dropdown and popover components ALWAYS appear on top */
 [data-radix-select-content],
 [data-radix-dropdown-menu-content],

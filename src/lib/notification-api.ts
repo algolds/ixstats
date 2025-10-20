@@ -22,6 +22,16 @@
 
 import { db } from '~/server/db';
 import { emitNotificationEvent } from '~/server/api/routers/notifications';
+import { withBasePath } from "./base-path";
+
+function resolveHref(href?: string | null): string | null {
+  if (!href) return null;
+  // Allow absolute URLs (http, https, mailto, etc.)
+  if (/^[a-zA-Z]+:\/\//.test(href) || href.startsWith("mailto:") || href.startsWith("tel:")) {
+    return href;
+  }
+  return withBasePath(href);
+}
 
 export type NotificationPriority = 'critical' | 'high' | 'medium' | 'low';
 export type NotificationCategory =
@@ -141,7 +151,7 @@ class NotificationAPIService {
           type: input.type ?? 'info',
           priority: input.priority ?? 'medium',
           severity: input.severity ?? 'informational',
-          href: input.href ?? null,
+          href: resolveHref(input.href),
           source: input.source ?? 'system',
           actionable: input.actionable ?? false,
           deliveryMethod: input.deliveryMethod ?? null,
@@ -177,7 +187,7 @@ class NotificationAPIService {
           type: input.type ?? 'info',
           priority: input.priority ?? 'medium',
           severity: input.severity ?? 'informational',
-          href: input.href ?? null,
+          href: resolveHref(input.href),
           source: input.source ?? 'system',
           actionable: input.actionable ?? false,
           deliveryMethod: input.deliveryMethod ?? null,
@@ -220,7 +230,7 @@ class NotificationAPIService {
         category: 'social',
         type: action === 'created' ? 'success' : 'info',
         priority: action === 'commented' ? 'medium' : 'low',
-        href: `/thinkpages/${id}`,
+        href: withBasePath(`/thinkpages/${id}`),
         source: 'thinkpages',
         actionable: true,
         metadata: { thinkpageId: id, authorId, action },
@@ -241,7 +251,7 @@ class NotificationAPIService {
         type: 'alert',
         priority: isSignificant ? 'high' : 'medium',
         severity: isSignificant ? 'important' : 'informational',
-        href: '/mycountry/new?tab=economy',
+        href: withBasePath('/mycountry/new?tab=economy'),
         source: 'economic-system',
         actionable: true,
         metadata: { metric, value, change: changePercent },
@@ -266,7 +276,7 @@ class NotificationAPIService {
         category: 'diplomatic',
         type: eventType === 'conflict' ? 'warning' : 'info',
         priority: eventType === 'conflict' ? 'high' : 'medium',
-        href: '/diplomatic',
+        href: withBasePath('/diplomatic'),
         source: 'diplomatic-system',
         actionable: true,
         metadata: { eventType, countries },
@@ -300,7 +310,7 @@ class NotificationAPIService {
           category: 'governance',
           type: action === 'cancelled' ? 'warning' : 'info',
           priority: actionPriorities[action],
-          href: `/meetings/${id}`,
+          href: withBasePath(`/meetings/${id}`),
           source: 'meeting-system',
           actionable: action === 'starting',
           metadata: { meetingId: id, scheduledTime: scheduledTime.toISOString(), action },
@@ -322,7 +332,7 @@ class NotificationAPIService {
         category: 'achievement',
         type: 'success',
         priority: 'low',
-        href: '/achievements',
+        href: withBasePath('/achievements'),
         source: 'achievement-system',
         actionable: true,
         metadata: { achievementName: name, achievementCategory: category },
@@ -341,7 +351,7 @@ class NotificationAPIService {
         type: 'error',
         priority: severity,
         severity: severity === 'critical' ? 'urgent' : 'important',
-        href: '/crisis-management',
+        href: withBasePath('/crisis-management'),
         source: 'crisis-system',
         actionable: true,
         deliveryMethod: severity === 'critical' ? 'modal' : 'dynamic-island',
@@ -483,7 +493,7 @@ class NotificationAPIService {
       type: 'success',
       priority: 'high',
       severity: 'important',
-      href: '/mycountry/new?tab=economy',
+      href: withBasePath('/mycountry/new?tab=economy'),
       source: 'economic-system',
       actionable: true,
       metadata: {
@@ -515,7 +525,7 @@ class NotificationAPIService {
       category: 'governance',
       type: isImprovement ? 'success' : 'warning',
       priority: Math.abs(change) > 15 ? 'high' : 'medium',
-      href: '/mycountry/new?tab=vitality',
+      href: withBasePath('/mycountry/new?tab=vitality'),
       source: 'vitality-system',
       actionable: true,
       metadata: {
@@ -590,7 +600,7 @@ class NotificationAPIService {
       category: 'governance',
       type: statusTypes[params.status],
       priority: priorities[params.status],
-      href: '/mycountry/quickactions',
+      href: withBasePath('/mycountry/quickactions'),
       source: 'quickactions',
       actionable: params.status === 'failure',
       metadata: {

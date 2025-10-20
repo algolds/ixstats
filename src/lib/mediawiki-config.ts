@@ -50,6 +50,26 @@ export const MEDIAWIKI_CONFIG: MediaWikiConfig = {
   },
 };
 
+/**
+ * Get the appropriate MediaWiki API URL based on context
+ * - Client-side: Use proxy route for same-server optimization
+ * - Server-side: Use direct URL or local path if available
+ */
+export function getMediaWikiApiUrl(): string {
+  // Client-side: use proxy route
+  if (typeof window !== 'undefined') {
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+    return `${basePath}/api/ixwiki-proxy/api.php`;
+  }
+  
+  // Server-side: use direct URL or local path
+  if (process.env.IXWIKI_LOCAL_PATH) {
+    return `${process.env.IXWIKI_LOCAL_PATH}/api.php`;
+  }
+  
+  return `${MEDIAWIKI_CONFIG.baseUrl}${MEDIAWIKI_CONFIG.apiEndpoint}`;
+}
+
 // Common country name variations and their canonical forms
 export const COUNTRY_NAME_MAPPINGS: Record<string, string> = {
   // Add variations here as needed, e.g.:

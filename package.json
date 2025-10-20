@@ -80,7 +80,10 @@
     "test:economics": "tsx scripts/audit/verify-economic-calculations.ts",
     "test:wiring": "tsx scripts/audit/verify-live-data-wiring.ts",
     "test:critical": "tsx scripts/audit/run-all-tests.ts --only=crud,health,database",
-    "verify:production": "npm run test:critical && npm run lint"
+    "validate:schemas": "tsx scripts/audit/validate-schema-alignment.ts",
+    "audit:coverage": "tsx scripts/audit/audit-schema-coverage.ts",
+    "validate:migrations": "tsx scripts/audit/validate-migration-safety.ts",
+    "verify:production": "npm run test:critical && npm run validate:schemas && npm run lint"
   },
   "dependencies": {
     "@base-ui-components/react": "^1.0.0-beta.1",

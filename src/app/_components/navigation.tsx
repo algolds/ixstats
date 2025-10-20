@@ -592,7 +592,7 @@ export function Navigation() {
                                 return (
                                   <div key={subItem.name}>
                                     <DropdownMenuItem>
-                                      <Link href={withBasePath(subItem.href)} className="flex items-center gap-3 px-3 py-3 cursor-pointer">
+                                      <Link href={subItem.href} className="flex items-center gap-3 px-3 py-3 cursor-pointer">
                                         <SubIcon className="h-4 w-4 text-muted-foreground" />
                                         <div className="flex flex-col">
                                           <span className="font-medium">{subItem.name}</span>
@@ -765,7 +765,7 @@ export function Navigation() {
                                 return (
                                   <div key={subItem.name}>
                                     <DropdownMenuItem>
-                                      <Link href={withBasePath(subItem.href)} className="flex items-center gap-3 px-3 py-3 cursor-pointer">
+                                      <Link href={subItem.href} className="flex items-center gap-3 px-3 py-3 cursor-pointer">
                                         <SubIcon className="h-4 w-4 text-muted-foreground" />
                                         <div className="flex flex-col">
                                           <span className="font-medium">{subItem.name}</span>
@@ -982,7 +982,7 @@ export function Navigation() {
                                 return (
                                   <Link
                                     key={subItem.name}
-                                    href={withBasePath(subItem.href)}
+                                    href={subItem.href}
                                     className="flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-border/60 hover:text-foreground"
                                     onClick={() => setMobileMenuOpen(false)}
                                   >

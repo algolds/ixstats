@@ -1,23 +1,47 @@
 "use client";
-import React, { useEffect } from "react";
-import Link from "next/link";
-import { ArrowLeft, Palette, ChevronRight, Info } from "lucide-react";
-export default function DesignSystemPage() {
-  useEffect(() => { document.title = "Design System - Help Center"; }, []);
+
+import { Palette, Layers, Droplet } from "lucide-react";
+import { ArticleLayout, Section, InfoBox } from "../../_components/ArticleLayout";
+
+export default function DesignSystemArticle() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-slate-950 dark:via-blue-950 dark:to-slate-900">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Link href="/help" className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 mb-6 transition-colors"><ArrowLeft className="w-4 h-4" />Back to Help Center</Link>
-        <div className="mb-8"><div className="flex items-center gap-3 mb-4"><Palette className="w-8 h-8 text-purple-600 dark:text-purple-400" /><h1 className="text-4xl font-bold text-slate-900 dark:text-white">Glass Physics Design System</h1></div><p className="text-xl text-slate-600 dark:text-slate-300">Unified design framework with 100+ components</p></div>
-        <div className="prose prose-slate dark:prose-invert prose-blue max-w-none"><div className="bg-white border border-slate-200 dark:bg-white/5 dark:border-white/10 rounded-xl p-8 backdrop-blur-xl space-y-6">
-          <section><h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Design Philosophy</h2><p className="text-slate-700 dark:text-slate-300 leading-relaxed">IxStats uses a custom "Glass Physics" design system that creates visual depth through translucent layers, backdrop blur, and hierarchical depth levels. This creates an immersive, modern interface that emphasizes data clarity.</p></section>
-          <div className="bg-purple-50 border border-purple-200 dark:bg-purple-500/10 dark:border-purple-500/30 rounded-lg p-4"><div className="flex gap-3"><Info className="w-5 h-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" /><div><h3 className="text-purple-900 dark:text-purple-300 font-semibold mb-1">Depth Hierarchy</h3><p className="text-purple-800 dark:text-purple-100/80 text-sm">Glass panels use progressive blur and opacity levels: parent → child → interactive → modal</p></div></div></div>
-          <section><h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Core Principles</h2><ul className="space-y-2 text-slate-700 dark:text-slate-300"><li className="flex gap-2"><span className="text-purple-600 dark:text-purple-400">•</span><span><strong className="text-slate-900 dark:text-white">Translucent Layers:</strong> bg-white/5, bg-white/10, bg-white/20 for depth</span></li><li className="flex gap-2"><span className="text-purple-600 dark:text-purple-400">•</span><span><strong className="text-slate-900 dark:text-white">Backdrop Blur:</strong> backdrop-blur-xl for glass effect</span></li><li className="flex gap-2"><span className="text-purple-600 dark:text-purple-400">•</span><span><strong className="text-slate-900 dark:text-white">Section Theming:</strong> MyCountry=Gold, Global=Blue, ECI=Indigo, SDI=Red</span></li><li className="flex gap-2"><span className="text-purple-600 dark:text-purple-400">•</span><span><strong className="text-slate-900 dark:text-white">Smooth Animations:</strong> transition-all with GPU acceleration</span></li><li className="flex gap-2"><span className="text-purple-600 dark:text-purple-400">•</span><span><strong className="text-slate-900 dark:text-white">Responsive Design:</strong> Mobile-first with desktop enhancements</span></li></ul></section>
-          <section><h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Component Library</h2><p className="text-slate-700 dark:text-slate-300 leading-relaxed mb-4">Over 100 UI components built with Radix UI primitives and Tailwind CSS v4:</p><ul className="space-y-2 text-slate-700 dark:text-slate-300"><li>• Cards and panels with glass effects</li><li>• Buttons with hover animations</li><li>• Forms with validation</li><li>• Charts and data visualizations</li><li>• Modals and dialogs</li><li>• Navigation components</li></ul></section>
-          <section><h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Accessibility</h2><p className="text-slate-700 dark:text-slate-300 leading-relaxed">WCAG 2.1 AA compliant with proper focus indicators, keyboard navigation, and screen reader support throughout the platform.</p></section>
-        </div></div>
-        <div className="mt-8 flex justify-between items-center"><Link href="/help/technical/database" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">← Previous: Database Schema</Link><Link href="/help" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">Back to Help Center →</Link></div>
-      </div>
-    </div>
+    <ArticleLayout
+      title="Glass Physics Design System"
+      description="Guidelines for the visual language that unifies dashboards, builders, and help content."
+      icon={Palette}
+    >
+      <Section title="Principles">
+        <ul className="list-disc pl-6 space-y-2">
+          <li>Layered glass hierarchy (base, elevated, modal, interactive) with consistent blur and depth.</li>
+          <li>Theme palettes map to domains (executive, intelligence, economy, government, defense, social).</li>
+          <li>Responsive layouts favour cards, gradients, and subtle motion.</li>
+        </ul>
+      </Section>
+
+      <Section title="Implementation">
+        <InfoBox title="Where to Look">
+          <ul className="list-disc pl-6 space-y-1">
+            <li>`src/components/ui` – shared primitives (buttons, cards, dialogs, badges).</li>
+            <li>`src/components/shared` – data display + form components using the same tokens.</li>
+            <li>`docs/architecture/frontend.md` – layout and component layering guidance.</li>
+          </ul>
+        </InfoBox>
+      </Section>
+
+      <Section title="Working With the System">
+        <ul className="list-disc pl-6 space-y-2">
+          <li>Reuse existing primitives before introducing new styles.</li>
+          <li>Keep accessibility in mind (contrast, focus states, ARIA attributes).</li>
+          <li>Update `/help/getting-started/navigation` if navigation or theming patterns change.</li>
+        </ul>
+      </Section>
+
+      <InfoBox title="Helpful References">
+        <ul className="list-disc pl-6 space-y-1">
+          <li><Layers className="inline h-4 w-4" /> `docs/systems/mycountry.md` – application of themes in dashboards.</li>
+          <li><Droplet className="inline h-4 w-4" /> `/help/technical/architecture` – structural context.</li>
+        </ul>
+      </InfoBox>
+    </ArticleLayout>
   );
 }

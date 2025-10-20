@@ -25,6 +25,7 @@ import { PolicyPresetSelector } from '../components/spending/PolicyPresetSelecto
 
 // Custom hook for state management
 import { useGovernmentSpending } from '../hooks/useGovernmentSpending';
+import { createAbsoluteUrl } from '~/lib/url-utils';
 
 // Help System
 import { GovernmentSpendingHelpSystem } from '../components/help/GovernmentHelpSystem';
@@ -101,7 +102,7 @@ export function GovernmentSpendingSection({
       <GovernmentBuilderError
         validation={validation}
         onNavigateToBuilder={() => {
-          window.location.href = '/builder?section=government';
+          window.location.href = createAbsoluteUrl('/builder?section=government');
         }}
         className="max-w-4xl mx-auto"
       />

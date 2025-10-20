@@ -21,9 +21,8 @@ const SearchUnsplashImagesSchema = z.object({
   color: z.string().optional(), // Unsplash API supports specific color names or hex codes
 });
 
-// Legacy schema - ThinkTanks and ThinkShare no longer use separate accounts
-// Only kept for in-universe ThinkPages posts
-const CreateAccountSchema = z.object({
+// Base schema for ThinkPages accounts
+const thinkpagesAccountBaseSchema = z.object({
   countryId: z.string(),
   accountType: z.enum(['government', 'media', 'citizen']),
   username: z.string().min(3).max(20).regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
@@ -35,7 +34,14 @@ const CreateAccountSchema = z.object({
   politicalLean: z.enum(['left', 'center', 'right']).default('center'),
   personality: z.enum(['serious', 'casual', 'satirical']).default('casual'),
   profileImageUrl: z.string().url().optional(),
+  isActive: z.boolean().default(true),
 });
+
+// Create schema - all required fields with defaults
+const CreateAccountSchema = thinkpagesAccountBaseSchema;
+
+// Update schema - all fields optional
+const UpdateAccountSchema = thinkpagesAccountBaseSchema.partial();
 
 const CreatePostSchema = z.object({
   accountId: z.string(), // ThinkpagesAccount ID for feed posts

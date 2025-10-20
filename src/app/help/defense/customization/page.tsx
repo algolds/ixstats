@@ -1,19 +1,46 @@
 "use client";
-import React, { useEffect } from "react";
-import Link from "next/link";
-import { ArrowLeft, Shield, ChevronRight } from "lucide-react";
-export default function DefensePage() {
-  useEffect(() => { document.title = "Defense System - Help Center"; }, []);
+
+import { SlidersHorizontal, Palette, CheckSquare } from "lucide-react";
+import { ArticleLayout, Section, InfoBox } from "../../_components/ArticleLayout";
+
+export default function DefenseCustomizationArticle() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-slate-950 dark:via-blue-950 dark:to-slate-900">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Link href="/help" className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 mb-6 transition-colors"><ArrowLeft className="w-4 h-4" />Back to Help Center</Link>
-        <div className="mb-8"><div className="flex items-center gap-3 mb-4"><Shield className="w-8 h-8 text-red-600 dark:text-red-400" /><h1 className="text-4xl font-bold text-slate-900 dark:text-white">Defense Systems</h1></div></div>
-        <div className="prose prose-slate dark:prose-invert prose-blue max-w-none"><div className="bg-white border border-slate-200 dark:bg-white/5 dark:border-white/10 rounded-xl p-8 backdrop-blur-xl space-y-6">
-          <section><h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Military Management</h2><p className="text-slate-700 dark:text-slate-300">Manage military units, defense forces, and national security through comprehensive defense systems. Track military assets, political stability, and force customization options.</p></section>
-          <section><h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Key Features</h2><ul className="space-y-2 text-slate-700 dark:text-slate-300"><li>• Military units and assets management</li><li>• Political stability tracking</li><li>• Force customization and organization</li><li>• Defense budget allocation</li></ul></section>
-        </div></div>
-      </div>
-    </div>
+    <ArticleLayout
+      title="Force Customization"
+      description="Tailor defense modules, doctrines, and task forces to match your campaign."
+      icon={SlidersHorizontal}
+    >
+      <Section title="Customization Options">
+        <ul className="list-disc pl-6 space-y-2">
+          <li>Adjust SDI module emphasis (cyber, orbital, homeland security, etc.).</li>
+          <li>Assign doctrines and readiness postures that affect compliance tasks and analytics.</li>
+          <li>Define bespoke task forces through editor flows for narrative flavour.</li>
+        </ul>
+      </Section>
+
+      <Section title="Workflow">
+        <InfoBox title="Steps">
+          <ol className="list-decimal pl-6 space-y-1">
+            <li>Open the Defense tab and select the module or task force you want to configure.</li>
+            <li>Apply changes; the UI persists updates via `api.sdi` and `api.security` mutations.</li>
+            <li>Verify new stats in readiness gauges and compliance lists.</li>
+          </ol>
+        </InfoBox>
+      </Section>
+
+      <Section title="Documentation">
+        <ul className="list-disc pl-6 space-y-2">
+          <li>Reflect changes in ThinkPages posts or policy documents for story continuity.</li>
+          <li>Audit updates by checking the notification feed and `/help/intelligence/alerts` to ensure signals align.</li>
+        </ul>
+      </Section>
+
+      <InfoBox title="Related Docs">
+        <ul className="list-disc pl-6 space-y-1">
+          <li><Palette className="inline h-4 w-4" /> `docs/systems/defense.md` – technical overview.</li>
+          <li><CheckSquare className="inline h-4 w-4" /> `/help/defense/overview` – high-level guidance.</li>
+        </ul>
+      </InfoBox>
+    </ArticleLayout>
   );
 }

@@ -1,19 +1,47 @@
 "use client";
-import React, { useEffect } from "react";
-import Link from "next/link";
-import { ArrowLeft, Users, ChevronRight } from "lucide-react";
-export default function SocialPage() {
-  useEffect(() => { document.title = "Social Platform - Help Center"; }, []);
+
+import { MessagesSquare, PenSquare, Share2 } from "lucide-react";
+import { ArticleLayout, Section, InfoBox } from "../../_components/ArticleLayout";
+
+export default function ThinkPagesArticle() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-slate-950 dark:via-blue-950 dark:to-slate-900">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Link href="/help" className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 mb-6 transition-colors"><ArrowLeft className="w-4 h-4" />Back to Help Center</Link>
-        <div className="mb-8"><div className="flex items-center gap-3 mb-4"><Users className="w-8 h-8 text-purple-600 dark:text-purple-400" /><h1 className="text-4xl font-bold text-slate-900 dark:text-white">Social Platform</h1></div></div>
-        <div className="prose prose-slate dark:prose-invert prose-blue max-w-none"><div className="bg-white border border-slate-200 dark:bg-white/5 dark:border-white/10 rounded-xl p-8 backdrop-blur-xl space-y-6">
-          <section><h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Community Engagement</h2><p className="text-slate-700 dark:text-slate-300">Connect with the IxStats community through ThinkPages content creation, ThinkShare social features, and ThinkTanks collaborative research groups.</p></section>
-          <section><h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Social Features</h2><ul className="space-y-2 text-slate-700 dark:text-slate-300"><li>• <strong>ThinkPages:</strong> Long-form content creation and publishing</li><li>• <strong>ThinkShare:</strong> Social sharing and discussions</li><li>• <strong>ThinkTanks:</strong> Collaborative research and policy groups</li><li>• Community forums and collaborative documents</li></ul></section>
-        </div></div>
-      </div>
-    </div>
+    <ArticleLayout
+      title="ThinkPages"
+      description="Share research, updates, and story beats with rich posts and collaborative tools."
+      icon={MessagesSquare}
+    >
+      <Section title="Features">
+        <ul className="list-disc pl-6 space-y-2">
+          <li>Rich text posts with wiki lookups, embeds, and tags.</li>
+          <li>Live event feed surfaces featured posts across the game world.</li>
+          <li>Integrates with achievements, notifications, and intelligence dashboards.</li>
+        </ul>
+      </Section>
+
+      <Section title="Creating Posts">
+        <InfoBox title="Workflow">
+          <ol className="list-decimal pl-6 space-y-1">
+            <li>Open `/thinkpages` and select "Compose".</li>
+            <li>Use the rich editor to add content, references, and media.</li>
+            <li>Publish publicly or to specific ThinkTanks; monitor reactions in the feed.</li>
+          </ol>
+        </InfoBox>
+      </Section>
+
+      <Section title="Tips">
+        <ul className="list-disc pl-6 space-y-2">
+          <li>Tag posts with topics (`#economy`, `#diplomacy`, etc.) for better discovery.</li>
+          <li>Link to help articles or docs using the wiki search tools.</li>
+          <li>Embed policy proposals or mission reports to keep teams aligned.</li>
+        </ul>
+      </Section>
+
+      <InfoBox title="Related Content">
+        <ul className="list-disc pl-6 space-y-1">
+          <li><PenSquare className="inline h-4 w-4" /> `/help/social/thinkshare` – messaging and follow-up.</li>
+          <li><Share2 className="inline h-4 w-4" /> `docs/systems/social.md` – architecture overview.</li>
+        </ul>
+      </InfoBox>
+    </ArticleLayout>
   );
 }

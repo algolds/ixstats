@@ -18,7 +18,8 @@ import { notificationAPI } from "~/lib/notification-api";
 // Input Validation Schemas
 // ===========================
 
-const militaryBranchInputSchema = z.object({
+// Base schema with all fields
+const militaryBranchBaseSchema = z.object({
   branchType: z.enum([
     'army', 'navy', 'air_force', 'space_force', 'marines',
     'coast_guard', 'cyber_command', 'special_forces'
@@ -39,7 +40,14 @@ const militaryBranchInputSchema = z.object({
   morale: z.number().min(0).max(100).default(50),
   deploymentCapacity: z.number().min(0).max(100).default(50),
   sustainmentCapacity: z.number().min(0).max(100).default(50),
+  isActive: z.boolean().default(true),
 });
+
+// Create schema - all required fields with defaults
+const militaryBranchCreateSchema = militaryBranchBaseSchema;
+
+// Update schema - all fields optional
+const militaryBranchUpdateSchema = militaryBranchBaseSchema.partial();
 
 const militaryUnitInputSchema = z.object({
   name: z.string().min(1),
@@ -289,7 +297,7 @@ export const securityRouter = createTRPCRouter({
   createMilitaryBranch: protectedProcedure
     .input(z.object({
       countryId: z.string(),
-      branch: militaryBranchInputSchema,
+      branch: militaryBranchCreateSchema,
     }))
     .mutation(async ({ ctx, input }) => {
       // Verify user owns this country
@@ -316,7 +324,7 @@ export const securityRouter = createTRPCRouter({
   updateMilitaryBranch: protectedProcedure
     .input(z.object({
       id: z.string(),
-      branch: militaryBranchInputSchema.partial(),
+      branch: militaryBranchUpdateSchema,
     }))
     .mutation(async ({ ctx, input }) => {
       // Verify user owns the branch's country

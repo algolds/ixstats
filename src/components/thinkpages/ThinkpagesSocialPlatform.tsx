@@ -22,7 +22,7 @@ import { GlassCanvasComposer } from './GlassCanvasComposer';
 import { api } from '~/trpc/react';
 import { toast } from 'sonner';
 import { BlurFade } from '~/components/magicui/blur-fade';
-import { EnhancedAccountManager } from './EnhancedAccountManager';
+import { AccountManagerModal } from './AccountManagerModal';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
 
@@ -49,7 +49,8 @@ export function ThinkpagesSocialPlatform({
 }: ThinkpagesSocialPlatformProps) {
   const [feedFilter, setFeedFilter] = useState<'recent' | 'trending' | 'hot'>('recent');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isAccountPanelOpen, setIsAccountPanelOpen] = useState(!selectedAccount);
+  const [isAccountPanelOpen, setIsAccountPanelOpen] = useState(false);
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   // Show all posts from all countries, not filtered by countryId
   const { data: feed, isLoading: isLoadingFeed, refetch: refetchFeed } = api.thinkpages.getFeed.useQuery({ filter: feedFilter });
   const { data: trendingTopics, isLoading: isLoadingTrending, refetch: refetchTrending } = api.thinkpages.getTrendingTopics.useQuery({ limit: 5 });
@@ -63,11 +64,6 @@ export function ThinkpagesSocialPlatform({
     }
   });
 
-  useEffect(() => {
-    if (!selectedAccount) {
-      setIsAccountPanelOpen(true);
-    }
-  }, [selectedAccount]);
 
   const canManageAccounts = Boolean(
     isOwner &&
@@ -157,6 +153,18 @@ export function ThinkpagesSocialPlatform({
                     >
                       {calculateTrendingMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <TrendingUp className="h-4 w-4" />}
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 rounded-full sm:h-10 sm:flex-none"
+                      onClick={() => {
+                        console.log('Accounts button clicked, setting modal to true');
+                        setIsAccountModalOpen(true);
+                      }}
+                    >
+                      <Users className="h-4 w-4 mr-1" />
+                      <span className="hidden sm:inline">Accounts</span>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -170,69 +178,30 @@ export function ThinkpagesSocialPlatform({
               onPost={() => {
                 toast.success('Posted successfully!');
                 refetchFeed();
-              }}
+              } }
               placeholder="What's happening across the nations?"
-              countryId={countryId}
-            />
+              countryId={countryId} accounts={[]} isOwner={false}            />
           )}
 
-          {canManageAccounts && (
-            <Card className="glass-hierarchy-child border border-dashed border-border/60">
-              <CardContent className="p-0">
-                <Collapsible open={isAccountPanelOpen} onOpenChange={setIsAccountPanelOpen}>
-                  <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex flex-col gap-1">
-                      <p className="text-sm font-semibold text-foreground">
-                        {selectedAccount ? 'Manage ThinkPages personas' : 'Select an account to start posting'}
-                      </p>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Quickly switch personas or create new voices for {countryName}.
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-                      <Badge
-                        variant={selectedAccount ? 'outline' : 'secondary'}
-                        className="rounded-full px-3 py-1 text-xs font-medium justify-center"
-                      >
-                        {selectedAccount ? `Active: ${activeAccountName}` : 'No account selected'}
-                      </Badge>
-                      <CollapsibleTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="rounded-full gap-2"
-                          aria-expanded={isAccountPanelOpen}
-                        >
-                          {isAccountPanelOpen ? (
-                            <>
-                              Hide manager
-                              <ChevronUp className="h-3 w-3" />
-                            </>
-                          ) : (
-                            <>
-                              Manage accounts
-                              <ChevronDown className="h-3 w-3" />
-                            </>
-                          )}
-                        </Button>
-                      </CollapsibleTrigger>
-                    </div>
-                  </div>
-                  <CollapsibleContent className="border-t border-border/60 p-4 sm:p-6">
-                    <EnhancedAccountManager
-                      countryId={countryId}
-                      accounts={accounts}
-                      selectedAccount={selectedAccount}
-                      onAccountSelect={(account) => {
-                        onAccountSelect?.(account);
-                        setIsAccountPanelOpen(false);
-                      }}
-                      onAccountSettings={(account) => onAccountSettings?.(account)}
-                      onCreateAccount={() => onCreateAccount?.()}
-                      isOwner={isOwner}
-                    />
-                  </CollapsibleContent>
-                </Collapsible>
+          {/* Account Selection Prompt */}
+          {!selectedAccount && !isAccountModalOpen && (
+            <Card className="glass-hierarchy-child">
+              <CardContent className="p-6 text-center">
+                <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Select an Account to Compose</h3>
+                <p className="text-muted-foreground mb-4">
+                  Choose an account to start posting on ThinkPages
+                </p>
+                <Button
+                  onClick={() => {
+                    console.log('Manage Accounts clicked, setting modal to true');
+                    setIsAccountModalOpen(true);
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Users className="h-4 w-4" />
+                  Manage Accounts
+                </Button>
               </CardContent>
             </Card>
           )}
@@ -244,6 +213,12 @@ export function ThinkpagesSocialPlatform({
                   <ThinkpagesPost
                     post={post}
                     currentUserAccountId={selectedAccount?.id || ''}
+                    accounts={accounts}
+                    countryId={countryId}
+                    isOwner={isOwner}
+                    onAccountSelect={onAccountSelect}
+                    onAccountSettings={onAccountSettings}
+                    onCreateAccount={onCreateAccount}
                     onLike={(postId) => {
                       if (selectedAccount) {
                         addReactionMutation.mutate({ postId, accountId: selectedAccount.id, reactionType: 'like' });
@@ -379,6 +354,19 @@ export function ThinkpagesSocialPlatform({
           <ThinkPagesGuide />
         </div>
       </div>
+
+      {/* Account Manager Modal */}
+      <AccountManagerModal
+        isOpen={isAccountModalOpen}
+        onClose={() => setIsAccountModalOpen(false)}
+        countryId={countryId}
+        accounts={accounts}
+        selectedAccount={selectedAccount}
+        onAccountSelect={onAccountSelect || (() => {})}
+        onAccountSettings={onAccountSettings || (() => {})}
+        onCreateAccount={onCreateAccount || (() => {})}
+        isOwner={isOwner}
+      />
 
     </div>
   );

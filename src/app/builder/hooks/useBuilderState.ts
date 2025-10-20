@@ -14,6 +14,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { BuilderStep } from '../components/enhanced/builderConfig';
 import type { RealCountryData, EconomicInputs } from '../lib/economy-data-service';
+import type { EconomyBuilderState } from '~/types/economy-builder';
 import type { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
 import type { TaxBuilderState } from '~/components/tax-system/TaxBuilder';
 import { safeGetItemSync, safeSetItemSync, safeRemoveItemSync } from '~/lib/localStorageMutex';
@@ -48,6 +49,8 @@ export interface BuilderState {
   activeEconomicsTab: string;
   /** Whether advanced mode is enabled for power users */
   showAdvancedMode: boolean;
+  /** Persisted state for the economy builder wizard */
+  economyBuilderState: EconomyBuilderState | null;
 }
 
 /**
@@ -93,6 +96,7 @@ const baseInitialState: BuilderState = {
   activeGovernmentTab: 'components',
   activeEconomicsTab: 'economy',
   showAdvancedMode: false,
+  economyBuilderState: null,
 };
 
 const getInitialState = (mode: 'create' | 'edit' = 'create'): BuilderState => {
@@ -363,6 +367,7 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
         activeGovernmentTab: 'components',
         activeEconomicsTab: 'economy',
         showAdvancedMode: false,
+        economyBuilderState: null,
       });
 
       console.log('[useBuilderState] Edit mode initialized with existing country data:', existingCountry.name);
@@ -478,7 +483,11 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
 
         if (savedState) {
           const parsedState = JSON.parse(savedState);
-          setBuilderState(parsedState);
+          setBuilderState((prev) => ({
+            ...prev,
+            ...parsedState,
+            economyBuilderState: parsedState.economyBuilderState ?? null,
+          }));
         }
 
         if (savedLastSaved) {

@@ -109,6 +109,102 @@ async function checkReferentialIntegrity() {
   }
 }
 
+// Check isActive field consistency across all models
+async function checkIsActiveFieldConsistency() {
+  const category = "isActive Field Consistency";
+
+  try {
+    // Check User model isActive field
+    const inactiveUsers = await db.user.count({
+      where: { isActive: false }
+    });
+    const totalUsers = await db.user.count();
+    log({
+      category,
+      check: "User isActive Field",
+      status: "PASS",
+      message: `${inactiveUsers}/${totalUsers} users are inactive (${((inactiveUsers/totalUsers)*100).toFixed(1)}%)`,
+    });
+
+    // Check ThinkpagesAccount isActive field
+    const inactiveAccounts = await db.thinkpagesAccount.count({
+      where: { isActive: false }
+    });
+    const totalAccounts = await db.thinkpagesAccount.count();
+    if (totalAccounts > 0) {
+      log({
+        category,
+        check: "ThinkpagesAccount isActive Field",
+        status: "PASS",
+        message: `${inactiveAccounts}/${totalAccounts} accounts are inactive (${((inactiveAccounts/totalAccounts)*100).toFixed(1)}%)`,
+      });
+    }
+
+    // Check IntelligenceItem isActive field
+    const inactiveIntelligence = await db.intelligenceItem.count({
+      where: { isActive: false }
+    });
+    const totalIntelligence = await db.intelligenceItem.count();
+    if (totalIntelligence > 0) {
+      log({
+        category,
+        check: "IntelligenceItem isActive Field",
+        status: "PASS",
+        message: `${inactiveIntelligence}/${totalIntelligence} intelligence items are inactive (${((inactiveIntelligence/totalIntelligence)*100).toFixed(1)}%)`,
+      });
+    }
+
+    // Check TrendingTopic isActive field
+    const inactiveTopics = await db.trendingTopic.count({
+      where: { isActive: false }
+    });
+    const totalTopics = await db.trendingTopic.count();
+    if (totalTopics > 0) {
+      log({
+        category,
+        check: "TrendingTopic isActive Field",
+        status: "PASS",
+        message: `${inactiveTopics}/${totalTopics} trending topics are inactive (${((inactiveTopics/totalTopics)*100).toFixed(1)}%)`,
+      });
+    }
+
+    // Check ThinktankGroup isActive field
+    const inactiveGroups = await db.thinktankGroup.count({
+      where: { isActive: false }
+    });
+    const totalGroups = await db.thinktankGroup.count();
+    if (totalGroups > 0) {
+      log({
+        category,
+        check: "ThinktankGroup isActive Field",
+        status: "PASS",
+        message: `${inactiveGroups}/${totalGroups} thinktank groups are inactive (${((inactiveGroups/totalGroups)*100).toFixed(1)}%)`,
+      });
+    }
+
+    // Check for any records with null isActive (should not happen with @default(true))
+    const nullIsActiveUsers = await db.user.count({
+      where: { isActive: null as any }
+    });
+    if (nullIsActiveUsers > 0) {
+      log({
+        category,
+        check: "Null isActive Values",
+        status: "FAIL",
+        message: `Found ${nullIsActiveUsers} users with null isActive values`,
+      });
+    }
+
+  } catch (error) {
+    log({
+      category,
+      check: "isActive Field Consistency",
+      status: "FAIL",
+      message: `Error checking isActive fields: ${error instanceof Error ? error.message : String(error)}`,
+    });
+  }
+}
+
 // Check data consistency
 async function checkDataConsistency() {
   const category = "Data Consistency";
@@ -133,6 +229,9 @@ async function checkDataConsistency() {
         tier: c.economicTier,
       })),
     });
+
+    // Check isActive field consistency across all models
+    await checkIsActiveFieldConsistency();
 
     // Check for negative population values
     const negativePopCountries = await db.country.findMany({

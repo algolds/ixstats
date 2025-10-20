@@ -56,6 +56,24 @@ const testSuites: TestSuite[] = [
     description: "Live data wiring verification for components",
     critical: false,
   },
+  {
+    name: "schemas",
+    script: "validate-schema-alignment.ts",
+    description: "Schema alignment validation between Prisma and Zod",
+    critical: true,
+  },
+  {
+    name: "coverage",
+    script: "audit-schema-coverage.ts",
+    description: "CRUD coverage audit for all models",
+    critical: false,
+  },
+  {
+    name: "migrations",
+    script: "validate-migration-safety.ts",
+    description: "Migration safety and schema drift validation",
+    critical: true,
+  },
 ];
 
 interface TestResult {

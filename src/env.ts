@@ -40,6 +40,8 @@ export const env = createEnv({
     ENABLE_COMPRESSION: z.string().optional().default("true"),
     ENABLE_CACHING: z.string().optional().default("true"),
     CACHE_TTL_SECONDS: z.string().optional().default("3600"),
+    // IxWiki Local Path (for same-server optimization)
+    IXWIKI_LOCAL_PATH: z.string().optional(),
   },
 
   /**
@@ -97,6 +99,8 @@ export const env = createEnv({
     ENABLE_COMPRESSION: process.env.ENABLE_COMPRESSION,
     ENABLE_CACHING: process.env.ENABLE_CACHING,
     CACHE_TTL_SECONDS: process.env.CACHE_TTL_SECONDS,
+    // IxWiki Local Path
+    IXWIKI_LOCAL_PATH: process.env.IXWIKI_LOCAL_PATH,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**
