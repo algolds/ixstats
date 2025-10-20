@@ -35,7 +35,7 @@ import { getIntelligenceEconomicData, getQuickEconomicHealth } from '~/lib/enhan
 import type { CountryWithEconomicData } from '~/types/ixstats';
 import type { EconomyData } from '~/types/economics';
 import { api } from '~/trpc/react';
-import { useUser } from '@clerk/nextjs';
+import { useUser } from '~/context/auth-context';
 import { toast } from 'sonner';
 import { withBasePath } from '~/lib/base-path';
 

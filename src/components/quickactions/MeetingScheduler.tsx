@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUser } from '@clerk/nextjs';
+import { useUser } from '~/context/auth-context';
 import { api } from '~/trpc/react';
 import { IxTime } from '~/lib/ixtime';
 import {

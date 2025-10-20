@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Crown, Globe, Activity, AlertTriangle } from 'lucide-react';

@@ -18,6 +18,13 @@ import {
   ArrowUp,
   ArrowDown,
   Minus,
+  Music,
+  Phone,
+  Hash,
+  Clock,
+  Car,
+  Flag,
+  LocateFixed,
 } from "lucide-react";
 import { IxTime } from "~/lib/ixtime";
 import {
@@ -81,6 +88,21 @@ interface CountryAtGlanceData {
     currency?: string | null;
     currencySymbol?: string | null;
     demonym?: string | null;
+    governmentType?: string | null;
+    largestCity?: string | null;
+    nationalLanguage?: string | null;
+    nationalDay?: string | null;
+    mottoNative?: string | null;
+    nationalSport?: string | null;
+    callingCode?: string | null;
+    internetTLD?: string | null;
+    isoCode?: string | null;
+    timeZone?: string | null;
+    drivingSide?: string | null;
+    weekStartDay?: string | null;
+    coordinatesLatitude?: string | null;
+    coordinatesLongitude?: string | null;
+    emergencyNumber?: string | null;
   } | null;
 }
 
@@ -256,12 +278,30 @@ export function CountryAtGlance({
                       </div>
                     </div>
                   )}
+                  {country.nationalIdentity.governmentType && (
+                    <div className="flex items-start space-x-3">
+                      <Crown className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">Government Type</p>
+                        <p className="text-sm font-medium">{country.nationalIdentity.governmentType}</p>
+                      </div>
+                    </div>
+                  )}
                   {country.nationalIdentity.capitalCity && (
                     <div className="flex items-start space-x-3">
                       <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                       <div className="min-w-0">
                         <p className="text-sm text-muted-foreground">Capital</p>
                         <p className="text-sm font-medium">{country.nationalIdentity.capitalCity}</p>
+                      </div>
+                    </div>
+                  )}
+                  {country.nationalIdentity.largestCity && (
+                    <div className="flex items-start space-x-3">
+                      <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">Largest City</p>
+                        <p className="text-sm font-medium">{country.nationalIdentity.largestCity}</p>
                       </div>
                     </div>
                   )}
@@ -278,8 +318,17 @@ export function CountryAtGlance({
                     <div className="flex items-start space-x-3">
                       <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">Languages</p>
+                        <p className="text-sm text-muted-foreground">Official Languages</p>
                         <p className="text-sm font-medium">{country.nationalIdentity.officialLanguages}</p>
+                      </div>
+                    </div>
+                  )}
+                  {country.nationalIdentity.nationalLanguage && (
+                    <div className="flex items-start space-x-3">
+                      <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">National Language</p>
+                        <p className="text-sm font-medium">{country.nationalIdentity.nationalLanguage}</p>
                       </div>
                     </div>
                   )}
@@ -295,21 +344,118 @@ export function CountryAtGlance({
                       </div>
                     </div>
                   )}
+                  {country.nationalIdentity.nationalDay && (
+                    <div className="flex items-start space-x-3">
+                      <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">National Day</p>
+                        <p className="text-sm font-medium">{country.nationalIdentity.nationalDay}</p>
+                      </div>
+                    </div>
+                  )}
                   {country.nationalIdentity.motto && (
                     <div className="flex items-start space-x-3 sm:col-span-2">
-                      <Crown className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <Flag className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                       <div className="min-w-0">
                         <p className="text-sm text-muted-foreground">National Motto</p>
                         <p className="text-sm font-medium italic">&quot;{country.nationalIdentity.motto}&quot;</p>
+                        {country.nationalIdentity.mottoNative && country.nationalIdentity.mottoNative !== country.nationalIdentity.motto && (
+                          <p className="text-xs text-muted-foreground/80 mt-1">
+                            {country.nationalIdentity.mottoNative}
+                          </p>
+                        )}
                       </div>
                     </div>
                   )}
                   {country.nationalIdentity.nationalAnthem && (
                     <div className="flex items-start space-x-3 sm:col-span-2">
-                      <Activity className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <Music className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                       <div className="min-w-0">
                         <p className="text-sm text-muted-foreground">National Anthem</p>
                         <p className="text-sm font-medium">{country.nationalIdentity.nationalAnthem}</p>
+                      </div>
+                    </div>
+                  )}
+                  {country.nationalIdentity.nationalSport && (
+                    <div className="flex items-start space-x-3">
+                      <Activity className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">National Sport</p>
+                        <p className="text-sm font-medium">{country.nationalIdentity.nationalSport}</p>
+                      </div>
+                    </div>
+                  )}
+                  {country.nationalIdentity.callingCode && (
+                    <div className="flex items-start space-x-3">
+                      <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">Calling Code</p>
+                        <p className="text-sm font-medium">{country.nationalIdentity.callingCode}</p>
+                      </div>
+                    </div>
+                  )}
+                  {country.nationalIdentity.internetTLD && (
+                    <div className="flex items-start space-x-3">
+                      <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">Internet TLD</p>
+                        <p className="text-sm font-medium">{country.nationalIdentity.internetTLD}</p>
+                      </div>
+                    </div>
+                  )}
+                  {country.nationalIdentity.isoCode && (
+                    <div className="flex items-start space-x-3">
+                      <Hash className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">ISO Code</p>
+                        <p className="text-sm font-medium">{country.nationalIdentity.isoCode}</p>
+                      </div>
+                    </div>
+                  )}
+                  {country.nationalIdentity.timeZone && (
+                    <div className="flex items-start space-x-3">
+                      <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">Time Zone</p>
+                        <p className="text-sm font-medium">{country.nationalIdentity.timeZone}</p>
+                      </div>
+                    </div>
+                  )}
+                  {country.nationalIdentity.drivingSide && (
+                    <div className="flex items-start space-x-3">
+                      <Car className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">Driving Side</p>
+                        <p className="text-sm font-medium capitalize">{country.nationalIdentity.drivingSide}</p>
+                      </div>
+                    </div>
+                  )}
+                  {country.nationalIdentity.weekStartDay && (
+                    <div className="flex items-start space-x-3">
+                      <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">Week Starts On</p>
+                        <p className="text-sm font-medium capitalize">{country.nationalIdentity.weekStartDay}</p>
+                      </div>
+                    </div>
+                  )}
+                  {country.nationalIdentity.coordinatesLatitude && country.nationalIdentity.coordinatesLongitude && (
+                    <div className="flex items-start space-x-3 sm:col-span-2">
+                      <LocateFixed className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">Coordinates</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.coordinatesLatitude}, {country.nationalIdentity.coordinatesLongitude}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {country.nationalIdentity.emergencyNumber && (
+                    <div className="flex items-start space-x-3">
+                      <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-muted-foreground">Emergency Number</p>
+                        <p className="text-sm font-medium">{country.nationalIdentity.emergencyNumber}</p>
                       </div>
                     </div>
                   )}

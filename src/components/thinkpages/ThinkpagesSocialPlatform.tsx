@@ -1,18 +1,20 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { cn } from '~/lib/utils';
 import { 
   Users, 
   TrendingUp, 
   Search, 
   RefreshCw,
-  Loader2
+  Loader2,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
+import { Badge } from '~/components/ui/badge';
 import { ThinkpagesPost } from './ThinkpagesPost';
 import { LiveEventsFeed } from './LiveEventsFeed';
 import { ThinkPagesGuide } from './ThinkPagesGuide';
@@ -20,22 +22,34 @@ import { GlassCanvasComposer } from './GlassCanvasComposer';
 import { api } from '~/trpc/react';
 import { toast } from 'sonner';
 import { BlurFade } from '~/components/magicui/blur-fade';
+import { EnhancedAccountManager } from './EnhancedAccountManager';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
+import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
 
 interface ThinkpagesSocialPlatformProps {
   countryId: string;
   countryName: string;
   isOwner: boolean;
   selectedAccount?: any;
+  accounts?: any[];
+  onAccountSelect?: (account: any) => void;
+  onAccountSettings?: (account: any) => void;
+  onCreateAccount?: () => void;
 }
 
 export function ThinkpagesSocialPlatform({
   countryId,
   countryName,
   isOwner,
-  selectedAccount
+  selectedAccount,
+  accounts = [],
+  onAccountSelect,
+  onAccountSettings,
+  onCreateAccount
 }: ThinkpagesSocialPlatformProps) {
   const [feedFilter, setFeedFilter] = useState<'recent' | 'trending' | 'hot'>('recent');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAccountPanelOpen, setIsAccountPanelOpen] = useState(!selectedAccount);
   // Show all posts from all countries, not filtered by countryId
   const { data: feed, isLoading: isLoadingFeed, refetch: refetchFeed } = api.thinkpages.getFeed.useQuery({ filter: feedFilter });
   const { data: trendingTopics, isLoading: isLoadingTrending, refetch: refetchTrending } = api.thinkpages.getTrendingTopics.useQuery({ limit: 5 });
@@ -48,6 +62,24 @@ export function ThinkpagesSocialPlatform({
       toast.error(error.message || "Failed to calculate trending topics");
     }
   });
+
+  useEffect(() => {
+    if (!selectedAccount) {
+      setIsAccountPanelOpen(true);
+    }
+  }, [selectedAccount]);
+
+  const canManageAccounts = Boolean(
+    isOwner &&
+    (onAccountSelect || onAccountSettings || onCreateAccount)
+  );
+
+  const activeAccountName = selectedAccount
+    ? (selectedAccount.displayName ??
+       selectedAccount.username ??
+       selectedAccount.accountName ??
+       (selectedAccount.id ? `Account ${String(selectedAccount.id).slice(-4)}` : 'Active account'))
+    : undefined;
 
   // Reaction mutation
   const addReactionMutation = api.thinkpages.addReaction.useMutation({
@@ -69,7 +101,7 @@ export function ThinkpagesSocialPlatform({
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 lg:space-y-8 touch-pan-y">
       {/* ThinkPages Global Feed Header */}
       
 
@@ -78,47 +110,55 @@ export function ThinkpagesSocialPlatform({
         <div className="lg:col-span-2 space-y-4">
           <Card className="glass-hierarchy-child">
             <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
+                <div className="relative w-full md:max-w-md">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search posts across all nations..."
-                    className="pl-10"
+                    className="pl-10 pr-4 h-11 rounded-xl"
+                    inputMode="search"
                   />
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={feedFilter === 'recent' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFeedFilter('recent')}
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-end md:gap-4 w-full md:w-auto">
+                  <ToggleGroup
+                    type="single"
+                    value={feedFilter}
+                    onValueChange={(value) => value && setFeedFilter(value as typeof feedFilter)}
+                    className="flex w-full flex-wrap justify-center gap-2 rounded-full bg-white/5 p-1 [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden sm:w-auto sm:flex-nowrap sm:gap-1"
                   >
-                    Recent
-                  </Button>
-                  <Button
-                    variant={feedFilter === 'trending' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFeedFilter('trending')}
-                  >
-                    Trending
-                  </Button>
-                  <Button
-                    variant={feedFilter === 'hot' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setFeedFilter('hot')}
-                  >
-                    Hot
-                  </Button>
-                </div>
+                    {(['recent', 'trending', 'hot'] as const).map((filter) => (
+                      <ToggleGroupItem
+                        key={filter}
+                        value={filter}
+                        className="flex min-w-[90px] items-center justify-center rounded-full px-4 py-1.5 text-sm font-medium capitalize transition-all data-[state=on]:border-primary data-[state=on]:bg-primary/10 sm:min-w-[80px]"
+                      >
+                        {filter}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
 
-                <Button variant="outline" size="sm" onClick={() => refetchFeed()}>
-                  {isLoadingFeed ? <Loader2 className="animate-spin h-4 w-4"/> : <RefreshCw className="h-4 w-4" />}
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => calculateTrendingMutation.mutate()}>
-                  {calculateTrendingMutation.isPending ? <Loader2 className="animate-spin h-4 w-4"/> : <TrendingUp className="h-4 w-4" />}
-                </Button>
+                  <div className="flex w-full gap-2 sm:w-auto sm:justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 rounded-full sm:h-10 sm:flex-none"
+                      onClick={() => refetchFeed()}
+                    >
+                      {isLoadingFeed ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 rounded-full sm:h-10 sm:flex-none"
+                      onClick={() => calculateTrendingMutation.mutate()}
+                    >
+                      {calculateTrendingMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <TrendingUp className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -136,14 +176,63 @@ export function ThinkpagesSocialPlatform({
             />
           )}
 
-          {/* Prompt to select account if none selected */}
-          {!selectedAccount && isOwner && (
-            <Card className="glass-hierarchy-child border-dashed">
-              <CardContent className="p-6 text-center">
-                <Users className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">
-                  Select an account from the sidebar to start posting
-                </p>
+          {canManageAccounts && (
+            <Card className="glass-hierarchy-child border border-dashed border-border/60">
+              <CardContent className="p-0">
+                <Collapsible open={isAccountPanelOpen} onOpenChange={setIsAccountPanelOpen}>
+                  <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-col gap-1">
+                      <p className="text-sm font-semibold text-foreground">
+                        {selectedAccount ? 'Manage ThinkPages personas' : 'Select an account to start posting'}
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Quickly switch personas or create new voices for {countryName}.
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+                      <Badge
+                        variant={selectedAccount ? 'outline' : 'secondary'}
+                        className="rounded-full px-3 py-1 text-xs font-medium justify-center"
+                      >
+                        {selectedAccount ? `Active: ${activeAccountName}` : 'No account selected'}
+                      </Badge>
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-full gap-2"
+                          aria-expanded={isAccountPanelOpen}
+                        >
+                          {isAccountPanelOpen ? (
+                            <>
+                              Hide manager
+                              <ChevronUp className="h-3 w-3" />
+                            </>
+                          ) : (
+                            <>
+                              Manage accounts
+                              <ChevronDown className="h-3 w-3" />
+                            </>
+                          )}
+                        </Button>
+                      </CollapsibleTrigger>
+                    </div>
+                  </div>
+                  <CollapsibleContent className="border-t border-border/60 p-4 sm:p-6">
+                    <EnhancedAccountManager
+                      countryId={countryId}
+                      accounts={accounts}
+                      selectedAccount={selectedAccount}
+                      onAccountSelect={(account) => {
+                        onAccountSelect?.(account);
+                        setIsAccountPanelOpen(false);
+                      }}
+                      onAccountSettings={(account) => onAccountSettings?.(account)}
+                      onCreateAccount={() => onCreateAccount?.()}
+                      isOwner={isOwner}
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
               </CardContent>
             </Card>
           )}
@@ -246,34 +335,36 @@ export function ThinkpagesSocialPlatform({
             <CardContent className="space-y-3">
               {isLoadingTrending ? (
                 <div className="flex justify-center py-4">
-                  <Loader2 className="animate-spin h-6 w-6"/>
+                  <Loader2 className="animate-spin h-6 w-6" />
                 </div>
               ) : (
-                trendingTopics?.map((topic, index) => (
-                  <BlurFade key={topic.hashtag} delay={0.1 + 0.03 * index}>
-                    <button
-                      className="w-full flex items-center justify-between p-3 hover:bg-accent/50 rounded-lg transition-colors text-left border border-transparent hover:border-border"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-6 h-6 rounded bg-[#fcc309]/20 text-[#800000] text-xs font-bold">
-                          {index + 1}
-                        </div>
-                        <div>
-                          <div className="font-medium text-sm">#{topic.hashtag}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {topic.postCount} thinks
+                <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 sm:mx-0 sm:px-0 sm:flex-col sm:overflow-visible [&::-webkit-scrollbar]:hidden [-webkit-overflow-scrolling:touch]">
+                  {trendingTopics?.map((topic, index) => (
+                    <BlurFade key={topic.hashtag} delay={0.1 + 0.03 * index}>
+                      <button
+                        className="flex min-w-[200px] items-center justify-between rounded-lg border border-transparent bg-background/40 p-3 text-left transition-colors hover:border-border hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-w-0"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#fcc309]/20 text-xs font-bold text-[#800000]">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm leading-tight">#{topic.hashtag}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {topic.postCount} thinks
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3 text-green-500" />
-                      <span className="text-xs text-green-600 font-medium">
-                        +{Math.floor(Math.random() * 50 + 10)}%
-                      </span>
-                    </div>
-                    </button>
-                  </BlurFade>
-                ))
+                        <div className="flex items-center gap-1 whitespace-nowrap">
+                          <TrendingUp className="h-3 w-3 text-green-500" />
+                          <span className="text-xs font-medium text-green-600">
+                            +{Math.floor(Math.random() * 50 + 10)}%
+                          </span>
+                        </div>
+                      </button>
+                    </BlurFade>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>

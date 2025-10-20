@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { AuthenticationGuard, CountryDataProvider, useCountryData } from "~/components/mycountry";

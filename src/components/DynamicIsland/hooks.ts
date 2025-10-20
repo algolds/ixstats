@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Globe, BarChart3, Settings, Activity, TrendingUp, Crown, Gauge, Eye, Target, Plus, Home, LogIn, LogOut } from 'lucide-react';
 import { createAbsoluteUrl } from '~/lib/url-utils';
 import { api } from "~/trpc/react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from '~/context/auth-context';
 import { usePathname } from "next/navigation";
 import type { ViewMode, SearchFilter, SearchResult } from './types';
 

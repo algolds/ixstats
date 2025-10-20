@@ -16,7 +16,7 @@ import { Card } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { AlertTriangle } from "lucide-react";
 import { createUrl } from "~/lib/url-utils";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { IxTime } from "~/lib/ixtime";

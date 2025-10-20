@@ -4,7 +4,7 @@ import { useParams } from 'next/navigation';
 import { api } from '~/trpc/react';
 import { ThinkpagesPost } from '~/components/thinkpages/ThinkpagesPost';
 import { Loader2 } from 'lucide-react';
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 
 export default function HashtagPage() {
   const params = useParams();

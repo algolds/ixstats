@@ -1,23 +1,21 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
-import { useUser as useClerkUser, useAuth as useClerkAuth, SignInButton as ClerkSignInButton, UserButton as ClerkUserButton } from '@clerk/nextjs';
-
-// Define types that match Clerk's interface
-interface User {
-  id: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  emailAddresses: { emailAddress: string }[];
-  imageUrl?: string;
-  createdAt?: number;
-}
+import React, { createContext, useContext, useEffect, useMemo } from 'react';
+import {
+  useUser as useClerkUser,
+  useAuth as useClerkAuth,
+  SignInButton as ClerkSignInButton,
+  SignOutButton as ClerkSignOutButton,
+  UserButton as ClerkUserButton,
+} from '@clerk/nextjs';
+import type { GetTokenOptions, SignOutOptions, UserResource } from '@clerk/types';
 
 interface AuthContextType {
-  user: User | null;
+  user: UserResource | null;
   isLoaded: boolean;
   isSignedIn: boolean;
-  signOut?: () => Promise<void>;
+  signOut: (options?: SignOutOptions) => Promise<void>;
+  getToken?: (options?: GetTokenOptions) => Promise<string | null>;
 }
 
 // Clerk is the default auth provider - always use it when available
@@ -43,41 +41,29 @@ if (typeof window === 'undefined') { // Server-side only
   }
 }
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  isLoaded: true,
-  isSignedIn: false,
-});
+const AuthContext = createContext<AuthContextType | null>(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Always use Clerk hooks when configured - this is the native integration
+function assertClerkConfigured(component: string) {
+  if (!isClerkConfigured) {
+    throw new Error(
+      `[${component}] Clerk is not configured. Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY (pk_*) and CLERK_SECRET_KEY (sk_*) before rendering authentication components.`
+    );
+  }
+}
+
+// Conditional AuthProvider that only uses Clerk hooks when Clerk is configured
+function ClerkAuthProvider({ children }: { children: React.ReactNode }) {
   const clerkUser = useClerkUser();
   const clerkAuth = useClerkAuth();
 
   // Memoize auth value to prevent unnecessary re-renders
   const authValue: AuthContextType = useMemo(() => {
-    if (isClerkConfigured) {
-      // Native Clerk integration - use Clerk data directly
-      return {
-        user: clerkUser.user ? {
-          id: clerkUser.user.id,
-          firstName: clerkUser.user.firstName,
-          lastName: clerkUser.user.lastName,
-          emailAddresses: clerkUser.user.emailAddresses,
-          imageUrl: clerkUser.user.imageUrl,
-          createdAt: clerkUser.user.createdAt instanceof Date ? clerkUser.user.createdAt.getTime() : undefined,
-        } : null,
-        isLoaded: clerkUser.isLoaded,
-        isSignedIn: Boolean(clerkUser.isSignedIn),
-        signOut: clerkAuth.signOut,
-      };
-    }
-
-    // Fallback when Clerk is not configured
     return {
-      user: null,
-      isLoaded: true,
-      isSignedIn: false,
+      user: clerkUser.user ?? null,
+      isLoaded: clerkUser.isLoaded,
+      isSignedIn: Boolean(clerkUser.isSignedIn),
+      signOut: clerkAuth.signOut,
+      getToken: clerkAuth.getToken,
     };
   }, [clerkUser, clerkAuth]);
 
@@ -88,9 +74,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  assertClerkConfigured('AuthProvider');
+  return <ClerkAuthProvider>{children}</ClerkAuthProvider>;
+}
+
 // Custom hooks that work with or without Clerk
 export function useUser() {
   const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('[useUser] must be used within <AuthProvider>.');
+  }
   return {
     user: context.user,
     isLoaded: context.isLoaded,
@@ -100,10 +94,14 @@ export function useUser() {
 
 export function useAuth() {
   const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('[useAuth] must be used within <AuthProvider>.');
+  }
   return {
     isLoaded: context.isLoaded,
     isSignedIn: context.isSignedIn,
-    signOut: context.signOut || (() => Promise.resolve()),
+    signOut: context.signOut,
+    getToken: context.getToken,
   };
 }
 
@@ -118,126 +116,34 @@ export function SignedOut({ children }: { children: React.ReactNode }) {
   return !isSignedIn ? <>{children}</> : null;
 }
 
-export function SignInButton({ children, mode, asChild, ...props }: { children?: React.ReactNode; mode?: string; asChild?: boolean; [key: string]: any }) {
-  const [isMounted, setIsMounted] = useState(false);
-  
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  // Memoize click handler to prevent re-creation
-  const handleFallbackClick = useCallback(() => {
-    const envType = isDevEnvironment ? 'development' : 'production';
-    const keyType = isDevEnvironment ? 'pk_test_* and sk_test_*' : 'pk_live_* and sk_live_*';
-    const envFile = isDevEnvironment ? '.env.local' : '.env.production';
-    alert(`Authentication is not configured for ${envType}.\n\nTo enable authentication:\n1. Add ${keyType} Clerk keys to ${envFile}\n2. Restart the ${envType} server`);
-  }, []);
-
-  if (!isClerkConfigured) {
-
-    if (asChild && children && React.isValidElement(children)) {
-      // Clone the child element and add our click handler, but filter out asChild prop
-      // Don't add title to avoid hydration mismatch
-      return React.cloneElement(children as React.ReactElement<any>, {
-        onClick: handleFallbackClick
-      });
-    }
-
-    // Use consistent props for both server and client to avoid hydration mismatch
-    const commonProps = {
-      onClick: handleFallbackClick,
-      title: "Authentication is not configured in this environment"
-    };
-
-    // Return a placeholder button when Clerk is disabled
-    // Filter out props that shouldn't be passed to DOM elements
-    const { asChild: _, mode: __, ...domProps } = props;
-    return (
-      <button 
-        {...domProps}
-        {...commonProps}
-      >
-        {children || (
-          <div className="flex items-center gap-2">
-            <span>{`Sign In (${isDevEnvironment ? 'Dev' : 'Prod'} Mode)`}</span>
-          </div>
-        )}
-      </button>
-    );
-  }
-
-  // Environment-specific key warnings - only log once
-  useEffect(() => {
-    if (isDevEnvironment && isUsingLiveKeys) {
-      console.warn('⚠️ DEVELOPMENT WARNING: Using live Clerk keys in development. Switch to test keys (pk_test_*, sk_test_*) for development.');
-    }
-
-    if (isProductionEnvironment && isUsingTestKeys) {
-      console.error('🚨 PRODUCTION ERROR: Using test Clerk keys in production! Switch to live keys (pk_live_*, sk_live_*) for production.');
-      console.error('🚨 Authentication will not work properly in production with test keys!');
-    }
-
-    // Log success only in development for debugging
-    if (isDevEnvironment && isUsingTestKeys) {
-      console.log('✅ Development Clerk keys correctly configured');
-      console.log('ℹ️  Note: Clerk development key warnings are expected in development and can be safely ignored');
-    }
-  }, []); // Only run once
-  
-  // Only render Clerk SignInButton on the client to avoid hydration mismatch
-  if (!isMounted) {
-    // Return a placeholder that matches the final rendered output
-    // Don't add title attribute to avoid hydration mismatch with Clerk components
-    if (asChild && children && React.isValidElement(children)) {
-      return React.cloneElement(children as React.ReactElement<any>, {
-        onClick: () => {}
-      });
-    }
-    return (
-      <button 
-        className={props.className} 
-        onClick={() => {}}
-      >
-        {children || (
-          <div className="flex items-center gap-2">
-            <span>Sign In</span>
-          </div>
-        )}
-      </button>
-    );
-  }
-
-  // Use actual Clerk SignInButton when configured and mounted
-  if (asChild && children && React.isValidElement(children)) {
-    // For asChild pattern, filter out asChild prop since ClerkSignInButton doesn't support it
-    const { asChild: _, ...clerkProps } = props;
-    return (
-      <ClerkSignInButton mode={mode as "modal" | "redirect" | undefined} {...clerkProps}>
-        {children}
-      </ClerkSignInButton>
-    );
-  } else {
-    // For normal button pattern, pass through all props
-    return (
-      <ClerkSignInButton mode={mode as "modal" | "redirect" | undefined} {...props}>
-        {children}
-      </ClerkSignInButton>
-    );
-  }
+export function SignOutButton(
+  props: React.ComponentProps<typeof ClerkSignOutButton>
+) {
+  assertClerkConfigured('SignOutButton');
+  return <ClerkSignOutButton {...props} />;
 }
 
-export function UserButton(props: any) {
-  const { user } = useUser();
-  
-  if (!isClerkConfigured || !user) {
-    // Return a placeholder when Clerk is disabled or no user
-    return (
-      <div className={props.className || "w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm"}>
-        ?
-      </div>
-    );
-  }
-  
-  // Use actual Clerk UserButton when configured and user is signed in
+export function SignInButton(
+  props: React.ComponentProps<typeof ClerkSignInButton>
+) {
+  assertClerkConfigured('SignInButton');
+
+  useEffect(() => {
+    if (isDevEnvironment && isUsingLiveKeys) {
+      console.warn(
+        '⚠️ DEVELOPMENT WARNING: Using live Clerk keys in development. Switch to test keys (pk_test_*, sk_test_*) for development.'
+      );
+    } else if (isProductionEnvironment && isUsingTestKeys) {
+      console.error(
+        '🚨 PRODUCTION ERROR: Using test Clerk keys in production! Switch to live keys (pk_live_*, sk_live_*) for production.'
+      );
+    }
+  }, []);
+
+  return <ClerkSignInButton {...props} />;
+}
+
+export function UserButton(props: React.ComponentProps<typeof ClerkUserButton>) {
+  assertClerkConfigured('UserButton');
   return <ClerkUserButton {...props} />;
 }

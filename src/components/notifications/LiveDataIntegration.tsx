@@ -10,7 +10,7 @@ import { useOptimizedIntelligenceData } from '~/hooks/useOptimizedIntelligenceDa
 import { useGlobalNotificationBridge } from '~/services/GlobalNotificationBridge';
 import { diplomaticNotificationService, achievementNotificationService } from '~/services/DiplomaticNotificationService';
 import { api } from '~/trpc/react';
-import { useUser } from '@clerk/nextjs';
+import { useUser } from '~/context/auth-context';
 
 interface LiveDataIntegrationProps {
   countryId?: string;

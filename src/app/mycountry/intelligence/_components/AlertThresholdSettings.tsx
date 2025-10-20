@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useUser } from '~/context/auth-context';
 import { Save, Plus, Trash2, Settings, Bell, BellOff, AlertCircle } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';

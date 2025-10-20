@@ -6,7 +6,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useUser } from '~/context/auth-context';
 import { useRouter, usePathname } from 'next/navigation';
 import { IxTime } from '~/lib/ixtime';
 import { getNotificationOrchestrator } from '~/services/NotificationOrchestrator';

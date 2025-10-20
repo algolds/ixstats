@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
+import { SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 
 // Force dynamic rendering to avoid SSG issues with Clerk
 export const dynamic = 'force-dynamic';
@@ -31,7 +32,6 @@ import {
   Users,
 } from "lucide-react";
 import { type RouterOutputs } from "~/trpc/react";
-import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
 import { createUrl } from "~/lib/url-utils";
 
 const DM_INPUT_TYPES = [

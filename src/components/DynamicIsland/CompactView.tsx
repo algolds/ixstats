@@ -22,7 +22,7 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "../ui/
 import { Popover, PopoverTrigger, PopoverContent } from "../ui/popover";
 import { SimpleFlag } from "../SimpleFlag";
 import { formatCurrency } from "~/lib/chart-utils";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import { useIxTime } from "~/contexts/IxTimeContext";
 import { api } from "~/trpc/react";
 import { useNotificationStore } from "~/stores/notificationStore";

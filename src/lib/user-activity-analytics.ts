@@ -72,6 +72,26 @@ export interface UserBehaviorPattern {
 }
 
 export class UserActivityAnalytics {
+  private static parseMetadata(metadata: unknown): Record<string, any> {
+    if (!metadata) {
+      return {};
+    }
+
+    if (typeof metadata === 'string') {
+      try {
+        return JSON.parse(metadata);
+      } catch {
+        return {};
+      }
+    }
+
+    if (typeof metadata === 'object') {
+      return metadata as Record<string, any>;
+    }
+
+    return {};
+  }
+
   /**
    * Get comprehensive user activity metrics
    */
@@ -109,7 +129,7 @@ export class UserActivityAnalytics {
       const durationCount: Record<string, number> = {};
 
       logs.forEach(log => {
-        const metadata = log.metadata ? JSON.parse(log.metadata) : {};
+        const metadata = this.parseMetadata(log.metadata);
         const category = metadata.category || 'UNKNOWN';
         const action = metadata.action || 'UNKNOWN';
         
@@ -179,9 +199,11 @@ export class UserActivityAnalytics {
       // Get security metrics
       const securityEvents = logs.filter(l => l.category === 'SECURITY').length;
       const suspiciousActivity = await this.detectSuspiciousActivity(userId, startDate, endDate);
-      const failedAuthAttempts = logs.filter(l => 
-        l.metadata && JSON.parse(l.metadata).action?.includes('LOGIN_FAILED')
-      ).length;
+      const failedAuthAttempts = logs.filter(l => {
+        const metadata = this.parseMetadata(l.metadata);
+        const action = metadata.action;
+        return typeof action === 'string' && action.includes('LOGIN_FAILED');
+      }).length;
 
       // Calculate feature usage
       const featureUsage = this.calculateFeatureUsage(logs);
@@ -262,7 +284,7 @@ export class UserActivityAnalytics {
       // Calculate feature usage
       const featureUsage: Record<string, number> = {};
       logs.forEach(log => {
-        const metadata = log.metadata ? JSON.parse(log.metadata) : {};
+        const metadata = this.parseMetadata(log.metadata);
         const category = metadata.category || 'UNKNOWN';
         featureUsage[category] = (featureUsage[category] || 0) + 1;
       });
@@ -589,7 +611,7 @@ export class UserActivityAnalytics {
     const usage: Record<string, number> = {};
     
     logs.forEach(log => {
-      const metadata = log.metadata ? JSON.parse(log.metadata) : {};
+      const metadata = this.parseMetadata(log.metadata);
       const category = metadata.category || 'UNKNOWN';
       usage[category] = (usage[category] || 0) + 1;
     });
@@ -629,7 +651,7 @@ export class UserActivityAnalytics {
     const actionCounts: Record<string, number> = {};
     
     logs.forEach(log => {
-      const metadata = log.metadata ? JSON.parse(log.metadata) : {};
+      const metadata = this.parseMetadata(log.metadata);
       const category = metadata.category || 'UNKNOWN';
       const action = metadata.action || 'UNKNOWN';
       

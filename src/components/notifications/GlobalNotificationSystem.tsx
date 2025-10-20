@@ -6,7 +6,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useUser } from '~/context/auth-context';
 import { usePathname } from 'next/navigation';
 import { api } from '~/trpc/react';
 import { useNotificationStore } from '~/stores/notificationStore';

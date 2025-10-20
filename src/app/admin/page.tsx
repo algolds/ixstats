@@ -30,13 +30,18 @@ import { FlagCacheManager } from "~/components/FlagCacheManager";
 import { RealTimeClock } from "~/components/ui/real-time-clock";
 import { api } from "~/trpc/react";
 import { AdminErrorBoundary } from "./_components/ErrorBoundary";
-import { SignInButton, useUser, UserButton } from "@clerk/nextjs";
+import { SignInButton, useUser, UserButton } from "~/context/auth-context";
 import { Settings, Clock, TrendingUp, Bot, Database, Upload, Monitor, Code, Gamepad2, Minimize2, Maximize2 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useAdminState } from "./_hooks/useAdminState";
 import { useAdminHandlers } from "./_hooks/useAdminHandlers";
 import { useBotSync } from "./_hooks/useBotSync";
+
+const SYSTEM_OWNERS = [
+  'user_2zqmDdZvhpNQWGLdAIj2YwH8MLo',
+  'user_3078Ja62W7yJDlBjjwNppfzceEz',
+] as const;
 
 export default function AdminPage() {
   // All hooks must be called unconditionally and at the top
@@ -191,7 +196,12 @@ export default function AdminPage() {
     );
   }
 
-  if (user && user.publicMetadata?.role !== "admin") {
+  const allowedRoles = new Set(["admin", "owner", "staff"]);
+  const isSystemOwner = !!user && SYSTEM_OWNERS.some((ownerId) => ownerId === user.id);
+  const hasAdminRole =
+    typeof user?.publicMetadata?.role === "string" && allowedRoles.has(user.publicMetadata.role);
+
+  if (!isSystemOwner && !hasAdminRole) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center border border-gray-200 dark:border-gray-700">

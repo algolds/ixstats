@@ -6,12 +6,63 @@
 
 import { createServer } from 'http';
 import { parse } from 'url';
+import { existsSync, readFileSync } from 'fs';
+import { resolve } from 'path';
 import next from 'next';
+
+function loadEnvVariables() {
+  const envFiles = [];
+  const cwd = process.cwd();
+  const mode = process.env.NODE_ENV || 'development';
+
+  if (mode === 'development') {
+    envFiles.push('.env.local.dev');
+    envFiles.push('.env.local');
+  } else if (mode === 'production') {
+    envFiles.push('.env.production');
+    envFiles.push('.env.local');
+  }
+
+  envFiles.push('.env');
+
+  for (const file of envFiles) {
+    const absolutePath = resolve(cwd, file);
+    if (!existsSync(absolutePath)) continue;
+
+    try {
+      const content = readFileSync(absolutePath, 'utf8');
+      for (const rawLine of content.split(/\r?\n/)) {
+        const line = rawLine.trim();
+        if (!line || line.startsWith('#')) continue;
+
+        const equalsIndex = line.indexOf('=');
+        if (equalsIndex === -1) continue;
+
+        const key = line.slice(0, equalsIndex).trim();
+        let value = line.slice(equalsIndex + 1).trim();
+
+        if (
+          (value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'"))
+        ) {
+          value = value.slice(1, -1);
+        }
+
+        if (Object.prototype.hasOwnProperty.call(process.env, key)) continue;
+        process.env[key] = value;
+      }
+    } catch (error) {
+      console.warn(`[Server] Failed to load environment file ${file}:`, error);
+    }
+  }
+}
+
+loadEnvVariables();
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = process.env.HOSTNAME || 'localhost';
-// Default to port 3550 in production to avoid clashing with dev servers
-const defaultPort = process.env.NODE_ENV === 'production' ? '3550' : '3000';
+// Default to port 3550 in production, 3003 for dev to avoid clashing with production
+const defaultPort = process.env.NODE_ENV === 'production' ? '3550' : '3003';
 const port = parseInt(process.env.PORT || defaultPort, 10);
 
 // Initialize Next.js
@@ -37,9 +88,14 @@ app.prepare().then(async () => {
 
   // Initialize WebSocket server (dynamic import to avoid build issues)
   try {
-    const { initializeWebSocketServer } = await import('./src/server/websocket-server.js');
-    await initializeWebSocketServer(httpServer);
-    console.log('[Server] ✓ WebSocket server initialized');
+    // For development, skip WebSocket initialization to avoid TypeScript import issues
+    if (dev) {
+      console.log('[Server] ⚠ WebSocket server disabled in development mode');
+    } else {
+      const { initializeWebSocketServer } = await import('./src/server/websocket-server.js');
+      await initializeWebSocketServer(httpServer);
+      console.log('[Server] ✓ WebSocket server initialized');
+    }
   } catch (error) {
     console.error('[Server] ✗ WebSocket initialization failed:', error.message);
     console.warn('[Server] Continuing without WebSocket support');

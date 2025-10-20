@@ -5,7 +5,7 @@ import { Badge } from "~/components/ui/badge";
 import { useToast } from "~/components/ui/toast";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useExecutiveNotifications } from "~/contexts/ExecutiveNotificationContext";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import {
   Bell,
   BellRing,

@@ -15,6 +15,11 @@ import { TierVisualization } from "./TierVisualization";
 import { FeaturedArticle } from "./FeaturedArticle";
 import { MyCountryCard } from "~/app/dashboard/_components/MyCountryCard";
 import { AdminQuickAccess } from "./AdminQuickAccess";
+import { CountryDataProvider, useMyCountryUnifiedData, useCountryData } from "~/components/mycountry/primitives";
+import { ExecutiveCommandCenter } from "~/app/mycountry/components/ExecutiveCommandCenter";
+import { DiplomaticOperationsHub } from "~/app/mycountry/intelligence/_components/DiplomaticOperationsHub";
+
+type MyCountryUnifiedData = ReturnType<typeof useMyCountryUnifiedData>;
 
 // Dashboard Components - Only the essential ones for MyCountry
 import { StrategicOperationsSuite } from "~/app/dashboard/_components/StrategicOperationsSuite";
@@ -165,39 +170,26 @@ interface SmartDashboardContentProps {
   };
   activityRingsData?: any;
   user?: any;
+  myCountryData?: MyCountryUnifiedData | null;
+  economyData?: any;
 }
 
-function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, adaptedGlobalStats, activityRingsData, user }: SmartDashboardContentProps) {
+function SmartDashboardContent({
+  userProfile,
+  userCountry,
+  isAdmin,
+  countries,
+  adaptedGlobalStats,
+  activityRingsData,
+  user,
+  myCountryData,
+  economyData
+}: SmartDashboardContentProps) {
   const [contentMode, setContentMode] = useState<'discover' | 'mycountry' | 'activity' | 'admin'>('discover');
   const [hasUserSelectedTab, setHasUserSelectedTab] = useState(false);
-  const [myCountryTab, setMyCountryTab] = useState<'overview' | 'diplomacy' | 'executive'>('overview');
-
-  // Fetch diplomatic data
-  const { data: diplomaticRelations } = api.diplomatic.getRelationships.useQuery(
-    { countryId: userCountry?.id || '' },
-    { enabled: !!userCountry?.id && contentMode === 'mycountry' && myCountryTab === 'diplomacy' }
-  );
-
-  const { data: embassies } = api.diplomatic.getEmbassies.useQuery(
-    { countryId: userCountry?.id || '' },
-    { enabled: !!userCountry?.id && contentMode === 'mycountry' && myCountryTab === 'diplomacy' }
-  );
-
-  const { data: recentDiplomaticActivity } = api.diplomatic.getRecentChanges.useQuery(
-    { countryId: userCountry?.id || '', hours: 72 },
-    { enabled: !!userCountry?.id && contentMode === 'mycountry' && myCountryTab === 'diplomacy' }
-  );
-
-  // Fetch executive data
-  const { data: upcomingMeetings } = api.quickActions.getMeetings.useQuery(
-    { countryId: userCountry?.id || '' },
-    { enabled: !!userCountry?.id && contentMode === 'mycountry' && myCountryTab === 'executive' }
-  );
-
-  const { data: policies } = api.quickActions.getPolicies.useQuery(
-    { countryId: userCountry?.id || '' },
-    { enabled: !!userCountry?.id && contentMode === 'mycountry' && myCountryTab === 'executive' }
-  );
+  const [myCountryTab, setMyCountryTab] = useState<'overview' | 'executive' | 'diplomacy'>('overview');
+  const [diplomacySubTab, setDiplomacySubTab] = useState<'overview' | 'network' | 'activity'>('overview');
+  const [executiveSubTab, setExecutiveSubTab] = useState<'meetings' | 'policies' | 'security' | 'agenda'>('meetings');
 
   // Auto-select content mode based on user context (only on initial load, not after user selection)
   React.useEffect(() => {
@@ -230,6 +222,29 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
     { id: 'activity', label: 'Activity', icon: Activity, description: 'Social feed & updates' },
     ...(isAdmin ? [{ id: 'admin' as const, label: 'Admin', icon: Shield, description: 'System administration' }] : [])
   ];
+
+  const unifiedMyCountry = myCountryData ?? null;
+  const executiveIntelligence = unifiedMyCountry?.executiveIntelligence;
+  const diplomaticRelations: any[] = Array.isArray(unifiedMyCountry?.diplomaticRelations)
+    ? unifiedMyCountry!.diplomaticRelations
+    : [];
+  const recentDiplomaticActivity: any[] = Array.isArray(unifiedMyCountry?.recentDiplomaticActivity)
+    ? unifiedMyCountry!.recentDiplomaticActivity
+    : [];
+  const upcomingMeetings: any[] = Array.isArray(unifiedMyCountry?.quickActionMeetings)
+    ? unifiedMyCountry!.quickActionMeetings
+    : [];
+  const policies: any[] = Array.isArray(unifiedMyCountry?.quickActionPolicies)
+    ? unifiedMyCountry!.quickActionPolicies
+    : [];
+
+  useEffect(() => {
+    if (myCountryTab === 'diplomacy') {
+      setDiplomacySubTab('overview');
+    } else if (myCountryTab === 'executive') {
+      setExecutiveSubTab('meetings');
+    }
+  }, [myCountryTab]);
 
   return (
     <Card className="glass-hierarchy-parent">
@@ -378,19 +393,19 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
               </div>
 
               {/* MyCountry Sub-Tabs */}
-              <Tabs value={myCountryTab} onValueChange={(value) => setMyCountryTab(value as 'overview' | 'diplomacy' | 'executive')} className="w-full">
+              <Tabs value={myCountryTab} onValueChange={(value) => setMyCountryTab(value as 'overview' | 'executive' | 'diplomacy')} className="w-full">
                 <TabsList className="grid w-full grid-cols-3 bg-muted/50 dark:bg-muted/20">
                   <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
                     <Home className="h-4 w-4" />
                     Overview
                   </TabsTrigger>
-                  <TabsTrigger value="diplomacy" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
-                    <Globe className="h-4 w-4" />
-                    Diplomacy
-                  </TabsTrigger>
                   <TabsTrigger value="executive" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
                     <Crown className="h-4 w-4" />
                     Executive
+                  </TabsTrigger>
+                  <TabsTrigger value="diplomacy" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground">
+                    <Globe className="h-4 w-4" />
+                    Diplomacy
                   </TabsTrigger>
                 </TabsList>
 
@@ -433,7 +448,7 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
                   </div>
 
                   {/* Quick Actions */}
-                  <div className="space-y-4">
+                  <div className="space-y-4 hidden md:block">
                     <h3 className="text-xl font-bold text-foreground flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                         <Zap className="h-4 w-4 text-white" />
@@ -468,15 +483,15 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
                           <span className="font-semibold text-foreground">Economics</span>
                         </div>
                       </Link>
-                      <Link href="/mycountry#intelligence">
+                      <Link href="/mycountry#diplomacy">
                         <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
                           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <Activity className="h-6 w-6 text-white" />
+                            <Globe className="h-6 w-6 text-white" />
                           </div>
-                          <span className="font-semibold text-foreground">Intelligence</span>
+                          <span className="font-semibold text-foreground">Diplomacy</span>
                         </div>
                       </Link>
-                      <Link href="/countries">
+                      <Link href="/leaderboards">
                         <div className="glass-hierarchy-child hover:glass-hierarchy-interactive h-32 rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 hover:scale-[1.02] group cursor-pointer">
                           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                             <BarChart3 className="h-6 w-6 text-white" />
@@ -593,6 +608,21 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
                       </div>
                     </div>
 
+                    <Card className="glass-hierarchy-child">
+                      <CardHeader>
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Globe className="h-4 w-4 text-blue-500" />
+                          Operational Network
+                        </CardTitle>
+                        <CardDescription>
+                          Live diplomatic missions, embassies, and cultural exchanges from the unified data core
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-0">
+                        <DiplomaticOperationsHub countryId={userCountry.id} countryName={userCountry.name} />
+                      </CardContent>
+                    </Card>
+
                     {/* Recent Diplomatic Activity */}
                     <Card className="glass-hierarchy-child">
                       <CardHeader>
@@ -655,6 +685,27 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
                         Leadership
                       </Badge>
                     </div>
+
+                    {executiveIntelligence && (
+                      <Card className="glass-hierarchy-child">
+                        <CardContent className="p-0">
+                          <ExecutiveCommandCenter
+                            intelligence={executiveIntelligence}
+                            country={{
+                              name: userCountry.name,
+                              flag: userCountry.flagUrl || "/flags/default.png",
+                              leader: userCountry.leader || "Unknown"
+                            }}
+                            isOwner
+                            countryStats={userCountry}
+                            economyData={economyData ?? userCountry}
+                            onNavigateToIntelligence={() => setMyCountryTab('overview')}
+                            onNavigateToMeetings={() => setMyCountryTab('executive')}
+                            onNavigateToPolicy={() => setMyCountryTab('executive')}
+                          />
+                        </CardContent>
+                      </Card>
+                    )}
 
                     {/* Executive Summary Cards */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -963,6 +1014,23 @@ function SmartDashboardContent({ userProfile, userCountry, isAdmin, countries, a
   );
 }
 
+function SmartDashboardContentWithCountry(
+  props: Omit<SmartDashboardContentProps, 'userCountry' | 'activityRingsData' | 'myCountryData' | 'economyData'>
+) {
+  const { country, activityRingsData, economyData } = useCountryData();
+  const myCountryData = useMyCountryUnifiedData();
+
+  return (
+    <SmartDashboardContent
+      {...props}
+      userCountry={country}
+      activityRingsData={activityRingsData}
+      economyData={economyData}
+      myCountryData={myCountryData}
+    />
+  );
+}
+
 
 export function EnhancedCommandCenter() {
   const { user } = useUser();
@@ -995,15 +1063,6 @@ export function EnhancedCommandCenter() {
 
 
   // Get user's country data
-  const { data: userCountry } = api.countries.getByIdAtTime.useQuery(
-    { id: userProfile?.countryId || '' },
-    { enabled: !!userProfile?.countryId }
-  );
-  const { data: activityRingsData } = api.countries.getActivityRingsData.useQuery(
-    { countryId: userProfile?.countryId || '' },
-    { enabled: !!userProfile?.countryId }
-  );
-
   // Process data
   const countries = allData?.countries ?? [];
   const isLoading = countriesLoading || globalStatsLoading;
@@ -1129,15 +1188,27 @@ export function EnhancedCommandCenter() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
           >
-            <SmartDashboardContent
-              userProfile={userProfile}
-              userCountry={userCountry}
-              isAdmin={isAdmin}
-              countries={countries}
-              adaptedGlobalStats={adaptedGlobalStats}
-              activityRingsData={activityRingsData}
-              user={user}
-            />
+            {user?.id && userProfile?.countryId ? (
+              <CountryDataProvider userId={user.id}>
+                <SmartDashboardContentWithCountry
+                  userProfile={userProfile}
+                  isAdmin={isAdmin}
+                  countries={countries}
+                  adaptedGlobalStats={adaptedGlobalStats}
+                  user={user}
+                />
+              </CountryDataProvider>
+            ) : (
+              <SmartDashboardContent
+                userProfile={userProfile}
+                isAdmin={isAdmin}
+                countries={countries}
+                adaptedGlobalStats={adaptedGlobalStats}
+                user={user}
+                myCountryData={null}
+                economyData={undefined}
+              />
+            )}
           </motion.div>
 
           {/* Right Sidebar - Featured Article & Tier Overview */}

@@ -6,8 +6,8 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useUser } from '@clerk/nextjs';
 import { api } from '~/trpc/react';
+import { useUser } from '~/context/auth-context';
 
 export interface LiveNotification {
   id: string;

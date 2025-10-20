@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "~/trpc/react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
 

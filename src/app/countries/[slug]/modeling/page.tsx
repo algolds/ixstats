@@ -4,7 +4,7 @@ import { use } from "react";
 import { api } from "~/trpc/react";
 import { EconomicModelingEngine } from "~/app/countries/_components/economy";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
-import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton } from "~/context/auth-context";
 import Link from "next/link";
 import { Skeleton } from "~/components/ui/skeleton";
 import { AlertTriangle } from "lucide-react";

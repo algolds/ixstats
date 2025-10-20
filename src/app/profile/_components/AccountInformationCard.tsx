@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { User, CheckCircle, AlertCircle, Eye, EyeOff, Disc } from "lucide-react";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton } from "~/context/auth-context";
 import type { UserResource } from "@clerk/types";
 
 interface AccountInformationCardProps {

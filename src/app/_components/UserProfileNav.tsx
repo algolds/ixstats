@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useUser, SignOutButton } from "@clerk/nextjs";
+import { useUser, SignOutButton } from "~/context/auth-context";
 import Link from "next/link";
 
 export function UserProfileNav() {

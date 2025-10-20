@@ -7,17 +7,17 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Alert, AlertDescription } from "~/components/ui/alert";
-import { 
-  Shield, 
-  AlertTriangle, 
-  Globe, 
-  Users, 
-  TrendingUp, 
+import {
+  Shield,
+  AlertTriangle,
+  Globe,
+  Users,
+  TrendingUp,
   ExternalLink,
   Activity,
   MapPin
 } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import { hasInterfaceAccess } from "~/lib/interface-routing";
 
 interface CountryIntelligenceSectionProps {

@@ -17,7 +17,7 @@
  */
 
 import { api } from "~/trpc/react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 
 export function useUserCountry() {
   const { user, isLoaded } = useUser();

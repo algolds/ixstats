@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect, useMemo, useRef, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 import { Lock, Unlock as UnlockIcon } from 'lucide-react';
 import { Card, CardContent } from '~/components/ui/card';

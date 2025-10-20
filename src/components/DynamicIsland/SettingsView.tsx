@@ -2,9 +2,8 @@ import React, { useCallback } from 'react';
 import { Button } from "~/components/ui/button";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 import { useTheme } from "~/context/theme-context";
-import { SignOutButton } from "@clerk/nextjs";
+import { SignOutButton, useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import { useUser } from "@clerk/nextjs";
 import {
   Settings,
   X,
@@ -195,11 +194,12 @@ export function SettingsView({ onClose }: SettingsViewProps) {
         
         {/* Logout */}
         <div className="border-t border-border pt-3 mt-3">
-          <SignOutButton>
-            <Button
-              size="sm"
-              className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition-all border-border w-full justify-start text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:border-red-200 dark:hover:border-red-800"
-            >
+          <Button
+            asChild
+            size="sm"
+            className="flex items-center gap-3 p-3 bg-card rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition-all border-border w-full justify-start text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:border-red-200 dark:hover:border-red-800"
+          >
+            <SignOutButton>
               <div className="p-1.5 bg-red-500/20 rounded flex-shrink-0">
                 <LogOut className="h-4 w-4" />
               </div>
@@ -209,8 +209,8 @@ export function SettingsView({ onClose }: SettingsViewProps) {
                   Sign out of your account
                 </div>
               </div>
-            </Button>
-          </SignOutButton>
+            </SignOutButton>
+          </Button>
         </div>
       </div>
     </div>

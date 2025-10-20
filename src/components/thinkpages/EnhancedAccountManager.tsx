@@ -14,7 +14,6 @@ import {
   Star, 
   MoreHorizontal,
   Verified,
-  Activity,
   TrendingUp,
   MessageSquare
 } from 'lucide-react';
@@ -22,6 +21,7 @@ import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
+import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -51,7 +51,6 @@ export function EnhancedAccountManager({
   onCreateAccount,
   isOwner
 }: EnhancedAccountManagerProps) {
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [filterType, setFilterType] = useState<'all' | 'government' | 'media' | 'citizen'>('all');
   const [favoriteAccounts, setFavoriteAccounts] = useState<string[]>([]);
 
@@ -227,14 +226,6 @@ export function EnhancedAccountManager({
             <Badge variant="outline" className="text-xs">
               {accounts.length}/25
             </Badge>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-              className="h-6 w-6"
-            >
-              <Activity className="h-3 w-3" />
-            </Button>
           </div>
         </div>
         <p className="text-sm text-muted-foreground">
@@ -242,49 +233,49 @@ export function EnhancedAccountManager({
         </p>
       </CardHeader>
       
-      <CardContent className="space-y-4">
-        {/* Account Type Overview */}
-        <div className="grid grid-cols-3 gap-2">
-          <div className={cn("flex items-center justify-between p-2 rounded-lg border text-xs", getAccountTypeColor('government'))}>
-            <div className="flex items-center gap-1">
-              <Crown className="h-3 w-3" />
-              <span>Gov</span>
-            </div>
-            <span className="font-medium">{getAccountTypeCount('government')}/5</span>
-          </div>
-          <div className={cn("flex items-center justify-between p-2 rounded-lg border text-xs", getAccountTypeColor('media'))}>
-            <div className="flex items-center gap-1">
-              <Newspaper className="h-3 w-3" />
-              <span>Media</span>
-            </div>
-            <span className="font-medium">{getAccountTypeCount('media')}/10</span>
-          </div>
-          <div className={cn("flex items-center justify-between p-2 rounded-lg border text-xs", getAccountTypeColor('citizen'))}>
-            <div className="flex items-center gap-1">
-              <Users className="h-3 w-3" />
-              <span>Citizens</span>
-            </div>
-            <span className="font-medium">{getAccountTypeCount('citizen')}/15</span>
-          </div>
-        </div>
-
-        {/* Filter Tabs */}
-        <div className="flex gap-1 p-1 bg-white/5 rounded-lg">
-          {(['all', 'government', 'media', 'citizen'] as const).map((type) => (
-            <Button
-              key={type}
-              variant={filterType === type ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setFilterType(type)}
-              className="flex-1 text-xs h-7"
-            >
-              {type === 'all' ? 'All' : type.charAt(0).toUpperCase() + type.slice(1)}
-            </Button>
-          ))}
-        </div>
+      <CardContent className="space-y-4 sm:space-y-5">
+        <ToggleGroup
+          type="single"
+          value={filterType}
+          onValueChange={(value) => value && setFilterType(value as typeof filterType)}
+          className="flex w-full flex-wrap justify-center gap-2 rounded-full bg-white/5 p-1 [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden sm:flex-nowrap sm:justify-between sm:gap-1"
+        >
+          {(['all', 'government', 'media', 'citizen'] as const).map((type) => {
+            const Icon = getAccountIcon(type);
+            const count =
+              type === 'all'
+                ? accounts.length
+                : getAccountTypeCount(type);
+            const limit = type === 'government' ? 5 : type === 'media' ? 10 : type === 'citizen' ? 15 : 25;
+            return (
+              <ToggleGroupItem
+                key={type}
+                value={type}
+                className={cn(
+                  "flex min-w-[130px] items-center justify-between gap-2 rounded-full border px-3 py-2 text-xs uppercase tracking-wide transition-all data-[state=on]:border-primary data-[state=on]:bg-primary/10 sm:min-w-[120px]",
+                  type !== 'all' ? getAccountTypeColor(type) : "border-accent/40 text-foreground"
+                )}
+              >
+                <span className="flex items-center gap-2">
+                  {type === 'all' ? (
+                    <Users className="h-3 w-3" />
+                  ) : (
+                    <Icon className="h-3 w-3" />
+                  )}
+                  <span className="font-medium">
+                    {type === 'all' ? 'All' : type.charAt(0).toUpperCase() + type.slice(1)}
+                  </span>
+                </span>
+                <span className="rounded-full bg-background/50 px-2 py-0.5 text-[10px] font-semibold">
+                  {count}/{limit}
+                </span>
+              </ToggleGroupItem>
+            );
+          })}
+        </ToggleGroup>
 
         {/* Accounts List */}
-        <div className="space-y-2 max-h-80 overflow-y-auto">
+        <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
           <AnimatePresence>
             {filteredAccounts.length === 0 ? (
               <div className="text-center py-6 text-muted-foreground">

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import { ArrowLeft, Users } from "lucide-react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";

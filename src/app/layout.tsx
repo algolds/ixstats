@@ -52,47 +52,49 @@ const RootLayout = ({
   const AppContent = () => (
     <TRPCReactProvider>
       <ThemeProvider>
-        <AuthProvider>
-          <IxTimeProvider>
-              <ExecutiveNotificationProvider>
-                <ToastProvider>
-                  <NotificationBadgeProvider>
-                    <GlobalNotificationSystem>
-                      <WebGLErrorHandler />
-                      <div className="min-h-screen flex flex-col">
-                        <Navigation />
-                        {/* <GlobalActivityMarquee /> */}
-                        <SetupRedirect />
-                        <main className="flex-1">
-                          {children}
-                        </main>
-                      </div>
-                    </GlobalNotificationSystem>
-                  </NotificationBadgeProvider>
-                </ToastProvider>
-              </ExecutiveNotificationProvider>
-          </IxTimeProvider>
-        </AuthProvider>
+        <IxTimeProvider>
+          <ExecutiveNotificationProvider>
+            <ToastProvider>
+              <NotificationBadgeProvider>
+                <GlobalNotificationSystem>
+                  <WebGLErrorHandler />
+                  <div className="min-h-screen flex flex-col">
+                    <Navigation />
+                    {/* <GlobalActivityMarquee /> */}
+                    <SetupRedirect />
+                    <main className="flex-1">
+                      {children}
+                    </main>
+                  </div>
+                </GlobalNotificationSystem>
+              </NotificationBadgeProvider>
+            </ToastProvider>
+          </ExecutiveNotificationProvider>
+        </IxTimeProvider>
       </ThemeProvider>
     </TRPCReactProvider>
   );
 
+  if (!isClerkConfigured) {
+    throw new Error(
+      "Clerk keys are not configured. Set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY (pk_*) and CLERK_SECRET_KEY (sk_*) to run IxStats."
+    );
+  }
+
   return (
     <html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
       <body className="min-h-screen transition-colors duration-200">
-        {isClerkConfigured ? (
-          <ClerkProvider
-            publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-            signInUrl={signInPath}
-            signUpUrl={signUpPath}
-            fallbackRedirectUrl={dashboardPath}
-            forceRedirectUrl={dashboardPath}
-          >
+        <ClerkProvider
+          publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+          signInUrl={signInPath}
+          signUpUrl={signUpPath}
+          afterSignInUrl={dashboardPath}
+          afterSignUpUrl={dashboardPath}
+        >
+          <AuthProvider>
             <AppContent />
-          </ClerkProvider>
-        ) : (
-          <AppContent />
-        )}
+          </AuthProvider>
+        </ClerkProvider>
         <ToasterProvider />
       </body>
     </html>
