@@ -353,6 +353,9 @@ export const diplomaticIntelligenceRouter = createTRPCRouter({
               ],
             },
           },
+          include: {
+            embassy: true,
+          },
           orderBy: { createdAt: 'desc' },
           take: input.limit,
         }),
@@ -381,7 +384,7 @@ export const diplomaticIntelligenceRouter = createTRPCRouter({
             activityType: 'diplomatic' as const,
             description: e.description ?? e.eventType,
             relatedCountries: otherCountry ? [otherCountry] : [],
-            importance: (e.severity === 'critical' ? 'high' : 'medium') as const,
+            importance: e.severity === 'critical' ? ('high' as const) : ('medium' as const),
             classification: 'RESTRICTED' as const,
             timestamp: e.createdAt,
             ixTimeTimestamp: nowIxTime,

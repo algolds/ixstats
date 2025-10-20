@@ -33,9 +33,9 @@ export const usersRouter = createTRPCRouter({
         const clerkUserId = ctx.auth.userId;
 
         // Re-use user from context when available to avoid duplicate queries
-        let userRecord = ctx.user ?? null;
+        let userRecord: any = null;
 
-        const countryInclude = {
+        const countryArgs = {
           include: {
             dmInputs: {
               where: { isActive: true },
@@ -48,9 +48,10 @@ export const usersRouter = createTRPCRouter({
           userRecord = await ctx.db.user.findUnique({
             where: { clerkUserId },
             include: {
-              country: countryInclude.include,
+              country: countryArgs,
+              role: true,
             },
-          });
+          }) as any;
         }
 
         // Auto-create user record if missing (handles first-time logins)
@@ -62,23 +63,24 @@ export const usersRouter = createTRPCRouter({
               clerkUserId,
             },
             include: {
-              country: countryInclude.include,
+              country: countryArgs,
+              role: true,
             },
-          });
+          }) as any;
         }
 
         // Attempt to hydrate country details when we have an ID but no relation loaded
-        let countryRecord = userRecord.country ?? null;
+        let countryRecord = userRecord?.country ?? null;
 
-        if (userRecord.countryId && !countryRecord) {
+        if (userRecord?.countryId && !countryRecord) {
           countryRecord = await ctx.db.country.findUnique({
             where: { id: userRecord.countryId },
-            ...countryInclude,
+            include: countryArgs.include,
           });
         }
 
         // Fallback: detect existing country link via ThinkPages accounts or other records
-        if (!userRecord.countryId || !countryRecord) {
+        if (!userRecord?.countryId || !countryRecord) {
           const linkedAccount = await ctx.db.thinkpagesAccount.findFirst({
             where: {
               clerkUserId,
@@ -89,7 +91,7 @@ export const usersRouter = createTRPCRouter({
             },
           });
 
-          if (linkedAccount?.countryId) {
+          if (linkedAccount?.countryId && userRecord) {
             try {
               userRecord = await ctx.db.user.update({
                 where: { clerkUserId },
@@ -97,11 +99,12 @@ export const usersRouter = createTRPCRouter({
                   countryId: linkedAccount.countryId,
                 },
                 include: {
-                  country: countryInclude.include,
+                  country: countryArgs,
+                  role: true,
                 },
-              });
+              }) as any;
 
-              countryRecord = userRecord.country;
+              countryRecord = userRecord?.country ?? null;
             } catch (linkError) {
               console.error("Failed to reconcile user country link:", linkError);
             }
@@ -109,10 +112,10 @@ export const usersRouter = createTRPCRouter({
         }
 
         // If we still don't have country details, attempt to load with dmInputs for completeness
-        if (!countryRecord && userRecord.countryId) {
+        if (!countryRecord && userRecord?.countryId) {
           countryRecord = await ctx.db.country.findUnique({
             where: { id: userRecord.countryId },
-            ...countryInclude,
+            include: countryArgs.include,
           });
         }
 

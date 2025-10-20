@@ -122,28 +122,28 @@ export function useMyCountryCompliance() {
     if (!taxSystem) {
       missingTaxes.push("Set up the national tax system");
     } else {
-      if (!isValueProvided(taxSystem.taxSystemName)) {
+      if (!isValueProvided(taxSystem.taxSystem.taxSystemName)) {
         missingTaxes.push("Tax system name");
       }
-      if (!isValueProvided(taxSystem.taxAuthority)) {
+      if (!isValueProvided(taxSystem.taxSystem.taxAuthority)) {
         missingTaxes.push("Tax authority details");
       }
-      if (!isValueProvided(taxSystem.taxCategories)) {
+      if (!isValueProvided(taxSystem.categories)) {
         missingTaxes.push("Tax categories");
       } else if (
-        Array.isArray(taxSystem.taxCategories) &&
-        !taxSystem.taxCategories.some(
-          (category) =>
+        Array.isArray(taxSystem.categories) &&
+        !taxSystem.categories.some(
+          (category: any) =>
             Array.isArray(category.taxBrackets) &&
             category.taxBrackets.length > 0
         )
       ) {
         missingTaxes.push("Tax brackets or rate structure");
       }
-      if (!isValueProvided(taxSystem.complianceRate)) {
+      if (!isValueProvided(taxSystem.taxSystem.complianceRate)) {
         missingTaxes.push("Compliance rate target");
       }
-      if (!isValueProvided(taxSystem.collectionEfficiency)) {
+      if (!isValueProvided(taxSystem.taxSystem.collectionEfficiency)) {
         missingTaxes.push("Collection efficiency target");
       }
     }

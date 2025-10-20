@@ -360,7 +360,7 @@ const LiveDiplomaticFeedComponent: React.FC<LiveDiplomaticFeedProps> = ({
               animate={{ opacity: 1 }}
               className="text-center py-8 text-[--intel-silver]"
             >
-              <RiNotification3Line className="w-12 w-12 mx-auto mb-4 opacity-50" />
+              <RiNotification3Line className="w-12 mx-auto mb-4 opacity-50" />
               <p>No diplomatic events to display</p>
               {!state.isConnected && (
                 <p className="text-xs mt-2">
