@@ -65,6 +65,8 @@ import { economyIntegrationService } from '../../services/EconomyIntegrationServ
 // Tab Components (lazy-loaded)
 import { Suspense } from 'react';
 import { EconomySectorsTab, LaborEmploymentTab, DemographicsPopulationTab } from './tabs';
+import { buildTaxSyncPayload } from './utils/taxSync';
+import { getRegionColor } from './tabs/utils/demographicsCalculations';
 import { TabLoadingFallback } from '../../components/LoadingFallback';
 
 // Step Components
@@ -113,13 +115,16 @@ interface EconomyBuilderPageProps {
   onEconomicInputsChange: (inputs: EconomicInputs) => void;
   governmentComponents?: any[];
   governmentBuilderData?: any;
-  taxSystemData?: any;
+  taxSystemData?: TaxBuilderState | null;
   countryId?: string;
   className?: string;
   onSelectedComponentsChange?: (components: EconomicComponentType[]) => void;
   showAdvanced?: boolean;
   selectedComponents?: EconomicComponentType[];
   economicHealthMetrics?: EconomicHealthMetrics;
+  persistedEconomyBuilder?: EconomyBuilderState | null;
+  onPersistEconomyBuilder?: (builder: EconomyBuilderState) => void;
+  onPersistTaxSystem?: (taxSystem: TaxBuilderState) => void;
 }
 
 /**
@@ -186,17 +191,34 @@ export function EconomyBuilderPage({
   onSelectedComponentsChange,
   showAdvanced = false,
   selectedComponents: propsSelectedComponents = [],
-  economicHealthMetrics
+  economicHealthMetrics,
+  persistedEconomyBuilder = null,
+  onPersistEconomyBuilder,
+  onPersistTaxSystem
 }: EconomyBuilderPageProps) {
   // Removed auto-save state - using global builder autosave instead
 
   // State Management - Memoized to prevent unnecessary re-renders
-  const [economyBuilder, setEconomyBuilder] = useState<EconomyBuilderState>(() => ({
-    structure: {
-      economicModel: 'Mixed Economy',
-      primarySectors: [],
-      secondarySectors: [],
-      tertiarySectors: [],
+  const [economyBuilder, setEconomyBuilder] = useState<EconomyBuilderState>(() => {
+    if (persistedEconomyBuilder) {
+      return {
+        ...persistedEconomyBuilder,
+        laborMarket: {
+          ...persistedEconomyBuilder.laborMarket,
+          averageAnnualIncome:
+            typeof persistedEconomyBuilder.laborMarket?.averageAnnualIncome === 'number'
+              ? persistedEconomyBuilder.laborMarket.averageAnnualIncome
+              : Math.round((economicInputs.coreIndicators?.gdpPerCapita || 0) * 0.8),
+        },
+      };
+    }
+
+    return {
+      structure: {
+        economicModel: 'Mixed Economy',
+        primarySectors: [],
+        secondarySectors: [],
+        tertiarySectors: [],
       totalGDP: 0,
       gdpCurrency: economicInputs.nationalIdentity?.currency || 'USD',
       economicTier: 'Developing' as const,
@@ -240,6 +262,9 @@ export function EconomyBuilderPage({
         gig: 3,
         informal: 4
       },
+      averageAnnualIncome:
+        economicInputs.laborEmployment?.averageAnnualIncome ??
+        Math.round((economicInputs.coreIndicators?.gdpPerCapita || 0) * 0.8),
       averageWorkweekHours: 40,
       averageOvertimeHours: 3,
       paidVacationDays: 15,
@@ -302,7 +327,8 @@ export function EconomyBuilderPage({
     },
     lastUpdated: new Date(),
     version: '1.0.0'
-  }));
+    };
+  });
 
   const [selectedComponents, setSelectedComponents] = useState<EconomicComponentType[]>(propsSelectedComponents);
   const [currentStep, setCurrentStep] = useState<'components' | 'sectors' | 'labor' | 'demographics' | 'taxes' | 'preview'>('components');
@@ -340,10 +366,21 @@ export function EconomyBuilderPage({
   const updateTaxSystemMutation = api.taxSystem.update.useMutation();
 
   // Use fetched tax data or prop tax data
-  const activeTaxSystemData = fetchedTaxSystemData || taxSystemData;
+  const activeTaxSystemData: TaxBuilderState | null = (fetchedTaxSystemData as TaxBuilderState | null) ?? (taxSystemData as TaxBuilderState | null) ?? null;
+
+  useEffect(() => {
+    if (activeTaxSystemData && onPersistTaxSystem) {
+      onPersistTaxSystem(activeTaxSystemData as TaxBuilderState);
+    }
+  }, [activeTaxSystemData, onPersistTaxSystem]);
 
   // Track auto-selection to prevent loops
   const hasAutoSelectedRef = useRef(false);
+  const persistEconomyBuilderRef = useRef<typeof onPersistEconomyBuilder | undefined>(onPersistEconomyBuilder);
+
+  useEffect(() => {
+    persistEconomyBuilderRef.current = onPersistEconomyBuilder;
+  }, [onPersistEconomyBuilder]);
 
   // Government Revenue Integration Effect
   useEffect(() => {
@@ -390,51 +427,15 @@ export function EconomyBuilderPage({
       governmentSizeIndicator
     });
 
-    // Apply modifiers to economic indicators based on revenue data
-    setEconomyBuilder(prev => {
-      const updatedBuilder = { ...prev };
-
-      // Adjust fiscal indicators based on tax burden
-      // High tax burden (>35%) may reduce private sector activity
-      if (taxBurdenRatio > 35) {
-        // Suggest higher government employment in sectors
-        const currentGovEmployment = updatedBuilder.laborMarket.sectorDistribution?.government || 8;
-        if (currentGovEmployment < 12) {
-          updatedBuilder.laborMarket = {
-            ...updatedBuilder.laborMarket,
-            sectorDistribution: {
-              ...updatedBuilder.laborMarket.sectorDistribution,
-              government: Math.min(currentGovEmployment + 2, 15)
-            }
-          };
-        }
-      } else if (taxBurdenRatio < 20) {
-        // Low tax burden suggests smaller government
-        const currentGovEmployment = updatedBuilder.laborMarket.sectorDistribution?.government || 8;
-        if (currentGovEmployment > 5) {
-          updatedBuilder.laborMarket = {
-            ...updatedBuilder.laborMarket,
-            sectorDistribution: {
-              ...updatedBuilder.laborMarket.sectorDistribution,
-              government: Math.max(currentGovEmployment - 1, 5)
-            }
-          };
-        }
-      }
-
-      // Update economic tier based on government revenue capabilities
-      if (revenueToGDPRatio > 35 && gdp > 1e12) {
-        // Large, well-funded government with high GDP suggests advanced economy
-        if (updatedBuilder.structure.economicTier !== 'Advanced') {
-          updatedBuilder.structure = {
-            ...updatedBuilder.structure,
-            economicTier: 'Advanced' as const
-          };
-        }
-      }
-
-      return updatedBuilder;
+    const adjustedBuilder = applyGovernmentRevenueAdjustments(economyBuilder, {
+      taxBurdenRatio,
+      revenueToGDPRatio,
+      gdp
     });
+
+    if (adjustedBuilder !== economyBuilder) {
+      handleEconomyBuilderChange(adjustedBuilder);
+    }
 
     console.log('[EconomyBuilder] Government revenue integration applied:', {
       totalRevenue,
@@ -448,7 +449,7 @@ export function EconomyBuilderPage({
   }, [
     governmentBuilderData?.revenueSources,
     economicInputs.coreIndicators?.nominalGDP,
-    economyBuilder.structure.totalGDP
+    economyBuilder
   ]);
 
   // Auto-select economic components based on government components with comprehensive synergy scoring
@@ -539,6 +540,7 @@ export function EconomyBuilderPage({
     const unsubscribe = economyIntegrationService.subscribe((state) => {
       if (state.economyBuilder && state.economyBuilder !== economyBuilder) {
         setEconomyBuilder(state.economyBuilder);
+        persistEconomyBuilderRef.current?.(state.economyBuilder);
       }
 
       // Only call parent callback if truly different (deep equality check)
@@ -575,7 +577,13 @@ export function EconomyBuilderPage({
   const handleEconomyBuilderChange = useCallback((builder: EconomyBuilderState) => {
     setEconomyBuilder(builder);
     economyIntegrationService.updateEconomyBuilder(builder);
-  }, []);
+    onPersistEconomyBuilder?.(builder);
+
+    if (economicInputs) {
+      const mergedInputs = mergeEconomyBuilderIntoInputs(economicInputs, builder);
+      onEconomicInputsChange(mergedInputs);
+    }
+  }, [economicInputs, onEconomicInputsChange, onPersistEconomyBuilder]);
 
   // tRPC mutations for comprehensive economy builder management
   const saveEconomyMutation = api.economics.saveEconomyBuilderState.useMutation({
@@ -617,18 +625,17 @@ export function EconomyBuilderPage({
   // Handle existing configuration when data loads
   React.useEffect(() => {
     if (existingConfiguration) {
-      setEconomyBuilder(prev => ({
-        ...prev,
-        // Do not spread all of existingConfiguration, only set known fields for type safety
+      const existingLaborMarket = (existingConfiguration.laborMarket ?? {}) as Partial<EconomyBuilderState['laborMarket']>;
+      const mergedBuilder: EconomyBuilderState = {
+        ...economyBuilder,
         structure: {
-          ...prev.structure,
+          ...economyBuilder.structure,
           ...existingConfiguration.structure,
           economicTier: (['Developing', 'Emerging', 'Developed', 'Advanced'] as const).includes(
             existingConfiguration.structure?.economicTier as any
           )
             ? (existingConfiguration.structure.economicTier as 'Developing' | 'Emerging' | 'Developed' | 'Advanced')
             : 'Developing',
-          // Only allow allowed values for growthStrategy
           growthStrategy: (['Export-Led', 'Import-Substitution', 'Balanced', 'Innovation-Driven'] as const).includes(
             existingConfiguration.structure?.growthStrategy as any
           )
@@ -636,21 +643,27 @@ export function EconomyBuilderPage({
             : 'Balanced',
         },
         sectors: {
-          ...prev.sectors,
+          ...economyBuilder.sectors,
           ...existingConfiguration.sectors,
         },
         laborMarket: {
-          ...prev.laborMarket,
-          ...existingConfiguration.laborMarket,
+          ...economyBuilder.laborMarket,
+          ...existingLaborMarket,
+          averageAnnualIncome:
+            existingLaborMarket.averageAnnualIncome ??
+            economyBuilder.laborMarket.averageAnnualIncome ??
+            Math.round((economicInputs.coreIndicators?.gdpPerCapita || 0) * 0.8),
         },
         demographics: {
-          ...prev.demographics,
+          ...economyBuilder.demographics,
           ...existingConfiguration.demographics,
         },
-        version: existingConfiguration.version ?? prev.version,
+        version: existingConfiguration.version ?? economyBuilder.version,
         isValid: true,
         errors: {},
-      }));
+      };
+
+      handleEconomyBuilderChange(mergedBuilder);
       setSelectedComponents(existingConfiguration.selectedAtomicComponents || []);
       setLastSaved(existingConfiguration.lastUpdated || null);
     }
@@ -771,15 +784,10 @@ export function EconomyBuilderPage({
     // Sync with tax system when it changes
     const syncWithTax = async () => {
       try {
+        const taxPayload = buildTaxSyncPayload(taxSystemData);
         await syncTaxMutation.mutateAsync({
           countryId,
-          taxData: {
-            personalIncomeTaxRates: JSON.stringify(taxSystemData.personalIncomeTaxRates || {}),
-            corporateTaxRates: JSON.stringify(taxSystemData.corporateTaxRates || {}),
-            salesTaxRate: taxSystemData.salesTaxRate || 0,
-            propertyTaxRate: taxSystemData.propertyTaxRate || 0,
-            payrollTaxRate: taxSystemData.payrollTaxRate || 0
-          }
+          taxData: taxPayload
         });
       } catch (error) {
         console.warn('Tax sync failed:', error);
@@ -1355,6 +1363,9 @@ export function EconomyBuilderPage({
               economyBuilder={economyBuilder}
               selectedComponents={selectedComponents}
               governmentBuilderData={governmentBuilderData}
+              onDraftChange={(taxSystem) => {
+                onPersistTaxSystem?.(taxSystem);
+              }}
               onUpdate={async (taxSystem) => {
                 await updateTaxSystemMutation.mutateAsync({
                   countryId: countryId!,
@@ -1452,17 +1463,211 @@ export function EconomyBuilderPage({
         onArchetypeApplied={(newState) => {
           // Apply the archetype state to the economy builder
           console.log('[EconomyBuilder] Archetype applied:', newState);
-          setEconomyBuilder(prev => ({
-            ...prev,
+          const nextState: EconomyBuilderState = {
+            ...economyBuilder,
             ...newState,
-            version: prev.version,
+            version: economyBuilder.version,
             lastUpdated: new Date(),
             isValid: true,
-            errors: {}
-          }));
+            errors: {},
+          };
+
+          handleEconomyBuilderChange(nextState);
           toast.success("Economic archetype applied successfully!");
         }}
       />
     </div>
   );
+}
+
+function mergeEconomyBuilderIntoInputs(baseInputs: EconomicInputs, builder: EconomyBuilderState): EconomicInputs {
+  const safeBase: EconomicInputs = {
+    ...baseInputs,
+    coreIndicators: { ...baseInputs.coreIndicators },
+    laborEmployment: { ...baseInputs.laborEmployment },
+    demographics: {
+      ...baseInputs.demographics,
+      ageDistribution: baseInputs.demographics?.ageDistribution
+        ? baseInputs.demographics.ageDistribution.map((group) => ({ ...group }))
+        : [],
+      regions: baseInputs.demographics?.regions
+        ? baseInputs.demographics.regions.map((region) => ({ ...region }))
+        : [],
+      educationLevels: baseInputs.demographics?.educationLevels
+        ? baseInputs.demographics.educationLevels.map((level) => ({ ...level }))
+        : [],
+      citizenshipStatuses: baseInputs.demographics?.citizenshipStatuses
+        ? baseInputs.demographics.citizenshipStatuses.map((status) => ({ ...status }))
+        : [],
+    },
+  };
+
+  const totalPopulation = builder.demographics.totalPopulation || safeBase.coreIndicators.totalPopulation;
+  const totalGDP = builder.structure.totalGDP || safeBase.coreIndicators.nominalGDP;
+  const inferredGdpPerCapita = totalPopulation > 0 && totalGDP > 0
+    ? totalGDP / totalPopulation
+    : safeBase.coreIndicators.gdpPerCapita;
+
+  safeBase.coreIndicators = {
+    ...safeBase.coreIndicators,
+    totalPopulation,
+    nominalGDP: totalGDP,
+    gdpPerCapita: inferredGdpPerCapita,
+  };
+
+  const workerProtectionValues = builder.laborMarket.workerProtections
+    ? Object.values(builder.laborMarket.workerProtections)
+    : [];
+  const averageProtectionScore = workerProtectionValues.length > 0
+    ? workerProtectionValues.reduce((sum, value) => sum + value, 0) / workerProtectionValues.length
+    : undefined;
+
+  safeBase.laborEmployment = {
+    ...safeBase.laborEmployment,
+    laborForceParticipationRate: builder.laborMarket.laborForceParticipationRate,
+    employmentRate: builder.laborMarket.employmentRate,
+    unemploymentRate: builder.laborMarket.unemploymentRate,
+    totalWorkforce: builder.laborMarket.totalWorkforce,
+    averageWorkweekHours: builder.laborMarket.averageWorkweekHours,
+    minimumWage: builder.laborMarket.minimumWageHourly,
+    averageAnnualIncome:
+      typeof builder.laborMarket.averageAnnualIncome === 'number'
+        ? builder.laborMarket.averageAnnualIncome
+        : safeBase.laborEmployment.averageAnnualIncome,
+    laborProtections: averageProtectionScore !== undefined
+      ? averageProtectionScore >= 60
+      : safeBase.laborEmployment.laborProtections,
+  };
+
+  const ageDistribution = [
+    {
+      group: '0-14',
+      percent: builder.demographics.ageDistribution.under15,
+      color: safeBase.demographics.ageDistribution?.[0]?.color || '#60a5fa',
+    },
+    {
+      group: '15-64',
+      percent: builder.demographics.ageDistribution.age15to64,
+      color: safeBase.demographics.ageDistribution?.[1]?.color || '#34d399',
+    },
+    {
+      group: '65+',
+      percent: builder.demographics.ageDistribution.over65,
+      color: safeBase.demographics.ageDistribution?.[2]?.color || '#f97316',
+    },
+  ];
+
+  const educationLevels = builder.demographics.educationLevels
+    ? [
+        {
+          level: 'No Formal Education',
+          percent: builder.demographics.educationLevels.noEducation,
+          color: safeBase.demographics.educationLevels?.[0]?.color || '#ef4444',
+        },
+        {
+          level: 'Primary Education',
+          percent: builder.demographics.educationLevels.primary,
+          color: safeBase.demographics.educationLevels?.[1]?.color || '#f59e0b',
+        },
+        {
+          level: 'Secondary Education',
+          percent: builder.demographics.educationLevels.secondary,
+          color: safeBase.demographics.educationLevels?.[2]?.color || '#22c55e',
+        },
+        {
+          level: 'Tertiary Education',
+          percent: builder.demographics.educationLevels.tertiary,
+          color: safeBase.demographics.educationLevels?.[3]?.color || '#3b82f6',
+        },
+      ]
+    : safeBase.demographics.educationLevels;
+
+  const regions = builder.demographics.regions?.length
+    ? builder.demographics.regions.map((region, index) => ({
+        name: region.name,
+        population: region.population || Math.round(totalPopulation * (region.populationPercent ?? 0) / 100),
+        urbanPercent: region.urbanPercent,
+        color: safeBase.demographics.regions?.[index]?.color || getRegionColor(index),
+      }))
+    : safeBase.demographics.regions;
+
+  safeBase.demographics = {
+    ...safeBase.demographics,
+    ageDistribution,
+    regions,
+    educationLevels,
+    lifeExpectancy: builder.demographics.lifeExpectancy,
+    literacyRate: builder.demographics.literacyRate,
+    urbanRuralSplit: {
+      urban: builder.demographics.urbanRuralSplit.urban,
+      rural: builder.demographics.urbanRuralSplit.rural,
+    },
+    populationGrowthRate: builder.demographics.populationGrowthRate,
+  };
+
+  return safeBase;
+}
+
+interface RevenueAdjustmentContext {
+  taxBurdenRatio: number;
+  revenueToGDPRatio: number;
+  gdp: number;
+}
+
+function applyGovernmentRevenueAdjustments(
+  builder: EconomyBuilderState,
+  { taxBurdenRatio, revenueToGDPRatio, gdp }: RevenueAdjustmentContext
+): EconomyBuilderState {
+  let laborMarket = builder.laborMarket;
+  let structure = builder.structure;
+  let changed = false;
+
+  if (laborMarket?.sectorDistribution) {
+    const currentGovernmentShare = laborMarket.sectorDistribution.government ?? 8;
+
+    if (taxBurdenRatio > 35) {
+      const desiredShare = Math.min(currentGovernmentShare + 2, 15);
+      if (desiredShare !== currentGovernmentShare) {
+        laborMarket = {
+          ...laborMarket,
+          sectorDistribution: {
+            ...laborMarket.sectorDistribution,
+            government: desiredShare,
+          },
+        };
+        changed = true;
+      }
+    } else if (taxBurdenRatio < 20) {
+      const desiredShare = Math.max(currentGovernmentShare - 1, 5);
+      if (desiredShare !== currentGovernmentShare) {
+        laborMarket = {
+          ...laborMarket,
+          sectorDistribution: {
+            ...laborMarket.sectorDistribution,
+            government: desiredShare,
+          },
+        };
+        changed = true;
+      }
+    }
+  }
+
+  if (revenueToGDPRatio > 35 && gdp > 1_000_000_000_000 && structure.economicTier !== 'Advanced') {
+    structure = {
+      ...structure,
+      economicTier: 'Advanced',
+    };
+    changed = true;
+  }
+
+  if (!changed) {
+    return builder;
+  }
+
+  return {
+    ...builder,
+    laborMarket,
+    structure,
+    lastUpdated: new Date(),
+  };
 }

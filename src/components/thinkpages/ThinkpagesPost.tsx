@@ -27,6 +27,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
+import { Card } from '~/components/ui/card';
 import { Textarea } from '~/components/ui/textarea';
 import { PostActions } from './primitives/PostActions';
 import { AccountIndicator } from './primitives/AccountIndicator';
@@ -38,6 +39,12 @@ import { formatContentEnhanced, extractHashtags, extractMentions } from '~/lib/t
 interface ThinkpagesPostProps {
   post: any;
   currentUserAccountId: string;
+  accounts?: any[];
+  countryId?: string;
+  isOwner?: boolean;
+  onAccountSelect?: (account: any) => void;
+  onAccountSettings?: (account: any) => void;
+  onCreateAccount?: () => void;
   onLike?: (postId: string) => void;
   onRepost?: (postId: string) => void;
   onReply?: (postId: string) => void;
@@ -88,6 +95,12 @@ const REACTION_ICONS: { [key: string]: React.ElementType } = {
 export function ThinkpagesPost({
   post,
   currentUserAccountId = '',
+  accounts = [],
+  countryId = '',
+  isOwner = false,
+  onAccountSelect,
+  onAccountSettings,
+  onCreateAccount,
   onLike,
   onRepost,
   onReply,
@@ -369,13 +382,20 @@ export function ThinkpagesPost({
 
           <div className={cn("mb-3", compact ? "text-sm" : "text-base")}>
             {post.repostOf ? (
-              <div className="border-l-2 border-muted pl-3">
-                <div className="text-muted-foreground text-sm mb-1">
-                  @{post.repostOf.account.username} · @{post.repostOf.account.displayName}
+              <Card className="border-green-500/30 bg-green-500/10 p-3 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={post.repostOf.account.profileImageUrl} />
+                    <AvatarFallback className="text-xs font-semibold">
+                      {post.repostOf.account.displayName?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="font-semibold text-sm">{post.repostOf.account.displayName}</span>
+                  <span className="text-muted-foreground text-xs">@{post.repostOf.account.username}</span>
                 </div>
                 {/* SECURITY: formatContentEnhanced now includes sanitizeUserContent to prevent XSS */}
                 <div dangerouslySetInnerHTML={{ __html: formatContentEnhanced(post.repostOf.content) }} />
-              </div>
+              </Card>
             ) : (
               /* SECURITY: formatContentEnhanced now includes sanitizeUserContent to prevent XSS */
               <div dangerouslySetInnerHTML={{ __html: formatContentEnhanced(post.content) }} />
@@ -398,6 +418,13 @@ export function ThinkpagesPost({
           <PostActions
             postId={post.id}
             currentUserAccountId={currentUserAccountId}
+            post={post}
+            accounts={accounts}
+            countryId={countryId}
+            isOwner={isOwner}
+            onAccountSelect={onAccountSelect}
+            onAccountSettings={onAccountSettings}
+            onCreateAccount={onCreateAccount}
             isLiked={post.reactions?.some((r: any) => r.accountId === currentUserAccountId && r.reactionType === 'like')}
             isReposted={false} // TODO: Track repost status
             likeCount={post.likeCount}

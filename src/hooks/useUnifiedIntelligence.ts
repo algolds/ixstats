@@ -377,6 +377,15 @@ export function useUnifiedIntelligence({
   useEffect(() => {
     if (!countryId || !userId) return;
 
+    // Check if WebSocket should be enabled based on environment
+    const isProduction = process.env.NODE_ENV === 'production';
+    const websocketEnabled = process.env.NEXT_PUBLIC_ENABLE_WEBSOCKET === 'true';
+    
+    if (!isProduction && !websocketEnabled) {
+      console.log('[useUnifiedIntelligence] WebSocket disabled in development mode');
+      return;
+    }
+
     console.log('[useUnifiedIntelligence] Initializing WebSocket connection for country:', countryId);
 
     const client = new IntelligenceWebSocketClient({

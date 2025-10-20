@@ -5,8 +5,11 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const queryParams = url.searchParams.toString();
     
-    // Proxy the request to ixwiki.com API
-    const ixwikiUrl = `https://ixwiki.com/api.php${queryParams ? `?${queryParams}` : ''}`;
+    // Use local IxWiki path if available (same-server optimization)
+    // Otherwise fall back to external HTTPS
+    const ixwikiUrl = process.env.IXWIKI_LOCAL_PATH 
+      ? `${process.env.IXWIKI_LOCAL_PATH}/api.php${queryParams ? `?${queryParams}` : ''}`
+      : `https://ixwiki.com/api.php${queryParams ? `?${queryParams}` : ''}`;
     
     const response = await fetch(ixwikiUrl, {
       method: 'GET',

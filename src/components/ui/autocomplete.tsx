@@ -121,7 +121,7 @@ export function Autocomplete({
         )}
       </div>
       {open && (globalSuggestions.length > 0 || userSuggestions.length > 0) && (
-        <div className="absolute z-50 w-full mt-2 rounded-lg border border-border bg-popover shadow-lg">
+        <div className="absolute z-[80] w-full mt-2 rounded-lg border border-border bg-popover shadow-lg">
           <Command shouldFilter={false}>
             <CommandList className="max-h-[300px]">
               {isLoading ? (

@@ -9,7 +9,8 @@ import {
   Users, 
   Settings,
   ArrowLeft,
-  Send
+  Send,
+  ChevronDown
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
@@ -18,6 +19,7 @@ import { Badge } from "~/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "~/components/ui/dropdown-menu";
 import { ThinkpagesSocialPlatform } from "~/components/thinkpages/ThinkpagesSocialPlatform";
 import { AccountCreationModal } from "~/components/thinkpages/AccountCreationModal";
 import { AccountSettingsModal } from "~/components/thinkpages/AccountSettingsModal";
@@ -65,20 +67,20 @@ import { api } from "~/trpc/react";
 const WORKSPACE_LINKS = [
   {
     key: 'feed',
-    label: 'Social Feed',
-    description: 'Broadcast national updates and highlight key narratives.',
+    label: 'ThinkPages',
+    description: 'The global forum',
     icon: MessageSquare
   },
   {
     key: 'thinktanks',
     label: 'ThinkTanks',
-    description: 'Coordinate research groups and collaborative workstreams.',
+    description: 'Collaborative groups to strategize and plan',
     icon: Users
   },
   {
     key: 'messages',
-    label: 'ThinkShare Messages',
-    description: 'Manage direct messages and rapid coordination.',
+    label: 'ThinkShare',
+    description: 'Private channels for confidential diplomatic communications and strategic coordination.',
     icon: Send
   }
 ] as const;
@@ -207,9 +209,30 @@ export default function ThinkPagesMainPage() {
                 </div>
                 <div>
                   <h1 className="text-xl font-bold bg-gradient-to-r from-[#0050a1] to-[#fcc309] bg-clip-text text-transparent">Thinkpages</h1>
-                  <p className="text-xs text-muted-foreground">
-                    Where Minds Meet • Since 2002
-                  </p>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground bg-transparent border-none cursor-pointer flex items-center gap-1">
+                      {WORKSPACE_LINKS.find(link => link.key === activeView)?.label || 'ThinkPages'} • The Global Forum
+                      <ChevronDown className="h-3 w-3 ml-1" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      {WORKSPACE_LINKS.map((link) => {
+                        const Icon = link.icon;
+                        return (
+                          <DropdownMenuItem
+                            key={link.key}
+                            onClick={() => setActiveView(link.key as 'feed' | 'thinktanks' | 'messages')}
+                            className="flex items-center gap-2"
+                          >
+                            <Icon className="h-4 w-4" />
+                            <div>
+                              <div className="font-medium">{link.label}</div>
+                              <div className="text-xs text-muted-foreground">{link.description}</div>
+                            </div>
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </div>
@@ -243,6 +266,7 @@ export default function ThinkPagesMainPage() {
 
 
         </motion.div>
+
 
         <AnimatePresence mode="wait">
           <motion.div
@@ -386,7 +410,7 @@ export default function ThinkPagesMainPage() {
           <div className="space-y-2 text-xs text-muted-foreground">
             <p>© 2002-2040 <a href="https://ixwiki.com/wiki/Valtari">Valtari Technologies, Inc.</a></p>
             <p>Made with ♡ from Hollona and Diorisia </p>
-            <p>The world’s most trusted platform for sharing ideas, connecting minds, and shaping the conversations that define the future.</p>
+            <p>Where nations converge, ideas flourish, and the future of global discourse takes shape.</p>
           </div>
         </motion.div>
 

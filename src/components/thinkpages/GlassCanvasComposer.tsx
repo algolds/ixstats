@@ -12,20 +12,35 @@ import {
   Loader2, 
   X, 
   Plus,
-  Sparkles
+  Sparkles,
+  Repeat2,
+  ChevronDown,
+  ChevronUp,
+  Users
 } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Textarea } from '~/components/ui/textarea';
 import { Card, CardContent } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
 import { api } from '~/trpc/react';
 import { toast } from 'sonner';
 
 interface GlassCanvasComposerProps {
   account: any;
+  accounts: any[];
+  onAccountSelect?: (account: any) => void;
+  onAccountSettings?: (account: any) => void;
+  onCreateAccount?: () => void;
+  isOwner: boolean;
   onPost: () => void;
   placeholder?: string;
   countryId: string;
+  repostData?: {
+    originalPost: any;
+    mode: 'repost';
+  };
 }
 
 interface DataVisualization {
@@ -38,14 +53,21 @@ interface DataVisualization {
 
 export function GlassCanvasComposer({ 
   account, 
+  accounts,
+  onAccountSelect,
+  onAccountSettings,
+  onCreateAccount,
+  isOwner,
   onPost, 
   placeholder = "What's happening in your nation?",
-  countryId 
+  countryId,
+  repostData
 }: GlassCanvasComposerProps) {
   const [content, setContent] = useState('');
   const [selectedVisualizations, setSelectedVisualizations] = useState<DataVisualization[]>([]);
   const [showVisualizationPanel, setShowVisualizationPanel] = useState(false);
   const [isGeneratingVisualization, setIsGeneratingVisualization] = useState(false);
+  const [showAccountManager, setShowAccountManager] = useState(false);
 
   // Get latest economic data for visualizations - live wired
   const { data: economicData, isLoading: isLoadingEconomic } = api.countries.getEconomicData.useQuery(
@@ -100,11 +122,12 @@ export function GlassCanvasComposer({
         type: viz.type,
         title: viz.title,
         config: viz.config
-      }))
+      })),
+      repostOfId: repostData?.originalPost?.id
     };
 
     createPostMutation.mutate(postData);
-  }, [content, selectedVisualizations, account.id, createPostMutation]);
+  }, [content, selectedVisualizations, account.id, createPostMutation, repostData]);
 
   const extractHashtags = (text: string): string[] => {
     const hashtags = text.match(/#[\w]+/g);
@@ -274,19 +297,109 @@ export function GlassCanvasComposer({
     <Card className="glass-hierarchy-child border-blue-500/30 bg-blue-500/5">
       <CardContent className="p-4">
         <div className="space-y-4">
-          {/* Account Info */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
-              {account.displayName.charAt(0)}
+          {/* Account Info with Manager */}
+          <Collapsible open={showAccountManager} onOpenChange={setShowAccountManager}>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
+                {account.displayName.charAt(0)}
+              </div>
+              <div className="flex-1">
+                <div className="font-medium text-sm">{account.displayName}</div>
+                <div className="text-xs text-muted-foreground">@{account.username}</div>
+              </div>
+              <Badge variant="outline" className="mr-2">
+                Glass Canvas
+              </Badge>
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                >
+                  {showAccountManager ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
             </div>
-            <div>
-              <div className="font-medium text-sm">{account.displayName}</div>
-              <div className="text-xs text-muted-foreground">@{account.username}</div>
-            </div>
-            <Badge variant="outline" className="ml-auto">
-              Glass Canvas
-            </Badge>
-          </div>
+            
+            <CollapsibleContent className="mt-3">
+              <div className="border-t border-white/10 pt-3">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium text-sm">Switch Account</h4>
+                  {isOwner && accounts.length < 25 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onCreateAccount}
+                      className="h-7 text-xs"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      New Account
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="grid gap-2 max-h-40 overflow-y-auto">
+                  {accounts.map((acc) => (
+                    <div
+                      key={acc.id}
+                      onClick={() => {
+                        onAccountSelect?.(acc);
+                        setShowAccountManager(false);
+                      }}
+                      className={cn(
+                        "flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors",
+                        acc.id === account.id
+                          ? "bg-blue-500/20 border border-blue-500/30"
+                          : "hover:bg-white/10 border border-transparent"
+                      )}
+                    >
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={acc.profileImageUrl} />
+                        <AvatarFallback className="text-xs">
+                          {acc.displayName.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-xs truncate">{acc.displayName}</div>
+                        <div className="text-xs text-muted-foreground truncate">@{acc.username}</div>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
+                        {acc.accountType}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Embedded Repost Display */}
+          {repostData && (
+            <Card className="border-green-500/30 bg-green-500/5 p-3">
+              <div className="flex items-center gap-2 text-green-500 text-xs mb-2">
+                <Repeat2 className="h-3 w-3" />
+                <span>Reposting</span>
+              </div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center text-white text-xs font-semibold">
+                  {repostData.originalPost.account?.displayName?.charAt(0) || '?'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1">
+                    <span className="font-semibold text-sm">{repostData.originalPost.account?.displayName || 'Unknown'}</span>
+                    <span className="text-muted-foreground text-xs">@{repostData.originalPost.account?.username || 'unknown'}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="text-sm text-muted-foreground line-clamp-3">
+                {repostData.originalPost.content}
+              </div>
+            </Card>
+          )}
 
           {/* Text Composer */}
           <div className="space-y-2">

@@ -5,7 +5,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
@@ -26,6 +26,7 @@ import { formatPopulation } from '~/lib/chart-utils';
 import { getFlagColors } from '~/lib/flag-color-extractor';
 import { UnifiedCountryFlag } from '~/components/UnifiedCountryFlag';
 import { cn } from '~/lib/utils';
+import { api } from '~/trpc/react';
 
 interface CountryData {
   id: string;
@@ -45,13 +46,15 @@ interface CountryData {
 interface WikiInfoBoxData {
   flag?: string;
   coat_of_arms?: string;
+  flagUrl?: string;
+  coatOfArmsUrl?: string;
   capital?: string;
   largest_city?: string;
-  official_languages?: string[];
-  ethnic_groups?: string[];
+  official_languages?: string | string[];
+  ethnic_groups?: string | string[];
   currency?: string;
-  time_zone?: string;
-  calling_code?: string;
+  time_zone?: string | string[];
+  calling_code?: string | string[];
   iso_code?: string;
   established?: string;
   independence?: string;
@@ -68,7 +71,8 @@ interface WikiInfoBoxData {
   hdi?: string;
   climate?: string;
   drives_on?: string;
-  internet_tld?: string;
+  internet_tld?: string | string[];
+  infobox?: Record<string, unknown>;
 }
 
 interface CountryProfileInfoBoxProps {
@@ -80,31 +84,69 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
   country,
   className
 }) => {
-  const [wikiData, setWikiData] = useState<WikiInfoBoxData | null>(null);
-  const [wikiLoading, setWikiLoading] = useState(true);
-
   const flagColors = getFlagColors(country.name);
 
-  // Load wiki infobox data
-  useEffect(() => {
-    const loadWikiData = async () => {
-      try {
-        setWikiLoading(true);
-        // Simulate wiki API call - replace with actual MediaWiki API integration
-        const response = await fetch(`/api/wiki/country-infobox?name=${encodeURIComponent(country.name)}`);
-        if (response.ok) {
-          const data = await response.json();
-          setWikiData(data);
-        }
-      } catch (error) {
-        console.error('Failed to load wiki data:', error);
-      } finally {
-        setWikiLoading(false);
+  const { data: wikiDataRaw, isLoading: wikiLoading } = api.countries.getWikiInfobox.useQuery(
+    { name: country.name },
+    { enabled: Boolean(country?.name) }
+  );
+
+  const wikiData: (WikiInfoBoxData & { flagUrl?: string; coatOfArmsUrl?: string; infobox?: Record<string, unknown> }) | null = useMemo(() => {
+    if (!wikiDataRaw) return null;
+    const infobox = (wikiDataRaw as any).infobox || {};
+
+    const normalizeList = (value: unknown): string | null => {
+      if (!value) return null;
+      if (Array.isArray(value)) {
+        return value.map(v => (typeof v === 'string' ? v : String(v))).filter(Boolean).join(', ');
       }
+      if (typeof value === 'string') {
+        return value
+          .replace(/<br\s*\/?>(\s*)/gi, ', ')
+          .replace(/\s+/g, ' ')
+          .replace(/\s*,\s*,/g, ',')
+          .trim();
+      }
+      return null;
     };
 
-    loadWikiData();
-  }, [country.name]);
+    const fallbackImage = (file?: string | null) => {
+      if (!file) return undefined;
+      return `https://ixwiki.com/wiki/Special:Filepath/${file}`;
+    };
+
+    return {
+      flag: wikiDataRaw.flag || infobox.image_flag || infobox.flag || undefined,
+      coat_of_arms: wikiDataRaw.coatOfArms || infobox.image_coat || infobox.coat_of_arms || undefined,
+      flagUrl: wikiDataRaw.flagUrl || fallbackImage(wikiDataRaw.flag || infobox.image_flag || infobox.flag),
+      coatOfArmsUrl: wikiDataRaw.coatOfArmsUrl || fallbackImage(wikiDataRaw.coatOfArms || infobox.image_coat || infobox.coat_of_arms),
+      capital: wikiDataRaw.capital || infobox.capital || null,
+      largest_city: infobox.largest_city || null,
+      official_languages: normalizeList(wikiDataRaw.languages || infobox.official_languages || infobox.official_language) || undefined,
+      ethnic_groups: normalizeList(infobox.ethnic_groups || infobox.ethnicity) || undefined,
+      currency: infobox.currency || wikiDataRaw.currency || null,
+      time_zone: normalizeList(infobox.time_zone) || undefined,
+      calling_code: normalizeList(infobox.calling_code) || undefined,
+      iso_code: infobox.iso_code || infobox.iso || null,
+      established: infobox.established || null,
+      independence: infobox.independence || null,
+      government_type: wikiDataRaw.government || infobox.government_type || infobox.government || null,
+      head_of_state: infobox.head_of_state || null,
+      head_of_government: infobox.head_of_government || null,
+      legislature: infobox.legislature || null,
+      area_total: infobox.area_total || null,
+      area_water: infobox.area_water || null,
+      population_total: infobox.population_total || wikiDataRaw.population?.toLocaleString() || null,
+      population_density: infobox.population_density || null,
+      gdp_nominal: infobox.GDP_nominal || null,
+      gdp_ppp: infobox.GDP_PPP || null,
+      hdi: infobox.HDI || infobox.hdi || null,
+      climate: infobox.climate || null,
+      drives_on: infobox.drives_on || infobox.drives || null,
+      internet_tld: normalizeList(infobox.internet_tld || infobox.tld) || undefined,
+      infobox,
+    } as WikiInfoBoxData & { flagUrl?: string; coatOfArmsUrl?: string; infobox?: Record<string, unknown> };
+  }, [wikiDataRaw]);
 
   const infoSections = [
     {
@@ -145,9 +187,9 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
       title: 'Culture & Society',
       icon: Globe,
       items: [
-        { label: 'Official Languages', value: wikiData?.official_languages?.join(', ') },
+        { label: 'Official Languages', value: wikiData?.official_languages || undefined },
         { label: 'Primary Religion', value: country.religion },
-        { label: 'Ethnic Groups', value: wikiData?.ethnic_groups?.slice(0, 3).join(', ') },
+        { label: 'Ethnic Groups', value: wikiData?.ethnic_groups || undefined },
         { label: 'Currency', value: wikiData?.currency },
         { label: 'Time Zone', value: wikiData?.time_zone },
         { label: 'Calling Code', value: wikiData?.calling_code }

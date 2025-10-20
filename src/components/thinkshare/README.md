@@ -1,31 +1,29 @@
-# Thinkshare Components
+# ThinkShare Components
 
-This directory contains all the components related to the Thinkshare messaging feature of the IxStats application.
+**Last updated:** October 2025
 
-## Structure
+ThinkShare delivers the messaging experience across ThinkPages and collaboration flows.
 
-- `ThinkshareMessages.tsx`: The main entry component for the Thinkshare messaging interface. It orchestrates the various sub-components.
-- `ThinkshareHeader.tsx`: Displays the header section of the Thinkshare interface.
-- `ConversationList.tsx`: Manages and displays the list of conversations.
-- `ConversationListHeader.tsx`: Contains the header and search input for the conversation list.
-- `ConversationListContent.tsx`: Renders the scrollable content area of the conversation list, including loading states and individual conversation cards.
-- `ConversationCard.tsx`: Represents a single conversation in the list.
-- `ChatArea.tsx`: Manages the display of messages within a selected conversation, including the chat header, message list, and message input.
-- `ChatHeader.tsx`: Displays the header for the active chat conversation.
-- `MessageList.tsx`: Renders the list of messages and typing indicators within a conversation.
-- `MessageBubble.tsx`: Displays an individual message, including content, reactions, and actions.
-- `MessageInput.tsx`: Provides the rich text input area for sending messages.
-- `MessageTimestamp.tsx`: A utility component for formatting and displaying message timestamps.
-- `TypingIndicator.tsx`: Displays a typing indicator for a participant.
-- `ReplyPreview.tsx`: Shows a preview of the message being replied to.
-- `NewConversationModal.tsx`: A modal for initiating new conversations.
+## Component Overview
+| Component | Description |
+| --- | --- |
+| `ThinkshareMessages.tsx` | High-level container coordinating layout and data fetching |
+| `ThinkshareHeader.tsx` | Header with participant info, status indicators, quick actions |
+| `ConversationList.tsx` (+ header/content/card) | Conversation selector with search + loading states |
+| `ChatArea.tsx` | Chat viewport with message list + composer |
+| `MessageList.tsx` / `MessageBubble.tsx` | Render messages, reactions, reply previews, timestamps |
+| `MessageInput.tsx` | Composer with rich-text support and attachments |
+| `TypingIndicator.tsx` | Real-time typing indicator display |
+| `ReplyPreview.tsx` | Shows the message being replied to |
+| `NewConversationModal.tsx` | Create or invite participants to new threads |
 
-## Usage
+## Data Requirements
+- Conversations & messages fetched via `api.thinkpages.getConversation*` (see router) and related mutations for posting/reactions
+- Typing indicators and live updates may come from real-time channels; ensure WebSocket bridge toggles are enabled when integrating
 
-To use the Thinkshare messaging feature, import `ThinkshareMessages` from this directory:
+## Usage Tips
+- Import `ThinkshareMessages` and provide necessary props (current user, selected conversation handlers)
+- Maintain consistent theming with ThinkPages components by using shared tokens
+- Update `/help/social/thinkshare` and `docs/systems/social.md` when altering messaging workflows
 
-```typescript
-import { ThinkshareMessages } from '~/components/thinkshare/ThinkshareMessages';
-```
-
-Ensure that all necessary props are passed to `ThinkshareMessages` as required.
+Keep this README aligned with component names and data contracts.

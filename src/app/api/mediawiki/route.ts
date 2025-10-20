@@ -336,14 +336,27 @@ async function handleMediaWikiRequest(request: NextRequest, searchParams: URLSea
     if (process.env.NODE_ENV !== 'production') {
       console.error(`[MediaWiki API] HTTP Error: ${response.status} ${response.statusText}`);
     }
-    return NextResponse.json(
-      { 
-        error: `MediaWiki API returned status ${response.status}`,
-        message: response.statusText,
-        status: response.status
-      },
-      { status: response.status }
-    );
+
+    const payload: Record<string, any> = {
+      error: `MediaWiki API returned status ${response.status}`,
+      message: response.statusText,
+      status: response.status
+    };
+
+    if (response.status === 404) {
+      payload.notFound = true;
+    }
+
+    const statusCode = response.status === 404 ? 200 : response.status;
+
+    return NextResponse.json(payload, {
+      status: statusCode,
+      headers: {
+        'X-RateLimit-Limit': RATE_LIMIT_MAX_REQUESTS.toString(),
+        'X-RateLimit-Remaining': rateLimit.remaining.toString(),
+        'X-RateLimit-Reset': rateLimit.resetTime.toString(),
+      }
+    });
   }
 
   const data = await response.json();

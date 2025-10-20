@@ -39,7 +39,8 @@ const governmentStructureInputSchema = z.object({
   budgetCurrency: z.string().default("USD"),
 });
 
-const departmentInputSchema = z.object({
+// Base schema for government departments
+const departmentBaseSchema = z.object({
   name: z.string().min(1, "Department name is required"),
   shortName: z.string().optional(),
   category: z.enum([
@@ -60,7 +61,14 @@ const departmentInputSchema = z.object({
   parentDepartmentId: z.string().optional(),
   organizationalLevel: z.enum(['Ministry', 'Department', 'Agency', 'Bureau', 'Office', 'Commission']).default("Ministry"),
   functions: z.array(z.string()).optional(),
+  isActive: z.boolean().default(true),
 });
+
+// Create schema - all required fields with defaults
+const departmentCreateSchema = departmentBaseSchema;
+
+// Update schema - all fields optional
+const departmentUpdateSchema = departmentBaseSchema.partial();
 
 const budgetAllocationInputSchema = z.object({
   departmentId: z.string().min(1),

@@ -31,59 +31,98 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
 
   const wikiService = new IxnayWikiService();
 
+  // Fallback content for when templates are not available
+  const getFallbackContent = () => `
+    <style>
+      .featured-article-fallback {
+        padding: 2rem;
+        text-align: center;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        max-width: 100%;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .featured-article-fallback * {
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        hyphens: auto !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      .featured-article-fallback h3 {
+        color: #212529;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
+      .featured-article-fallback p {
+        color: #495057;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+      }
+      .featured-links {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 1.5rem;
+      }
+      .featured-links a {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: #0d6efd;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 500;
+        transition: background-color 0.2s;
+      }
+      .featured-links a:hover {
+        background: #0b5ed7;
+        text-decoration: none;
+      }
+      .dark .featured-article-fallback {
+        background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+        color: #e2e8f0;
+      }
+      .dark .featured-article-fallback h3 {
+        color: #e2e8f0;
+      }
+      .dark .featured-article-fallback p {
+        color: #cbd5e0;
+      }
+    </style>
+    <div class="featured-article-fallback">
+      <h3>Welcome to IxWiki</h3>
+      <p>Discover the rich world of IxWiki, where nations come to life through detailed articles, comprehensive statistics, and engaging content.</p>
+      <p>Explore countries, learn about their histories, and dive into the fascinating world of international relations and economics.</p>
+      <div class="featured-links">
+        <a href="https://ixwiki.com/wiki/Main_Page" target="_blank" rel="noopener noreferrer">Visit IxWiki</a>
+        <a href="${createUrl("/countries")}" target="_blank" rel="noopener noreferrer">Browse Countries</a>
+      </div>
+    </div>
+  `;
+
   const fetchFeaturedArticle = async () => {
     try {
       setIsLoading(true);
 
-      // Fetch the template content
-      console.log("Fetching template: Template:Home/Featured article");
+      // Fetch the template content (suppress console errors for missing templates)
       const templateResult = await wikiService.getTemplate("Template:Home/Featured article");
-      console.log("Template result type:", typeof templateResult);
-      if (typeof templateResult === 'string') {
-        console.log("Template content length:", templateResult.length);
-        console.log("Template content preview:", templateResult.substring(0, 200));
-      } else {
-        console.log("Template error:", templateResult.error);
-      }
       
       if (typeof templateResult === 'object' && 'error' in templateResult) {
-        console.warn("Template fetch error:", templateResult.error);
-        // Try alternative template names
-        const alternativeTemplates = [
-          "Template:Featured_article",
-          "Template:Home/Featured",
-          "Template:Main/Featured_article"
-        ];
-        
-        let foundTemplate = false;
-        for (const altTemplate of alternativeTemplates) {
-          try {
-            const altResult = await wikiService.getTemplate(altTemplate);
-            if (typeof altResult === 'string') {
-              console.log(`Found alternative template: ${altTemplate}`);
-              foundTemplate = true;
-              // Parse the alternative template
-              const htmlResult = await wikiService.parseWikitextToHtml(altResult, altTemplate);
-              if (htmlResult) {
-                setHtmlContent(htmlResult);
-                setLastFetch(new Date());
-                try {
-                  const extractedData = extractArticleData(altResult);
-                  setArticleData(extractedData);
-                } catch (extractError) {
-                  console.warn("Could not extract structured data from alternative template:", extractError);
-                }
-                return;
-              }
-            }
-          } catch (altError) {
-            console.warn(`Alternative template ${altTemplate} failed:`, altError);
-          }
-        }
-        
-        if (!foundTemplate) {
-          throw new Error(`Template not found. Tried: Template:Home/Featured article and alternatives`);
-        }
+        // Template not found - show fallback content immediately
+        // No need to try alternatives or log errors
+        setArticleData(null);
+        setHtmlContent(getFallbackContent());
+        setLastFetch(new Date());
+        return;
       }
 
       // At this point, templateResult should be a string
@@ -428,9 +467,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
       }
 
     } catch (err) {
-      console.error("Error fetching featured article:", err);
-      
-      // Instead of showing an error, create a fallback featured article
+      // Silent fallback - no error logging for missing templates
       const fallbackData: FeaturedArticleData = {
         title: "Welcome to IxWiki",
         description: "Discover the rich world of IxWiki, where nations come to life through detailed articles, comprehensive statistics, and engaging content.",
@@ -440,72 +477,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
       };
       
       setArticleData(fallbackData);
-      setHtmlContent(`
-        <style>
-          .featured-article-fallback {
-            padding: 2rem;
-            text-align: center;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-          }
-          .featured-article-fallback h3 {
-            color: #212529;
-            margin-bottom: 1rem;
-            font-size: 1.5rem;
-            font-weight: 600;
-          }
-          .featured-article-fallback p {
-            color: #495057;
-            line-height: 1.6;
-            margin-bottom: 1rem;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-          }
-          .featured-links {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin-top: 1.5rem;
-          }
-          .featured-links a {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            background: #0d6efd;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 500;
-            transition: background-color 0.2s;
-          }
-          .featured-links a:hover {
-            background: #0b5ed7;
-            text-decoration: none;
-          }
-          .dark .featured-article-fallback {
-            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
-            color: #e2e8f0;
-          }
-          .dark .featured-article-fallback h3 {
-            color: #e2e8f0;
-          }
-          .dark .featured-article-fallback p {
-            color: #cbd5e0;
-          }
-        </style>
-        <div class="featured-article-fallback">
-          <h3>Welcome to IxWiki</h3>
-          <p>Discover the rich world of IxWiki, where nations come to life through detailed articles, comprehensive statistics, and engaging content.</p>
-          <p>Explore countries, learn about their histories, and dive into the fascinating world of international relations and economics.</p>
-          <div class="featured-links">
-            <a href="https://ixwiki.com/wiki/Main_Page" target="_blank" rel="noopener noreferrer">Visit IxWiki</a>
-            <a href={createUrl("/countries")} target="_blank" rel="noopener noreferrer">Browse Countries</a>
-          </div>
-        </div>
-      `);
+      setHtmlContent(getFallbackContent());
       setLastFetch(new Date());
     } finally {
       setIsLoading(false);
@@ -581,7 +553,7 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
       // Since we have the title from the arrow format, make a direct API call to get the page content
       if (title && title !== "Featured Article") {
         console.log('Making direct API call for title:', title);
-        const apiUrl = `https://ixwiki.com/api.php?action=query&prop=extracts&exintro=1&explaintext=1&format=json&titles=${encodeURIComponent(title)}`;
+        const apiUrl = `https://ixwiki.com/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&format=json&titles=${encodeURIComponent(title)}`;
         console.log('API URL:', apiUrl);
         
         try {

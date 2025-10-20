@@ -35,7 +35,7 @@ interface TestResult {
  */
 async function fetchWikitext(countryName: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const url = `https://ixwiki.com/api.php?action=query&prop=revisions&rvprop=content&titles=${encodeURIComponent(countryName)}&rvsection=0&format=json&formatversion=2`;
+    const url = `https://ixwiki.com/w/api.php?action=query&prop=revisions&rvprop=content&titles=${encodeURIComponent(countryName)}&rvsection=0&format=json&formatversion=2`;
 
     https.get(url, (res) => {
       let data = '';

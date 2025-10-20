@@ -28,7 +28,7 @@ export function getWikiConfigs(): Record<string, WikiConfig> {
     // Server-side: use direct URLs
     return {
       ixwiki: {
-        baseUrl: 'https://ixwiki.com/api.php',
+        baseUrl: 'https://ixwiki.com/w/api.php',
         apiEndpoint: '',
         searchNamespace: [0, 6],
       },

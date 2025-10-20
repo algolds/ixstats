@@ -1,6 +1,7 @@
 // Wiki search service supporting both ixwiki.com and iiwiki.com
 import type { CountryInfoboxWithDynamicProps } from "./mediawiki-service";
 import { unifiedFlagService } from "./unified-flag-service";
+import { BASE_PATH } from "./base-path";
 
 export interface WikiConfig {
   baseUrl: string;
@@ -10,13 +11,33 @@ export interface WikiConfig {
 
 // Helper function to get the base URL for API requests
 function getApiBaseUrl(): string {
+  const normalizedBasePath = BASE_PATH
+    ? (BASE_PATH.startsWith("/") ? BASE_PATH : `/${BASE_PATH}`)
+    : "";
+
+  const ensureBasePath = (origin: string): string => {
+    const trimmedOrigin = origin.endsWith("/")
+      ? origin.slice(0, -1)
+      : origin;
+    if (!normalizedBasePath) {
+      return trimmedOrigin;
+    }
+    return trimmedOrigin.endsWith(normalizedBasePath)
+      ? trimmedOrigin
+      : `${trimmedOrigin}${normalizedBasePath}`;
+  };
+
   // In server-side context (Node.js), we need absolute URLs
   if (typeof window === 'undefined') {
-    // Server-side: use environment variable or default to localhost
-    return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const origin =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      process.env.APP_URL ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined) ||
+      `http://localhost:${process.env.PORT ?? "3000"}`;
+    return ensureBasePath(origin);
   }
-  // Client-side: use relative URLs
-  return '';
+  // Client-side: include base path so fetch works when deployed under a sub-path
+  return normalizedBasePath || '';
 }
 
 // Function to get wiki configs with proper URLs
@@ -24,18 +45,18 @@ function getWikiConfigs(): Record<string, WikiConfig> {
   const baseUrl = getApiBaseUrl();
   return {
     ixwiki: {
-      baseUrl: `${baseUrl}/api/ixwiki-proxy/api.php`,
-      apiEndpoint: "", 
+      baseUrl: `${baseUrl}/api/ixwiki-proxy`,
+      apiEndpoint: "/wiki/api.php",
       searchNamespace: [0, 6], // Main and Media namespaces
     },
     iiwiki: {
-      baseUrl: `${baseUrl}/api/iiwiki-proxy/mediawiki/api.php`,
-      apiEndpoint: "", 
+      baseUrl: `${baseUrl}/api/iiwiki-proxy`,
+      apiEndpoint: "/wiki/api.php",
       searchNamespace: [0, 6], // Main and Media namespaces
     },
     althistory: {
-      baseUrl: `${baseUrl}/api/althistory-wiki-proxy/api.php`,
-      apiEndpoint: "",
+      baseUrl: `${baseUrl}/api/althistory-wiki-proxy`,
+      apiEndpoint: "/api.php",
       searchNamespace: [0, 6], // Main and Media namespaces
     }
   };

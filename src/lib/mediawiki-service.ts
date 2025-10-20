@@ -1,5 +1,5 @@
 // Enhanced ixwiki.com API integration with complete template parsing
-import { MEDIAWIKI_CONFIG, buildApiUrl } from '~/lib/mediawiki-config';
+import { MEDIAWIKI_CONFIG, buildApiUrl, getMediaWikiApiUrl } from '~/lib/mediawiki-config';
 
 // Main interface that allows additional dynamic string properties
 export interface CountryInfobox {
@@ -222,7 +222,9 @@ class LRUCache<K, V> extends Map<K, V> {
 }
 
 export class IxnayWikiService {
-  private readonly API_BASE_URL = `${MEDIAWIKI_CONFIG.baseUrl}${MEDIAWIKI_CONFIG.apiEndpoint}`;
+  private get API_BASE_URL(): string {
+    return getMediaWikiApiUrl();
+  }
   private readonly FLAG_CACHE = new LRUCache<string, CacheEntry<string | null>>(MEDIAWIKI_CONFIG.cache.maxSize);
   private readonly INFOBOX_CACHE = new LRUCache<string, CacheEntry<CountryInfoboxWithDynamicProps | null>>(MEDIAWIKI_CONFIG.cache.maxSize);
   private readonly TEMPLATE_CACHE = new LRUCache<string, CacheEntry<string | null>>(MEDIAWIKI_CONFIG.cache.maxSize);

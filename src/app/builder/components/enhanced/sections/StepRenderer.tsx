@@ -272,7 +272,7 @@ function HelpModal({ text, title }: { text: string; title: string }) {
     </Dialog>
   );
 }
-import { CountrySelectorHeader } from '../../../primitives/CountrySelectorHeader';
+import { FoundationStep } from '../steps/FoundationStep';
 import { NationalIdentitySection } from '../NationalIdentitySection';
 import { CoreIndicatorsSection } from '../../../sections/CoreIndicatorsSection';
 import { AtomicComponentSelector } from '~/components/government/atoms/AtomicGovernmentComponents';
@@ -314,9 +314,33 @@ export const StepRenderer = memo(function StepRenderer({
   onGovernmentStructureChange,
   onGovernmentStructureSave,
 }: StepRendererProps) {
-  const { builderState, setBuilderState } = useBuilderContext();
+  const { builderState, setBuilderState, updateStep } = useBuilderContext();
   const { handleTabChange } = useBuilderActions({ builderState, setBuilderState });
 
+  const handleFoundationComplete = useCallback(
+    (country: RealCountryData) => {
+      updateStep('foundation', country);
+    },
+    [updateStep]
+  );
+
+  const handleCreateFromScratch = useCallback(() => {
+    const scratchCountry: RealCountryData = {
+      name: 'Custom Nation',
+      countryCode: 'custom',
+      gdp: 250000000000,
+      gdpPerCapita: 25000,
+      unemploymentRate: 5,
+      population: 10000000,
+      foundationCountryName: undefined,
+      growthRate: 3,
+      continent: 'Custom',
+      region: 'Custom',
+      governmentSpending: 55000000000,
+    };
+
+    updateStep('foundation', scratchCountry);
+  }, [updateStep]);
 
   // Foundation Step
   if (builderState.step === 'foundation') {
@@ -353,8 +377,12 @@ export const StepRenderer = memo(function StepRenderer({
     }
 
     return (
-      <CountrySelectorHeader
-        softSelectedCountry={builderState.selectedCountry}
+      <FoundationStep
+        countries={countries}
+        isLoadingCountries={isLoadingCountries}
+        countryLoadError={countryLoadError}
+        onCountrySelect={handleFoundationComplete}
+        onCreateFromScratch={handleCreateFromScratch}
         onBackToIntro={onBackToIntro}
       />
     );
@@ -551,6 +579,18 @@ export const StepRenderer = memo(function StepRenderer({
           economicInputs={builderState.economicInputs}
           onEconomicInputsChange={(inputs: EconomicInputs) => {
             setBuilderState((prev) => ({ ...prev, economicInputs: inputs }));
+          }}
+          governmentComponents={builderState.governmentComponents}
+          governmentBuilderData={builderState.governmentStructure}
+          taxSystemData={builderState.taxSystemData}
+          countryId={builderState.selectedCountry?.countryCode}
+          showAdvanced={builderState.showAdvancedMode}
+          persistedEconomyBuilder={builderState.economyBuilderState}
+          onPersistEconomyBuilder={(economyBuilderState) => {
+            setBuilderState((prev) => ({ ...prev, economyBuilderState }));
+          }}
+          onPersistTaxSystem={(taxSystemDraft) => {
+            setBuilderState((prev) => ({ ...prev, taxSystemData: taxSystemDraft }));
           }}
         />
       </Suspense>

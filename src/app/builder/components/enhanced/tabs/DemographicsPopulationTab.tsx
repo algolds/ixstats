@@ -17,6 +17,27 @@ import { GeographicSection } from './demographics/GeographicSection';
 import { SocialIndicatorsSection } from './demographics/SocialIndicatorsSection';
 import { DemographicsVisualizations } from './demographics/DemographicsVisualizations';
 
+const determineRegionDevelopmentLevel = (region: RegionDistribution): RegionDistribution['developmentLevel'] => {
+  const activity = region.economicActivity ?? 0;
+  const urban = region.urbanPercent ?? 0;
+
+  if (activity >= 35 || urban >= 80) {
+    return 'Advanced';
+  }
+  if (activity >= 25 || urban >= 70) {
+    return 'Developed';
+  }
+  if (activity >= 15 || urban >= 55) {
+    return 'Developing';
+  }
+  return 'Underdeveloped';
+};
+
+const clampToRange = (value: number, min: number, max: number) => {
+  if (Number.isNaN(value)) return min;
+  return Math.min(Math.max(value, min), max);
+};
+
 /**
  * Props for the DemographicsPopulationTab component
  *
@@ -104,25 +125,91 @@ export function DemographicsPopulationTab({
   };
 
   const handleRegionChange = (regionIndex: number, field: keyof RegionDistribution, value: any) => {
-    const updatedRegions = economyBuilder.demographics.regions.map((region, index) =>
-      index === regionIndex ? { ...region, [field]: value } : region
-    );
+    const regionsCopy = economyBuilder.demographics.regions.map((region) => ({ ...region }));
+    const targetRegion = regionsCopy[regionIndex];
+
+    if (!targetRegion) {
+      return;
+    }
+
+    let nextRegion = { ...targetRegion };
+
+    switch (field) {
+      case 'populationPercent': {
+        const numericValue = typeof value === 'number' ? value : parseFloat(String(value ?? 0));
+        const rounded = Math.round(clampToRange(Number.isNaN(numericValue) ? 0 : numericValue, 0, 100) * 10) / 10;
+
+        const otherTotal = regionsCopy.reduce((sum, region, index) => (
+          index === regionIndex ? sum : sum + (region.populationPercent ?? 0)
+        ), 0);
+
+        let adjusted = rounded;
+        if (otherTotal + adjusted > 100) {
+          adjusted = Math.max(0, 100 - otherTotal);
+        }
+
+        if (Math.abs(otherTotal + adjusted - 100) <= 0.5) {
+          adjusted = Math.max(0, 100 - otherTotal);
+        }
+
+        adjusted = Math.round(adjusted * 10) / 10;
+        if (otherTotal + adjusted > 100) {
+          adjusted = Math.max(0, Math.round((100 - otherTotal) * 10) / 10);
+        }
+
+        nextRegion.populationPercent = adjusted;
+        nextRegion.population = Math.round((economyBuilder.demographics.totalPopulation || 0) * (adjusted / 100));
+        break;
+      }
+      case 'urbanPercent': {
+        const numericValue = typeof value === 'number' ? value : parseFloat(String(value ?? 0));
+        nextRegion.urbanPercent = Math.round(clampToRange(Number.isNaN(numericValue) ? 0 : numericValue, 0, 100));
+        break;
+      }
+      case 'economicActivity': {
+        const numericValue = typeof value === 'number' ? value : parseFloat(String(value ?? 0));
+        nextRegion.economicActivity = Math.round(clampToRange(Number.isNaN(numericValue) ? 0 : numericValue, 0, 50));
+        break;
+      }
+      default: {
+        nextRegion = { ...nextRegion, [field]: value };
+      }
+    }
+
+    regionsCopy[regionIndex] = {
+      ...nextRegion,
+      developmentLevel: determineRegionDevelopmentLevel(nextRegion),
+    };
+
+    const normalizedRegions = regionsCopy.map((region) => ({
+      ...region,
+      developmentLevel: determineRegionDevelopmentLevel(region),
+    }));
+
     onEconomyBuilderChange({
       ...economyBuilder,
-      demographics: { ...economyBuilder.demographics, regions: updatedRegions }
+      demographics: { ...economyBuilder.demographics, regions: normalizedRegions }
     });
   };
 
   const addRegion = () => {
     const regionNumber = economyBuilder.demographics.regions.length + 1;
+    const existingTotalPercent = economyBuilder.demographics.regions.reduce((sum, region) =>
+      sum + (region.populationPercent ?? 0), 0);
+    const remainingPercent = Math.max(0, 100 - existingTotalPercent);
+    const allocatedPercent = remainingPercent > 0 ? Math.min(remainingPercent, 15) : 5;
+    const populationPercent = Number(allocatedPercent.toFixed(1));
+    const population = Math.round((economyBuilder.demographics.totalPopulation || 0) * (populationPercent / 100));
+
     const newRegion: RegionDistribution = {
       name: `New Region ${regionNumber}`,
-      population: Math.round(economyBuilder.demographics.totalPopulation * 0.1),
-      populationPercent: 10,
+      population,
+      populationPercent,
       urbanPercent: 60,
-      economicActivity: 10,
+      economicActivity: 18,
       developmentLevel: 'Developing'
     };
+    newRegion.developmentLevel = determineRegionDevelopmentLevel(newRegion);
     onEconomyBuilderChange({
       ...economyBuilder,
       demographics: { ...economyBuilder.demographics, regions: [...economyBuilder.demographics.regions, newRegion] }

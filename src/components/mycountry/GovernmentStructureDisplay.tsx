@@ -271,10 +271,10 @@ export function GovernmentStructureDisplay({
           </p>
           {isOwner && (
             <div className="flex items-center justify-center gap-3">
-              <Link href={createUrl("/builder")}>
+              <Link href={createUrl("/mycountry/editor?tab=atomic")}>
                 <Button className="flex items-center gap-2 bg-primary">
                   <Zap className="h-4 w-4" />
-                  Build with Atomic Components
+                  Launch Atomic Editor
                 </Button>
               </Link>
               <Link href={createUrl("/mycountry/editor?tab=structure")}>

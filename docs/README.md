@@ -1,93 +1,56 @@
-# IxStats Documentation
+# IxStats Documentation Hub
 
-**Version**: 1.0.9 Production Release
-**Last Updated**: October 2025
+This repository refresh introduces a streamlined documentation set that mirrors the current codebase. The guides are grouped by purpose so engineers, storytellers, and operators can quickly land in the right place.
 
-Complete documentation for the IxStats nation simulation and worldbuilding platform.
+- **Overview** – product positioning, feature map, quick facts
+- **Architecture** – frontend, backend, and data internals
+- **Systems** – deep dives for each major gameplay or management module
+- **Operations** – environment management, deployments, monitoring
+- **Processes** – testing, contributing, incident workflows
+- **Reference** – API, database, and event schemas
 
-## 📁 **Documentation Structure**
+Legacy documents have been relocated to `docs/archive/v1`. Keep them for historical context, but use the refreshed material below for all future work.
 
-### **Essential Documentation** (Root Level)
-- [`README.md`](../README.md) - Main project overview, setup instructions, and commands (v1.0.0)
-- [`IMPLEMENTATION_STATUS.md`](../IMPLEMENTATION_STATUS.md) - Feature completion matrix (100% complete)
-- [`CLAUDE.md`](../CLAUDE.md) - Development guidelines for Claude Code AI assistance
-- [`DOCUMENTATION_INDEX.md`](./DOCUMENTATION_INDEX.md) - Complete documentation navigation guide
+## Navigation
 
-### **Core System Documentation** (Root Level)
-- [`ATOMIC_SYSTEM_ARCHITECTURE.md`](../ATOMIC_SYSTEM_ARCHITECTURE.md) - Revolutionary government system design
-- [`ECONOMY_BUILDER_ARCHITECTURE.md`](../ECONOMY_BUILDER_ARCHITECTURE.md) - Economic builder system architecture
-- [`ECONOMIC_SYSTEMS_README.md`](../ECONOMIC_SYSTEMS_README.md) - Economic calculation engines
-- [`DIPLOMATIC_SYSTEMS_GUIDE.md`](../DIPLOMATIC_SYSTEMS_GUIDE.md) - Diplomatic operations platform
-- [`STRATCOMM_IMPLEMENTATION_GUIDE.md`](../STRATCOMM_IMPLEMENTATION_GUIDE.md) - Strategic communications (planned)
-- [`COMPREHENSIVE_COUNTRY_BUILDER_PRD.md`](../COMPREHENSIVE_COUNTRY_BUILDER_PRD.md) - Country builder requirements
-- [`ADMIN_DASHBOARD_OVERVIEW.md`](../ADMIN_DASHBOARD_OVERVIEW.md) - Admin god-mode features
-- [`PRODUCTION_DEPLOYMENT.md`](../PRODUCTION_DEPLOYMENT.md) - Deployment and configuration guide
+### Overview
+- [`overview/platform.md`](overview/platform.md) – project charter, personas, and release cadence
+- [`overview/feature-map.md`](overview/feature-map.md) – map of routes, components, hooks, and supporting services
 
-### **🔧 Technical Architecture** (`/docs/technical/`)
-- [`DIPLOMATIC_INTELLIGENCE_SYSTEM_ARCHITECTURE.md`](./technical/DIPLOMATIC_INTELLIGENCE_SYSTEM_ARCHITECTURE.md) - Diplomatic intelligence design
-- [`WIKI_INTEGRATION_ARCHITECTURE.md`](./technical/WIKI_INTEGRATION_ARCHITECTURE.md) - MediaWiki integration
-- [`THINKPAGES_META_EXPERIENCE_DESIGN.md`](./technical/THINKPAGES_META_EXPERIENCE_DESIGN.md) - Social platform UX
-- [`QUICK_ACTIONS_SYSTEM.md`](./technical/QUICK_ACTIONS_SYSTEM.md) - Quick actions framework
-- [`QUICK_ACTIONS_IMPLEMENTATION.md`](./technical/QUICK_ACTIONS_IMPLEMENTATION.md) - Quick actions implementation
+### Architecture
+- [`architecture/frontend.md`](architecture/frontend.md) – App Router layout, component layers, design system guidelines
+- [`architecture/backend.md`](architecture/backend.md) – tRPC patterns, middleware, rate limiting, and user context
+- [`architecture/data.md`](architecture/data.md) – Prisma schema overview, migrations, seeders, and data lifecycle
 
-### **🚀 Future Features** (`/docs/future-features/`)
-- [`labs/vexel/`](./future-features/labs/vexel/) - Heraldic design system (planned feature)
+### Systems
+- [`systems/mycountry.md`](systems/mycountry.md) – executive command suite, compliance tooling, and analytics
+- [`systems/intelligence.md`](systems/intelligence.md) – live briefing feeds, diplomatic intelligence, and forecasting
+- [`systems/diplomacy.md`](systems/diplomacy.md) – embassies, missions, cultural exchanges, and relationship scoring
+- [`systems/economy.md`](systems/economy.md) – economic indicators, builder integration, and modeling utilities
+- [`systems/defense.md`](systems/defense.md) – defense posture, SDI modules, readiness tracking, and crisis playbooks
+- [`systems/social.md`](systems/social.md) – ThinkPages, ThinkShare, and collaborative research experiences
+- [`systems/achievements.md`](systems/achievements.md) – achievement unlock logic, leaderboards, and notifications
+- [`systems/builder.md`](systems/builder.md) – nation creation flows, atomic components, and data ingestion
+- [`systems/help.md`](systems/help.md) – in-app help center architecture and authoring workflow
 
-### **🗂️ Archived Documentation** (`/docs/archived/`)
-- Completed implementation summaries
-- Debug and troubleshooting files
-- Historical cleanup reports
-- IIWiki integration testing files
+### Operations
+- [`operations/environments.md`](operations/environments.md) – environment tiers, required variables, and secrets
+- [`operations/deployment.md`](operations/deployment.md) – build pipeline, base paths, server scripts, and rollback tools
+- [`operations/monitoring.md`](operations/monitoring.md) – logging, webhook alerts, and runtime health checks
 
-## 🎯 **Quick Start Guide**
+### Processes
+- [`processes/testing.md`](processes/testing.md) – Jest strategy, wiring audits, browser automation, and fixtures
+- [`processes/contributing.md`](processes/contributing.md) – coding standards, review expectations, and release management
 
-### **For New Developers**
-1. Start with [`README.md`](../README.md) for project setup
-2. Review [`CLAUDE.md`](../CLAUDE.md) for AI-assisted development
-3. Check [`IMPLEMENTATION_STATUS.md`](../IMPLEMENTATION_STATUS.md) for feature status (100% complete)
+### Reference
+- [`reference/api.md`](reference/api.md) – generated tRPC router & procedure index with request/response patterns
+- [`reference/database.md`](reference/database.md) – Prisma model catalogue and relational diagrams
+- [`reference/events.md`](reference/events.md) – websocket channels, notification payloads, and scheduled jobs
 
-### **For Understanding the System**
-1. [`ATOMIC_SYSTEM_ARCHITECTURE.md`](../ATOMIC_SYSTEM_ARCHITECTURE.md) - Revolutionary government design
-2. [`ECONOMY_BUILDER_ARCHITECTURE.md`](../ECONOMY_BUILDER_ARCHITECTURE.md) - Economic systems
-3. [`DIPLOMATIC_SYSTEMS_GUIDE.md`](../DIPLOMATIC_SYSTEMS_GUIDE.md) - Diplomatic features
+## How to Maintain This Documentation
+1. Update Markdown alongside code changes—especially READMEs in feature directories and the relevant system guide.
+2. Run or extend automation in `scripts/audit` when adding routers, models, or calculations; capture outputs in the reference docs.
+3. Keep `/help` synchronized with the Markdown guides so users receive the same guidance in-app and in the repository.
+4. Move outdated docs to `docs/archive/<date>` instead of deleting them when retiring features.
 
-### **For Deployment**
-- [`PRODUCTION_DEPLOYMENT.md`](../PRODUCTION_DEPLOYMENT.md) - Complete deployment guide
-- Base path: `/projects/ixstats`
-- Port: 3550 (production), 3000 (development)
-
-## 🚀 **Current Status (v1.0.0 Production Release)**
-
-**Overall Completion: 100% (Grade A+)**
-- ✅ Core infrastructure operational (100%)
-- ✅ Authentication & security hardened (13 fixes applied)
-- ✅ Data wiring at 62.9% live integration (304 endpoints)
-- ✅ All major features operational (90-95%)
-- ✅ Production deployment ready
-- ✅ Redis rate limiting implemented
-- ✅ Discord webhook monitoring active
-
-**31 tRPC Routers with 304 Endpoints**: countries, admin, users, roles, sdi, intelligence, eci, notifications, mycountry, diplomatic, thinkpages, achievements, and more
-
-**131 Database Models**: Complete Prisma schema with 9 migrations
-
-**Remaining for v1.1:**
-1. Budget system UI integration
-2. ECI/SDI admin dashboard polish
-3. Advanced mobile performance optimizations
-4. PWA features and offline support
-
-## 📝 **Documentation Maintenance**
-
-**Last Major Update**: October 2025 (v1.0.0)
-- Updated completion status (98% → 100%)
-- Verified accurate technical metrics (36 routers, 304 endpoints, 131 models)
-- Added production optimization documentation
-- Updated Redis rate limiting and Discord webhook integration
-- Refreshed all feature matrices and status indicators
-
-**Next Review**: At v1.1 release (estimated 4-6 weeks)
-
----
-
-*This index is maintained as part of regular documentation cleanup. Update when adding new major documentation files.*
+The documentation refresh targets accuracy as of this commit. Treat the structure as the source of truth going forward.

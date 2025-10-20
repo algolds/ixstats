@@ -44,13 +44,7 @@ function generateEconomicDataForCountry(country: any) {
 
   const economicData = generateCountryEconomicData(profile);
 
-  // DEBUG LOGGING
-  console.log('=== CountryDataProvider DEBUG ===');
-  console.log('Country from API:', country.name);
-  console.log('API unemploymentRate:', country.unemploymentRate);
-  console.log('API taxRevenueGDPPercent:', country.taxRevenueGDPPercent);
-  console.log('API laborForceParticipationRate:', country.laborForceParticipationRate);
-  console.log('Template labor.unemploymentRate (before override):', economicData.labor.unemploymentRate);
+  // Economic data mapping (debug logs removed for production)
 
   // CRITICAL FIX: DO NOT use template data! Only use real database values.
   // If database value is null/undefined, SET IT TO null so UI can show "N/A"
@@ -93,10 +87,7 @@ function generateEconomicDataForCountry(country: any) {
     rural: country.ruralPopulationPercent
   } : { urban: 60, rural: 40 }; // Default split if not available
 
-  // DEBUG: Log final economicData
-  console.log('Final economicData.labor.unemploymentRate:', economicData.labor.unemploymentRate);
-  console.log('Final economicData.fiscal.taxRevenueGDPPercent:', economicData.fiscal.taxRevenueGDPPercent);
-  console.log('=== END CountryDataProvider DEBUG ===');
+  // Economic data mapping complete
 
   return economicData;
 }

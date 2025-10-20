@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { Globe, Crown, Building, MapPin, Users, Coins } from 'lucide-react';
-import { EnhancedNumberInput, CurrencySymbolPicker } from '../../../primitives/enhanced';
+import { CurrencySymbolPicker } from '../../../primitives/enhanced';
+import { Input } from '~/components/ui/input';
 import { Autocomplete } from '~/components/ui/autocomplete';
 import type { NationalIdentityData } from '~/app/builder/lib/economy-data-service';
 
@@ -69,16 +70,17 @@ export function BasicInfoForm({
 }: BasicInfoFormProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <EnhancedNumberInput
-        label="Country Name"
-        value={String(identity.countryName || '')}
-        onChange={(value) => onIdentityChange('countryName', String(value))}
-        sectionId="symbols"
-        icon={Globe}
-        showButtons={false}
-        placeholder="Enter country name"
-        acceptText={true}
-      />
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <Globe className="h-4 w-4" />
+          Country Name
+        </label>
+        <Input
+          value={identity.countryName ?? ''}
+          onChange={(event) => onIdentityChange('countryName', event.target.value)}
+          placeholder="Enter country name"
+        />
+      </div>
 
       {/* Government Type Selector - inline to prevent remounting */}
       <div className="space-y-2">
@@ -128,17 +130,16 @@ export function BasicInfoForm({
         )}
       </div>
 
-      <div className="lg:col-span-2">
-        <EnhancedNumberInput
-          label="Official Name"
-          description="Full ceremonial name of the country"
-          value={String(identity.officialName || '')}
-          onChange={(value) => onIdentityChange('officialName', String(value))}
-          sectionId="symbols"
-          icon={Crown}
-          showButtons={false}
+      <div className="lg:col-span-2 space-y-2">
+        <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <Crown className="h-4 w-4" />
+          Official Name
+        </label>
+        <p className="text-xs text-muted-foreground">Full ceremonial name of the country</p>
+        <Input
+          value={identity.officialName ?? ''}
+          onChange={(event) => onIdentityChange('officialName', event.target.value)}
           placeholder="The Republic of..."
-          acceptText={true}
         />
       </div>
 

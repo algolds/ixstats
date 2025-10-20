@@ -40,6 +40,7 @@ import type {
 } from '~/types/unified-notifications';
 import { generateSafeKey } from '~/app/mycountry/utils/keyValidation';
 import { useLiveNotifications } from '~/hooks/useLiveNotifications';
+import { createAbsoluteUrl } from "~/lib/url-utils";
 
 // Notification center configuration
 interface NotificationCenterConfig {
@@ -294,7 +295,8 @@ export function UnifiedNotificationCenter({
         label: 'View Details',
         type: 'primary' as const,
         onClick: () => {
-          if (n.href) window.location.href = n.href;
+          if (!n.href) return;
+          window.location.href = createAbsoluteUrl(n.href);
         }
       }] : undefined,
       metadata: n.metadata ? JSON.parse(n.metadata) : undefined,

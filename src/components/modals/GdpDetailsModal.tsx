@@ -218,7 +218,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-4rem)] w-[calc(100vw-2rem)] sm:w-[calc(100vw-4rem)] max-h-[90vh] overflow-y-auto z-[9999] shadow-2xl border-2 border-white/10 backdrop-blur-xl bg-background/95">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-4rem)] w-[calc(100vw-2rem)] sm:w-[calc(100vw-4rem)] max-h-[90vh] overflow-y-auto z-[13000] shadow-2xl border-2 border-white/10 backdrop-blur-xl bg-background/95">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-green-500" />

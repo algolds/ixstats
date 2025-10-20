@@ -340,6 +340,7 @@ export interface LaborConfiguration {
     gig: number;
     informal: number;
   };
+  averageAnnualIncome: number;
   
   // Working Conditions
   averageWorkweekHours: number;
@@ -1049,4 +1050,3 @@ export interface EconomyBuilderConfig {
 
 // Re-export EconomicInputs from the canonical source
 export type { EconomicInputs } from '~/app/builder/lib/economy-data-service';
-

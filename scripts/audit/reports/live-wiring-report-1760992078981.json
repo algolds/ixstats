@@ -1,0 +1,2020 @@
+{
+  "timestamp": "2025-10-20T20:27:58.978Z",
+  "summary": {
+    "totalComponents": 237,
+    "liveComponents": 84,
+    "mockComponents": 0,
+    "mixedComponents": 0,
+    "passiveComponents": 153,
+    "fullyCovered": 237,
+    "avgScore": 100,
+    "grade": "A+ (Excellent)"
+  },
+  "details": [
+    {
+      "component": "page.tsx",
+      "path": "/src/app/mycountry/page.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "AchievementsRankings.tsx",
+      "path": "/src/app/mycountry/components/AchievementsRankings.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "ActivityRings.tsx",
+      "path": "/src/app/mycountry/components/ActivityRings.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "AtomicExecutiveSummary.tsx",
+      "path": "/src/app/mycountry/components/AtomicExecutiveSummary.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 3 live data call(s)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "ContentHierarchy.tsx",
+      "path": "/src/app/mycountry/components/ContentHierarchy.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "DataMonitoringCenter.tsx",
+      "path": "/src/app/mycountry/components/DataMonitoringCenter.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "DynamicIslandNotifications.tsx",
+      "path": "/src/app/mycountry/components/DynamicIslandNotifications.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "EnhancedEconomicIntelligence.tsx",
+      "path": "/src/app/mycountry/components/EnhancedEconomicIntelligence.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "ErrorBoundary.tsx",
+      "path": "/src/app/mycountry/components/ErrorBoundary.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "ExecutiveCommandCenter.tsx",
+      "path": "/src/app/mycountry/components/ExecutiveCommandCenter.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "ExecutiveSummary.tsx",
+      "path": "/src/app/mycountry/components/ExecutiveSummary.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "FocusCards.tsx",
+      "path": "/src/app/mycountry/components/FocusCards.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "ForwardLookingIntelligence.tsx",
+      "path": "/src/app/mycountry/components/ForwardLookingIntelligence.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "GlobalNotificationSystem.tsx",
+      "path": "/src/app/mycountry/components/GlobalNotificationSystem.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "HolographicNationCard.tsx",
+      "path": "/src/app/mycountry/components/HolographicNationCard.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "IconSystem.tsx",
+      "path": "/src/app/mycountry/components/IconSystem.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "IntelligenceBriefings.tsx",
+      "path": "/src/app/mycountry/components/IntelligenceBriefings.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 2 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "🔌 Uses countries router (2 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "MobileOptimizations.tsx",
+      "path": "/src/app/mycountry/components/MobileOptimizations.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "MyCountryDataWrapper.tsx",
+      "path": "/src/app/mycountry/components/MyCountryDataWrapper.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "NationalPerformanceCommandCenter.tsx",
+      "path": "/src/app/mycountry/components/NationalPerformanceCommandCenter.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "RealTimeDataService.tsx",
+      "path": "/src/app/mycountry/components/RealTimeDataService.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses countries router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "RealTimeIntelligenceDashboard.tsx",
+      "path": "/src/app/mycountry/components/RealTimeIntelligenceDashboard.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "TabColorSystem.tsx",
+      "path": "/src/app/mycountry/components/TabColorSystem.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "UnifiedLayout.tsx",
+      "path": "/src/app/mycountry/components/UnifiedLayout.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "index.ts",
+      "path": "/src/app/mycountry/components/index.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "page.tsx",
+      "path": "/src/app/mycountry/defense/page.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 4 live data call(s)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "page.tsx",
+      "path": "/src/app/mycountry/editor/page.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "useDataSync.ts",
+      "path": "/src/app/mycountry/hooks/useDataSync.ts",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses countries router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "page.tsx",
+      "path": "/src/app/mycountry/intelligence/page.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "DatabaseIntegrationService.ts",
+      "path": "/src/app/mycountry/services/DatabaseIntegrationService.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "intelligence.ts",
+      "path": "/src/app/mycountry/types/intelligence.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "dataTransformers.ts",
+      "path": "/src/app/mycountry/utils/dataTransformers.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "enhancedEconomicIntelligence.ts",
+      "path": "/src/app/mycountry/utils/enhancedEconomicIntelligence.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "intelligence.ts",
+      "path": "/src/app/mycountry/utils/intelligence.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "keyValidation.ts",
+      "path": "/src/app/mycountry/utils/keyValidation.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "liveDataTransformers.ts",
+      "path": "/src/app/mycountry/utils/liveDataTransformers.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "EditorHeader.tsx",
+      "path": "/src/app/mycountry/editor/_components/EditorHeader.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "PendingChangesBanner.tsx",
+      "path": "/src/app/mycountry/editor/_components/PendingChangesBanner.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "StepIndicator.tsx",
+      "path": "/src/app/mycountry/editor/_components/StepIndicator.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "useEditorSave.ts",
+      "path": "/src/app/mycountry/editor/_hooks/useEditorSave.ts",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 4 live data call(s)",
+        "✅ Found 7 live data call(s)",
+        "🔌 Uses countries router (2 calls)",
+        "🔌 Uses government router (2 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "AddGeographyModal.tsx",
+      "path": "/src/app/mycountry/editor/components/AddGeographyModal.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "ChangePreviewDialog.tsx",
+      "path": "/src/app/mycountry/editor/components/ChangePreviewDialog.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "LoadingState.tsx",
+      "path": "/src/app/mycountry/editor/components/LoadingState.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "NoCountryState.tsx",
+      "path": "/src/app/mycountry/editor/components/NoCountryState.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "ScheduledChangesPanel.tsx",
+      "path": "/src/app/mycountry/editor/components/ScheduledChangesPanel.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 2 live data call(s)",
+        "✅ Found 1 live data call(s)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "UnauthorizedState.tsx",
+      "path": "/src/app/mycountry/editor/components/UnauthorizedState.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "useChangeTracking.ts",
+      "path": "/src/app/mycountry/editor/hooks/useChangeTracking.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "useCountryEditorData.ts",
+      "path": "/src/app/mycountry/editor/hooks/useCountryEditorData.ts",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 5 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "✅ Found 3 live data call(s)",
+        "🔌 Uses countries router (2 calls)",
+        "🔌 Uses government router (3 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "usePendingLocks.ts",
+      "path": "/src/app/mycountry/editor/hooks/usePendingLocks.ts",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "useRealTimeFeedback.ts",
+      "path": "/src/app/mycountry/editor/hooks/useRealTimeFeedback.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "FiscalSystemSectionEnhanced.tsx",
+      "path": "/src/app/mycountry/editor/sections/FiscalSystemSectionEnhanced.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "GeographySection.tsx",
+      "path": "/src/app/mycountry/editor/sections/GeographySection.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 3 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "🔌 Uses countries router (3 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "AlertThresholdSettings.tsx",
+      "path": "/src/app/mycountry/intelligence/_components/AlertThresholdSettings.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 2 live data call(s)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "AnalyticsDashboard.tsx",
+      "path": "/src/app/mycountry/intelligence/_components/AnalyticsDashboard.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 2 live data call(s)",
+        "✅ Found 5 live data call(s)",
+        "🔌 Uses countries router (1 calls)",
+        "🔌 Uses diplomatic router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "AreaFilter.tsx",
+      "path": "/src/app/mycountry/intelligence/_components/AreaFilter.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "BriefingCard.tsx",
+      "path": "/src/app/mycountry/intelligence/_components/BriefingCard.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CriticalMetricsDashboard.tsx",
+      "path": "/src/app/mycountry/intelligence/_components/CriticalMetricsDashboard.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "DiplomaticOperationsHub.tsx",
+      "path": "/src/app/mycountry/intelligence/_components/DiplomaticOperationsHub.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 12 live data call(s)",
+        "✅ Found 6 live data call(s)",
+        "✅ Found 6 live data call(s)",
+        "🔌 Uses countries router (1 calls)",
+        "🔌 Uses diplomatic router (11 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "IntelligenceFeed.tsx",
+      "path": "/src/app/mycountry/intelligence/_components/IntelligenceFeed.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 3 live data call(s)",
+        "✅ Found 2 live data call(s)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "IntelligenceHeader.tsx",
+      "path": "/src/app/mycountry/intelligence/_components/IntelligenceHeader.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "MeetingScheduler.tsx",
+      "path": "/src/app/mycountry/intelligence/_components/MeetingScheduler.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 4 live data call(s)",
+        "✅ Found 7 live data call(s)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "PolicyCreator.tsx",
+      "path": "/src/app/mycountry/intelligence/_components/PolicyCreator.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 3 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "🔌 Uses government router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "SecureCommunications.tsx",
+      "path": "/src/app/mycountry/intelligence/_components/SecureCommunications.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 3 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses diplomatic router (3 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "ViewSelector.tsx",
+      "path": "/src/app/mycountry/intelligence/_components/ViewSelector.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "index.ts",
+      "path": "/src/app/mycountry/intelligence/_components/index.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "intelligence-config.ts",
+      "path": "/src/app/mycountry/intelligence/_config/intelligence-config.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "types.ts",
+      "path": "/src/app/mycountry/intelligence/_config/types.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "useIntelligenceData.ts",
+      "path": "/src/app/mycountry/intelligence/_hooks/useIntelligenceData.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "loading.tsx",
+      "path": "/src/app/countries/loading.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "page.tsx",
+      "path": "/src/app/countries/page.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses countries router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "page.tsx",
+      "path": "/src/app/countries/[slug]/page.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 2 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "🔌 Uses countries router (1 calls)",
+        "🔌 Uses government router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "profile-page.tsx",
+      "path": "/src/app/countries/[slug]/profile-page.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 2 live data call(s)",
+        "✅ Found 3 live data call(s)",
+        "🔌 Uses countries router (1 calls)",
+        "🔌 Uses users router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "social-profile-page.tsx",
+      "path": "/src/app/countries/[slug]/social-profile-page.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses countries router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "CountriesCommandPalette.tsx",
+      "path": "/src/app/countries/_components/CountriesCommandPalette.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountriesFilterSidebar.tsx",
+      "path": "/src/app/countries/_components/CountriesFilterSidebar.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountriesFocusGridModular.tsx",
+      "path": "/src/app/countries/_components/CountriesFocusGridModular.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountriesGrid.tsx",
+      "path": "/src/app/countries/_components/CountriesGrid.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountriesHeader.tsx",
+      "path": "/src/app/countries/_components/CountriesHeader.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountriesPageHeader.tsx",
+      "path": "/src/app/countries/_components/CountriesPageHeader.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountriesPageModular.tsx",
+      "path": "/src/app/countries/_components/CountriesPageModular.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountriesSearch.tsx",
+      "path": "/src/app/countries/_components/CountriesSearch.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountriesSortBar.tsx",
+      "path": "/src/app/countries/_components/CountriesSortBar.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountriesStats.tsx",
+      "path": "/src/app/countries/_components/CountriesStats.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountryComparisonModal.tsx",
+      "path": "/src/app/countries/_components/CountryComparisonModal.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountryExecutiveSection.tsx",
+      "path": "/src/app/countries/_components/CountryExecutiveSection.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 6 live data call(s)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "CountryInfobox.tsx",
+      "path": "/src/app/countries/_components/CountryInfobox.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountryIntelligenceSection.tsx",
+      "path": "/src/app/countries/_components/CountryIntelligenceSection.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 2 live data call(s)",
+        "✅ Found 5 live data call(s)",
+        "🔌 Uses users router (1 calls)",
+        "🔌 Uses intelligence router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "CountryListCard.tsx",
+      "path": "/src/app/countries/_components/CountryListCard.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CrisisStatusBanner.tsx",
+      "path": "/src/app/countries/_components/CrisisStatusBanner.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "🔌 Uses users router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "LiveIntelligenceSection.tsx",
+      "path": "/src/app/countries/_components/LiveIntelligenceSection.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 4 live data call(s)",
+        "✅ Found 4 live data call(s)",
+        "🔌 Uses countries router (4 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "index.ts",
+      "path": "/src/app/countries/_components/index.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "page.tsx",
+      "path": "/src/app/countries/new/page.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses countries router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "CountryDiplomaticPanel.tsx",
+      "path": "/src/app/countries/[slug]/_components/CountryDiplomaticPanel.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountryEconomicPanel.tsx",
+      "path": "/src/app/countries/[slug]/_components/CountryEconomicPanel.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountryHeader.tsx",
+      "path": "/src/app/countries/[slug]/_components/CountryHeader.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountryOverviewPanel.tsx",
+      "path": "/src/app/countries/[slug]/_components/CountryOverviewPanel.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountryTabs.tsx",
+      "path": "/src/app/countries/[slug]/_components/CountryTabs.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "useCountryPageState.ts",
+      "path": "/src/app/countries/[slug]/_hooks/useCountryPageState.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "countryDataTransformers.ts",
+      "path": "/src/app/countries/[slug]/_utils/countryDataTransformers.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "page.tsx",
+      "path": "/src/app/countries/[slug]/modeling/page.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses countries router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "page.tsx",
+      "path": "/src/app/countries/[slug]/profile/page.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "ComparisonCharts.tsx",
+      "path": "/src/app/countries/_components/charts/ComparisonCharts.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "IxStatsCharts.tsx",
+      "path": "/src/app/countries/_components/charts/IxStatsCharts.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "IxTimeCalendar.tsx",
+      "path": "/src/app/countries/_components/charts/IxTimeCalendar.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "index.ts",
+      "path": "/src/app/countries/_components/charts/index.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountryAtGlance.tsx",
+      "path": "/src/app/countries/_components/detail/CountryAtGlance.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "TimeControl.tsx",
+      "path": "/src/app/countries/_components/detail/TimeControl.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "index.ts",
+      "path": "/src/app/countries/_components/detail/index.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "ComparativeAnalysis.tsx",
+      "path": "/src/app/countries/_components/economy/ComparativeAnalysis.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CoreEconomicIndicators.tsx",
+      "path": "/src/app/countries/_components/economy/CoreEconomicIndicators.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountryEconomicDataSection.tsx",
+      "path": "/src/app/countries/_components/economy/CountryEconomicDataSection.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 2 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses countries router (2 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "Demographics.tsx",
+      "path": "/src/app/countries/_components/economy/Demographics.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "EconomicDataDisplay.tsx",
+      "path": "/src/app/countries/_components/economy/EconomicDataDisplay.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 2 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses countries router (2 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "EconomicModelingEngine.tsx",
+      "path": "/src/app/countries/_components/economy/EconomicModelingEngine.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses countries router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "EconomicSummaryWidget.tsx",
+      "path": "/src/app/countries/_components/economy/EconomicSummaryWidget.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "FiscalSystemComponent.tsx",
+      "path": "/src/app/countries/_components/economy/FiscalSystemComponent.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "GovernmentSpending.tsx",
+      "path": "/src/app/countries/_components/economy/GovernmentSpending.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "HistoricalEconomicTracker.tsx",
+      "path": "/src/app/countries/_components/economy/HistoricalEconomicTracker.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "IncomeWealthDistribution.tsx",
+      "path": "/src/app/countries/_components/economy/IncomeWealthDistribution.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "LaborEmployment.tsx",
+      "path": "/src/app/countries/_components/economy/LaborEmployment.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "index.ts",
+      "path": "/src/app/countries/_components/economy/index.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "utils.ts",
+      "path": "/src/app/countries/_components/economy/utils.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "loading.tsx",
+      "path": "/src/app/dashboard/loading.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "page.tsx",
+      "path": "/src/app/dashboard/page.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "ActivityFeed.tsx",
+      "path": "/src/app/dashboard/_components/ActivityFeed.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "ActivityFeedCard.tsx",
+      "path": "/src/app/dashboard/_components/ActivityFeedCard.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CommandPalette.tsx",
+      "path": "/src/app/dashboard/_components/CommandPalette.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountriesSection.tsx",
+      "path": "/src/app/dashboard/_components/CountriesSection.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 2 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses countries router (2 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "CountryCard.tsx",
+      "path": "/src/app/dashboard/_components/CountryCard.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses countries router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "DashboardHeader.tsx",
+      "path": "/src/app/dashboard/_components/DashboardHeader.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "DiplomaticOperationsCard.tsx",
+      "path": "/src/app/dashboard/_components/DiplomaticOperationsCard.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 2 live data call(s)",
+        "✅ Found 4 live data call(s)",
+        "🔌 Uses countries router (1 calls)",
+        "🔌 Uses diplomatic router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "EnhancedCountryCard.tsx",
+      "path": "/src/app/dashboard/_components/EnhancedCountryCard.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses countries router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "GlassActivityMarquee.tsx",
+      "path": "/src/app/dashboard/_components/GlassActivityMarquee.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "GlobalAnalytics.tsx",
+      "path": "/src/app/dashboard/_components/GlobalAnalytics.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "GlobalIntelligenceCard.tsx",
+      "path": "/src/app/dashboard/_components/GlobalIntelligenceCard.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 3 live data call(s)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "GlobalStatsCard.tsx",
+      "path": "/src/app/dashboard/_components/GlobalStatsCard.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 3 live data call(s)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "GlobalStatsSection.tsx",
+      "path": "/src/app/dashboard/_components/GlobalStatsSection.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "LiveActivityMarquee.tsx",
+      "path": "/src/app/dashboard/_components/LiveActivityMarquee.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "MyCountryCard.tsx",
+      "path": "/src/app/dashboard/_components/MyCountryCard.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "StrategicCommunicationsCard.tsx",
+      "path": "/src/app/dashboard/_components/StrategicCommunicationsCard.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 3 live data call(s)",
+        "✅ Found 3 live data call(s)",
+        "🔌 Uses thinkpages router (3 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "StrategicOperationsSuite.tsx",
+      "path": "/src/app/dashboard/_components/StrategicOperationsSuite.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "ThinkPagesHubCard.tsx",
+      "path": "/src/app/dashboard/_components/ThinkPagesHubCard.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 3 live data call(s)",
+        "✅ Found 3 live data call(s)",
+        "🔌 Uses thinkpages router (3 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "ThinkPagesStatusCard.tsx",
+      "path": "/src/app/dashboard/_components/ThinkPagesStatusCard.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "TrendingTopicsCard.tsx",
+      "path": "/src/app/dashboard/_components/TrendingTopicsCard.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses thinkpages router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "index.ts",
+      "path": "/src/app/dashboard/_components/index.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "page.tsx",
+      "path": "/src/app/dashboard/new/page.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "page.tsx",
+      "path": "/src/app/thinkpages/page.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 3 live data call(s)",
+        "✅ Found 3 live data call(s)",
+        "🔌 Uses countries router (1 calls)",
+        "🔌 Uses users router (1 calls)",
+        "🔌 Uses thinkpages router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "page.tsx",
+      "path": "/src/app/thinkpages/feed/page.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 2 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "🔌 Uses countries router (1 calls)",
+        "🔌 Uses users router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "page.tsx",
+      "path": "/src/app/thinkpages/thinkshare/page.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses users router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "page.tsx",
+      "path": "/src/app/thinkpages/thinktanks/page.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "page.tsx",
+      "path": "/src/app/thinkpages/post/[postId]/page.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 5 live data call(s)",
+        "✅ Found 4 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses users router (1 calls)",
+        "🔌 Uses thinkpages router (4 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "CountriesFocusGrid.tsx",
+      "path": "/src/components/countries/CountriesFocusGrid.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountryActionsMenu.tsx",
+      "path": "/src/components/countries/CountryActionsMenu.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 6 live data call(s)",
+        "✅ Found 3 live data call(s)",
+        "✅ Found 4 live data call(s)",
+        "🔌 Uses diplomatic router (4 calls)",
+        "🔌 Uses thinkpages router (2 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "CountryFocusCard.tsx",
+      "path": "/src/components/countries/CountryFocusCard.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CountryProfileInfoBox.tsx",
+      "path": "/src/components/countries/CountryProfileInfoBox.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses countries router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "DiplomaticIntelligenceProfile.tsx",
+      "path": "/src/components/countries/DiplomaticIntelligenceProfile.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 3 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses thinkpages router (3 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "DynamicCountryHeader.tsx",
+      "path": "/src/components/countries/DynamicCountryHeader.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "EnhancedIntelligenceBriefing.tsx",
+      "path": "/src/components/countries/EnhancedIntelligenceBriefing.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "EnhancedSocialCountryProfile.tsx",
+      "path": "/src/components/countries/EnhancedSocialCountryProfile.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "NationalIdentityDisplay.tsx",
+      "path": "/src/components/countries/NationalIdentityDisplay.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "PublicExecutiveOverview.tsx",
+      "path": "/src/components/countries/PublicExecutiveOverview.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "PublicVitalityRings.tsx",
+      "path": "/src/components/countries/PublicVitalityRings.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "WikiIntelligenceTab.tsx",
+      "path": "/src/components/countries/WikiIntelligenceTab.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "CountryMetricsGrid.tsx",
+      "path": "/src/components/countries/intelligence/CountryMetricsGrid.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "IntelligenceSummary.tsx",
+      "path": "/src/components/countries/intelligence/IntelligenceSummary.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "StatusIndicators.tsx",
+      "path": "/src/components/countries/intelligence/StatusIndicators.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "VitalityMetricsPanel.tsx",
+      "path": "/src/components/countries/intelligence/VitalityMetricsPanel.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "WikiIntegrationPanel.tsx",
+      "path": "/src/components/countries/intelligence/WikiIntegrationPanel.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "constants.ts",
+      "path": "/src/components/countries/intelligence/constants.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "index.ts",
+      "path": "/src/components/countries/intelligence/index.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "types.ts",
+      "path": "/src/components/countries/intelligence/types.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "utils.ts",
+      "path": "/src/components/countries/intelligence/utils.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "IntelligenceCharts.tsx",
+      "path": "/src/components/countries/intelligence/charts/IntelligenceCharts.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "chartConfig.ts",
+      "path": "/src/components/countries/intelligence/charts/chartConfig.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "index.ts",
+      "path": "/src/components/countries/intelligence/charts/index.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "AdvancedSearchDiscovery.tsx",
+      "path": "/src/components/diplomatic/AdvancedSearchDiscovery.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses countries router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "CulturalExchangeProgram.tsx",
+      "path": "/src/components/diplomatic/CulturalExchangeProgram.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 3 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "🔌 Uses diplomatic router (3 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "DiplomaticLeaderboards.tsx",
+      "path": "/src/components/diplomatic/DiplomaticLeaderboards.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses countries router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "EmbassyNetworkVisualization.tsx",
+      "path": "/src/components/diplomatic/EmbassyNetworkVisualization.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 11 live data call(s)",
+        "✅ Found 6 live data call(s)",
+        "✅ Found 5 live data call(s)",
+        "🔌 Uses countries router (1 calls)",
+        "🔌 Uses diplomatic router (10 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "EnhancedEmbassyNetwork.tsx",
+      "path": "/src/components/diplomatic/EnhancedEmbassyNetwork.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "🔌 Uses diplomatic router (1 calls)",
+        "🔌 Uses atomicGovernment router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "InlineDiplomaticActions.tsx",
+      "path": "/src/components/diplomatic/InlineDiplomaticActions.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 3 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "🔌 Uses users router (1 calls)",
+        "🔌 Uses thinkpages router (2 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "LiveDiplomaticFeed.tsx",
+      "path": "/src/components/diplomatic/LiveDiplomaticFeed.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "SecureDiplomaticChannels.tsx",
+      "path": "/src/components/diplomatic/SecureDiplomaticChannels.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 3 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses diplomatic router (3 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "SocialActivityFeed.tsx",
+      "path": "/src/components/diplomatic/SocialActivityFeed.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "🔌 Uses intelligence router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "AssetManager.tsx",
+      "path": "/src/components/defense/AssetManager.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 3 live data call(s)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "CommandPanel.tsx",
+      "path": "/src/components/defense/CommandPanel.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 3 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses countries router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "MilitaryCustomizer.tsx",
+      "path": "/src/components/defense/MilitaryCustomizer.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 3 live data call(s)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "StabilityPanel.tsx",
+      "path": "/src/components/defense/StabilityPanel.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 2 live data call(s)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "UnitManager.tsx",
+      "path": "/src/components/defense/UnitManager.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 3 live data call(s)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "ActionDialog.tsx",
+      "path": "/src/components/intelligence/ActionDialog.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "AtomicIntelligenceFeed.tsx",
+      "path": "/src/components/intelligence/AtomicIntelligenceFeed.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "ForwardLookingIntelligence.tsx",
+      "path": "/src/components/intelligence/ForwardLookingIntelligence.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "AdvancedBudgetDashboard.tsx",
+      "path": "/src/components/government/AdvancedBudgetDashboard.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "AtomicGovernmentDashboard.tsx",
+      "path": "/src/components/government/AtomicGovernmentDashboard.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses countries router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "BudgetManagementDashboard.tsx",
+      "path": "/src/components/government/BudgetManagementDashboard.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "GovernmentBuilder.tsx",
+      "path": "/src/components/government/GovernmentBuilder.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "index.ts",
+      "path": "/src/components/government/index.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "AtomicGovernmentComponents.tsx",
+      "path": "/src/components/government/atoms/AtomicGovernmentComponents.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "AtomicUIComponents.tsx",
+      "path": "/src/components/government/atoms/AtomicUIComponents.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "BudgetAllocationForm.tsx",
+      "path": "/src/components/government/atoms/BudgetAllocationForm.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "DepartmentForm.tsx",
+      "path": "/src/components/government/atoms/DepartmentForm.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "GovernmentStructureForm.tsx",
+      "path": "/src/components/government/atoms/GovernmentStructureForm.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "RevenueSourceForm.tsx",
+      "path": "/src/components/government/atoms/RevenueSourceForm.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "SubBudgetManager.tsx",
+      "path": "/src/components/government/atoms/SubBudgetManager.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "governmentTemplates.ts",
+      "path": "/src/components/government/templates/governmentTemplates.ts",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "AccountCreationModal.tsx",
+      "path": "/src/components/thinkpages/AccountCreationModal.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 3 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses thinkpages router (3 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "AccountManagerModal.tsx",
+      "path": "/src/components/thinkpages/AccountManagerModal.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "AccountSettingsModal.tsx",
+      "path": "/src/components/thinkpages/AccountSettingsModal.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses thinkpages router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "EnhancedAccountManager.tsx",
+      "path": "/src/components/thinkpages/EnhancedAccountManager.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses thinkpages router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "GlassCanvasComposer.tsx",
+      "path": "/src/components/thinkpages/GlassCanvasComposer.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 5 live data call(s)",
+        "✅ Found 4 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses countries router (3 calls)",
+        "🔌 Uses diplomatic router (1 calls)",
+        "🔌 Uses thinkpages router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "LiveEventsFeed.tsx",
+      "path": "/src/components/thinkpages/LiveEventsFeed.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses countries router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "PostComposer.tsx",
+      "path": "/src/components/thinkpages/PostComposer.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses thinkpages router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "ReactionPopup.tsx",
+      "path": "/src/components/thinkpages/ReactionPopup.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses thinkpages router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "ReactionsDialog.tsx",
+      "path": "/src/components/thinkpages/ReactionsDialog.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses thinkpages router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "RepostModal.tsx",
+      "path": "/src/components/thinkpages/RepostModal.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "RichTextEditor.tsx",
+      "path": "/src/components/thinkpages/RichTextEditor.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses thinkpages router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "ThinkPagesGuide.tsx",
+      "path": "/src/components/thinkpages/ThinkPagesGuide.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "ThinkpagesPost.tsx",
+      "path": "/src/components/thinkpages/ThinkpagesPost.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 8 live data call(s)",
+        "✅ Found 8 live data call(s)",
+        "🔌 Uses thinkpages router (8 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "ThinkpagesSocialPlatform.tsx",
+      "path": "/src/components/thinkpages/ThinkpagesSocialPlatform.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 4 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "🔌 Uses thinkpages router (4 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "ThinktankGroups.tsx",
+      "path": "/src/components/thinkpages/ThinktankGroups.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 5 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "✅ Found 3 live data call(s)",
+        "🔌 Uses thinkpages router (5 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "UnifiedComposerContainer.tsx",
+      "path": "/src/components/thinkpages/UnifiedComposerContainer.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "WikiImageSearch.tsx",
+      "path": "/src/components/thinkpages/WikiImageSearch.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses thinkpages router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "WikiSearch.tsx",
+      "path": "/src/components/thinkpages/WikiSearch.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses thinkpages router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "AccountIndicator.tsx",
+      "path": "/src/components/thinkpages/primitives/AccountIndicator.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "CollaborativeDocument.tsx",
+      "path": "/src/components/thinkpages/primitives/CollaborativeDocument.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 5 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "✅ Found 3 live data call(s)",
+        "🔌 Uses thinkpages router (5 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "DiscordEmojiPicker.tsx",
+      "path": "/src/components/thinkpages/primitives/DiscordEmojiPicker.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses thinkpages router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "PostActions.tsx",
+      "path": "/src/components/thinkpages/primitives/PostActions.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 2 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "🔌 Uses thinkpages router (2 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "WikiTextImporter.tsx",
+      "path": "/src/components/thinkpages/primitives/WikiTextImporter.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "AtomicTaxEffectivenessPanel.tsx",
+      "path": "/src/components/tax-system/AtomicTaxEffectivenessPanel.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "TaxBuilder.tsx",
+      "path": "/src/components/tax-system/TaxBuilder.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "✅ Found 2 live data call(s)",
+        "🔌 Uses government router (1 calls)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "TaxEconomySyncDisplay.tsx",
+      "path": "/src/components/tax-system/TaxEconomySyncDisplay.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "TaxGovernmentSyncDisplay.tsx",
+      "path": "/src/components/tax-system/TaxGovernmentSyncDisplay.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "UnifiedTaxEffectivenessDisplay.tsx",
+      "path": "/src/components/tax-system/UnifiedTaxEffectivenessDisplay.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "AtomicTaxComponents.tsx",
+      "path": "/src/components/tax-system/atoms/AtomicTaxComponents.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "TaxCalculator.tsx",
+      "path": "/src/components/tax-system/atoms/TaxCalculator.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)"
+      ],
+      "score": 100
+    },
+    {
+      "component": "TaxCategoryForm.tsx",
+      "path": "/src/components/tax-system/atoms/TaxCategoryForm.tsx",
+      "status": "PASSIVE",
+      "details": [],
+      "score": 100
+    },
+    {
+      "component": "TaxSystemForm.tsx",
+      "path": "/src/components/tax-system/atoms/TaxSystemForm.tsx",
+      "status": "LIVE",
+      "details": [
+        "✅ Found 1 live data call(s)",
+        "✅ Found 1 live data call(s)",
+        "🔌 Uses government router (1 calls)"
+      ],
+      "score": 100
+    }
+  ]
+}

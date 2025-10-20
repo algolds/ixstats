@@ -67,7 +67,7 @@ function CountryShowcaseCard({ country }: { country: any }) {
     const fetchWikiData = async () => {
       try {
         // Fetch extract and page images
-        const apiUrl = `https://ixwiki.com/api.php?action=query&prop=extracts|pageimages&exintro=1&explaintext=1&piprop=original&format=json&titles=${encodeURIComponent(country.name)}`;
+        const apiUrl = `https://ixwiki.com/w/api.php?action=query&prop=extracts|pageimages&exintro=1&explaintext=1&piprop=original&format=json&titles=${encodeURIComponent(country.name)}`;
         const resp = await fetch(apiUrl, {
           headers: {
             'User-Agent': 'IxStats-Platform',
@@ -113,7 +113,7 @@ function CountryShowcaseCard({ country }: { country: any }) {
 
         // Fallback: Try to fetch coat of arms specifically
         if (!coatOfArmsUrl) {
-          const coaApiUrl = `https://ixwiki.com/api.php?action=query&prop=images&format=json&titles=${encodeURIComponent(country.name)}`;
+          const coaApiUrl = `https://ixwiki.com/w/api.php?action=query&prop=images&format=json&titles=${encodeURIComponent(country.name)}`;
           const coaResp = await fetch(coaApiUrl, {
             headers: {
               'User-Agent': 'IxStats-Platform',

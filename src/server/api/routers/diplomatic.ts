@@ -131,37 +131,51 @@ export const diplomaticRouter = createTRPCRouter({
       countryId: z.string()
     }))
     .query(async ({ ctx, input }) => {
-      try {
-        const embassies = await ctx.db.embassy.findMany({
-          where: {
-            OR: [
-              { hostCountryId: input.countryId },
-              { guestCountryId: input.countryId }
-            ]
-          },
-          orderBy: { establishedAt: 'desc' }
-        });
+      const embassies = await ctx.db.embassy.findMany({
+        where: {
+          OR: [
+            { hostCountryId: input.countryId },
+            { guestCountryId: input.countryId }
+          ]
+        },
+        orderBy: { establishedAt: 'desc' },
+        include: {
+          hostCountry: { select: { id: true, name: true, flag: true } },
+          guestCountry: { select: { id: true, name: true, flag: true } }
+        }
+      });
 
-        return embassies.map(embassy => ({
+      return embassies.map(embassy => {
+        const isHost = embassy.hostCountryId === input.countryId;
+        const partnerCountry = isHost ? embassy.guestCountry : embassy.hostCountry;
+
+        return {
           id: embassy.id,
-          country: embassy.hostCountryId === input.countryId ? embassy.guestCountryId : embassy.hostCountryId,
+          hostCountryId: embassy.hostCountryId,
+          guestCountryId: embassy.guestCountryId,
+          countryId: partnerCountry?.id ?? null,
+          country: partnerCountry?.name ?? 'Unknown',
+          countryFlag: partnerCountry?.flag ?? null,
           status: embassy.status,
           strength: Math.floor((embassy.staffCount || 5) * 8 + (embassy.services ? JSON.parse(embassy.services).length * 10 : 30)),
-          role: embassy.hostCountryId === input.countryId ? 'host' : 'guest',
+          role: isHost ? 'host' as const : 'guest' as const,
           ambassadorName: embassy.ambassadorName,
           location: embassy.location,
           staffCount: embassy.staffCount,
           services: embassy.services ? JSON.parse(embassy.services) : [],
-          establishedAt: embassy.establishedAt.toISOString()
-        }));
-      } catch (error) {
-        // Fallback mock data
-        return [
-          { id: '1', country: 'Caphiria', status: 'active', strength: 85 },
-          { id: '2', country: 'Urcea', status: 'strengthening', strength: 72 },
-          { id: '3', country: 'Burgundie', status: 'neutral', strength: 45 }
-        ];
-      }
+          establishedAt: embassy.establishedAt.toISOString(),
+          level: embassy.level,
+          experience: embassy.experience,
+          influence: embassy.influence,
+          budget: embassy.budget,
+          maintenanceCost: embassy.maintenanceCost,
+          securityLevel: embassy.securityLevel,
+          specialization: embassy.specialization,
+          specializationLevel: embassy.specializationLevel,
+          lastMaintenance: embassy.lastMaintenancePaid?.toISOString() ?? null,
+          updatedAt: embassy.updatedAt.toISOString(),
+        };
+      });
     }),
 
   establishEmbassy: protectedProcedure
@@ -193,6 +207,9 @@ export const diplomaticRouter = createTRPCRouter({
         }
       });
 
+      let hostCountryName: string | null = null;
+      let guestCountryName: string | null = null;
+
       // 🔔 Notify both countries about embassy establishment
       try {
         // Get country names for better messaging
@@ -201,10 +218,13 @@ export const diplomaticRouter = createTRPCRouter({
           ctx.db.country.findUnique({ where: { id: input.guestCountryId }, select: { name: true } })
         ]);
 
+        hostCountryName = hostCountry?.name ?? null;
+        guestCountryName = guestCountry?.name ?? null;
+
         // Notify host country
         await notificationAPI.create({
           title: '🏛️ New Embassy Established',
-          message: `${guestCountry?.name || 'A country'} has established ${input.name} in your nation`,
+          message: `${guestCountryName || 'A country'} has established ${input.name} in your nation`,
           countryId: input.hostCountryId,
           category: 'diplomatic',
           priority: 'medium',
@@ -217,7 +237,7 @@ export const diplomaticRouter = createTRPCRouter({
         // Notify guest country (confirmation)
         await notificationAPI.create({
           title: '🏛️ Embassy Establishment Confirmed',
-          message: `${input.name} has been successfully established in ${hostCountry?.name || 'the host nation'}`,
+          message: `${input.name} has been successfully established in ${hostCountryName || 'the host nation'}`,
           countryId: input.guestCountryId,
           category: 'diplomatic',
           priority: 'low',
@@ -232,7 +252,11 @@ export const diplomaticRouter = createTRPCRouter({
         // Don't fail the embassy creation if notifications fail
       }
 
-      return embassy;
+      return {
+        ...embassy,
+        hostCountryName,
+        guestCountryName,
+      };
     }),
 
   // Diplomatic Channels
@@ -1487,4 +1511,3 @@ function getInfluenceEffects(totalInfluence: number): Record<string, number> {
   
   return effects;
 }
-
