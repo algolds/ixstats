@@ -7,7 +7,7 @@ import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Trophy, Star, Medal, Crown, Sparkles, Lock, TrendingUp, Wifi, WifiOff } from "lucide-react";
 import { api } from "~/trpc/react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/url-utils";
 import Link from "next/link";

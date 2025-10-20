@@ -18,6 +18,7 @@ import {
   Menu,
   MessageSquare,
   Rss,
+  Send,
   Settings,
   Shield,
   SlidersHorizontal,
@@ -395,6 +396,27 @@ export function Navigation() {
       icon: Rss,
       requiresAuth: false,
       description: "Knowledge management and collaborative thinking",
+      isDropdown: true,
+      dropdownItems: [
+        {
+          name: "Social Feed",
+          href: "/thinkpages?view=feed",
+          icon: MessageSquare,
+          description: "Broadcast updates and follow communities"
+        },
+        {
+          name: "ThinkTanks",
+          href: "/thinkpages?view=thinktanks",
+          icon: Users,
+          description: "Coordinate collaborative research groups"
+        },
+        {
+          name: "ThinkShare Messages",
+          href: "/thinkpages?view=messages",
+          icon: Send,
+          description: "Direct conversations with your teams"
+        }
+      ]
     },
     {
       name: "Admin",

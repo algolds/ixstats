@@ -1,7 +1,7 @@
 "use client";
 import { Button } from "~/components/ui/button";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { getUserInterfacePreferences } from "~/lib/interface-routing";
 import { navigateTo } from "~/lib/url-utils";

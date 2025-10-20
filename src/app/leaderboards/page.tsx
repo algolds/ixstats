@@ -18,7 +18,7 @@ import {
   Star
 } from "lucide-react";
 import { api } from "~/trpc/react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import { cn } from "~/lib/utils";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import Link from "next/link";

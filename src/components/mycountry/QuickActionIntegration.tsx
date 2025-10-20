@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useUser } from '~/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { api } from '~/trpc/react';
 import { useCountryData } from '~/components/mycountry';

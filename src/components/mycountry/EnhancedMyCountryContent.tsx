@@ -20,7 +20,7 @@ import { AtomicComponentSelector } from '~/components/government/atoms/AtomicGov
 import { TaxBuilder } from '~/components/tax-system/TaxBuilder';
 import { GovernmentBuilder } from '~/components/government/GovernmentBuilder';
 import { api } from '~/trpc/react';
-import { useUser } from '@clerk/nextjs';
+import { useUser } from '~/context/auth-context';
 import { ComponentType } from '@prisma/client';
 import type { AtomicGovernmentComponent } from '~/components/government/atoms/AtomicGovernmentComponents';
 

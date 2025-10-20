@@ -2,7 +2,7 @@
 // Provides real-time intelligence updates with automatic connection management
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useUser } from '~/context/auth-context';
 import { IntelligenceWebSocketClient } from '~/lib/websocket/intelligence-websocket-client';
 import type { 
   IntelligenceUpdate, 

@@ -3,7 +3,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUser } from '@clerk/nextjs';
+import { useUser } from '~/context/auth-context';
 import { api } from '~/trpc/react';
 import {
   Dialog,

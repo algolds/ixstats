@@ -1,7 +1,7 @@
 "use client";
 
 import React, { use } from 'react';
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
@@ -209,4 +209,3 @@ export default function PostPage({ params }: PostPageProps) {
     </div>
   );
 }
-

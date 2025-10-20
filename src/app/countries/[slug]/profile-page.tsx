@@ -21,7 +21,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { AlertTriangle, Eye, ExternalLink, ArrowLeft } from "lucide-react";
 import { createUrl } from "~/lib/url-utils";
 import Link from "next/link";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import { getFlagColors, generateFlagThemeCSS } from "~/lib/flag-color-extractor";
 
 // Import our new components

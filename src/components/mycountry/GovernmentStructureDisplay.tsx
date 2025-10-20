@@ -5,13 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { Skeleton } from '~/components/ui/skeleton';
-import { 
-  Building2, 
-  Crown, 
-  Users, 
-  DollarSign, 
-  Edit2, 
-  Plus, 
+import {
+  Building2,
+  Crown,
+  Users,
+  DollarSign,
+  Edit2,
+  Plus,
   AlertTriangle,
   Settings,
   TrendingUp,
@@ -19,7 +19,7 @@ import {
   Shield
 } from 'lucide-react';
 import { api } from "~/trpc/react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import Link from 'next/link';
 import { createUrl } from '~/lib/url-utils';
 import { useAtomicGovernment, useAtomicState } from '~/components/atomic/AtomicStateProvider';

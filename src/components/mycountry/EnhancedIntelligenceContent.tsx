@@ -16,7 +16,7 @@ import { IntelligenceTabSystem } from './IntelligenceTabSystem';
 import { CrisisStatusBanner } from "~/app/countries/_components/CrisisStatusBanner";
 import { useFlag } from "~/hooks/useFlag";
 import { api } from '~/trpc/react';
-import { useUser } from '@clerk/nextjs';
+import { useUser } from '~/context/auth-context';
 import { useUnifiedIntelligence } from '~/hooks/useUnifiedIntelligence';
 
 interface EnhancedIntelligenceContentProps {

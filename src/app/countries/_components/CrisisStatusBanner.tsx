@@ -5,14 +5,14 @@ import { api } from "~/trpc/react";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { 
-  AlertTriangle, 
-  Shield, 
-  CheckCircle, 
+import {
+  AlertTriangle,
+  Shield,
+  CheckCircle,
   ExternalLink,
   Activity
 } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import { hasInterfaceAccess } from "~/lib/interface-routing";
 
 interface CrisisStatusBannerProps {

@@ -2914,6 +2914,274 @@ const countriesRouter = createTRPCRouter({
       return crises;
     }),
 
+  getLiveEventsFeed: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+      limit: z.number().optional().default(20),
+      hours: z.number().optional().default(72)
+    }))
+    .query(async ({ ctx, input }) => {
+      const now = new Date();
+      const sinceWindow = new Date(now.getTime() - input.hours * 60 * 60 * 1000);
+
+      const [country, crisisEvents, diplomaticEvents, embassyMissions, cabinetMeetings, securityThreats] = await Promise.all([
+        ctx.db.country.findUnique({
+          where: { id: input.countryId }
+        }),
+        ctx.db.crisisEvent.findMany({
+          where: {
+            affectedCountries: {
+              contains: input.countryId
+            },
+            createdAt: {
+              gte: sinceWindow
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: input.limit
+        }),
+        ctx.db.diplomaticEvent.findMany({
+          where: {
+            OR: [
+              { country1Id: input.countryId },
+              { country2Id: input.countryId }
+            ],
+            createdAt: {
+              gte: sinceWindow
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: input.limit
+        }),
+        ctx.db.embassyMission.findMany({
+          where: {
+            embassy: {
+              OR: [
+                { hostCountryId: input.countryId },
+                { guestCountryId: input.countryId }
+              ]
+            },
+            OR: [
+              { updatedAt: { gte: sinceWindow } },
+              { completesAt: { gte: sinceWindow } }
+            ]
+          },
+          include: {
+            embassy: {
+              include: {
+                hostCountry: { select: { name: true, id: true } },
+                guestCountry: { select: { name: true, id: true } }
+              }
+            }
+          },
+          orderBy: { updatedAt: 'desc' },
+          take: input.limit
+        }),
+        ctx.db.cabinetMeeting.findMany({
+          where: {
+            countryId: input.countryId,
+            OR: [
+              { status: { in: ['scheduled', 'in_progress'] } },
+              {
+                status: 'completed',
+                completedAt: { gte: sinceWindow }
+              }
+            ]
+          },
+          orderBy: [
+            { scheduledDate: 'asc' },
+            { createdAt: 'desc' }
+          ],
+          take: input.limit
+        }),
+        ctx.db.securityThreat.findMany({
+          where: {
+            countryId: input.countryId,
+            isActive: true,
+            OR: [
+              { updatedAt: { gte: sinceWindow } },
+              { createdAt: { gte: sinceWindow } }
+            ]
+          },
+          orderBy: { updatedAt: 'desc' },
+          take: input.limit
+        })
+      ]);
+
+      type LiveEvent = {
+        id: string;
+        type: string;
+        title: string;
+        description: string;
+        timestamp: string;
+        severity?: string | null;
+        tags?: string[];
+        metadata?: Record<string, unknown>;
+      };
+
+      const events: LiveEvent[] = [];
+
+      if (country) {
+        if (country.adjustedGdpGrowth > 0.03) {
+          events.push({
+            id: `economic_growth_${country.id}`,
+            type: 'economic_growth',
+            title: 'Strong Economic Growth',
+            description: `GDP growth reached ${(country.adjustedGdpGrowth * 100).toFixed(1)}%`,
+            timestamp: country.updatedAt.toISOString(),
+            severity: 'positive',
+            tags: ['Economy', `${(country.adjustedGdpGrowth * 100).toFixed(1)}% growth`],
+            metadata: {
+              value: country.adjustedGdpGrowth,
+              economicTier: country.economicTier
+            }
+          });
+        }
+
+        if (country.adjustedGdpGrowth < -0.01) {
+          events.push({
+            id: `economic_decline_${country.id}`,
+            type: 'economic_decline',
+            title: 'Economic Contraction Detected',
+            description: `GDP declined ${(country.adjustedGdpGrowth * 100).toFixed(1)}%`,
+            timestamp: country.updatedAt.toISOString(),
+            severity: 'warning',
+            tags: ['Economy', 'Decline'],
+            metadata: {
+              value: country.adjustedGdpGrowth
+            }
+          });
+        }
+
+        if (country.populationGrowthRate > 0.02) {
+          events.push({
+            id: `population_growth_${country.id}`,
+            type: 'economic_growth',
+            title: 'Population Surge',
+            description: 'Population growth exceeded 2% this cycle',
+            timestamp: country.updatedAt.toISOString(),
+            severity: 'info',
+            tags: ['Demographics', `${(country.populationGrowthRate * 100).toFixed(1)}% growth`],
+            metadata: {
+              value: country.populationGrowthRate,
+              currentPopulation: country.currentPopulation
+            }
+          });
+        }
+      }
+
+      crisisEvents.forEach((crisis) => {
+        events.push({
+          id: `crisis_${crisis.id}`,
+          type: 'crisis',
+          title: crisis.title,
+          description: crisis.description ?? 'Crisis event detected',
+          timestamp: crisis.createdAt.toISOString(),
+          severity: crisis.severity ?? null,
+          tags: ['Crisis', crisis.severity ?? ''],
+          metadata: {
+            economicImpact: crisis.economicImpact,
+            affectedCountries: crisis.affectedCountries,
+            status: crisis.status
+          }
+        });
+      });
+
+      diplomaticEvents.forEach((event) => {
+        const otherCountryId = event.country1Id === input.countryId ? event.country2Id : event.country1Id;
+        const tags = ['Diplomacy'];
+        if (event.eventType) tags.push(event.eventType.replace(/_/g, ' '));
+        if (event.severity) tags.push(event.severity);
+
+        events.push({
+          id: `diplomatic_${event.id}`,
+          type: 'diplomatic',
+          title: event.title,
+          description: event.description,
+          timestamp: event.createdAt.toISOString(),
+          severity: event.severity ?? 'info',
+          tags,
+          metadata: {
+            tradeValue: event.tradeValue,
+            status: event.status,
+            relatedCountries: [otherCountryId].filter(Boolean),
+            embassyId: event.embassyId,
+            missionId: event.missionId
+          }
+        });
+      });
+
+      embassyMissions.forEach((mission) => {
+        const embassy = mission.embassy;
+        const otherCountryName = embassy
+          ? (embassy.hostCountryId === input.countryId
+              ? embassy.guestCountry?.name
+              : embassy.hostCountry?.name)
+          : undefined;
+
+        events.push({
+          id: `embassy_mission_${mission.id}`,
+          type: 'embassy_mission',
+          title: `${mission.name} (${mission.status})`,
+          description: mission.description,
+          timestamp: mission.updatedAt.toISOString(),
+          severity: mission.status === 'failed' ? 'critical' : mission.status === 'completed' ? 'positive' : 'info',
+          tags: ['Embassy Mission', mission.type.replace(/_/g, ' '), mission.status],
+          metadata: {
+            completesAt: mission.completesAt.toISOString(),
+            embassyName: embassy?.name,
+            relatedCountry: otherCountryName
+          }
+        });
+      });
+
+      cabinetMeetings.forEach((meeting) => {
+        const timestamp = meeting.scheduledDate ?? meeting.createdAt;
+        events.push({
+          id: `cabinet_meeting_${meeting.id}`,
+          type: 'cabinet_meeting',
+          title: meeting.title,
+          description: meeting.description ?? 'Cabinet meeting scheduled',
+          timestamp: timestamp.toISOString(),
+          severity: meeting.status === 'cancelled' ? 'warning' : meeting.status,
+          tags: ['Cabinet', meeting.status],
+          metadata: {
+            scheduledDate: meeting.scheduledDate?.toISOString(),
+            durationMinutes: meeting.duration,
+            status: meeting.status
+          }
+        });
+      });
+
+      securityThreats.forEach((threat) => {
+        events.push({
+          id: `security_${threat.id}`,
+          type: 'security',
+          title: `Security Alert: ${threat.threatName}`,
+          description: threat.description ?? 'Security threat detected',
+          timestamp: threat.updatedAt.toISOString(),
+          severity: threat.severity,
+          tags: ['Security', threat.threatType, threat.severity],
+          metadata: {
+            status: threat.status,
+            urgency: threat.urgency,
+            likelihood: threat.likelihood,
+            impact: threat.impact
+          }
+        });
+      });
+
+      const sortedEvents = events
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        .slice(0, input.limit);
+
+      return {
+        countryId: input.countryId,
+        generatedAt: now.toISOString(),
+        events: sortedEvents
+      };
+    }),
+
   // Get trade data for a country
   getTradeData: publicProcedure
     .input(z.object({

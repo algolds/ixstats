@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { useUser } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
 import { createDefaultEconomicInputs, type EconomicInputs } from "~/app/builder/lib/economy-data-service";
 import { type GovernmentBuilderState, type DepartmentInput, type BudgetAllocationInput, type RevenueSourceInput, type GovernmentType } from "~/types/government";

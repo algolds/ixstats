@@ -9,8 +9,7 @@ import { Badge } from "./badge";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { api } from "../../trpc/react";
-import { useUser } from "@clerk/nextjs";
-import { UserButton } from "@clerk/nextjs";
+import { useUser, UserButton } from "~/context/auth-context";
 import { createUrl } from "~/lib/url-utils";
 
 interface Notification {

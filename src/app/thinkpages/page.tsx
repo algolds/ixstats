@@ -2,16 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   MessageSquare, 
   Users, 
   Settings,
   ArrowLeft,
-  Send,
-  Menu,
-  X
+  Send
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "~/components/ui/button";
@@ -21,7 +19,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Switch } from "~/components/ui/switch";
 import { Label } from "~/components/ui/label";
 import { ThinkpagesSocialPlatform } from "~/components/thinkpages/ThinkpagesSocialPlatform";
-import { EnhancedAccountManager } from "~/components/thinkpages/EnhancedAccountManager";
 import { AccountCreationModal } from "~/components/thinkpages/AccountCreationModal";
 import { AccountSettingsModal } from "~/components/thinkpages/AccountSettingsModal";
 import dynamic from 'next/dynamic';
@@ -96,7 +93,6 @@ export default function ThinkPagesMainPage() {
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [settingsAccount, setSettingsAccount] = useState<any>(null);
   const [showGlobalSettings, setShowGlobalSettings] = useState(false);
-  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
   // Handle URL parameters for auto-selecting view and contextual panels
   useEffect(() => {
@@ -111,9 +107,6 @@ export default function ThinkPagesMainPage() {
 
     if (panelParam === 'account-manager') {
       setActiveView('feed');
-      if (window.innerWidth < 1024) {
-        setShowMobileSidebar(true);
-      }
     }
 
     if (panelParam === 'settings') {
@@ -131,28 +124,6 @@ export default function ThinkPagesMainPage() {
     window.history.replaceState({}, '', url.toString());
   }, [activeView]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const handleResize = () => {
-      if (window.innerWidth >= 1024) {
-        setShowMobileSidebar(false);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!showMobileSidebar) return;
-    if (typeof document === 'undefined') return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, [showMobileSidebar]);
 
   // Get user profile and country data
   const { data: userProfile } = api.users.getProfile.useQuery(
@@ -182,104 +153,6 @@ export default function ThinkPagesMainPage() {
                            countryData.id && countryData.id.trim() !== '' &&
                            countryData.name && countryData.name.trim() !== '';
 
-  const renderWorkspaceMenu = (onNavigate?: () => void) => (
-    <div className="space-y-6">
-      <nav className="rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground/80">
-          Workspace Views
-        </p>
-        <div className="mt-3 space-y-2">
-          {WORKSPACE_LINKS.map((link) => {
-            const Icon = link.icon;
-            const isActive = activeView === link.key;
-            return (
-              <button
-                key={link.key}
-                type="button"
-                className={`flex w-full items-start gap-3 rounded-xl border px-3 py-3 text-left transition-colors ${
-                  isActive
-                    ? "border-primary/50 bg-primary/10 text-foreground shadow-sm"
-                    : "border-border/50 text-muted-foreground hover:border-border hover:bg-accent/10 hover:text-foreground"
-                }`}
-                onClick={() => {
-                  setActiveView(link.key);
-                  onNavigate?.();
-                }}
-                aria-current={isActive ? "page" : undefined}
-              >
-                <span
-                  className={`flex h-9 w-9 items-center justify-center rounded-xl ${
-                    isActive ? "bg-primary text-primary-foreground" : "bg-muted/60 text-foreground"
-                  }`}
-                >
-                  <Icon className="h-5 w-5" />
-                </span>
-                <span className="flex-1 min-w-0">
-                  <span className="block text-sm font-semibold leading-snug">{link.label}</span>
-                  <span className="mt-1 block text-xs leading-tight text-muted-foreground">
-                    {link.description}
-                  </span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </nav>
-
-      {isUserAuthenticated && isCountryDataReady ? (
-        <div className="rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm">
-          <EnhancedAccountManager
-            countryId={countryData.id}
-            accounts={accounts || []}
-            selectedAccount={selectedAccount}
-            onAccountSelect={(account) => {
-              handleAccountSelect(account);
-              onNavigate?.();
-            }}
-            onAccountSettings={(account) => {
-              handleAccountSettings(account);
-              onNavigate?.();
-            }}
-            onCreateAccount={() => {
-              handleCreateAccount();
-              onNavigate?.();
-            }}
-            isOwner={true}
-          />
-        </div>
-      ) : (
-        <div className="rounded-2xl border border-dashed border-border/60 bg-muted/30 px-4 py-4 text-sm text-muted-foreground">
-          <p className="font-medium text-foreground">Account manager unavailable</p>
-          <p className="mt-1 leading-snug">
-            Sign in and complete your country setup to manage ThinkPages personas.
-          </p>
-        </div>
-      )}
-
-      <div className="rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-foreground">Workspace preferences</p>
-            <p className="text-xs text-muted-foreground leading-tight">
-              Tune notifications, auto-sharing, and collaboration defaults.
-            </p>
-          </div>
-          <Settings className="h-4 w-4 text-muted-foreground" />
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-3"
-          onClick={() => {
-            setShowGlobalSettings(true);
-            onNavigate?.();
-          }}
-        >
-          Open Settings
-        </Button>
-      </div>
-    </div>
-  );
 
   // Account management handlers
   const handleAccountSelect = (account: any) => {
@@ -365,60 +238,31 @@ export default function ThinkPagesMainPage() {
                   </Link>
                 </div>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                className="lg:hidden"
-                onClick={() => setShowMobileSidebar(true)}
-              >
-                <Menu className="h-4 w-4 mr-2" />
-                Workspace Menu
-              </Button>
             </div>
           </div>
 
+
         </motion.div>
 
-        <div className="lg:hidden mb-5">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {WORKSPACE_LINKS.map((link) => {
-              const Icon = link.icon;
-              const isActive = activeView === link.key;
-              return (
-                <Button
-                  key={link.key}
-                  variant={isActive ? "default" : "outline"}
-                  className="justify-start gap-2"
-                  onClick={() => setActiveView(link.key)}
-                >
-                  <Icon className="h-4 w-4" />
-                  {link.label}
-                </Button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-          <aside className="hidden lg:block">
-            {renderWorkspaceMenu()}
-          </aside>
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeView}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-6"
-            >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeView}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-6"
+          >
               {activeView === 'feed' && isUserAuthenticated && isCountryDataReady && (
                 <ThinkpagesSocialPlatform
                   countryId={countryData.id}
                   countryName={countryData.name}
                   isOwner={true}
                   selectedAccount={selectedAccount}
+                  accounts={accounts || []}
+                  onAccountSelect={handleAccountSelect}
+                  onAccountSettings={handleAccountSettings}
+                  onCreateAccount={handleCreateAccount}
                 />
               )}
 
@@ -501,52 +345,7 @@ export default function ThinkPagesMainPage() {
                   </CardContent>
                 </Card>
               )}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        <AnimatePresence>
-          {showMobileSidebar && (
-            <motion.div
-              className="fixed inset-0 z-50"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <motion.div
-                className="absolute inset-0 bg-black/60"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setShowMobileSidebar(false)}
-              />
-              <motion.aside
-                role="dialog"
-                aria-modal="true"
-                className="absolute left-0 top-0 h-full w-[min(88vw,360px)] max-w-[360px] overflow-y-auto border-r border-border/40 bg-background/98 px-5 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-[calc(env(safe-area-inset-top)+1rem)] shadow-2xl backdrop-blur-xl"
-                initial={{ x: "-100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "-100%" }}
-                transition={{ type: "tween", duration: 0.28 }}
-              >
-                <div className="mb-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground/80">ThinkPages</p>
-                    <h2 className="text-lg font-semibold text-foreground">Workspace Menu</h2>
-                  </div>
-                  <button
-                    type="button"
-                    className="rounded-full border border-border/50 p-2 text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
-                    onClick={() => setShowMobileSidebar(false)}
-                    aria-label="Close workspace menu"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                {renderWorkspaceMenu(() => setShowMobileSidebar(false))}
-              </motion.aside>
-            </motion.div>
-          )}
+          </motion.div>
         </AnimatePresence>
 
         {/* Account Management Modals */}
@@ -590,73 +389,72 @@ export default function ThinkPagesMainPage() {
             <p>The world’s most trusted platform for sharing ideas, connecting minds, and shaping the conversations that define the future.</p>
           </div>
         </motion.div>
+
+        {/* Global ThinkPages Settings Dialog */}
+        <Dialog open={showGlobalSettings} onOpenChange={setShowGlobalSettings}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>ThinkPages Settings</DialogTitle>
+              <DialogDescription>
+                Manage your global ThinkPages preferences and privacy settings
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6 py-4">
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold">Privacy & Visibility</h3>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="show-online" className="flex flex-col gap-1">
+                    <span>Show online status</span>
+                    <span className="text-xs text-muted-foreground">Let others see when you're active</span>
+                  </Label>
+                  <Switch id="show-online" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="discoverable" className="flex flex-col gap-1">
+                    <span>Discoverable profile</span>
+                    <span className="text-xs text-muted-foreground">Allow others to find you</span>
+                  </Label>
+                  <Switch id="discoverable" defaultChecked />
+                </div>
+              </div>
+
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="text-sm font-semibold">Notifications</h3>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="post-notif" className="flex flex-col gap-1">
+                    <span>Post reactions</span>
+                    <span className="text-xs text-muted-foreground">Get notified when someone reacts</span>
+                  </Label>
+                  <Switch id="post-notif" defaultChecked />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="mention-notif" className="flex flex-col gap-1">
+                    <span>Mentions & replies</span>
+                    <span className="text-xs text-muted-foreground">Get notified when mentioned</span>
+                  </Label>
+                  <Switch id="mention-notif" defaultChecked />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="group-notif" className="flex flex-col gap-1">
+                    <span>ThinkTank activity</span>
+                    <span className="text-xs text-muted-foreground">Group messages and updates</span>
+                  </Label>
+                  <Switch id="group-notif" defaultChecked />
+                </div>
+              </div>
+
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="text-sm font-semibold">About ThinkPages</h3>
+                <div className="text-xs text-muted-foreground space-y-2">
+                  <p><strong>Account Limit:</strong> {accounts.length}/25 accounts</p>
+                  <p><strong>Platform:</strong> ThinkPages v1.0</p>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
-
-      {/* Global ThinkPages Settings Dialog */}
-      <Dialog open={showGlobalSettings} onOpenChange={setShowGlobalSettings}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>ThinkPages Settings</DialogTitle>
-            <DialogDescription>
-              Manage your global ThinkPages preferences and privacy settings
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6 py-4">
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold">Privacy & Visibility</h3>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="show-online" className="flex flex-col gap-1">
-                  <span>Show online status</span>
-                  <span className="text-xs text-muted-foreground">Let others see when you're active</span>
-                </Label>
-                <Switch id="show-online" />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="discoverable" className="flex flex-col gap-1">
-                  <span>Discoverable profile</span>
-                  <span className="text-xs text-muted-foreground">Allow others to find you</span>
-                </Label>
-                <Switch id="discoverable" defaultChecked />
-              </div>
-            </div>
-
-            <div className="space-y-4 border-t pt-4">
-              <h3 className="text-sm font-semibold">Notifications</h3>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="post-notif" className="flex flex-col gap-1">
-                  <span>Post reactions</span>
-                  <span className="text-xs text-muted-foreground">Get notified when someone reacts</span>
-                </Label>
-                <Switch id="post-notif" defaultChecked />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="mention-notif" className="flex flex-col gap-1">
-                  <span>Mentions & replies</span>
-                  <span className="text-xs text-muted-foreground">Get notified when mentioned</span>
-                </Label>
-                <Switch id="mention-notif" defaultChecked />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="group-notif" className="flex flex-col gap-1">
-                  <span>ThinkTank activity</span>
-                  <span className="text-xs text-muted-foreground">Group messages and updates</span>
-                </Label>
-                <Switch id="group-notif" defaultChecked />
-              </div>
-            </div>
-
-            <div className="space-y-4 border-t pt-4">
-              <h3 className="text-sm font-semibold">About ThinkPages</h3>
-              <div className="text-xs text-muted-foreground space-y-2">
-                <p><strong>Account Limit:</strong> {accounts.length}/25 accounts</p>
-                <p><strong>Platform:</strong> ThinkPages v1.0</p>
-              
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

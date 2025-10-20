@@ -72,13 +72,37 @@ export class UserLogger {
   private static readonly MAX_LOG_FILE_SIZE = 10 * 1024 * 1024; // 10MB
   private static readonly LOG_RETENTION_DAYS = 90;
   private static readonly ACTIVITY_SUMMARY_RETENTION_DAYS = 365;
+  private static initialized = false;
+
+  private static safeParseMetadata(metadata: unknown): Record<string, any> | null {
+    if (!metadata) {
+      return null;
+    }
+
+    if (typeof metadata === 'object') {
+      return metadata as Record<string, any>;
+    }
+
+    if (typeof metadata === 'string') {
+      try {
+        return JSON.parse(metadata);
+      } catch {
+        return null;
+      }
+    }
+
+    return null;
+  }
 
   /**
    * Initialize user logging system
    */
   static initialize(): void {
+    if (this.initialized) {
+      return;
+    }
+
     try {
-      // Ensure log directory exists
       if (!existsSync(this.LOG_DIR)) {
         mkdirSync(this.LOG_DIR, { recursive: true });
       }
@@ -87,6 +111,8 @@ export class UserLogger {
         component: 'UserLogger',
         metadata: { logDir: this.LOG_DIR }
       });
+
+      this.initialized = true;
     } catch (error) {
       ErrorLogger.logError(error as Error, {
         component: 'UserLogger',
@@ -402,14 +428,16 @@ export class UserLogger {
 
       // Analyze categories
       logs.forEach(log => {
-        const category = log.metadata ? JSON.parse(log.metadata).category : 'UNKNOWN';
+        const metadata = this.safeParseMetadata(log.metadata);
+        const category = metadata?.category ?? 'UNKNOWN';
         summary.categories[category] = (summary.categories[category] || 0) + 1;
       });
 
       // Find top actions
       const actionCounts: Record<string, number> = {};
       logs.forEach(log => {
-        const action = log.metadata ? JSON.parse(log.metadata).action : 'UNKNOWN';
+        const metadata = this.safeParseMetadata(log.metadata);
+        const action = metadata?.action ?? 'UNKNOWN';
         actionCounts[action] = (actionCounts[action] || 0) + 1;
       });
 

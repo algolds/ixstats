@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "~/context/auth-context";
 import { AuthenticationGuard, CountryDataProvider, useCountryData } from "~/components/mycountry";
 import { EnhancedIntelligenceContent } from "~/components/mycountry/EnhancedIntelligenceContent";
 import { AtomicStateProvider } from "~/components/atomic/AtomicStateProvider";

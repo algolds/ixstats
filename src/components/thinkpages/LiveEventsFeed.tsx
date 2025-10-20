@@ -1,23 +1,24 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '~/lib/utils';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  AlertTriangle, 
-  Crown, 
-  Factory, 
-  Globe, 
-  Clock,
-  Zap
+import {
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  Crown,
+  Factory,
+  Globe,
+  Calendar,
+  ShieldAlert,
+  Building2,
+  Zap,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { api } from '~/trpc/react';
-import { IxTime } from '~/lib/ixtime';
 
 interface LiveEventsFeedProps {
   countryId: string;
@@ -27,40 +28,39 @@ interface LiveEventsFeedProps {
 export function LiveEventsFeed({ countryId, onEventClick }: LiveEventsFeedProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Get latest economic milestones
-  const { data: milestones } = api.countries.getEconomicMilestones.useQuery(
-    { countryId, limit: 5 },
-    { refetchInterval: 30000 } // Refresh every 30 seconds
-  );
-
-  // Get latest crisis events
-  const { data: crisisEvents } = api.countries.getCrisisEvents.useQuery(
-    { countryId, limit: 3 },
-    { refetchInterval: 30000 }
-  );
-
-  // Get recent diplomatic relations changes
-  const { data: diplomaticChanges } = api.diplomatic.getRecentChanges.useQuery(
-    { countryId, hours: 24 },
-    { refetchInterval: 60000 } // Refresh every minute
+  const { data: liveFeed, isLoading } = api.countries.getLiveEventsFeed.useQuery(
+    { countryId, limit: 12, hours: 96 },
+    { refetchInterval: 30000, staleTime: 15000 }
   );
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
   const getEventIcon = (type: string) => {
     switch (type) {
-      case 'economic_growth': return TrendingUp;
-      case 'economic_decline': return TrendingDown;
-      case 'crisis': return AlertTriangle;
-      case 'diplomatic': return Globe;
-      case 'industrial': return Factory;
-      case 'government': return Crown;
-      default: return Zap;
+      case 'economic_growth':
+      case 'population_growth':
+        return TrendingUp;
+      case 'economic_decline':
+        return TrendingDown;
+      case 'crisis':
+        return AlertTriangle;
+      case 'diplomatic':
+        return Globe;
+      case 'industrial':
+        return Factory;
+      case 'government':
+        return Crown;
+      case 'cabinet_meeting':
+        return Calendar;
+      case 'embassy_mission':
+        return Building2;
+      case 'security':
+        return ShieldAlert;
+      default:
+        return Zap;
     }
   };
 
@@ -75,51 +75,38 @@ export function LiveEventsFeed({ countryId, onEventClick }: LiveEventsFeedProps)
           default: return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/30';
         }
       case 'diplomatic': return 'text-blue-400 bg-blue-500/20 border-blue-500/30';
+      case 'embassy_mission': return 'text-purple-300 bg-purple-500/20 border-purple-500/30';
+      case 'cabinet_meeting': return 'text-sky-300 bg-sky-500/20 border-sky-500/30';
+      case 'security':
+        if (severity && ['critical', 'existential'].includes(severity.toLowerCase())) {
+          return 'text-red-300 bg-red-600/20 border-red-600/40';
+        }
+        return 'text-amber-300 bg-amber-500/20 border-amber-500/30';
       case 'industrial': return 'text-purple-400 bg-purple-500/20 border-purple-500/30';
       default: return 'text-gray-400 bg-gray-500/20 border-gray-500/30';
     }
   };
 
   const formatTimeAgo = (timestamp: string | Date) => {
-    const now = IxTime.getCurrentIxTime();
-    const eventTime = new Date(timestamp);
-    const diffMs = now - eventTime.getTime();
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const now = currentTime.getTime();
+    const eventTime = new Date(timestamp).getTime();
+    const diffMs = now - eventTime;
+    const diffMinutes = Math.floor(Math.abs(diffMs) / (1000 * 60));
     const diffHours = Math.floor(diffMinutes / 60);
-    
-    if (diffMinutes < 1) return 'Just now';
-    if (diffMinutes < 60) return `${diffMinutes}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return `${Math.floor(diffHours / 24)}d ago`;
-  };
 
-  const allEvents = [
-    ...(milestones?.map(m => ({
-      id: m.id,
-      type: m.value > 0 ? 'economic_growth' : 'economic_decline',
-      title: m.title,
-      description: m.description,
-      timestamp: m.achievedAt,
-      metadata: { value: m.value, category: m.category }
-    })) || []),
-    ...(crisisEvents?.map(c => ({
-      id: c.id,
-      type: 'crisis',
-      title: c.title,
-      description: c.description,
-      timestamp: c.createdAt,
-      severity: c.severity,
-      metadata: { economicImpact: c.economicImpact, affectedCountries: c.affectedCountries }
-    })) || []),
-    ...(diplomaticChanges?.map(d => ({
-      id: d.id,
-      type: 'diplomatic',
-      title: `Diplomatic Relations Update: ${d.targetCountry}`,
-      description: `Relationship status changed to ${d.currentStatus}`,
-      timestamp: d.updatedAt,
-      metadata: { targetCountry: d.targetCountry, previousStatus: d.previousStatus }
-    })) || [])
-  ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    if (Math.abs(diffMinutes) < 1) return 'Just now';
+
+    if (diffMs >= 0) {
+      if (diffMinutes < 60) return `${diffMinutes}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      return `${Math.floor(diffHours / 24)}d ago`;
+    } else {
+      if (diffMinutes < 60) return `in ${diffMinutes}m`;
+      if (diffHours < 24) return `in ${diffHours}h`;
+      return `in ${Math.floor(diffHours / 24)}d`;
+    }
+  };
+  const allEvents = liveFeed?.events ?? [];
 
   return (
     <Card className="glass-hierarchy-child">
@@ -137,17 +124,22 @@ export function LiveEventsFeed({ countryId, onEventClick }: LiveEventsFeedProps)
       </CardHeader>
       <CardContent className="space-y-3 max-h-96 overflow-y-auto">
         <AnimatePresence>
-          {allEvents.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
+              <p className="text-sm">Loading recent activity…</p>
+            </div>
+          ) : allEvents.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Zap className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p className="text-sm">No recent events</p>
               <p className="text-xs">Events will appear as they occur</p>
             </div>
           ) : (
-            allEvents.slice(0, 10).map((event, index) => {
+            allEvents.map((event, index) => {
               const Icon = getEventIcon(event.type);
-              const colorClasses = getEventColor(event.type, 'severity' in event ? event.severity : undefined);
-              
+              const colorClasses = getEventColor(event.type, event.severity);
+
               return (
                 <motion.div
                   key={event.id}
@@ -168,7 +160,7 @@ export function LiveEventsFeed({ countryId, onEventClick }: LiveEventsFeedProps)
                       <div className="flex items-center justify-between mb-1">
                         <h4 className="font-medium text-sm truncate">{event.title}</h4>
                         <div className="flex items-center gap-2">
-                          {'severity' in event && event.severity && (
+                          {event.severity && (
                             <Badge variant="outline" className="text-xs">
                               {event.severity.toUpperCase()}
                             </Badge>
@@ -181,25 +173,58 @@ export function LiveEventsFeed({ countryId, onEventClick }: LiveEventsFeedProps)
                       <p className="text-xs text-muted-foreground line-clamp-2">
                         {event.description}
                       </p>
-                      {event.metadata && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {'value' in event.metadata && event.metadata.value && (
-                            <span className="text-xs px-2 py-1 bg-white/10 rounded">
-                              {event.metadata.value > 0 ? '+' : ''}{(event.metadata.value * 100).toFixed(1)}%
-                            </span>
-                          )}
-                          {'economicImpact' in event.metadata && event.metadata.economicImpact && (
-                            <span className="text-xs px-2 py-1 bg-white/10 rounded">
-                              Impact: ${event.metadata.economicImpact.toLocaleString()}
-                            </span>
-                          )}
-                          {'category' in event.metadata && event.metadata.category && (
-                            <span className="text-xs px-2 py-1 bg-white/10 rounded">
-                              {event.metadata.category}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      {(() => {
+                        const metadata = (event.metadata ?? {}) as Record<string, any>;
+                        const hasMetadata = Object.keys(metadata).length > 0;
+                        if (!(event.tags?.length || hasMetadata)) {
+                          return null;
+                        }
+
+                        return (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {event.tags?.map((tag) => (
+                              <span key={tag} className="text-xs px-2 py-1 bg-white/10 rounded">
+                                {tag}
+                              </span>
+                            ))}
+                            {'value' in metadata && metadata.value && (
+                              <span className="text-xs px-2 py-1 bg-white/10 rounded">
+                                {metadata.value > 0 ? '+' : ''}{(metadata.value * 100).toFixed(1)}%
+                              </span>
+                            )}
+                            {'economicImpact' in metadata && metadata.economicImpact && (
+                              <span className="text-xs px-2 py-1 bg-white/10 rounded">
+                                Impact: ${metadata.economicImpact.toLocaleString()}
+                              </span>
+                            )}
+                            {'status' in metadata && metadata.status && (
+                              <span className="text-xs px-2 py-1 bg-white/10 rounded">
+                                {String(metadata.status)}
+                              </span>
+                            )}
+                            {'relatedCountry' in metadata && metadata.relatedCountry && (
+                              <span className="text-xs px-2 py-1 bg-white/10 rounded">
+                                {String(metadata.relatedCountry)}
+                              </span>
+                            )}
+                            {'relatedCountries' in metadata && Array.isArray(metadata.relatedCountries) && metadata.relatedCountries.length > 0 && (
+                              <span className="text-xs px-2 py-1 bg-white/10 rounded">
+                                {metadata.relatedCountries.join(', ')}
+                              </span>
+                            )}
+                            {'scheduledDate' in metadata && metadata.scheduledDate && (
+                              <span className="text-xs px-2 py-1 bg-white/10 rounded">
+                                {`Starts ${formatTimeAgo(metadata.scheduledDate as string)}`}
+                              </span>
+                            )}
+                            {'category' in metadata && metadata.category && (
+                              <span className="text-xs px-2 py-1 bg-white/10 rounded">
+                                {metadata.category}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </motion.div>

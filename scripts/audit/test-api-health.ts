@@ -308,6 +308,96 @@ async function testQuickActionsEndpoints() {
   );
 }
 
+async function testUnifiedIntelligenceEndpoints() {
+  const router = "unifiedIntelligence";
+
+  results.push(
+    await checkEndpoint(router, "getOverview", async () => {
+      const country = await db.country.findFirst();
+      if (country) {
+        await db.country.findUnique({
+          where: { id: country.id },
+          include: {
+            governmentStructure: true,
+            economicModel: true,
+            taxSystem: true,
+          },
+        });
+
+        await db.vitalitySnapshot.findMany({
+          where: { countryId: country.id },
+          orderBy: { calculatedAt: "desc" },
+          take: 4,
+        });
+
+        await db.intelligenceAlert.findMany({
+          where: { countryId: country.id },
+          orderBy: { detectedAt: "desc" },
+          take: 10,
+        });
+
+        await db.intelligenceBriefing.findMany({
+          where: { countryId: country.id },
+          include: { recommendations: { take: 5 } },
+          take: 5,
+        });
+
+        await db.cabinetMeeting.findMany({
+          where: { countryId: country.id },
+          orderBy: { scheduledDate: "desc" },
+          take: 5,
+        });
+      }
+    })
+  );
+
+  results.push(
+    await checkEndpoint(router, "getQuickActions", async () => {
+      const country = await db.country.findFirst();
+      if (country) {
+        await db.intelligenceAlert.findMany({
+          where: { countryId: country.id },
+          take: 5,
+        });
+        await db.intelligenceRecommendation.findMany({
+          where: { countryId: country.id, isActive: true },
+          take: 3,
+        });
+      }
+    })
+  );
+
+  results.push(
+    await checkEndpoint(router, "getIntelligenceFeed", async () => {
+      const country = await db.country.findFirst();
+      if (country) {
+        await db.intelligenceAlert.findMany({
+          where: { countryId: country.id },
+          orderBy: { detectedAt: "desc" },
+          take: 20,
+        });
+      }
+    })
+  );
+
+  results.push(
+    await checkEndpoint(router, "getDiplomaticChannels", async () => {
+      const country = await db.country.findFirst();
+      if (country) {
+        await db.diplomaticChannelParticipant.findMany({
+          where: { countryId: country.id },
+          include: { channel: true },
+          take: 10,
+        });
+        await db.diplomaticChannel.findMany({
+          take: 5,
+          orderBy: { updatedAt: "desc" },
+        });
+      }
+    })
+  );
+}
+
 async function testEconomicsEndpoints() {
   const router = "enhancedEconomics";
 
@@ -389,6 +479,9 @@ async function runHealthChecks() {
 
   console.log("🔍 Testing Intelligence Endpoints...");
   await testIntelligenceEndpoints();
+
+  console.log("🔍 Testing Unified Intelligence Endpoints...");
+  await testUnifiedIntelligenceEndpoints();
 
   console.log("🔍 Testing Quick Actions Endpoints...");
   await testQuickActionsEndpoints();

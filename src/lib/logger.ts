@@ -505,7 +505,16 @@ class Logger {
 }
 
 // Export singleton instance
-export const logger = new Logger();
+declare global {
+  // eslint-disable-next-line no-var
+  var __ixstatsLogger__: Logger | undefined;
+}
+
+if (!globalThis.__ixstatsLogger__) {
+  globalThis.__ixstatsLogger__ = new Logger();
+}
+
+export const logger = globalThis.__ixstatsLogger__;
 
 // Export types
 export type { LogStorageConfig };

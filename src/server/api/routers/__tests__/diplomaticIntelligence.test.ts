@@ -1,12 +1,16 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
 jest.mock('~/env', () => ({ env: { DATABASE_URL: 'file:./test.db', NODE_ENV: 'test' } }));
-jest.mock('~/server/db', () => ({ db: {} }));
+jest.mock('~/server/db', () => ({ 
+  db: {
+    systemLog: { create: jest.fn() }
+  }
+}));
 
 import { createCallerFactory } from '../../trpc';
 import { diplomaticIntelligenceRouter } from '../diplomatic-intelligence';
 
-type MockFn = jest.Mock<any, any>;
+type MockFn = jest.MockedFunction<any>;
 
 const mockDb = {
   country: { findUnique: jest.fn() as MockFn },
@@ -17,6 +21,7 @@ const mockDb = {
   diplomaticEvent: { findMany: jest.fn() as MockFn },
   notification: { findMany: jest.fn() as MockFn },
   diplomaticAction: { create: jest.fn() as MockFn, count: jest.fn() as MockFn },
+  systemLog: { create: jest.fn() as MockFn },
 };
 
 const baseContext = {
@@ -28,6 +33,8 @@ const baseContext = {
 describe('diplomaticIntelligenceRouter', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Mock systemLog.create to prevent database errors in user logging
+    mockDb.systemLog.create.mockResolvedValue({ id: 'log_1' });
   });
 
   it('builds a live intelligence briefing from relational data', async () => {
@@ -109,7 +116,7 @@ describe('diplomaticIntelligenceRouter', () => {
       },
     ]);
 
-    const caller = createCallerFactory(diplomaticIntelligenceRouter)(baseContext);
+    const caller = diplomaticIntelligenceRouter.createCaller(baseContext);
 
     const result = await caller.getIntelligenceBriefing({
       countryId: 'country_1',
@@ -161,7 +168,7 @@ describe('diplomaticIntelligenceRouter', () => {
       },
     ]);
 
-    const caller = createCallerFactory(diplomaticIntelligenceRouter)(baseContext);
+    const caller = diplomaticIntelligenceRouter.createCaller(baseContext);
 
     await expect(
       caller.getActivityIntelligence({ countryId: 'country_1', clearanceLevel: 'PUBLIC' })
@@ -191,7 +198,7 @@ describe('diplomaticIntelligenceRouter', () => {
 
     mockDb.diplomaticAction.create.mockResolvedValue(actionRecord);
 
-    const caller = createCallerFactory(diplomaticIntelligenceRouter)(baseContext);
+    const caller = diplomaticIntelligenceRouter.createCaller(baseContext);
 
     const created = await caller.createDiplomaticAction({
       targetCountryId: 'ally_1',
@@ -222,7 +229,7 @@ describe('diplomaticIntelligenceRouter', () => {
     mockDb.policy.count.mockResolvedValue(3);
     mockDb.diplomaticAction.count.mockResolvedValue(2);
 
-    const caller = createCallerFactory(diplomaticIntelligenceRouter)(baseContext);
+    const caller = diplomaticIntelligenceRouter.createCaller(baseContext);
 
     await expect(
       caller.getStrategicAssessment({ countryId: 'country_1', clearanceLevel: 'RESTRICTED' })

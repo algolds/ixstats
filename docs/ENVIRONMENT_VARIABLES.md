@@ -24,12 +24,14 @@ Copy `.env.example` to `.env.local` and configure:
 cp .env.example .env.local
 ```
 
-Minimum configuration to run locally:
+Minimum configuration to run locally *(Clerk test keys are required for any authenticated routes)*:
 
 ```bash
 NODE_ENV="development"
 DATABASE_URL="file:./dev.db"
 PORT=3000
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
+CLERK_SECRET_KEY="sk_test_..."
 ```
 
 ### Full Setup (Production)
@@ -126,7 +128,7 @@ npm run start:prod  # Uses PORT or defaults to 3550
 
 **Description**: Clerk publishable API key (client-side).
 
-**Required**: No (app works without auth, but features are limited)
+**Required**: Yes – the app refuses to boot without a valid key
 
 **Format**: `pk_test_...` (development) or `pk_live_...` (production)
 
@@ -154,7 +156,7 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_live_[REDACTED_FOR_SECURITY]"
 
 **Description**: Clerk secret API key (server-side only).
 
-**Required**: No (required if using Clerk authentication)
+**Required**: Yes – the server throws during startup if this is missing
 
 **Format**: `sk_test_...` (development) or `sk_live_...` (production)
 
