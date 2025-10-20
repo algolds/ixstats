@@ -1142,7 +1142,7 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
                   <SelectValue placeholder="Select upgrade" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableUpgrades.map(upgrade => (
+                  {availableUpgrades.filter(upgrade => upgrade !== null).map(upgrade => (
                     <SelectItem key={upgrade.upgradeType} value={upgrade.upgradeType}>
                       {upgrade.upgradeType.replace(/_/g, ' ')} (Lvl {upgrade.nextLevel})
                     </SelectItem>

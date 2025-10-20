@@ -138,7 +138,7 @@ export function LiveEventsFeed({ countryId, onEventClick }: LiveEventsFeedProps)
           ) : (
             allEvents.map((event, index) => {
               const Icon = getEventIcon(event.type);
-              const colorClasses = getEventColor(event.type, event.severity);
+              const colorClasses = getEventColor(event.type, event.severity ?? undefined);
 
               return (
                 <motion.div

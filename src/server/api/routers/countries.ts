@@ -3081,8 +3081,7 @@ const countriesRouter = createTRPCRouter({
           tags: ['Crisis', crisis.severity ?? ''],
           metadata: {
             economicImpact: crisis.economicImpact,
-            affectedCountries: crisis.affectedCountries,
-            status: crisis.status
+            affectedCountries: crisis.affectedCountries
           }
         });
       });

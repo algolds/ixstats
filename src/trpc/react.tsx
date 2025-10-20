@@ -59,9 +59,11 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
             headers.set("x-trpc-source", "nextjs-react");
 
             // Add Clerk authentication token
-            const token = await getToken();
-            if (token) {
-              headers.set("authorization", `Bearer ${token}`);
+            if (getToken) {
+              const token = await getToken();
+              if (token) {
+                headers.set("authorization", `Bearer ${token}`);
+              }
             }
 
             return headers;
