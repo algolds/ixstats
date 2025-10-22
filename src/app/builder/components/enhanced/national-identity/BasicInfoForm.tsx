@@ -5,6 +5,7 @@ import { Globe, Crown, Building, MapPin, Users, Coins } from 'lucide-react';
 import { CurrencySymbolPicker } from '../../../primitives/enhanced';
 import { Input } from '~/components/ui/input';
 import { Autocomplete } from '~/components/ui/autocomplete';
+import { CurrencyAutocomplete } from './CurrencyAutocomplete';
 import type { NationalIdentityData } from '~/app/builder/lib/economy-data-service';
 
 interface BasicInfoFormProps {
@@ -168,12 +169,11 @@ export function BasicInfoForm({
       />
 
       <div className="space-y-4">
-        <IdentityAutocomplete
+        <CurrencyAutocomplete
           fieldName="currency"
           value={String(identity.currency || '')}
           onChange={(value: string) => onIdentityChange('currency', value)}
-          placeholder="Dollar, Euro, etc."
-          icon={Coins}
+          placeholder="Select or enter currency"
         />
         <div className="space-y-2">
           <label className="flex items-center gap-2 text-sm font-medium text-foreground">

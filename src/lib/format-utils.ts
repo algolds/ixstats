@@ -3,7 +3,94 @@
  *
  * Provides consistent number, currency, and data formatting across the entire application.
  * All formatting functions automatically scale to K/M/B/T for better readability.
+ * Supports both ISO 4217 currency codes and custom currencies.
  */
+
+// ISO 4217 currency codes for validation
+const ISO_CURRENCY_CODES = new Set([
+  'USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'CNY', 'SEK', 'NZD',
+  'MXN', 'SGD', 'HKD', 'NOK', 'TRY', 'RUB', 'INR', 'BRL', 'ZAR', 'KRW',
+  'PLN', 'TWD', 'THB', 'DKK', 'CZK', 'HUF', 'ILS', 'CLP', 'PHP', 'AED',
+  'COP', 'SAR', 'MYR', 'RON', 'BGN', 'HRK', 'ISK', 'UAH', 'QAR', 'KWD',
+  'BHD', 'OMR', 'JOD', 'LBP', 'EGP', 'MAD', 'TND', 'DZD', 'LYD', 'SDG',
+  'ETB', 'KES', 'UGX', 'TZS', 'ZMW', 'BWP', 'SZL', 'LSL', 'NAD', 'MUR',
+  'SCR', 'KMF', 'DJF', 'RWF', 'BIF', 'CDF', 'AOA', 'XAF', 'XOF', 'XPF'
+]);
+
+// Custom currency configurations
+interface CustomCurrency {
+  code: string;
+  symbol: string;
+  name: string;
+  decimalPlaces: number;
+}
+
+const CUSTOM_CURRENCIES: Record<string, CustomCurrency> = {
+  'Taler': { code: 'Taler', symbol: '₮', name: 'Taler', decimalPlaces: 2 },
+  'Crown': { code: 'Crown', symbol: '©', name: 'Crown', decimalPlaces: 2 },
+  'Mark': { code: 'Mark', symbol: 'ℳ', name: 'Mark', decimalPlaces: 2 },
+  'Ducat': { code: 'Ducat', symbol: '₫', name: 'Ducat', decimalPlaces: 2 },
+  'Guilder': { code: 'Guilder', symbol: 'ƒ', name: 'Guilder', decimalPlaces: 2 },
+  'Pound': { code: 'Pound', symbol: '£', name: 'Pound', decimalPlaces: 2 },
+  'Franc': { code: 'Franc', symbol: '₣', name: 'Franc', decimalPlaces: 2 },
+  'Lira': { code: 'Lira', symbol: '₤', name: 'Lira', decimalPlaces: 2 },
+  'Peso': { code: 'Peso', symbol: '₱', name: 'Peso', decimalPlaces: 2 },
+  'Real': { code: 'Real', symbol: 'R$', name: 'Real', decimalPlaces: 2 }
+};
+
+/**
+ * Check if a currency code is a valid ISO 4217 code
+ */
+function isISOCurrency(currency: string): boolean {
+  return ISO_CURRENCY_CODES.has(currency.toUpperCase());
+}
+
+/**
+ * Get custom currency configuration
+ */
+function getCustomCurrency(currency: string): CustomCurrency | null {
+  return CUSTOM_CURRENCIES[currency] || null;
+}
+
+/**
+ * Format currency with custom currency support
+ */
+function formatCustomCurrency(
+  amount: number,
+  currency: string,
+  forceDecimals: boolean = false
+): string {
+  const customCurrency = getCustomCurrency(currency);
+  if (!customCurrency) {
+    // Fallback to generic custom currency
+    return `${currency} ${amount.toLocaleString('en-US', {
+      minimumFractionDigits: forceDecimals ? 2 : 0,
+      maximumFractionDigits: forceDecimals ? 2 : 0,
+    })}`;
+  }
+
+  const absAmount = Math.abs(amount);
+  const decimals = forceDecimals ? 2 : customCurrency.decimalPlaces;
+
+  if (absAmount >= 1e12) {
+    const scaled = amount / 1e12;
+    return `${customCurrency.symbol}${scaled.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}T`;
+  } else if (absAmount >= 1e9) {
+    const scaled = amount / 1e9;
+    return `${customCurrency.symbol}${scaled.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}B`;
+  } else if (absAmount >= 1e6) {
+    const scaled = amount / 1e6;
+    return `${customCurrency.symbol}${scaled.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}M`;
+  } else if (absAmount >= 1e3) {
+    const scaled = amount / 1e3;
+    return `${customCurrency.symbol}${scaled.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}K`;
+  } else {
+    return `${customCurrency.symbol}${amount.toLocaleString('en-US', {
+      minimumFractionDigits: forceDecimals ? 2 : 0,
+      maximumFractionDigits: forceDecimals ? 2 : 0,
+    })}`;
+  }
+}
 
 /**
  * Format currency with automatic scaling (K/M/B/T)
@@ -23,48 +110,59 @@ export function formatCurrency(
   currency: string = 'USD',
   forceDecimals: boolean = false
 ): string {
+  // Handle custom currencies
+  if (!isISOCurrency(currency)) {
+    return formatCustomCurrency(amount, currency, forceDecimals);
+  }
+
   const absAmount = Math.abs(amount);
 
-  if (absAmount >= 1e12) {
-    // Trillions
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 1,
-    }).format(amount / 1e12) + 'T';
-  } else if (absAmount >= 1e9) {
-    // Billions
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 1,
-    }).format(amount / 1e9) + 'B';
-  } else if (absAmount >= 1e6) {
-    // Millions
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 1,
-    }).format(amount / 1e6) + 'M';
-  } else if (absAmount >= 1e3) {
-    // Thousands
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 1,
-      maximumFractionDigits: 1,
-    }).format(amount / 1e3) + 'K';
-  } else {
-    // Less than 1000
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: forceDecimals ? 2 : 0,
-      maximumFractionDigits: forceDecimals ? 2 : 0,
-    }).format(amount);
+  try {
+    if (absAmount >= 1e12) {
+      // Trillions
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      }).format(amount / 1e12) + 'T';
+    } else if (absAmount >= 1e9) {
+      // Billions
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      }).format(amount / 1e9) + 'B';
+    } else if (absAmount >= 1e6) {
+      // Millions
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      }).format(amount / 1e6) + 'M';
+    } else if (absAmount >= 1e3) {
+      // Thousands
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      }).format(amount / 1e3) + 'K';
+    } else {
+      // Less than 1000
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: forceDecimals ? 2 : 0,
+        maximumFractionDigits: forceDecimals ? 2 : 0,
+      }).format(amount);
+    }
+  } catch (error) {
+    // Fallback to custom currency formatting if Intl.NumberFormat fails
+    console.warn(`Failed to format currency ${currency}, falling back to custom formatting:`, error);
+    return formatCustomCurrency(amount, currency, forceDecimals);
   }
 }
 
@@ -176,12 +274,45 @@ export function formatExactNumber(num: number): string {
  * formatExactCurrency(1234567890) → "$1,234,567,890"
  */
 export function formatExactCurrency(amount: number, currency: string = 'USD'): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+  // Handle custom currencies
+  if (!isISOCurrency(currency)) {
+    const customCurrency = getCustomCurrency(currency);
+    if (customCurrency) {
+      return `${customCurrency.symbol}${amount.toLocaleString('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      })}`;
+    } else {
+      return `${currency} ${amount.toLocaleString('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      })}`;
+    }
+  }
+
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  } catch (error) {
+    // Fallback to custom currency formatting if Intl.NumberFormat fails
+    console.warn(`Failed to format exact currency ${currency}, falling back to custom formatting:`, error);
+    const customCurrency = getCustomCurrency(currency);
+    if (customCurrency) {
+      return `${customCurrency.symbol}${amount.toLocaleString('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      })}`;
+    } else {
+      return `${currency} ${amount.toLocaleString('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      })}`;
+    }
+  }
 }
 
 /**
@@ -245,6 +376,63 @@ export function getScaledValue(num: number): { value: number; suffix: string } {
   if (absNum >= 1e6) return { value: (num / 1e6), suffix: 'M' };
   if (absNum >= 1e3) return { value: (num / 1e3), suffix: 'K' };
   return { value: num, suffix: '' };
+}
+
+/**
+ * Get all available currency codes (ISO + custom)
+ */
+export function getAvailableCurrencies(): string[] {
+  return [...ISO_CURRENCY_CODES, ...Object.keys(CUSTOM_CURRENCIES)];
+}
+
+/**
+ * Get currency information
+ */
+export function getCurrencyInfo(currency: string): { isISO: boolean; symbol?: string; name?: string } {
+  if (isISOCurrency(currency)) {
+    return { isISO: true };
+  }
+  
+  const customCurrency = getCustomCurrency(currency);
+  if (customCurrency) {
+    return {
+      isISO: false,
+      symbol: customCurrency.symbol,
+      name: customCurrency.name
+    };
+  }
+  
+  return { isISO: false };
+}
+
+/**
+ * Validate currency code
+ */
+export function isValidCurrency(currency: string): boolean {
+  return isISOCurrency(currency) || getCustomCurrency(currency) !== null;
+}
+
+/**
+ * Safe currency formatting with fallback
+ */
+export function safeFormatCurrency(
+  amount: number,
+  currency: string = 'USD',
+  forceDecimals: boolean = false,
+  fallbackCurrency: string = 'USD'
+): string {
+  // If currency is invalid, use fallback immediately
+  if (!isValidCurrency(currency)) {
+    console.warn(`Invalid currency ${currency}, using fallback ${fallbackCurrency}`);
+    return formatCurrency(amount, fallbackCurrency, forceDecimals);
+  }
+
+  try {
+    return formatCurrency(amount, currency, forceDecimals);
+  } catch (error) {
+    console.warn(`Currency formatting failed for ${currency}, using fallback ${fallbackCurrency}:`, error);
+    return formatCurrency(amount, fallbackCurrency, forceDecimals);
+  }
 }
 
 /**

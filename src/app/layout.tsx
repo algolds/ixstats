@@ -9,7 +9,7 @@ import { TRPCReactProvider } from "~/trpc/react";
 import { ThemeProvider } from "~/context/theme-context";
 import { AuthProvider } from "~/context/auth-context";
 import { createUrl } from "~/lib/url-utils";
-import { Navigation } from "~/app/_components/navigation";
+import { Navigation } from "~/app/_components";
 import { GlobalActivityMarquee } from "~/app/_components/GlobalActivityMarquee";
 import { SetupRedirect } from "~/app/_components/SetupRedirect";
 import { WebGLErrorHandler } from "~/components/webgl-error-handler";
@@ -88,8 +88,8 @@ const RootLayout = ({
           publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
           signInUrl={signInPath}
           signUpUrl={signUpPath}
-          signInFallbackRedirectUrl={dashboardPath}
-          redirectUrl={dashboardPath}
+          afterSignInUrl={dashboardPath}
+          afterSignUpUrl={dashboardPath}
         >
           <AuthProvider>
             <AppContent />

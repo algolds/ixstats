@@ -23,7 +23,6 @@ export interface PremiumStatus {
  */
 export function usePremium(): PremiumStatus {
   const { user, isLoaded, isSignedIn } = useUser();
-  const [userRecordCreated, setUserRecordCreated] = useState(false);
 
   // Determine if we should query membership - but always call the hook
   const shouldQueryMembership = Boolean(
@@ -33,27 +32,6 @@ export function usePremium(): PremiumStatus {
     user.id.trim() !== ''
   );
 
-  // First, ensure user record exists in database
-  const { mutate: createUserRecord, isPending: isCreatingUser } = api.users.createUserRecord.useMutation({
-    onSuccess: () => {
-      console.log('[usePremium] User record created successfully');
-      setUserRecordCreated(true);
-    },
-    onError: (error) => {
-      console.error('[usePremium] Failed to create user record:', error);
-      // Even if creation fails, mark as attempted to prevent infinite retries
-      setUserRecordCreated(true);
-    }
-  });
-
-  // Auto-create user record when needed - only once per user session
-  useEffect(() => {
-    if (shouldQueryMembership && !userRecordCreated && !isCreatingUser) {
-      // Attempt to create user record (will succeed only if user doesn't exist)
-      createUserRecord();
-    }
-  }, [shouldQueryMembership, userRecordCreated, isCreatingUser, createUserRecord]);
-
   // Always call the query hook to maintain hook order consistency
   const { data: membershipData, isLoading: membershipLoading, error } = api.users.getMembershipStatus.useQuery(
     undefined,
@@ -62,7 +40,7 @@ export function usePremium(): PremiumStatus {
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000, // Cache for 5 minutes
       retry: (failureCount, error) => {
-        // Retry once if user not found (after we try to create the user record)
+        // Retry once if user not found (user creation now handled by tRPC context)
         return failureCount < 1 && error.message?.includes('User not found in system');
       },
       retryDelay: 1000, // Wait 1 second before retry
@@ -74,7 +52,7 @@ export function usePremium(): PremiumStatus {
     console.error('[usePremium] Membership query failed:', error);
   }
 
-  const isLoading = !isLoaded || membershipLoading || isCreatingUser;
+  const isLoading = !isLoaded || membershipLoading;
 
   // Default to basic membership if not ready or no data
   if (!shouldQueryMembership || isLoading || !membershipData) {

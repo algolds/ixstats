@@ -55,6 +55,7 @@ export function RepostModal({
             originalPost,
             mode: 'repost'
           }}
+          hideAccountsTab={true}
         />
       </DialogContent>
     </Dialog>

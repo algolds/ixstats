@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Badge } from '~/components/ui/badge';
 import { Button } from '~/components/ui/button';
 import { Skeleton } from '~/components/ui/skeleton';
+import { safeFormatCurrency } from '~/lib/format-utils';
 import {
   Building2,
   Crown,
@@ -429,13 +430,7 @@ export function GovernmentStructureDisplay({
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total Budget:</span>
                   <span className="font-medium">
-                    {new Intl.NumberFormat('en-US', {
-                      style: 'currency',
-                      currency: governmentData.budgetCurrency,
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                      notation: 'compact'
-                    }).format(governmentData.totalBudget)}
+                    {safeFormatCurrency(governmentData.totalBudget, governmentData.budgetCurrency, false, 'USD')}
                   </span>
                 </div>
                 <div className="flex justify-between">

@@ -38,10 +38,7 @@ import { useAdminState } from "./_hooks/useAdminState";
 import { useAdminHandlers } from "./_hooks/useAdminHandlers";
 import { useBotSync } from "./_hooks/useBotSync";
 
-const SYSTEM_OWNERS = [
-  'user_2zqmDdZvhpNQWGLdAIj2YwH8MLo',
-  'user_3078Ja62W7yJDlBjjwNppfzceEz',
-] as const;
+import { SYSTEM_OWNER_IDS, isSystemOwner } from "~/lib/system-owner-constants";
 
 export default function AdminPage() {
   // All hooks must be called unconditionally and at the top
@@ -197,11 +194,11 @@ export default function AdminPage() {
   }
 
   const allowedRoles = new Set(["admin", "owner", "staff"]);
-  const isSystemOwner = !!user && SYSTEM_OWNERS.some((ownerId) => ownerId === user.id);
+  const isSystemOwnerUser = !!user && isSystemOwner(user.id);
   const hasAdminRole =
     typeof user?.publicMetadata?.role === "string" && allowedRoles.has(user.publicMetadata.role);
 
-  if (!isSystemOwner && !hasAdminRole) {
+  if (!isSystemOwnerUser && !hasAdminRole) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center border border-gray-200 dark:border-gray-700">

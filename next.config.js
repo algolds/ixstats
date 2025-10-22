@@ -10,6 +10,7 @@
 
 // Import polyfill plugin
 import NodePolyfillPlugin from 'node-polyfill-webpack-plugin';
+import path from 'path';
 
 // Normalize base path so we can deploy under https://ixwiki.com/projects/ixstats
 const normalizeBasePath = (value) => {
@@ -86,15 +87,23 @@ const config = {
     config.output.globalObject = 'this';
 
     // Fix webpack cache warning - optimize serialization for large strings
-    if (config.cache) {
+    if (config.cache && dev) {
+      // Ensure cache directory exists and is properly configured
+      const cacheDir = path.resolve(process.cwd(), '.next/cache');
+      
       config.cache = {
         ...config.cache,
         type: 'filesystem',
         compression: 'gzip',
-        maxMemoryGenerations: dev ? Infinity : 1,
+        maxMemoryGenerations: Infinity,
         // Optimize serialization for large strings by using buffers
         store: 'pack',
+        // Use absolute path for cache directory to avoid illegal path issues
+        cacheDirectory: cacheDir,
         // Remove buildDependencies to prevent ESM resolution issues during cache serialization
+        buildDependencies: {
+          config: [__filename]
+        }
       };
     }
 

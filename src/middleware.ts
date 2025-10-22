@@ -151,15 +151,11 @@ export default isClerkConfigured
 
         // Check for admin role on /admin routes
         if (req.nextUrl.pathname.startsWith('/admin')) {
-          // Hardcoded system owner IDs - always grant full admin access
-          const SYSTEM_OWNERS = [
-            'user_2zqmDdZvhpNQWGLdAIj2YwH8MLo', // Dev environment
-            'user_3078Ja62W7yJDlBjjwNppfzceEz', // Production environment
-          ];
+          // Use centralized system owner constants
+          const { isSystemOwner } = await import('~/lib/system-owner-constants');
+          const isSystemOwnerUser = isSystemOwner(userId);
 
-          const isSystemOwner = SYSTEM_OWNERS.includes(userId);
-
-          if (!isSystemOwner) {
+          if (!isSystemOwnerUser) {
             const publicMetadata = sessionClaims?.publicMetadata as { role?: string } | undefined;
             const userRole = publicMetadata?.role;
 

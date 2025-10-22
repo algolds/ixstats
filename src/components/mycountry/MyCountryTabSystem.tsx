@@ -13,6 +13,7 @@ import { Badge } from '~/components/ui/badge';
 import { CountryExecutiveSection } from "~/app/countries/_components/CountryExecutiveSection";
 import { LiveIntelligenceSection } from "~/app/countries/_components/LiveIntelligenceSection";
 import { CountryAtGlance } from "~/app/countries/_components/detail";
+import { safeFormatCurrency } from "~/lib/format-utils";
 import {
   LaborEmployment,
   FiscalSystemComponent,
@@ -408,7 +409,7 @@ export function MyCountryTabSystem({ variant = 'unified' }: MyCountryTabSystemPr
                       <p className="text-sm text-muted-foreground">Total Budget</p>
                       <p className="text-sm font-medium">
                         {typeof governmentStructure.totalBudget === 'number'
-                          ? governmentStructure.totalBudget.toLocaleString('en-US', { style: 'currency', currency: (governmentStructure.budgetCurrency || 'USD') as any, maximumFractionDigits: 0 })
+                          ? safeFormatCurrency(governmentStructure.totalBudget, governmentStructure.budgetCurrency || 'USD', false, 'USD')
                           : governmentStructure.totalBudget}
                       </p>
                     </div>

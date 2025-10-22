@@ -51,7 +51,7 @@ export function useEditorSave({
 
   const utils = api.useUtils();
   const updateCountryMutation = api.countries.update.useMutation();
-  const updateNationalIdentityMutation = api.countries.updateNationalIdentity.useMutation();
+  const updateNationalIdentityMutation = api.nationalIdentity.update.useMutation();
   const createScheduledChangeMutation = api.scheduledChanges.createScheduledChange.useMutation();
   const updateGovernmentMutation = api.government.update.useMutation();
   const createGovernmentMutation = api.government.create.useMutation();
@@ -86,7 +86,8 @@ export function useEditorSave({
         }
 
         if (Object.keys(nationalIdentityUpdates).length > 1) {
-          await updateNationalIdentityMutation.mutateAsync(nationalIdentityUpdates as any);
+          const { countryId: _, ...data } = nationalIdentityUpdates;
+          await updateNationalIdentityMutation.mutateAsync({ countryId, data });
         }
       }
 

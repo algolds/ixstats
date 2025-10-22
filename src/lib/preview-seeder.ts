@@ -14,9 +14,14 @@ export interface PreviewSeedOptions {
 }
 
 export class PreviewSeeder {
-  private static readonly IS_PRODUCTION = process.env.NODE_ENV === 'production';
-
-  constructor(private db: PrismaClient) {}
+  private static readonly IS_PRODUCTION = process.env.NODE_ENV === 'production'
+  
+  constructor(private db: PrismaClient) {
+    // Prevent running in production
+    if (PreviewSeeder.IS_PRODUCTION) {
+      throw new Error('PreviewSeeder cannot run in production environment');
+    }
+  }
 
   /**
    * Seed the database with comprehensive preview data

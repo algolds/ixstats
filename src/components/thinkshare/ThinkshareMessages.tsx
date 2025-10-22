@@ -66,13 +66,25 @@ export function ThinkshareMessages({ userId, userAccounts = [] }: ThinkshareMess
   // Use the global user ID directly - no longer need thinkpages accounts for ThinkShare
   const currentUserId = userId;
 
-  // Create currentAccount object for ChatArea
-  const currentAccount = currentUserId ? {
+  // Fetch current user's profile to get proper display name
+  const { data: currentUserProfile } = api.users.getProfile.useQuery(
+    undefined,
+    { enabled: !!currentUserId }
+  );
+
+  // Create currentAccount object for ChatArea with proper user data
+  const currentAccount = currentUserId && currentUserProfile ? {
     id: currentUserId,
-    username: currentUserId, // fallback
-    displayName: currentUserId, // fallback
+    username: currentUserProfile.country?.slug || currentUserId,
+    displayName: currentUserProfile.country?.name || 'My Country',
+    profileImageUrl: currentUserProfile.country?.flag || null,
+    accountType: 'country' as const
+  } : currentUserId ? {
+    id: currentUserId,
+    username: 'loading',
+    displayName: 'Loading...',
     profileImageUrl: null,
-    accountType: 'user'
+    accountType: 'country' as const
   } : undefined;
 
   // Show error state if no user ID is provided

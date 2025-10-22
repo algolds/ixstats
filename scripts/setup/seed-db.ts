@@ -28,9 +28,16 @@ async function seedDatabase() {
       console.log(`📊 Database currently contains: ${countryCount} countries, ${userCount} users`);
       console.log("⚠️  This will clear existing data and reseed the database");
       
+      // Check for --force flag
+      const hasForceFlag = process.argv.includes('--force');
+      
       // In non-interactive mode, skip confirmation
-      if (process.env.CI || process.env.NODE_ENV === 'test') {
-        console.log("🤖 CI/Test environment detected - proceeding with reseed");
+      if (process.env.CI || process.env.NODE_ENV === 'test' || hasForceFlag) {
+        if (hasForceFlag) {
+          console.log("🚀 Force flag detected - proceeding with reseed");
+        } else {
+          console.log("🤖 CI/Test environment detected - proceeding with reseed");
+        }
       } else {
         console.log("💡 Use --force flag to skip confirmation: npm run db:seed -- --force");
         process.exit(0);

@@ -12,6 +12,12 @@ export interface IxSheetzGrowthParams {
   globalGrowthFactor: number;
   localGrowthFactor: number;
   timeElapsed: number; // years
+  // Optional economic indicators for deterministic volatility
+  unemploymentRate?: number;
+  inflationRate?: number;
+  politicalStability?: number; // 0-100 scale
+  tradeOpenness?: number; // 0-100 scale
+  countryId?: string; // For deterministic seeding
 }
 
 export interface GrowthModifiers {
@@ -167,14 +173,14 @@ export class IxSheetzCalculator {
       effectiveGrowthRate *= tierMod.gdpMultiplier;
       
       // Innovation-driven growth (higher for advanced economies)
-      const innovationEffect = tierMod.innovationBonus * this.calculateInnovationCycle(timeElapsed);
+      const innovationEffect = tierMod.innovationBonus * this.calculateInnovationCycle(params);
       effectiveGrowthRate *= (1 + innovationEffect * 0.1);
 
       // Add stability factor (reduces volatility for developed economies)
       const stabilityAdjustment = (tierMod.stabilityFactor - 1) * 0.2;
       const volatility = this.modifiers.volatilityFactor * (1 - stabilityAdjustment);
-      const randomAdjustment = (Math.random() - 0.5) * 2 * volatility;
-      effectiveGrowthRate *= (1 + randomAdjustment);
+      const deterministicAdjustment = this.calculateDeterministicVolatility(params) * volatility;
+      effectiveGrowthRate *= (1 + deterministicAdjustment);
     }
 
     // Apply population effects (larger markets can drive growth)
@@ -224,6 +230,64 @@ export class IxSheetzCalculator {
   }
 
   /**
+   * Calculate deterministic volatility based on economic indicators
+   * This replaces Math.random() with reproducible calculations
+   */
+  private calculateDeterministicVolatility(params: IxSheetzGrowthParams): number {
+    const {
+      unemploymentRate = 5.0,
+      inflationRate = 2.0,
+      politicalStability = 70,
+      tradeOpenness = 60,
+      countryId = "default",
+      timeElapsed,
+    } = params;
+
+    // Create a deterministic seed from country ID
+    let seed = 0;
+    for (let i = 0; i < countryId.length; i++) {
+      seed = ((seed << 5) - seed) + countryId.charCodeAt(i);
+      seed = seed & seed; // Convert to 32bit integer
+    }
+
+    // Deterministic pseudo-random function (0 to 1)
+    const seededRandom = (x: number) => {
+      const mixed = Math.abs(Math.sin(seed + x * 12.9898) * 43758.5453123);
+      return mixed - Math.floor(mixed);
+    };
+
+    // Economic instability factors (higher = more volatility)
+    // Unemployment above 5% increases volatility
+    const unemploymentVolatility = Math.max(0, (unemploymentRate - 5) / 20); // 0-0.5 range
+
+    // Inflation outside 2-3% target increases volatility
+    const inflationTarget = 2.5;
+    const inflationDeviation = Math.abs(inflationRate - inflationTarget);
+    const inflationVolatility = Math.min(inflationDeviation / 10, 0.5); // 0-0.5 range
+
+    // Political instability (lower stability = higher volatility)
+    const politicalVolatility = (100 - politicalStability) / 100; // 0-1 range
+
+    // Trade openness affects external shock vulnerability
+    const tradeVolatility = tradeOpenness / 200; // 0-0.5 range
+
+    // Combine volatility factors
+    const totalVolatilityFactor = (
+      unemploymentVolatility * 0.3 +
+      inflationVolatility * 0.3 +
+      politicalVolatility * 0.25 +
+      tradeVolatility * 0.15
+    );
+
+    // Use time-based seeding for deterministic but varying results
+    const timeComponent = seededRandom(timeElapsed * 1.7);
+    const volatilityDirection = (timeComponent - 0.5) * 2; // -1 to 1
+
+    // Return volatility adjustment (-volatilityFactor to +volatilityFactor)
+    return volatilityDirection * totalVolatilityFactor;
+  }
+
+  /**
    * Calculate cyclical economic effects (boom/bust cycles)
    */
   private calculateCyclicalEffect(timeElapsed: number, period: number): number {
@@ -233,16 +297,33 @@ export class IxSheetzCalculator {
 
   /**
    * Calculate innovation cycle effects (technological progress)
+   * Uses deterministic breakthrough detection based on economic factors
    */
-  private calculateInnovationCycle(timeElapsed: number): number {
+  private calculateInnovationCycle(params: IxSheetzGrowthParams): number {
+    const { timeElapsed, baseGdpPerCapita, politicalStability = 70, countryId = "default" } = params;
+
     // Innovation comes in waves, with major breakthroughs every ~20 years
     const innovationPhase = (timeElapsed % 20) / 20 * 2 * Math.PI;
     const baseInnovation = Math.sin(innovationPhase) * 0.5 + 0.5; // 0 to 1
-    
-    // Add random breakthrough effects
-    const breakthroughChance = 0.05; // 5% chance per year
-    const breakthrough = Math.random() < (breakthroughChance * timeElapsed) ? 0.3 : 0;
-    
+
+    // Deterministic breakthrough detection based on economic capacity
+    // Higher GDP per capita and stability increase breakthrough likelihood
+    const breakthroughCapacity = (
+      (baseGdpPerCapita / 100000) * 0.5 + // Wealth factor
+      (politicalStability / 100) * 0.3 + // Stability factor
+      0.2 // Base factor
+    );
+
+    // Create deterministic seed for breakthrough timing
+    let seed = 0;
+    for (let i = 0; i < countryId.length; i++) {
+      seed = ((seed << 5) - seed) + countryId.charCodeAt(i);
+    }
+
+    // Deterministic breakthrough function
+    const breakthroughPhase = Math.abs(Math.sin(seed + timeElapsed * 7.3)) * breakthroughCapacity;
+    const breakthrough = breakthroughPhase > 0.85 ? 0.3 : 0; // Threshold-based breakthrough
+
     return (baseInnovation + breakthrough) * 0.2; // Scale to reasonable impact
   }
 

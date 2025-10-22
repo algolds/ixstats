@@ -7,6 +7,8 @@ import { Label } from '~/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
 import { Building2, Crown, Scale, Users, Briefcase } from 'lucide-react';
 import type { GovernmentStructureInput, GovernmentType } from '~/types/government';
+import { safeFormatCurrency } from '~/lib/format-utils';
+import { CurrencySelector } from '~/components/ui/currency-selector';
 
 interface GovernmentStructureFormProps {
   data: GovernmentStructureInput;
@@ -61,12 +63,7 @@ export function GovernmentStructureForm({
   }, [onChange]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: data.budgetCurrency || 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
+    return safeFormatCurrency(amount, data.budgetCurrency || 'USD', false, 'USD');
   };
 
   return (
@@ -251,22 +248,12 @@ export function GovernmentStructureForm({
               <Label htmlFor="budgetCurrency" className="text-sm font-medium text-[var(--color-text-secondary)]">
                 Currency
               </Label>
-              <Select
+              <CurrencySelector
                 value={data.budgetCurrency}
                 onValueChange={(value) => handleChange('budgetCurrency', value)}
                 disabled={isReadOnly}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select currency" />
-                </SelectTrigger>
-                <SelectContent>
-                  {currencyOptions.map((currency) => (
-                    <SelectItem key={currency} value={currency}>
-                      {currency}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Select currency"
+              />
             </div>
           </div>
         </div>

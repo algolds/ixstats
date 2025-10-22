@@ -19,7 +19,10 @@ export function useEconomyData(countryId: string) {
   const { data, isLoading, error, refetch } =
     api.countries.getByIdAtTime.useQuery(
       { id: countryId },
-      { staleTime: 60_000 }
+      { 
+        staleTime: 60_000,
+        enabled: !!countryId
+      }
     )
 
   // Try to get atomic state for enhanced calculations

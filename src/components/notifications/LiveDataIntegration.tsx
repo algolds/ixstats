@@ -53,16 +53,16 @@ export function LiveDataIntegration({
 
   // Intelligence data stream
   const { intelligence } = useOptimizedIntelligenceData({
-    countryId: effectiveCountryId,
-    enableIntelligence: enableIntelligenceStream,
+    countryId: effectiveCountryId || '',
+    enableIntelligence: enableIntelligenceStream && !!effectiveCountryId,
     enableVitality: false
   });
 
   // Economic data stream - using country data as proxy for economic metrics
   const { data: countryData } = api.countries.getByIdAtTime.useQuery(
-    { id: effectiveCountryId },
+    { id: effectiveCountryId || '' },
     { 
-      enabled: enableEconomicStream && !!effectiveCountryId,
+      enabled: enableEconomicStream && !!effectiveCountryId && effectiveCountryId.trim() !== '',
       refetchInterval: 30000, // Refresh every 30 seconds
       retry: false // Don't retry on error
     }

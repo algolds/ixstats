@@ -68,6 +68,8 @@ export interface UseBuilderStateReturn {
   isAutoSaving: boolean;
   /** Whether existing country data is loading (edit mode) */
   isLoadingCountry: boolean;
+  /** Country ID for edit mode */
+  countryId?: string;
   /** Update economic inputs with type safety */
   updateEconomicInputs: (inputs: EconomicInputs) => void;
   /** Update selected government components */
@@ -76,6 +78,8 @@ export interface UseBuilderStateReturn {
   updateGovernmentStructure: (structure: any) => void;
   /** Update tax system configuration */
   updateTaxSystem: (taxData: TaxBuilderState) => void;
+  /** Update economy builder state configuration */
+  updateEconomyBuilderState: (economyState: EconomyBuilderState | null) => void;
   /** Update current step and mark as completed */
   updateStep: (step: BuilderStep, data?: any) => void;
   /** Clear all draft data from localStorage */
@@ -182,7 +186,10 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
     isLoading: countryLoading
   } = api.countries.getByIdAtTime.useQuery(
     { id: countryId || '' },
-    { enabled: mode === 'edit' && !!countryId }
+    { 
+      enabled: mode === 'edit' && !!countryId && countryId.trim() !== '',
+      retry: false
+    }
   );
 
   const {
@@ -284,7 +291,7 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
         officialLanguages: nationalIdentity?.officialLanguages || '',
         nationalLanguage: nationalIdentity?.nationalLanguage || '',
         nationalAnthem: nationalIdentity?.nationalAnthem || '',
-        nationalReligion: (existingCountry as any).religion || '',
+        nationalReligion: nationalIdentity?.nationalReligion || (existingCountry as any).religion || '',
         nationalDay: nationalIdentity?.nationalDay || '',
         callingCode: nationalIdentity?.callingCode || '',
         internetTLD: nationalIdentity?.internetTLD || '',
@@ -478,8 +485,21 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
       }
 
       if (!quickStartProcessed.current) {
-        const savedState = safeGetItemSync('builder_state');
-        const savedLastSaved = safeGetItemSync('builder_last_saved');
+        let savedState = safeGetItemSync('builder_state');
+        let savedLastSaved = safeGetItemSync('builder_last_saved');
+
+        // Fallback to sessionStorage if localStorage fails
+        if (!savedState) {
+          try {
+            savedState = sessionStorage.getItem('builder_state');
+            savedLastSaved = sessionStorage.getItem('builder_last_saved');
+            if (savedState) {
+              console.log('[BuilderState] Recovered state from sessionStorage');
+            }
+          } catch (error) {
+            console.warn('[BuilderState] Failed to access sessionStorage:', error);
+          }
+        }
 
         if (savedState) {
           const parsedState = JSON.parse(savedState);
@@ -511,12 +531,25 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
         const stateKey = mode === 'edit' && countryId ? `builder_state_${countryId}` : 'builder_state';
         const savedKey = mode === 'edit' && countryId ? `builder_last_saved_${countryId}` : 'builder_last_saved';
 
-        safeSetItemSync(stateKey, JSON.stringify(builderStateRef.current));
+        const stateSaved = safeSetItemSync(stateKey, JSON.stringify(builderStateRef.current));
         const now = new Date();
-        safeSetItemSync(savedKey, now.toISOString());
-        setLastSaved(now);
+        const timestampSaved = safeSetItemSync(savedKey, now.toISOString());
+        
+        if (stateSaved && timestampSaved) {
+          setLastSaved(now);
+        } else {
+          console.warn('[BuilderState] Failed to save to localStorage, data may be lost on page refresh');
+          // Try fallback to sessionStorage
+          try {
+            sessionStorage.setItem(stateKey, JSON.stringify(builderStateRef.current));
+            sessionStorage.setItem(savedKey, now.toISOString());
+            console.log('[BuilderState] Fallback to sessionStorage successful');
+          } catch (sessionError) {
+            console.error('[BuilderState] Both localStorage and sessionStorage failed:', sessionError);
+          }
+        }
       } catch (error) {
-        // Failed to save state
+        console.error('[BuilderState] Failed to save state:', error);
       } finally {
         setIsAutoSaving(false);
       }
@@ -634,6 +667,10 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
     setBuilderState(prev => ({ ...prev, taxSystemData: taxData }));
   }, []);
 
+  const updateEconomyBuilderState = useCallback((economyState: EconomyBuilderState | null) => {
+    setBuilderState(prev => ({ ...prev, economyBuilderState: economyState }));
+  }, []);
+
   const updateStep = useCallback((step: BuilderStep, data?: any) => {
     setBuilderState(prev => {
       const newState = { ...prev };
@@ -698,10 +735,12 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
     lastSaved,
     isAutoSaving,
     isLoadingCountry,
+    countryId,
     updateEconomicInputs,
     updateGovernmentComponents,
     updateGovernmentStructure,
     updateTaxSystem,
+    updateEconomyBuilderState,
     updateStep,
     clearDraft,
     canAccessStep,

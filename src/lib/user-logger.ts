@@ -472,7 +472,9 @@ export class UserLogger {
    * Get user log file path
    */
   private static getUserLogFilePath(clerkUserId: string): string {
-    return join(this.LOG_DIR, `user-${clerkUserId}.log`);
+    // Sanitize the user ID to prevent illegal path characters
+    const sanitizedUserId = clerkUserId.replace(/[<>:"/\\|?*]/g, '_');
+    return join(this.LOG_DIR, `user-${sanitizedUserId}.log`);
   }
 
   /**

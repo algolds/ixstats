@@ -152,7 +152,7 @@ model Country {
   incomeDistribution   IncomeDistribution?
   laborMarket          LaborMarket?
   nationalIdentity     NationalIdentity?
-  user                 User?
+  users                User[]                   @relation("UserCountry")
   moodMetrics          CountryMoodMetric[]
   archetypeMatches     CountryArchetypeMatch[] @relation("CountryArchetypes")
   governmentStructure  GovernmentStructure?
@@ -398,13 +398,13 @@ model CalculationLog {
 model User {
   id                  String                   @id @default(cuid())
   clerkUserId         String                   @unique
-  countryId           String?                  @unique
+  countryId           String?
   roleId              String? // Foreign key to Role
   membershipTier      String                   @default("basic") // "basic", "mycountry_premium"
   isActive            Boolean                  @default(true)
   createdAt           DateTime                 @default(now())
   updatedAt           DateTime                 @updatedAt
-  country             Country?                 @relation(fields: [countryId], references: [id])
+  country             Country?                 @relation("UserCountry", fields: [countryId], references: [id])
   role                Role?                    @relation(fields: [roleId], references: [id])
   archetypeSelections UserArchetypeSelection[] @relation("UserArchetypes")
   scheduledChanges    ScheduledChange[]        @relation("UserScheduledChanges")
@@ -1777,6 +1777,7 @@ model NationalIdentity {
   officialLanguages    String?
   nationalLanguage     String?
   nationalAnthem       String?
+  nationalReligion     String?
   nationalDay          String?
   callingCode          String?
   internetTLD          String?

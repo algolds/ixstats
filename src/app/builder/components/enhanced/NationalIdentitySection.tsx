@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { MediaSearchModal } from '~/components/MediaSearchModal';
-import { Flag, Globe, Landmark, Heart, ChevronDown, ChevronUp } from 'lucide-react';
+import { Flag, Globe, Landmark, Heart, ChevronDown, ChevronUp, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
 import type { EconomicInputs, RealCountryData } from '~/app/builder/lib/economy-data-service';
 import {
@@ -26,6 +26,7 @@ interface NationalIdentitySectionProps {
   inputs: EconomicInputs;
   onInputsChange: (inputs: EconomicInputs) => void;
   referenceCountry?: RealCountryData | null;
+  countryId?: string;
 }
 
 /**
@@ -71,6 +72,7 @@ export function NationalIdentitySection({
   inputs,
   onInputsChange,
   referenceCountry,
+  countryId,
 }: NationalIdentitySectionProps) {
   // Guard against null inputs
   if (!inputs) {
@@ -116,7 +118,53 @@ export function NationalIdentitySection({
     handleFlagUrlChange,
     handleCoatOfArmsUrlChange,
     handleFieldValueSave,
-  } = useNationalIdentityState(inputs, onInputsChange, referenceCountry);
+    autoSync,
+  } = useNationalIdentityState(inputs, onInputsChange, referenceCountry, countryId);
+
+  // Helper function to render autosave status
+  const renderAutosaveStatus = () => {
+    if (!countryId) return null; // Only show in edit mode
+    
+    const { syncState } = autoSync;
+    
+    if (syncState.isSyncing) {
+      return (
+        <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          <span>Saving...</span>
+        </div>
+      );
+    }
+    
+    if (syncState.syncError) {
+      return (
+        <div className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
+          <AlertCircle className="h-3 w-3" />
+          <span>Save failed</span>
+        </div>
+      );
+    }
+    
+    if (syncState.lastSyncTime) {
+      return (
+        <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+          <CheckCircle className="h-3 w-3" />
+          <span>Saved</span>
+        </div>
+      );
+    }
+    
+    if (syncState.pendingChanges) {
+      return (
+        <div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+          <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+          <span>Pending</span>
+        </div>
+      );
+    }
+    
+    return null;
+  };
 
   return (
     <>
@@ -154,10 +202,13 @@ export function NationalIdentitySection({
         <Collapsible open={isBasicInfoOpen} onOpenChange={setIsBasicInfoOpen}>
           <div className="rounded-lg border border-border bg-card">
             <CollapsibleTrigger className="w-full p-6 flex items-center justify-between hover:bg-accent/5 transition-colors">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Globe className="h-5 w-5" />
-                Basic Identity Information
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Globe className="h-5 w-5" />
+                  Basic Identity Information
+                </h3>
+                {renderAutosaveStatus()}
+              </div>
               {isBasicInfoOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
             </CollapsibleTrigger>
             <CollapsibleContent className="p-6">
@@ -194,10 +245,13 @@ export function NationalIdentitySection({
         <Collapsible open={isCultureOpen} onOpenChange={setIsCultureOpen}>
           <div className="rounded-lg border border-border bg-card">
             <CollapsibleTrigger className="w-full p-6 flex items-center justify-between hover:bg-accent/5 transition-colors">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Heart className="h-5 w-5" />
-                Culture & Language
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Heart className="h-5 w-5" />
+                  Culture & Language
+                </h3>
+                {renderAutosaveStatus()}
+              </div>
               {isCultureOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
             </CollapsibleTrigger>
             <CollapsibleContent className="p-6">
@@ -216,10 +270,13 @@ export function NationalIdentitySection({
         <Collapsible open={isGeographyOpen} onOpenChange={setIsGeographyOpen}>
           <div className="rounded-lg border border-border bg-card">
             <CollapsibleTrigger className="w-full p-6 flex items-center justify-between hover:bg-accent/5 transition-colors">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Landmark className="h-5 w-5" />
-                Technical Details & Geography
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Landmark className="h-5 w-5" />
+                  Technical Details & Geography
+                </h3>
+                {renderAutosaveStatus()}
+              </div>
               {isGeographyOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
             </CollapsibleTrigger>
             <CollapsibleContent className="p-6">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '~/lib/utils';
@@ -34,6 +34,7 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
   // Debounced search queries to reduce API calls
   const [debouncedRepoQuery, setDebouncedRepoQuery] = useState('');
   const [debouncedCommonsQuery, setDebouncedCommonsQuery] = useState('');
+  const [debouncedWikiQuery, setDebouncedWikiQuery] = useState('');
 
   // Debounce search queries
   useEffect(() => {
@@ -45,6 +46,11 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
     const timer = setTimeout(() => setDebouncedCommonsQuery(wikiCommonsSearchQuery), 500);
     return () => clearTimeout(timer);
   }, [wikiCommonsSearchQuery]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedWikiQuery(wikiSearchQuery), 500);
+    return () => clearTimeout(timer);
+  }, [wikiSearchQuery]);
 
   const { ref: repoRef, inView: repoInView } = useInView();
   const { ref: commonsRef, inView: commonsInView } = useInView();
@@ -66,8 +72,9 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
     }
   );
 
-  const fetchNextRepoPage = () => setRepoPage(prev => prev + 1);
-  const hasNextRepoPage = true; // Simplified - could be based on data length
+  // Memoize fetch functions to prevent infinite re-renders
+  const fetchNextRepoPage = useCallback(() => setRepoPage(prev => prev + 1), []);
+  const hasNextRepoPage = imagesData && imagesData.length >= 6; // Only load more if we got a full page
 
   const {
     data: wikiCommonsImagesData,
@@ -82,8 +89,8 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
     }
   );
 
-  const fetchNextCommonsPage = () => setCommonsPage(prev => prev + 1);
-  const hasNextCommonsPage = true; // Simplified - could be based on data length
+  const fetchNextCommonsPage = useCallback(() => setCommonsPage(prev => prev + 1), []);
+  const hasNextCommonsPage = wikiCommonsImagesData && wikiCommonsImagesData.length >= 6; // Only load more if we got a full page
 
   const [wikiCursor, setWikiCursor] = useState<string | undefined>(undefined);
 
@@ -93,19 +100,19 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
     isFetching: isFetchingNextWikiPage,
     refetch: refetchWiki,
   } = api.thinkpages.searchWiki.useQuery(
-    { query: wikiSearchQuery, wiki: wikiSource, limit: 30, cursor: wikiCursor },
+    { query: debouncedWikiQuery, wiki: wikiSource, limit: 30, cursor: wikiCursor },
     {
-      enabled: activeTab === 'wiki' && !!wikiSearchQuery,
+      enabled: activeTab === 'wiki' && !!debouncedWikiQuery,
       staleTime: 5 * 60 * 1000, // 5 minutes cache
       refetchOnWindowFocus: false
     }
   );
 
-  const fetchNextWikiPage = () => {
+  const fetchNextWikiPage = useCallback(() => {
     if (wikiData?.nextCursor) {
       setWikiCursor(wikiData.nextCursor);
     }
-  };
+  }, [wikiData?.nextCursor]);
   const hasNextWikiPage = wikiData?.hasMore ?? false;
 
   const wikiImages = wikiData?.images || [];
@@ -148,6 +155,7 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
       setWikiSource('ixwiki');
       setDebouncedRepoQuery('');
       setDebouncedCommonsQuery('');
+      setDebouncedWikiQuery('');
       // Prevent body scroll when modal is open
       document.body.style.overflow = 'hidden';
     } else {
@@ -415,7 +423,7 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                     onKeyDown={(e) => e.key === 'Enter' && refetchWiki()}
                     className="flex-1"
                   />
-                  <Button onClick={() => refetchWiki()} disabled={isLoadingWiki || !wikiSearchQuery.trim()}>
+                  <Button onClick={() => refetchWiki()} disabled={isLoadingWiki || !debouncedWikiQuery.trim()}>
                     {isLoadingWiki ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Search className="h-4 w-4 mr-2" />}Search
                   </Button>
                 </div>
@@ -467,9 +475,9 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                         </div>
                       )}
                     </>
-                  ) : wikiSearchQuery ? (
+                  ) : debouncedWikiQuery ? (
                     <div className="col-span-2 md:col-span-3 text-center text-muted-foreground p-8">
-                      No images found for "{wikiSearchQuery}". Try a different search query.
+                      No images found for "{debouncedWikiQuery}". Try a different search query.
                     </div>
                   ) : (
                     <div className="col-span-2 md:col-span-3 text-center text-muted-foreground p-8">

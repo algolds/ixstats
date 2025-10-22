@@ -63,6 +63,7 @@ export function useEconomyBuilderState(
         gig: 3,
         informal: 4
       },
+      averageAnnualIncome: 40000,
       averageWorkweekHours: 40,
       averageOvertimeHours: 3,
       paidVacationDays: 15,

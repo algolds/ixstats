@@ -48,6 +48,7 @@ import { Label } from '~/components/ui/label';
 import { type RichTextEditorRef } from '~/components/thinkpages/RichTextEditor';
 import { Textarea } from '~/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
+import { useUserProfiles } from '~/hooks/useUserProfiles';
 import dynamic from 'next/dynamic';
 
 const RichTextEditor = dynamic(() => import('~/components/thinkpages/RichTextEditor'), { ssr: false });
@@ -185,6 +186,27 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
 
   // Use the global user ID instead of account-based system
   const currentUserId = userId;
+
+  // Extract unique user IDs from messages for profile fetching
+  const uniqueUserIds = React.useMemo(() => {
+    if (!groupMessages?.messages) return [];
+    const userIds = new Set<string>();
+    groupMessages.messages.forEach((msg: GroupChatMessage) => {
+      if (msg.userId && msg.userId !== currentUserId) {
+        userIds.add(msg.userId);
+      }
+    });
+    // Also add typing indicator user IDs
+    Array.from(clientState.typingIndicators.values()).forEach(indicator => {
+      if (indicator.accountId !== currentUserId) {
+        userIds.add(indicator.accountId);
+      }
+    });
+    return Array.from(userIds);
+  }, [groupMessages?.messages, currentUserId, clientState.typingIndicators]);
+
+  // Fetch user profiles for all participants
+  const { userDisplayNames } = useUserProfiles(uniqueUserIds);
 
   // Real-time WebSocket functionality
   const {
@@ -457,11 +479,11 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
                           <div className="flex items-center gap-2 mb-1">
                             <Avatar className="h-6 w-6">
                               <AvatarFallback className="text-xs">
-                                {message.userId.substring(0, 2).toUpperCase()}
+                                {(userDisplayNames.get(message.userId) || message.userId).substring(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                             <span className="text-xs text-muted-foreground font-medium">
-                              User {message.userId.substring(0, 8)}
+                              {userDisplayNames.get(message.userId) || `User ${message.userId.substring(0, 8)}`}
                             </span>
                           </div>
                         )}
@@ -516,17 +538,16 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
                 {Array.from(clientState.typingIndicators.values())
                   .filter(indicator => indicator.groupId === selectedGroup?.id && indicator.accountId !== currentUserId)
                   .map(indicator => {
-                    // In group chats, we can try to find member info
-                    // For now, we'll use the account ID, but this could be enhanced with member lookup
-                    const displayName = `User ${indicator.accountId.substring(0, 8)}...`;
-                    
+                    // Get the display name from fetched user profiles
+                    const displayName = userDisplayNames.get(indicator.accountId) || `User ${indicator.accountId.substring(0, 8)}`;
+
                     return (
                       <div key={indicator.id} className="flex justify-start">
                         <div className="max-w-[70%]">
                           <div className="flex items-center gap-2 mb-1">
                             <Avatar className="h-6 w-6">
                               <AvatarFallback className="text-xs bg-gradient-to-br from-orange-500 to-orange-600 text-white">
-                                {indicator.accountId.substring(0, 2).toUpperCase()}
+                                {displayName.substring(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
                             <span className="text-xs text-muted-foreground font-medium">

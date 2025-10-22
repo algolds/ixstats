@@ -494,9 +494,29 @@ export function Navigation() {
 
   const setupStatus = getSetupStatus();
 
+  // Debug logging for navigation visibility
+  console.log('[Navigation] Debug info:', {
+    isLoaded,
+    user: !!user,
+    profileLoading,
+    userProfile: userProfile ? { countryId: userProfile.countryId, hasCountry: !!userProfile.countryId } : null,
+    setupStatus,
+    isAdmin,
+    isPremium
+  });
+
   // Filter visible navigation items based on user state and admin settings
   const visibleNavItems = navigationItems.filter(item => {
     if (item.requiresAuth && !user) return false;
+    
+    // Special handling for MyCountry - show it even if setup is incomplete
+    // so users can access the setup flow or see their country page
+    if (item.name === "MyCountry®" && item.requiresCountry) {
+      // Show MyCountry if user is authenticated, regardless of setup status
+      if (!user) return false;
+      return true;
+    }
+    
     if (item.requiresCountry && setupStatus !== 'complete') return false;
     if (item.adminOnly && !isAdmin) return false;
     if (item.premiumOnly && !isPremium) return false;

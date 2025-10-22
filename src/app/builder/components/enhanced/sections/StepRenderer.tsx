@@ -314,7 +314,7 @@ export const StepRenderer = memo(function StepRenderer({
   onGovernmentStructureChange,
   onGovernmentStructureSave,
 }: StepRendererProps) {
-  const { builderState, setBuilderState, updateStep } = useBuilderContext();
+  const { builderState, setBuilderState, updateStep, countryId } = useBuilderContext();
   const { handleTabChange } = useBuilderActions({ builderState, setBuilderState });
 
   const handleFoundationComplete = useCallback(
@@ -450,6 +450,7 @@ export const StepRenderer = memo(function StepRenderer({
                   setBuilderState((prev) => ({ ...prev, economicInputs }));
                 }}
                 referenceCountry={builderState.selectedCountry}
+                countryId={countryId}
               />
             </motion.div>
           </TabsContent>

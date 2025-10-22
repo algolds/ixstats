@@ -20,7 +20,10 @@ export default function ThinkPagesFeedPage() {
 
   const { data: countryData } = api.countries.getByIdAtTime.useQuery(
     { id: userProfile?.countryId || '' },
-    { enabled: !!userProfile?.countryId }
+    { 
+      enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== '',
+      retry: false
+    }
   );
 
   // For anonymous users or users without a country, show global feed with default values

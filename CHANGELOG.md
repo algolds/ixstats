@@ -5,6 +5,52 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2025-10-22
+
+### Added
+- Created comprehensive ATOMIC_COMPONENTS_GUIDE.md (51 KB, 106 components documented)
+- Applied rate limiting to public endpoints (thinkpages, countries, leaderboards)
+- Created USER_PROFILE_UTILS_USAGE.md guide for display name implementation
+
+### Changed
+- Organized root documentation structure (moved 12 files to archive/docs)
+- Updated IMPLEMENTATION_STATUS.md with current v1.1.3 metrics
+- Enhanced diplomatic leaderboard status calculation
+
+### Fixed
+- Diplomatic leaderboard status badge display (now shows correct status)
+- User display name resolution (verified working across all components)
+- Economy builder persistence (verified complete functionality)
+
+### Documentation
+- Moved 12 completed/audit files to `/docs/archive/`:
+  - PHASE_1_2_IMPLEMENTATION_COMPLETE.md
+  - IMPLEMENTATION_EXECUTIVE_SUMMARY.md
+  - TAX_SYSTEM_PERSISTENCE_COMPLETE.md
+  - NATIONAL_IDENTITY_PERSISTENCE_COMPLETE.md
+  - ATOMIC_COMPONENTS_PERSISTENCE_IMPLEMENTATION.md
+  - SECURITY_AUDIT_TASK_1.4_1.7_COMPLETED.md
+  - ACHIEVEMENT_SUMMARY.md
+  - AUDIT_REPORT_2025-10-19.md
+  - AUDIT_REPORT_V1.1.md
+  - CHANGELOG_V1.1.md
+  - CODEBASE_AUDIT_OCTOBER_2025.md
+  - SECURITY_AUDIT_2025-10-22.md
+  - URGENT_SECURITY_ACTIONS.md
+- Moved 4 reference docs to `/docs/`:
+  - SYNERGY_REFERENCE.md
+  - ADMIN_ENDPOINT_SECURITY_MAP.md
+  - RATE_LIMITING_IMPLEMENTATION_GUIDE.md
+  - DEV_DATABASE_SETUP.md
+- Root now contains only active documents (README, CLAUDE, CHANGELOG, IMPLEMENTATION_PLAN, IMPLEMENTATION_STATUS)
+
+### Metrics
+- Documentation files moved: 16 total (12 to archive, 4 to docs)
+- Root documentation clarity: Significantly improved
+- Atomic components documented: 106 (24 government, 40+ economy, 42 tax)
+
+---
+
 ## [1.1.2] - 2025-10-18
 
 ### Removed

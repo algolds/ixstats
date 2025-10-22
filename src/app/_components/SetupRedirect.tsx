@@ -6,6 +6,7 @@ import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { navigateTo } from "~/lib/url-utils";
 import { usePermissions, ROLE_LEVELS } from "~/hooks/usePermissions";
+import { isSystemOwner } from "~/lib/system-owner-constants";
 
 export function SetupRedirect() {
   const { user, isLoaded } = useUser();
@@ -14,12 +15,7 @@ export function SetupRedirect() {
   const hasRedirected = useRef(false);
   const { user: permissionUser, isLoading: permissionsLoading } = usePermissions();
 
-  const SYSTEM_OWNER_IDS = [
-    "user_2zqmDdZvhpNQWGLdAIj2YwH8MLo", // Dev environment owner
-    "user_3078Ja62W7yJDlBjjwNppfzceEz", // Production environment owner
-  ];
-
-  const isSystemOwner = user ? SYSTEM_OWNER_IDS.includes(user.id) : false;
+  const isSystemOwnerUser = user ? isSystemOwner(user.id) : false;
   const isAdminOrHigher =
     permissionUser?.role ? permissionUser.role.level <= ROLE_LEVELS.ADMIN : false;
 
@@ -56,30 +52,60 @@ export function SetupRedirect() {
 
     // Only proceed if user is loaded and we're not on a skip path
     if (isLoaded && user && !shouldSkipSetup) {
+      console.log('[SetupRedirect] User loaded:', user.id, 'isSystemOwner:', isSystemOwner, 'isAdminOrHigher:', isAdminOrHigher);
+      
       // Wait for permission data to load before making decisions
       if (permissionsLoading) return;
 
       // System owners or admins may not need a linked country—skip redirect
-      if (isSystemOwner || isAdminOrHigher) {
+      if (isSystemOwnerUser || isAdminOrHigher) {
+        console.log('[SetupRedirect] System owner or admin detected, checking for country redirect');
+        console.log('[SetupRedirect] User profile:', userProfile);
+        
+        // If system owner has a country, redirect to it
+        if (userProfile && userProfile.countryId) {
+          console.log('[SetupRedirect] System owner has country, redirecting to MyCountry page');
+          hasRedirected.current = true;
+          // Redirect to MyCountry page which will handle the country-specific content
+          navigateTo(router, '/mycountry');
+          return;
+        }
+        
+        console.log('[SetupRedirect] System owner has no country, skipping redirect');
         return;
       }
 
       // If profile is still loading, wait
-      if (profileLoading) return;
+      if (profileLoading) {
+        console.log('[SetupRedirect] Profile still loading, waiting...');
+        return;
+      }
 
       // If there was an error loading profile, don't redirect
       if (profileError) {
-        console.warn('Profile loading error, skipping setup redirect:', profileError);
+        console.warn('[SetupRedirect] Profile loading error, skipping setup redirect:', profileError);
         return;
       }
 
       // If user has no country linked, redirect to setup
       if (userProfile && !userProfile.countryId) {
+        console.log('[SetupRedirect] User has no country linked, redirecting to setup');
         hasRedirected.current = true;
         navigateTo(router, '/setup');
+        return;
       }
+
+      // If userProfile is null/undefined but user is loaded, they might not have a profile yet
+      if (!userProfile && isLoaded && user) {
+        console.log('[SetupRedirect] No user profile found, redirecting to setup');
+        hasRedirected.current = true;
+        navigateTo(router, '/setup');
+        return;
+      }
+
+      console.log('[SetupRedirect] User has country linked, no redirect needed');
     }
-  }, [isLoaded, user, profileLoading, userProfile, profileError, router, shouldSkipSetup]);
+  }, [isLoaded, user, profileLoading, userProfile, profileError, router, shouldSkipSetup, permissionsLoading, isSystemOwner, isAdminOrHigher]);
 
   // Reset redirect flag when user changes
   useEffect(() => {

@@ -135,7 +135,10 @@ export default function ThinkPagesMainPage() {
 
   const { data: countryData } = api.countries.getByIdAtTime.useQuery(
     { id: userProfile?.countryId || '' },
-    { enabled: !!userProfile?.countryId }
+    { 
+      enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== '',
+      retry: false
+    }
   );
 
   // Fetch ThinkPages accounts for the feed (still needed for feed posting)
@@ -145,6 +148,14 @@ export default function ThinkPagesMainPage() {
   );
 
   const accounts = accountsData || [];
+
+  // Auto-select first account if none selected and accounts are available
+  useEffect(() => {
+    if (!selectedAccount && accounts.length > 0) {
+      console.log('🎯 Auto-selecting first available account:', accounts[0]);
+      setSelectedAccount(accounts[0]);
+    }
+  }, [accounts, selectedAccount]);
 
   // Allow anonymous access for view-only mode
   const isUserAuthenticated = user && user.id;

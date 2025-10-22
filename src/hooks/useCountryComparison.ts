@@ -15,7 +15,10 @@ export function useCountryComparison() {
   // Fetch detailed data for a specific country
   const { data: countryData, isLoading: isLoadingCountry } = api.countries.getByIdAtTime.useQuery(
     { id: selectedCountryIds[0] || '' },
-    { enabled: selectedCountryIds.length === 1 }
+    { 
+      enabled: selectedCountryIds.length === 1 && !!selectedCountryIds[0] && selectedCountryIds[0].trim() !== '',
+      retry: false
+    }
   );
 
   // Fetch all countries for selection

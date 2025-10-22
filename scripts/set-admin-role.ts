@@ -1,13 +1,11 @@
 // Script to set admin role for system owners
 import { db } from "../src/server/db";
+import { SYSTEM_OWNER_IDS } from "../src/lib/system-owner-constants";
 
 async function setAdminRole() {
   try {
-    // System owner user IDs
-    const SYSTEM_OWNERS = [
-      'user_2zqmDdZvhpNQWGLdAIj2YwH8MLo', // Dev environment
-      'user_3078Ja62W7yJDlBjjwNppfzceEz', // Production environment
-    ];
+    // Use centralized system owner IDs
+    const SYSTEM_OWNERS = SYSTEM_OWNER_IDS;
 
     // First, ensure the owner role exists with level 0
     let ownerRole = await db.role.findFirst({

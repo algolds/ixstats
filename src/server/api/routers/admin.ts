@@ -3,7 +3,8 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure, adminProcedure } from "~/server/api/trpc";
+import { isSystemOwner } from "~/lib/system-owner-constants";
 import { CONFIG_CONSTANTS, getDefaultEconomicConfig } from "~/lib/config-service";
 import { IxTime } from "~/lib/ixtime";
 import { parseRosterFile } from "~/lib/data-parser";
@@ -29,7 +30,7 @@ import {
 
 export const adminRouter = createTRPCRouter({
   // Internal calculation formulas management
-  getCalculationFormulas: publicProcedure
+  getCalculationFormulas: protectedProcedure
     .query(async ({ ctx }) => {
       const lastCalc = await ctx.db.calculationLog.findFirst({ orderBy: { timestamp: "desc" } });
       const lastModified = lastCalc?.timestamp ?? new Date();
@@ -55,7 +56,7 @@ export const adminRouter = createTRPCRouter({
       };
     }),
   // Get global statistics for SDI interface
-  getGlobalStats: publicProcedure
+  getGlobalStats: protectedProcedure
     .query(async ({ ctx }) => {
       try {
         const totalNations = await ctx.db.country.count();
@@ -87,7 +88,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // Get system status
-  getSystemStatus: publicProcedure
+  getSystemStatus: adminProcedure
     .query(async ({ ctx }) => {
       try {
         const [countryCount, activeDmInputs, lastCalculation] = await Promise.all([
@@ -130,7 +131,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // Get bot status with health check
-  getBotStatus: publicProcedure
+  getBotStatus: adminProcedure
     .query(async ({ ctx }) => {
       try {
         const [botHealth, ixTimeStatus] = await Promise.all([
@@ -172,7 +173,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // Get system configuration
-  getConfig: publicProcedure
+  getConfig: adminProcedure
     .query(async ({ ctx }) => {
       try {
         const configs = await ctx.db.systemConfig.findMany({
@@ -324,7 +325,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // Get calculation logs
-  getCalculationLogs: publicProcedure
+  getCalculationLogs: adminProcedure
     .input(z.object({
       limit: z.number().optional().default(10),
     }).optional())
@@ -827,7 +828,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // Get system health
-  getSystemHealth: publicProcedure
+  getSystemHealth: adminProcedure
     .query(async ({ ctx }) => {
       try {
         const [
@@ -908,7 +909,7 @@ export const adminRouter = createTRPCRouter({
   */
 
   // Sync with Discord bot
-  syncWithBot: publicProcedure
+  syncWithBot: adminProcedure
     .mutation(async () => {
       try {
         const result = await IxTime.syncWithBot();
@@ -940,13 +941,13 @@ export const adminRouter = createTRPCRouter({
   // List all countries and their assigned users
   listCountriesWithUsers: adminProcedure.query(async ({ ctx }) => {
     const countries = await ctx.db.country.findMany({
-      include: { user: true },
+      include: { users: true },
       orderBy: { name: 'asc' },
     });
     return countries.map(c => ({
       id: c.id,
       name: c.name,
-      user: c.user ? { id: c.user.id, clerkUserId: c.user.clerkUserId } : null,
+      user: c.users && c.users.length > 0 ? { id: c.users[0].id, clerkUserId: c.users[0].clerkUserId } : null,
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,
     }));
@@ -956,16 +957,29 @@ export const adminRouter = createTRPCRouter({
   assignUserToCountry: adminProcedure
     .input(z.object({ userId: z.string(), countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // Unlink any user currently assigned to this country
-      await ctx.db.user.updateMany({ where: { countryId: input.countryId }, data: { countryId: null } });
-      // Unlink this user from any country they currently claim
-      await ctx.db.user.updateMany({ where: { clerkUserId: input.userId }, data: { countryId: null } });
-      // Link user to country
-      await ctx.db.user.upsert({
-        where: { clerkUserId: input.userId },
-        update: { countryId: input.countryId },
-        create: { clerkUserId: input.userId, countryId: input.countryId },
-      });
+      const isSystemOwnerUser = isSystemOwner(input.userId);
+      
+      if (isSystemOwnerUser) {
+        // For system owners, allow multiple users to access the same country
+        // Just link the user without unlinking others
+        await ctx.db.user.upsert({
+          where: { clerkUserId: input.userId },
+          update: { countryId: input.countryId },
+          create: { clerkUserId: input.userId, countryId: input.countryId },
+        });
+      } else {
+        // For regular users, maintain the original behavior (one user per country)
+        // Unlink any user currently assigned to this country
+        await ctx.db.user.updateMany({ where: { countryId: input.countryId }, data: { countryId: null } });
+        // Unlink this user from any country they currently claim
+        await ctx.db.user.updateMany({ where: { clerkUserId: input.userId }, data: { countryId: null } });
+        // Link user to country
+        await ctx.db.user.upsert({
+          where: { clerkUserId: input.userId },
+          update: { countryId: input.countryId },
+          create: { clerkUserId: input.userId, countryId: input.countryId },
+        });
+      }
       return { success: true };
     }),
 
@@ -978,7 +992,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // Get navigation settings (wiki/cards/labs visibility)
-  getNavigationSettings: publicProcedure
+  getNavigationSettings: protectedProcedure
     .query(async ({ ctx }) => {
       try {
         const settings = await ctx.db.systemConfig.findMany({
@@ -1090,6 +1104,16 @@ export const adminRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
+        // God-mode operations require system owner privileges
+        // This check ensures only the system owner can directly manipulate country data
+        // Regular admins must use standard update flows to prevent data corruption
+        if (!isSystemOwner(ctx.auth.userId)) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'God-mode operations require system owner privileges. Regular admin access is insufficient.',
+          });
+        }
+
         const { id, data } = input;
 
         // Build update object
@@ -1235,6 +1259,16 @@ export const adminRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
+        // God-mode bulk operations require system owner privileges
+        // This prevents mass data corruption by restricting bulk updates to the system owner
+        // Regular admins must update countries individually through standard procedures
+        if (!isSystemOwner(ctx.auth.userId)) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'God-mode operations require system owner privileges. Regular admin access is insufficient.',
+          });
+        }
+
         const results = [];
 
         for (const update of input.updates) {

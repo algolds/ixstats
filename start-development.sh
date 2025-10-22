@@ -32,12 +32,16 @@ else
     export NODE_ENV=development
 fi
 
+# Override DATABASE_URL to use development database
+export DATABASE_URL="file:./prisma/dev.db"
+echo "🔄 Overriding DATABASE_URL to use development database: $DATABASE_URL"
+
 # Use development port 3000 (3001 is used by Discord bot API, 3002 by IxMaps production, 3003 by IxMaps dev)
 DEVELOPMENT_PORT=3000
 
 echo "🔍 Development Environment Summary:"
 echo "   NODE_ENV: $NODE_ENV"
-echo "   Database: ${DATABASE_URL:-file:./dev.db}"
+echo "   Database: $DATABASE_URL (Development Database)"
 echo "   Port: $DEVELOPMENT_PORT"
 echo "   Base Path: / (root)"
 echo "   MediaWiki URL: ${NEXT_PUBLIC_MEDIAWIKI_URL:-https://ixwiki.com/}"
@@ -69,9 +73,22 @@ echo "✅ Port $DEVELOPMENT_PORT is available"
 DB_FILE=${DATABASE_URL#file:./}
 if [ -f "$DB_FILE" ]; then
     echo "✅ Development database found: $DB_FILE"
+    # Show database size
+    DB_SIZE=$(du -h "$DB_FILE" | cut -f1)
+    echo "   Database size: $DB_SIZE"
 else
-    echo "⚠️  Development database not found: $DB_FILE"
-    echo "   Run 'npm run db:setup' to initialize the database"
+    echo "❌ Development database not found: $DB_FILE"
+    echo "   Creating development database from production copy..."
+    if [ -f "prisma/prod.db" ]; then
+        cp prisma/prod.db "$DB_FILE"
+        echo "✅ Development database created from production copy"
+        DB_SIZE=$(du -h "$DB_FILE" | cut -f1)
+        echo "   Database size: $DB_SIZE"
+    else
+        echo "❌ Production database not found to copy from: prisma/prod.db"
+        echo "   Please ensure the production database exists at: prisma/prod.db"
+        exit 1
+    fi
 fi
 
 echo ""

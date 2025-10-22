@@ -37,7 +37,10 @@ export function useUserCountry() {
     error: countryError
   } = api.countries.getByIdAtTime.useQuery(
     { id: userProfile?.countryId ?? '' },
-    { enabled: !!userProfile?.countryId }
+    { 
+      enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== '',
+      retry: false
+    }
   );
 
   return {

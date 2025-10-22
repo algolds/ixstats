@@ -46,11 +46,41 @@ Legacy documents have been relocated to `docs/archive/v1`. Keep them for histori
 - [`reference/api.md`](reference/api.md) – generated tRPC router & procedure index with request/response patterns
 - [`reference/database.md`](reference/database.md) – Prisma model catalogue and relational diagrams
 - [`reference/events.md`](reference/events.md) – websocket channels, notification payloads, and scheduled jobs
+- [`ATOMIC_COMPONENTS_GUIDE.md`](ATOMIC_COMPONENTS_GUIDE.md) – comprehensive guide to 106 atomic components (24 government, 40+ economy, 42 tax)
+- [`SYNERGY_REFERENCE.md`](SYNERGY_REFERENCE.md) – government component synergy system and interaction patterns
+- [`RATE_LIMITING_IMPLEMENTATION_GUIDE.md`](RATE_LIMITING_IMPLEMENTATION_GUIDE.md) – rate limiting implementation and configuration guide
+- [`ADMIN_ENDPOINT_SECURITY_MAP.md`](ADMIN_ENDPOINT_SECURITY_MAP.md) – admin endpoint security mappings and authentication requirements
+- [`USER_PROFILE_UTILS_USAGE.md`](USER_PROFILE_UTILS_USAGE.md) – user profile utilities and display name implementation
+- [`DEV_DATABASE_SETUP.md`](DEV_DATABASE_SETUP.md) – development database setup and management guide
+- [`TAX_SYSTEM_PERSISTENCE.md`](TAX_SYSTEM_PERSISTENCE.md) – tax system persistence architecture and implementation
+- [`TAX_SYSTEM_DATA_STRUCTURE.md`](TAX_SYSTEM_DATA_STRUCTURE.md) – tax system data structures and type definitions
+- [`TAX_SYSTEM_FRONTEND_EXAMPLE.md`](TAX_SYSTEM_FRONTEND_EXAMPLE.md) – tax system frontend integration examples
+- [`TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md`](TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md) – complete tax system implementation summary
+
+## Archive
+
+Completed implementation docs, audit reports, and historical documentation are preserved in:
+- [`archive/`](archive/) – v1.1.3 completed implementation and security audits (13 documents)
+  - PHASE_1_2_IMPLEMENTATION_COMPLETE.md
+  - TAX_SYSTEM_PERSISTENCE_COMPLETE.md
+  - NATIONAL_IDENTITY_PERSISTENCE_COMPLETE.md
+  - ATOMIC_COMPONENTS_PERSISTENCE_IMPLEMENTATION.md
+  - SECURITY_AUDIT_2025-10-22.md
+  - SECURITY_AUDIT_TASK_1.4_1.7_COMPLETED.md
+  - ACHIEVEMENT_SUMMARY.md
+  - AUDIT_REPORT_2025-10-19.md
+  - AUDIT_REPORT_V1.1.md
+  - CHANGELOG_V1.1.md
+  - CODEBASE_AUDIT_OCTOBER_2025.md
+  - IMPLEMENTATION_EXECUTIVE_SUMMARY.md
+  - URGENT_SECURITY_ACTIONS.md
+- [`archive/v1/`](archive/v1/) – v1.0 historical documentation and technical guides (80+ documents)
 
 ## How to Maintain This Documentation
 1. Update Markdown alongside code changes—especially READMEs in feature directories and the relevant system guide.
 2. Run or extend automation in `scripts/audit` when adding routers, models, or calculations; capture outputs in the reference docs.
 3. Keep `/help` synchronized with the Markdown guides so users receive the same guidance in-app and in the repository.
 4. Move outdated docs to `docs/archive/<date>` instead of deleting them when retiring features.
+5. Keep root directory clean—only active documents (README, CLAUDE, CHANGELOG, IMPLEMENTATION_PLAN, IMPLEMENTATION_STATUS).
 
-The documentation refresh targets accuracy as of this commit. Treat the structure as the source of truth going forward.
+The documentation refresh targets accuracy as of October 22, 2025 (v1.1.3). Treat the structure as the source of truth going forward.

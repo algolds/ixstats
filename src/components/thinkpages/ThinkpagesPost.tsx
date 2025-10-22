@@ -415,6 +415,38 @@ export function ThinkpagesPost({
             </div>
           )}
 
+          {/* Debug PostActions props */}
+          {(() => {
+            const isLikedValue = post.reactions?.some((r: any) => r.accountId === currentUserAccountId && r.reactionType === 'like');
+            const reactionCountsValue = (() => {
+              try {
+                if (typeof post.reactionCounts === 'string') {
+                  return JSON.parse(post.reactionCounts);
+                }
+                return post.reactionCounts || {};
+              } catch (error) {
+                console.warn('Failed to parse reactionCounts:', error);
+                return {};
+              }
+            })();
+            
+            console.log('📤 ThinkpagesPost passing props to PostActions:', {
+              postId: post.id,
+              currentUserAccountId,
+              isLiked: isLikedValue,
+              likeCount: post.likeCount,
+              reactionsCount: post.reactions?.length || 0,
+              reactions: post.reactions,
+              reactionCounts: reactionCountsValue,
+              hasOnLike: !!onLike,
+              hasOnReaction: !!onReaction,
+              postAccountId: post.account?.id,
+              postAccountUsername: post.account?.username
+            });
+            
+            return null;
+          })()}
+
           <PostActions
             postId={post.id}
             currentUserAccountId={currentUserAccountId}
@@ -431,7 +463,17 @@ export function ThinkpagesPost({
             repostCount={post.repostCount}
             replyCount={post.replyCount}
             reactions={post.reactions || []}
-            reactionCounts={post.reactionCounts || {}}
+            reactionCounts={(() => {
+              try {
+                if (typeof post.reactionCounts === 'string') {
+                  return JSON.parse(post.reactionCounts);
+                }
+                return post.reactionCounts || {};
+              } catch (error) {
+                console.warn('Failed to parse reactionCounts:', error);
+                return {};
+              }
+            })()}
             onLike={onLike}
             onRepost={onRepost}
             onReply={() => handleReply()}
@@ -506,23 +548,37 @@ export function ThinkpagesPost({
             </div>
           </div>
 
-          {post.reactionCounts && Object.keys(post.reactionCounts).length > 0 && (
-            <button
-              onClick={() => setShowReactionsDialog(true)}
-              className="flex items-center gap-2 mt-2 pt-2 border-t border-white/10 hover:bg-muted/30 w-full rounded px-2 py-1 transition-colors"
-            >
-              {Object.entries(post.reactionCounts).map(([type, count]) => {
-                const Icon = REACTION_ICONS[type];
-                if (!Icon || (count as number) === 0) return null;
+          {(() => {
+            try {
+              const reactionCounts = typeof post.reactionCounts === 'string' 
+                ? JSON.parse(post.reactionCounts) 
+                : (post.reactionCounts || {});
+              
+              if (reactionCounts && Object.keys(reactionCounts).length > 0) {
                 return (
-                  <div key={type} className="flex items-center gap-1 text-sm text-muted-foreground">
-                    {React.createElement(Icon, { className: "h-4 w-4" })}
-                    <span>{typeof count === 'number' ? count : 0}</span>
-                  </div>
+                  <button
+                    onClick={() => setShowReactionsDialog(true)}
+                    className="flex items-center gap-2 mt-2 pt-2 border-t border-white/10 hover:bg-muted/30 w-full rounded px-2 py-1 transition-colors"
+                  >
+                    {Object.entries(reactionCounts).map(([type, count]) => {
+                      const Icon = REACTION_ICONS[type];
+                      if (!Icon || (count as number) === 0) return null;
+                      return (
+                        <div key={type} className="flex items-center gap-1 text-sm text-muted-foreground">
+                          {React.createElement(Icon, { className: "h-4 w-4" })}
+                          <span>{typeof count === 'number' ? count : 0}</span>
+                        </div>
+                      );
+                    })}
+                  </button>
                 );
-              })}
-            </button>
-          )}
+              }
+              return null;
+            } catch (error) {
+              console.warn('Failed to display reaction counts:', error);
+              return null;
+            }
+          })()}
 
           {/* Edit Composer */}
           <AnimatePresence>

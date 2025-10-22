@@ -263,6 +263,7 @@ function AtomicBuilderPageInner({ onBackToIntro, mode = 'create', countryId }: A
         governmentComponents: builderState.governmentComponents,
         taxSystemData: builderState.taxSystemData,
         governmentStructure: builderState.governmentStructure,
+        economyBuilderState: builderState.economyBuilderState || undefined,
       });
     } catch (error) {
       // Error handled by mutation's onError callback

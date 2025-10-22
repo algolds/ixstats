@@ -2,12 +2,14 @@
 // Simplified users router with profile management and country linking
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure, adminProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure, adminProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig } from "~/lib/config-service";
 import { IxStatsCalculator } from "~/lib/calculations";
 import { generateSlug } from "~/lib/slug-utils";
 import { notificationHooks } from "~/lib/notification-hooks";
+import { UserManagementService } from "~/lib/user-management-service";
+import { isSystemOwner } from "~/lib/system-owner-constants";
 import type {
   Country,
   CountryStats,
@@ -18,7 +20,7 @@ import type {
 
 export const usersRouter = createTRPCRouter({
   // Get current user's profile using auth context (no input required)
-  getProfile: publicProcedure
+  getProfile: rateLimitedPublicProcedure
     .query(async ({ ctx }) => {
       try {
         if (!ctx.auth?.userId) {
@@ -56,17 +58,8 @@ export const usersRouter = createTRPCRouter({
 
         // Auto-create user record if missing (handles first-time logins)
         if (!userRecord) {
-          userRecord = await ctx.db.user.upsert({
-            where: { clerkUserId },
-            update: {},
-            create: {
-              clerkUserId,
-            },
-            include: {
-              country: countryArgs,
-              role: true,
-            },
-          }) as any;
+          const userService = new UserManagementService(ctx.db);
+          userRecord = await userService.getOrCreateUser(clerkUserId);
         }
 
         // Attempt to hydrate country details when we have an ID but no relation loaded
@@ -137,7 +130,7 @@ export const usersRouter = createTRPCRouter({
     }),
 
   // Get user profile by ID (for admin use)
-  getProfileById: publicProcedure
+  getProfileById: rateLimitedPublicProcedure
     .input(
       z.object({
         userId: z.string().min(1, "User ID cannot be empty"),
@@ -199,14 +192,25 @@ export const usersRouter = createTRPCRouter({
         if (input.userId !== ctx.auth?.userId) {
           throw new Error("UNAUTHORIZED: Cannot link country for different user");
         }
+        
         // Check if user already has a country
         const user = await ctx.db.user.findUnique({ where: { clerkUserId: input.userId } });
-        if (user && user.countryId) {
-          throw new Error("User already has a linked country");
+        if (user && user.countryId === input.countryId) {
+          // User is already linked to this country, return success
+          return { success: true, message: "User already linked to this country" };
         }
-        // Check if country is already claimed
-        const claimedUser = await ctx.db.user.findFirst({ where: { countryId: input.countryId } });
-        if (claimedUser) {
+        
+        // Check if country is already claimed by another user
+        const claimedUser = await ctx.db.user.findFirst({ 
+          where: { 
+            countryId: input.countryId,
+            clerkUserId: { not: input.userId } // Exclude current user
+          } 
+        });
+        
+        const isSystemOwnerUser = isSystemOwner(input.userId);
+        
+        if (claimedUser && !isSystemOwnerUser) {
           throw new Error("Country is already claimed by another user");
         }
         // Check if country exists
@@ -215,11 +219,26 @@ export const usersRouter = createTRPCRouter({
           throw new Error("Country not found");
         }
         // Link user to country
-        await ctx.db.user.upsert({
-          where: { clerkUserId: input.userId },
-          update: { countryId: input.countryId },
-          create: { clerkUserId: input.userId, countryId: input.countryId },
-        });
+        if (isSystemOwnerUser) {
+          // For system owners, allow linking even if country is claimed by others
+          await ctx.db.user.upsert({
+            where: { clerkUserId: input.userId },
+            update: { countryId: input.countryId },
+            create: { clerkUserId: input.userId, countryId: input.countryId },
+          });
+        } else {
+          // For regular users, unlink any existing country first
+          await ctx.db.user.updateMany({ 
+            where: { countryId: input.countryId }, 
+            data: { countryId: null } 
+          });
+          
+          await ctx.db.user.upsert({
+            where: { clerkUserId: input.userId },
+            update: { countryId: input.countryId },
+            create: { clerkUserId: input.userId, countryId: input.countryId },
+          });
+        }
         // Get the updated country with user info
         const updatedCountry = await ctx.db.country.findUnique({
           where: { id: input.countryId },
@@ -746,96 +765,26 @@ export const usersRouter = createTRPCRouter({
 
         const userId = ctx.auth.userId;
 
-        // Check if user already exists
-        const existingUser = await ctx.db.user.findUnique({
-          where: { clerkUserId: userId },
-          include: {
-            role: {
-              include: {
-                rolePermissions: {
-                  include: {
-                    permission: true
-                  }
-                }
-              }
-            }
-          }
-        });
+        // Use centralized user management service
+        const userService = new UserManagementService(ctx.db);
+        const user = await userService.getOrCreateUser(userId);
 
-        if (existingUser) {
-          return { user: existingUser, created: false };
+        if (!user) {
+          return {
+            user: null,
+            created: false,
+            error: "Failed to create or retrieve user record"
+          };
         }
 
-        // Ensure basic roles exist
-        await ctx.db.role.upsert({
-          where: { name: 'owner' },
-          update: {},
-          create: {
-            name: 'owner',
-            displayName: 'System Owner',
-            description: 'Full system access and control',
-            level: 0,
-            isSystem: true,
-            isActive: true,
-          }
-        });
+        // Check if this was a new user creation by looking at the user's creation time
+        const isNewUser = user.createdAt > new Date(Date.now() - 5000); // Created within last 5 seconds
 
-        await ctx.db.role.upsert({
-          where: { name: 'admin' },
-          update: {},
-          create: {
-            name: 'admin',
-            displayName: 'Administrator',
-            description: 'Administrative access',
-            level: 10,
-            isSystem: true,
-            isActive: true,
-          }
-        });
-
-        await ctx.db.role.upsert({
-          where: { name: 'user' },
-          update: {},
-          create: {
-            name: 'user',
-            displayName: 'Member',
-            description: 'Standard user access',
-            level: 100,
-            isSystem: true,
-            isActive: true,
-          }
-        });
-
-        // Get the System Owner role
-        const systemOwnerRole = await ctx.db.role.findUnique({
-          where: { name: 'owner' },
-        });
-
-        if (!systemOwnerRole) {
-          throw new Error("Failed to create System Owner role");
-        }
-
-        // Create the user with System Owner role
-        const newUser = await ctx.db.user.create({
-          data: {
-            clerkUserId: userId,
-            roleId: systemOwnerRole.id,
-            isActive: true,
-          },
-          include: {
-            role: {
-              include: {
-                rolePermissions: {
-                  include: {
-                    permission: true
-                  }
-                }
-              }
-            }
-          }
-        });
-
-        return { user: newUser, created: true };
+        return { 
+          user, 
+          created: isNewUser,
+          message: isNewUser ? "User created successfully" : "User already exists"
+        };
       } catch (error) {
         console.error("Error creating user record:", error);
         return {

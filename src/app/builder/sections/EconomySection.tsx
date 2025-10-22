@@ -27,6 +27,7 @@ import { Button } from '~/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Alert, AlertDescription } from '~/components/ui/alert';
 import { api } from '~/trpc/react';
+import { useBuilderContext } from '../components/enhanced/context/BuilderStateContext';
 
 // Enhanced Components
 import {
@@ -99,19 +100,28 @@ export function EconomySection({
   const { EDIT_MODE_FIELD_LOCKS } = require('../components/enhanced/builderConfig');
   const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
 
+  // Get builder context to update global state
+  const builderContext = useBuilderContext?.();
+
   // Economy Builder State
   const [isEconomyBuilderOpen, setIsEconomyBuilderOpen] = useState(false);
   const [economyBuilderState, setEconomyBuilderState] = useState<EconomyBuilderState | null>(null);
-  
+
   // Economy Builder Handlers
   const handleOpenEconomyBuilder = () => {
     setIsEconomyBuilderOpen(true);
   };
 
   const handleSaveEconomyBuilder = (builder: EconomyBuilderState) => {
-    setEconomyBuilderState(builder);
-    // Here you would typically save to a database or update the parent state
-    console.log('Economy builder saved:', builder);
+    setEconomyBuilderState(builder); // Update local state for UI
+
+    // Update global builder state if context is available
+    if (builderContext?.updateEconomyBuilderState) {
+      builderContext.updateEconomyBuilderState(builder);
+      console.log('✅ Economy builder saved to global state:', builder);
+    } else {
+      console.warn('⚠️ Builder context not available - economy state not persisted to global state');
+    }
   };
 
   // Calculate component effectiveness if we have economy builder state

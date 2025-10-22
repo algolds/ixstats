@@ -34,11 +34,25 @@ interface ReactionPopupProps {
 }
 
 export function ReactionPopup({ onSelectReaction, postReactionCounts }: ReactionPopupProps) {
+  console.log('🎭 ReactionPopup component rendered:', { onSelectReaction: !!onSelectReaction, postReactionCounts });
+  
   const [showMoreEmojis, setShowMoreEmojis] = useState(false);
   const [activeTab, setActiveTab] = useState<'reactions' | 'discord'>('reactions');
+  const [discordError, setDiscordError] = useState<string | null>(null);
   
   // Always load Discord emojis since they're prominently featured
-  const { data: discordEmojis, isLoading } = api.thinkpages.getDiscordEmojis.useQuery({});
+  const { data: discordEmojis, isLoading, error } = api.thinkpages.getDiscordEmojis.useQuery({}, {
+    retry: 1,
+    retryDelay: 1000
+  });
+
+  // Handle error state
+  React.useEffect(() => {
+    if (error) {
+      console.warn('Discord emojis failed to load:', error);
+      setDiscordError('Discord emojis unavailable');
+    }
+  }, [error]);
 
   const availableReactions = Object.keys(REACTION_ICONS);
 
@@ -50,7 +64,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
       className="p-2 bg-background border border-border rounded-lg shadow-lg min-w-[280px]"
     >
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'reactions' | 'discord')} className="w-full">
-        <TabsList className="w-full grid grid-cols-2 mb-2 bg-white/5">
+        <TabsList className="w-full grid grid-cols-2 mb-2 bg-muted">
           <TabsTrigger value="reactions" className="text-xs flex items-center gap-1">
             <Heart className="h-3 w-3" />
             <span>Built-in</span>
@@ -102,6 +116,12 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
             {isLoading ? (
               <div className="flex items-center justify-center p-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                <span className="ml-2 text-xs text-muted-foreground">Loading...</span>
+              </div>
+            ) : error || discordError ? (
+              <div className="text-xs text-muted-foreground p-2 text-center">
+                <div className="mb-1">{discordError || 'Discord emojis unavailable'}</div>
+                <div className="text-xs opacity-75">Using built-in reactions</div>
               </div>
             ) : discordEmojis?.emojis ? (
               <>
@@ -116,6 +136,10 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                       src={emoji.url} 
                       alt={`:${emoji.name}:`}
                       className="h-5 w-5"
+                      onError={(e) => {
+                        console.warn('Discord emoji failed to load:', emoji.name);
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
                     />
                   </button>
                 ))}
@@ -140,7 +164,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
 
       {/* Current Reaction Counts */}
       {postReactionCounts && Object.keys(postReactionCounts).length > 0 && (
-        <div className="border-t pt-2 mt-2">
+        <div className="border-t border-border pt-2 mt-2">
           <div className="text-xs text-muted-foreground mb-1">Current reactions:</div>
           <div className="flex flex-wrap gap-1 text-xs">
             {Object.entries(postReactionCounts).map(([type, count]) => {

@@ -140,7 +140,10 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
 
   const { data: userCountry } = api.countries.getByIdAtTime.useQuery(
     { id: userProfile?.countryId || '' },
-    { enabled: !!userProfile?.countryId }
+    { 
+      enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== '',
+      retry: false
+    }
   );
 
   // Get user engagement state for like/share buttons

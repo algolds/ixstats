@@ -44,6 +44,7 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 | [`operations/environments.md`](operations/environments.md) | Environment tiers, base paths, service toggles, and secret requirements |
 | [`operations/deployment.md`](operations/deployment.md) | Build pipeline, scripts, hosting expectations, and rollback plan |
 | [`operations/monitoring.md`](operations/monitoring.md) | Error logging, Discord webhooks, audit scripts, and health checks |
+| [`RATE_LIMITING_GUIDE.md`](RATE_LIMITING_GUIDE.md) | Rate limiting configuration, Redis setup, endpoint protection, and troubleshooting |
 | [`processes/testing.md`](processes/testing.md) | Test strategy, coverage goals, fixtures, and nightly automation |
 | [`processes/contributing.md`](processes/contributing.md) | Contribution workflow, review protocol, release cadence |
 

@@ -3,8 +3,16 @@
  * Comprehensive CRUD Test Script for IxStats v1.0
  * Tests all tRPC router endpoints for Create, Read, Update, Delete operations
  *
+ * ⚠️  WARNING: This script should NEVER run in production!
  * Usage: npx tsx scripts/audit/test-all-crud-operations.ts
  */
+
+// Production safety guard
+if (process.env.NODE_ENV === 'production') {
+  console.error('❌ CRITICAL ERROR: This test script cannot run in production!');
+  console.error('   This script creates test data and should only be used in development.');
+  process.exit(1);
+}
 
 import { PrismaClient } from "@prisma/client";
 import { db } from "../../src/server/db";

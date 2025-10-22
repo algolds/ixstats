@@ -25,6 +25,7 @@ import { BlurFade } from '~/components/magicui/blur-fade';
 import { AccountManagerModal } from './AccountManagerModal';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
 import { ToggleGroup, ToggleGroupItem } from '~/components/ui/toggle-group';
+import { RepostModal } from './RepostModal';
 
 interface ThinkpagesSocialPlatformProps {
   countryId: string;
@@ -51,6 +52,8 @@ export function ThinkpagesSocialPlatform({
   const [searchQuery, setSearchQuery] = useState('');
   const [isAccountPanelOpen, setIsAccountPanelOpen] = useState(false);
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+  const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
+  const [repostingPost, setRepostingPost] = useState<any>(null);
   // Show all posts from all countries, not filtered by countryId
   const { data: feed, isLoading: isLoadingFeed, refetch: refetchFeed } = api.thinkpages.getFeed.useQuery({ filter: feedFilter });
   const { data: trendingTopics, isLoading: isLoadingTrending, refetch: refetchTrending } = api.thinkpages.getTrendingTopics.useQuery({ limit: 5 });
@@ -77,10 +80,27 @@ export function ThinkpagesSocialPlatform({
        (selectedAccount.id ? `Account ${String(selectedAccount.id).slice(-4)}` : 'Active account'))
     : undefined;
 
+  // Debug logging for account selection
+  useEffect(() => {
+    console.log('📱 ThinkpagesSocialPlatform account state:', {
+      selectedAccount: !!selectedAccount,
+      accountId: selectedAccount?.id,
+      accountName: activeAccountName,
+      accountsCount: accounts.length,
+      isOwner
+    });
+  }, [selectedAccount, activeAccountName, accounts.length, isOwner]);
+
+  const utils = api.useUtils();
+
   // Reaction mutation
   const addReactionMutation = api.thinkpages.addReaction.useMutation({
-    onSuccess: () => {
-      refetchFeed();
+    onSuccess: async () => {
+      // Properly await cache invalidation
+      await Promise.all([
+        utils.thinkpages.getFeed.invalidate(),
+        utils.thinkpages.getPost.invalidate()
+      ]);
     },
     onError: (error) => {
       toast.error(error.message || "Failed to add reaction");
@@ -220,23 +240,40 @@ export function ThinkpagesSocialPlatform({
                     onAccountSettings={onAccountSettings}
                     onCreateAccount={onCreateAccount}
                     onLike={(postId) => {
+                      console.log('🎯 ThinkpagesSocialPlatform onLike called:', { 
+                        postId, 
+                        selectedAccount: !!selectedAccount, 
+                        accountId: selectedAccount?.id,
+                        accountName: selectedAccount?.username || selectedAccount?.displayName
+                      });
+                      
                       if (selectedAccount) {
-                        addReactionMutation.mutate({ postId, accountId: selectedAccount.id, reactionType: 'like' });
+                        console.log('✅ Adding like reaction via mutation');
+                        addReactionMutation.mutate({ 
+                          postId, 
+                          accountId: selectedAccount.id, 
+                          reactionType: 'like' 
+                        });
                       } else {
+                        console.warn('❌ No selected account for like reaction');
                         toast.error('Please select an account first');
                       }
                     }}
                     onRepost={(postId) => {
                       if (selectedAccount) {
-                        toast.info('Repost functionality coming soon!');
+                        const postToRepost = filteredPosts?.find(p => p.id === postId);
+                        if (postToRepost) {
+                          setRepostingPost(postToRepost);
+                          setIsRepostModalOpen(true);
+                        }
                       } else {
                         toast.error('Please select an account first');
                       }
                     }}
                     onReply={(postId) => {
-                      if (selectedAccount) {
-                        toast.info('Reply functionality coming soon!');
-                      } else {
+                      // Reply functionality is handled directly in ThinkpagesPost component
+                      // This callback is kept for consistency but not actively used
+                      if (!selectedAccount) {
                         toast.error('Please select an account first');
                       }
                     }}
@@ -253,19 +290,31 @@ export function ThinkpagesSocialPlatform({
                       }
                     }}
                     onReaction={(postId, reactionType) => {
+                      console.log('🎭 ThinkpagesSocialPlatform onReaction called:', { 
+                        postId, 
+                        reactionType,
+                        selectedAccount: !!selectedAccount, 
+                        accountId: selectedAccount?.id,
+                        accountName: selectedAccount?.username || selectedAccount?.displayName
+                      });
+                      
                       if (selectedAccount) {
                         // Validate and cast reaction type to enum
                         const validReactions = ['like', 'laugh', 'angry', 'sad', 'fire', 'thumbsup', 'thumbsdown'] as const;
                         type ValidReaction = typeof validReactions[number];
                         
                         if (validReactions.includes(reactionType as ValidReaction)) {
+                          console.log('✅ Adding reaction via mutation:', { postId, accountId: selectedAccount.id, reactionType });
                           addReactionMutation.mutate({ 
                             postId, 
                             accountId: selectedAccount.id, 
                             reactionType: reactionType as ValidReaction
                           });
+                        } else {
+                          console.warn('❌ Invalid reaction type:', reactionType);
                         }
                       } else {
+                        console.warn('❌ No selected account for reaction');
                         toast.error('Please select an account first');
                       }
                     }}
@@ -333,7 +382,9 @@ export function ThinkpagesSocialPlatform({
                         <div className="flex items-center gap-1 whitespace-nowrap">
                           <TrendingUp className="h-3 w-3 text-green-500" />
                           <span className="text-xs font-medium text-green-600">
-                            +{Math.floor(Math.random() * 50 + 10)}%
+                            {topic.engagement > 0
+                              ? `${Math.round((topic.engagement / topic.postCount) * 10)}`
+                              : '0'} eng
                           </span>
                         </div>
                       </button>
@@ -367,6 +418,28 @@ export function ThinkpagesSocialPlatform({
         onCreateAccount={onCreateAccount || (() => {})}
         isOwner={isOwner}
       />
+
+      {/* Repost Modal */}
+      {repostingPost && (
+        <RepostModal
+          open={isRepostModalOpen}
+          onOpenChange={setIsRepostModalOpen}
+          originalPost={repostingPost}
+          countryId={countryId}
+          selectedAccount={selectedAccount}
+          accounts={accounts}
+          onAccountSelect={onAccountSelect}
+          onAccountSettings={onAccountSettings}
+          onCreateAccount={onCreateAccount}
+          isOwner={isOwner}
+          onPost={() => {
+            toast.success('Reposted successfully!');
+            refetchFeed();
+            setIsRepostModalOpen(false);
+            setRepostingPost(null);
+          }}
+        />
+      )}
 
     </div>
   );

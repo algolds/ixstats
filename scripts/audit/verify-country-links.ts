@@ -14,13 +14,9 @@
  */
 
 import { PrismaClient } from "@prisma/client";
+import { SYSTEM_OWNER_IDS } from "../../src/lib/system-owner-constants";
 
 const prisma = new PrismaClient();
-
-const SYSTEM_OWNER_IDS = [
-  "user_2zqmDdZvhpNQWGLdAIj2YwH8MLo",
-  "user_3078Ja62W7yJDlBjjwNppfzceEz",
-] as const;
 const SYSTEM_OWNER_SET = new Set<string>(SYSTEM_OWNER_IDS);
 
 type SummaryRow = {

@@ -102,7 +102,10 @@ export function SocialUserProfile({ userProfile, className }: SocialUserProfileP
   // Fetch user country data
   const { data: userCountry } = api.countries.getByIdAtTime.useQuery(
     { id: userProfile?.countryId || '' },
-    { enabled: !!userProfile?.countryId }
+    { 
+      enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== '',
+      retry: false
+    }
   );
 
   const { data: activityRingsData } = api.countries.getActivityRingsData.useQuery(

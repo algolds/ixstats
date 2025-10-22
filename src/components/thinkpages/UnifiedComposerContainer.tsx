@@ -23,6 +23,7 @@ interface UnifiedComposerContainerProps {
     originalPost: any;
     mode: 'repost';
   };
+  hideAccountsTab?: boolean;
 }
 
 export function UnifiedComposerContainer({
@@ -34,9 +35,40 @@ export function UnifiedComposerContainer({
   onCreateAccount,
   isOwner,
   onPost,
-  repostData
+  repostData,
+  hideAccountsTab = false
 }: UnifiedComposerContainerProps) {
   const [activeTab, setActiveTab] = useState<'compose' | 'accounts'>(selectedAccount ? 'compose' : 'accounts');
+
+  // If hiding accounts tab, show only composer without tabs
+  if (hideAccountsTab) {
+    return (
+      <Card className="glass-hierarchy-interactive border-purple-500/30 bg-purple-500/5">
+        {selectedAccount ? (
+          <GlassCanvasComposer
+            account={selectedAccount}
+            accounts={accounts}
+            onAccountSelect={onAccountSelect || (() => {})}
+            onAccountSettings={onAccountSettings || (() => {})}
+            onCreateAccount={onCreateAccount || (() => {})}
+            isOwner={isOwner}
+            onPost={onPost}
+            placeholder={repostData ? "Add a comment to your repost..." : "What's happening in your nation?"}
+            countryId={countryId}
+            repostData={repostData}
+          />
+        ) : (
+          <div className="p-8 text-center">
+            <div className="text-muted-foreground mb-4">
+              <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">No Account Selected</h3>
+              <p className="text-sm">Please select an account to start posting</p>
+            </div>
+          </div>
+        )}
+      </Card>
+    );
+  }
 
   return (
     <Card className="glass-hierarchy-interactive border-purple-500/30 bg-purple-500/5">

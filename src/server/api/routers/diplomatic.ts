@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { notificationAPI } from "~/lib/notification-api";
@@ -64,27 +64,186 @@ export const diplomaticRouter = createTRPCRouter({
       hours: z.number().optional().default(24)
     }))
     .query(async ({ ctx, input }) => {
-      // Mock recent diplomatic changes
-      const mockChanges = [
-        {
-          id: '1',
-          targetCountry: 'Strategic Partner',
-          currentStatus: 'alliance',
-          previousStatus: 'neutral',
-          updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          changeType: 'status_upgrade'
-        },
-        {
-          id: '2',
-          targetCountry: 'Regional Rival',
-          currentStatus: 'tension',
-          previousStatus: 'neutral',
-          updatedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-          changeType: 'status_downgrade'
-        }
-      ];
+      try {
+        const cutoffDate = new Date(Date.now() - input.hours * 60 * 60 * 1000);
+        const changes: Array<{
+          id: string;
+          targetCountry: string;
+          currentStatus: string;
+          previousStatus?: string;
+          updatedAt: string;
+          changeType: string;
+          description?: string;
+        }> = [];
 
-      return mockChanges;
+        // 1. Recent diplomatic events (relationship changes, embassy events, mission completions)
+        const diplomaticEvents = await ctx.db.diplomaticEvent.findMany({
+          where: {
+            OR: [
+              { country1Id: input.countryId },
+              { country2Id: input.countryId }
+            ],
+            createdAt: { gte: cutoffDate }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 10
+        });
+
+        for (const event of diplomaticEvents) {
+          const targetCountryId = event.country1Id === input.countryId ? event.country2Id : event.country1Id;
+
+          // Get target country name
+          let targetCountryName = 'Unknown';
+          if (targetCountryId) {
+            const targetCountry = await ctx.db.country.findUnique({
+              where: { id: targetCountryId },
+              select: { name: true }
+            });
+            targetCountryName = targetCountry?.name || 'Unknown';
+          }
+
+          changes.push({
+            id: event.id,
+            targetCountry: targetCountryName,
+            currentStatus: event.eventType,
+            updatedAt: event.createdAt.toISOString(),
+            changeType: event.eventType,
+            description: event.description
+          });
+        }
+
+        // 2. Recent embassy status changes
+        const recentEmbassies = await ctx.db.embassy.findMany({
+          where: {
+            OR: [
+              { hostCountryId: input.countryId },
+              { guestCountryId: input.countryId }
+            ],
+            updatedAt: { gte: cutoffDate }
+          },
+          orderBy: { updatedAt: 'desc' },
+          take: 10,
+          include: {
+            hostCountry: { select: { name: true } },
+            guestCountry: { select: { name: true } }
+          }
+        });
+
+        for (const embassy of recentEmbassies) {
+          const isHost = embassy.hostCountryId === input.countryId;
+          const partnerCountry = isHost ? embassy.guestCountry : embassy.hostCountry;
+
+          changes.push({
+            id: embassy.id,
+            targetCountry: partnerCountry?.name || 'Unknown',
+            currentStatus: embassy.status,
+            updatedAt: embassy.updatedAt.toISOString(),
+            changeType: 'embassy_update',
+            description: `Embassy ${embassy.status === 'ACTIVE' ? 'operational' : embassy.status}`
+          });
+        }
+
+        // 3. Recent missions completed/failed
+        const recentMissions = await ctx.db.embassyMission.findMany({
+          where: {
+            embassy: {
+              OR: [
+                { hostCountryId: input.countryId },
+                { guestCountryId: input.countryId }
+              ]
+            },
+            status: { in: ['completed', 'failed'] },
+            updatedAt: { gte: cutoffDate }
+          },
+          orderBy: { updatedAt: 'desc' },
+          take: 10,
+          include: {
+            embassy: {
+              include: {
+                hostCountry: { select: { name: true } },
+                guestCountry: { select: { name: true } }
+              }
+            }
+          }
+        });
+
+        for (const mission of recentMissions) {
+          const isGuest = mission.embassy.guestCountryId === input.countryId;
+          const partnerCountry = isGuest ? mission.embassy.hostCountry : mission.embassy.guestCountry;
+
+          changes.push({
+            id: mission.id,
+            targetCountry: partnerCountry?.name || 'Unknown',
+            currentStatus: mission.status,
+            updatedAt: mission.updatedAt.toISOString(),
+            changeType: 'mission_' + mission.status,
+            description: `${mission.name} ${mission.status}`
+          });
+        }
+
+        // 4. Recent cultural exchanges
+        const recentExchanges = await ctx.db.culturalExchange.findMany({
+          where: {
+            OR: [
+              { hostCountryId: input.countryId },
+              {
+                participatingCountries: {
+                  some: { countryId: input.countryId }
+                }
+              }
+            ],
+            updatedAt: { gte: cutoffDate }
+          },
+          orderBy: { updatedAt: 'desc' },
+          take: 10
+        });
+
+        for (const exchange of recentExchanges) {
+          changes.push({
+            id: exchange.id,
+            targetCountry: exchange.hostCountryName,
+            currentStatus: exchange.status,
+            updatedAt: exchange.updatedAt.toISOString(),
+            changeType: 'cultural_exchange',
+            description: `${exchange.title} - ${exchange.type}`
+          });
+        }
+
+        // 5. Recent treaties signed
+        const recentTreaties = await ctx.db.treaty.findMany({
+          where: {
+            parties: { contains: input.countryId },
+            updatedAt: { gte: cutoffDate }
+          },
+          orderBy: { updatedAt: 'desc' },
+          take: 10
+        });
+
+        for (const treaty of recentTreaties) {
+          changes.push({
+            id: treaty.id,
+            targetCountry: treaty.name,
+            currentStatus: treaty.status,
+            updatedAt: treaty.updatedAt.toISOString(),
+            changeType: 'treaty_' + treaty.status.toLowerCase(),
+            description: treaty.description || treaty.name
+          });
+        }
+
+        // Sort all changes by date descending and limit to 20 most recent
+        const sortedChanges = changes
+          .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+          .slice(0, 20);
+
+        return sortedChanges;
+      } catch (error) {
+        console.error('Error fetching recent diplomatic changes:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to fetch recent diplomatic changes',
+          cause: error,
+        });
+      }
     }),
 
   // Update diplomatic relationship
@@ -1165,25 +1324,25 @@ export const diplomaticRouter = createTRPCRouter({
       };
     }),
 
-  getInfluenceLeaderboard: publicProcedure
+  getInfluenceLeaderboard: rateLimitedPublicProcedure
     .query(async ({ ctx }) => {
       const countries = await ctx.db.country.findMany({
         include: {
-          // embassies: {
-          //   select: {
-          //     influence: true,
-          //     level: true,
-          //     status: true
-          //   }
-          // }
+          embassies: {
+            select: {
+              influence: true,
+              level: true,
+              status: true
+            }
+          }
         }
       });
 
       const leaderboard = countries.map(country => {
-        const activeEmbassies = (country as any).embassies.filter((e: any) => e.status === 'ACTIVE');
-        const totalInfluence = activeEmbassies.reduce((sum: number, e: any) => sum + (e.influence || 0), 0);
-        const averageLevel = activeEmbassies.length > 0 ? 
-          activeEmbassies.reduce((sum: number, e: any) => sum + (e.level || 1), 0) / activeEmbassies.length : 0;
+        const activeEmbassies = country.embassies.filter(e => e.status === 'ACTIVE');
+        const totalInfluence = activeEmbassies.reduce((sum, e) => sum + (e.influence || 0), 0);
+        const averageLevel = activeEmbassies.length > 0 ?
+          activeEmbassies.reduce((sum, e) => sum + (e.level || 1), 0) / activeEmbassies.length : 0;
 
         return {
           countryId: country.id,

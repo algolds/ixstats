@@ -4,13 +4,15 @@ import { useState, useEffect } from 'react';
 import { api } from '~/trpc/react';
 import { useBuilderTheming } from '~/hooks/useBuilderTheming';
 import { useCountryFlagRouteAware } from '~/hooks/useCountryFlagRouteAware';
+import { useNationalIdentityAutoSync } from '~/hooks/useNationalIdentityAutoSync';
 import { wikiCommonsFlagService } from '~/lib/wiki-commons-flag-service';
 import type { EconomicInputs, RealCountryData } from '~/app/builder/lib/economy-data-service';
 
 export function useNationalIdentityState(
   inputs: EconomicInputs,
   onInputsChange: (inputs: EconomicInputs) => void,
-  referenceCountry: RealCountryData | null | undefined
+  referenceCountry: RealCountryData | null | undefined,
+  countryId?: string
 ) {
   // State management
   const [showFlagImageModal, setShowFlagImageModal] = useState(false);
@@ -69,6 +71,22 @@ export function useNationalIdentityState(
     nationalSport: '',
     weekStartDay: 'monday'
   };
+
+  // Auto-sync for national identity (edit mode only)
+  const autoSync = useNationalIdentityAutoSync(
+    countryId,
+    identity,
+    {
+      enabled: !!countryId, // Only enable in edit mode
+      debounceMs: 15000, // 15 seconds
+      onSyncSuccess: () => {
+        console.log('[NationalIdentity] Autosave successful');
+      },
+      onSyncError: (error) => {
+        console.warn('[NationalIdentity] Autosave failed:', error);
+      },
+    }
+  );
 
   // Sync local state with loaded identity data
   useEffect(() => {
@@ -171,6 +189,8 @@ export function useNationalIdentityState(
     handleFlagUrlChange,
     handleCoatOfArmsUrlChange,
     handleFieldValueSave,
+    // Auto-sync
+    autoSync,
   };
 }
 

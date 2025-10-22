@@ -11,6 +11,7 @@ import { TaxBuilder, type TaxBuilderState } from '~/components/tax-system/TaxBui
 import type { EconomicInputs } from '~/app/builder/lib/economy-data-service';
 import { api } from '~/trpc/react';
 import { usePendingLocks } from "../hooks/usePendingLocks";
+import { safeFormatCurrency } from '~/lib/format-utils';
 
 interface FiscalSystemSectionEnhancedProps {
   inputs: EconomicInputs;
@@ -78,10 +79,9 @@ export function FiscalSystemSectionEnhanced({
   };
 
   const formatCurrency = (num: number) => {
-    if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`;
-    if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
-    if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(num);
+    // Get currency from national identity, fallback to USD
+    const currency = inputs.nationalIdentity?.currency || 'USD';
+    return safeFormatCurrency(num, currency, false, 'USD');
   };
 
   const budgetStatus = budgetBalance >= 0 ? 'surplus' : 'deficit';

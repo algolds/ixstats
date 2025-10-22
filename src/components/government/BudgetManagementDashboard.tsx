@@ -6,6 +6,7 @@ import { Button } from '~/components/ui/button';
 import { Badge } from '~/components/ui/badge';
 import { Progress } from '~/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
+import { safeFormatCurrency } from '~/lib/format-utils';
 import { 
   PieChart, 
   Pie, 
@@ -129,12 +130,7 @@ export function BudgetManagementDashboard({
   }, [revenueSources]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: governmentStructure.budgetCurrency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
+    return safeFormatCurrency(amount, governmentStructure.budgetCurrency, false, 'USD');
   };
 
   const formatNumber = (num: number) => {

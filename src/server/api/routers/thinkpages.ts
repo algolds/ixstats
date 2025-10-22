@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { generateAndPostCitizenReaction } from "~/lib/auto-post-service";
@@ -80,7 +80,10 @@ const CreatePostSchema = z.object({
 const AddReactionSchema = z.object({
   postId: z.string(),
   accountId: z.string(), // ThinkpagesAccount ID for reactions
-  reactionType: z.enum(['like', 'laugh', 'angry', 'sad', 'fire', 'thumbsup', 'thumbsdown']),
+  reactionType: z.union([
+    z.enum(['like', 'laugh', 'angry', 'sad', 'fire', 'thumbsup', 'thumbsdown']),
+    z.string().startsWith('discord:') // Support Discord emoji reactions like "discord:ixnay"
+  ]),
 });
 
 const GetFeedSchema = z.object({
@@ -133,7 +136,7 @@ async function getWikiCommonsImageInfo(title: string): Promise<{ url: string; de
 
 export const thinkpagesRouter = createTRPCRouter({
   // Search Unsplash images
-  searchUnsplashImages: publicProcedure
+  searchUnsplashImages: rateLimitedPublicProcedure
     .input(SearchUnsplashImagesSchema)
     .query(async ({ input }) => {
       try {
@@ -154,7 +157,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Search Wiki Commons images
-  searchWikiCommonsImages: publicProcedure
+  searchWikiCommonsImages: rateLimitedPublicProcedure
     .input(z.object({
       query: z.string().min(1),
       page: z.number().min(1).default(1),
@@ -215,9 +218,9 @@ export const thinkpagesRouter = createTRPCRouter({
       }
     }),
 
-  searchWiki: publicProcedure
-    .input(z.object({ 
-      query: z.string(), 
+  searchWiki: rateLimitedPublicProcedure
+    .input(z.object({
+      query: z.string(),
       wiki: z.enum(['iiwiki', 'ixwiki']),
       cursor: z.string().optional(),
       limit: z.number().min(1).max(100).default(30)
@@ -333,7 +336,7 @@ export const thinkpagesRouter = createTRPCRouter({
   }),
 
   // Search users globally for ThinkTanks/ThinkShare
-  searchUsers: publicProcedure
+  searchUsers: rateLimitedPublicProcedure
     .input(z.object({
       query: z.string(),
     }))
@@ -737,7 +740,14 @@ export const thinkpagesRouter = createTRPCRouter({
         });
       }
 
-      const reactionCounts = post.reactionCounts ? JSON.parse(post.reactionCounts) : {};
+      const reactionCounts = (() => {
+        try {
+          return post.reactionCounts ? JSON.parse(post.reactionCounts) : {};
+        } catch (error) {
+          console.warn('Failed to parse reactionCounts in addReaction:', error);
+          return {};
+        }
+      })();
 
       const existingReaction = await db.postReaction.findUnique({
         where: {
@@ -750,46 +760,73 @@ export const thinkpagesRouter = createTRPCRouter({
 
       if (existingReaction) {
         if (existingReaction.reactionType === input.reactionType) {
-          return existingReaction;
+          // Same reaction - remove it (toggle behavior)
+          await db.$transaction(async (tx) => {
+            reactionCounts[existingReaction.reactionType] = (reactionCounts[existingReaction.reactionType] || 1) - 1;
+            
+            await tx.postReaction.delete({
+              where: {
+                postId_accountId: {
+                  postId: input.postId,
+                  accountId: input.accountId,
+                },
+              },
+            });
+
+            await tx.thinkpagesPost.update({
+              where: { id: input.postId },
+              data: { reactionCounts: JSON.stringify(reactionCounts) },
+            });
+          });
+
+          return { removed: true };
         }
 
-        reactionCounts[existingReaction.reactionType] = (reactionCounts[existingReaction.reactionType] || 1) - 1;
-        reactionCounts[input.reactionType] = (reactionCounts[input.reactionType] || 0) + 1;
+        // Different reaction - update it
+        await db.$transaction(async (tx) => {
+          reactionCounts[existingReaction.reactionType] = (reactionCounts[existingReaction.reactionType] || 1) - 1;
+          reactionCounts[input.reactionType] = (reactionCounts[input.reactionType] || 0) + 1;
 
-        const reaction = await db.postReaction.update({
-          where: {
-            postId_accountId: {
+          await tx.postReaction.update({
+            where: {
+              postId_accountId: {
+                postId: input.postId,
+                accountId: input.accountId,
+              },
+            },
+            data: { reactionType: input.reactionType },
+          });
+
+          await tx.thinkpagesPost.update({
+            where: { id: input.postId },
+            data: { reactionCounts: JSON.stringify(reactionCounts) },
+          });
+        });
+
+        return { updated: true, reactionType: input.reactionType };
+      } else {
+        // New reaction - create it
+        const reaction = await db.$transaction(async (tx) => {
+          reactionCounts[input.reactionType] = (reactionCounts[input.reactionType] || 0) + 1;
+
+          const newReaction = await tx.postReaction.create({
+            data: {
               postId: input.postId,
               accountId: input.accountId,
+              reactionType: input.reactionType,
             },
-          },
-          data: { reactionType: input.reactionType },
-        });
+          });
 
-        await db.thinkpagesPost.update({
-          where: { id: input.postId },
-          data: { reactionCounts: JSON.stringify(reactionCounts) },
-        });
+          await tx.thinkpagesPost.update({
+            where: { id: input.postId },
+            data: { reactionCounts: JSON.stringify(reactionCounts) },
+          });
 
-        return reaction;
-      } else {
-        reactionCounts[input.reactionType] = (reactionCounts[input.reactionType] || 0) + 1;
-
-        const reaction = await db.postReaction.create({
-          data: {
-            postId: input.postId,
-            accountId: input.accountId,
-            reactionType: input.reactionType,
-          },
-        });
-
-        await db.thinkpagesPost.update({
-          where: { id: input.postId },
-          data: { reactionCounts: JSON.stringify(reactionCounts) },
+          return newReaction;
         });
 
         // 🔔 Notify post author of new reaction (likes only)
-        if (!existingReaction && input.reactionType === 'like') {
+        if (input.reactionType === 'like') {
           const postWithAuthor = await db.thinkpagesPost.findUnique({
             where: { id: input.postId },
             select: { accountId: true, content: true }
@@ -818,6 +855,26 @@ export const thinkpagesRouter = createTRPCRouter({
     }))
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
+      const clerkUserId = ctx.auth?.userId;
+
+      if (!clerkUserId) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'You must be logged in to remove reactions'
+        });
+      }
+
+      // Verify the account belongs to the current user
+      const account = await db.thinkpagesAccount.findUnique({
+        where: { id: input.accountId }
+      });
+
+      if (!account || account.clerkUserId !== clerkUserId) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to use this account'
+        });
+      }
 
       const post = await db.thinkpagesPost.findUnique({
         where: { id: input.postId },
@@ -831,7 +888,14 @@ export const thinkpagesRouter = createTRPCRouter({
         });
       }
 
-      const reactionCounts = post.reactionCounts ? JSON.parse(post.reactionCounts) : {};
+      const reactionCounts = (() => {
+        try {
+          return post.reactionCounts ? JSON.parse(post.reactionCounts) : {};
+        } catch (error) {
+          console.warn('Failed to parse reactionCounts in addReaction:', error);
+          return {};
+        }
+      })();
 
       const existingReaction = await db.postReaction.findUnique({
         where: {
@@ -843,20 +907,26 @@ export const thinkpagesRouter = createTRPCRouter({
       });
 
       if (existingReaction) {
-        reactionCounts[existingReaction.reactionType] = (reactionCounts[existingReaction.reactionType] || 1) - 1;
-
-        await db.postReaction.delete({
-          where: {
-            postId_accountId: {
-              postId: input.postId,
-              accountId: input.accountId,
+        // Use transaction to ensure consistency
+        await db.$transaction(async (tx) => {
+          // Update reaction counts
+          reactionCounts[existingReaction.reactionType] = (reactionCounts[existingReaction.reactionType] || 1) - 1;
+          
+          // Remove the reaction
+          await tx.postReaction.delete({
+            where: {
+              postId_accountId: {
+                postId: input.postId,
+                accountId: input.accountId,
+              },
             },
-          },
-        });
+          });
 
-        await db.thinkpagesPost.update({
-          where: { id: input.postId },
-          data: { reactionCounts: JSON.stringify(reactionCounts) },
+          // Update post with new counts
+          await tx.thinkpagesPost.update({
+            where: { id: input.postId },
+            data: { reactionCounts: JSON.stringify(reactionCounts) },
+          });
         });
 
         return { success: true };
@@ -866,7 +936,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Get feed
-  getFeed: publicProcedure
+  getFeed: rateLimitedPublicProcedure
     .input(GetFeedSchema)
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -970,7 +1040,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Get trending topics
-  getTrendingTopics: publicProcedure
+  getTrendingTopics: rateLimitedPublicProcedure
     .input(z.object({
       limit: z.number().min(1).max(20).default(10)
     }))
@@ -990,7 +1060,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Get account details
-  getAccount: publicProcedure
+  getAccount: rateLimitedPublicProcedure
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -1025,7 +1095,7 @@ export const thinkpagesRouter = createTRPCRouter({
       const { db } = ctx;
 
       const account = await db.user.findFirst({
-        where: { country: { user: { clerkUserId: input.clerkUserId } } },
+        where: { clerkUserId: input.clerkUserId },
         include: {
           country: true
         }
@@ -1035,7 +1105,7 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Get post details with replies
-  getPost: publicProcedure
+  getPost: rateLimitedPublicProcedure
     .input(z.object({ postId: z.string() }))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
@@ -2419,7 +2489,15 @@ export const thinkpagesRouter = createTRPCRouter({
           },
           messages: {
             orderBy: { ixTimeTimestamp: 'desc' },
-            take: 1
+            take: 1,
+            include: {
+              readReceipts: {
+                where: {
+                  userId: input.userId,
+                  messageType: 'thinkshare'
+                }
+              }
+            }
           },
           _count: {
             select: { messages: true }
@@ -2430,6 +2508,46 @@ export const thinkpagesRouter = createTRPCRouter({
         cursor: input.cursor ? { id: input.cursor } : undefined,
         skip: input.cursor ? 1 : 0
       });
+
+      // Calculate unread counts for each conversation
+      const conversationIds = conversations.map((c: any) => c.id);
+      const unreadCountsPromises = conversationIds.map(async (convId: string) => {
+        const participant = conversations.find((c: any) => c.id === convId)?.participants.find((p: any) => p.userId === input.userId);
+        const lastReadAt = participant?.lastReadAt;
+
+        // Count messages that are:
+        // 1. In this conversation
+        // 2. Not sent by the current user
+        // 3. Created after the user's lastReadAt timestamp OR don't have a read receipt
+        const unreadCount = await db.thinkshareMessage.count({
+          where: {
+            conversationId: convId,
+            userId: { not: input.userId },
+            deletedAt: null,
+            OR: [
+              // Messages sent after user's last read timestamp
+              lastReadAt ? {
+                ixTimeTimestamp: { gt: lastReadAt }
+              } : {},
+              // Messages without read receipts for this user
+              {
+                readReceipts: {
+                  none: {
+                    userId: input.userId,
+                    messageType: 'thinkshare'
+                  }
+                }
+              }
+            ]
+          }
+        });
+
+        return { convId, unreadCount };
+      });
+
+      const unreadCountsResults = await Promise.all(unreadCountsPromises);
+      const unreadCountsMap = new Map(unreadCountsResults.map(r => [r.convId, r.unreadCount]));
+
       // Fetch user profiles for all participants and last messages in a single batch
       const participantUserIds = new Set<string>();
       for (const conv of conversations as any[]) {
@@ -2475,8 +2593,9 @@ export const thinkpagesRouter = createTRPCRouter({
             } : null,
           } : undefined;
 
-          // Calculate unread count placeholder (0 for now)
+          // Get calculated unread count from map
           const participant = conv.participants.find((p: any) => p.userId === input.userId);
+          const unreadCount = unreadCountsMap.get(conv.id) || 0;
 
           return {
             ...conv,
@@ -2484,7 +2603,7 @@ export const thinkpagesRouter = createTRPCRouter({
             otherParticipants,
             lastMessage,
             lastReadAt: participant?.lastReadAt,
-            unreadCount: 0,
+            unreadCount,
           };
         }),
         nextCursor: conversations.length === input.limit ? conversations[conversations.length - 1]?.id : null

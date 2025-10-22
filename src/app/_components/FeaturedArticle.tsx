@@ -553,7 +553,8 @@ export function FeaturedArticle({ className }: FeaturedArticleProps) {
       // Since we have the title from the arrow format, make a direct API call to get the page content
       if (title && title !== "Featured Article") {
         console.log('Making direct API call for title:', title);
-        const apiUrl = `https://ixwiki.com/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&format=json&titles=${encodeURIComponent(title)}`;
+        // Use the proxy API instead of direct call to avoid CORS issues
+        const apiUrl = `/api/ixwiki-proxy/api.php?action=query&prop=extracts&exintro=1&explaintext=1&format=json&titles=${encodeURIComponent(title)}`;
         console.log('API URL:', apiUrl);
         
         try {

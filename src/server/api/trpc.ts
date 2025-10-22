@@ -16,6 +16,8 @@ import type { NextRequest } from "next/server";
 import { db } from "~/server/db";
 import { rateLimiter } from "~/lib/rate-limiter";
 import { userLoggingMiddleware } from "~/lib/user-logging-middleware";
+import { UserManagementService } from "~/lib/user-management-service";
+import { isSystemOwner } from "~/lib/system-owner-constants";
 
 /**
  * 1. CONTEXT
@@ -53,105 +55,31 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
             auth = { userId: verifiedToken.sub };
           }
         } catch (tokenError) {
-          console.warn('[TRPC Context] Token verification failed:', tokenError);
+          console.error('[TRPC Context] Token verification failed:', tokenError);
+          // Reject invalid tokens explicitly instead of silent continuation
+          throw new Error('UNAUTHORIZED: Invalid or expired authentication token');
         }
       }
     }
 
     // Get user from database if we have a userId
-    if (auth?.userId) {
-      try {
-        user = await db.user.findUnique({
-          where: { clerkUserId: auth.userId },
-          include: {
-            country: true,
-            role: {
-              include: {
-                rolePermissions: {
-                  include: {
-                    permission: true
-                  }
-                }
-              }
-            }
+      if (auth?.userId) {
+        try {
+          // ALWAYS use centralized user management service to ensure correct role
+          console.log(`[TRPC Context] Using centralized service for user: ${auth.userId}`);
+          const userService = new UserManagementService(db);
+          user = await userService.getOrCreateUser(auth.userId);
+
+          if (user) {
+            console.log(`[TRPC Context] User loaded: ${auth.userId}, role: ${(user as any).role?.name || 'NO_ROLE'}, roleId: ${(user as any).roleId || 'NULL'}, roleLevel: ${(user as any).role?.level ?? 'NULL'}`);
+          } else {
+            console.error(`[TRPC Context] Failed to get/create user: ${auth.userId}`);
           }
-        });
-
-        if (user) {
-          console.log(`[TRPC Context] User loaded: ${auth.userId}, role: ${(user as any).role?.name || 'NO_ROLE'}, roleId: ${(user as any).roleId || 'NULL'}`);
-        } else {
-          // Auto-create user if authenticated but not in database
-          console.warn(`[TRPC Context] User ${auth.userId} authenticated but not found in database - auto-creating`);
-
-          try {
-            // Get default user role
-            const defaultRole = await db.role.findFirst({
-              where: { name: 'user' }
-            });
-
-            // Use upsert to handle race conditions safely
-            // This will create the user if it doesn't exist, or return existing user if it does
-            user = await db.user.upsert({
-              where: { clerkUserId: auth.userId },
-              update: {
-                // If user exists but was somehow not found in initial query, just return them
-                // This handles edge cases where user was created between our queries
-              },
-              create: {
-                clerkUserId: auth.userId,
-                roleId: defaultRole?.id || null,
-              },
-              include: {
-                country: true,
-                role: {
-                  include: {
-                    rolePermissions: {
-                      include: {
-                        permission: true
-                      }
-                    }
-                  }
-                }
-              }
-            });
-
-            console.log(`[TRPC Context] Auto-created/retrieved user ${auth.userId} with role: ${(user as any).role?.name || 'NO_ROLE'}`);
-          } catch (createError) {
-            console.error('[TRPC Context] Failed to auto-create user:', createError);
-            
-            // If upsert still fails, try to fetch the user one more time
-            // This handles the case where another process created the user
-            try {
-              user = await db.user.findUnique({
-                where: { clerkUserId: auth.userId },
-                include: {
-                  country: true,
-                  role: {
-                    include: {
-                      rolePermissions: {
-                        include: {
-                          permission: true
-                        }
-                      }
-                    }
-                  }
-                }
-              });
-              
-              if (user) {
-                console.log(`[TRPC Context] Retrieved existing user ${auth.userId} after creation failure`);
-              }
-            } catch (retryError) {
-              console.error('[TRPC Context] Failed to retrieve user after creation failure:', retryError);
-              // Continue without user rather than failing
-            }
-          }
+        } catch (dbError) {
+          console.error('[TRPC Context] Database user lookup failed:', dbError);
+          // Continue without user rather than failing - auth is still valid
         }
-      } catch (dbError) {
-        console.error('[TRPC Context] Database user lookup failed:', dbError);
-        // Continue without user rather than failing - auth is still valid
       }
-    }
   } catch (error) {
     console.warn('[TRPC Context] Auth extraction failed:', error);
     // Continue without auth rather than failing
@@ -299,17 +227,34 @@ const countryOwnerMiddleware = t.middleware(async ({ ctx, next }) => {
     throw new Error('UNAUTHORIZED: Authentication required');
   }
 
+  // System owners can access any country, bypass country ownership check
+  if (isSystemOwner(ctx.auth.userId)) {
+    return next({
+      ctx: {
+        ...ctx,
+        auth: ctx.auth,
+        user: ctx.user,
+        country: null, // System owners bypass country check
+      }
+    });
+  }
+
   // Check if user has a linked country
-  if (!ctx.user.countryId || !ctx.user.country) {
+  if (!ctx.user.countryId) {
     throw new Error('FORBIDDEN: Country ownership required');
   }
+
+  // Fetch country data since it's not included in UserWithRole type
+  const country = await ctx.db.country.findUnique({
+    where: { id: ctx.user.countryId }
+  });
 
   return next({
     ctx: {
       ...ctx,
       auth: ctx.auth,
       user: ctx.user,
-      country: ctx.user.country,
+      country,
     }
   });
 });
@@ -522,69 +467,30 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
     throw new Error('UNAUTHORIZED: User not found');
   }
 
-  // Check if user has admin role - if not, try to assign default role
+  // SECURITY: Check if user has admin role - NEVER auto-assign roles in middleware
+  // Role assignment must ONLY happen through UserManagementService to prevent privilege escalation
   if (!(user as any).role) {
-    console.warn(`[ADMIN_MIDDLEWARE] User ${ctx.auth.userId} has no role assigned (roleId: ${(user as any).roleId}), attempting to assign default role`);
-
-    // Try to get the default user role
-    try {
-      const defaultRole = await db.role.findFirst({
-        where: { name: 'user' }
-      });
-
-      if (defaultRole && !(user as any).roleId) {
-        // User has no roleId at all - assign default role
-        user = await db.user.update({
-          where: { clerkUserId: ctx.auth.userId },
-          data: { roleId: defaultRole.id },
-          include: {
-            country: true,
-            role: {
-              include: {
-                rolePermissions: {
-                  include: {
-                    permission: true
-                  }
-                }
-              }
-            }
-          }
-        });
-        console.log(`[ADMIN_MIDDLEWARE] Assigned default role to user ${ctx.auth.userId}`);
-      }
-
-      // After attempting to assign role, check again
-      if (!(user as any).role) {
-        console.error(`[ADMIN_MIDDLEWARE] User ${ctx.auth.userId} still has no role after attempted assignment`);
-        throw new Error('FORBIDDEN: No role assigned and unable to assign default role');
-      }
-    } catch (roleError) {
-      console.error(`[ADMIN_MIDDLEWARE] Failed to assign default role:`, roleError);
-      throw new Error('FORBIDDEN: No role assigned');
-    }
+    console.error(`[ADMIN_MIDDLEWARE] User ${ctx.auth.userId} has no role assigned (roleId: ${(user as any).roleId})`);
+    throw new Error('FORBIDDEN: User has no assigned role. Contact system administrator for role assignment.');
   }
 
-  // Hardcoded system owner IDs - always grant full admin access
-  const SYSTEM_OWNERS = [
-    'user_2zqmDdZvhpNQWGLdAIj2YwH8MLo', // Dev environment
-    'user_3078Ja62W7yJDlBjjwNppfzceEz', // Production environment
-  ];
-
-  const isSystemOwner = SYSTEM_OWNERS.includes(ctx.auth.userId);
+  // Use centralized system owner constants
+  const isSystemOwnerUser = isSystemOwner(ctx.auth.userId);
 
   // Check for admin roles (level 0-20 are considered admin levels)
   const adminRoles = ['owner', 'admin', 'staff'];
-  const isAdmin = isSystemOwner || adminRoles.includes((user as any).role.name) || (user as any).role.level <= 20;
+  const roleLevel = (user as any).role?.level ?? 999;
+  const isAdmin = isSystemOwnerUser || adminRoles.includes((user as any).role?.name) || roleLevel <= 20;
 
   if (!isAdmin) {
-    console.warn(`[ADMIN_ACCESS_DENIED] User ${ctx.auth.userId} (role: ${(user as any).role.name}) attempted admin access`);
+    console.warn(`[ADMIN_ACCESS_DENIED] User ${ctx.auth.userId} (role: ${(user as any).role?.name || 'NO_ROLE'}, level: ${roleLevel}) attempted admin access`);
     throw new Error('FORBIDDEN: Admin privileges required');
   }
 
-  if (isSystemOwner) {
+  if (isSystemOwnerUser) {
     console.log(`[ADMIN_ACCESS] System owner ${ctx.auth.userId} accessing admin functions (hardcoded override)`);
   } else {
-    console.log(`[ADMIN_ACCESS] Admin ${ctx.auth.userId} (role: ${(user as any).role.name}) accessing admin functions`);
+    console.log(`[ADMIN_ACCESS] Admin ${ctx.auth.userId} (role: ${(user as any).role?.name || 'NO_ROLE'}, level: ${roleLevel}) accessing admin functions`);
   }
 
   return next({

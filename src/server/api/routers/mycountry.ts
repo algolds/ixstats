@@ -690,7 +690,10 @@ export const myCountryRouter = createTRPCRouter({
         throw new Error('FORBIDDEN: Can only access actions for owned country');
       }
 
-      const country = ctx.user.country;
+      // Fetch country data since it's not included in UserWithRole type
+      const country = await ctx.db.country.findUnique({
+        where: { id: input.countryId }
+      });
       if (!country) {
         throw new Error('FORBIDDEN: Country data not available');
       }

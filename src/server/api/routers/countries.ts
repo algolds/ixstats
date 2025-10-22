@@ -3,7 +3,8 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, publicProcedure, protectedProcedure, executiveProcedure, countryOwnerProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure, executiveProcedure, countryOwnerProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import { isSystemOwner } from "~/lib/system-owner-constants";
 import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig, CONFIG_CONSTANTS } from "~/lib/config-service";
 import { parseRosterFile } from "~/lib/data-parser";
@@ -17,6 +18,7 @@ import { getAtomicEffectivenessService } from "~/services/AtomicEffectivenessSer
 import { ComponentType } from "@prisma/client";
 import { calculateAllVitalityScores } from "~/lib/vitality-calculator";
 import { notificationAPI } from "~/lib/notification-api";
+import { checkComponentSynergy } from "~/lib/government-synergy";
 import type {
   CoreEconomicIndicators,
   LaborEmploymentData,
@@ -210,7 +212,7 @@ const economicDataSchema = z.object({
 });
 
 const countriesRouter = createTRPCRouter({
-  getSelectList: publicProcedure
+  getSelectList: rateLimitedPublicProcedure
     .input(
       z.object({
         search: z.string().optional(),
@@ -252,7 +254,7 @@ const countriesRouter = createTRPCRouter({
     }),
 
   // Get all countries with basic info + total count
-  getAll: publicProcedure
+  getAll: rateLimitedPublicProcedure
     .input(
       z.object({
         limit: z.number().optional().default(100),
@@ -671,7 +673,8 @@ const countriesRouter = createTRPCRouter({
         where: { clerkUserId: ctx.auth.userId }
       });
 
-      if (!userProfile || userProfile.countryId !== countryId) {
+      // System owners can edit any country
+      if (!isSystemOwner(ctx.auth.userId) && (!userProfile || userProfile.countryId !== countryId)) {
         throw new Error('You do not have permission to edit this country.');
       }
 
@@ -762,7 +765,8 @@ const countriesRouter = createTRPCRouter({
         where: { clerkUserId: ctx.auth.userId }
       });
 
-      if (!userProfile || userProfile.countryId !== id) {
+      // System owners can edit any country
+      if (!isSystemOwner(ctx.auth.userId) && (!userProfile || userProfile.countryId !== id)) {
         throw new Error('You do not have permission to edit this country.');
       }
 
@@ -812,7 +816,8 @@ const countriesRouter = createTRPCRouter({
         where: { clerkUserId: ctx.auth.userId }
       });
 
-      if (!userProfile || userProfile.countryId !== countryId) {
+      // System owners can edit any country
+      if (!isSystemOwner(ctx.auth.userId) && (!userProfile || userProfile.countryId !== countryId)) {
         throw new Error('You do not have permission to edit this country.');
       }
 
@@ -844,10 +849,16 @@ const countriesRouter = createTRPCRouter({
 
   getByIdAtTime: publicProcedure
     .input(z.object({
-      id: z.string(),
+      id: z.string().optional(),
       timestamp: z.number().optional(),
     }))
     .query(async ({ ctx, input }) => {
+      // Validate input - return null for invalid IDs instead of throwing
+      if (!input.id || input.id.trim() === '') {
+        console.log(`[countries.getByIdAtTime] Invalid or empty ID provided: "${input.id}"`);
+        return null;
+      }
+      
       const targetTime = input.timestamp ?? IxTime.getCurrentIxTime();
       const countryFromDb = await ctx.db.country.findUnique({
         where: { id: input.id },
@@ -2104,7 +2115,7 @@ const countriesRouter = createTRPCRouter({
       }
     }),
 
-  getTopCountriesByGdpPerCapita: publicProcedure
+  getTopCountriesByGdpPerCapita: rateLimitedPublicProcedure
     .input(z.object({
       limit: z.number().optional().default(10),
     }))
@@ -2143,7 +2154,7 @@ const countriesRouter = createTRPCRouter({
       }
     }),
 
-  getTopCountriesByPopulation: publicProcedure
+  getTopCountriesByPopulation: rateLimitedPublicProcedure
     .input(z.object({
       limit: z.number().optional().default(15),
     }))
@@ -2255,7 +2266,7 @@ const countriesRouter = createTRPCRouter({
       }
     }),
 
-  searchWiki: publicProcedure
+  searchWiki: rateLimitedPublicProcedure
     .input(z.object({
       query: z.string(),
       site: z.enum(['ixwiki', 'iiwiki', 'althistory']),
@@ -3497,11 +3508,48 @@ const countriesRouter = createTRPCRouter({
         }).optional(),
         governmentSpending: z.record(z.string(), z.number()).optional(),
         nationalIdentity: z.object({
+          // Basic Identity
+          countryName: z.string().optional(),
+          officialName: z.string().optional(),
           governmentType: z.string().optional(),
-          nationalReligion: z.string().optional(),
-          leader: z.string().optional(),
+          motto: z.string().optional(),
+          mottoNative: z.string().optional(),
+
+          // Geography & Administration
           capitalCity: z.string().optional(),
+          largestCity: z.string().optional(),
+          coordinatesLatitude: z.string().optional(),
+          coordinatesLongitude: z.string().optional(),
+
+          // Population & Culture
+          demonym: z.string().optional(),
+          nationalReligion: z.string().optional(),
+
+          // Currency
           currency: z.string().optional(),
+          currencySymbol: z.string().optional(),
+
+          // Languages
+          officialLanguages: z.string().optional(),
+          nationalLanguage: z.string().optional(),
+
+          // National Symbols & Culture
+          nationalAnthem: z.string().optional(),
+          nationalDay: z.string().optional(),
+          nationalSport: z.string().optional(),
+
+          // Technical & Administrative
+          callingCode: z.string().optional(),
+          internetTLD: z.string().optional(),
+          drivingSide: z.string().optional(),
+          timeZone: z.string().optional(),
+          isoCode: z.string().optional(),
+          emergencyNumber: z.string().optional(),
+          postalCodeFormat: z.string().optional(),
+          weekStartDay: z.string().optional(),
+
+          // Legacy field (kept for backward compatibility)
+          leader: z.string().optional(),
         }).optional(),
         geography: z.object({
           continent: z.string().optional(),
@@ -3520,12 +3568,103 @@ const countriesRouter = createTRPCRouter({
         notes: z.string().optional(),
       })).optional(),
       taxSystemData: z.object({
+        // Core tax system fields
         taxSystemName: z.string().optional(),
+        taxAuthority: z.string().optional(),
+        fiscalYear: z.string().optional(),
+        taxCode: z.string().optional(),
         baseRate: z.number().min(0).max(100).optional(),
         progressiveTax: z.boolean().optional(),
         flatTaxRate: z.number().min(0).max(100).optional(),
+        alternativeMinTax: z.boolean().optional(),
+        alternativeMinRate: z.number().min(0).max(100).optional(),
+        taxHolidays: z.string().optional(), // JSON array
         complianceRate: z.number().min(0).max(100).optional(),
         collectionEfficiency: z.number().min(0).max(100).optional(),
+        lastReform: z.date().optional(),
+
+        // Tax categories (Income, Corporate, Sales, Property, etc.)
+        categories: z.array(z.object({
+          categoryName: z.string(),
+          categoryType: z.string(), // Direct, Indirect
+          description: z.string().optional(),
+          isActive: z.boolean().optional(),
+          baseRate: z.number().optional(),
+          calculationMethod: z.string().optional(), // percentage, fixed, tiered
+          minimumAmount: z.number().optional(),
+          maximumAmount: z.number().optional(),
+          exemptionAmount: z.number().optional(),
+          deductionAllowed: z.boolean().optional(),
+          standardDeduction: z.number().optional(),
+          priority: z.number().optional(),
+          color: z.string().optional(),
+          icon: z.string().optional(),
+
+          // Brackets for this category (for progressive taxation)
+          brackets: z.array(z.object({
+            bracketName: z.string().optional(),
+            minIncome: z.number(),
+            maxIncome: z.number().optional(), // null for highest bracket
+            rate: z.number(),
+            flatAmount: z.number().optional(),
+            marginalRate: z.boolean().optional(),
+            isActive: z.boolean().optional(),
+            priority: z.number().optional(),
+          })).optional(),
+
+          // Exemptions specific to this category
+          exemptions: z.array(z.object({
+            exemptionName: z.string(),
+            exemptionType: z.string(), // Individual, Corporate, Sector, Geographic
+            description: z.string().optional(),
+            exemptionAmount: z.number().optional(),
+            exemptionRate: z.number().optional(),
+            qualifications: z.string().optional(), // JSON criteria
+            isActive: z.boolean().optional(),
+            startDate: z.date().optional(),
+            endDate: z.date().optional(),
+          })).optional(),
+
+          // Deductions specific to this category
+          deductions: z.array(z.object({
+            deductionName: z.string(),
+            deductionType: z.string(), // Standard, Itemized
+            description: z.string().optional(),
+            maximumAmount: z.number().optional(),
+            percentage: z.number().optional(),
+            qualifications: z.string().optional(), // JSON criteria
+            isActive: z.boolean().optional(),
+            priority: z.number().optional(),
+          })).optional(),
+        })).optional(),
+
+        // System-wide exemptions (not tied to a specific category)
+        systemWideExemptions: z.array(z.object({
+          exemptionName: z.string(),
+          exemptionType: z.string(),
+          description: z.string().optional(),
+          exemptionAmount: z.number().optional(),
+          exemptionRate: z.number().optional(),
+          qualifications: z.string().optional(),
+          isActive: z.boolean().optional(),
+          startDate: z.date().optional(),
+          endDate: z.date().optional(),
+        })).optional(),
+
+        // Tax policies
+        policies: z.array(z.object({
+          policyName: z.string(),
+          policyType: z.string(), // Rate Change, Exemption, Deduction
+          description: z.string().optional(),
+          targetCategory: z.string().optional(),
+          impactType: z.string(), // Increase, Decrease, Neutral
+          rateChange: z.number().optional(),
+          effectiveDate: z.date(),
+          expiryDate: z.date().optional(),
+          isActive: z.boolean().optional(),
+          estimatedRevenue: z.number().optional(),
+          affectedPopulation: z.number().optional(),
+        })).optional(),
       }).optional(),
       governmentStructure: z.object({
         governmentType: z.string().optional(),
@@ -3533,7 +3672,177 @@ const countriesRouter = createTRPCRouter({
         headOfState: z.string().optional(),
         headOfGovernment: z.string().optional(),
         legislatureName: z.string().optional(),
+        executiveName: z.string().optional(),
+        judicialName: z.string().optional(),
         totalBudget: z.number().optional(),
+        fiscalYear: z.string().optional(),
+        budgetCurrency: z.string().optional(),
+        // Additional fields for complete persistence
+        departments: z.array(z.object({
+          id: z.string().optional(), // Temporary ID for hierarchy mapping
+          name: z.string(),
+          shortName: z.string().optional(),
+          category: z.string(),
+          description: z.string().optional(),
+          minister: z.string().optional(),
+          ministerTitle: z.string().default("Minister"),
+          headquarters: z.string().optional(),
+          established: z.string().optional(),
+          employeeCount: z.number().optional(),
+          icon: z.string().optional(),
+          color: z.string().default("#6366f1"),
+          priority: z.number().default(50),
+          isActive: z.boolean().default(true),
+          parentDepartmentId: z.string().optional(), // References temporary ID
+          organizationalLevel: z.string().default("Ministry"),
+          functions: z.array(z.string()).optional(),
+          kpis: z.string().optional(), // JSON string
+        })).optional(),
+        budgetAllocations: z.array(z.object({
+          departmentId: z.string(), // References temporary department ID
+          budgetYear: z.number(),
+          allocatedAmount: z.number(),
+          allocatedPercent: z.number(),
+          spentAmount: z.number().default(0),
+          encumberedAmount: z.number().default(0),
+          availableAmount: z.number().default(0),
+          budgetStatus: z.string().default("Allocated"),
+          notes: z.string().optional(),
+        })).optional(),
+        revenueSources: z.array(z.object({
+          name: z.string(),
+          category: z.string(),
+          description: z.string().optional(),
+          rate: z.number().optional(),
+          revenueAmount: z.number().default(0),
+          revenuePercent: z.number().default(0),
+          isActive: z.boolean().default(true),
+          collectionMethod: z.string().optional(),
+          administeredBy: z.string().optional(),
+        })).optional(),
+      }).optional(),
+      economyBuilderState: z.object({
+        // Economic structure
+        structure: z.object({
+          economicModel: z.string(),
+          primarySectors: z.array(z.string()),
+          secondarySectors: z.array(z.string()),
+          tertiarySectors: z.array(z.string()),
+          totalGDP: z.number(),
+          gdpCurrency: z.string(),
+          economicTier: z.enum(['Developing', 'Emerging', 'Developed', 'Advanced']),
+          growthStrategy: z.enum(['Export-Led', 'Import-Substitution', 'Balanced', 'Innovation-Driven']),
+        }).optional(),
+
+        // Sector configurations
+        sectors: z.array(z.object({
+          id: z.string(),
+          name: z.string(),
+          category: z.enum(['Primary', 'Secondary', 'Tertiary']),
+          gdpContribution: z.number(),
+          employmentShare: z.number(),
+          productivity: z.number(),
+          growthRate: z.number(),
+          exports: z.number(),
+          imports: z.number(),
+          technologyLevel: z.enum(['Traditional', 'Modern', 'Advanced', 'Cutting-Edge']),
+          automation: z.number(),
+          regulation: z.enum(['Light', 'Moderate', 'Heavy', 'Comprehensive']),
+          subsidy: z.number(),
+          innovation: z.number(),
+          sustainability: z.number(),
+          competitiveness: z.number(),
+        })).optional(),
+
+        // Labor market configuration
+        laborMarket: z.object({
+          totalWorkforce: z.number(),
+          laborForceParticipationRate: z.number(),
+          employmentRate: z.number(),
+          unemploymentRate: z.number(),
+          underemploymentRate: z.number(),
+          youthUnemploymentRate: z.number(),
+          seniorEmploymentRate: z.number(),
+          femaleParticipationRate: z.number(),
+          maleParticipationRate: z.number(),
+          sectorDistribution: z.record(z.string(), z.number()).optional(),
+          employmentType: z.object({
+            fullTime: z.number(),
+            partTime: z.number(),
+            temporary: z.number(),
+            seasonal: z.number(),
+            selfEmployed: z.number(),
+            gig: z.number(),
+            informal: z.number(),
+          }).optional(),
+          averageAnnualIncome: z.number(),
+          averageWorkweekHours: z.number(),
+          averageOvertimeHours: z.number().optional(),
+          paidVacationDays: z.number().optional(),
+          paidSickLeaveDays: z.number().optional(),
+          parentalLeaveWeeks: z.number().optional(),
+          unionizationRate: z.number().optional(),
+          collectiveBargainingCoverage: z.number().optional(),
+          minimumWageHourly: z.number(),
+          livingWageHourly: z.number().optional(),
+          workplaceSafetyIndex: z.number().optional(),
+          laborRightsScore: z.number().optional(),
+          workerProtections: z.object({
+            jobSecurity: z.number(),
+            wageProtection: z.number(),
+            healthSafety: z.number(),
+            discriminationProtection: z.number(),
+            collectiveRights: z.number(),
+          }).optional(),
+        }).optional(),
+
+        // Demographics configuration
+        demographics: z.object({
+          totalPopulation: z.number(),
+          populationGrowthRate: z.number(),
+          ageDistribution: z.object({
+            under15: z.number(),
+            age15to64: z.number(),
+            over65: z.number(),
+          }).optional(),
+          urbanRuralSplit: z.object({
+            urban: z.number(),
+            rural: z.number(),
+          }).optional(),
+          regions: z.array(z.object({
+            name: z.string(),
+            population: z.number(),
+            populationPercent: z.number(),
+            urbanPercent: z.number(),
+            economicActivity: z.number(),
+            developmentLevel: z.enum(['Underdeveloped', 'Developing', 'Developed', 'Advanced']),
+          })).optional(),
+          lifeExpectancy: z.number().optional(),
+          literacyRate: z.number().optional(),
+          educationLevels: z.object({
+            noEducation: z.number(),
+            primary: z.number(),
+            secondary: z.number(),
+            tertiary: z.number(),
+          }).optional(),
+          netMigrationRate: z.number().optional(),
+          immigrationRate: z.number().optional(),
+          emigrationRate: z.number().optional(),
+          infantMortalityRate: z.number().optional(),
+          maternalMortalityRate: z.number().optional(),
+          healthExpenditureGDP: z.number().optional(),
+          youthDependencyRatio: z.number().optional(),
+          elderlyDependencyRatio: z.number().optional(),
+          totalDependencyRatio: z.number().optional(),
+        }).optional(),
+
+        // Selected atomic economic components
+        selectedAtomicComponents: z.array(z.string()),
+
+        // Validation state
+        isValid: z.boolean().optional(),
+        lastUpdated: z.date().optional(),
+        version: z.string().optional(),
       }).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -3713,6 +4022,7 @@ const countriesRouter = createTRPCRouter({
               officialLanguages: nationalIdentity.officialLanguages,
               nationalLanguage: nationalIdentity.nationalLanguage,
               nationalAnthem: nationalIdentity.nationalAnthem,
+              nationalReligion: nationalIdentity.nationalReligion,
               nationalDay: nationalIdentity.nationalDay,
               callingCode: nationalIdentity.callingCode,
               internetTLD: nationalIdentity.internetTLD,
@@ -3766,6 +4076,170 @@ const countriesRouter = createTRPCRouter({
           });
         }
 
+        // Create comprehensive Tax System with all related records
+        if (input.taxSystemData) {
+          const taxSystemData = input.taxSystemData;
+
+          // Create main TaxSystem record
+          const taxSystem = await tx.taxSystem.create({
+            data: {
+              countryId: country.id,
+              taxSystemName: taxSystemData.taxSystemName || 'National Tax System',
+              taxAuthority: taxSystemData.taxAuthority,
+              fiscalYear: taxSystemData.fiscalYear || 'calendar',
+              taxCode: taxSystemData.taxCode,
+              baseRate: taxSystemData.baseRate,
+              progressiveTax: taxSystemData.progressiveTax ?? true,
+              flatTaxRate: taxSystemData.flatTaxRate,
+              alternativeMinTax: taxSystemData.alternativeMinTax ?? false,
+              alternativeMinRate: taxSystemData.alternativeMinRate,
+              taxHolidays: taxSystemData.taxHolidays,
+              complianceRate: taxSystemData.complianceRate,
+              collectionEfficiency: taxSystemData.collectionEfficiency,
+              lastReform: taxSystemData.lastReform,
+            }
+          });
+
+          console.log(`✅ Created TaxSystem: ${taxSystem.id} for country ${country.id}`);
+
+          // Create tax categories with their brackets, exemptions, and deductions
+          if (taxSystemData.categories && taxSystemData.categories.length > 0) {
+            for (const categoryData of taxSystemData.categories) {
+              const taxCategory = await tx.taxCategory.create({
+                data: {
+                  taxSystemId: taxSystem.id,
+                  categoryName: categoryData.categoryName,
+                  categoryType: categoryData.categoryType,
+                  description: categoryData.description,
+                  isActive: categoryData.isActive ?? true,
+                  baseRate: categoryData.baseRate,
+                  calculationMethod: categoryData.calculationMethod || 'percentage',
+                  minimumAmount: categoryData.minimumAmount,
+                  maximumAmount: categoryData.maximumAmount,
+                  exemptionAmount: categoryData.exemptionAmount,
+                  deductionAllowed: categoryData.deductionAllowed ?? true,
+                  standardDeduction: categoryData.standardDeduction,
+                  priority: categoryData.priority || 50,
+                  color: categoryData.color,
+                  icon: categoryData.icon,
+                }
+              });
+
+              console.log(`  ✅ Created TaxCategory: ${categoryData.categoryName} (${taxCategory.id})`);
+
+              // Create tax brackets for this category
+              if (categoryData.brackets && categoryData.brackets.length > 0) {
+                for (const bracketData of categoryData.brackets) {
+                  await tx.taxBracket.create({
+                    data: {
+                      taxSystemId: taxSystem.id,
+                      categoryId: taxCategory.id,
+                      bracketName: bracketData.bracketName,
+                      minIncome: bracketData.minIncome,
+                      maxIncome: bracketData.maxIncome,
+                      rate: bracketData.rate,
+                      flatAmount: bracketData.flatAmount,
+                      marginalRate: bracketData.marginalRate ?? true,
+                      isActive: bracketData.isActive ?? true,
+                      priority: bracketData.priority || 50,
+                    }
+                  });
+                }
+                console.log(`    ✅ Created ${categoryData.brackets.length} tax brackets for ${categoryData.categoryName}`);
+              }
+
+              // Create category-specific exemptions
+              if (categoryData.exemptions && categoryData.exemptions.length > 0) {
+                for (const exemptionData of categoryData.exemptions) {
+                  await tx.taxExemption.create({
+                    data: {
+                      taxSystemId: taxSystem.id,
+                      categoryId: taxCategory.id,
+                      exemptionName: exemptionData.exemptionName,
+                      exemptionType: exemptionData.exemptionType,
+                      description: exemptionData.description,
+                      exemptionAmount: exemptionData.exemptionAmount,
+                      exemptionRate: exemptionData.exemptionRate,
+                      qualifications: exemptionData.qualifications,
+                      isActive: exemptionData.isActive ?? true,
+                      startDate: exemptionData.startDate,
+                      endDate: exemptionData.endDate,
+                    }
+                  });
+                }
+                console.log(`    ✅ Created ${categoryData.exemptions.length} exemptions for ${categoryData.categoryName}`);
+              }
+
+              // Create category-specific deductions
+              if (categoryData.deductions && categoryData.deductions.length > 0) {
+                for (const deductionData of categoryData.deductions) {
+                  await tx.taxDeduction.create({
+                    data: {
+                      categoryId: taxCategory.id,
+                      deductionName: deductionData.deductionName,
+                      deductionType: deductionData.deductionType,
+                      description: deductionData.description,
+                      maximumAmount: deductionData.maximumAmount,
+                      percentage: deductionData.percentage,
+                      qualifications: deductionData.qualifications,
+                      isActive: deductionData.isActive ?? true,
+                      priority: deductionData.priority || 50,
+                    }
+                  });
+                }
+                console.log(`    ✅ Created ${categoryData.deductions.length} deductions for ${categoryData.categoryName}`);
+              }
+            }
+          }
+
+          // Create system-wide exemptions (not tied to specific category)
+          if (taxSystemData.systemWideExemptions && taxSystemData.systemWideExemptions.length > 0) {
+            for (const exemptionData of taxSystemData.systemWideExemptions) {
+              await tx.taxExemption.create({
+                data: {
+                  taxSystemId: taxSystem.id,
+                  categoryId: null, // System-wide exemption
+                  exemptionName: exemptionData.exemptionName,
+                  exemptionType: exemptionData.exemptionType,
+                  description: exemptionData.description,
+                  exemptionAmount: exemptionData.exemptionAmount,
+                  exemptionRate: exemptionData.exemptionRate,
+                  qualifications: exemptionData.qualifications,
+                  isActive: exemptionData.isActive ?? true,
+                  startDate: exemptionData.startDate,
+                  endDate: exemptionData.endDate,
+                }
+              });
+            }
+            console.log(`  ✅ Created ${taxSystemData.systemWideExemptions.length} system-wide exemptions`);
+          }
+
+          // Create tax policies
+          if (taxSystemData.policies && taxSystemData.policies.length > 0) {
+            for (const policyData of taxSystemData.policies) {
+              await tx.taxPolicy.create({
+                data: {
+                  taxSystemId: taxSystem.id,
+                  policyName: policyData.policyName,
+                  policyType: policyData.policyType,
+                  description: policyData.description,
+                  targetCategory: policyData.targetCategory,
+                  impactType: policyData.impactType,
+                  rateChange: policyData.rateChange,
+                  effectiveDate: policyData.effectiveDate,
+                  expiryDate: policyData.expiryDate,
+                  isActive: policyData.isActive ?? true,
+                  estimatedRevenue: policyData.estimatedRevenue,
+                  affectedPopulation: policyData.affectedPopulation,
+                }
+              });
+            }
+            console.log(`  ✅ Created ${taxSystemData.policies.length} tax policies`);
+          }
+
+          console.log(`✅ Complete tax system created for country ${country.id}`);
+        }
+
         // Create Labor Market record
         if (laborEmployment && Object.keys(laborEmployment).length > 0) {
           await tx.laborMarket.create({
@@ -3810,6 +4284,135 @@ const countriesRouter = createTRPCRouter({
           });
         }
 
+        // Create complete Government Structure with departments, budget allocations, and revenue sources
+        if (input.governmentStructure) {
+          const govInput = input.governmentStructure;
+
+          // Create main GovernmentStructure record
+          const govStructure = await tx.governmentStructure.create({
+            data: {
+              countryId: country.id,
+              governmentName: govInput.governmentName || `Government of ${input.name}`,
+              governmentType: govInput.governmentType || "Federal Republic",
+              headOfState: govInput.headOfState,
+              headOfGovernment: govInput.headOfGovernment,
+              legislatureName: govInput.legislatureName,
+              executiveName: govInput.executiveName,
+              judicialName: govInput.judicialName,
+              totalBudget: govInput.totalBudget || 0,
+              fiscalYear: govInput.fiscalYear || "Calendar Year",
+              budgetCurrency: govInput.budgetCurrency || "USD",
+            }
+          });
+
+          console.log(`✅ Created GovernmentStructure: ${govStructure.id} for country ${country.id}`);
+
+          // Create departments with hierarchy support (two-pass approach)
+          if (govInput.departments && govInput.departments.length > 0) {
+            // Map temporary IDs to actual database IDs
+            const deptIdMap = new Map<string, string>();
+
+            // First pass: Create all departments without parent links
+            for (const deptInput of govInput.departments) {
+              const tempId = deptInput.id || deptInput.name; // Use ID or name as temp identifier
+
+              const department = await tx.governmentDepartment.create({
+                data: {
+                  governmentStructureId: govStructure.id,
+                  name: deptInput.name,
+                  shortName: deptInput.shortName,
+                  category: deptInput.category,
+                  description: deptInput.description,
+                  minister: deptInput.minister,
+                  ministerTitle: deptInput.ministerTitle || "Minister",
+                  headquarters: deptInput.headquarters,
+                  established: deptInput.established,
+                  employeeCount: deptInput.employeeCount,
+                  icon: deptInput.icon,
+                  color: deptInput.color || "#6366f1",
+                  priority: deptInput.priority || 50,
+                  isActive: deptInput.isActive ?? true,
+                  organizationalLevel: deptInput.organizationalLevel || "Ministry",
+                  functions: deptInput.functions ? JSON.stringify(deptInput.functions) : null,
+                  kpis: deptInput.kpis,
+                  // parentDepartmentId will be set in second pass
+                }
+              });
+
+              // Store mapping of temporary ID to actual database ID
+              deptIdMap.set(tempId, department.id);
+            }
+
+            console.log(`  ✅ Created ${govInput.departments.length} departments (first pass)`);
+
+            // Second pass: Link parent departments
+            for (const deptInput of govInput.departments) {
+              if (deptInput.parentDepartmentId) {
+                const tempId = deptInput.id || deptInput.name;
+                const actualDeptId = deptIdMap.get(tempId);
+                const actualParentId = deptIdMap.get(deptInput.parentDepartmentId);
+
+                if (actualDeptId && actualParentId) {
+                  await tx.governmentDepartment.update({
+                    where: { id: actualDeptId },
+                    data: { parentDepartmentId: actualParentId }
+                  });
+                }
+              }
+            }
+
+            console.log(`  ✅ Linked department hierarchy (second pass)`);
+
+            // Create budget allocations for departments
+            if (govInput.budgetAllocations && govInput.budgetAllocations.length > 0) {
+              for (const allocInput of govInput.budgetAllocations) {
+                const actualDeptId = deptIdMap.get(allocInput.departmentId);
+
+                if (actualDeptId) {
+                  await tx.budgetAllocation.create({
+                    data: {
+                      governmentStructureId: govStructure.id,
+                      departmentId: actualDeptId,
+                      budgetYear: allocInput.budgetYear,
+                      allocatedAmount: allocInput.allocatedAmount,
+                      allocatedPercent: allocInput.allocatedPercent,
+                      spentAmount: allocInput.spentAmount || 0,
+                      encumberedAmount: allocInput.encumberedAmount || 0,
+                      availableAmount: allocInput.availableAmount || allocInput.allocatedAmount,
+                      budgetStatus: allocInput.budgetStatus || "Allocated",
+                      notes: allocInput.notes,
+                    }
+                  });
+                }
+              }
+
+              console.log(`  ✅ Created ${govInput.budgetAllocations.length} budget allocations`);
+            }
+          }
+
+          // Create revenue sources
+          if (govInput.revenueSources && govInput.revenueSources.length > 0) {
+            for (const revenueInput of govInput.revenueSources) {
+              await tx.revenueSource.create({
+                data: {
+                  governmentStructureId: govStructure.id,
+                  name: revenueInput.name,
+                  category: revenueInput.category,
+                  description: revenueInput.description,
+                  rate: revenueInput.rate,
+                  revenueAmount: revenueInput.revenueAmount,
+                  revenuePercent: revenueInput.revenuePercent || 0,
+                  isActive: revenueInput.isActive ?? true,
+                  collectionMethod: revenueInput.collectionMethod,
+                  administeredBy: revenueInput.administeredBy,
+                }
+              });
+            }
+
+            console.log(`  ✅ Created ${govInput.revenueSources.length} revenue sources`);
+          }
+        }
+
         // Create initial historical data point
         await tx.historicalDataPoint.create({
           data: {
@@ -3825,6 +4428,327 @@ const countriesRouter = createTRPCRouter({
             gdpDensity: foundationData?.landArea ? totalGdp / foundationData.landArea : undefined,
           }
         });
+
+        // Create Government Components and calculate synergies
+        if (input.governmentComponents && input.governmentComponents.length > 0) {
+          const componentRecords = [];
+
+          // Create each government component
+          for (const componentInput of input.governmentComponents) {
+            const component = await tx.governmentComponent.create({
+              data: {
+                countryId: country.id,
+                componentType: componentInput.componentType as any,
+                effectivenessScore: componentInput.effectivenessScore ?? 50,
+                implementationDate: new Date(),
+                implementationCost: componentInput.implementationCost ?? 0,
+                maintenanceCost: componentInput.maintenanceCost ?? 0,
+                requiredCapacity: componentInput.requiredCapacity ?? 50,
+                isActive: componentInput.isActive ?? true,
+                notes: componentInput.notes,
+              }
+            });
+            componentRecords.push(component);
+          }
+
+          console.log(`  ✅ Created ${componentRecords.length} government components`);
+
+          // Calculate synergies between components
+          const synergies = [];
+          for (let i = 0; i < componentRecords.length; i++) {
+            for (let j = i + 1; j < componentRecords.length; j++) {
+              const comp1 = componentRecords[i]!;
+              const comp2 = componentRecords[j]!;
+
+              // Check for synergies and conflicts using comprehensive mapping
+              const synergyData = checkComponentSynergy(comp1.componentType, comp2.componentType);
+
+              if (synergyData) {
+                const synergy = await tx.componentSynergy.create({
+                  data: {
+                    countryId: country.id,
+                    primaryComponentId: comp1.id,
+                    secondaryComponentId: comp2.id,
+                    synergyType: synergyData.type,
+                    effectMultiplier: synergyData.multiplier,
+                    description: synergyData.description,
+                  }
+                });
+                synergies.push(synergy);
+              }
+            }
+          }
+
+          console.log(`  ✅ Detected ${synergies.length} component synergies/conflicts`);
+
+          // Calculate total effectiveness based on synergies and conflicts
+          let totalSynergyBonus = 0;
+          let conflictPenalty = 0;
+
+          for (const synergy of synergies) {
+            if (synergy.synergyType === 'CONFLICTING') {
+              conflictPenalty += 15; // Standard conflict penalty
+            } else if (synergy.synergyType === 'ADDITIVE') {
+              totalSynergyBonus += 10; // Standard synergy bonus
+            } else if (synergy.synergyType === 'MULTIPLICATIVE') {
+              totalSynergyBonus += synergy.effectMultiplier * 10;
+            }
+          }
+
+          // Calculate base effectiveness from components
+          const baseEffectiveness = componentRecords.reduce((sum, comp) => sum + comp.effectivenessScore, 0) / (componentRecords.length || 1);
+
+          // Calculate final government effectiveness (0-100 range)
+          const governmentEffectiveness = Math.max(0, Math.min(100, baseEffectiveness + totalSynergyBonus - conflictPenalty));
+
+          // Update country with government effectiveness score
+          await tx.country.update({
+            where: { id: country.id },
+            data: {
+              governmentEffectiveness: governmentEffectiveness
+            }
+          });
+
+          console.log(`  ✅ Government effectiveness: ${governmentEffectiveness.toFixed(1)}% (base: ${baseEffectiveness.toFixed(1)}%, synergy: +${totalSynergyBonus}, conflicts: -${conflictPenalty})`);
+        }
+
+        // Create Economy Builder Configuration
+        if (input.economyBuilderState) {
+          const economyState = input.economyBuilderState;
+
+          // Create Economic Components (atomic economic components)
+          if (economyState.selectedAtomicComponents && economyState.selectedAtomicComponents.length > 0) {
+            const economicComponentRecords = [];
+
+            for (const componentType of economyState.selectedAtomicComponents) {
+              const economicComponent = await tx.economicComponent.create({
+                data: {
+                  countryId: country.id,
+                  componentType: componentType as any,
+                  effectivenessScore: 50, // Default effectiveness
+                  implementationDate: new Date(),
+                  implementationCost: 0,
+                  maintenanceCost: 0,
+                  requiredCapacity: 50,
+                  isActive: true,
+                  notes: `Added during country creation via Economy Builder`,
+                }
+              });
+              economicComponentRecords.push(economicComponent);
+            }
+
+            console.log(`  ✅ Created ${economicComponentRecords.length} economic atomic components`);
+          }
+
+          // Store economy builder structure as JSON in EconomicProfile
+          // This preserves the complete economy builder configuration
+          const existingProfile = await tx.economicProfile.findUnique({
+            where: { countryId: country.id }
+          });
+
+          if (existingProfile) {
+            // Update existing profile with economy builder data
+            await tx.economicProfile.update({
+              where: { countryId: country.id },
+              data: {
+                sectorBreakdown: economyState.structure ? JSON.stringify({
+                  economicModel: economyState.structure.economicModel,
+                  primarySectors: economyState.structure.primarySectors,
+                  secondarySectors: economyState.structure.secondarySectors,
+                  tertiarySectors: economyState.structure.tertiarySectors,
+                  economicTier: economyState.structure.economicTier,
+                  growthStrategy: economyState.structure.growthStrategy,
+                  sectors: economyState.sectors || []
+                }) : undefined,
+              }
+            });
+          } else {
+            // Create new profile with economy builder data
+            await tx.economicProfile.create({
+              data: {
+                countryId: country.id,
+                sectorBreakdown: economyState.structure ? JSON.stringify({
+                  economicModel: economyState.structure.economicModel,
+                  primarySectors: economyState.structure.primarySectors,
+                  secondarySectors: economyState.structure.secondarySectors,
+                  tertiarySectors: economyState.structure.tertiarySectors,
+                  economicTier: economyState.structure.economicTier,
+                  growthStrategy: economyState.structure.growthStrategy,
+                  sectors: economyState.sectors || []
+                }) : undefined,
+              }
+            });
+          }
+
+          console.log(`  ✅ Stored economy builder structure in EconomicProfile`);
+
+          // Create or update Labor Market record with economy builder data
+          if (economyState.laborMarket) {
+            const laborData = economyState.laborMarket;
+
+            const existingLabor = await tx.laborMarket.findUnique({
+              where: { countryId: country.id }
+            });
+
+            const laborMarketData = {
+              countryId: country.id,
+              employmentBySector: laborData.sectorDistribution ? JSON.stringify(laborData.sectorDistribution) : undefined,
+              youthUnemploymentRate: laborData.youthUnemploymentRate,
+              femaleParticipationRate: laborData.femaleParticipationRate,
+              informalEmploymentRate: laborData.employmentType?.informal,
+              medianWage: laborData.averageAnnualIncome / 2080, // Convert annual to hourly estimate
+              wageGrowthRate: 0, // Default
+              wageBySector: laborData.sectorDistribution ? JSON.stringify(
+                Object.fromEntries(
+                  Object.entries(laborData.sectorDistribution).map(([sector, _]) => [
+                    sector,
+                    laborData.averageAnnualIncome
+                  ])
+                )
+              ) : undefined,
+            };
+
+            if (existingLabor) {
+              await tx.laborMarket.update({
+                where: { countryId: country.id },
+                data: laborMarketData
+              });
+            } else {
+              await tx.laborMarket.create({
+                data: laborMarketData
+              });
+            }
+
+            // Update Country table with labor market summary data
+            await tx.country.update({
+              where: { id: country.id },
+              data: {
+                totalWorkforce: laborData.totalWorkforce,
+                laborForceParticipationRate: laborData.laborForceParticipationRate,
+                employmentRate: laborData.employmentRate,
+                unemploymentRate: laborData.unemploymentRate,
+                averageWorkweekHours: laborData.averageWorkweekHours,
+                minimumWage: laborData.minimumWageHourly * 2080, // Convert hourly to annual
+                averageAnnualIncome: laborData.averageAnnualIncome,
+              }
+            });
+
+            console.log(`  ✅ Created/updated labor market from economy builder`);
+          }
+
+          // Create or update Demographics record with economy builder data
+          if (economyState.demographics) {
+            const demoData = economyState.demographics;
+
+            const existingDemo = await tx.demographics.findUnique({
+              where: { countryId: country.id }
+            });
+
+            const demographicsData = {
+              countryId: country.id,
+              ageDistribution: demoData.ageDistribution ? JSON.stringify(demoData.ageDistribution) : undefined,
+              educationLevels: demoData.educationLevels ? JSON.stringify(demoData.educationLevels) : undefined,
+              birthRate: undefined, // Not in economy builder
+              deathRate: undefined, // Not in economy builder
+              migrationRate: demoData.netMigrationRate,
+              dependencyRatio: demoData.totalDependencyRatio,
+              medianAge: undefined, // Not in economy builder
+              populationGrowthProjection: demoData.populationGrowthRate,
+            };
+
+            if (existingDemo) {
+              await tx.demographics.update({
+                where: { countryId: country.id },
+                data: demographicsData
+              });
+            } else {
+              await tx.demographics.create({
+                data: demographicsData
+              });
+            }
+
+            // Update Country table with demographics summary
+            await tx.country.update({
+              where: { id: country.id },
+              data: {
+                currentPopulation: demoData.totalPopulation,
+                populationGrowthRate: demoData.populationGrowthRate,
+                lifeExpectancy: demoData.lifeExpectancy,
+                urbanPopulationPercent: demoData.urbanRuralSplit?.urban,
+                ruralPopulationPercent: demoData.urbanRuralSplit?.rural,
+                literacyRate: demoData.literacyRate,
+              }
+            });
+
+            console.log(`  ✅ Created/updated demographics from economy builder`);
+          }
+
+          // Create SectoralOutput records for each sector configuration
+          if (economyState.sectors && economyState.sectors.length > 0) {
+            // First, ensure we have an EconomicModel to link to
+            let economicModel = await tx.economicModel.findUnique({
+              where: { countryId: country.id }
+            });
+
+            if (!economicModel) {
+              // Create basic economic model
+              economicModel = await tx.economicModel.create({
+                data: {
+                  countryId: country.id,
+                  baseYear: new Date().getFullYear(),
+                  projectionYears: 20,
+                  gdpGrowthRate: coreIndicators.realGDPGrowthRate || 3.0,
+                  inflationRate: coreIndicators.inflationRate || 2.0,
+                  unemploymentRate: economyState.laborMarket?.unemploymentRate || 5,
+                  interestRate: 3.5,
+                  exchangeRate: coreIndicators.currencyExchangeRate || 1.0,
+                  populationGrowthRate: economyState.demographics?.populationGrowthRate || 1.0,
+                  consumptionShare: 0.65,
+                  investmentRate: 0.25,
+                  fiscalBalance: 0,
+                  tradeBalance: 0,
+                }
+              });
+            }
+
+            // Calculate total GDP from sectors
+            const totalSectorGDP = economyState.sectors.reduce((sum, sector) => {
+              return sum + (economyState.structure.totalGDP * sector.gdpContribution / 100);
+            }, 0);
+
+            // Create sectoral output for current year
+            const currentYear = new Date().getFullYear();
+
+            // Group sectors by category
+            const agricultureGDP = economyState.sectors
+              .filter(s => s.category === 'Primary')
+              .reduce((sum, s) => sum + (economyState.structure.totalGDP * s.gdpContribution / 100), 0);
+
+            const industryGDP = economyState.sectors
+              .filter(s => s.category === 'Secondary')
+              .reduce((sum, s) => sum + (economyState.structure.totalGDP * s.gdpContribution / 100), 0);
+
+            const servicesGDP = economyState.sectors
+              .filter(s => s.category === 'Tertiary')
+              .reduce((sum, s) => sum + (economyState.structure.totalGDP * s.gdpContribution / 100), 0);
+
+            await tx.sectoralOutput.create({
+              data: {
+                economicModelId: economicModel.id,
+                year: currentYear,
+                agriculture: agricultureGDP,
+                industry: industryGDP,
+                services: servicesGDP,
+                government: economyState.structure.totalGDP * 0.15, // Default 15% government
+                totalGDP: economyState.structure.totalGDP,
+              }
+            });
+
+            console.log(`  ✅ Created sectoral output records for ${economyState.sectors.length} sectors`);
+          }
+
+          console.log(`✅ Complete economy builder state persisted for country ${country.id}`);
+        }
 
         // Link user to country
         await tx.user.update({

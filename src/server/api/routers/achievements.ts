@@ -1,12 +1,12 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure, protectedProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { ActivityHooks } from "~/lib/activity-hooks";
 import { notificationHooks } from "~/lib/notification-hooks";
 
 export const achievementsRouter = createTRPCRouter({
   // Get recent achievements for a country
-  getRecentByCountry: publicProcedure
+  getRecentByCountry: rateLimitedPublicProcedure
     .input(z.object({
       countryId: z.string(),
       limit: z.number().optional().default(10)
@@ -46,7 +46,7 @@ export const achievementsRouter = createTRPCRouter({
     }),
 
   // Get all achievements for a country
-  getAllByCountry: publicProcedure
+  getAllByCountry: rateLimitedPublicProcedure
     .input(z.object({
       countryId: z.string()
     }))
@@ -85,7 +85,7 @@ export const achievementsRouter = createTRPCRouter({
     }),
 
   // Get achievement leaderboard
-  getLeaderboard: publicProcedure
+  getLeaderboard: rateLimitedPublicProcedure
     .input(z.object({
       limit: z.number().optional().default(20),
       category: z.string().optional()
@@ -95,7 +95,7 @@ export const achievementsRouter = createTRPCRouter({
         // Get all countries with user
         const countries = await ctx.db.country.findMany({
           include: {
-            user: {
+            users: {
               select: {
                 clerkUserId: true
               }
@@ -105,7 +105,7 @@ export const achievementsRouter = createTRPCRouter({
         });
 
         const leaderboard = await Promise.all(countries.map(async (country) => {
-          const userIds = country.user ? [country.user.clerkUserId] : [];
+          const userIds = country.users && country.users.length > 0 ? country.users.map(u => u.clerkUserId) : [];
 
           const achievements = await ctx.db.userAchievement.findMany({
             where: {

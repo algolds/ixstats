@@ -219,6 +219,7 @@ export function EconomyBuilderModal({
       gig: 5.5,
       informal: 3.0
     },
+    averageAnnualIncome: 45000,
     averageWorkweekHours: 38.5,
     averageOvertimeHours: 3.2,
     paidVacationDays: 15,

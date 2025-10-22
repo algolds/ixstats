@@ -35,7 +35,10 @@ export function useCountryEditorData() {
   // Get refetch function for country data
   const { refetch: refetchCountry } = api.countries.getByIdAtTime.useQuery(
     { id: userProfile?.countryId || '' },
-    { enabled: !!userProfile?.countryId }
+    { 
+      enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== '',
+      retry: false
+    }
   );
 
   const updateCountryMutation = api.countries.updateEconomicData.useMutation();

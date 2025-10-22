@@ -74,7 +74,7 @@ export function useCommandItems(userProfile?: UserProfile) {
 
 // Shared state management hook for Dynamic Island
 export function useDynamicIslandState() {
-  const { user } = useUser();
+  const { user, isLoaded, isSignedIn } = useUser();
   const pathname = usePathname();
   const [mode, setMode] = useState<ViewMode>('compact');
   const [isExpanded, setIsExpanded] = useState(false);
@@ -98,6 +98,7 @@ export function useDynamicIslandState() {
   const [isProcessingShortcut, setIsProcessingShortcut] = useState(false);
   const shortcutTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   
+
   // Debounce search query for better performance
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -166,7 +167,7 @@ export function useDynamicIslandState() {
       const contextualCommands = [...commands];
 
       // Add authentication commands
-      if (!user) {
+      if (!isSignedIn || !user) {
         contextualCommands.push(
           { name: "Sign In", path: "/sign-in", icon: LogIn, description: "Sign in to your IxStats account" },
           { name: "Sign Up", path: "/sign-up", icon: LogIn, description: "Create a new IxStats account" }

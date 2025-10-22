@@ -33,6 +33,7 @@ import { withBasePath } from "~/lib/base-path";
 import type { CompactViewProps } from './types';
 import { HealthRing } from "../ui/health-ring";
 import { getNationUrl } from "~/lib/slug-utils";
+import { devLog, debugLog } from "~/lib/console-utils";
 
 // Helper functions
 const getGreeting = (ixTime: number): string => {
@@ -54,7 +55,7 @@ const getTimeDisplay = (ixTime: number): string => {
   return `${displayHours}:${minutes} ${ampm}`;
 };
 
-export function CompactView({
+function CompactViewComponent({
   isSticky,
   isCollapsed,
   setIsCollapsed,
@@ -79,10 +80,10 @@ export function CompactView({
     { enabled: !!userProfile?.countryId }
   );
 
-  // Debug logging
+  // Debug logging - only in development
   React.useEffect(() => {
     if (activityRingsData) {
-      console.log('[CompactView] Activity Rings Data:', {
+      debugLog('CompactView', 'Activity Rings Data:', {
         economicVitality: activityRingsData.economicVitality,
         populationWellbeing: activityRingsData.populationWellbeing,
         diplomaticStanding: activityRingsData.diplomaticStanding,
@@ -196,7 +197,7 @@ export function CompactView({
 
   useEffect(() => {
     setMounted(true);
-    console.log('[CompactView] Mounted with isSticky:', isSticky, 'isCollapsed:', isCollapsed);
+    debugLog('CompactView', 'Mounted with isSticky:', isSticky, 'isCollapsed:', isCollapsed);
     // Initialize previous count
     previousNotificationCountRef.current = totalUnreadCount;
   }, []);
@@ -204,7 +205,7 @@ export function CompactView({
   // Flash animation when new notifications arrive
   useEffect(() => {
     if (mounted && totalUnreadCount > previousNotificationCountRef.current) {
-      console.log('[CompactView] New notification detected! Flashing dynamic island');
+      debugLog('CompactView', 'New notification detected! Flashing dynamic island');
       setIsFlashing(true);
       
       // Stop flashing after animation completes
@@ -222,9 +223,9 @@ export function CompactView({
     }
   }, [totalUnreadCount, mounted]);
   
-  // Debug sticky state changes
+  // Debug sticky state changes - only in development
   useEffect(() => {
-    console.log('[CompactView] State change - isSticky:', isSticky, 'isCollapsed:', isCollapsed);
+    debugLog('CompactView', 'State change - isSticky:', isSticky, 'isCollapsed:', isCollapsed);
   }, [isSticky, isCollapsed]);
 
   // No scroll-based scaling - just transition between two states
@@ -494,15 +495,15 @@ export function CompactView({
                     <div className="text-center py-6">
                       <div className="p-4 bg-muted/30 rounded-xl">
                         <User className="h-12 w-12 mx-auto mb-3 text-blue-400" />
-                        <div className="text-muted-foreground mb-2">Welcome!</div>
-                        <div className="text-muted-foreground text-sm mb-4">Complete setup to access all features</div>
+                        <div className="text-muted-foreground mb-2">Welcome to IxStats!</div>
+                        <div className="text-muted-foreground text-sm mb-4">Sign in to access your personalized dashboard</div>
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => window.location.href = createAbsoluteUrl('/setup')}
+                          onClick={() => window.location.href = createAbsoluteUrl('/sign-in')}
                           className="text-muted-foreground hover:text-foreground border-border hover:border-accent hover:bg-accent/10"
                         >
-                          Complete Setup
+                          Sign In
                         </Button>
                       </div>
                     </div>
@@ -583,3 +584,5 @@ export function CompactView({
     </TooltipProvider>
   );
 }
+
+export const CompactView = React.memo(CompactViewComponent);

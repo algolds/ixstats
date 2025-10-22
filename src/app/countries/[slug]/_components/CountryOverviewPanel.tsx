@@ -8,6 +8,7 @@ import { VitalityRings } from "~/components/mycountry/primitives/VitalityRings";
 import { BookOpen, ExternalLink, Building, Crown, Users, MapPin, Heart, Globe, TrendingUp, Activity } from "lucide-react";
 import type { CountryInfobox } from "~/lib/mediawiki-service";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
+import { safeFormatCurrency } from "~/lib/format-utils";
 
 interface CountryOverviewPanelProps {
   country: {
@@ -320,11 +321,7 @@ export function CountryOverviewPanel({
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">Total Budget</p>
                       <p className="font-semibold">
-                        {governmentStructure!.totalBudget!.toLocaleString("en-US", {
-                          style: "currency",
-                          currency: (governmentStructure?.budgetCurrency || "USD") as string,
-                          maximumFractionDigits: 0,
-                        })}
+                        {safeFormatCurrency(governmentStructure!.totalBudget!, governmentStructure?.budgetCurrency || "USD", false, "USD")}
                       </p>
                     </div>
                   </div>

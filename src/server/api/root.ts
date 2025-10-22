@@ -38,6 +38,7 @@ import { userLoggingRouter } from "./routers/user-logging";
 import { customTypesRouter } from "./routers/customTypes";
 import { economicsRouter } from "./routers/economics";
 import { unifiedIntelligenceRouter } from "./routers/unified-intelligence";
+import { nationalIdentityRouter } from "./routers/nationalIdentity";
 
 /**
  * This is the primary router for your server.
@@ -82,6 +83,7 @@ export const appRouter = createTRPCRouter({
   userLogging: userLoggingRouter, // User activity logging and analytics
   customTypes: customTypesRouter, // Custom government types and field autocomplete system
   economics: economicsRouter, // Economy builder and economic data management
+  nationalIdentity: nationalIdentityRouter, // National identity CRUD and autosave
   system: adminRouter, // Alias for global stats
 });
 
