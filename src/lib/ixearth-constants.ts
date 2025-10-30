@@ -200,14 +200,17 @@ export const MAPLIBRE_CONFIG = {
   /** Default center point for IxEarth map [longitude, latitude] */
   defaultCenter: [0, 0] as [number, number],
 
-  /** Default zoom level */
-  defaultZoom: 2,
+  /** Default zoom level (globe view - Google Maps style) */
+  defaultZoom: 2.5,
 
   /** Min zoom level */
   minZoom: 0,
 
   /** Max zoom level */
-  maxZoom: 14,
+  maxZoom: 18,
+
+  /** Zoom level threshold for globe → mercator transition */
+  globeToMercatorZoom: 4,
 
   /** Tile extent for MVT generation */
   tileExtent: 512,
@@ -229,11 +232,11 @@ export const MAPLIBRE_CONFIG = {
     "climate",
   ] as const,
 
-  /** Default projection */
-  defaultProjection: "naturalEarth",
+  /** Default projection (globe for Google Maps-like experience) */
+  defaultProjection: "globe",
 
   /** Available projections */
-  availableProjections: ["naturalEarth", "mercator", "equalEarth", "globe"] as const,
+  availableProjections: ["mercator", "equalEarth", "globe"] as const,
 } as const;
 
 // =============================================================================
