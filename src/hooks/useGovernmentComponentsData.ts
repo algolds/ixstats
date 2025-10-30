@@ -9,10 +9,10 @@
  * @module useGovernmentComponentsData
  */
 
-import { useMemo } from 'react';
-import { api } from '~/trpc/react';
-import { ATOMIC_COMPONENTS, type AtomicGovernmentComponent } from '~/lib/atomic-government-data';
-import type { ComponentType } from '@prisma/client';
+import { useMemo } from "react";
+import { api } from "~/trpc/react";
+import { ATOMIC_COMPONENTS, type AtomicGovernmentComponent } from "~/lib/atomic-government-data";
+import type { ComponentType } from "@prisma/client";
 
 /**
  * useGovernmentComponentsData - Fetch government component reference data
@@ -55,11 +55,15 @@ import type { ComponentType } from '@prisma/client';
  */
 export function useGovernmentComponentsData(category?: string) {
   // ==================== DATABASE QUERY ====================
-  const { data: dbResponse, isLoading, error } = api.governmentComponents.getAllComponents.useQuery(
+  const {
+    data: dbResponse,
+    isLoading,
+    error,
+  } = api.governmentComponents.getAllComponents.useQuery(
     { category, isActive: true },
     {
       staleTime: 10 * 60 * 1000, // 10-minute cache
-      enabled: true
+      enabled: true,
     }
   );
 
@@ -70,8 +74,8 @@ export function useGovernmentComponentsData(category?: string) {
   // Track component selection for analytics
   const { mutate: incrementUsage } = api.governmentComponents.incrementComponentUsage.useMutation({
     onError: (err) => {
-      console.warn('[useGovernmentComponentsData] Failed to track component usage:', err);
-    }
+      console.warn("[useGovernmentComponentsData] Failed to track component usage:", err);
+    },
   });
 
   // ==================== PROCESS COMPONENTS WITH FALLBACK ====================
@@ -83,33 +87,35 @@ export function useGovernmentComponentsData(category?: string) {
 
       // Apply category filter if specified
       const filtered = category
-        ? transformed.filter(comp => comp.category === category)
+        ? transformed.filter((comp) => comp.category === category)
         : transformed;
 
       return {
         components: filtered,
-        isUsingFallback: false
+        isUsingFallback: false,
       };
     }
 
     // Fallback to hardcoded data
     if (!isLoading) {
-      console.warn('[useGovernmentComponentsData] Database empty or unavailable, falling back to hardcoded components');
+      console.warn(
+        "[useGovernmentComponentsData] Database empty or unavailable, falling back to hardcoded components"
+      );
     }
 
     // Convert ATOMIC_COMPONENTS to array
-    const fallbackComponents = Object.values(ATOMIC_COMPONENTS).filter((comp): comp is AtomicGovernmentComponent =>
-      comp !== undefined
+    const fallbackComponents = Object.values(ATOMIC_COMPONENTS).filter(
+      (comp): comp is AtomicGovernmentComponent => comp !== undefined
     );
 
     // Apply category filter if specified
     const filtered = category
-      ? fallbackComponents.filter(comp => comp.category === category)
+      ? fallbackComponents.filter((comp) => comp.category === category)
       : fallbackComponents;
 
     return {
       components: filtered,
-      isUsingFallback: true
+      isUsingFallback: true,
     };
   }, [dbComponents, category, isLoading]);
 
@@ -121,7 +127,7 @@ export function useGovernmentComponentsData(category?: string) {
     isUsingFallback,
     incrementUsage: (componentType: ComponentType) => {
       incrementUsage({ componentType });
-    }
+    },
   };
 }
 
@@ -154,23 +160,23 @@ function transformDatabaseComponent(dbComp: any): AtomicGovernmentComponent {
     id: dbComp.id || dbComp.componentType.toLowerCase(),
     type: dbComp.componentType,
     name: dbComp.name,
-    description: dbComp.description || '',
+    description: dbComp.description || "",
     effectiveness: dbComp.effectiveness || dbComp.effectivenessScore || 50,
     synergies: dbComp.synergies || [],
     conflicts: dbComp.conflicts || [],
     implementationCost: dbComp.implementationCost || 0,
     maintenanceCost: dbComp.maintenanceCost || 0,
     requiredCapacity: dbComp.requiredCapacity || 50,
-    category: dbComp.category || 'general',
+    category: dbComp.category || "general",
     prerequisites: dbComp.prerequisites || [],
-    color: dbComp.color || 'blue',
+    color: dbComp.color || "blue",
     icon: dbComp.icon || (() => null), // Placeholder - icons should be mapped from string to component
     metadata: dbComp.metadata || {
-      complexity: 'Medium' as const,
-      timeToImplement: '12-18 months',
+      complexity: "Medium" as const,
+      timeToImplement: "12-18 months",
       staffRequired: 10,
-      technologyRequired: false
-    }
+      technologyRequired: false,
+    },
   };
 }
 
@@ -182,7 +188,7 @@ export function useGovernmentComponentCategories() {
 
   const categories = useMemo(() => {
     const categorySet = new Set<string>();
-    components.forEach(comp => {
+    components.forEach((comp) => {
       if (comp.category) {
         categorySet.add(comp.category);
       }
@@ -200,12 +206,12 @@ export function useGovernmentComponent(componentType: ComponentType) {
   const { components, isLoading, error } = useGovernmentComponentsData();
 
   const component = useMemo(() => {
-    return components.find(comp => comp.type === componentType);
+    return components.find((comp) => comp.type === componentType);
   }, [components, componentType]);
 
   return {
     component,
     isLoading,
-    error
+    error,
   };
 }

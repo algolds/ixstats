@@ -1,15 +1,15 @@
 "use client";
 
-import React, { createContext, useContext } from 'react';
-import type { ReactNode } from 'react';
-import { useBuilderState, type UseBuilderStateReturn } from '../../../hooks/useBuilderState';
+import React, { createContext, useContext } from "react";
+import type { ReactNode } from "react";
+import { useBuilderState, type UseBuilderStateReturn } from "../../../hooks/useBuilderState";
 
 // Create the context with undefined as the default value
 const BuilderStateContext = createContext<UseBuilderStateReturn | undefined>(undefined);
 
 interface BuilderStateProviderProps {
   children: ReactNode;
-  mode?: 'create' | 'edit';
+  mode?: "create" | "edit";
   countryId?: string;
 }
 
@@ -23,7 +23,11 @@ interface BuilderStateProviderProps {
  * - Step navigation helpers
  * - Unified builder service integration
  */
-export function BuilderStateProvider({ children, mode = 'create', countryId }: BuilderStateProviderProps) {
+export function BuilderStateProvider({
+  children,
+  mode = "create",
+  countryId,
+}: BuilderStateProviderProps) {
   const builderStateValue = useBuilderState(mode, countryId);
 
   return (
@@ -43,7 +47,7 @@ export function useBuilderContext(): UseBuilderStateReturn {
   const context = useContext(BuilderStateContext);
 
   if (context === undefined) {
-    throw new Error('useBuilderContext must be used within a BuilderStateProvider');
+    throw new Error("useBuilderContext must be used within a BuilderStateProvider");
   }
 
   return context;

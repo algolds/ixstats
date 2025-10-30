@@ -44,7 +44,7 @@ export const CanvasRevealEffect = ({
 
     const id = webglContextManager.registerContext();
     setContextId(id);
-    
+
     return () => {
       if (id) {
         webglContextManager.unregisterContext(id);
@@ -55,7 +55,7 @@ export const CanvasRevealEffect = ({
   // Fallback for when WebGL is not supported or context limit reached
   if (!webglSupported || !contextAvailable) {
     return (
-      <div className={cn("h-full relative bg-white w-full", containerClassName)}>
+      <div className={cn("relative h-full w-full bg-white", containerClassName)}>
         <div className="h-full w-full bg-gradient-to-br from-cyan-500/20 to-blue-500/20" />
         {showGradient && (
           <div className="absolute inset-0 bg-gradient-to-t from-gray-950 to-[84%]" />
@@ -66,14 +66,12 @@ export const CanvasRevealEffect = ({
 
   return (
     <WebGLErrorBoundary>
-      <div className={cn("h-full relative bg-white w-full", containerClassName)}>
+      <div className={cn("relative h-full w-full bg-white", containerClassName)}>
         <div className="h-full w-full">
           <DotMatrix
             colors={colors ?? [[0, 255, 255]]}
             dotSize={dotSize ?? 3}
-            opacities={
-              opacities ?? [0.3, 0.3, 0.3, 0.5, 0.5, 0.5, 0.8, 0.8, 0.8, 1]
-            }
+            opacities={opacities ?? [0.3, 0.3, 0.3, 0.5, 0.5, 0.5, 0.8, 0.8, 0.8, 1]}
             shader={`
                 float animation_speed_factor = ${animationSpeed.toFixed(1)};
                 float intro_offset = distance(u_resolution / 2.0 / u_total_size, st2) * 0.01 + (random(st2) * 0.15);
@@ -109,32 +107,11 @@ const DotMatrix: React.FC<DotMatrixProps> = ({
   center = ["x", "y"],
 }) => {
   const uniforms = React.useMemo(() => {
-    let colorsArray = [
-      colors[0],
-      colors[0],
-      colors[0],
-      colors[0],
-      colors[0],
-      colors[0],
-    ];
+    let colorsArray = [colors[0], colors[0], colors[0], colors[0], colors[0], colors[0]];
     if (colors.length === 2) {
-      colorsArray = [
-        colors[0],
-        colors[0],
-        colors[0],
-        colors[1],
-        colors[1],
-        colors[1],
-      ];
+      colorsArray = [colors[0], colors[0], colors[0], colors[1], colors[1], colors[1]];
     } else if (colors.length === 3) {
-      colorsArray = [
-        colors[0],
-        colors[0],
-        colors[1],
-        colors[1],
-        colors[2],
-        colors[2],
-      ];
+      colorsArray = [colors[0], colors[0], colors[1], colors[1], colors[2], colors[2]];
     }
 
     return {
@@ -218,10 +195,13 @@ const DotMatrix: React.FC<DotMatrixProps> = ({
   );
 };
 
-type Uniforms = Record<string, {
+type Uniforms = Record<
+  string,
+  {
     value: number[] | number[][] | number;
     type: string;
-  }>;
+  }
+>;
 const ShaderMaterial = ({
   source,
   uniforms,
@@ -271,9 +251,7 @@ const ShaderMaterial = ({
           break;
         case "uniform3fv":
           preparedUniforms[uniformName] = {
-            value: uniform.value.map((v: number[]) =>
-              new THREE.Vector3().fromArray(v)
-            ),
+            value: uniform.value.map((v: number[]) => new THREE.Vector3().fromArray(v)),
             type: "3fv",
           };
           break;
@@ -323,7 +301,7 @@ const ShaderMaterial = ({
 
       return materialObject;
     } catch (error) {
-      console.warn('Failed to create shader material:', error);
+      console.warn("Failed to create shader material:", error);
       setMaterialError(true);
       return null;
     }
@@ -351,7 +329,7 @@ const Shader: React.FC<ShaderProps> = ({ source, uniforms, maxFps = 60 }) => {
   }
 
   return (
-    <Canvas 
+    <Canvas
       className="absolute inset-0 h-full w-full"
       onCreated={({ gl }) => {
         // Configure WebGL context
@@ -359,7 +337,7 @@ const Shader: React.FC<ShaderProps> = ({ source, uniforms, maxFps = 60 }) => {
         gl.autoClear = false;
       }}
       onError={(error) => {
-        console.warn('Canvas error:', error);
+        console.warn("Canvas error:", error);
         setHasError(true);
       }}
     >
@@ -369,9 +347,12 @@ const Shader: React.FC<ShaderProps> = ({ source, uniforms, maxFps = 60 }) => {
 };
 interface ShaderProps {
   source: string;
-  uniforms: Record<string, {
+  uniforms: Record<
+    string,
+    {
       value: number[] | number[][] | number;
       type: string;
-    }>;
+    }
+  >;
   maxFps?: number;
 }

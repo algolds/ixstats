@@ -33,7 +33,7 @@ const generateTaxationItems = (): AgendaItemTemplate => ({
   relatedMetrics: ["taxRevenueGDPPercent", "taxRevenuePerCapita"],
   decisionType: "policy_approval",
   dataMapping: {
-    model: "RevenueSource"
+    model: "RevenueSource",
   },
   children: [
     {
@@ -47,7 +47,7 @@ const generateTaxationItems = (): AgendaItemTemplate => ({
       decisionType: "policy_approval",
       dataMapping: {
         model: "RevenueSource",
-        filter: { name: "Income Tax" }
+        filter: { name: "Income Tax" },
       },
       children: [
         {
@@ -57,7 +57,7 @@ const generateTaxationItems = (): AgendaItemTemplate => ({
           category: "economic",
           keywords: ["tax brackets", "progressive tax", "marginal rates"],
           tags: ["taxation", "income", "rates"],
-          decisionType: "policy_approval"
+          decisionType: "policy_approval",
         },
         {
           id: "policy-economic-taxation-income-deductions",
@@ -66,7 +66,7 @@ const generateTaxationItems = (): AgendaItemTemplate => ({
           category: "economic",
           keywords: ["deductions", "credits", "exemptions"],
           tags: ["taxation", "income", "deductions"],
-          decisionType: "policy_approval"
+          decisionType: "policy_approval",
         },
         {
           id: "policy-economic-taxation-income-withholding",
@@ -75,9 +75,9 @@ const generateTaxationItems = (): AgendaItemTemplate => ({
           category: "economic",
           keywords: ["withholding", "PAYE", "collection"],
           tags: ["taxation", "income", "enforcement"],
-          decisionType: "policy_approval"
-        }
-      ]
+          decisionType: "policy_approval",
+        },
+      ],
     },
     {
       id: "policy-economic-taxation-corporate",
@@ -96,7 +96,7 @@ const generateTaxationItems = (): AgendaItemTemplate => ({
           category: "economic",
           keywords: ["corporate rate", "business rate", "profits tax"],
           tags: ["taxation", "corporate", "rates"],
-          decisionType: "policy_approval"
+          decisionType: "policy_approval",
         },
         {
           id: "policy-economic-taxation-corporate-incentives",
@@ -105,7 +105,7 @@ const generateTaxationItems = (): AgendaItemTemplate => ({
           category: "economic",
           keywords: ["incentives", "credits", "R&D", "SEZ"],
           tags: ["taxation", "corporate", "incentives"],
-          decisionType: "policy_approval"
+          decisionType: "policy_approval",
         },
         {
           id: "policy-economic-taxation-corporate-international",
@@ -114,9 +114,9 @@ const generateTaxationItems = (): AgendaItemTemplate => ({
           category: "economic",
           keywords: ["transfer pricing", "tax treaties", "BEPS"],
           tags: ["taxation", "corporate", "international"],
-          decisionType: "policy_approval"
-        }
-      ]
+          decisionType: "policy_approval",
+        },
+      ],
     },
     {
       id: "policy-economic-taxation-vat",
@@ -135,7 +135,7 @@ const generateTaxationItems = (): AgendaItemTemplate => ({
           category: "economic",
           keywords: ["vat rate", "reduced rate", "zero-rated"],
           tags: ["taxation", "vat", "rates"],
-          decisionType: "policy_approval"
+          decisionType: "policy_approval",
         },
         {
           id: "policy-economic-taxation-vat-exemptions",
@@ -144,9 +144,9 @@ const generateTaxationItems = (): AgendaItemTemplate => ({
           category: "economic",
           keywords: ["exemptions", "essential goods", "zero-rated"],
           tags: ["taxation", "vat", "exemptions"],
-          decisionType: "policy_approval"
-        }
-      ]
+          decisionType: "policy_approval",
+        },
+      ],
     },
     {
       id: "policy-economic-taxation-property",
@@ -164,7 +164,7 @@ const generateTaxationItems = (): AgendaItemTemplate => ({
           category: "economic",
           keywords: ["property tax", "land tax", "real estate"],
           tags: ["taxation", "property"],
-          decisionType: "policy_approval"
+          decisionType: "policy_approval",
         },
         {
           id: "policy-economic-taxation-property-wealth",
@@ -174,7 +174,7 @@ const generateTaxationItems = (): AgendaItemTemplate => ({
           keywords: ["wealth tax", "net worth", "assets"],
           tags: ["taxation", "wealth"],
           relatedMetrics: ["incomeInequalityGini"],
-          decisionType: "policy_approval"
+          decisionType: "policy_approval",
         },
         {
           id: "policy-economic-taxation-property-inheritance",
@@ -183,9 +183,9 @@ const generateTaxationItems = (): AgendaItemTemplate => ({
           category: "economic",
           keywords: ["inheritance", "estate tax", "death duty"],
           tags: ["taxation", "inheritance"],
-          decisionType: "policy_approval"
-        }
-      ]
+          decisionType: "policy_approval",
+        },
+      ],
     },
     {
       id: "policy-economic-taxation-excise",
@@ -203,7 +203,7 @@ const generateTaxationItems = (): AgendaItemTemplate => ({
           category: "economic",
           keywords: ["alcohol tax", "beer", "wine", "spirits"],
           tags: ["taxation", "excise", "alcohol"],
-          decisionType: "policy_approval"
+          decisionType: "policy_approval",
         },
         {
           id: "policy-economic-taxation-excise-tobacco",
@@ -212,7 +212,7 @@ const generateTaxationItems = (): AgendaItemTemplate => ({
           category: "economic",
           keywords: ["tobacco tax", "cigarette", "smoking"],
           tags: ["taxation", "excise", "tobacco"],
-          decisionType: "policy_approval"
+          decisionType: "policy_approval",
         },
         {
           id: "policy-economic-taxation-excise-fuel",
@@ -221,7 +221,7 @@ const generateTaxationItems = (): AgendaItemTemplate => ({
           category: "economic",
           keywords: ["fuel tax", "gas tax", "energy"],
           tags: ["taxation", "excise", "fuel"],
-          decisionType: "policy_approval"
+          decisionType: "policy_approval",
         },
         {
           id: "policy-economic-taxation-excise-carbon",
@@ -230,7 +230,7 @@ const generateTaxationItems = (): AgendaItemTemplate => ({
           category: "economic",
           keywords: ["carbon tax", "emissions", "pollution"],
           tags: ["taxation", "excise", "environmental"],
-          decisionType: "policy_approval"
+          decisionType: "policy_approval",
         },
         {
           id: "policy-economic-taxation-excise-sugar",
@@ -239,9 +239,9 @@ const generateTaxationItems = (): AgendaItemTemplate => ({
           category: "economic",
           keywords: ["sugar tax", "health levy", "soft drinks"],
           tags: ["taxation", "excise", "health"],
-          decisionType: "policy_approval"
-        }
-      ]
+          decisionType: "policy_approval",
+        },
+      ],
     },
     {
       id: "policy-economic-taxation-customs",
@@ -251,9 +251,9 @@ const generateTaxationItems = (): AgendaItemTemplate => ({
       keywords: ["customs", "tariffs", "import duties"],
       tags: ["policy", "taxation", "customs"],
       relatedMetrics: ["importsGDPPercent"],
-      decisionType: "policy_approval"
-    }
-  ]
+      decisionType: "policy_approval",
+    },
+  ],
 });
 
 export const agendaTaxonomy: AgendaItemTemplate[] = [
@@ -296,7 +296,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "economic",
                 keywords: ["trade agreement", "FTA", "bilateral"],
                 tags: ["trade", "agreements"],
-                decisionType: "resolution"
+                decisionType: "resolution",
               },
               {
                 id: "policy-economic-trade-tariffs",
@@ -305,7 +305,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "economic",
                 keywords: ["tariffs", "duties", "trade barriers"],
                 tags: ["trade", "tariffs"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-economic-trade-export",
@@ -315,9 +315,9 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 keywords: ["exports", "promotion", "incentives"],
                 tags: ["trade", "exports"],
                 relatedMetrics: ["exportsGDPPercent"],
-                decisionType: "policy_approval"
-              }
-            ]
+                decisionType: "policy_approval",
+              },
+            ],
           },
           {
             id: "policy-economic-labor",
@@ -337,7 +337,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 keywords: ["minimum wage", "living wage", "wage floor"],
                 tags: ["labor", "wages"],
                 relatedMetrics: ["minimumWage", "povertyRate"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-economic-labor-unions",
@@ -346,7 +346,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "economic",
                 keywords: ["unions", "collective bargaining", "strikes"],
                 tags: ["labor", "unions"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-economic-labor-hours",
@@ -356,7 +356,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 keywords: ["working hours", "overtime", "workplace safety"],
                 tags: ["labor", "workplace"],
                 relatedMetrics: ["averageWorkweekHours"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-economic-labor-unemployment",
@@ -366,7 +366,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 keywords: ["unemployment", "benefits", "job training"],
                 tags: ["labor", "unemployment"],
                 relatedMetrics: ["unemploymentRate"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-economic-labor-discrimination",
@@ -375,7 +375,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "economic",
                 keywords: ["discrimination", "equal opportunity", "diversity"],
                 tags: ["labor", "rights"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-economic-labor-maternity",
@@ -384,9 +384,9 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "economic",
                 keywords: ["maternity", "parental leave", "childcare"],
                 tags: ["labor", "family"],
-                decisionType: "policy_approval"
-              }
-            ]
+                decisionType: "policy_approval",
+              },
+            ],
           },
           {
             id: "policy-economic-monetary",
@@ -406,7 +406,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 keywords: ["inflation", "price stability", "targeting"],
                 tags: ["monetary", "inflation"],
                 relatedMetrics: ["inflationRate"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-economic-monetary-currency",
@@ -416,9 +416,9 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 keywords: ["exchange rate", "currency", "forex"],
                 tags: ["monetary", "currency"],
                 relatedMetrics: ["currencyExchangeRate"],
-                decisionType: "policy_approval"
-              }
-            ]
+                decisionType: "policy_approval",
+              },
+            ],
           },
           {
             id: "policy-economic-debt",
@@ -428,7 +428,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             keywords: ["debt", "bonds", "fiscal", "borrowing"],
             tags: ["policy", "economic", "debt"],
             relatedMetrics: ["totalDebtGDPRatio", "debtServiceCosts"],
-            decisionType: "policy_approval"
+            decisionType: "policy_approval",
           },
           {
             id: "policy-economic-competition",
@@ -437,7 +437,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             category: "economic",
             keywords: ["competition", "antitrust", "monopoly", "mergers"],
             tags: ["policy", "economic", "competition"],
-            decisionType: "policy_approval"
+            decisionType: "policy_approval",
           },
           {
             id: "policy-economic-investment",
@@ -446,9 +446,9 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             category: "economic",
             keywords: ["investment", "FDI", "capital", "securities"],
             tags: ["policy", "economic", "investment"],
-            decisionType: "policy_approval"
-          }
-        ]
+            decisionType: "policy_approval",
+          },
+        ],
       },
       {
         id: "policy-social",
@@ -477,7 +477,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "social",
                 keywords: ["universal healthcare", "public health", "insurance"],
                 tags: ["healthcare", "coverage"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-social-healthcare-primary",
@@ -486,7 +486,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "social",
                 keywords: ["primary care", "GP", "clinics"],
                 tags: ["healthcare", "primary"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-social-healthcare-hospitals",
@@ -495,7 +495,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "social",
                 keywords: ["hospitals", "emergency", "specialist"],
                 tags: ["healthcare", "hospitals"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-social-healthcare-mental",
@@ -504,7 +504,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "social",
                 keywords: ["mental health", "psychiatric", "counseling"],
                 tags: ["healthcare", "mental"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-social-healthcare-pharmaceutical",
@@ -513,9 +513,9 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "social",
                 keywords: ["pharmaceutical", "drugs", "medications"],
                 tags: ["healthcare", "pharmaceutical"],
-                decisionType: "policy_approval"
-              }
-            ]
+                decisionType: "policy_approval",
+              },
+            ],
           },
           {
             id: "policy-social-education",
@@ -534,7 +534,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "social",
                 keywords: ["primary school", "elementary", "literacy"],
                 tags: ["education", "primary"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-social-education-secondary",
@@ -543,7 +543,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "social",
                 keywords: ["secondary", "high school", "vocational"],
                 tags: ["education", "secondary"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-social-education-higher",
@@ -552,7 +552,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "social",
                 keywords: ["university", "college", "higher education"],
                 tags: ["education", "higher"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-social-education-vocational",
@@ -561,7 +561,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "social",
                 keywords: ["vocational", "apprenticeship", "trade school"],
                 tags: ["education", "vocational"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-social-education-curriculum",
@@ -570,9 +570,9 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "social",
                 keywords: ["curriculum", "standards", "testing"],
                 tags: ["education", "curriculum"],
-                decisionType: "policy_approval"
-              }
-            ]
+                decisionType: "policy_approval",
+              },
+            ],
           },
           {
             id: "policy-social-welfare",
@@ -591,7 +591,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "social",
                 keywords: ["income support", "cash transfer", "allowances"],
                 tags: ["welfare", "income"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-social-welfare-housing",
@@ -600,7 +600,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "social",
                 keywords: ["housing", "subsidies", "homelessness"],
                 tags: ["welfare", "housing"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-social-welfare-food",
@@ -609,9 +609,9 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "social",
                 keywords: ["food stamps", "nutrition", "meals"],
                 tags: ["welfare", "food"],
-                decisionType: "policy_approval"
-              }
-            ]
+                decisionType: "policy_approval",
+              },
+            ],
           },
           {
             id: "policy-social-pension",
@@ -620,7 +620,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             category: "social",
             keywords: ["pension", "retirement", "elderly", "social security"],
             tags: ["policy", "social", "pension"],
-            decisionType: "policy_approval"
+            decisionType: "policy_approval",
           },
           {
             id: "policy-social-disability",
@@ -629,9 +629,9 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             category: "social",
             keywords: ["disability", "accessibility", "special needs"],
             tags: ["policy", "social", "disability"],
-            decisionType: "policy_approval"
-          }
-        ]
+            decisionType: "policy_approval",
+          },
+        ],
       },
       {
         id: "policy-infrastructure",
@@ -658,7 +658,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "infrastructure",
                 keywords: ["roads", "highways", "motorways"],
                 tags: ["infrastructure", "roads"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-infrastructure-transport-rail",
@@ -667,7 +667,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "infrastructure",
                 keywords: ["railway", "trains", "rail network"],
                 tags: ["infrastructure", "rail"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-infrastructure-transport-public",
@@ -676,7 +676,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "infrastructure",
                 keywords: ["public transit", "buses", "metro", "trams"],
                 tags: ["infrastructure", "transit"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-infrastructure-transport-air",
@@ -685,7 +685,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "infrastructure",
                 keywords: ["airports", "aviation", "air travel"],
                 tags: ["infrastructure", "aviation"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-infrastructure-transport-ports",
@@ -694,9 +694,9 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "infrastructure",
                 keywords: ["ports", "harbors", "maritime", "shipping"],
                 tags: ["infrastructure", "maritime"],
-                decisionType: "policy_approval"
-              }
-            ]
+                decisionType: "policy_approval",
+              },
+            ],
           },
           {
             id: "policy-infrastructure-utilities",
@@ -714,7 +714,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "infrastructure",
                 keywords: ["water", "sanitation", "sewerage"],
                 tags: ["infrastructure", "water"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-infrastructure-utilities-electricity",
@@ -723,7 +723,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "infrastructure",
                 keywords: ["electricity", "power", "grid", "energy"],
                 tags: ["infrastructure", "electricity"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-infrastructure-utilities-telecom",
@@ -732,7 +732,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "infrastructure",
                 keywords: ["telecommunications", "internet", "broadband", "5G"],
                 tags: ["infrastructure", "telecom"],
-                decisionType: "policy_approval"
+                decisionType: "policy_approval",
               },
               {
                 id: "policy-infrastructure-utilities-waste",
@@ -741,9 +741,9 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
                 category: "infrastructure",
                 keywords: ["waste", "garbage", "recycling"],
                 tags: ["infrastructure", "waste"],
-                decisionType: "policy_approval"
-              }
-            ]
+                decisionType: "policy_approval",
+              },
+            ],
           },
           {
             id: "policy-infrastructure-housing",
@@ -753,7 +753,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             keywords: ["housing", "urban", "planning", "zoning"],
             tags: ["infrastructure", "housing"],
             relatedMetrics: ["urbanPopulationPercent"],
-            decisionType: "policy_approval"
+            decisionType: "policy_approval",
           },
           {
             id: "policy-infrastructure-digital",
@@ -762,9 +762,9 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             category: "infrastructure",
             keywords: ["digital", "broadband", "e-government", "connectivity"],
             tags: ["infrastructure", "digital"],
-            decisionType: "policy_approval"
-          }
-        ]
+            decisionType: "policy_approval",
+          },
+        ],
       },
       {
         id: "policy-environmental",
@@ -782,7 +782,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             category: "infrastructure",
             keywords: ["climate change", "emissions", "carbon neutral"],
             tags: ["environmental", "climate"],
-            decisionType: "policy_approval"
+            decisionType: "policy_approval",
           },
           {
             id: "policy-environmental-conservation",
@@ -791,7 +791,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             category: "infrastructure",
             keywords: ["conservation", "biodiversity", "wildlife"],
             tags: ["environmental", "conservation"],
-            decisionType: "policy_approval"
+            decisionType: "policy_approval",
           },
           {
             id: "policy-environmental-pollution",
@@ -800,7 +800,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             category: "infrastructure",
             keywords: ["pollution", "air quality", "emissions"],
             tags: ["environmental", "pollution"],
-            decisionType: "policy_approval"
+            decisionType: "policy_approval",
           },
           {
             id: "policy-environmental-renewable",
@@ -809,9 +809,9 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             category: "infrastructure",
             keywords: ["renewable", "solar", "wind", "clean energy"],
             tags: ["environmental", "renewable"],
-            decisionType: "policy_approval"
-          }
-        ]
+            decisionType: "policy_approval",
+          },
+        ],
       },
       {
         id: "policy-justice",
@@ -829,7 +829,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             category: "governance",
             keywords: ["criminal justice", "prisons", "sentencing"],
             tags: ["justice", "criminal"],
-            decisionType: "policy_approval"
+            decisionType: "policy_approval",
           },
           {
             id: "policy-justice-civil",
@@ -838,11 +838,11 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             category: "governance",
             keywords: ["civil law", "litigation", "courts"],
             tags: ["justice", "civil"],
-            decisionType: "policy_approval"
-          }
-        ]
-      }
-    ]
+            decisionType: "policy_approval",
+          },
+        ],
+      },
+    ],
   },
 
   // ============================================================
@@ -869,8 +869,8 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         decisionType: "budget_allocation",
         dataMapping: {
           model: "GovernmentStructure",
-          field: "totalBudget"
-        }
+          field: "totalBudget",
+        },
       },
       {
         id: "budget-departments",
@@ -881,7 +881,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         tags: ["budget", "departments"],
         decisionType: "budget_allocation",
         dataMapping: {
-          model: "BudgetAllocation"
+          model: "BudgetAllocation",
         },
         children: [
           {
@@ -894,8 +894,8 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             decisionType: "budget_allocation",
             dataMapping: {
               model: "GovernmentDepartment",
-              filter: { category: "Defense" }
-            }
+              filter: { category: "Defense" },
+            },
           },
           {
             id: "budget-departments-education",
@@ -908,8 +908,8 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             decisionType: "budget_allocation",
             dataMapping: {
               model: "GovernmentDepartment",
-              filter: { category: "Education" }
-            }
+              filter: { category: "Education" },
+            },
           },
           {
             id: "budget-departments-health",
@@ -922,8 +922,8 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             decisionType: "budget_allocation",
             dataMapping: {
               model: "GovernmentDepartment",
-              filter: { category: "Health" }
-            }
+              filter: { category: "Health" },
+            },
           },
           {
             id: "budget-departments-infrastructure",
@@ -935,8 +935,8 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             decisionType: "budget_allocation",
             dataMapping: {
               model: "GovernmentDepartment",
-              filter: { category: "Infrastructure" }
-            }
+              filter: { category: "Infrastructure" },
+            },
           },
           {
             id: "budget-departments-social",
@@ -946,7 +946,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             keywords: ["social services", "welfare", "assistance"],
             tags: ["budget", "social"],
             relatedMetrics: ["povertyRate"],
-            decisionType: "budget_allocation"
+            decisionType: "budget_allocation",
           },
           {
             id: "budget-departments-justice",
@@ -955,7 +955,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             category: "governance",
             keywords: ["justice", "police", "courts", "law enforcement"],
             tags: ["budget", "justice"],
-            decisionType: "budget_allocation"
+            decisionType: "budget_allocation",
           },
           {
             id: "budget-departments-foreign",
@@ -964,9 +964,9 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             category: "diplomatic",
             keywords: ["foreign affairs", "diplomacy", "embassies"],
             tags: ["budget", "diplomatic"],
-            decisionType: "budget_allocation"
-          }
-        ]
+            decisionType: "budget_allocation",
+          },
+        ],
       },
       {
         id: "budget-revenue",
@@ -978,8 +978,8 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         relatedMetrics: ["taxRevenueGDPPercent", "governmentRevenueTotal"],
         decisionType: "resolution",
         dataMapping: {
-          model: "RevenueSource"
-        }
+          model: "RevenueSource",
+        },
       },
       {
         id: "budget-deficit",
@@ -989,7 +989,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         keywords: ["deficit", "surplus", "balance", "borrowing"],
         tags: ["budget", "deficit"],
         relatedMetrics: ["budgetDeficitSurplus"],
-        decisionType: "policy_approval"
+        decisionType: "policy_approval",
       },
       {
         id: "budget-capital",
@@ -998,9 +998,9 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         category: "economic",
         keywords: ["capital", "projects", "infrastructure", "investment"],
         tags: ["budget", "capital"],
-        decisionType: "budget_allocation"
-      }
-    ]
+        decisionType: "budget_allocation",
+      },
+    ],
   },
 
   // ============================================================
@@ -1023,7 +1023,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         tags: ["operations", "appointments"],
         decisionType: "appointment",
         dataMapping: {
-          model: "GovernmentOfficial"
+          model: "GovernmentOfficial",
         },
         children: [
           {
@@ -1033,7 +1033,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             category: "governance",
             keywords: ["cabinet", "ministers", "appointments"],
             tags: ["appointments", "cabinet"],
-            decisionType: "appointment"
+            decisionType: "appointment",
           },
           {
             id: "operations-appointments-senior",
@@ -1042,7 +1042,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             category: "governance",
             keywords: ["senior officials", "directors", "secretaries"],
             tags: ["appointments", "officials"],
-            decisionType: "appointment"
+            decisionType: "appointment",
           },
           {
             id: "operations-appointments-judiciary",
@@ -1051,9 +1051,9 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
             category: "governance",
             keywords: ["judges", "judiciary", "magistrates"],
             tags: ["appointments", "judiciary"],
-            decisionType: "appointment"
-          }
-        ]
+            decisionType: "appointment",
+          },
+        ],
       },
       {
         id: "operations-restructuring",
@@ -1064,8 +1064,8 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         tags: ["operations", "restructuring"],
         decisionType: "directive",
         dataMapping: {
-          model: "GovernmentDepartment"
-        }
+          model: "GovernmentDepartment",
+        },
       },
       {
         id: "operations-performance",
@@ -1074,7 +1074,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         category: "governance",
         keywords: ["performance", "efficiency", "KPI", "metrics"],
         tags: ["operations", "performance"],
-        decisionType: "resolution"
+        decisionType: "resolution",
       },
       {
         id: "operations-digitalization",
@@ -1083,7 +1083,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         category: "governance",
         keywords: ["digitalization", "e-government", "IT", "digital services"],
         tags: ["operations", "digital"],
-        decisionType: "directive"
+        decisionType: "directive",
       },
       {
         id: "operations-procurement",
@@ -1092,9 +1092,9 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         category: "governance",
         keywords: ["procurement", "contracts", "tenders"],
         tags: ["operations", "procurement"],
-        decisionType: "resolution"
-      }
-    ]
+        decisionType: "resolution",
+      },
+    ],
   },
 
   // ============================================================
@@ -1116,7 +1116,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         keywords: ["economic development", "growth", "industrialization"],
         tags: ["strategic", "economic"],
         relatedMetrics: ["adjustedGdpGrowth"],
-        decisionType: "directive"
+        decisionType: "directive",
       },
       {
         id: "strategic-demographic",
@@ -1126,7 +1126,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         keywords: ["demographic", "population", "urbanization"],
         tags: ["strategic", "demographic"],
         relatedMetrics: ["populationGrowthRate", "urbanPopulationPercent"],
-        decisionType: "directive"
+        decisionType: "directive",
       },
       {
         id: "strategic-innovation",
@@ -1135,7 +1135,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         category: "economic",
         keywords: ["innovation", "technology", "R&D"],
         tags: ["strategic", "innovation"],
-        decisionType: "directive"
+        decisionType: "directive",
       },
       {
         id: "strategic-sustainability",
@@ -1144,9 +1144,9 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         category: "infrastructure",
         keywords: ["sustainability", "sustainable development", "green"],
         tags: ["strategic", "sustainability"],
-        decisionType: "directive"
-      }
-    ]
+        decisionType: "directive",
+      },
+    ],
   },
 
   // ============================================================
@@ -1168,7 +1168,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         category: "economic",
         keywords: ["economic crisis", "recession", "bailout"],
         tags: ["crisis", "economic", "urgent"],
-        decisionType: "directive"
+        decisionType: "directive",
       },
       {
         id: "crisis-security",
@@ -1177,7 +1177,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         category: "security",
         keywords: ["security", "defense", "threat", "emergency"],
         tags: ["crisis", "security", "urgent"],
-        decisionType: "directive"
+        decisionType: "directive",
       },
       {
         id: "crisis-natural",
@@ -1186,7 +1186,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         category: "social",
         keywords: ["disaster", "earthquake", "flood", "relief"],
         tags: ["crisis", "disaster", "urgent"],
-        decisionType: "directive"
+        decisionType: "directive",
       },
       {
         id: "crisis-pandemic",
@@ -1195,9 +1195,9 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         category: "social",
         keywords: ["pandemic", "outbreak", "health crisis"],
         tags: ["crisis", "health", "urgent"],
-        decisionType: "directive"
-      }
-    ]
+        decisionType: "directive",
+      },
+    ],
   },
 
   // ============================================================
@@ -1218,7 +1218,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         category: "diplomatic",
         keywords: ["treaties", "agreements", "pacts"],
         tags: ["diplomatic", "treaties"],
-        decisionType: "resolution"
+        decisionType: "resolution",
       },
       {
         id: "diplomatic-relations",
@@ -1227,7 +1227,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         category: "diplomatic",
         keywords: ["bilateral", "relations", "embassy"],
         tags: ["diplomatic", "bilateral"],
-        decisionType: "resolution"
+        decisionType: "resolution",
       },
       {
         id: "diplomatic-multilateral",
@@ -1236,7 +1236,7 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         category: "diplomatic",
         keywords: ["multilateral", "UN", "international organizations"],
         tags: ["diplomatic", "multilateral"],
-        decisionType: "resolution"
+        decisionType: "resolution",
       },
       {
         id: "diplomatic-aid",
@@ -1245,14 +1245,17 @@ export const agendaTaxonomy: AgendaItemTemplate[] = [
         category: "diplomatic",
         keywords: ["foreign aid", "development", "humanitarian"],
         tags: ["diplomatic", "aid"],
-        decisionType: "budget_allocation"
-      }
-    ]
-  }
+        decisionType: "budget_allocation",
+      },
+    ],
+  },
 ];
 
 // Utility functions
-export function flattenTaxonomy(items: AgendaItemTemplate[] = agendaTaxonomy, depth = 0): AgendaItemTemplate[] {
+export function flattenTaxonomy(
+  items: AgendaItemTemplate[] = agendaTaxonomy,
+  depth = 0
+): AgendaItemTemplate[] {
   const result: AgendaItemTemplate[] = [];
   for (const item of items) {
     result.push({ ...item, children: undefined });
@@ -1263,19 +1266,26 @@ export function flattenTaxonomy(items: AgendaItemTemplate[] = agendaTaxonomy, de
   return result;
 }
 
-export function searchAgendaItems(query: string, items: AgendaItemTemplate[] = agendaTaxonomy): AgendaItemTemplate[] {
+export function searchAgendaItems(
+  query: string,
+  items: AgendaItemTemplate[] = agendaTaxonomy
+): AgendaItemTemplate[] {
   const lowerQuery = query.toLowerCase().trim();
   if (!lowerQuery) return [];
   const flatItems = flattenTaxonomy(items);
-  return flatItems.filter(item =>
-    item.label.toLowerCase().includes(lowerQuery) ||
-    item.description.toLowerCase().includes(lowerQuery) ||
-    item.keywords.some(kw => kw.toLowerCase().includes(lowerQuery)) ||
-    item.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
+  return flatItems.filter(
+    (item) =>
+      item.label.toLowerCase().includes(lowerQuery) ||
+      item.description.toLowerCase().includes(lowerQuery) ||
+      item.keywords.some((kw) => kw.toLowerCase().includes(lowerQuery)) ||
+      item.tags.some((tag) => tag.toLowerCase().includes(lowerQuery))
   );
 }
 
-export function getAgendaItemById(id: string, items: AgendaItemTemplate[] = agendaTaxonomy): AgendaItemTemplate | null {
+export function getAgendaItemById(
+  id: string,
+  items: AgendaItemTemplate[] = agendaTaxonomy
+): AgendaItemTemplate | null {
   for (const item of items) {
     if (item.id === id) return item;
     if (item.children) {
@@ -1286,7 +1296,11 @@ export function getAgendaItemById(id: string, items: AgendaItemTemplate[] = agen
   return null;
 }
 
-export function getAgendaItemPath(id: string, items: AgendaItemTemplate[] = agendaTaxonomy, path: AgendaItemTemplate[] = []): AgendaItemTemplate[] | null {
+export function getAgendaItemPath(
+  id: string,
+  items: AgendaItemTemplate[] = agendaTaxonomy,
+  path: AgendaItemTemplate[] = []
+): AgendaItemTemplate[] | null {
   for (const item of items) {
     const currentPath = [...path, item];
     if (item.id === id) return currentPath;

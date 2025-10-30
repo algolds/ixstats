@@ -5,13 +5,13 @@
 
 "use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { 
+import React from "react";
+import { motion } from "framer-motion";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import {
   TrendingUp,
   TrendingDown,
   Users,
@@ -25,12 +25,12 @@ import {
   Activity,
   Eye,
   Shield,
-  Zap
-} from 'lucide-react';
-import { formatCurrency, formatPopulation } from '~/lib/chart-utils';
-import { getFlagColors } from '~/lib/flag-color-extractor';
-import { IxTime } from '~/lib/ixtime';
-import { cn } from '~/lib/utils';
+  Zap,
+} from "lucide-react";
+import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { getFlagColors } from "~/lib/flag-color-extractor";
+import { IxTime } from "~/lib/ixtime";
+import { cn } from "~/lib/utils";
 
 interface CountryData {
   id: string;
@@ -60,108 +60,128 @@ interface PublicExecutiveOverviewProps {
 export const PublicExecutiveOverview: React.FC<PublicExecutiveOverviewProps> = ({
   country,
   currentIxTime,
-  className
+  className,
 }) => {
   const flagColors = getFlagColors(country.name);
 
   // Calculate public-safe metrics
   const economicHealth = Math.min(100, (country.currentGdpPerCapita / 50000) * 100);
-  const populationGrowth = Math.min(100, Math.max(0, (((country.populationGrowthRate ?? 0) * 100) + 2) * 25));
-  const developmentIndex = country.economicTier === "Extravagant" ? 100 : 
-                          country.economicTier === "Very Strong" ? 85 :
-                          country.economicTier === "Strong" ? 70 :
-                          country.economicTier === "Healthy" ? 55 :
-                          country.economicTier === "Developed" ? 40 :
-                          country.economicTier === "Developing" ? 25 : 10;
+  const populationGrowth = Math.min(
+    100,
+    Math.max(0, ((country.populationGrowthRate ?? 0) * 100 + 2) * 25)
+  );
+  const developmentIndex =
+    country.economicTier === "Extravagant"
+      ? 100
+      : country.economicTier === "Very Strong"
+        ? 85
+        : country.economicTier === "Strong"
+          ? 70
+          : country.economicTier === "Healthy"
+            ? 55
+            : country.economicTier === "Developed"
+              ? 40
+              : country.economicTier === "Developing"
+                ? 25
+                : 10;
 
-  const stabilityScore = country.analytics?.stabilityScore ?? (80 + Math.random() * 20);
+  const stabilityScore = country.analytics?.stabilityScore ?? 80 + Math.random() * 20;
   const economicMomentum = country.analytics?.economicMomentum ?? economicHealth;
 
   // Key performance indicators
   const kpis = [
     {
-      label: 'Economic Strength',
+      label: "Economic Strength",
       value: economicHealth,
-      change: ((country.adjustedGdpGrowth ?? 0) * 100),
+      change: (country.adjustedGdpGrowth ?? 0) * 100,
       icon: DollarSign,
       color: flagColors.primary,
-      format: 'percentage',
-      description: 'Overall economic performance indicator'
+      format: "percentage",
+      description: "Overall economic performance indicator",
     },
     {
-      label: 'Population Dynamics',
+      label: "Population Dynamics",
       value: country.currentPopulation,
-      change: ((country.populationGrowthRate ?? 0) * 100),
+      change: (country.populationGrowthRate ?? 0) * 100,
       icon: Users,
       color: flagColors.secondary,
-      format: 'population',
-      description: 'Demographic trends and population health'
+      format: "population",
+      description: "Demographic trends and population health",
     },
     {
-      label: 'Development Level',
+      label: "Development Level",
       value: developmentIndex,
       change: 0, // Development tier changes are rare
       icon: TrendingUp,
       color: flagColors.accent,
-      format: 'percentage',
-      description: 'Infrastructure and development quality'
+      format: "percentage",
+      description: "Infrastructure and development quality",
     },
     {
-      label: 'National Stability',
+      label: "National Stability",
       value: stabilityScore,
       change: Math.random() * 4 - 2, // Simulated stability change
       icon: Shield,
-      color: '#10b981',
-      format: 'percentage',
-      description: 'Political and economic stability index'
-    }
+      color: "#10b981",
+      format: "percentage",
+      description: "Political and economic stability index",
+    },
   ];
 
   // Public-safe recent developments
   const publicDevelopments = [
     {
-      type: 'economic',
+      type: "economic",
       message: `GDP per capita: ${formatCurrency(country.currentGdpPerCapita)}`,
-      severity: 'info',
-      timestamp: currentIxTime - 1000 * 60 * 60 * 24 // 1 day ago
+      severity: "info",
+      timestamp: currentIxTime - 1000 * 60 * 60 * 24, // 1 day ago
     },
     {
-      type: 'demographic',
+      type: "demographic",
       message: `Population growth: ${((country.populationGrowthRate ?? 0) * 100).toFixed(2)}% annually`,
-      severity: (country.populationGrowthRate ?? 0) > 0.01 ? 'positive' : 'neutral',
-      timestamp: currentIxTime - 1000 * 60 * 60 * 12 // 12 hours ago
+      severity: (country.populationGrowthRate ?? 0) > 0.01 ? "positive" : "neutral",
+      timestamp: currentIxTime - 1000 * 60 * 60 * 12, // 12 hours ago
     },
     {
-      type: 'development',
+      type: "development",
       message: `Maintaining ${country.economicTier.toLowerCase()} economic tier status`,
-      severity: 'positive',
-      timestamp: currentIxTime - 1000 * 60 * 60 * 6 // 6 hours ago
-    }
+      severity: "positive",
+      timestamp: currentIxTime - 1000 * 60 * 60 * 6, // 6 hours ago
+    },
   ];
 
   // Risk assessment (public version)
-  const publicRisks = country.analytics?.riskFlags?.slice(0, 3).map(flag => ({
-    level: 'moderate',
-    category: flag.replace(/_/g, ' ').toLowerCase(),
-    impact: 'Economic planning consideration',
-    timeframe: 'Medium-term'
-  })) || [];
+  const publicRisks =
+    country.analytics?.riskFlags?.slice(0, 3).map((flag) => ({
+      level: "moderate",
+      category: flag.replace(/_/g, " ").toLowerCase(),
+      impact: "Economic planning consideration",
+      timeframe: "Medium-term",
+    })) || [];
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'positive': return 'text-green-500';
-      case 'warning': return 'text-yellow-500';
-      case 'negative': return 'text-red-500';
-      default: return 'text-blue-500';
+      case "positive":
+        return "text-green-500";
+      case "warning":
+        return "text-yellow-500";
+      case "negative":
+        return "text-red-500";
+      default:
+        return "text-blue-500";
     }
   };
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
-      case 'positive': return <CheckCircle className="h-4 w-4" />;
-      case 'warning': return <AlertTriangle className="h-4 w-4" />;
-      case 'negative': return <TrendingDown className="h-4 w-4" />;
-      default: return <Activity className="h-4 w-4" />;
+      case "positive":
+        return <CheckCircle className="h-4 w-4" />;
+      case "warning":
+        return <AlertTriangle className="h-4 w-4" />;
+      case "negative":
+        return <TrendingDown className="h-4 w-4" />;
+      default:
+        return <Activity className="h-4 w-4" />;
     }
   };
 
@@ -170,7 +190,7 @@ export const PublicExecutiveOverview: React.FC<PublicExecutiveOverviewProps> = (
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
+          <h2 className="flex items-center gap-2 text-2xl font-bold">
             <Eye className="h-6 w-6" style={{ color: flagColors.primary }} />
             Public Overview
           </h2>
@@ -184,7 +204,7 @@ export const PublicExecutiveOverview: React.FC<PublicExecutiveOverviewProps> = (
       </div>
 
       {/* Key Performance Indicators */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi, index) => (
           <motion.div
             key={kpi.label}
@@ -194,36 +214,38 @@ export const PublicExecutiveOverview: React.FC<PublicExecutiveOverviewProps> = (
           >
             <Card className="glass-hierarchy-child hover:glass-depth-2 transition-all duration-200">
               <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <div 
-                    className="p-2 rounded-lg"
-                    style={{ backgroundColor: `${kpi.color}20` }}
-                  >
+                <div className="mb-2 flex items-center gap-3">
+                  <div className="rounded-lg p-2" style={{ backgroundColor: `${kpi.color}20` }}>
                     <kpi.icon className="h-5 w-5" style={{ color: kpi.color }} />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm truncate">{kpi.label}</h4>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="truncate text-sm font-medium">{kpi.label}</h4>
                     <div className="flex items-center gap-2">
                       <span className="text-lg font-bold" style={{ color: kpi.color }}>
-                        {kpi.format === 'population' 
+                        {kpi.format === "population"
                           ? formatPopulation(kpi.value)
-                          : kpi.format === 'currency'
-                          ? formatCurrency(kpi.value)
-                          : `${Math.round(kpi.value)}%`
-                        }
+                          : kpi.format === "currency"
+                            ? formatCurrency(kpi.value)
+                            : `${Math.round(kpi.value)}%`}
                       </span>
                       {kpi.change !== 0 && (
-                        <div className={`flex items-center gap-1 text-xs ${
-                          kpi.change > 0 ? 'text-green-500' : 'text-red-500'
-                        }`}>
-                          {kpi.change > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                        <div
+                          className={`flex items-center gap-1 text-xs ${
+                            kpi.change > 0 ? "text-green-500" : "text-red-500"
+                          }`}
+                        >
+                          {kpi.change > 0 ? (
+                            <TrendingUp className="h-3 w-3" />
+                          ) : (
+                            <TrendingDown className="h-3 w-3" />
+                          )}
                           {Math.abs(kpi.change).toFixed(1)}%
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground">{kpi.description}</p>
+                <p className="text-muted-foreground text-xs">{kpi.description}</p>
               </CardContent>
             </Card>
           </motion.div>
@@ -240,7 +262,7 @@ export const PublicExecutiveOverview: React.FC<PublicExecutiveOverviewProps> = (
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Recent Developments */}
             <Card className="glass-hierarchy-child">
               <CardHeader>
@@ -254,7 +276,7 @@ export const PublicExecutiveOverview: React.FC<PublicExecutiveOverviewProps> = (
                   {publicDevelopments.map((dev, index) => (
                     <motion.div
                       key={index}
-                      className="flex items-start gap-3 p-3 rounded-lg glass-hierarchy-interactive"
+                      className="glass-hierarchy-interactive flex items-start gap-3 rounded-lg p-3"
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -264,7 +286,7 @@ export const PublicExecutiveOverview: React.FC<PublicExecutiveOverviewProps> = (
                       </div>
                       <div className="flex-1">
                         <p className="text-sm">{dev.message}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-muted-foreground mt-1 text-xs">
                           {IxTime.formatIxTime(dev.timestamp, true)}
                         </p>
                       </div>
@@ -288,27 +310,36 @@ export const PublicExecutiveOverview: React.FC<PublicExecutiveOverviewProps> = (
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Economic Tier</span>
-                    <Badge style={{ backgroundColor: `${flagColors.primary}20`, color: flagColors.primary }}>
+                    <span className="text-muted-foreground text-sm">Economic Tier</span>
+                    <Badge
+                      style={{
+                        backgroundColor: `${flagColors.primary}20`,
+                        color: flagColors.primary,
+                      }}
+                    >
                       {country.economicTier}
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Population Tier</span>
-                    <Badge variant="outline">
-                      {country.populationTier || 'Standard'}
-                    </Badge>
+                    <span className="text-muted-foreground text-sm">Population Tier</span>
+                    <Badge variant="outline">{country.populationTier || "Standard"}</Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Stability Index</span>
+                    <span className="text-muted-foreground text-sm">Stability Index</span>
                     <span className="font-semibold text-green-500">
                       {Math.round(stabilityScore)}% Stable
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Economic Momentum</span>
-                    <span className={`font-semibold ${economicMomentum > 50 ? 'text-green-500' : 'text-yellow-500'}`}>
-                      {economicMomentum > 75 ? 'High' : economicMomentum > 50 ? 'Moderate' : 'Building'}
+                    <span className="text-muted-foreground text-sm">Economic Momentum</span>
+                    <span
+                      className={`font-semibold ${economicMomentum > 50 ? "text-green-500" : "text-yellow-500"}`}
+                    >
+                      {economicMomentum > 75
+                        ? "High"
+                        : economicMomentum > 50
+                          ? "Moderate"
+                          : "Building"}
                     </span>
                   </div>
                 </div>
@@ -326,27 +357,33 @@ export const PublicExecutiveOverview: React.FC<PublicExecutiveOverviewProps> = (
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center p-4 rounded-lg glass-hierarchy-interactive">
-                  <DollarSign className="h-8 w-8 mx-auto mb-2" style={{ color: flagColors.primary }} />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="glass-hierarchy-interactive rounded-lg p-4 text-center">
+                  <DollarSign
+                    className="mx-auto mb-2 h-8 w-8"
+                    style={{ color: flagColors.primary }}
+                  />
                   <div className="text-2xl font-bold" style={{ color: flagColors.primary }}>
                     {formatCurrency(country.currentGdpPerCapita)}
                   </div>
-                  <p className="text-sm text-muted-foreground">GDP per Capita</p>
+                  <p className="text-muted-foreground text-sm">GDP per Capita</p>
                 </div>
-                <div className="text-center p-4 rounded-lg glass-hierarchy-interactive">
-                  <Globe className="h-8 w-8 mx-auto mb-2" style={{ color: flagColors.secondary }} />
+                <div className="glass-hierarchy-interactive rounded-lg p-4 text-center">
+                  <Globe className="mx-auto mb-2 h-8 w-8" style={{ color: flagColors.secondary }} />
                   <div className="text-2xl font-bold" style={{ color: flagColors.secondary }}>
                     {formatCurrency(country.currentTotalGdp)}
                   </div>
-                  <p className="text-sm text-muted-foreground">Total GDP</p>
+                  <p className="text-muted-foreground text-sm">Total GDP</p>
                 </div>
-                <div className="text-center p-4 rounded-lg glass-hierarchy-interactive">
-                  <TrendingUp className="h-8 w-8 mx-auto mb-2" style={{ color: flagColors.accent }} />
+                <div className="glass-hierarchy-interactive rounded-lg p-4 text-center">
+                  <TrendingUp
+                    className="mx-auto mb-2 h-8 w-8"
+                    style={{ color: flagColors.accent }}
+                  />
                   <div className="text-2xl font-bold" style={{ color: flagColors.accent }}>
                     {((country.adjustedGdpGrowth ?? 0) * 100).toFixed(2)}%
                   </div>
-                  <p className="text-sm text-muted-foreground">Growth Rate</p>
+                  <p className="text-muted-foreground text-sm">Growth Rate</p>
                 </div>
               </div>
             </CardContent>
@@ -362,31 +399,37 @@ export const PublicExecutiveOverview: React.FC<PublicExecutiveOverviewProps> = (
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-4">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Total Population:</span>
-                    <span className="font-semibold">{formatPopulation(country.currentPopulation)}</span>
+                    <span className="font-semibold">
+                      {formatPopulation(country.currentPopulation)}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Growth Rate:</span>
-                    <span className={`font-semibold ${
-                      (country.populationGrowthRate ?? 0) > 0 ? 'text-green-500' : 'text-red-500'
-                    }`}>
+                    <span
+                      className={`font-semibold ${
+                        (country.populationGrowthRate ?? 0) > 0 ? "text-green-500" : "text-red-500"
+                      }`}
+                    >
                       {((country.populationGrowthRate ?? 0) * 100).toFixed(2)}% annually
                     </span>
                   </div>
                   {country.populationDensity && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Population Density:</span>
-                      <span className="font-semibold">{country.populationDensity.toFixed(1)}/km²</span>
+                      <span className="font-semibold">
+                        {country.populationDensity.toFixed(1)}/km²
+                      </span>
                     </div>
                   )}
                 </div>
                 <div className="space-y-4">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Population Tier:</span>
-                    <span className="font-semibold">{country.populationTier || 'Standard'}</span>
+                    <span className="font-semibold">{country.populationTier || "Standard"}</span>
                   </div>
                   {country.landArea && (
                     <div className="flex justify-between">
@@ -411,27 +454,33 @@ export const PublicExecutiveOverview: React.FC<PublicExecutiveOverviewProps> = (
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold text-white"
-                       style={{ backgroundColor: flagColors.primary }}>
+                  <div
+                    className="flex h-20 w-20 items-center justify-center rounded-full text-2xl font-bold text-white"
+                    style={{ backgroundColor: flagColors.primary }}
+                  >
                     {Math.round(developmentIndex)}%
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold">{country.economicTier} Tier</h3>
-                    <p className="text-muted-foreground">Development classification based on economic indicators</p>
+                    <p className="text-muted-foreground">
+                      Development classification based on economic indicators
+                    </p>
                   </div>
                 </div>
-                
+
                 {publicRisks.length > 0 && (
                   <div>
-                    <h4 className="font-medium mb-3">Development Considerations</h4>
+                    <h4 className="mb-3 font-medium">Development Considerations</h4>
                     <div className="space-y-2">
                       {publicRisks.map((risk, index) => (
-                        <div key={index} className="p-3 rounded-lg glass-hierarchy-interactive">
+                        <div key={index} className="glass-hierarchy-interactive rounded-lg p-3">
                           <div className="flex items-start gap-3">
-                            <AlertTriangle className="h-4 w-4 text-yellow-500 mt-0.5" />
+                            <AlertTriangle className="mt-0.5 h-4 w-4 text-yellow-500" />
                             <div>
                               <p className="text-sm font-medium capitalize">{risk.category}</p>
-                              <p className="text-xs text-muted-foreground">{risk.impact} • {risk.timeframe}</p>
+                              <p className="text-muted-foreground text-xs">
+                                {risk.impact} • {risk.timeframe}
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -448,11 +497,11 @@ export const PublicExecutiveOverview: React.FC<PublicExecutiveOverviewProps> = (
       {/* Disclaimer */}
       <Card className="glass-hierarchy-child border-dashed">
         <CardContent className="p-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="text-muted-foreground flex items-center gap-2 text-sm">
             <Eye className="h-4 w-4" />
             <span>
-              This is a public overview showing general performance indicators. 
-              Detailed strategic data is available to authorized country management.
+              This is a public overview showing general performance indicators. Detailed strategic
+              data is available to authorized country management.
             </span>
           </div>
         </CardContent>

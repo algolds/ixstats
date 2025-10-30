@@ -16,11 +16,11 @@ interface WarningPanelProps {
 }
 
 function hasIxTime(obj: unknown): obj is { ixTime: unknown } {
-  return typeof obj === 'object' && obj !== null && 'ixTime' in obj;
+  return typeof obj === "object" && obj !== null && "ixTime" in obj;
 }
 
 function hasIsPaused(obj: unknown): obj is { isPaused: boolean } {
-  return typeof obj === 'object' && obj !== null && 'isPaused' in obj;
+  return typeof obj === "object" && obj !== null && "isPaused" in obj;
 }
 
 export function WarningPanel({ systemStatus }: WarningPanelProps) {
@@ -31,7 +31,7 @@ export function WarningPanel({ systemStatus }: WarningPanelProps) {
   if (!hasIsPaused(ixTime) || !ixTime.isPaused) return null;
 
   return (
-    <div className="bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg p-4 mt-6">
+    <div className="mt-6 rounded-lg border border-red-300 bg-red-100 p-4 dark:border-red-700 dark:bg-red-900">
       <div className="flex">
         <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
         <div className="ml-3">
@@ -39,7 +39,8 @@ export function WarningPanel({ systemStatus }: WarningPanelProps) {
             IxTime is currently paused
           </h3>
           <p className="mt-1 text-sm text-red-700 dark:text-red-300">
-            Economic calculations and time progression have been suspended. Countries will not update automatically.
+            Economic calculations and time progression have been suspended. Countries will not
+            update automatically.
           </p>
         </div>
       </div>

@@ -13,17 +13,17 @@ import {
   RiSparklingLine,
   RiFireLine,
   RiHeartLine,
-  RiThumbUpLine
+  RiThumbUpLine,
 } from "react-icons/ri";
-import type { 
+import type {
   DiplomaticAchievement,
   AchievementTier,
-  AchievementRarity 
+  AchievementRarity,
 } from "~/types/achievement-constellation";
 import {
   ACHIEVEMENT_TIER_CONFIG,
   ACHIEVEMENT_CATEGORY_CONFIG,
-  ACHIEVEMENT_RARITY_CONFIG
+  ACHIEVEMENT_RARITY_CONFIG,
 } from "~/types/achievement-constellation";
 
 interface AchievementUnlockModalProps {
@@ -53,11 +53,13 @@ const AchievementUnlockModalComponent: React.FC<AchievementUnlockModalProps> = (
   onClose,
   onShare,
   onViewProgress,
-  autoCloseDelay = 8000
+  autoCloseDelay = 8000,
 }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [particles, setParticles] = useState<ParticleProps[]>([]);
-  const [animationStage, setAnimationStage] = useState<'entering' | 'celebrating' | 'stable'>('entering');
+  const [animationStage, setAnimationStage] = useState<"entering" | "celebrating" | "stable">(
+    "entering"
+  );
 
   // Auto-close timer
   useEffect(() => {
@@ -73,16 +75,16 @@ const AchievementUnlockModalComponent: React.FC<AchievementUnlockModalProps> = (
   // Animation stage progression
   useEffect(() => {
     if (!visible) {
-      setAnimationStage('entering');
+      setAnimationStage("entering");
       return;
     }
 
     const stageTimer1 = setTimeout(() => {
-      setAnimationStage('celebrating');
+      setAnimationStage("celebrating");
     }, 500);
 
     const stageTimer2 = setTimeout(() => {
-      setAnimationStage('stable');
+      setAnimationStage("stable");
     }, 3000);
 
     return () => {
@@ -93,7 +95,7 @@ const AchievementUnlockModalComponent: React.FC<AchievementUnlockModalProps> = (
 
   // Particle system for celebration effects
   useEffect(() => {
-    if (animationStage !== 'celebrating' || !achievement) return;
+    if (animationStage !== "celebrating" || !achievement) return;
 
     const createParticle = (baseX: number, baseY: number): ParticleProps => ({
       id: Math.random(),
@@ -101,45 +103,44 @@ const AchievementUnlockModalComponent: React.FC<AchievementUnlockModalProps> = (
       y: baseY + (Math.random() - 0.5) * 50,
       velocity: {
         x: (Math.random() - 0.5) * 8,
-        y: Math.random() * -8 - 2
+        y: Math.random() * -8 - 2,
       },
       size: Math.random() * 8 + 4,
       color: ACHIEVEMENT_TIER_CONFIG[achievement.tier].color,
       opacity: 1,
       life: 0,
-      maxLife: Math.random() * 2000 + 1000
+      maxLife: Math.random() * 2000 + 1000,
     });
 
     // Create initial burst of particles
     const initialParticles: ParticleProps[] = [];
-    for (let i = 0; i < (achievement.rarity === 'legendary' ? 50 : 30); i++) {
+    for (let i = 0; i < (achievement.rarity === "legendary" ? 50 : 30); i++) {
       initialParticles.push(createParticle(0, 0));
     }
     setParticles(initialParticles);
 
     // Animation loop
     const animationLoop = setInterval(() => {
-      setParticles(prevParticles => {
+      setParticles((prevParticles) => {
         const updatedParticles = prevParticles
-          .map(particle => ({
+          .map((particle) => ({
             ...particle,
             x: particle.x + particle.velocity.x,
             y: particle.y + particle.velocity.y,
             velocity: {
               x: particle.velocity.x * 0.99,
-              y: particle.velocity.y + 0.3 // Gravity
+              y: particle.velocity.y + 0.3, // Gravity
             },
-            opacity: 1 - (particle.life / particle.maxLife),
-            life: particle.life + 16
+            opacity: 1 - particle.life / particle.maxLife,
+            life: particle.life + 16,
           }))
-          .filter(particle => particle.life < particle.maxLife && particle.opacity > 0.1);
+          .filter((particle) => particle.life < particle.maxLife && particle.opacity > 0.1);
 
         // Add new particles occasionally for legendary achievements
-        if (achievement.rarity === 'legendary' && Math.random() < 0.3) {
-          updatedParticles.push(createParticle(
-            (Math.random() - 0.5) * 200,
-            Math.random() * -100 - 50
-          ));
+        if (achievement.rarity === "legendary" && Math.random() < 0.3) {
+          updatedParticles.push(
+            createParticle((Math.random() - 0.5) * 200, Math.random() * -100 - 50)
+          );
         }
 
         return updatedParticles;
@@ -169,7 +170,9 @@ const AchievementUnlockModalComponent: React.FC<AchievementUnlockModalProps> = (
   const rarityConfig = ACHIEVEMENT_RARITY_CONFIG[achievement.rarity];
 
   // Calculate prestige value
-  const prestigeValue = Math.round(100 * tierConfig.prestigeMultiplier * (2 - rarityConfig.probability));
+  const prestigeValue = Math.round(
+    100 * tierConfig.prestigeMultiplier * (2 - rarityConfig.probability)
+  );
 
   return (
     <AnimatePresence>
@@ -177,52 +180,52 @@ const AchievementUnlockModalComponent: React.FC<AchievementUnlockModalProps> = (
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[10000] flex items-center justify-center p-4"
+        className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
         onClick={onClose}
       >
         <motion.div
           initial={{ scale: 0.5, opacity: 0, rotateY: -45 }}
-          animate={{ 
-            scale: 1, 
-            opacity: 1, 
+          animate={{
+            scale: 1,
+            opacity: 1,
             rotateY: 0,
             rotateX: [0, -5, 5, 0],
           }}
-          exit={{ 
-            scale: 0.8, 
+          exit={{
+            scale: 0.8,
             opacity: 0,
-            rotateY: 45 
+            rotateY: 45,
           }}
-          transition={{ 
-            duration: 0.6, 
+          transition={{
+            duration: 0.6,
             ease: "backOut",
-            rotateX: { 
-              duration: 2, 
-              repeat: animationStage === 'celebrating' ? Infinity : 0,
-              ease: "easeInOut" 
-            }
+            rotateX: {
+              duration: 2,
+              repeat: animationStage === "celebrating" ? Infinity : 0,
+              ease: "easeInOut",
+            },
           }}
-          className="relative glass-modal rounded-2xl border-2 max-w-md w-full mx-4 overflow-hidden"
-          style={{ 
+          className="glass-modal relative mx-4 w-full max-w-md overflow-hidden rounded-2xl border-2"
+          style={{
             borderColor: tierConfig.color,
-            boxShadow: `0 0 40px ${tierConfig.color}40, 0 0 80px ${tierConfig.color}20`
+            boxShadow: `0 0 40px ${tierConfig.color}40, 0 0 80px ${tierConfig.color}20`,
           }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Particle System Overlay */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
             {particles.map((particle) => (
               <motion.div
                 key={particle.id}
                 className="absolute rounded-full"
                 style={{
-                  left: '50%',
-                  top: '50%',
+                  left: "50%",
+                  top: "50%",
                   width: particle.size,
                   height: particle.size,
                   backgroundColor: particle.color,
                   opacity: particle.opacity,
-                  transform: `translate(${particle.x}px, ${particle.y}px)`
+                  transform: `translate(${particle.x}px, ${particle.y}px)`,
                 }}
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -232,18 +235,18 @@ const AchievementUnlockModalComponent: React.FC<AchievementUnlockModalProps> = (
           </div>
 
           {/* Legendary Rarity Border Effect */}
-          {achievement.rarity === 'legendary' && (
-            <div className="absolute inset-0 rounded-2xl pointer-events-none">
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-purple-500/20 via-pink-500/20 via-yellow-500/20 to-purple-500/20 animate-pulse" />
-              <motion.div 
+          {achievement.rarity === "legendary" && (
+            <div className="pointer-events-none absolute inset-0 rounded-2xl">
+              <div className="absolute inset-0 animate-pulse rounded-2xl bg-gradient-to-r from-purple-500/20 via-pink-500/20 via-yellow-500/20 to-purple-500/20" />
+              <motion.div
                 className="absolute inset-[2px] rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent"
-                animate={{ 
+                animate={{
                   backgroundImage: [
-                    'linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent)',
-                    'linear-gradient(135deg, transparent, rgba(255,255,255,0.1), transparent)',
-                    'linear-gradient(225deg, transparent, rgba(255,255,255,0.1), transparent)',
-                    'linear-gradient(315deg, transparent, rgba(255,255,255,0.1), transparent)'
-                  ]
+                    "linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent)",
+                    "linear-gradient(135deg, transparent, rgba(255,255,255,0.1), transparent)",
+                    "linear-gradient(225deg, transparent, rgba(255,255,255,0.1), transparent)",
+                    "linear-gradient(315deg, transparent, rgba(255,255,255,0.1), transparent)",
+                  ],
                 }}
                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
               />
@@ -251,60 +254,57 @@ const AchievementUnlockModalComponent: React.FC<AchievementUnlockModalProps> = (
           )}
 
           {/* Header */}
-          <div className="relative p-8 text-center border-b border-white/10">
+          <div className="relative border-b border-white/10 p-8 text-center">
             <motion.div
               initial={{ scale: 0, rotate: -180 }}
-              animate={{ 
-                scale: 1, 
+              animate={{
+                scale: 1,
                 rotate: 0,
-                y: animationStage === 'celebrating' ? [0, -10, 0] : 0
+                y: animationStage === "celebrating" ? [0, -10, 0] : 0,
               }}
-              transition={{ 
+              transition={{
                 scale: { delay: 0.2, duration: 0.5, ease: "backOut" },
                 rotate: { delay: 0.2, duration: 0.5, ease: "backOut" },
-                y: { 
-                  duration: 1, 
-                  repeat: animationStage === 'celebrating' ? Infinity : 0,
-                  ease: "easeInOut"
-                }
+                y: {
+                  duration: 1,
+                  repeat: animationStage === "celebrating" ? Infinity : 0,
+                  ease: "easeInOut",
+                },
               }}
-              className="w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center relative"
-              style={{ 
+              className="relative mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full"
+              style={{
                 backgroundColor: `${tierConfig.color}20`,
                 border: `2px solid ${tierConfig.color}`,
-                filter: tierConfig.glow
+                filter: tierConfig.glow,
               }}
             >
-              <RiStarFill 
-                className="w-10 h-10" 
-                style={{ color: tierConfig.color }}
-              />
-              
+              <RiStarFill className="h-10 w-10" style={{ color: tierConfig.color }} />
+
               {/* Sparkle effects for rare achievements */}
               {rarityConfig.sparkleEffect && (
                 <>
                   <motion.div
                     className="absolute -top-2 -right-2"
-                    animate={{ 
+                    animate={{
                       scale: [0, 1, 0],
                       rotate: [0, 180, 360],
-                      opacity: [0, 1, 0]
+                      opacity: [0, 1, 0],
                     }}
                     transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
                   >
-                    <RiSparklingLine className="w-6 h-6 text-yellow-400" />
+                    <RiSparklingLine className="h-6 w-6 text-yellow-400" />
                   </motion.div>
-                  
+
                   <motion.div
                     className="absolute -bottom-2 -left-2"
-                    animate={{ 
+                    animate={{
                       scale: [0, 1, 0],
                       rotate: [360, 180, 0],
-                      opacity: [0, 1, 0]
+                      opacity: [0, 1, 0],
                     }}
                     transition={{ duration: 2, repeat: Infinity, delay: 1 }}
                   >
-                    <RiSparklingLine className="w-5 h-5 text-blue-400" />
+                    <RiSparklingLine className="h-5 w-5 text-blue-400" />
                   </motion.div>
                 </>
               )}
@@ -315,60 +315,60 @@ const AchievementUnlockModalComponent: React.FC<AchievementUnlockModalProps> = (
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.5 }}
             >
-              <h2 className="text-2xl font-bold text-white mb-2">Achievement Unlocked!</h2>
-              <h3 className="text-xl font-bold mb-3" style={{ color: tierConfig.color }}>
+              <h2 className="mb-2 text-2xl font-bold text-white">Achievement Unlocked!</h2>
+              <h3 className="mb-3 text-xl font-bold" style={{ color: tierConfig.color }}>
                 {achievement.title}
               </h3>
-              
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <span 
-                  className="px-3 py-1 rounded-full text-xs font-medium"
-                  style={{ 
+
+              <div className="mb-2 flex items-center justify-center gap-2">
+                <span
+                  className="rounded-full px-3 py-1 text-xs font-medium"
+                  style={{
                     color: categoryConfig.color,
-                    backgroundColor: `${categoryConfig.color.replace('text-', '')}20`
+                    backgroundColor: `${categoryConfig.color.replace("text-", "")}20`,
                   }}
                 >
                   {achievement.category}
                 </span>
-                <span 
-                  className="px-3 py-1 rounded-full text-xs font-medium"
-                  style={{ 
+                <span
+                  className="rounded-full px-3 py-1 text-xs font-medium"
+                  style={{
                     color: tierConfig.color,
-                    backgroundColor: 'rgba(255,255,255,0.1)'
+                    backgroundColor: "rgba(255,255,255,0.1)",
                   }}
                 >
                   {achievement.tier}
                 </span>
-                <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-[--intel-silver]">
+                <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-[--intel-silver]">
                   {achievement.rarity}
                 </span>
               </div>
 
-              {achievement.rarity === 'legendary' && (
+              {achievement.rarity === "legendary" && (
                 <motion.div
-                  animate={{ 
+                  animate={{
                     scale: [1, 1.1, 1],
                     textShadow: [
-                      '0 0 10px rgba(255,255,255,0.5)',
-                      '0 0 20px rgba(255,255,255,0.8)',
-                      '0 0 10px rgba(255,255,255,0.5)'
-                    ]
+                      "0 0 10px rgba(255,255,255,0.5)",
+                      "0 0 20px rgba(255,255,255,0.8)",
+                      "0 0 10px rgba(255,255,255,0.5)",
+                    ],
                   }}
                   transition={{ duration: 2, repeat: Infinity }}
-                  className="text-yellow-400 text-sm font-bold flex items-center justify-center gap-2"
+                  className="flex items-center justify-center gap-2 text-sm font-bold text-yellow-400"
                 >
-                  <RiFireLine className="w-4 h-4" />
+                  <RiFireLine className="h-4 w-4" />
                   LEGENDARY ACHIEVEMENT
-                  <RiFireLine className="w-4 h-4" />
+                  <RiFireLine className="h-4 w-4" />
                 </motion.div>
               )}
             </motion.div>
 
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 p-2 text-[--intel-silver] hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              className="absolute top-4 right-4 rounded-lg p-2 text-[--intel-silver] transition-colors hover:bg-white/10 hover:text-white"
             >
-              <RiCloseLine className="w-5 h-5" />
+              <RiCloseLine className="h-5 w-5" />
             </button>
           </div>
 
@@ -377,24 +377,21 @@ const AchievementUnlockModalComponent: React.FC<AchievementUnlockModalProps> = (
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.5 }}
-            className="p-6 border-b border-white/10"
+            className="border-b border-white/10 p-6"
           >
-            <p className="text-[--intel-silver] text-center text-sm leading-relaxed mb-4">
+            <p className="mb-4 text-center text-sm leading-relaxed text-[--intel-silver]">
               {achievement.description}
             </p>
 
             {/* Prestige Value */}
             <div className="flex items-center justify-center gap-4">
               <div className="text-center">
-                <div 
-                  className="text-2xl font-bold"
-                  style={{ color: tierConfig.color }}
-                >
+                <div className="text-2xl font-bold" style={{ color: tierConfig.color }}>
                   +{prestigeValue.toLocaleString()}
                 </div>
                 <div className="text-xs text-[--intel-silver]">Prestige Points</div>
               </div>
-              
+
               {achievement.socialReactions > 0 && (
                 <div className="text-center">
                   <div className="text-lg font-bold text-purple-400">
@@ -412,13 +409,13 @@ const AchievementUnlockModalComponent: React.FC<AchievementUnlockModalProps> = (
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8, duration: 0.5 }}
-              className="p-6 border-b border-white/10"
+              className="border-b border-white/10 p-6"
             >
-              <h4 className="font-semibold text-white flex items-center gap-2 mb-4">
-                <RiTrophyLine className="w-4 h-4" />
+              <h4 className="mb-4 flex items-center gap-2 font-semibold text-white">
+                <RiTrophyLine className="h-4 w-4" />
                 Rewards Earned
               </h4>
-              
+
               <div className="space-y-3">
                 {achievement.rewards.map((reward) => (
                   <motion.div
@@ -426,16 +423,16 @@ const AchievementUnlockModalComponent: React.FC<AchievementUnlockModalProps> = (
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 1, duration: 0.3 }}
-                    className="flex items-center gap-3 p-3 bg-[--intel-gold]/10 rounded-lg border border-[--intel-gold]/20"
+                    className="flex items-center gap-3 rounded-lg border border-[--intel-gold]/20 bg-[--intel-gold]/10 p-3"
                   >
-                    <div className="w-8 h-8 bg-[--intel-gold]/20 rounded-lg flex items-center justify-center">
-                      <RiCheckLine className="w-4 h-4 text-[--intel-gold]" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[--intel-gold]/20">
+                      <RiCheckLine className="h-4 w-4 text-[--intel-gold]" />
                     </div>
-                    
+
                     <div className="flex-1">
-                      <p className="text-white text-sm font-medium">{reward.description}</p>
-                      <p className="text-[--intel-silver] text-xs">
-                        {reward.type.replace('_', ' ')} • Value: {reward.value}
+                      <p className="text-sm font-medium text-white">{reward.description}</p>
+                      <p className="text-xs text-[--intel-silver]">
+                        {reward.type.replace("_", " ")} • Value: {reward.value}
                       </p>
                     </div>
                   </motion.div>
@@ -458,21 +455,21 @@ const AchievementUnlockModalComponent: React.FC<AchievementUnlockModalProps> = (
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={handleShare}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg text-sm font-medium transition-colors"
+                    className="flex items-center gap-2 rounded-lg bg-blue-500/20 px-4 py-2 text-sm font-medium text-blue-400 transition-colors hover:bg-blue-500/30"
                   >
-                    <RiShareLine className="w-4 h-4" />
+                    <RiShareLine className="h-4 w-4" />
                     Share
                   </motion.button>
                 )}
-                
+
                 {onViewProgress && (
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={handleViewProgress}
-                    className="flex items-center gap-2 px-4 py-2 bg-[--intel-gold]/20 hover:bg-[--intel-gold]/30 text-[--intel-gold] rounded-lg text-sm font-medium transition-colors"
+                    className="flex items-center gap-2 rounded-lg bg-[--intel-gold]/20 px-4 py-2 text-sm font-medium text-[--intel-gold] transition-colors hover:bg-[--intel-gold]/30"
                   >
-                    <RiEyeLine className="w-4 h-4" />
+                    <RiEyeLine className="h-4 w-4" />
                     View Progress
                   </motion.button>
                 )}
@@ -482,7 +479,7 @@ const AchievementUnlockModalComponent: React.FC<AchievementUnlockModalProps> = (
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={onClose}
-                className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg text-sm font-medium transition-colors"
+                className="rounded-lg bg-white/10 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-white/20"
               >
                 Continue
               </motion.button>
@@ -494,22 +491,22 @@ const AchievementUnlockModalComponent: React.FC<AchievementUnlockModalProps> = (
                 initial={{ width: "100%" }}
                 animate={{ width: "0%" }}
                 transition={{ duration: autoCloseDelay / 1000, ease: "linear" }}
-                className="h-1 bg-[--intel-gold]/30 rounded-full mx-auto"
+                className="mx-auto h-1 rounded-full bg-[--intel-gold]/30"
                 style={{ maxWidth: "200px" }}
               />
-              <p className="text-xs text-[--intel-silver] mt-2">
+              <p className="mt-2 text-xs text-[--intel-silver]">
                 Auto-closing in {Math.ceil(autoCloseDelay / 1000)} seconds
               </p>
             </div>
           </motion.div>
 
           {/* Achievement Rarity Glow Effect */}
-          {achievement.rarity === 'epic' || achievement.rarity === 'legendary' ? (
-            <div 
-              className="absolute inset-0 rounded-2xl pointer-events-none"
+          {achievement.rarity === "epic" || achievement.rarity === "legendary" ? (
+            <div
+              className="pointer-events-none absolute inset-0 rounded-2xl"
               style={{
                 background: `radial-gradient(circle at center, ${tierConfig.color}10 0%, transparent 70%)`,
-                animation: 'pulse 2s infinite'
+                animation: "pulse 2s infinite",
               }}
             />
           ) : null}
@@ -519,6 +516,6 @@ const AchievementUnlockModalComponent: React.FC<AchievementUnlockModalProps> = (
   );
 };
 
-AchievementUnlockModalComponent.displayName = 'AchievementUnlockModal';
+AchievementUnlockModalComponent.displayName = "AchievementUnlockModal";
 
 export const AchievementUnlockModal = React.memo(AchievementUnlockModalComponent);

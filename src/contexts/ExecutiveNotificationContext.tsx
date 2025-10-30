@@ -1,14 +1,14 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 
 interface ExecutiveNotification {
   id: string;
-  type: 'alert' | 'opportunity' | 'update' | 'message' | 'achievement';
-  severity: 'critical' | 'high' | 'medium' | 'low';
+  type: "alert" | "opportunity" | "update" | "message" | "achievement";
+  severity: "critical" | "high" | "medium" | "low";
   title: string;
   description: string;
-  category: 'economic' | 'diplomatic' | 'social' | 'security' | 'governance';
+  category: "economic" | "diplomatic" | "social" | "security" | "governance";
   timestamp: number;
   actionable: boolean;
   read: boolean;
@@ -51,20 +51,20 @@ export function ExecutiveNotificationProvider({ children }: ExecutiveNotificatio
   const [notifications, setNotifications] = useState<ExecutiveNotification[]>([]);
   const [isExecutiveMode, setIsExecutiveMode] = useState(false);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   const setExecutiveMode = useCallback((isExecutive: boolean) => {
     setIsExecutiveMode(isExecutive);
   }, []);
 
   const markAsRead = useCallback((notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
     );
   }, []);
 
   const markAllAsRead = useCallback(() => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   }, []);
 
   const contextValue: ExecutiveNotificationContextType = {

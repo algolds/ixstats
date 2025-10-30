@@ -10,9 +10,9 @@ export interface PolicyTemplate {
   id: string;
   name: string;
   description: string;
-  policyType: 'economic' | 'social' | 'diplomatic' | 'infrastructure' | 'governance';
+  policyType: "economic" | "social" | "diplomatic" | "infrastructure" | "governance";
   category: string;
-  priority: 'critical' | 'high' | 'medium' | 'low';
+  priority: "critical" | "high" | "medium" | "low";
   keywords: string[];
   tags: string[];
 
@@ -75,15 +75,16 @@ export const policyTaxonomy: PolicyTemplate[] = [
         taxRevenueEffect: 1.0,
         implementationCost: 50000000,
         maintenanceCost: 5000000,
-        estimatedBenefit: "Boost GDP by 2.5%, reduce unemployment by 3%, stimulate economic recovery",
+        estimatedBenefit:
+          "Boost GDP by 2.5%, reduce unemployment by 3%, stimulate economic recovery",
         targetMetrics: ["currentTotalGdp", "unemploymentRate", "adjustedGdpGrowth"],
         objectives: [
           "Increase GDP growth",
           "Reduce unemployment",
           "Stimulate consumer spending",
-          "Support businesses"
+          "Support businesses",
         ],
-        recommendedFor: ["recession", "high-unemployment", "low-growth"]
+        recommendedFor: ["recession", "high-unemployment", "low-growth"],
       },
       {
         id: "economic-austerity",
@@ -105,9 +106,9 @@ export const policyTaxonomy: PolicyTemplate[] = [
         objectives: [
           "Reduce budget deficit",
           "Control debt-to-GDP ratio",
-          "Improve fiscal sustainability"
+          "Improve fiscal sustainability",
         ],
-        recommendedFor: ["high-debt", "budget-deficit", "credit-rating-concerns"]
+        recommendedFor: ["high-debt", "budget-deficit", "credit-rating-concerns"],
       },
       {
         id: "economic-tax",
@@ -139,8 +140,8 @@ export const policyTaxonomy: PolicyTemplate[] = [
             targetMetrics: ["taxRevenueGDPPercent", "currentTotalGdp"],
             dataMapping: {
               model: "RevenueSource",
-              filter: { name: "Income Tax" }
-            }
+              filter: { name: "Income Tax" },
+            },
           },
           {
             id: "economic-tax-increase-corporate",
@@ -161,8 +162,8 @@ export const policyTaxonomy: PolicyTemplate[] = [
             targetMetrics: ["taxRevenueGDPPercent"],
             dataMapping: {
               model: "RevenueSource",
-              filter: { name: "Corporate Tax" }
-            }
+              filter: { name: "Corporate Tax" },
+            },
           },
           {
             id: "economic-tax-vat-increase",
@@ -183,8 +184,8 @@ export const policyTaxonomy: PolicyTemplate[] = [
             targetMetrics: ["taxRevenueGDPPercent", "inflationRate"],
             dataMapping: {
               model: "RevenueSource",
-              filter: { category: "Indirect Tax" }
-            }
+              filter: { category: "Indirect Tax" },
+            },
           },
           {
             id: "economic-tax-progressive",
@@ -202,9 +203,9 @@ export const policyTaxonomy: PolicyTemplate[] = [
             implementationCost: 5000000,
             maintenanceCost: 500000,
             estimatedBenefit: "Reduce income inequality, increase consumer spending",
-            targetMetrics: ["incomeInequalityGini", "taxRevenueGDPPercent"]
-          }
-        ]
+            targetMetrics: ["incomeInequalityGini", "taxRevenueGDPPercent"],
+          },
+        ],
       },
       {
         id: "economic-monetary",
@@ -234,7 +235,7 @@ export const policyTaxonomy: PolicyTemplate[] = [
             maintenanceCost: 0,
             estimatedBenefit: "Boost investment, increase GDP growth, lower unemployment",
             targetMetrics: ["currentTotalGdp", "interestRates"],
-            recommendedFor: ["low-growth", "recession"]
+            recommendedFor: ["low-growth", "recession"],
           },
           {
             id: "economic-monetary-rate-hike",
@@ -253,9 +254,9 @@ export const policyTaxonomy: PolicyTemplate[] = [
             maintenanceCost: 0,
             estimatedBenefit: "Control inflation, stabilize currency",
             targetMetrics: ["inflationRate", "interestRates"],
-            recommendedFor: ["high-inflation", "overheating"]
-          }
-        ]
+            recommendedFor: ["high-inflation", "overheating"],
+          },
+        ],
       },
       {
         id: "economic-trade",
@@ -284,7 +285,7 @@ export const policyTaxonomy: PolicyTemplate[] = [
             implementationCost: 2000000,
             maintenanceCost: 200000,
             estimatedBenefit: "Increase exports, lower consumer prices, boost competitiveness",
-            targetMetrics: ["exportsGDPPercent", "currentTotalGdp"]
+            targetMetrics: ["exportsGDPPercent", "currentTotalGdp"],
           },
           {
             id: "economic-trade-protectionism",
@@ -302,7 +303,7 @@ export const policyTaxonomy: PolicyTemplate[] = [
             implementationCost: 1000000,
             maintenanceCost: 100000,
             estimatedBenefit: "Protect domestic jobs, increase tariff revenue",
-            targetMetrics: ["importsGDPPercent", "taxRevenueGDPPercent"]
+            targetMetrics: ["importsGDPPercent", "taxRevenueGDPPercent"],
           },
           {
             id: "economic-trade-export-promotion",
@@ -320,9 +321,9 @@ export const policyTaxonomy: PolicyTemplate[] = [
             implementationCost: 15000000,
             maintenanceCost: 2000000,
             estimatedBenefit: "Increase exports by 15%, create export jobs",
-            targetMetrics: ["exportsGDPPercent"]
-          }
-        ]
+            targetMetrics: ["exportsGDPPercent"],
+          },
+        ],
       },
       {
         id: "economic-labor",
@@ -351,7 +352,7 @@ export const policyTaxonomy: PolicyTemplate[] = [
             implementationCost: 0,
             maintenanceCost: 0,
             estimatedBenefit: "Reduce poverty, increase consumer spending",
-            targetMetrics: ["minimumWage", "povertyRate", "averageAnnualIncome"]
+            targetMetrics: ["minimumWage", "povertyRate", "averageAnnualIncome"],
           },
           {
             id: "economic-labor-unemployment-extension",
@@ -370,7 +371,7 @@ export const policyTaxonomy: PolicyTemplate[] = [
             maintenanceCost: 5000000,
             estimatedBenefit: "Support unemployed workers, maintain consumer demand",
             targetMetrics: ["unemploymentRate", "povertyRate"],
-            recommendedFor: ["recession", "high-unemployment"]
+            recommendedFor: ["recession", "high-unemployment"],
           },
           {
             id: "economic-labor-training",
@@ -388,11 +389,11 @@ export const policyTaxonomy: PolicyTemplate[] = [
             implementationCost: 20000000,
             maintenanceCost: 3000000,
             estimatedBenefit: "Reduce unemployment, increase productivity",
-            targetMetrics: ["unemploymentRate", "laborForceParticipationRate"]
-          }
-        ]
-      }
-    ]
+            targetMetrics: ["unemploymentRate", "laborForceParticipationRate"],
+          },
+        ],
+      },
+    ],
   },
 
   // ============================================================
@@ -429,12 +430,12 @@ export const policyTaxonomy: PolicyTemplate[] = [
         objectives: [
           "Provide healthcare access for all citizens",
           "Reduce medical costs",
-          "Improve public health outcomes"
+          "Improve public health outcomes",
         ],
         dataMapping: {
           model: "GovernmentDepartment",
-          filter: { category: "Health" }
-        }
+          filter: { category: "Health" },
+        },
       },
       {
         id: "social-education-expansion",
@@ -456,12 +457,12 @@ export const policyTaxonomy: PolicyTemplate[] = [
         objectives: [
           "Improve literacy rates",
           "Enhance workforce skills",
-          "Increase educational attainment"
+          "Increase educational attainment",
         ],
         dataMapping: {
           model: "GovernmentDepartment",
-          filter: { category: "Education" }
-        }
+          filter: { category: "Education" },
+        },
       },
       {
         id: "social-welfare-expansion",
@@ -480,11 +481,7 @@ export const policyTaxonomy: PolicyTemplate[] = [
         maintenanceCost: 10000000,
         estimatedBenefit: "Reduce poverty rate by 5%, improve social stability",
         targetMetrics: ["povertyRate", "incomeInequalityGini"],
-        objectives: [
-          "Reduce poverty",
-          "Provide basic income security",
-          "Improve social cohesion"
-        ]
+        objectives: ["Reduce poverty", "Provide basic income security", "Improve social cohesion"],
       },
       {
         id: "social-pension-reform",
@@ -506,10 +503,10 @@ export const policyTaxonomy: PolicyTemplate[] = [
         objectives: [
           "Ensure retirement security",
           "Increase pension coverage",
-          "Reduce elderly poverty"
-        ]
-      }
-    ]
+          "Reduce elderly poverty",
+        ],
+      },
+    ],
   },
 
   // ============================================================
@@ -545,8 +542,8 @@ export const policyTaxonomy: PolicyTemplate[] = [
         objectives: [
           "Improve transportation networks",
           "Reduce transport costs",
-          "Create infrastructure jobs"
-        ]
+          "Create infrastructure jobs",
+        ],
       },
       {
         id: "infrastructure-digital",
@@ -568,8 +565,8 @@ export const policyTaxonomy: PolicyTemplate[] = [
         objectives: [
           "Expand broadband coverage",
           "Improve digital connectivity",
-          "Support tech industry growth"
-        ]
+          "Support tech industry growth",
+        ],
       },
       {
         id: "infrastructure-renewable",
@@ -591,8 +588,8 @@ export const policyTaxonomy: PolicyTemplate[] = [
         objectives: [
           "Transition to renewable energy",
           "Reduce carbon emissions",
-          "Create green jobs"
-        ]
+          "Create green jobs",
+        ],
       },
       {
         id: "infrastructure-housing",
@@ -614,10 +611,10 @@ export const policyTaxonomy: PolicyTemplate[] = [
         objectives: [
           "Increase affordable housing supply",
           "Reduce homelessness",
-          "Lower housing costs"
-        ]
-      }
-    ]
+          "Lower housing costs",
+        ],
+      },
+    ],
   },
 
   // ============================================================
@@ -652,8 +649,8 @@ export const policyTaxonomy: PolicyTemplate[] = [
         objectives: [
           "Reduce carbon emissions",
           "Incentivize clean energy",
-          "Generate environmental revenue"
-        ]
+          "Generate environmental revenue",
+        ],
       },
       {
         id: "environmental-green-subsidy",
@@ -674,11 +671,11 @@ export const policyTaxonomy: PolicyTemplate[] = [
         objectives: [
           "Accelerate renewable energy adoption",
           "Support green technology",
-          "Reduce fossil fuel dependence"
-        ]
-      }
-    ]
-  }
+          "Reduce fossil fuel dependence",
+        ],
+      },
+    ],
+  },
 ];
 
 // Utility functions
@@ -693,19 +690,26 @@ export function flattenPolicyTaxonomy(items: PolicyTemplate[] = policyTaxonomy):
   return result;
 }
 
-export function searchPolicyTemplates(query: string, items: PolicyTemplate[] = policyTaxonomy): PolicyTemplate[] {
+export function searchPolicyTemplates(
+  query: string,
+  items: PolicyTemplate[] = policyTaxonomy
+): PolicyTemplate[] {
   const lowerQuery = query.toLowerCase().trim();
   if (!lowerQuery) return [];
   const flatItems = flattenPolicyTaxonomy(items);
-  return flatItems.filter(item =>
-    item.name.toLowerCase().includes(lowerQuery) ||
-    item.description.toLowerCase().includes(lowerQuery) ||
-    item.keywords.some(kw => kw.toLowerCase().includes(lowerQuery)) ||
-    item.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
+  return flatItems.filter(
+    (item) =>
+      item.name.toLowerCase().includes(lowerQuery) ||
+      item.description.toLowerCase().includes(lowerQuery) ||
+      item.keywords.some((kw) => kw.toLowerCase().includes(lowerQuery)) ||
+      item.tags.some((tag) => tag.toLowerCase().includes(lowerQuery))
   );
 }
 
-export function getPolicyTemplateById(id: string, items: PolicyTemplate[] = policyTaxonomy): PolicyTemplate | null {
+export function getPolicyTemplateById(
+  id: string,
+  items: PolicyTemplate[] = policyTaxonomy
+): PolicyTemplate | null {
   for (const item of items) {
     if (item.id === id) return item;
     if (item.children) {
@@ -716,7 +720,11 @@ export function getPolicyTemplateById(id: string, items: PolicyTemplate[] = poli
   return null;
 }
 
-export function getPolicyTemplatePath(id: string, items: PolicyTemplate[] = policyTaxonomy, path: PolicyTemplate[] = []): PolicyTemplate[] | null {
+export function getPolicyTemplatePath(
+  id: string,
+  items: PolicyTemplate[] = policyTaxonomy,
+  path: PolicyTemplate[] = []
+): PolicyTemplate[] | null {
   for (const item of items) {
     const currentPath = [...path, item];
     if (item.id === id) return currentPath;
@@ -731,9 +739,12 @@ export function getPolicyTemplatePath(id: string, items: PolicyTemplate[] = poli
 /**
  * Get policy recommendations based on country metrics
  */
-export function getRecommendedPolicies(conditions: string[], items: PolicyTemplate[] = policyTaxonomy): PolicyTemplate[] {
+export function getRecommendedPolicies(
+  conditions: string[],
+  items: PolicyTemplate[] = policyTaxonomy
+): PolicyTemplate[] {
   const flatItems = flattenPolicyTaxonomy(items);
-  return flatItems.filter(item =>
-    item.recommendedFor && item.recommendedFor.some(rec => conditions.includes(rec))
+  return flatItems.filter(
+    (item) => item.recommendedFor && item.recommendedFor.some((rec) => conditions.includes(rec))
   );
 }

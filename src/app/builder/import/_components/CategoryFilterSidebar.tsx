@@ -1,7 +1,11 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Filter, Crown } from "lucide-react";
-import { GlassCard, GlassCardContent, GlassCardHeader } from "~/app/builder/components/glass/GlassCard";
+import {
+  GlassCard,
+  GlassCardContent,
+  GlassCardHeader,
+} from "~/app/builder/components/glass/GlassCard";
 import { cn } from "~/lib/utils";
 
 interface WikiSite {
@@ -26,7 +30,7 @@ export const CategoryFilterSidebar: React.FC<CategoryFilterSidebarProps> = ({
   const guaranteedCategories = ["Countries", "Nations"];
   const combinedCategories = [
     ...guaranteedCategories,
-    ...popularCategories.filter(cat => !guaranteedCategories.includes(cat))
+    ...popularCategories.filter((cat) => !guaranteedCategories.includes(cat)),
   ];
 
   return (
@@ -40,25 +44,19 @@ export const CategoryFilterSidebar: React.FC<CategoryFilterSidebarProps> = ({
       <GlassCardHeader>
         <div className="flex items-center gap-3">
           <div
-            className="p-2 rounded-lg"
+            className="rounded-lg p-2"
             style={{
-              backgroundColor: 'var(--color-bg-accent)',
-              borderColor: 'var(--color-border-secondary)'
+              backgroundColor: "var(--color-bg-accent)",
+              borderColor: "var(--color-border-secondary)",
             }}
           >
-            <Filter className="h-5 w-5" style={{ color: 'var(--color-text-secondary)' }} />
+            <Filter className="h-5 w-5" style={{ color: "var(--color-text-secondary)" }} />
           </div>
           <div>
-            <h2
-              className="text-lg font-semibold"
-              style={{ color: 'var(--color-text-primary)' }}
-            >
+            <h2 className="text-lg font-semibold" style={{ color: "var(--color-text-primary)" }}>
               Category Filter
             </h2>
-            <p
-              className="text-sm"
-              style={{ color: 'var(--color-text-muted)' }}
-            >
+            <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
               Search any wiki category to find your page
             </p>
           </div>
@@ -73,22 +71,19 @@ export const CategoryFilterSidebar: React.FC<CategoryFilterSidebarProps> = ({
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
               className={cn(
-                "w-full px-4 py-3 rounded-lg border transition-all duration-200",
-                "focus:outline-none focus:ring-2 focus:ring-brand-primary/50 focus:border-brand-primary/50"
+                "w-full rounded-lg border px-4 py-3 transition-all duration-200",
+                "focus:ring-brand-primary/50 focus:border-brand-primary/50 focus:ring-2 focus:outline-none"
               )}
               style={{
-                backgroundColor: 'var(--color-bg-secondary)',
-                borderColor: 'var(--color-border-primary)',
-                color: 'var(--color-text-primary)'
+                backgroundColor: "var(--color-bg-secondary)",
+                borderColor: "var(--color-border-primary)",
+                color: "var(--color-text-primary)",
               }}
             />
           </div>
 
           <div className="space-y-3">
-            <span
-              className="text-sm font-medium"
-              style={{ color: 'var(--color-text-muted)' }}
-            >
+            <span className="text-sm font-medium" style={{ color: "var(--color-text-muted)" }}>
               Popular:
             </span>
             <div className="flex flex-col gap-2">
@@ -99,15 +94,21 @@ export const CategoryFilterSidebar: React.FC<CategoryFilterSidebarProps> = ({
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setCategoryFilter(category)}
                   className={cn(
-                    "px-3 py-2 text-sm rounded-lg transition-all duration-200",
-                    "border font-medium text-left",
+                    "rounded-lg px-3 py-2 text-sm transition-all duration-200",
+                    "border text-left font-medium",
                     categoryFilter === category
-                      ? 'border-border-secondary'
-                      : 'border-transparent hover:border-border-secondary'
+                      ? "border-border-secondary"
+                      : "hover:border-border-secondary border-transparent"
                   )}
                   style={{
-                    color: categoryFilter === category ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
-                    backgroundColor: categoryFilter === category ? 'var(--color-bg-accent)' : 'var(--color-bg-secondary)'
+                    color:
+                      categoryFilter === category
+                        ? "var(--color-text-primary)"
+                        : "var(--color-text-muted)",
+                    backgroundColor:
+                      categoryFilter === category
+                        ? "var(--color-bg-accent)"
+                        : "var(--color-bg-secondary)",
                   }}
                 >
                   {category}
@@ -116,12 +117,16 @@ export const CategoryFilterSidebar: React.FC<CategoryFilterSidebarProps> = ({
             </div>
           </div>
 
-          <div className="pt-4 border-t" style={{ borderColor: 'var(--color-border-primary)' }}>
-            <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--color-text-muted)' }}>
+          <div className="border-t pt-4" style={{ borderColor: "var(--color-border-primary)" }}>
+            <div
+              className="flex items-center gap-2 text-xs"
+              style={{ color: "var(--color-text-muted)" }}
+            >
               <Crown className="h-3 w-3" />
               <span>
-                Searching in <strong>Category:{categoryFilter}</strong> on {selectedSite.displayName}
-                {selectedSite.name === 'iiwiki' && <span> (including subcategories)</span>}
+                Searching in <strong>Category:{categoryFilter}</strong> on{" "}
+                {selectedSite.displayName}
+                {selectedSite.name === "iiwiki" && <span> (including subcategories)</span>}
               </span>
             </div>
           </div>

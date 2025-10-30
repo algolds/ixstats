@@ -19,11 +19,7 @@ export const CardSpotlight = ({
 } & React.HTMLAttributes<HTMLDivElement>) => {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  function handleMouseMove({
-    currentTarget,
-    clientX,
-    clientY,
-  }: ReactMouseEvent<HTMLDivElement>) {
+  function handleMouseMove({ currentTarget, clientX, clientY }: ReactMouseEvent<HTMLDivElement>) {
     const { left, top } = currentTarget.getBoundingClientRect();
 
     mouseX.set(clientX - left);
@@ -36,7 +32,7 @@ export const CardSpotlight = ({
   return (
     <div
       className={cn(
-        "group/spotlight p-10 rounded-md relative border border-neutral-800 bg-black dark:border-neutral-800",
+        "group/spotlight relative rounded-md border border-neutral-800 bg-black p-10 dark:border-neutral-800",
         className
       )}
       onMouseMove={handleMouseMove}
@@ -45,7 +41,7 @@ export const CardSpotlight = ({
       {...props}
     >
       <motion.div
-        className="pointer-events-none absolute z-0 -inset-px rounded-md opacity-0 transition duration-300 group-hover/spotlight:opacity-100"
+        className="pointer-events-none absolute -inset-px z-0 rounded-md opacity-0 transition duration-300 group-hover/spotlight:opacity-100"
         style={{
           backgroundColor: color,
           maskImage: useMotionTemplate`
@@ -69,7 +65,7 @@ export const CardSpotlight = ({
           />
         )}
         {isHovering && (
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 pointer-events-none" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10" />
         )}
       </motion.div>
       {children}

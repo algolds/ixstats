@@ -13,7 +13,7 @@ import {
   Plus,
   Layers,
   Users,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
@@ -41,7 +41,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
   day: "numeric",
   hour: "numeric",
-  minute: "2-digit"
+  minute: "2-digit",
 });
 
 function getDisplayDate(value: string | Date | null | undefined) {
@@ -63,14 +63,10 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
     quickActionMeetings,
     quickActionPolicies,
     refetchQuickActionMeetings,
-    refetchQuickActionPolicies
+    refetchQuickActionPolicies,
   } = useMyCountryUnifiedData();
 
-  const {
-    activeTab,
-    setActiveTab,
-    wsConnected
-  } = unifiedIntelligence;
+  const { activeTab, setActiveTab, wsConnected } = unifiedIntelligence;
 
   const [meetingSchedulerOpen, setMeetingSchedulerOpen] = useState(false);
   const [policyCreatorOpen, setPolicyCreatorOpen] = useState(false);
@@ -86,7 +82,11 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
 
   const recentPolicies = useMemo(() => {
     return [...normalizedPolicies]
-      .sort((a, b) => new Date(b.createdAt ?? b.effectiveDate ?? new Date()).getTime() - new Date(a.createdAt ?? a.effectiveDate ?? new Date()).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt ?? b.effectiveDate ?? new Date()).getTime() -
+          new Date(a.createdAt ?? a.effectiveDate ?? new Date()).getTime()
+      )
       .slice(0, 6);
   }, [normalizedPolicies]);
 
@@ -100,7 +100,7 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
       { value: "overview", icon: Eye, label: "Overview", shortLabel: "Over" },
       { value: "meetings", icon: Calendar, label: "Meetings", shortLabel: "Meet" },
       { value: "policies", icon: FileText, label: "Policies", shortLabel: "Policy" },
-      { value: "communications", icon: Send, label: "Communications", shortLabel: "Comms" }
+      { value: "communications", icon: Send, label: "Communications", shortLabel: "Comms" },
     ];
 
     const enhancedTabs =
@@ -109,7 +109,7 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
             { value: "diplomatic-ops", icon: Globe, label: "Diplomatic Ops", shortLabel: "Diplo" },
             { value: "intelligence-feed", icon: Activity, label: "Intel Feed", shortLabel: "Feed" },
             { value: "analytics", icon: BarChart3, label: "Analytics", shortLabel: "Stats" },
-            { value: "settings", icon: Shield, label: "Settings", shortLabel: "Set" }
+            { value: "settings", icon: Shield, label: "Settings", shortLabel: "Set" },
           ]
         : [];
 
@@ -119,11 +119,11 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
     return (
       <div className="overflow-x-auto">
         <TabsList className={`grid w-full grid-cols-4 lg:grid-cols-${colCount} min-w-fit`}>
-          {tabs.map(tab => (
+          {tabs.map((tab) => (
             <TabsTrigger
               key={tab.value}
               value={tab.value}
-              className="flex items-center gap-1 text-xs lg:text-sm data-[state=active]:bg-background data-[state=active]:text-foreground"
+              className="data-[state=active]:bg-background data-[state=active]:text-foreground flex items-center gap-1 text-xs lg:text-sm"
             >
               <tab.icon className="h-3 w-3 lg:h-4 lg:w-4" />
               <span className="hidden sm:inline">{tab.label}</span>
@@ -161,7 +161,11 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
         }}
       />
 
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as IntelligenceTab)} className="space-y-4">
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as IntelligenceTab)}
+        className="space-y-4"
+      >
         {renderTabsList()}
 
         <TabsContent value="overview" id="overview">
@@ -171,7 +175,7 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
               country={{
                 name: country.name,
                 flag: resolvedFlagUrl || country.flagUrl || null,
-                leader: country.headOfGovernment || "Unknown"
+                leader: country.headOfGovernment || "Unknown",
               }}
               isOwner
               countryStats={country}
@@ -193,7 +197,8 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
                     National Meeting Scheduler
                   </CardTitle>
                   <CardDescription>
-                    Schedule, review, and action strategic cabinet meetings powered by Quick Actions.
+                    Schedule, review, and action strategic cabinet meetings powered by Quick
+                    Actions.
                   </CardDescription>
                 </div>
                 <Button onClick={() => setMeetingSchedulerOpen(true)} className="gap-2">
@@ -204,16 +209,16 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
               <CardContent className="space-y-4">
                 {upcomingMeetings.length > 0 ? (
                   <div className="space-y-3">
-                    {upcomingMeetings.map(meeting => (
+                    {upcomingMeetings.map((meeting) => (
                       <div
                         key={meeting.id}
-                        className="flex flex-col gap-2 rounded-lg border border-border/40 bg-muted/40 p-4 md:flex-row md:items-center md:justify-between"
+                        className="border-border/40 bg-muted/40 flex flex-col gap-2 rounded-lg border p-4 md:flex-row md:items-center md:justify-between"
                       >
                         <div className="flex items-center gap-3">
                           <Layers className="h-5 w-5 text-purple-500" />
                           <div>
-                            <div className="font-semibold text-foreground">{meeting.title}</div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-foreground font-semibold">{meeting.title}</div>
+                            <div className="text-muted-foreground text-xs">
                               {getDisplayDate(meeting.scheduledDate)} • {meeting.duration ?? 60} min
                             </div>
                           </div>
@@ -223,9 +228,9 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
                             {meeting.status?.toUpperCase() ?? "SCHEDULED"}
                           </Badge>
                           {(meeting.attendances?.length ?? 0) > 0 && (
-                            <div className="flex items-center justify-start gap-1 text-xs text-muted-foreground md:justify-end">
+                            <div className="text-muted-foreground flex items-center justify-start gap-1 text-xs md:justify-end">
                               <Users className="h-3 w-3" />
-                              {(meeting.attendances?.length ?? 0)} participants
+                              {meeting.attendances?.length ?? 0} participants
                             </div>
                           )}
                         </div>
@@ -233,10 +238,17 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
                     ))}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border/50 p-8 text-center text-sm text-muted-foreground">
-                    <Calendar className="h-8 w-8 text-muted-foreground/70" />
-                    <p>No meetings scheduled yet. Use the Quick Actions scheduler to plan your next session.</p>
-                    <Button variant="outline" onClick={() => setMeetingSchedulerOpen(true)} className="gap-2">
+                  <div className="border-border/50 text-muted-foreground flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-8 text-center text-sm">
+                    <Calendar className="text-muted-foreground/70 h-8 w-8" />
+                    <p>
+                      No meetings scheduled yet. Use the Quick Actions scheduler to plan your next
+                      session.
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => setMeetingSchedulerOpen(true)}
+                      className="gap-2"
+                    >
                       <Plus className="h-4 w-4" />
                       Schedule first meeting
                     </Button>
@@ -268,17 +280,18 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
               <CardContent className="space-y-4">
                 {recentPolicies.length > 0 ? (
                   <div className="space-y-3">
-                    {recentPolicies.map(policy => (
+                    {recentPolicies.map((policy) => (
                       <div
                         key={policy.id}
-                        className="flex flex-col gap-2 rounded-lg border border-border/40 bg-muted/40 p-4 md:flex-row md:items-center md:justify-between"
+                        className="border-border/40 bg-muted/40 flex flex-col gap-2 rounded-lg border p-4 md:flex-row md:items-center md:justify-between"
                       >
                         <div className="flex items-center gap-3">
                           <Layers className="h-5 w-5 text-indigo-500" />
                           <div>
-                            <div className="font-semibold text-foreground">{policy.title}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {policy.category ? policy.category.toUpperCase() : "GENERAL"} • {getDisplayDate(policy.effectiveDate ?? policy.createdAt)}
+                            <div className="text-foreground font-semibold">{policy.title}</div>
+                            <div className="text-muted-foreground text-xs">
+                              {policy.category ? policy.category.toUpperCase() : "GENERAL"} •{" "}
+                              {getDisplayDate(policy.effectiveDate ?? policy.createdAt)}
                             </div>
                           </div>
                         </div>
@@ -290,7 +303,7 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
                             {policy.status?.toUpperCase() ?? "DRAFT"}
                           </Badge>
                           {policy.priority && (
-                            <div className="flex items-center justify-start gap-1 text-xs text-muted-foreground md:justify-end">
+                            <div className="text-muted-foreground flex items-center justify-start gap-1 text-xs md:justify-end">
                               <AlertCircle className="h-3 w-3" />
                               {policy.priority.toUpperCase()}
                             </div>
@@ -300,10 +313,17 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
                     ))}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border/50 p-8 text-center text-sm text-muted-foreground">
-                    <FileText className="h-8 w-8 text-muted-foreground/70" />
-                    <p>No policies created yet. Launch the Quick Actions policy creator to get started.</p>
-                    <Button variant="outline" onClick={() => setPolicyCreatorOpen(true)} className="gap-2">
+                  <div className="border-border/50 text-muted-foreground flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-8 text-center text-sm">
+                    <FileText className="text-muted-foreground/70 h-8 w-8" />
+                    <p>
+                      No policies created yet. Launch the Quick Actions policy creator to get
+                      started.
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => setPolicyCreatorOpen(true)}
+                      className="gap-2"
+                    >
                       <Plus className="h-4 w-4" />
                       Create first policy
                     </Button>
@@ -323,7 +343,8 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
                   Secure Communications
                 </CardTitle>
                 <CardDescription>
-                  Encrypted diplomatic and intelligence communications powered by the unified intelligence system.
+                  Encrypted diplomatic and intelligence communications powered by the unified
+                  intelligence system.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -343,7 +364,8 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
                     Diplomatic Operations Hub
                   </CardTitle>
                   <CardDescription>
-                    Manage embassies, cultural exchanges, and live diplomatic relations from the single intelligence source.
+                    Manage embassies, cultural exchanges, and live diplomatic relations from the
+                    single intelligence source.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -364,7 +386,8 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
                     Intelligence Feed
                   </CardTitle>
                   <CardDescription>
-                    Real-time intelligence briefings, alerts, and recommendations synchronized across the MyCountry suite.
+                    Real-time intelligence briefings, alerts, and recommendations synchronized
+                    across the MyCountry suite.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -385,7 +408,8 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
                     Intelligence Analytics
                   </CardTitle>
                   <CardDescription>
-                    Advanced analytics and predictive intelligence modeling sharing the same production data layer.
+                    Advanced analytics and predictive intelligence modeling sharing the same
+                    production data layer.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

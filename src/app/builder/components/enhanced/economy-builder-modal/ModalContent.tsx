@@ -1,20 +1,23 @@
 "use client";
 
-import React from 'react';
-import { TabsContent } from '~/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Zap } from 'lucide-react';
+import React from "react";
+import { TabsContent } from "~/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Zap } from "lucide-react";
 
-import { AtomicEconomicComponentSelector } from '~/components/economy/atoms/AtomicEconomicComponents';
-import { EconomicEffectiveness, EconomicImpactPreview } from '~/components/economy/atoms/AtomicEconomicUI';
-import { EconomySectorsTab } from '../tabs/EconomySectorsTab';
-import { LaborEmploymentTab } from '../tabs/LaborEmploymentTab';
-import { DemographicsPopulationTab } from '../tabs/DemographicsPopulationTab';
-import { EconomyPreviewTab } from '../tabs/EconomyPreviewTab';
+import { AtomicEconomicComponentSelector } from "~/components/economy/atoms/AtomicEconomicComponents";
+import {
+  EconomicEffectiveness,
+  EconomicImpactPreview,
+} from "~/components/economy/atoms/AtomicEconomicUI";
+import { EconomySectorsTab } from "../tabs/EconomySectorsTab";
+import { LaborEmploymentTab } from "../tabs/LaborEmploymentTab";
+import { DemographicsPopulationTab } from "../tabs/DemographicsPopulationTab";
+import { EconomyPreviewTab } from "../tabs/EconomyPreviewTab";
 
-import type { EconomyBuilderState, EconomicHealthMetrics } from '~/types/economy-builder';
-import type { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
-import type { EconomicInputs } from '~/app/builder/lib/economy-data-service';
+import type { EconomyBuilderState, EconomicHealthMetrics } from "~/types/economy-builder";
+import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
+import type { EconomicInputs } from "~/app/builder/lib/economy-data-service";
 
 interface ModalContentProps {
   economyBuilder: EconomyBuilderState;
@@ -31,12 +34,12 @@ export function ModalContent({
   economicHealthMetrics,
   economicInputs,
   onComponentChange,
-  onEconomyBuilderChange
+  onEconomyBuilderChange,
 }: ModalContentProps) {
   return (
     <div className="flex-1 overflow-auto">
-      <TabsContent value="atomicComponents" className="h-full m-0 p-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+      <TabsContent value="atomicComponents" className="m-0 h-full p-6">
+        <div className="grid h-full grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <Card className="h-full">
               <CardHeader>
@@ -56,18 +59,13 @@ export function ModalContent({
           </div>
 
           <div className="space-y-6">
-            <EconomicEffectiveness
-              selectedComponents={selectedComponents}
-              maxComponents={12}
-            />
-            <EconomicImpactPreview
-              selectedComponents={selectedComponents}
-            />
+            <EconomicEffectiveness selectedComponents={selectedComponents} maxComponents={12} />
+            <EconomicImpactPreview selectedComponents={selectedComponents} />
           </div>
         </div>
       </TabsContent>
 
-      <TabsContent value="sectors" className="h-full m-0 p-6">
+      <TabsContent value="sectors" className="m-0 h-full p-6">
         <EconomySectorsTab
           economyBuilder={economyBuilder}
           onEconomyBuilderChange={onEconomyBuilderChange}
@@ -75,7 +73,7 @@ export function ModalContent({
         />
       </TabsContent>
 
-      <TabsContent value="labor" className="h-full m-0 p-6">
+      <TabsContent value="labor" className="m-0 h-full p-6">
         <LaborEmploymentTab
           economyBuilder={economyBuilder}
           onEconomyBuilderChange={onEconomyBuilderChange}
@@ -83,7 +81,7 @@ export function ModalContent({
         />
       </TabsContent>
 
-      <TabsContent value="demographics" className="h-full m-0 p-6">
+      <TabsContent value="demographics" className="m-0 h-full p-6">
         <DemographicsPopulationTab
           economyBuilder={economyBuilder}
           onEconomyBuilderChange={onEconomyBuilderChange}
@@ -91,7 +89,7 @@ export function ModalContent({
         />
       </TabsContent>
 
-      <TabsContent value="preview" className="h-full m-0 p-6">
+      <TabsContent value="preview" className="m-0 h-full p-6">
         <EconomyPreviewTab
           economyBuilder={economyBuilder}
           economicHealthMetrics={economicHealthMetrics}

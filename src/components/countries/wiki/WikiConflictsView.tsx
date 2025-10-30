@@ -56,10 +56,10 @@ export function WikiConflictsView({ dataConflicts }: WikiConflictsViewProps) {
                 <div
                   key={index}
                   className={cn(
-                    "p-4 rounded-lg border-l-4",
-                    conflict.severity === 'high' && "border-red-500 bg-red-500/10",
-                    conflict.severity === 'medium' && "border-yellow-500 bg-yellow-500/10",
-                    conflict.severity === 'low' && "border-blue-500 bg-blue-500/10"
+                    "rounded-lg border-l-4 p-4",
+                    conflict.severity === "high" && "border-red-500 bg-red-500/10",
+                    conflict.severity === "medium" && "border-yellow-500 bg-yellow-500/10",
+                    conflict.severity === "low" && "border-blue-500 bg-blue-500/10"
                   )}
                 >
                   <div className="flex items-start justify-between">
@@ -68,11 +68,11 @@ export function WikiConflictsView({ dataConflicts }: WikiConflictsViewProps) {
                       <div className="mt-2 space-y-1 text-sm">
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground">Wiki:</span>
-                          <span>{conflict.wikiValue || 'Not specified'}</span>
+                          <span>{conflict.wikiValue || "Not specified"}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground">IxStats:</span>
-                          <span>{conflict.ixStatsValue || 'Not specified'}</span>
+                          <span>{conflict.ixStatsValue || "Not specified"}</span>
                         </div>
                       </div>
                     </div>
@@ -80,9 +80,9 @@ export function WikiConflictsView({ dataConflicts }: WikiConflictsViewProps) {
                       variant="outline"
                       className={cn(
                         "ml-4",
-                        conflict.severity === 'high' && "border-red-500/30 text-red-400",
-                        conflict.severity === 'medium' && "border-yellow-500/30 text-yellow-400",
-                        conflict.severity === 'low' && "border-blue-500/30 text-blue-400"
+                        conflict.severity === "high" && "border-red-500/30 text-red-400",
+                        conflict.severity === "medium" && "border-yellow-500/30 text-yellow-400",
+                        conflict.severity === "low" && "border-blue-500/30 text-blue-400"
                       )}
                     >
                       {conflict.severity.toUpperCase()}
@@ -96,8 +96,8 @@ export function WikiConflictsView({ dataConflicts }: WikiConflictsViewProps) {
       ) : (
         <Card className="glass-hierarchy-child">
           <CardContent className="p-8 text-center">
-            <RiShieldLine className="h-12 w-12 mx-auto mb-4 text-green-400" />
-            <h3 className="text-lg font-semibold mb-2">Data Integrity Confirmed</h3>
+            <RiShieldLine className="mx-auto mb-4 h-12 w-12 text-green-400" />
+            <h3 className="mb-2 text-lg font-semibold">Data Integrity Confirmed</h3>
             <p className="text-muted-foreground">
               No significant conflicts detected between Wiki and IxStats data.
             </p>

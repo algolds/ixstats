@@ -1,5 +1,5 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-import { type NextRequest, NextResponse } from 'next/server';
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 // Get base path from environment - should match Next.js basePath
 const BASE_PATH = process.env.BASE_PATH || "";
@@ -9,31 +9,31 @@ const ENABLE_COMPRESSION = process.env.ENABLE_COMPRESSION === "true";
 const RATE_LIMIT_ENABLED = process.env.RATE_LIMIT_ENABLED === "true";
 
 const isProtectedRoute = createRouteMatcher([
-  '/admin(.*)',
-  '/profile(.*)',
+  "/admin(.*)",
+  "/profile(.*)",
   // Setup page should be accessible without authentication when using fallback auth
   // '/setup(.*)',
 ]);
 
 const isPublicRoute = createRouteMatcher([
-  '/',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-  '/api(.*)',
-  '/countries',
-  '/countries/(.*)',
-  '/thinkpages',
-  '/thinkpages/(.*)',
-  '/builder',
-  '/builder/(.*)',
+  "/",
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+  "/api(.*)",
+  "/countries",
+  "/countries/(.*)",
+  "/thinkpages",
+  "/thinkpages/(.*)",
+  "/builder",
+  "/builder/(.*)",
 ]);
 
 // Check if Clerk is configured with valid keys
 const isClerkConfigured = Boolean(
   process.env.CLERK_SECRET_KEY &&
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-  process.env.CLERK_SECRET_KEY.startsWith('sk_') &&
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith('pk_')
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
+    process.env.CLERK_SECRET_KEY.startsWith("sk_") &&
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith("pk_")
 );
 
 /**
@@ -41,7 +41,7 @@ const isClerkConfigured = Boolean(
  * Protects against XSS, clickjacking, and other code injection attacks
  */
 function generateCSP(nonce: string): string {
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  const isDevelopment = process.env.NODE_ENV === "development";
 
   // Base CSP directives
   const directives = [
@@ -57,7 +57,7 @@ function generateCSP(nonce: string): string {
     `base-uri 'self'`,
     `form-action 'self'`,
     `frame-ancestors 'none'`,
-    `upgrade-insecure-requests`
+    `upgrade-insecure-requests`,
   ];
 
   // Relax CSP in development for hot reload
@@ -65,15 +65,19 @@ function generateCSP(nonce: string): string {
     directives.push(`script-src-elem 'self' 'unsafe-inline' https://*.clerk.accounts.dev`);
   }
 
-  return directives.join('; ');
+  return directives.join("; ");
 }
 
 /**
  * Add comprehensive security and performance headers to response
  */
-function enhanceResponse(response: NextResponse, req: NextRequest, userId: string | null): NextResponse {
+function enhanceResponse(
+  response: NextResponse,
+  req: NextRequest,
+  userId: string | null
+): NextResponse {
   // Generate nonce for CSP
-  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
 
   // Content Security Policy
   response.headers.set("Content-Security-Policy", generateCSP(nonce));
@@ -87,7 +91,7 @@ function enhanceResponse(response: NextResponse, req: NextRequest, userId: strin
   response.headers.set("Permissions-Policy", "geolocation=(), microphone=(), camera=()");
 
   // HSTS (HTTP Strict Transport Security) - only in production
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === "production") {
     response.headers.set(
       "Strict-Transport-Security",
       "max-age=31536000; includeSubDomains; preload"
@@ -135,7 +139,7 @@ export default isClerkConfigured
           const prefixedPath =
             BASE_PATH && currentPath.startsWith(BASE_PATH)
               ? currentPath
-              : `${BASE_PATH}${currentPath.startsWith('/') ? currentPath : `/${currentPath}`}`;
+              : `${BASE_PATH}${currentPath.startsWith("/") ? currentPath : `/${currentPath}`}`;
           const returnUrl = encodeURIComponent(prefixedPath);
 
           // Build absolute sign-in URL based on environment
@@ -150,20 +154,22 @@ export default isClerkConfigured
         }
 
         // Check for admin role on /admin routes
-        if (req.nextUrl.pathname.startsWith('/admin')) {
+        if (req.nextUrl.pathname.startsWith("/admin")) {
           // Use centralized system owner constants
-          const { isSystemOwner } = await import('~/lib/system-owner-constants');
+          const { isSystemOwner } = await import("~/lib/system-owner-constants");
           const isSystemOwnerUser = isSystemOwner(userId);
 
           if (!isSystemOwnerUser) {
             const publicMetadata = sessionClaims?.publicMetadata as { role?: string } | undefined;
             const userRole = publicMetadata?.role;
 
-            if (userRole !== 'admin') {
-              console.log(`[Middleware] Access denied to /admin for user ${userId} with role ${userRole || 'none'}`);
+            if (userRole !== "admin") {
+              console.log(
+                `[Middleware] Access denied to /admin for user ${userId} with role ${userRole || "none"}`
+              );
               // Redirect to home page with access denied message
               const homeUrl = new URL(`${BASE_PATH}/`, req.nextUrl.origin);
-              homeUrl.searchParams.set('error', 'access_denied');
+              homeUrl.searchParams.set("error", "access_denied");
               return NextResponse.redirect(homeUrl);
             }
           } else {
@@ -181,8 +187,8 @@ export default isClerkConfigured
 export const config = {
   matcher: [
     // Skip Next.js internals and all static files, unless found in search params
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     // Always run for API routes
-    '/(api|trpc)(.*)',
+    "/(api|trpc)(.*)",
   ],
 };

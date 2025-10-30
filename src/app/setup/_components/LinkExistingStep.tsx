@@ -34,23 +34,28 @@ export function LinkExistingStep({
   error,
   onBack,
   onLink,
-  isLinking
+  isLinking,
 }: LinkExistingStepProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedCountryId, setSelectedCountryId] = useState<string | null>(null);
 
-  const filteredCountries = countries.filter(country =>
-    country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    country.continent?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    country.region?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCountries = countries.filter(
+    (country) =>
+      country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      country.continent?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      country.region?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getTierColor = (tier: string) => {
     switch (tier) {
-      case 'Advanced': return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800';
-      case 'Developed': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300 border border-blue-200 dark:border-blue-800';
-      case 'Emerging': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300 border border-gray-200 dark:border-gray-800';
+      case "Advanced":
+        return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800";
+      case "Developed":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300 border border-blue-200 dark:border-blue-800";
+      case "Emerging":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800";
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300 border border-gray-200 dark:border-gray-800";
     }
   };
 
@@ -66,25 +71,23 @@ export function LinkExistingStep({
         <Button
           variant="ghost"
           onClick={onBack}
-          className="mb-8 glass-hierarchy-child px-6 py-3 rounded-xl"
+          className="glass-hierarchy-child mb-8 rounded-xl px-6 py-3"
         >
-          <ArrowLeft className="h-5 w-5 mr-3" />
+          <ArrowLeft className="mr-3 h-5 w-5" />
           Back to options
         </Button>
 
-        <h1 className="text-5xl font-bold text-foreground mb-6">
-          Link to Existing Country
-        </h1>
+        <h1 className="text-foreground mb-6 text-5xl font-bold">Link to Existing Country</h1>
 
-        <p className="text-2xl text-muted-foreground max-w-3xl">
+        <p className="text-muted-foreground max-w-3xl text-2xl">
           Search and select an existing country to link to your account.
         </p>
       </div>
 
-      <div className="glass-hierarchy-parent rounded-3xl p-8 border border-border">
+      <div className="glass-hierarchy-parent border-border rounded-3xl border p-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-foreground flex items-center mb-4">
-            <div className="glass-hierarchy-child p-3 rounded-xl mr-4">
+          <h2 className="text-foreground mb-4 flex items-center text-2xl font-bold">
+            <div className="glass-hierarchy-child mr-4 rounded-xl p-3">
               <Search className="h-6 w-6 text-blue-600 dark:text-blue-400" />
             </div>
             Search Countries
@@ -96,20 +99,20 @@ export function LinkExistingStep({
 
         <div className="space-y-8">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Search className="text-muted-foreground absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transform" />
             <Input
               type="text"
               placeholder="Search by name, continent, or region..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-12 py-4 text-lg glass-hierarchy-child border-border rounded-2xl"
+              className="glass-hierarchy-child border-border rounded-2xl py-4 pl-12 text-lg"
             />
           </div>
 
           {isLoading ? (
             <LoadingState message="Loading countries..." />
           ) : (
-            <div className="space-y-4 max-h-96 overflow-y-auto">
+            <div className="max-h-96 space-y-4 overflow-y-auto">
               {filteredCountries.map((country, index) => (
                 <motion.button
                   key={country.id}
@@ -117,23 +120,21 @@ export function LinkExistingStep({
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className={`w-full p-6 glass-hierarchy-child rounded-2xl text-left transition-all duration-500 ${
+                  className={`glass-hierarchy-child w-full rounded-2xl p-6 text-left transition-all duration-500 ${
                     selectedCountryId === country.id
-                      ? 'glass-hierarchy-interactive border-2 border-primary scale-105'
-                      : 'hover:glass-hierarchy-interactive border border-border hover:scale-102'
+                      ? "glass-hierarchy-interactive border-primary scale-105 border-2"
+                      : "hover:glass-hierarchy-interactive border-border border hover:scale-102"
                   }`}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 glass-hierarchy-child rounded-xl flex items-center justify-center">
+                      <div className="glass-hierarchy-child flex h-12 w-12 items-center justify-center rounded-xl">
                         <MapPin className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-foreground mb-2">
-                          {country.name}
-                        </h3>
+                        <h3 className="text-foreground mb-2 text-xl font-bold">{country.name}</h3>
                         <p className="text-muted-foreground">
                           {country.continent} {country.region && `• ${country.region}`}
                         </p>
@@ -148,24 +149,18 @@ export function LinkExistingStep({
             </div>
           )}
 
-          {error && (
-            <ErrorDisplay
-              message={error}
-              severity="error"
-              variant="alert"
-            />
-          )}
+          {error && <ErrorDisplay message={error} severity="error" variant="alert" />}
 
           {selectedCountryId && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="pt-8 border-t border-border"
+              className="border-border border-t pt-8"
             >
               <Button
                 onClick={() => onLink(selectedCountryId)}
                 disabled={isLinking}
-                className="w-full glass-hierarchy-interactive py-6 text-lg font-semibold rounded-2xl"
+                className="glass-hierarchy-interactive w-full rounded-2xl py-6 text-lg font-semibold"
                 size="lg"
               >
                 {isLinking ? (
@@ -175,7 +170,7 @@ export function LinkExistingStep({
                   </>
                 ) : (
                   <>
-                    <Link className="h-6 w-6 mr-4" />
+                    <Link className="mr-4 h-6 w-6" />
                     Link Country
                   </>
                 )}

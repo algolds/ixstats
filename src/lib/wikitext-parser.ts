@@ -8,7 +8,7 @@ interface WikiImage {
   filename: string;
   width?: string;
   height?: string;
-  align?: 'left' | 'right' | 'center' | 'none';
+  align?: "left" | "right" | "center" | "none";
   caption?: string;
   link?: string;
   thumb?: boolean;
@@ -32,8 +32,8 @@ export class WikiTextParser {
   private allowHtml: boolean;
 
   constructor(options: ParseOptions = {}) {
-    this.imageBaseUrl = options.imageBaseUrl || 'https://ixwiki.com/wiki/Special:Redirect/file';
-    this.wikiBaseUrl = options.wikiBaseUrl || 'https://ixwiki.com/wiki';
+    this.imageBaseUrl = options.imageBaseUrl || "https://ixwiki.com/wiki/Special:Redirect/file";
+    this.wikiBaseUrl = options.wikiBaseUrl || "https://ixwiki.com/wiki";
     this.allowHtml = options.allowHtml ?? true;
   }
 
@@ -41,7 +41,7 @@ export class WikiTextParser {
    * Main parse method - converts wiki-text to HTML
    */
   parse(wikitext: string): string {
-    if (!wikitext) return '';
+    if (!wikitext) return "";
 
     let html = wikitext;
 
@@ -92,18 +92,27 @@ export class WikiTextParser {
   private parseTemplates(text: string): string {
     // Simple template parser - expands common templates
     const templates: Record<string, (params: string[]) => string> = {
-      'citation needed': () => '<sup class="text-muted-foreground text-xs">[<i>citation needed</i>]</sup>',
-      'cn': () => '<sup class="text-muted-foreground text-xs">[<i>citation needed</i>]</sup>',
-      'stub': () => '<div class="bg-muted p-4 rounded-lg my-4 text-sm"><i>This section is a stub. You can help by expanding it.</i></div>',
-      'clear': () => '<div class="clear-both"></div>',
-      'main': (params) => `<div class="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg my-4 text-sm">Main article: <a href="${this.wikiBaseUrl}/${params[0]}" class="text-blue-600 hover:underline">${params[0]}</a></div>`,
-      'see also': (params) => `<div class="bg-muted p-3 rounded-lg my-4 text-sm">See also: <a href="${this.wikiBaseUrl}/${params[0]}" class="text-blue-600 hover:underline">${params[0]}</a></div>`,
+      "citation needed": () =>
+        '<sup class="text-muted-foreground text-xs">[<i>citation needed</i>]</sup>',
+      cn: () => '<sup class="text-muted-foreground text-xs">[<i>citation needed</i>]</sup>',
+      stub: () =>
+        '<div class="bg-muted p-4 rounded-lg my-4 text-sm"><i>This section is a stub. You can help by expanding it.</i></div>',
+      clear: () => '<div class="clear-both"></div>',
+      main: (params) =>
+        `<div class="bg-blue-50 dark:bg-blue-950 p-3 rounded-lg my-4 text-sm">Main article: <a href="${this.wikiBaseUrl}/${params[0]}" class="text-blue-600 hover:underline">${params[0]}</a></div>`,
+      "see also": (params) =>
+        `<div class="bg-muted p-3 rounded-lg my-4 text-sm">See also: <a href="${this.wikiBaseUrl}/${params[0]}" class="text-blue-600 hover:underline">${params[0]}</a></div>`,
     };
 
     // Match {{template|params}}
     return text.replace(/\{\{([^}|]+)(\|[^}]*)?\}\}/g, (match, templateName, params) => {
       const name = templateName.trim().toLowerCase();
-      const paramList = params ? params.substring(1).split('|').map((p: string) => p.trim()) : [];
+      const paramList = params
+        ? params
+            .substring(1)
+            .split("|")
+            .map((p: string) => p.trim())
+        : [];
 
       if (templates[name]) {
         return templates[name](paramList);
@@ -119,21 +128,21 @@ export class WikiTextParser {
    */
   private parseParserFunctions(text: string): string {
     // Remove parser functions for now (they're complex)
-    return text.replace(/\{\{#[^}]+\}\}/g, '');
+    return text.replace(/\{\{#[^}]+\}\}/g, "");
   }
 
   /**
    * Remove HTML comments <!-- comment -->
    */
   private parseComments(text: string): string {
-    return text.replace(/<!--[\s\S]*?-->/g, '');
+    return text.replace(/<!--[\s\S]*?-->/g, "");
   }
 
   /**
    * Parse headings = Heading =
    */
   private parseHeadings(text: string): string {
-    const lines = text.split('\n');
+    const lines = text.split("\n");
     const result: string[] = [];
 
     for (const line of lines) {
@@ -143,7 +152,12 @@ export class WikiTextParser {
       if (headingMatch) {
         const level = headingMatch[1].length;
         const content = headingMatch[2].trim();
-        const id = this.escapeHtml(content.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, ''));
+        const id = this.escapeHtml(
+          content
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^\w-]/g, "")
+        );
         const escapedContent = this.escapeHtml(content);
         result.push(`<h${level} id="${id}" class="font-bold my-4">${escapedContent}</h${level}>`);
       } else {
@@ -151,7 +165,7 @@ export class WikiTextParser {
       }
     }
 
-    return result.join('\n');
+    return result.join("\n");
   }
 
   /**
@@ -165,7 +179,7 @@ export class WikiTextParser {
    * Parse lists (* unordered, # ordered, ; definition, : indented)
    */
   private parseLists(text: string): string {
-    const lines = text.split('\n');
+    const lines = text.split("\n");
     const result: string[] = [];
     let inList = false;
     let listStack: string[] = [];
@@ -181,15 +195,24 @@ export class WikiTextParser {
         const lastMarker = markers[markers.length - 1];
 
         // Determine list type
-        const listType = lastMarker === '#' ? 'ol' : lastMarker === ';' ? 'dl-dt' : lastMarker === ':' ? 'dl-dd' : 'ul';
+        const listType =
+          lastMarker === "#"
+            ? "ol"
+            : lastMarker === ";"
+              ? "dl-dt"
+              : lastMarker === ":"
+                ? "dl-dd"
+                : "ul";
 
         if (!inList) {
           // Start first list
-          if (listType === 'dl-dt' || listType === 'dl-dd') {
+          if (listType === "dl-dt" || listType === "dl-dd") {
             result.push('<dl class="my-2">');
-            listStack.push('dl');
+            listStack.push("dl");
           } else {
-            result.push(`<${listType} class="list-${listType === 'ol' ? 'decimal' : 'disc'} ml-6 my-2">`);
+            result.push(
+              `<${listType} class="list-${listType === "ol" ? "decimal" : "disc"} ml-6 my-2">`
+            );
             listStack.push(listType);
           }
           inList = true;
@@ -197,8 +220,10 @@ export class WikiTextParser {
 
         // Handle nested lists
         while (listStack.length < depth) {
-          const newType = markers[listStack.length] === '#' ? 'ol' : 'ul';
-          result.push(`<${newType} class="list-${newType === 'ol' ? 'decimal' : 'disc'} ml-6 my-1">`);
+          const newType = markers[listStack.length] === "#" ? "ol" : "ul";
+          result.push(
+            `<${newType} class="list-${newType === "ol" ? "decimal" : "disc"} ml-6 my-1">`
+          );
           listStack.push(newType);
         }
 
@@ -208,9 +233,9 @@ export class WikiTextParser {
         }
 
         // Add list item
-        if (listType === 'dl-dt') {
+        if (listType === "dl-dt") {
           result.push(`<dt class="font-semibold">${content}</dt>`);
-        } else if (listType === 'dl-dd') {
+        } else if (listType === "dl-dd") {
           result.push(`<dd class="ml-4">${content}</dd>`);
         } else {
           result.push(`<li>${content}</li>`);
@@ -232,7 +257,7 @@ export class WikiTextParser {
       result.push(`</${closeType}>`);
     }
 
-    return result.join('\n');
+    return result.join("\n");
   }
 
   /**
@@ -251,45 +276,45 @@ export class WikiTextParser {
   private parseImages(text: string): string {
     // Match [[File:...]] or [[Image:...]]
     return text.replace(/\[\[(File|Image):([^\]]+)\]\]/gi, (match, type, params) => {
-      const parts = params.split('|').map((p: string) => p.trim());
+      const parts = params.split("|").map((p: string) => p.trim());
       const filename = parts[0];
 
       const imageData: WikiImage = {
         filename,
         width: undefined,
         height: undefined,
-        align: 'none',
+        align: "none",
         caption: undefined,
         thumb: false,
         frame: false,
         frameless: false,
-        border: false
+        border: false,
       };
 
       // Parse image options
       for (let i = 1; i < parts.length; i++) {
         const option = parts[i].toLowerCase();
 
-        if (option === 'thumb' || option === 'thumbnail') {
+        if (option === "thumb" || option === "thumbnail") {
           imageData.thumb = true;
-        } else if (option === 'frame' || option === 'framed') {
+        } else if (option === "frame" || option === "framed") {
           imageData.frame = true;
-        } else if (option === 'frameless') {
+        } else if (option === "frameless") {
           imageData.frameless = true;
-        } else if (option === 'border') {
+        } else if (option === "border") {
           imageData.border = true;
-        } else if (['left', 'right', 'center', 'none'].includes(option)) {
+        } else if (["left", "right", "center", "none"].includes(option)) {
           imageData.align = option as any;
-        } else if (option.endsWith('px')) {
-          const size = option.replace('px', '');
-          if (size.includes('x')) {
-            const [w, h] = size.split('x');
+        } else if (option.endsWith("px")) {
+          const size = option.replace("px", "");
+          if (size.includes("x")) {
+            const [w, h] = size.split("x");
             imageData.width = w;
             imageData.height = h;
           } else {
             imageData.width = size;
           }
-        } else if (option.startsWith('link=')) {
+        } else if (option.startsWith("link=")) {
           imageData.link = option.substring(5);
         } else if (i === parts.length - 1) {
           // Last param is usually caption
@@ -306,23 +331,23 @@ export class WikiTextParser {
    */
   private renderImage(img: WikiImage): string {
     const imageUrl = `${this.imageBaseUrl}/${encodeURIComponent(img.filename)}`;
-    const width = img.width ? `width="${this.escapeHtml(img.width)}"` : '';
-    const height = img.height ? `height="${this.escapeHtml(img.height)}"` : '';
-    const border = img.border ? 'border border-border' : '';
+    const width = img.width ? `width="${this.escapeHtml(img.width)}"` : "";
+    const height = img.height ? `height="${this.escapeHtml(img.height)}"` : "";
+    const border = img.border ? "border border-border" : "";
     const altText = this.escapeHtml(img.caption || img.filename);
 
-    let alignClass = '';
-    if (img.align === 'left') alignClass = 'float-left mr-4 mb-4';
-    else if (img.align === 'right') alignClass = 'float-right ml-4 mb-4';
-    else if (img.align === 'center') alignClass = 'mx-auto block';
+    let alignClass = "";
+    if (img.align === "left") alignClass = "float-left mr-4 mb-4";
+    else if (img.align === "right") alignClass = "float-right ml-4 mb-4";
+    else if (img.align === "center") alignClass = "mx-auto block";
 
     if (img.thumb || img.frame) {
       // Thumbnail or framed image
-      const escapedCaption = img.caption ? this.escapeHtml(img.caption) : '';
+      const escapedCaption = img.caption ? this.escapeHtml(img.caption) : "";
       return `
         <figure class="${alignClass} bg-muted p-2 rounded-lg max-w-sm">
           <img src="${this.escapeHtml(imageUrl)}" alt="${altText}" ${width} ${height} class="rounded ${border}" />
-          ${img.caption ? `<figcaption class="text-sm text-muted-foreground mt-2 text-center">${escapedCaption}</figcaption>` : ''}
+          ${img.caption ? `<figcaption class="text-sm text-muted-foreground mt-2 text-center">${escapedCaption}</figcaption>` : ""}
         </figure>
       `;
     } else {
@@ -366,11 +391,11 @@ export class WikiTextParser {
    */
   private escapeHtml(text: string): string {
     const htmlEscapes: Record<string, string> = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
     };
 
     return text.replace(/[&<>"']/g, (char) => htmlEscapes[char] || char);
@@ -381,32 +406,38 @@ export class WikiTextParser {
    */
   private parseFormatting(text: string): string {
     // Bold and italic combined '''''text'''''
-    text = text.replace(/'''''(.+?)'''''/g, '<strong><em>$1</em></strong>');
+    text = text.replace(/'''''(.+?)'''''/g, "<strong><em>$1</em></strong>");
 
     // Bold '''text'''
-    text = text.replace(/'''(.+?)'''/g, '<strong>$1</strong>');
+    text = text.replace(/'''(.+?)'''/g, "<strong>$1</strong>");
 
     // Italic ''text''
-    text = text.replace(/''(.+?)''/g, '<em>$1</em>');
+    text = text.replace(/''(.+?)''/g, "<em>$1</em>");
 
     // Strikethrough <s>text</s> or <strike>
-    text = text.replace(/<s>(.+?)<\/s>/gi, '<del>$1</del>');
-    text = text.replace(/<strike>(.+?)<\/strike>/gi, '<del>$1</del>');
+    text = text.replace(/<s>(.+?)<\/s>/gi, "<del>$1</del>");
+    text = text.replace(/<strike>(.+?)<\/strike>/gi, "<del>$1</del>");
 
     // Underline <u>text</u>
-    text = text.replace(/<u>(.+?)<\/u>/gi, '<u>$1</u>');
+    text = text.replace(/<u>(.+?)<\/u>/gi, "<u>$1</u>");
 
     // Code <code>text</code>
-    text = text.replace(/<code>(.+?)<\/code>/gi, '<code class="bg-muted px-1 py-0.5 rounded text-sm">$1</code>');
+    text = text.replace(
+      /<code>(.+?)<\/code>/gi,
+      '<code class="bg-muted px-1 py-0.5 rounded text-sm">$1</code>'
+    );
 
     // Preformatted <pre>text</pre>
-    text = text.replace(/<pre>([\s\S]+?)<\/pre>/gi, '<pre class="bg-muted p-4 rounded-lg overflow-x-auto my-4"><code>$1</code></pre>');
+    text = text.replace(
+      /<pre>([\s\S]+?)<\/pre>/gi,
+      '<pre class="bg-muted p-4 rounded-lg overflow-x-auto my-4"><code>$1</code></pre>'
+    );
 
     // Superscript <sup>text</sup>
-    text = text.replace(/<sup>(.+?)<\/sup>/gi, '<sup>$1</sup>');
+    text = text.replace(/<sup>(.+?)<\/sup>/gi, "<sup>$1</sup>");
 
     // Subscript <sub>text</sub>
-    text = text.replace(/<sub>(.+?)<\/sub>/gi, '<sub>$1</sub>');
+    text = text.replace(/<sub>(.+?)<\/sub>/gi, "<sub>$1</sub>");
 
     return text;
   }
@@ -423,11 +454,11 @@ export class WikiTextParser {
 
       for (const row of rows) {
         const cells = row.split(/\n[\|\!]/).filter((c: string) => c.trim());
-        html += '<tr>';
+        html += "<tr>";
 
         for (const cell of cells) {
-          const isHeader = row.trim().startsWith('!');
-          const cellContent = cell.replace(/^[\|\!]\s*/, '').trim();
+          const isHeader = row.trim().startsWith("!");
+          const cellContent = cell.replace(/^[\|\!]\s*/, "").trim();
 
           if (isHeader) {
             html += `<th class="border border-border px-4 py-2 bg-muted font-semibold">${cellContent}</th>`;
@@ -436,10 +467,10 @@ export class WikiTextParser {
           }
         }
 
-        html += '</tr>';
+        html += "</tr>";
       }
 
-      html += '</table>';
+      html += "</table>";
       return html;
     });
   }
@@ -451,20 +482,22 @@ export class WikiTextParser {
     // Split by double newlines for paragraphs
     const paragraphs = text.split(/\n\n+/);
 
-    return paragraphs.map(para => {
-      para = para.trim();
-      if (!para) return '';
+    return paragraphs
+      .map((para) => {
+        para = para.trim();
+        if (!para) return "";
 
-      // Don't wrap if already in a block element
-      if (para.match(/^<(h\d|div|p|ul|ol|table|blockquote|pre|hr)/i)) {
-        return para;
-      }
+        // Don't wrap if already in a block element
+        if (para.match(/^<(h\d|div|p|ul|ol|table|blockquote|pre|hr)/i)) {
+          return para;
+        }
 
-      // Convert single newlines to <br>
-      para = para.replace(/\n/g, '<br />');
+        // Convert single newlines to <br>
+        para = para.replace(/\n/g, "<br />");
 
-      return `<p class="my-2">${para}</p>`;
-    }).join('\n');
+        return `<p class="my-2">${para}</p>`;
+      })
+      .join("\n");
   }
 
   /**
@@ -472,19 +505,19 @@ export class WikiTextParser {
    */
   private parseHtmlEntities(text: string): string {
     const entities: Record<string, string> = {
-      '&nbsp;': ' ',
-      '&lt;': '<',
-      '&gt;': '>',
-      '&amp;': '&',
-      '&quot;': '"',
-      '&apos;': "'",
-      '&ndash;': '–',
-      '&mdash;': '—',
-      '&hellip;': '…',
+      "&nbsp;": " ",
+      "&lt;": "<",
+      "&gt;": ">",
+      "&amp;": "&",
+      "&quot;": '"',
+      "&apos;": "'",
+      "&ndash;": "–",
+      "&mdash;": "—",
+      "&hellip;": "…",
     };
 
     for (const [entity, char] of Object.entries(entities)) {
-      text = text.replace(new RegExp(entity, 'g'), char);
+      text = text.replace(new RegExp(entity, "g"), char);
     }
 
     return text;
@@ -525,7 +558,7 @@ export function extractWikiLinks(wikitext: string): Array<{ page: string; displa
   while ((match = linkRegex.exec(wikitext)) !== null) {
     links.push({
       page: match[1].trim(),
-      display: match[3]?.trim()
+      display: match[3]?.trim(),
     });
   }
 

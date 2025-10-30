@@ -1,15 +1,15 @@
 /**
  * Atomic Integration Service
- * 
+ *
  * This service handles real-time integration between atomic government components
  * and all government-related systems, providing live-wired updates and intelligent
  * adjustments based on component selections.
  */
 
-import { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
-import type { GovernmentBuilderState } from '~/types/government';
-import type { EconomicInputs } from '../lib/economy-data-service';
-import { generateGovernmentBuilderFromAtomicComponents } from '../utils/atomicGovernmentIntegration';
+import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import type { GovernmentBuilderState } from "~/types/government";
+import type { EconomicInputs } from "../lib/economy-data-service";
+import { generateGovernmentBuilderFromAtomicComponents } from "../utils/atomicGovernmentIntegration";
 
 export interface AtomicIntegrationState {
   selectedComponents: ComponentType[];
@@ -22,7 +22,7 @@ export interface AtomicIntegrationState {
 }
 
 export interface AtomicUpdateEvent {
-  type: 'components_changed' | 'government_updated' | 'economics_updated' | 'error' | 'warning';
+  type: "components_changed" | "government_updated" | "economics_updated" | "error" | "warning";
   timestamp: number;
   data: any;
   message: string;
@@ -44,7 +44,7 @@ export class AtomicIntegrationService {
       lastUpdate: Date.now(),
       isUpdating: false,
       errors: [],
-      warnings: []
+      warnings: [],
     };
   }
 
@@ -73,10 +73,10 @@ export class AtomicIntegrationService {
    */
   async updateComponents(components: ComponentType[]): Promise<void> {
     this.addToQueue({
-      type: 'components_changed',
+      type: "components_changed",
       timestamp: Date.now(),
       data: components,
-      message: `Updated atomic components: ${components.join(', ')}`
+      message: `Updated atomic components: ${components.join(", ")}`,
     });
 
     this.state.selectedComponents = components;
@@ -94,10 +94,10 @@ export class AtomicIntegrationService {
 
         this.state.governmentBuilder = generatedBuilder;
         this.addToQueue({
-          type: 'government_updated',
+          type: "government_updated",
           timestamp: Date.now(),
           data: generatedBuilder,
-          message: 'Government structure updated from atomic components'
+          message: "Government structure updated from atomic components",
         });
 
         // Update economic inputs if needed
@@ -107,12 +107,12 @@ export class AtomicIntegrationService {
       this.state.lastUpdate = Date.now();
       this.state.errors = [];
     } catch (error) {
-      this.state.errors.push(error instanceof Error ? error.message : 'Unknown error');
+      this.state.errors.push(error instanceof Error ? error.message : "Unknown error");
       this.addToQueue({
-        type: 'error',
+        type: "error",
         timestamp: Date.now(),
         data: error,
-        message: 'Failed to update components'
+        message: "Failed to update components",
       });
     } finally {
       this.state.isUpdating = false;
@@ -125,10 +125,10 @@ export class AtomicIntegrationService {
    */
   async updateGovernmentBuilder(builder: GovernmentBuilderState): Promise<void> {
     this.addToQueue({
-      type: 'government_updated',
+      type: "government_updated",
       timestamp: Date.now(),
       data: builder,
-      message: 'Government builder updated'
+      message: "Government builder updated",
     });
 
     this.state.governmentBuilder = builder;
@@ -140,10 +140,10 @@ export class AtomicIntegrationService {
       if (!validation.isValid) {
         this.state.warnings.push(validation.message);
         this.addToQueue({
-          type: 'warning',
+          type: "warning",
           timestamp: Date.now(),
           data: validation,
-          message: validation.message
+          message: validation.message,
         });
       }
     }
@@ -154,10 +154,10 @@ export class AtomicIntegrationService {
    */
   async updateEconomicInputs(inputs: EconomicInputs): Promise<void> {
     this.addToQueue({
-      type: 'economics_updated',
+      type: "economics_updated",
       timestamp: Date.now(),
       data: inputs,
-      message: 'Economic inputs updated'
+      message: "Economic inputs updated",
     });
 
     this.state.economicInputs = inputs;
@@ -239,19 +239,19 @@ export class AtomicIntegrationService {
    */
   private async processUpdate(event: AtomicUpdateEvent): Promise<void> {
     switch (event.type) {
-      case 'components_changed':
+      case "components_changed":
         await this.handleComponentsChanged(event.data);
         break;
-      case 'government_updated':
+      case "government_updated":
         await this.handleGovernmentUpdated(event.data);
         break;
-      case 'economics_updated':
+      case "economics_updated":
         await this.handleEconomicsUpdated(event.data);
         break;
-      case 'error':
+      case "error":
         this.handleError(event.data);
         break;
-      case 'warning':
+      case "warning":
         this.handleWarning(event.data);
         break;
     }
@@ -272,11 +272,15 @@ export class AtomicIntegrationService {
     const conflicts = this.detectConflicts(components);
 
     if (synergies.length > 0) {
-      this.state.warnings.push(`Synergies detected: ${synergies.map(s => s.description).join(', ')}`);
+      this.state.warnings.push(
+        `Synergies detected: ${synergies.map((s) => s.description).join(", ")}`
+      );
     }
 
     if (conflicts.length > 0) {
-      this.state.warnings.push(`Conflicts detected: ${conflicts.map(c => c.description).join(', ')}`);
+      this.state.warnings.push(
+        `Conflicts detected: ${conflicts.map((c) => c.description).join(", ")}`
+      );
     }
   }
 
@@ -285,7 +289,10 @@ export class AtomicIntegrationService {
    */
   private async handleGovernmentUpdated(builder: GovernmentBuilderState): Promise<void> {
     // Validate budget allocations - only add warning once
-    const totalAllocation = builder.budgetAllocations.reduce((sum, alloc) => sum + alloc.allocatedPercent, 0);
+    const totalAllocation = builder.budgetAllocations.reduce(
+      (sum, alloc) => sum + alloc.allocatedPercent,
+      0
+    );
     if (Math.abs(totalAllocation - 100) > 1) {
       const budgetWarning = `Budget allocation totals ${totalAllocation.toFixed(1)}%, should be 100%`;
       // Only add if not already present
@@ -296,11 +303,11 @@ export class AtomicIntegrationService {
 
     // Check department coverage
     const requiredDepartments = this.getRequiredDepartments(this.state.selectedComponents);
-    const actualDepartments = builder.departments.map(d => d.name);
-    const missingDepartments = requiredDepartments.filter(d => !actualDepartments.includes(d));
+    const actualDepartments = builder.departments.map((d) => d.name);
+    const missingDepartments = requiredDepartments.filter((d) => !actualDepartments.includes(d));
 
     if (missingDepartments.length > 0) {
-      this.state.warnings.push(`Missing departments: ${missingDepartments.join(', ')}`);
+      this.state.warnings.push(`Missing departments: ${missingDepartments.join(", ")}`);
     }
   }
 
@@ -309,11 +316,16 @@ export class AtomicIntegrationService {
    */
   private async handleEconomicsUpdated(inputs: EconomicInputs): Promise<void> {
     // Validate spending against GDP
-    const spendingPercent = (inputs.governmentSpending.totalSpending / inputs.coreIndicators.nominalGDP) * 100;
+    const spendingPercent =
+      (inputs.governmentSpending.totalSpending / inputs.coreIndicators.nominalGDP) * 100;
     if (spendingPercent > 50) {
-      this.state.warnings.push(`Government spending is ${spendingPercent.toFixed(1)}% of GDP, which is very high`);
+      this.state.warnings.push(
+        `Government spending is ${spendingPercent.toFixed(1)}% of GDP, which is very high`
+      );
     } else if (spendingPercent < 10) {
-      this.state.warnings.push(`Government spending is ${spendingPercent.toFixed(1)}% of GDP, which is very low`);
+      this.state.warnings.push(
+        `Government spending is ${spendingPercent.toFixed(1)}% of GDP, which is very low`
+      );
     }
   }
 
@@ -342,21 +354,26 @@ export class AtomicIntegrationService {
       governmentSpending: {
         ...this.state.economicInputs.governmentSpending,
         totalSpending: builder.structure.totalBudget,
-        spendingGDPPercent: this.state.economicInputs.coreIndicators.nominalGDP > 0 
-          ? (builder.structure.totalBudget / this.state.economicInputs.coreIndicators.nominalGDP) * 100 
-          : 35,
+        spendingGDPPercent:
+          this.state.economicInputs.coreIndicators.nominalGDP > 0
+            ? (builder.structure.totalBudget /
+                this.state.economicInputs.coreIndicators.nominalGDP) *
+              100
+            : 35,
         spendingCategories: builder.departments.map((dept, index) => {
-          const allocation = builder.budgetAllocations.find(a => a.departmentId === index.toString());
+          const allocation = builder.budgetAllocations.find(
+            (a) => a.departmentId === index.toString()
+          );
           return {
             category: dept.name,
             amount: allocation?.allocatedAmount || 0,
             percent: allocation?.allocatedPercent || 0,
             icon: dept.icon,
             color: dept.color,
-            description: dept.description
+            description: dept.description,
           };
-        })
-      }
+        }),
+      },
     };
 
     this.state.economicInputs = updatedInputs;
@@ -365,64 +382,72 @@ export class AtomicIntegrationService {
   /**
    * Validate government against atomic components
    */
-  private validateGovernmentAgainstComponents(builder: GovernmentBuilderState): { isValid: boolean; message: string } {
+  private validateGovernmentAgainstComponents(builder: GovernmentBuilderState): {
+    isValid: boolean;
+    message: string;
+  } {
     const requiredDepartments = this.getRequiredDepartments(this.state.selectedComponents);
-    const actualDepartments = builder.departments.map(d => d.name);
-    const missingDepartments = requiredDepartments.filter(d => !actualDepartments.includes(d));
+    const actualDepartments = builder.departments.map((d) => d.name);
+    const missingDepartments = requiredDepartments.filter((d) => !actualDepartments.includes(d));
 
     if (missingDepartments.length > 0) {
       return {
         isValid: false,
-        message: `Government structure missing departments required by atomic components: ${missingDepartments.join(', ')}`
+        message: `Government structure missing departments required by atomic components: ${missingDepartments.join(", ")}`,
       };
     }
 
-    return { isValid: true, message: '' };
+    return { isValid: true, message: "" };
   }
 
   /**
    * Validate component combination
    */
-  private validateComponentCombination(components: ComponentType[]): { isValid: boolean; message: string } {
+  private validateComponentCombination(components: ComponentType[]): {
+    isValid: boolean;
+    message: string;
+  } {
     // Check for mutually exclusive components
     const exclusivePairs = [
       [ComponentType.CENTRALIZED_POWER, ComponentType.FEDERAL_SYSTEM],
       [ComponentType.DEMOCRATIC_PROCESS, ComponentType.AUTOCRATIC_PROCESS],
-      [ComponentType.CONSENSUS_PROCESS, ComponentType.AUTOCRATIC_PROCESS]
+      [ComponentType.CONSENSUS_PROCESS, ComponentType.AUTOCRATIC_PROCESS],
     ];
 
     for (const [comp1, comp2] of exclusivePairs) {
       if (components.includes(comp1) && components.includes(comp2)) {
         return {
           isValid: false,
-          message: `Components ${comp1} and ${comp2} are mutually exclusive`
+          message: `Components ${comp1} and ${comp2} are mutually exclusive`,
         };
       }
     }
 
-    return { isValid: true, message: '' };
+    return { isValid: true, message: "" };
   }
 
   /**
    * Detect synergies between components
    */
-  private detectSynergies(components: ComponentType[]): Array<{ components: ComponentType[]; description: string }> {
+  private detectSynergies(
+    components: ComponentType[]
+  ): Array<{ components: ComponentType[]; description: string }> {
     const synergies: Array<{ components: ComponentType[]; description: string }> = [];
 
     // Define synergy patterns
     const synergyPatterns = [
       {
         components: [ComponentType.DEMOCRATIC_PROCESS, ComponentType.RULE_OF_LAW],
-        description: 'Democratic rule of law creates strong legitimacy'
+        description: "Democratic rule of law creates strong legitimacy",
       },
       {
         components: [ComponentType.FEDERAL_SYSTEM, ComponentType.PROFESSIONAL_BUREAUCRACY],
-        description: 'Professional federal administration enhances efficiency'
-      }
+        description: "Professional federal administration enhances efficiency",
+      },
     ];
 
     for (const pattern of synergyPatterns) {
-      if (pattern.components.every(comp => components.includes(comp))) {
+      if (pattern.components.every((comp) => components.includes(comp))) {
         synergies.push(pattern);
       }
     }
@@ -434,7 +459,9 @@ export class AtomicIntegrationService {
    * Detect conflicts between components
    * Note: Conflicts are now handled by atomicGovernmentIntegration utility to avoid duplicates
    */
-  private detectConflicts(components: ComponentType[]): Array<{ components: ComponentType[]; description: string }> {
+  private detectConflicts(
+    components: ComponentType[]
+  ): Array<{ components: ComponentType[]; description: string }> {
     // Conflicts are now handled by atomicGovernmentIntegration utility
     // This prevents duplicate conflict messages in the UI
     return [];
@@ -456,15 +483,18 @@ export class AtomicIntegrationService {
    */
   private notifyListeners(): void {
     const newState = { ...this.state };
-    
+
     // Only notify if state actually changed (deep equality check)
-    if (!this.lastNotifiedState || JSON.stringify(newState) !== JSON.stringify(this.lastNotifiedState)) {
+    if (
+      !this.lastNotifiedState ||
+      JSON.stringify(newState) !== JSON.stringify(this.lastNotifiedState)
+    ) {
       this.lastNotifiedState = newState;
-      this.listeners.forEach(listener => {
+      this.listeners.forEach((listener) => {
         try {
           listener(newState);
         } catch (error) {
-          console.error('Error in atomic integration listener:', error);
+          console.error("Error in atomic integration listener:", error);
         }
       });
     }

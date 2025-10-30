@@ -6,7 +6,7 @@
 // Core entity properties
 export interface BaseEntity {
   id: string;
-  createdAt: number;  // Unix timestamp - standardized across all entities
+  createdAt: number; // Unix timestamp - standardized across all entities
   updatedAt?: number;
 }
 
@@ -24,11 +24,11 @@ export interface BaseNotification extends BaseEntity {
   title: string;
   message: string;
   type: string;
-  severity: StandardPriority;  // Aligned with priority for consistency
+  severity: StandardPriority; // Aligned with priority for consistency
   read?: boolean;
 }
 
-// Base for all intelligence/insight entities  
+// Base for all intelligence/insight entities
 export interface BaseIntelligence extends BaseEntity {
   category: StandardCategory;
   source: string;
@@ -37,15 +37,22 @@ export interface BaseIntelligence extends BaseEntity {
 }
 
 // Standardized enums (replace all variants)
-export type StandardPriority = 'critical' | 'high' | 'medium' | 'low';
-export type StandardCategory = 'economic' | 'diplomatic' | 'social' | 'governance' | 'security' | 'infrastructure' | 'crisis';
-export type StandardTimeframe = 'immediate' | 'short' | 'medium' | 'long';
-export type StandardTrend = 'up' | 'down' | 'stable';
+export type StandardPriority = "critical" | "high" | "medium" | "low";
+export type StandardCategory =
+  | "economic"
+  | "diplomatic"
+  | "social"
+  | "governance"
+  | "security"
+  | "infrastructure"
+  | "crisis";
+export type StandardTimeframe = "immediate" | "short" | "medium" | "long";
+export type StandardTrend = "up" | "down" | "stable";
 
 // Icon reference type (standardized across system)
 export interface IconReference {
-  name: string;      // Lucide icon name
-  variant?: 'solid' | 'outline';
+  name: string; // Lucide icon name
+  variant?: "solid" | "outline";
   color?: string;
 }
 

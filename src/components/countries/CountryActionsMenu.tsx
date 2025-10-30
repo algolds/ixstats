@@ -10,7 +10,7 @@ import {
   Heart,
   X,
   Loader2,
-  Sparkles
+  Sparkles,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
@@ -33,21 +33,22 @@ export function CountryActionsMenu({
   viewerCountryId,
   isOpen,
   onClose,
-  isOwnCountry = false
+  isOwnCountry = false,
 }: CountryActionsMenuProps) {
   const router = useRouter();
   const [selectedAchievement, setSelectedAchievement] = useState<string>("");
 
   // Check if viewer is following target country
-  const { data: followStatus, refetch: refetchFollowStatus } = api.diplomatic.getFollowStatus.useQuery(
-    {
-      viewerCountryId: viewerCountryId || "",
-      targetCountryId
-    },
-    {
-      enabled: !!viewerCountryId
-    }
-  );
+  const { data: followStatus, refetch: refetchFollowStatus } =
+    api.diplomatic.getFollowStatus.useQuery(
+      {
+        viewerCountryId: viewerCountryId || "",
+        targetCountryId,
+      },
+      {
+        enabled: !!viewerCountryId,
+      }
+    );
 
   // Get recent achievements for congratulate dropdown
   const { data: recentAchievements } = api.achievements.getRecentByCountry.useQuery(
@@ -69,7 +70,7 @@ export function CountryActionsMenu({
     },
     onError: (error) => {
       toast.error(`Failed to follow: ${error.message}`);
-    }
+    },
   });
 
   const unfollowMutation = api.diplomatic.unfollowCountry.useMutation({
@@ -79,10 +80,8 @@ export function CountryActionsMenu({
     },
     onError: (error) => {
       toast.error(`Failed to unfollow: ${error.message}`);
-    }
+    },
   });
-
-
 
   // Embassy establishment mutation
   const establishEmbassyMutation = api.diplomatic.establishEmbassy.useMutation({
@@ -92,7 +91,7 @@ export function CountryActionsMenu({
     },
     onError: (error) => {
       toast.error(`Failed to establish embassy: ${error.message}`);
-    }
+    },
   });
 
   // Congratulate via ThinkShare mutation
@@ -104,7 +103,7 @@ export function CountryActionsMenu({
     },
     onError: (error) => {
       toast.error(`Failed to send congratulations: ${error.message}`);
-    }
+    },
   });
 
   // Handle follow/unfollow toggle
@@ -117,12 +116,12 @@ export function CountryActionsMenu({
     if (followStatus?.isFollowing) {
       unfollowMutation.mutate({
         followerCountryId: viewerCountryId,
-        followedCountryId: targetCountryId
+        followedCountryId: targetCountryId,
       });
     } else {
       followMutation.mutate({
         followerCountryId: viewerCountryId,
-        followedCountryId: targetCountryId
+        followedCountryId: targetCountryId,
       });
     }
   }, [viewerCountryId, followStatus, targetCountryId, followMutation, unfollowMutation]);
@@ -145,7 +144,7 @@ export function CountryActionsMenu({
       hostCountryId: targetCountryId,
       guestCountryId: viewerCountryId,
       name: `Embassy in ${targetCountryName}`,
-      location: "Capital District"
+      location: "Capital District",
     });
   }, [viewerCountryId, targetCountryId, targetCountryName, establishEmbassyMutation]);
 
@@ -161,7 +160,9 @@ export function CountryActionsMenu({
       return;
     }
 
-    const achievement = recentAchievements?.find((a: { id: string }) => a.id === selectedAchievement);
+    const achievement = recentAchievements?.find(
+      (a: { id: string }) => a.id === selectedAchievement
+    );
     if (!achievement) return;
 
     // Note: getAccountsByCountry is deprecated and returns empty array
@@ -170,14 +171,22 @@ export function CountryActionsMenu({
       accountId: viewerCountryId, // Use viewer's country ID directly
       content: `🎉 Congratulations to ${targetCountryName} on achieving: ${achievement.title}! ${achievement.description || "A remarkable accomplishment!"}`,
       visibility: "public" as const,
-      hashtags: ["achievement", targetCountryName.replace(/\s/g, "")]
+      hashtags: ["achievement", targetCountryName.replace(/\s/g, "")],
     });
-  }, [viewerCountryId, targetCountryId, targetCountryName, selectedAchievement, recentAchievements, congratulateMutation]);
+  }, [
+    viewerCountryId,
+    targetCountryId,
+    targetCountryName,
+    selectedAchievement,
+    recentAchievements,
+    congratulateMutation,
+  ]);
 
-  const isLoading = followMutation.isPending ||
-                    unfollowMutation.isPending ||
-                    establishEmbassyMutation.isPending ||
-                    congratulateMutation.isPending;
+  const isLoading =
+    followMutation.isPending ||
+    unfollowMutation.isPending ||
+    establishEmbassyMutation.isPending ||
+    congratulateMutation.isPending;
 
   return (
     <AnimatePresence>
@@ -189,7 +198,7 @@ export function CountryActionsMenu({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-xl z-50"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xl"
           />
 
           {/* Menu Panel - Glassmorphic Design */}
@@ -198,31 +207,29 @@ export function CountryActionsMenu({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-sm mx-4"
+            className="fixed top-1/2 left-1/2 z-50 mx-4 w-full max-w-sm -translate-x-1/2 -translate-y-1/2"
           >
-            <div className="relative rounded-2xl p-6 shadow-2xl border border-white/20 backdrop-blur-2xl bg-gradient-to-br from-white/10 via-white/5 to-transparent dark:from-black/40 dark:via-black/20 dark:to-transparent">
+            <div className="relative rounded-2xl border border-white/20 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-6 shadow-2xl backdrop-blur-2xl dark:from-black/40 dark:via-black/20 dark:to-transparent">
               {/* Glass reflection effect */}
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/20 to-transparent dark:from-white/5 dark:to-transparent pointer-events-none" />
+              <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-white/20 to-transparent dark:from-white/5 dark:to-transparent" />
 
               {/* Content */}
               <div className="relative z-10">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
+                <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-4">
                   <div>
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <h3 className="flex items-center gap-2 text-base font-bold text-white">
                       <Sparkles className="h-5 w-5 text-blue-400" />
                       Country Actions
                     </h3>
-                    <p className="text-sm text-white/60 mt-1">
-                      {targetCountryName}
-                    </p>
+                    <p className="mt-1 text-sm text-white/60">{targetCountryName}</p>
                   </div>
                   <button
                     onClick={onClose}
-                    className="p-2 hover:bg-white/10 rounded-xl transition-all duration-200 group"
+                    className="group rounded-xl p-2 transition-all duration-200 hover:bg-white/10"
                     aria-label="Close"
                   >
-                    <X className="h-5 w-5 text-white/60 group-hover:text-white transition-colors" />
+                    <X className="h-5 w-5 text-white/60 transition-colors group-hover:text-white" />
                   </button>
                 </div>
 
@@ -235,7 +242,7 @@ export function CountryActionsMenu({
                         router.push(createUrl("/mycountry"));
                         onClose();
                       }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 rounded-xl transition-all duration-200 backdrop-blur-sm border border-amber-500/20"
+                      className="flex w-full items-center gap-3 rounded-xl border border-amber-500/20 bg-gradient-to-r from-amber-500/20 to-orange-500/20 px-4 py-3 text-sm font-medium text-amber-300 backdrop-blur-sm transition-all duration-200 hover:from-amber-500/30 hover:to-orange-500/30"
                     >
                       <Building2 className="h-4 w-4" />
                       MyCountry Dashboard
@@ -248,10 +255,10 @@ export function CountryActionsMenu({
                       onClick={handleFollowToggle}
                       disabled={!viewerCountryId || isLoading}
                       className={cn(
-                        "w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 backdrop-blur-sm border disabled:opacity-50",
+                        "flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm font-medium backdrop-blur-sm transition-all duration-200 disabled:opacity-50",
                         followStatus?.isFollowing
-                          ? "bg-gradient-to-r from-red-500/20 to-pink-500/20 hover:from-red-500/30 hover:to-pink-500/30 text-red-300 border-red-500/20"
-                          : "bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 text-blue-300 border-blue-500/20"
+                          ? "border-red-500/20 bg-gradient-to-r from-red-500/20 to-pink-500/20 text-red-300 hover:from-red-500/30 hover:to-pink-500/30"
+                          : "border-blue-500/20 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-300 hover:from-blue-500/30 hover:to-cyan-500/30"
                       )}
                     >
                       {followMutation.isPending || unfollowMutation.isPending ? (
@@ -270,7 +277,7 @@ export function CountryActionsMenu({
                     <button
                       onClick={handleDiplomaticMessage}
                       disabled={!viewerCountryId}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 hover:from-purple-500/30 hover:to-fuchsia-500/30 text-purple-300 rounded-xl transition-all duration-200 backdrop-blur-sm border border-purple-500/20 disabled:opacity-50"
+                      className="flex w-full items-center gap-3 rounded-xl border border-purple-500/20 bg-gradient-to-r from-purple-500/20 to-fuchsia-500/20 px-4 py-3 text-sm font-medium text-purple-300 backdrop-blur-sm transition-all duration-200 hover:from-purple-500/30 hover:to-fuchsia-500/30 disabled:opacity-50"
                     >
                       <MessageSquare className="h-4 w-4" />
                       Secure Message
@@ -282,7 +289,7 @@ export function CountryActionsMenu({
                     <button
                       onClick={handleEstablishEmbassy}
                       disabled={!viewerCountryId || isLoading}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium bg-gradient-to-r from-amber-500/20 to-yellow-500/20 hover:from-amber-500/30 hover:to-yellow-500/30 text-amber-300 rounded-xl transition-all duration-200 backdrop-blur-sm border border-amber-500/20 disabled:opacity-50"
+                      className="flex w-full items-center gap-3 rounded-xl border border-amber-500/20 bg-gradient-to-r from-amber-500/20 to-yellow-500/20 px-4 py-3 text-sm font-medium text-amber-300 backdrop-blur-sm transition-all duration-200 hover:from-amber-500/30 hover:to-yellow-500/30 disabled:opacity-50"
                     >
                       {establishEmbassyMutation.isPending ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -295,11 +302,11 @@ export function CountryActionsMenu({
 
                   {/* Congratulate */}
                   {!isOwnCountry && recentAchievements && recentAchievements.length > 0 && (
-                    <div className="relative group">
+                    <div className="group relative">
                       <button
                         onClick={handleCongratulate}
                         disabled={!viewerCountryId || isLoading || !selectedAchievement}
-                        className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium bg-gradient-to-r from-green-500/20 to-emerald-500/20 hover:from-green-500/30 hover:to-emerald-500/30 text-green-300 rounded-xl transition-all duration-200 backdrop-blur-sm border border-green-500/20 disabled:opacity-50"
+                        className="flex w-full items-center justify-between rounded-xl border border-green-500/20 bg-gradient-to-r from-green-500/20 to-emerald-500/20 px-4 py-3 text-sm font-medium text-green-300 backdrop-blur-sm transition-all duration-200 hover:from-green-500/30 hover:to-emerald-500/30 disabled:opacity-50"
                       >
                         <div className="flex items-center gap-3">
                           {congratulateMutation.isPending ? (
@@ -313,14 +320,22 @@ export function CountryActionsMenu({
                           value={selectedAchievement}
                           onChange={(e) => setSelectedAchievement(e.target.value)}
                           onClick={(e) => e.stopPropagation()}
-                          className="px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-xs text-white/90 focus:outline-none focus:ring-2 focus:ring-green-500/50 backdrop-blur-sm hover:bg-white/20 transition-colors cursor-pointer min-w-[140px]"
+                          className="min-w-[140px] cursor-pointer rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs text-white/90 backdrop-blur-sm transition-colors hover:bg-white/20 focus:ring-2 focus:ring-green-500/50 focus:outline-none"
                         >
-                          <option value="" className="bg-gray-800 text-white">Select achievement...</option>
-                          {recentAchievements.map((achievement: { id: string; icon?: string | null; title: string }) => (
-                            <option key={achievement.id} value={achievement.id} className="bg-gray-800 text-white">
-                              {achievement.icon} {achievement.title}
-                            </option>
-                          ))}
+                          <option value="" className="bg-gray-800 text-white">
+                            Select achievement...
+                          </option>
+                          {recentAchievements.map(
+                            (achievement: { id: string; icon?: string | null; title: string }) => (
+                              <option
+                                key={achievement.id}
+                                value={achievement.id}
+                                className="bg-gray-800 text-white"
+                              >
+                                {achievement.icon} {achievement.title}
+                              </option>
+                            )
+                          )}
                         </select>
                       </button>
                     </div>
@@ -329,8 +344,8 @@ export function CountryActionsMenu({
 
                 {/* Footer */}
                 {!viewerCountryId && (
-                  <div className="mt-4 pt-4 border-t border-white/10">
-                    <p className="text-xs text-white/50 text-center">
+                  <div className="mt-4 border-t border-white/10 pt-4">
+                    <p className="text-center text-xs text-white/50">
                       Login required to perform actions
                     </p>
                   </div>

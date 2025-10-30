@@ -16,8 +16,8 @@
  * @module useDiplomaticScenarios
  */
 
-import { useMemo } from 'react';
-import { api } from '~/trpc/react';
+import { useMemo } from "react";
+import { api } from "~/trpc/react";
 import {
   DiplomaticScenarioGenerator,
   type DiplomaticScenario,
@@ -26,14 +26,14 @@ import {
   type TimeFrame,
   type CountryData,
   type WorldContext,
-} from '~/lib/diplomatic-scenario-generator';
+} from "~/lib/diplomatic-scenario-generator";
 
 /**
  * Scenario filters interface
  */
 export interface ScenarioFilters {
   type?: ScenarioType;
-  relationshipLevel?: 'hostile' | 'tense' | 'neutral' | 'friendly' | 'allied';
+  relationshipLevel?: "hostile" | "tense" | "neutral" | "friendly" | "allied";
   difficulty?: DifficultyLevel;
   timeFrame?: TimeFrame;
   isActive?: boolean;
@@ -124,7 +124,11 @@ export interface ParsedDiplomaticScenario {
  */
 export function useDiplomaticScenarios(filters?: ScenarioFilters) {
   // ==================== DATABASE QUERY ====================
-  const { data: dbResponse, isLoading, error } = api.diplomaticScenarios.getAllScenarios.useQuery(
+  const {
+    data: dbResponse,
+    isLoading,
+    error,
+  } = api.diplomaticScenarios.getAllScenarios.useQuery(
     {
       type: filters?.type as any,
       relationshipLevel: filters?.relationshipLevel,
@@ -151,8 +155,8 @@ export function useDiplomaticScenarios(filters?: ScenarioFilters) {
   // Track scenario view/engagement for analytics
   const { mutate: incrementUsage } = api.diplomaticScenarios.incrementScenarioUsage.useMutation({
     onError: (err) => {
-      console.warn('[useDiplomaticScenarios] Failed to track scenario usage:', err);
-    }
+      console.warn("[useDiplomaticScenarios] Failed to track scenario usage:", err);
+    },
   });
 
   // ==================== PROCESS SCENARIOS WITH FALLBACK ====================
@@ -165,13 +169,15 @@ export function useDiplomaticScenarios(filters?: ScenarioFilters) {
         total: dbTotal,
         hasMore: dbHasMore,
         isUsingFallback: false,
-        dataSource: 'database' as const,
+        dataSource: "database" as const,
       };
     }
 
     // Fallback to hardcoded data
     if (!isLoading) {
-      console.warn('[useDiplomaticScenarios] Database empty or unavailable, falling back to hardcoded scenarios');
+      console.warn(
+        "[useDiplomaticScenarios] Database empty or unavailable, falling back to hardcoded scenarios"
+      );
     }
 
     const fallbackScenarios = getFallbackScenarios(filters);
@@ -181,7 +187,7 @@ export function useDiplomaticScenarios(filters?: ScenarioFilters) {
       total: fallbackScenarios.length,
       hasMore: false,
       isUsingFallback: true,
-      dataSource: 'fallback' as const,
+      dataSource: "fallback" as const,
     };
   }, [dbScenarios, dbTotal, dbHasMore, filters, isLoading]);
 
@@ -196,7 +202,7 @@ export function useDiplomaticScenarios(filters?: ScenarioFilters) {
     hasMore,
     incrementUsage: (scenarioId: string) => {
       incrementUsage({ scenarioId });
-    }
+    },
   };
 }
 
@@ -213,113 +219,113 @@ function getFallbackScenarios(filters?: ScenarioFilters): ParsedDiplomaticScenar
 
   // Create mock world context for scenario generation
   const mockContext: WorldContext = {
-    playerCountryId: filters?.country1Id || 'mock-country-1',
-    playerCountryName: 'Player Country',
+    playerCountryId: filters?.country1Id || "mock-country-1",
+    playerCountryName: "Player Country",
     embassies: [
       {
-        id: 'mock-embassy-1',
-        hostCountryId: filters?.country2Id || 'mock-country-2',
-        guestCountryId: filters?.country1Id || 'mock-country-1',
+        id: "mock-embassy-1",
+        hostCountryId: filters?.country2Id || "mock-country-2",
+        guestCountryId: filters?.country1Id || "mock-country-1",
         level: 3,
-        status: 'active',
+        status: "active",
         influence: 50,
         reputation: 60,
-        specialization: 'trade',
-      }
+        specialization: "trade",
+      },
     ],
     relationships: [
       {
-        country1: filters?.country1Id || 'mock-country-1',
-        country2: filters?.country2Id || 'mock-country-2',
-        relationship: filters?.relationshipLevel || 'neutral',
+        country1: filters?.country1Id || "mock-country-1",
+        country2: filters?.country2Id || "mock-country-2",
+        relationship: filters?.relationshipLevel || "neutral",
         strength: 50,
-        status: 'active',
-      }
+        status: "active",
+      },
     ],
     treaties: [],
     recentMissions: [],
     diplomaticHistory: [],
     economicData: {
       playerGDP: 500000000000,
-      playerTier: 'developed',
-    }
+      playerTier: "developed",
+    },
   };
 
   // Create mock countries
   const mockCountries: CountryData[] = [
     {
-      id: filters?.country2Id || 'mock-country-2',
-      name: 'Target Country',
-      economicTier: 'developing',
-      region: 'Global',
-      governmentType: 'Democracy',
-    }
+      id: filters?.country2Id || "mock-country-2",
+      name: "Target Country",
+      economicTier: "developing",
+      region: "Global",
+      governmentType: "Democracy",
+    },
   ];
 
   // Generate scenarios using the generator
   const generatedScenarios = generator.generateScenarios(mockContext, mockCountries, 10);
 
   // Transform to database schema format
-  const transformedScenarios: ParsedDiplomaticScenario[] = generatedScenarios.map((scenario, index) => {
-    // Map difficulty from metadata
-    const difficulty = scenario.difficulty;
-    const timeFrame = scenario.timeFrame;
+  const transformedScenarios: ParsedDiplomaticScenario[] = generatedScenarios.map(
+    (scenario, index) => {
+      // Map difficulty from metadata
+      const difficulty = scenario.difficulty;
+      const timeFrame = scenario.timeFrame;
 
-    return {
-      id: scenario.id,
-      type: scenario.type,
-      title: scenario.title,
-      narrative: scenario.narrative.introduction + ' ' + scenario.narrative.situation,
-      country1Id: mockContext.playerCountryId,
-      country2Id: scenario.involvedCountries.primary,
-      country1Name: mockContext.playerCountryName,
-      country2Name: mockCountries[0]?.name || 'Target Country',
-      relationshipState: filters?.relationshipLevel || 'neutral',
-      relationshipStrength: 50,
-      responseOptions: scenario.choices.map(choice => ({
-        id: choice.id,
-        label: choice.label,
-        description: choice.description,
-        skillRequired: choice.skillRequired,
-        skillLevel: choice.skillLevel,
-        riskLevel: choice.riskLevel,
-        effects: choice.effects,
-        predictedOutcomes: choice.predictedOutcomes,
-      })),
-      tags: [scenario.type, difficulty, timeFrame],
-      culturalImpact: Math.floor(Math.random() * 50) + 30, // 30-80 range
-      diplomaticRisk: Math.floor(Math.random() * 50) + 30, // 30-80 range
-      economicCost: Math.floor(Math.random() * 40) + 20, // 20-60 range
-      status: 'active',
-      expiresAt: scenario.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-  });
+      return {
+        id: scenario.id,
+        type: scenario.type,
+        title: scenario.title,
+        narrative: scenario.narrative.introduction + " " + scenario.narrative.situation,
+        country1Id: mockContext.playerCountryId,
+        country2Id: scenario.involvedCountries.primary,
+        country1Name: mockContext.playerCountryName,
+        country2Name: mockCountries[0]?.name || "Target Country",
+        relationshipState: filters?.relationshipLevel || "neutral",
+        relationshipStrength: 50,
+        responseOptions: scenario.choices.map((choice) => ({
+          id: choice.id,
+          label: choice.label,
+          description: choice.description,
+          skillRequired: choice.skillRequired,
+          skillLevel: choice.skillLevel,
+          riskLevel: choice.riskLevel,
+          effects: choice.effects,
+          predictedOutcomes: choice.predictedOutcomes,
+        })),
+        tags: [scenario.type, difficulty, timeFrame],
+        culturalImpact: Math.floor(Math.random() * 50) + 30, // 30-80 range
+        diplomaticRisk: Math.floor(Math.random() * 50) + 30, // 30-80 range
+        economicCost: Math.floor(Math.random() * 40) + 20, // 20-60 range
+        status: "active",
+        expiresAt: scenario.expiresAt || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    }
+  );
 
   // Apply filters
   let filtered = transformedScenarios;
 
   if (filters?.type) {
-    filtered = filtered.filter(s => s.type === filters.type);
+    filtered = filtered.filter((s) => s.type === filters.type);
   }
 
   if (filters?.difficulty) {
-    filtered = filtered.filter(s => s.tags.includes(filters.difficulty!));
+    filtered = filtered.filter((s) => s.tags.includes(filters.difficulty!));
   }
 
   if (filters?.timeFrame) {
-    filtered = filtered.filter(s => s.tags.includes(filters.timeFrame!));
+    filtered = filtered.filter((s) => s.tags.includes(filters.timeFrame!));
   }
 
   if (filters?.relationshipLevel) {
-    filtered = filtered.filter(s => s.relationshipState === filters.relationshipLevel);
+    filtered = filtered.filter((s) => s.relationshipState === filters.relationshipLevel);
   }
 
   if (filters?.isActive === true) {
-    filtered = filtered.filter(s =>
-      s.status === 'active' && s.expiresAt.getTime() > Date.now()
-    );
+    filtered = filtered.filter((s) => s.status === "active" && s.expiresAt.getTime() > Date.now());
   }
 
   return filtered;
@@ -335,7 +341,11 @@ function getFallbackScenarios(filters?: ScenarioFilters): ParsedDiplomaticScenar
  * @returns {Object} Scenario data and loading state
  */
 export function useScenarioById(scenarioId: string) {
-  const { data: dbScenario, isLoading, error } = api.diplomaticScenarios.getScenarioById.useQuery(
+  const {
+    data: dbScenario,
+    isLoading,
+    error,
+  } = api.diplomaticScenarios.getScenarioById.useQuery(
     { id: scenarioId },
     {
       staleTime: 10 * 60 * 1000, // 10-minute cache
@@ -350,10 +360,10 @@ export function useScenarioById(scenarioId: string) {
     }
 
     // Check fallback scenarios
-    if (!isLoading && scenarioId.startsWith('scenario_')) {
-      console.warn('[useScenarioById] Scenario not found in database, checking fallback');
+    if (!isLoading && scenarioId.startsWith("scenario_")) {
+      console.warn("[useScenarioById] Scenario not found in database, checking fallback");
       const fallbackScenarios = getFallbackScenarios();
-      return fallbackScenarios.find(s => s.id === scenarioId) || null;
+      return fallbackScenarios.find((s) => s.id === scenarioId) || null;
     }
 
     return null;
@@ -378,13 +388,18 @@ export function useScenarioById(scenarioId: string) {
  * @returns {Object} Mutation data and state
  */
 export function useScenarioGeneration(countryId: string, targetCountryId?: string) {
-  const { mutate: generateScenario, isPending, error, data } = api.diplomaticScenarios.generateScenario.useMutation({
+  const {
+    mutate: generateScenario,
+    isPending,
+    error,
+    data,
+  } = api.diplomaticScenarios.generateScenario.useMutation({
     onSuccess: (result) => {
-      console.log('[useScenarioGeneration] Generated scenario:', result.scenario.title);
+      console.log("[useScenarioGeneration] Generated scenario:", result.scenario.title);
     },
     onError: (err) => {
-      console.error('[useScenarioGeneration] Failed to generate scenario:', err);
-    }
+      console.error("[useScenarioGeneration] Failed to generate scenario:", err);
+    },
   });
 
   const generate = (options?: {
@@ -420,10 +435,13 @@ export function useScenarioGeneration(countryId: string, targetCountryId?: strin
  * @param {Object} [options] - Pagination options
  * @returns {Object} History data and loading state
  */
-export function useScenarioHistory(countryId: string, options?: {
-  limit?: number;
-  offset?: number;
-}) {
+export function useScenarioHistory(
+  countryId: string,
+  options?: {
+    limit?: number;
+    offset?: number;
+  }
+) {
   const { data, isLoading, error } = api.diplomaticScenarios.getPlayerScenarioHistory.useQuery(
     {
       countryId,
@@ -443,7 +461,7 @@ export function useScenarioHistory(countryId: string, options?: {
     }
 
     if (!isLoading) {
-      console.warn('[useScenarioHistory] No history found in database');
+      console.warn("[useScenarioHistory] No history found in database");
     }
 
     return [];
@@ -483,7 +501,7 @@ export function useActiveScenarios(countryId: string) {
 
     // Fallback: generate mock active scenarios
     if (!isLoading) {
-      console.warn('[useActiveScenarios] No active scenarios in database, using fallback');
+      console.warn("[useActiveScenarios] No active scenarios in database, using fallback");
       return getFallbackScenarios({ isActive: true, country1Id: countryId }).slice(0, 3);
     }
 
@@ -508,13 +526,18 @@ export function useActiveScenarios(countryId: string) {
  * @returns {Object} Mutation data and state
  */
 export function useRecordChoice() {
-  const { mutate: recordChoice, isPending, error, data } = api.diplomaticScenarios.recordChoice.useMutation({
+  const {
+    mutate: recordChoice,
+    isPending,
+    error,
+    data,
+  } = api.diplomaticScenarios.recordChoice.useMutation({
     onSuccess: (result) => {
-      console.log('[useRecordChoice] Recorded choice for scenario:', result.scenario.title);
+      console.log("[useRecordChoice] Recorded choice for scenario:", result.scenario.title);
     },
     onError: (err) => {
-      console.error('[useRecordChoice] Failed to record choice:', err);
-    }
+      console.error("[useRecordChoice] Failed to record choice:", err);
+    },
   });
 
   return {
@@ -589,10 +612,7 @@ export function useScenarioRelevance(scenarioId: string, countryId: string) {
  * @param {Object} [options] - Query options
  * @returns {Object} Grouped scenarios and loading state
  */
-export function useScenariosByType(options?: {
-  isActive?: boolean;
-  country1Id?: string;
-}) {
+export function useScenariosByType(options?: { isActive?: boolean; country1Id?: string }) {
   const { data, isLoading, error } = api.diplomaticScenarios.getScenariosByType.useQuery(
     {
       isActive: options?.isActive ?? true,

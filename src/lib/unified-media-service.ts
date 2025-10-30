@@ -1,7 +1,7 @@
 // src/lib/unified-media-service.ts
 // Unified Media Service - Single source of truth for all WikiMedia data
 
-import { IxnayWikiService } from './mediawiki-service';
+import { IxnayWikiService } from "./mediawiki-service";
 
 export interface CacheStats {
   totalRequests: number;
@@ -17,7 +17,13 @@ export interface FlagData {
   localPath?: string;
   cached: boolean;
   timestamp: number;
-  source: 'server-file' | 'memory-cache' | 'mediawiki-api' | 'mediawiki-cache' | 'direct-pattern' | 'placeholder';
+  source:
+    | "server-file"
+    | "memory-cache"
+    | "mediawiki-api"
+    | "mediawiki-cache"
+    | "direct-pattern"
+    | "placeholder";
 }
 
 export interface CountryInfobox {
@@ -72,11 +78,7 @@ class UnifiedCache {
     });
   }
 
-  async getOrFetch<T>(
-    key: string,
-    fetcher: () => Promise<T>,
-    source: string
-  ): Promise<T | null> {
+  async getOrFetch<T>(key: string, fetcher: () => Promise<T>, source: string): Promise<T | null> {
     // Check cache first
     const cached = await this.get<T>(key);
     if (cached !== null) {
@@ -125,7 +127,7 @@ class UnifiedCache {
   getStats(): CacheStats {
     const totalItems = this.memoryCache.size;
     const pendingItems = this.pendingRequests.size;
-    
+
     return {
       totalRequests: totalItems + pendingItems,
       cacheHits: totalItems,
@@ -159,108 +161,118 @@ export class UnifiedMediaService {
     this.stats.flagRequests++;
 
     const cacheKey = `flag:${countryName.toLowerCase()}`;
-    
-    return this.cache.getOrFetch(
-      cacheKey,
-      async () => {
-        // Priority 1: Check MediaWiki cache first (most comprehensive)
-        const mediaWikiCached = this.wikiService.getCachedFlagUrl(countryName);
-        if (mediaWikiCached && !mediaWikiCached.includes('placeholder')) {
-          console.log(`[UnifiedMedia] Using MediaWiki cache for ${countryName}:`, mediaWikiCached);
-          return { 
-            url: mediaWikiCached, 
-            cached: true,
-            timestamp: Date.now(),
-            source: 'mediawiki-cache'
-          } as FlagData;
-        }
 
-        // Priority 2: Check server-cached file
-        const serverUrl = await this.checkServerCachedFlag(countryName);
-        if (serverUrl) {
-          return { 
-            url: serverUrl, 
-            cached: true,
-            timestamp: Date.now(),
-            source: 'server-file'
-          } as FlagData;
-        }
+    return this.cache
+      .getOrFetch(
+        cacheKey,
+        async () => {
+          // Priority 1: Check MediaWiki cache first (most comprehensive)
+          const mediaWikiCached = this.wikiService.getCachedFlagUrl(countryName);
+          if (mediaWikiCached && !mediaWikiCached.includes("placeholder")) {
+            console.log(
+              `[UnifiedMedia] Using MediaWiki cache for ${countryName}:`,
+              mediaWikiCached
+            );
+            return {
+              url: mediaWikiCached,
+              cached: true,
+              timestamp: Date.now(),
+              source: "mediawiki-cache",
+            } as FlagData;
+          }
 
-        // Priority 3: Fetch from MediaWiki API
-        const wikiUrl = await this.wikiService.getFlagUrl(countryName);
-        console.log(`[UnifiedMedia] MediaWiki API returned for ${countryName}:`, wikiUrl);
-        if (wikiUrl && typeof wikiUrl === 'string' && !wikiUrl.includes('placeholder')) {
-          console.log(`[UnifiedMedia] Using MediaWiki API URL for ${countryName}:`, wikiUrl);
-          return { 
-            url: wikiUrl, 
+          // Priority 2: Check server-cached file
+          const serverUrl = await this.checkServerCachedFlag(countryName);
+          if (serverUrl) {
+            return {
+              url: serverUrl,
+              cached: true,
+              timestamp: Date.now(),
+              source: "server-file",
+            } as FlagData;
+          }
+
+          // Priority 3: Fetch from MediaWiki API
+          const wikiUrl = await this.wikiService.getFlagUrl(countryName);
+          console.log(`[UnifiedMedia] MediaWiki API returned for ${countryName}:`, wikiUrl);
+          if (wikiUrl && typeof wikiUrl === "string" && !wikiUrl.includes("placeholder")) {
+            console.log(`[UnifiedMedia] Using MediaWiki API URL for ${countryName}:`, wikiUrl);
+            return {
+              url: wikiUrl,
+              cached: false,
+              timestamp: Date.now(),
+              source: "mediawiki-api",
+            } as FlagData;
+          }
+
+          // Priority 4: Try common flag patterns directly
+          const commonPatterns = [
+            `Flag3 ${countryName}.png`,
+            `Flag of ${countryName}.svg`,
+            `Flag_of_${countryName}.png`,
+            `${countryName}_flag.svg`,
+          ];
+
+          for (const pattern of commonPatterns) {
+            try {
+              const testUrl = `https://ixwiki.com/wiki/Special:Redirect/file/${encodeURIComponent(pattern)}`;
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 5000);
+              const response = await fetch(testUrl, {
+                method: "HEAD",
+                signal: controller.signal,
+              });
+              clearTimeout(timeoutId);
+              if (response.ok) {
+                console.log(`[UnifiedMedia] Found flag via direct pattern: ${testUrl}`);
+                return {
+                  url: testUrl,
+                  cached: false,
+                  timestamp: Date.now(),
+                  source: "direct-pattern",
+                } as FlagData;
+              }
+            } catch (error) {
+              // Continue to next pattern
+            }
+          }
+
+          // Priority 5: Return placeholder
+          console.log(`[UnifiedMedia] Using placeholder for ${countryName}`);
+          return {
+            url: "/placeholder-flag.svg",
             cached: false,
             timestamp: Date.now(),
-            source: 'mediawiki-api'
+            source: "placeholder",
           } as FlagData;
-        }
-
-        // Priority 4: Try common flag patterns directly
-        const commonPatterns = [
-          `Flag3 ${countryName}.png`,
-          `Flag of ${countryName}.svg`,
-          `Flag_of_${countryName}.png`,
-          `${countryName}_flag.svg`
-        ];
-        
-        for (const pattern of commonPatterns) {
-          try {
-            const testUrl = `https://ixwiki.com/wiki/Special:Redirect/file/${encodeURIComponent(pattern)}`;
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
-            const response = await fetch(testUrl, { 
-              method: 'HEAD', 
-              signal: controller.signal 
-            });
-            clearTimeout(timeoutId);
-            if (response.ok) {
-              console.log(`[UnifiedMedia] Found flag via direct pattern: ${testUrl}`);
-              return {
-                url: testUrl,
-                cached: false,
-                timestamp: Date.now(),
-                source: 'direct-pattern'
-              } as FlagData;
-            }
-          } catch (error) {
-            // Continue to next pattern
-          }
-        }
-
-        // Priority 5: Return placeholder
-        console.log(`[UnifiedMedia] Using placeholder for ${countryName}`);
-        return { 
-          url: '/placeholder-flag.svg', 
-          cached: false,
-          timestamp: Date.now(),
-          source: 'placeholder'
-        } as FlagData;
-      },
-      'flag-service'
-    ).then(flagData => {
-      const finalUrl = flagData?.url || null;
-      console.log(`[UnifiedMedia] Final URL for ${countryName}:`, finalUrl, 'Source:', flagData?.source);
-      return finalUrl;
-    });
+        },
+        "flag-service"
+      )
+      .then((flagData) => {
+        const finalUrl = flagData?.url || null;
+        console.log(
+          `[UnifiedMedia] Final URL for ${countryName}:`,
+          finalUrl,
+          "Source:",
+          flagData?.source
+        );
+        return finalUrl;
+      });
   }
 
   getCachedFlagUrl(countryName: string): string | null {
     // First check MediaWiki service cache (priority)
     const mediaWikiCached = this.wikiService.getCachedFlagUrl(countryName);
-    if (mediaWikiCached && !mediaWikiCached.includes('placeholder')) {
+    if (mediaWikiCached && !mediaWikiCached.includes("placeholder")) {
       return mediaWikiCached;
     }
 
     // Then check our own cache
     const cacheKey = `flag:${countryName.toLowerCase()}`;
     const cached = this.cache.get<FlagData>(cacheKey);
-    
+
     const cachedUrl = cached ? (cached as any).url : null;
-    if (cachedUrl && !cachedUrl.includes('placeholder')) {
+    if (cachedUrl && !cachedUrl.includes("placeholder")) {
       return cachedUrl;
     }
 
@@ -274,24 +286,22 @@ export class UnifiedMediaService {
   async preloadFlags(countryNames: string[]): Promise<void> {
     const batchSize = 5;
     const batches = [];
-    
+
     for (let i = 0; i < countryNames.length; i += batchSize) {
       batches.push(countryNames.slice(i, i + batchSize));
     }
 
     for (const batch of batches) {
-      await Promise.allSettled(
-        batch.map(name => this.getFlagUrl(name))
-      );
-      
+      await Promise.allSettled(batch.map((name) => this.getFlagUrl(name)));
+
       // Small delay between batches to be respectful to MediaWiki
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
   }
 
   async batchGetFlags(countryNames: string[]): Promise<Record<string, string | null>> {
     const results: Record<string, string | null> = {};
-    
+
     await Promise.allSettled(
       countryNames.map(async (name) => {
         try {
@@ -315,14 +325,14 @@ export class UnifiedMediaService {
     this.stats.infoboxRequests++;
 
     const cacheKey = `infobox:${countryName.toLowerCase()}`;
-    
+
     return this.cache.getOrFetch(
       cacheKey,
       async (): Promise<CountryInfobox | null> => {
         const infobox = await this.wikiService.getCountryInfobox(countryName);
         return infobox;
       },
-      'infobox-service'
+      "infobox-service"
     );
   }
 
@@ -337,13 +347,13 @@ export class UnifiedMediaService {
     };
   }
 
-  clearCache(scope?: 'flags' | 'infoboxes' | 'all'): void {
+  clearCache(scope?: "flags" | "infoboxes" | "all"): void {
     if (scope) {
-      this.cache.clear(scope === 'flags' ? 'flag:' : 'infobox:');
+      this.cache.clear(scope === "flags" ? "flag:" : "infobox:");
     } else {
       this.cache.clear();
     }
-    
+
     // Also clear underlying MediaWiki service cache
     this.wikiService.clearCache();
   }
@@ -353,17 +363,19 @@ export class UnifiedMediaService {
   // ============================================================================
 
   isPlaceholderFlag(url: string): boolean {
-    return url.includes('placeholder') || url.includes('default') || url.endsWith('placeholder-flag.svg');
+    return (
+      url.includes("placeholder") || url.includes("default") || url.endsWith("placeholder-flag.svg")
+    );
   }
 
   private async checkServerCachedFlag(countryName: string): Promise<string | null> {
     try {
       // Check if there's a server-cached version
-      const response = await fetch(`/api/flags/${encodeURIComponent(countryName)}.webp`, { 
-        method: 'HEAD',
-        cache: 'no-cache' 
+      const response = await fetch(`/api/flags/${encodeURIComponent(countryName)}.webp`, {
+        method: "HEAD",
+        cache: "no-cache",
       });
-      
+
       if (response.ok) {
         return `/api/public/flags/${encodeURIComponent(countryName)}.webp`;
       }
@@ -375,10 +387,10 @@ export class UnifiedMediaService {
 
   private generateDirectMediaWikiUrl(countryName: string): string {
     const safeCountryName = countryName
-      .replace(/[^a-zA-Z0-9\-_\s]/g, '')
-      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9\-_\s]/g, "")
+      .replace(/\s+/g, "_")
       .toLowerCase();
-    
+
     return `https://ixwiki.com/wiki/Special:Redirect/file/Flag_of_${safeCountryName}.svg`;
   }
 }

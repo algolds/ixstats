@@ -7,10 +7,10 @@
  * @module ComponentLibrary
  */
 
-import React from 'react';
-import { ComponentCard } from './ComponentCard';
-import type { AtomicGovernmentComponent } from '~/lib/atomic-government-data';
-import { ComponentType } from '@prisma/client';
+import React from "react";
+import { ComponentCard } from "./ComponentCard";
+import type { AtomicGovernmentComponent } from "~/lib/atomic-government-data";
+import { ComponentType } from "@prisma/client";
 
 export interface ComponentLibraryProps {
   components: Partial<Record<ComponentType, AtomicGovernmentComponent>>;
@@ -32,7 +32,7 @@ export const ComponentLibrary = React.memo<ComponentLibraryProps>(
 
     if (componentEntries.length === 0) {
       return (
-        <div className="text-center py-12 px-4">
+        <div className="px-4 py-12 text-center">
           <p className="text-gray-500 dark:text-gray-400">
             No components available. Try adjusting your search or filters.
           </p>
@@ -41,7 +41,7 @@ export const ComponentLibrary = React.memo<ComponentLibraryProps>(
     }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {componentEntries.map(([type, component]) => (
           <ComponentCard
             key={component.id}
@@ -58,4 +58,4 @@ export const ComponentLibrary = React.memo<ComponentLibraryProps>(
   }
 );
 
-ComponentLibrary.displayName = 'ComponentLibrary';
+ComponentLibrary.displayName = "ComponentLibrary";

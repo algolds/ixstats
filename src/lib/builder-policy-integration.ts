@@ -6,17 +6,23 @@
  * based on the current state of all builder systems.
  */
 
-import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from '~/lib/atomic-economic-data';
-import { ComponentType, ATOMIC_COMPONENTS } from '~/components/government/atoms/AtomicGovernmentComponents';
-import { CrossBuilderSynergyService } from '~/app/builder/services/CrossBuilderSynergyService';
-import { UnifiedEffectivenessCalculator } from '~/app/builder/services/UnifiedEffectivenessCalculator';
-import { convertGovernmentStructureToSpending } from '~/lib/government-spending-bridge';
-import { calculateAtomicTaxEffectiveness, getAtomicTaxRecommendations } from '~/lib/atomic-tax-integration';
-import { getEconomicService } from '~/lib/enhanced-economic-service';
-import type { EconomyBuilderState } from '~/types/economy-builder';
-import type { GovernmentBuilderState, GovernmentStructure } from '~/types/government';
-import type { TaxSystem, TaxCategory } from '~/types/tax-system';
-import type { EconomyData, CoreEconomicIndicatorsData } from '~/types/economics';
+import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
+import {
+  ComponentType,
+  ATOMIC_COMPONENTS,
+} from "~/components/government/atoms/AtomicGovernmentComponents";
+import { CrossBuilderSynergyService } from "~/app/builder/services/CrossBuilderSynergyService";
+import { UnifiedEffectivenessCalculator } from "~/app/builder/services/UnifiedEffectivenessCalculator";
+import { convertGovernmentStructureToSpending } from "~/lib/government-spending-bridge";
+import {
+  calculateAtomicTaxEffectiveness,
+  getAtomicTaxRecommendations,
+} from "~/lib/atomic-tax-integration";
+import { getEconomicService } from "~/lib/enhanced-economic-service";
+import type { EconomyBuilderState } from "~/types/economy-builder";
+import type { GovernmentBuilderState, GovernmentStructure } from "~/types/government";
+import type { TaxSystem, TaxCategory } from "~/types/tax-system";
+import type { EconomyData, CoreEconomicIndicatorsData } from "~/types/economics";
 
 // ===== TYPE DEFINITIONS =====
 
@@ -193,7 +199,7 @@ export interface OverallImpact {
   stabilityChange: number; // percentage points
   growthPotentialChange: number; // percentage points
   competitivenessChange: number; // percentage points
-  riskLevel: 'low' | 'medium' | 'high';
+  riskLevel: "low" | "medium" | "high";
   confidence: number; // 0-100
 }
 
@@ -215,8 +221,8 @@ export interface PolicyImpactPhase {
 export interface PolicyRecommendation {
   id: string;
   name: string;
-  category: 'economic' | 'social' | 'diplomatic' | 'infrastructure' | 'governance';
-  priority: 'critical' | 'high' | 'medium' | 'low';
+  category: "economic" | "social" | "diplomatic" | "infrastructure" | "governance";
+  priority: "critical" | "high" | "medium" | "low";
   description: string;
   rationale: string;
   expectedBenefits: string[];
@@ -241,7 +247,7 @@ export interface PolicyApplicationResult {
 }
 
 export interface PolicyChange {
-  system: 'economy' | 'government' | 'tax';
+  system: "economy" | "government" | "tax";
   changeType: string;
   oldValue: any;
   newValue: any;
@@ -283,9 +289,10 @@ export class BuilderPolicyIntegrationService {
     const economyContext = this.extractEconomyContext(economyBuilder, economyData);
 
     // Extract government context
-    const governmentContext = governmentBuilder || governmentStructure
-      ? this.extractGovernmentContext(governmentBuilder, governmentStructure)
-      : null;
+    const governmentContext =
+      governmentBuilder || governmentStructure
+        ? this.extractGovernmentContext(governmentBuilder, governmentStructure)
+        : null;
 
     // Extract tax context
     const taxContext = taxSystem
@@ -305,7 +312,7 @@ export class BuilderPolicyIntegrationService {
       government: governmentContext,
       tax: taxContext,
       crossBuilder: crossBuilderContext,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 
@@ -321,32 +328,37 @@ export class BuilderPolicyIntegrationService {
     const recommendations: string[] = [];
 
     // Validate policy type compatibility
-    if (policyData.policyType === 'economic' && !context.economy) {
-      errors.push('Economic policy requires economy builder data');
+    if (policyData.policyType === "economic" && !context.economy) {
+      errors.push("Economic policy requires economy builder data");
     }
 
-    if (policyData.policyType === 'governance' && !context.government) {
-      warnings.push('Governance policy is more effective with government builder configuration');
+    if (policyData.policyType === "governance" && !context.government) {
+      warnings.push("Governance policy is more effective with government builder configuration");
     }
 
     // Validate budget requirements
     if (policyData.implementationCost && context.government) {
       const availableBudget = context.government.totalBudget * 0.1; // Assume 10% available for new policies
       if (policyData.implementationCost > availableBudget) {
-        errors.push(`Policy cost (${policyData.implementationCost}) exceeds available budget (${availableBudget})`);
+        errors.push(
+          `Policy cost (${policyData.implementationCost}) exceeds available budget (${availableBudget})`
+        );
       }
     }
 
     // Validate tax implications
     if (policyData.requiresTaxChange && !context.tax) {
-      warnings.push('Tax system configuration recommended for tax-related policies');
+      warnings.push("Tax system configuration recommended for tax-related policies");
     }
 
     // Check for component conflicts
     if (policyData.requiredComponents) {
-      const missingComponents = this.checkRequiredComponents(policyData.requiredComponents, context);
+      const missingComponents = this.checkRequiredComponents(
+        policyData.requiredComponents,
+        context
+      );
       if (missingComponents.length > 0) {
-        warnings.push(`Missing recommended components: ${missingComponents.join(', ')}`);
+        warnings.push(`Missing recommended components: ${missingComponents.join(", ")}`);
       }
     }
 
@@ -358,15 +370,21 @@ export class BuilderPolicyIntegrationService {
 
     // Generate recommendations
     if (compatibilityScore < 70) {
-      recommendations.push('Consider adjusting policy parameters to better align with current builder configuration');
+      recommendations.push(
+        "Consider adjusting policy parameters to better align with current builder configuration"
+      );
     }
 
     if (context.crossBuilder.conflicts.length > 0) {
-      recommendations.push('Address existing cross-builder conflicts before implementing major policy changes');
+      recommendations.push(
+        "Address existing cross-builder conflicts before implementing major policy changes"
+      );
     }
 
     if (expectedEffectiveness < 50) {
-      recommendations.push('Current builder configuration may limit policy effectiveness - consider system improvements first');
+      recommendations.push(
+        "Current builder configuration may limit policy effectiveness - consider system improvements first"
+      );
     }
 
     return {
@@ -375,7 +393,7 @@ export class BuilderPolicyIntegrationService {
       warnings,
       recommendations,
       compatibilityScore,
-      expectedEffectiveness
+      expectedEffectiveness,
     };
   }
 
@@ -422,16 +440,14 @@ export class BuilderPolicyIntegrationService {
       tax: taxImpact,
       social: socialImpact,
       overall: overallImpact,
-      timeline
+      timeline,
     };
   }
 
   /**
    * AI-powered policy recommendations based on builder state
    */
-  async getSuggestedPolicies(
-    context: BuilderPolicyContext
-  ): Promise<PolicyRecommendation[]> {
+  async getSuggestedPolicies(context: BuilderPolicyContext): Promise<PolicyRecommendation[]> {
     const recommendations: PolicyRecommendation[] = [];
 
     // Economic policy recommendations
@@ -475,13 +491,19 @@ export class BuilderPolicyIntegrationService {
     try {
       // Apply economic changes
       if (policyData.economicEffects) {
-        const economicChanges = await this.applyEconomicEffects(policyData.economicEffects, context);
+        const economicChanges = await this.applyEconomicEffects(
+          policyData.economicEffects,
+          context
+        );
         appliedChanges.push(...economicChanges);
       }
 
       // Apply government changes
       if (policyData.governmentEffects && context.government) {
-        const governmentChanges = await this.applyGovernmentEffects(policyData.governmentEffects, context);
+        const governmentChanges = await this.applyGovernmentEffects(
+          policyData.governmentEffects,
+          context
+        );
         appliedChanges.push(...governmentChanges);
       }
 
@@ -495,10 +517,13 @@ export class BuilderPolicyIntegrationService {
       const newEffectiveness = await this.calculateNewEffectiveness(context, appliedChanges);
 
       const builderUpdates: BuilderUpdateSummary = {
-        economyUpdates: appliedChanges.filter((c: { system: string }) => c.system === 'economy').length,
-        governmentUpdates: appliedChanges.filter((c: { system: string }) => c.system === 'government').length,
-        taxUpdates: appliedChanges.filter((c: { system: string }) => c.system === 'tax').length,
-        totalChanges: appliedChanges.length
+        economyUpdates: appliedChanges.filter((c: { system: string }) => c.system === "economy")
+          .length,
+        governmentUpdates: appliedChanges.filter(
+          (c: { system: string }) => c.system === "government"
+        ).length,
+        taxUpdates: appliedChanges.filter((c: { system: string }) => c.system === "tax").length,
+        totalChanges: appliedChanges.length,
       };
 
       return {
@@ -507,27 +532,26 @@ export class BuilderPolicyIntegrationService {
         builderUpdates,
         newEffectiveness,
         errors,
-        warnings
+        warnings,
       };
     } catch (error) {
-      errors.push(`Failed to apply policy: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      errors.push(
+        `Failed to apply policy: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
       return {
         success: false,
         appliedChanges,
         builderUpdates: { economyUpdates: 0, governmentUpdates: 0, taxUpdates: 0, totalChanges: 0 },
         newEffectiveness: context.crossBuilder.unifiedEffectiveness,
         errors,
-        warnings
+        warnings,
       };
     }
   }
 
   // ===== PRIVATE HELPER METHODS =====
 
-  private extractEconomyContext(
-    economyBuilder: EconomyBuilderState,
-    economyData: EconomyData
-  ) {
+  private extractEconomyContext(economyBuilder: EconomyBuilderState, economyData: EconomyData) {
     const components = economyBuilder.selectedAtomicComponents;
     const effectiveness = this.calculateEconomyEffectiveness(components);
 
@@ -539,7 +563,7 @@ export class BuilderPolicyIntegrationService {
       gdpPerCapita: economyData.core.gdpPerCapita,
       growthRate: economyData.core.realGDPGrowthRate * 100,
       inflationRate: economyData.core.inflationRate * 100,
-      effectiveness
+      effectiveness,
     };
   }
 
@@ -557,29 +581,50 @@ export class BuilderPolicyIntegrationService {
 
     return {
       components: components as ComponentType[],
-      departments: departments.map((d: { id: string; name: string; category: string; employeeCount: number; priority: number }) => ({
-        id: d.id,
-        name: d.name,
-        category: d.category,
-        budget: budgetAllocations.find((ba: { departmentId: string; allocatedAmount: number }) => ba.departmentId === d.id)?.allocatedAmount || 0,
-        employeeCount: d.employeeCount || 0,
-        priority: d.priority
-      })),
+      departments: departments.map(
+        (d: {
+          id: string;
+          name: string;
+          category: string;
+          employeeCount: number;
+          priority: number;
+        }) => ({
+          id: d.id,
+          name: d.name,
+          category: d.category,
+          budget:
+            budgetAllocations.find(
+              (ba: { departmentId: string; allocatedAmount: number }) => ba.departmentId === d.id
+            )?.allocatedAmount || 0,
+          employeeCount: d.employeeCount || 0,
+          priority: d.priority,
+        })
+      ),
       totalBudget: structure?.totalBudget || 0,
-      budgetAllocations: budgetAllocations.map((ba: { departmentId: string; allocatedAmount: number; allocatedPercent: number }) => ({
-        departmentId: ba.departmentId,
-        departmentName: departments.find((d: { id: string; name: string; category: string }) => d.id === ba.departmentId)?.name || 'Unknown',
-        allocatedAmount: ba.allocatedAmount,
-        allocatedPercent: ba.allocatedPercent,
-        category: departments.find((d: { id: string; name: string; category: string }) => d.id === ba.departmentId)?.category || 'Other'
-      })),
-      revenueSources: revenueSources.map((rs: { name: any; category: any; revenueAmount: any; revenuePercent: any; }) => ({
-        name: rs.name,
-        category: rs.category,
-        amount: rs.revenueAmount,
-        percent: rs.revenuePercent
-      })),
-      effectiveness: this.calculateGovernmentEffectiveness(components as ComponentType[])
+      budgetAllocations: budgetAllocations.map(
+        (ba: { departmentId: string; allocatedAmount: number; allocatedPercent: number }) => ({
+          departmentId: ba.departmentId,
+          departmentName:
+            departments.find(
+              (d: { id: string; name: string; category: string }) => d.id === ba.departmentId
+            )?.name || "Unknown",
+          allocatedAmount: ba.allocatedAmount,
+          allocatedPercent: ba.allocatedPercent,
+          category:
+            departments.find(
+              (d: { id: string; name: string; category: string }) => d.id === ba.departmentId
+            )?.category || "Other",
+        })
+      ),
+      revenueSources: revenueSources.map(
+        (rs: { name: any; category: any; revenueAmount: any; revenuePercent: any }) => ({
+          name: rs.name,
+          category: rs.category,
+          amount: rs.revenueAmount,
+          percent: rs.revenuePercent,
+        })
+      ),
+      effectiveness: this.calculateGovernmentEffectiveness(components as ComponentType[]),
     };
   }
 
@@ -593,16 +638,16 @@ export class BuilderPolicyIntegrationService {
 
     // Calculate tax effectiveness using atomic integration
     const atomicTaxEffectiveness = calculateAtomicTaxEffectiveness(
-      governmentBuilder?.selectedComponents as ComponentType[] || [],
+      (governmentBuilder?.selectedComponents as ComponentType[]) || [],
       {
         collectionEfficiency: taxSystem.collectionEfficiency || 70,
-        complianceRate: taxSystem.complianceRate || 75
+        complianceRate: taxSystem.complianceRate || 75,
       }
     );
 
     // Get tax recommendations
     const atomicRecommendations = getAtomicTaxRecommendations(
-      governmentBuilder?.selectedComponents as ComponentType[] || []
+      (governmentBuilder?.selectedComponents as ComponentType[]) || []
     );
 
     const totalRevenue = categories.reduce((sum, cat) => {
@@ -610,25 +655,25 @@ export class BuilderPolicyIntegrationService {
     }, 0);
 
     return {
-      categories: categories.map(cat => ({
+      categories: categories.map((cat) => ({
         id: cat.id,
         name: cat.categoryName,
         type: cat.categoryType,
         rate: cat.rate || cat.baseRate || 0,
         revenue: (cat.rate || 0) * 1000000, // Simplified
-        effectiveness: atomicTaxEffectiveness.effectivenessScore
+        effectiveness: atomicTaxEffectiveness.effectivenessScore,
       })),
       totalRevenue,
       collectionEfficiency: atomicTaxEffectiveness.collectionEfficiency,
       complianceRate: atomicTaxEffectiveness.complianceRate,
       effectiveness: atomicTaxEffectiveness.effectivenessScore,
       recommendations: atomicRecommendations.recommendedPolicies.map((policy, index) => ({
-        category: 'General',
+        category: "General",
         currentRate: 0,
         recommendedRate: 0,
         rationale: policy,
-        expectedImpact: 5
-      }))
+        expectedImpact: 5,
+      })),
     };
   }
 
@@ -644,20 +689,20 @@ export class BuilderPolicyIntegrationService {
     );
 
     return {
-      synergies: crossBuilderAnalysis.synergies.map(s => ({
+      synergies: crossBuilderAnalysis.synergies.map((s) => ({
         type: s.type,
         description: s.description,
         strength: s.strength,
-        impact: s.impact
+        impact: s.impact,
       })),
-      conflicts: crossBuilderAnalysis.conflicts.map(c => ({
+      conflicts: crossBuilderAnalysis.conflicts.map((c) => ({
         type: c.type,
         description: c.description,
         severity: c.strength,
-        resolution: c.recommendations[0] || 'No resolution available'
+        resolution: c.recommendations[0] || "No resolution available",
       })),
       overallScore: crossBuilderAnalysis.overallScore,
-      unifiedEffectiveness: crossBuilderAnalysis.unifiedEffectiveness
+      unifiedEffectiveness: crossBuilderAnalysis.unifiedEffectiveness,
     };
   }
 
@@ -665,26 +710,26 @@ export class BuilderPolicyIntegrationService {
     // Extract sector data from economy data
     return [
       {
-        name: 'Agriculture',
+        name: "Agriculture",
         gdpContribution: economyData.labor.employmentBySector.agriculture,
         employment: economyData.labor.employmentBySector.agriculture,
         growthRate: 2.5,
-        productivity: 75
+        productivity: 75,
       },
       {
-        name: 'Industry',
+        name: "Industry",
         gdpContribution: economyData.labor.employmentBySector.industry,
         employment: economyData.labor.employmentBySector.industry,
         growthRate: 3.5,
-        productivity: 85
+        productivity: 85,
       },
       {
-        name: 'Services',
+        name: "Services",
         gdpContribution: economyData.labor.employmentBySector.services,
         employment: economyData.labor.employmentBySector.services,
         growthRate: 4.0,
-        productivity: 80
-      }
+        productivity: 80,
+      },
     ];
   }
 
@@ -694,16 +739,17 @@ export class BuilderPolicyIntegrationService {
       employmentRate: economyData.labor.employmentRate,
       unemploymentRate: economyData.labor.unemploymentRate,
       averageIncome: economyData.labor.averageAnnualIncome,
-      minimumWage: economyData.labor.minimumWage
+      minimumWage: economyData.labor.minimumWage,
     };
   }
 
   private calculateEconomyEffectiveness(components: EconomicComponentType[]): number {
     if (components.length === 0) return 0;
 
-    const baseEffectiveness = components.reduce((sum, comp) => {
-      return sum + (ATOMIC_ECONOMIC_COMPONENTS[comp]?.effectiveness || 0);
-    }, 0) / components.length;
+    const baseEffectiveness =
+      components.reduce((sum, comp) => {
+        return sum + (ATOMIC_ECONOMIC_COMPONENTS[comp]?.effectiveness || 0);
+      }, 0) / components.length;
 
     return Math.round(baseEffectiveness);
   }
@@ -711,9 +757,10 @@ export class BuilderPolicyIntegrationService {
   private calculateGovernmentEffectiveness(components: ComponentType[]): number {
     if (components.length === 0) return 0;
 
-    const baseEffectiveness = components.reduce((sum, comp) => {
-      return sum + (ATOMIC_COMPONENTS[comp]?.effectiveness || 0);
-    }, 0) / components.length;
+    const baseEffectiveness =
+      components.reduce((sum, comp) => {
+        return sum + (ATOMIC_COMPONENTS[comp]?.effectiveness || 0);
+      }, 0) / components.length;
 
     return Math.round(baseEffectiveness);
   }
@@ -724,12 +771,12 @@ export class BuilderPolicyIntegrationService {
   ): string[] {
     const missing: string[] = [];
 
-    requiredComponents.forEach(req => {
-      const hasEconomic = context.economy.components.some(c =>
+    requiredComponents.forEach((req) => {
+      const hasEconomic = context.economy.components.some((c) =>
         ATOMIC_ECONOMIC_COMPONENTS[c]?.name.toLowerCase().includes(req.toLowerCase())
       );
 
-      const hasGovernment = context.government?.components.some(c =>
+      const hasGovernment = context.government?.components.some((c) =>
         ATOMIC_COMPONENTS[c]?.name.toLowerCase().includes(req.toLowerCase())
       );
 
@@ -745,11 +792,15 @@ export class BuilderPolicyIntegrationService {
     let score = 50; // Base compatibility
 
     // Check category alignment
-    if (policyData.category === 'economic' && context.economy.effectiveness > 70) {
+    if (policyData.category === "economic" && context.economy.effectiveness > 70) {
       score += 20;
     }
 
-    if (policyData.category === 'governance' && context.government && context.government.effectiveness > 70) {
+    if (
+      policyData.category === "governance" &&
+      context.government &&
+      context.government.effectiveness > 70
+    ) {
       score += 20;
     }
 
@@ -777,13 +828,14 @@ export class BuilderPolicyIntegrationService {
       critical: 20,
       high: 15,
       medium: 10,
-      low: 5
+      low: 5,
     };
     effectiveness += priorityBonus[policyData.priority as keyof typeof priorityBonus] || 0;
 
     // Factor in implementation cost (higher cost may be more effective but riskier)
     if (policyData.implementationCost) {
-      const costRatio = policyData.implementationCost / (context.government?.totalBudget || 1000000);
+      const costRatio =
+        policyData.implementationCost / (context.government?.totalBudget || 1000000);
       if (costRatio < 0.05) effectiveness += 10;
       else if (costRatio > 0.2) effectiveness -= 10;
     }
@@ -792,7 +844,8 @@ export class BuilderPolicyIntegrationService {
   }
 
   private calculateEconomicImpact(policyData: any, context: BuilderPolicyContext): EconomicImpact {
-    const baseImpact = policyData.priority === 'critical' ? 5 : policyData.priority === 'high' ? 3 : 1;
+    const baseImpact =
+      policyData.priority === "critical" ? 5 : policyData.priority === "high" ? 3 : 1;
 
     return {
       gdpChange: baseImpact * (context.economy.effectiveness / 100),
@@ -801,14 +854,17 @@ export class BuilderPolicyIntegrationService {
       sectorImpacts: {
         agriculture: baseImpact * 0.8,
         industry: baseImpact * 1.2,
-        services: baseImpact * 1.0
+        services: baseImpact * 1.0,
       },
       investmentChange: baseImpact * 1.5,
-      productivityChange: baseImpact * 0.5
+      productivityChange: baseImpact * 0.5,
     };
   }
 
-  private calculateGovernmentImpact(policyData: any, context: BuilderPolicyContext): GovernmentImpact {
+  private calculateGovernmentImpact(
+    policyData: any,
+    context: BuilderPolicyContext
+  ): GovernmentImpact {
     const baseImpact = policyData.implementationCost || 100000;
 
     return {
@@ -816,7 +872,7 @@ export class BuilderPolicyIntegrationService {
       efficiencyChange: 2.5,
       capacityChange: 3.0,
       departmentImpacts: {},
-      serviceQualityChange: 4.0
+      serviceQualityChange: 4.0,
     };
   }
 
@@ -828,7 +884,7 @@ export class BuilderPolicyIntegrationService {
       collectionEfficiencyChange: 1.0,
       complianceChange: 0.5,
       categoryImpacts: {},
-      administrativeCostChange: (policyData.implementationCost || 0) * 0.05
+      administrativeCostChange: (policyData.implementationCost || 0) * 0.05,
     };
   }
 
@@ -839,7 +895,7 @@ export class BuilderPolicyIntegrationService {
       wellbeingChange: 2.0,
       educationImpact: 1.5,
       healthcareImpact: 1.5,
-      publicSatisfaction: 5.0
+      publicSatisfaction: 5.0,
     };
   }
 
@@ -850,14 +906,22 @@ export class BuilderPolicyIntegrationService {
     social: SocialImpact,
     context: BuilderPolicyContext
   ): OverallImpact {
-    const effectivenessChange = (economic.gdpChange + government.efficiencyChange + social.wellbeingChange) / 3;
-    const stabilityChange = (government.capacityChange + tax.complianceChange - economic.inflationChange) / 3;
-    const growthPotentialChange = (economic.gdpChange + economic.investmentChange + economic.productivityChange) / 3;
-    const competitivenessChange = (economic.productivityChange + government.efficiencyChange + tax.collectionEfficiencyChange) / 3;
+    const effectivenessChange =
+      (economic.gdpChange + government.efficiencyChange + social.wellbeingChange) / 3;
+    const stabilityChange =
+      (government.capacityChange + tax.complianceChange - economic.inflationChange) / 3;
+    const growthPotentialChange =
+      (economic.gdpChange + economic.investmentChange + economic.productivityChange) / 3;
+    const competitivenessChange =
+      (economic.productivityChange + government.efficiencyChange + tax.collectionEfficiencyChange) /
+      3;
 
-    const riskLevel: 'low' | 'medium' | 'high' =
-      context.crossBuilder.conflicts.length > 2 ? 'high' :
-      context.crossBuilder.conflicts.length > 0 ? 'medium' : 'low';
+    const riskLevel: "low" | "medium" | "high" =
+      context.crossBuilder.conflicts.length > 2
+        ? "high"
+        : context.crossBuilder.conflicts.length > 0
+          ? "medium"
+          : "low";
 
     return {
       effectivenessChange,
@@ -865,7 +929,7 @@ export class BuilderPolicyIntegrationService {
       growthPotentialChange,
       competitivenessChange,
       riskLevel,
-      confidence: context.crossBuilder.overallScore
+      confidence: context.crossBuilder.overallScore,
     };
   }
 
@@ -884,101 +948,106 @@ export class BuilderPolicyIntegrationService {
         governmentImpact: government.efficiencyChange * 0.2,
         taxImpact: tax.revenueChange * 0.1,
         socialImpact: social.publicSatisfaction * 0.3,
-        implementationCost: baseCost * 0.4
+        implementationCost: baseCost * 0.4,
       },
       shortTerm: {
         economicImpact: economic.gdpChange * 0.4,
         governmentImpact: government.efficiencyChange * 0.6,
         taxImpact: tax.revenueChange * 0.5,
         socialImpact: social.wellbeingChange * 0.5,
-        implementationCost: baseCost * 0.4
+        implementationCost: baseCost * 0.4,
       },
       mediumTerm: {
         economicImpact: economic.gdpChange * 0.8,
         governmentImpact: government.efficiencyChange * 0.9,
         taxImpact: tax.revenueChange * 0.8,
         socialImpact: social.wellbeingChange * 0.8,
-        implementationCost: baseCost * 0.15
+        implementationCost: baseCost * 0.15,
       },
       longTerm: {
         economicImpact: economic.gdpChange,
         governmentImpact: government.efficiencyChange,
         taxImpact: tax.revenueChange,
         socialImpact: social.wellbeingChange,
-        implementationCost: baseCost * 0.05
-      }
+        implementationCost: baseCost * 0.05,
+      },
     };
   }
 
-  private generateEconomicPolicyRecommendations(context: BuilderPolicyContext): PolicyRecommendation[] {
+  private generateEconomicPolicyRecommendations(
+    context: BuilderPolicyContext
+  ): PolicyRecommendation[] {
     const recommendations: PolicyRecommendation[] = [];
 
     // Innovation policy
     if (context.economy.components.includes(EconomicComponentType.INNOVATION_ECONOMY)) {
       recommendations.push({
-        id: 'r-d-tax-credit',
-        name: 'Research & Development Tax Credit Program',
-        category: 'economic',
-        priority: 'high',
-        description: 'Implement tax credits for companies investing in R&D to boost innovation',
-        rationale: 'Innovation economy component benefits significantly from R&D incentives',
+        id: "r-d-tax-credit",
+        name: "Research & Development Tax Credit Program",
+        category: "economic",
+        priority: "high",
+        description: "Implement tax credits for companies investing in R&D to boost innovation",
+        rationale: "Innovation economy component benefits significantly from R&D incentives",
         expectedBenefits: [
-          'Increase private sector R&D investment by 15-20%',
-          'Attract high-tech companies and talent',
-          'Boost productivity and economic growth'
+          "Increase private sector R&D investment by 15-20%",
+          "Attract high-tech companies and talent",
+          "Boost productivity and economic growth",
         ],
         implementationSteps: [
-          'Define eligible R&D activities',
-          'Set tax credit rates and caps',
-          'Establish verification mechanisms',
-          'Launch awareness campaign'
+          "Define eligible R&D activities",
+          "Set tax credit rates and caps",
+          "Establish verification mechanisms",
+          "Launch awareness campaign",
         ],
         estimatedCost: 50000000,
-        timeframe: '6-12 months',
-        requiredComponents: ['Innovation Economy', 'Professional Bureaucracy'],
-        synergiesWith: ['Knowledge Economy', 'Technocratic Process'],
+        timeframe: "6-12 months",
+        requiredComponents: ["Innovation Economy", "Professional Bureaucracy"],
+        synergiesWith: ["Knowledge Economy", "Technocratic Process"],
         conflictsWith: [],
-        riskFactors: ['Budget constraints', 'Administrative complexity'],
+        riskFactors: ["Budget constraints", "Administrative complexity"],
         successProbability: 85,
-        aiConfidence: 90
+        aiConfidence: 90,
       });
     }
 
     // Labor market policy
     if (context.economy.labor.unemploymentRate > 5) {
       recommendations.push({
-        id: 'job-training-program',
-        name: 'National Job Training & Reskilling Initiative',
-        category: 'economic',
-        priority: 'high',
-        description: 'Comprehensive training program to reduce unemployment and improve workforce skills',
+        id: "job-training-program",
+        name: "National Job Training & Reskilling Initiative",
+        category: "economic",
+        priority: "high",
+        description:
+          "Comprehensive training program to reduce unemployment and improve workforce skills",
         rationale: `Current unemployment rate of ${context.economy.labor.unemploymentRate.toFixed(1)}% indicates need for workforce development`,
         expectedBenefits: [
-          'Reduce unemployment by 1-2 percentage points',
-          'Improve workforce productivity',
-          'Better match between skills and job market needs'
+          "Reduce unemployment by 1-2 percentage points",
+          "Improve workforce productivity",
+          "Better match between skills and job market needs",
         ],
         implementationSteps: [
-          'Identify high-demand skills and sectors',
-          'Partner with educational institutions',
-          'Provide training subsidies and stipends',
-          'Track employment outcomes'
+          "Identify high-demand skills and sectors",
+          "Partner with educational institutions",
+          "Provide training subsidies and stipends",
+          "Track employment outcomes",
         ],
         estimatedCost: 30000000,
-        timeframe: '12-24 months',
-        requiredComponents: ['Flexible Labor', 'Government Education Programs'],
-        synergiesWith: ['Knowledge Economy', 'Social Market Economy'],
+        timeframe: "12-24 months",
+        requiredComponents: ["Flexible Labor", "Government Education Programs"],
+        synergiesWith: ["Knowledge Economy", "Social Market Economy"],
         conflictsWith: [],
-        riskFactors: ['Participant recruitment', 'Training quality', 'Job placement success'],
+        riskFactors: ["Participant recruitment", "Training quality", "Job placement success"],
         successProbability: 75,
-        aiConfidence: 85
+        aiConfidence: 85,
       });
     }
 
     return recommendations;
   }
 
-  private generateGovernmentPolicyRecommendations(context: BuilderPolicyContext): PolicyRecommendation[] {
+  private generateGovernmentPolicyRecommendations(
+    context: BuilderPolicyContext
+  ): PolicyRecommendation[] {
     const recommendations: PolicyRecommendation[] = [];
 
     if (!context.government) return recommendations;
@@ -986,31 +1055,31 @@ export class BuilderPolicyIntegrationService {
     // Budget optimization
     if (context.government.effectiveness < 70) {
       recommendations.push({
-        id: 'gov-efficiency-reform',
-        name: 'Government Efficiency Reform Initiative',
-        category: 'governance',
-        priority: 'high',
-        description: 'Streamline government operations and improve service delivery efficiency',
+        id: "gov-efficiency-reform",
+        name: "Government Efficiency Reform Initiative",
+        category: "governance",
+        priority: "high",
+        description: "Streamline government operations and improve service delivery efficiency",
         rationale: `Government effectiveness score of ${context.government.effectiveness}% indicates room for improvement`,
         expectedBenefits: [
-          'Reduce administrative costs by 10-15%',
-          'Improve service delivery times',
-          'Increase citizen satisfaction'
+          "Reduce administrative costs by 10-15%",
+          "Improve service delivery times",
+          "Increase citizen satisfaction",
         ],
         implementationSteps: [
-          'Conduct efficiency audit of all departments',
-          'Identify redundant processes',
-          'Implement digital transformation',
-          'Train staff on new procedures'
+          "Conduct efficiency audit of all departments",
+          "Identify redundant processes",
+          "Implement digital transformation",
+          "Train staff on new procedures",
         ],
         estimatedCost: 20000000,
-        timeframe: '18-24 months',
-        requiredComponents: ['Professional Bureaucracy', 'Digital Government'],
-        synergiesWith: ['Technocratic Process', 'Performance Legitimacy'],
+        timeframe: "18-24 months",
+        requiredComponents: ["Professional Bureaucracy", "Digital Government"],
+        synergiesWith: ["Technocratic Process", "Performance Legitimacy"],
         conflictsWith: [],
-        riskFactors: ['Resistance to change', 'Implementation complexity'],
+        riskFactors: ["Resistance to change", "Implementation complexity"],
         successProbability: 70,
-        aiConfidence: 80
+        aiConfidence: 80,
       });
     }
 
@@ -1025,117 +1094,128 @@ export class BuilderPolicyIntegrationService {
     // Tax compliance improvement
     if (context.tax.complianceRate < 80) {
       recommendations.push({
-        id: 'tax-compliance-enhancement',
-        name: 'Tax Compliance Enhancement Program',
-        category: 'economic',
-        priority: 'high',
-        description: 'Improve voluntary tax compliance through education and simplified filing',
+        id: "tax-compliance-enhancement",
+        name: "Tax Compliance Enhancement Program",
+        category: "economic",
+        priority: "high",
+        description: "Improve voluntary tax compliance through education and simplified filing",
         rationale: `Current compliance rate of ${context.tax.complianceRate.toFixed(1)}% below optimal levels`,
         expectedBenefits: [
-          'Increase tax revenue by 5-10%',
-          'Reduce enforcement costs',
-          'Improve taxpayer satisfaction'
+          "Increase tax revenue by 5-10%",
+          "Reduce enforcement costs",
+          "Improve taxpayer satisfaction",
         ],
         implementationSteps: [
-          'Simplify tax filing procedures',
-          'Launch taxpayer education campaign',
-          'Implement user-friendly digital filing',
-          'Provide free filing assistance'
+          "Simplify tax filing procedures",
+          "Launch taxpayer education campaign",
+          "Implement user-friendly digital filing",
+          "Provide free filing assistance",
         ],
         estimatedCost: 15000000,
-        timeframe: '12-18 months',
-        requiredComponents: ['Professional Bureaucracy', 'Digital Government'],
-        synergiesWith: ['Rule of Law', 'Institutional Legitimacy'],
+        timeframe: "12-18 months",
+        requiredComponents: ["Professional Bureaucracy", "Digital Government"],
+        synergiesWith: ["Rule of Law", "Institutional Legitimacy"],
         conflictsWith: [],
-        riskFactors: ['System complexity', 'Digital literacy gaps'],
+        riskFactors: ["System complexity", "Digital literacy gaps"],
         successProbability: 80,
-        aiConfidence: 85
+        aiConfidence: 85,
       });
     }
 
     return recommendations;
   }
 
-  private generateCrossBuilderPolicyRecommendations(context: BuilderPolicyContext): PolicyRecommendation[] {
+  private generateCrossBuilderPolicyRecommendations(
+    context: BuilderPolicyContext
+  ): PolicyRecommendation[] {
     const recommendations: PolicyRecommendation[] = [];
 
     // Address conflicts
     if (context.crossBuilder.conflicts.length > 0) {
       recommendations.push({
-        id: 'cross-system-alignment',
-        name: 'Cross-System Policy Alignment Initiative',
-        category: 'governance',
-        priority: 'critical',
-        description: 'Resolve conflicts between economic, government, and tax systems',
+        id: "cross-system-alignment",
+        name: "Cross-System Policy Alignment Initiative",
+        category: "governance",
+        priority: "critical",
+        description: "Resolve conflicts between economic, government, and tax systems",
         rationale: `${context.crossBuilder.conflicts.length} cross-builder conflicts detected`,
         expectedBenefits: [
-          'Improve overall system effectiveness by 10-15%',
-          'Reduce policy implementation friction',
-          'Create synergies between systems'
+          "Improve overall system effectiveness by 10-15%",
+          "Reduce policy implementation friction",
+          "Create synergies between systems",
         ],
         implementationSteps: [
-          'Analyze all system conflicts',
-          'Prioritize critical conflicts',
-          'Develop resolution strategies',
-          'Implement coordinated changes'
+          "Analyze all system conflicts",
+          "Prioritize critical conflicts",
+          "Develop resolution strategies",
+          "Implement coordinated changes",
         ],
         estimatedCost: 25000000,
-        timeframe: '12-18 months',
-        requiredComponents: ['Professional Bureaucracy', 'Technocratic Process'],
-        synergiesWith: context.crossBuilder.synergies.map(s => s.type),
+        timeframe: "12-18 months",
+        requiredComponents: ["Professional Bureaucracy", "Technocratic Process"],
+        synergiesWith: context.crossBuilder.synergies.map((s) => s.type),
         conflictsWith: [],
-        riskFactors: ['Coordination complexity', 'Stakeholder resistance'],
+        riskFactors: ["Coordination complexity", "Stakeholder resistance"],
         successProbability: 65,
-        aiConfidence: 75
+        aiConfidence: 75,
       });
     }
 
     return recommendations;
   }
 
-  private async applyEconomicEffects(effects: any, context: BuilderPolicyContext): Promise<PolicyChange[]> {
+  private async applyEconomicEffects(
+    effects: any,
+    context: BuilderPolicyContext
+  ): Promise<PolicyChange[]> {
     const changes: PolicyChange[] = [];
 
     // This would interface with the economy builder to apply changes
     // For now, return simulated changes
     changes.push({
-      system: 'economy',
-      changeType: 'growth_rate_adjustment',
+      system: "economy",
+      changeType: "growth_rate_adjustment",
       oldValue: context.economy.growthRate,
       newValue: context.economy.growthRate + (effects.growthImpact || 0),
-      description: 'Economic growth rate adjusted based on policy effects'
+      description: "Economic growth rate adjusted based on policy effects",
     });
 
     return changes;
   }
 
-  private async applyGovernmentEffects(effects: any, context: BuilderPolicyContext): Promise<PolicyChange[]> {
+  private async applyGovernmentEffects(
+    effects: any,
+    context: BuilderPolicyContext
+  ): Promise<PolicyChange[]> {
     const changes: PolicyChange[] = [];
 
     if (!context.government) return changes;
 
     changes.push({
-      system: 'government',
-      changeType: 'efficiency_adjustment',
+      system: "government",
+      changeType: "efficiency_adjustment",
       oldValue: context.government.effectiveness,
       newValue: context.government.effectiveness + (effects.efficiencyImpact || 0),
-      description: 'Government efficiency adjusted based on policy effects'
+      description: "Government efficiency adjusted based on policy effects",
     });
 
     return changes;
   }
 
-  private async applyTaxEffects(effects: any, context: BuilderPolicyContext): Promise<PolicyChange[]> {
+  private async applyTaxEffects(
+    effects: any,
+    context: BuilderPolicyContext
+  ): Promise<PolicyChange[]> {
     const changes: PolicyChange[] = [];
 
     if (!context.tax) return changes;
 
     changes.push({
-      system: 'tax',
-      changeType: 'collection_efficiency_adjustment',
+      system: "tax",
+      changeType: "collection_efficiency_adjustment",
       oldValue: context.tax.collectionEfficiency,
       newValue: context.tax.collectionEfficiency + (effects.collectionImpact || 0),
-      description: 'Tax collection efficiency adjusted based on policy effects'
+      description: "Tax collection efficiency adjusted based on policy effects",
     });
 
     return changes;

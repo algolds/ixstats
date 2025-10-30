@@ -2,13 +2,13 @@
 
 /**
  * MyCountryDataWrapper - Central data orchestration component for MyCountry system
- * 
+ *
  * This component serves as the main data coordination layer, integrating:
  * - Real-time data synchronization
- * - Unified notification management 
+ * - Unified notification management
  * - Executive vs public mode switching
  * - Cross-system state management
- * 
+ *
  * Key responsibilities:
  * - Coordinate between useDataSync hook and RealTimeDataService
  * - Route notifications to appropriate systems (executive/global)
@@ -16,26 +16,24 @@
  * - Provide unified data interface to child components
  */
 
-import React, { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  TrendingUp, 
-  Globe, 
-  Shield, 
-  Users 
-} from 'lucide-react';
-import { RealTimeDataService } from './RealTimeDataService';
-import { useDataSync } from '../hooks/useDataSync';
-import { useUnifiedNotifications } from '~/hooks/useUnifiedNotifications';
-import { UnifiedLayout } from './UnifiedLayout';
-import { useExecutiveNotifications, type ExecutiveNotification } from '~/contexts/ExecutiveNotificationContext';
-import { useIntelligenceWebSocket } from '~/hooks/useIntelligenceWebSocket';
+import React, { useState, useRef } from "react";
+import { motion } from "framer-motion";
+import { TrendingUp, Globe, Shield, Users } from "lucide-react";
+import { RealTimeDataService } from "./RealTimeDataService";
+import { useDataSync } from "../hooks/useDataSync";
+import { useUnifiedNotifications } from "~/hooks/useUnifiedNotifications";
+import { UnifiedLayout } from "./UnifiedLayout";
+import {
+  useExecutiveNotifications,
+  type ExecutiveNotification,
+} from "~/contexts/ExecutiveNotificationContext";
+import { useIntelligenceWebSocket } from "~/hooks/useIntelligenceWebSocket";
 // import { PublicMyCountryPage } from '../public-page';
 // import { ExecutiveDashboard } from '../executive-dashboard';
 import { api } from "~/trpc/react";
-import { standardize } from '~/lib/interface-standardizer';
-import { ensureCountryData } from '~/lib/type-guards';
-import { adaptExecutiveToQuick } from '~/lib/transformers/interface-adapters';
+import { standardize } from "~/lib/interface-standardizer";
+import { ensureCountryData } from "~/lib/type-guards";
+import { adaptExecutiveToQuick } from "~/lib/transformers/interface-adapters";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 
 // Executive actions now come from real API - no mock data needed
@@ -52,8 +50,8 @@ interface MyCountryDataWrapperProps {
   rankings: any[];
   intelligenceFeed: any[];
   flagUrl?: string | null;
-  viewMode: 'public' | 'executive';
-  onModeToggle: (mode: 'public' | 'executive') => void;
+  viewMode: "public" | "executive";
+  onModeToggle: (mode: "public" | "executive") => void;
   onActionClick: (actionId: string) => void;
   onFocusAreaClick: (areaId: string) => void;
   onSettingsClick: () => void;
@@ -79,13 +77,12 @@ export function MyCountryDataWrapper({
   onSettingsClick,
   onPrivateAccess,
 }: MyCountryDataWrapperProps) {
-  
   // Executive notifications integration
   const { setNotifications, setExecutiveMode } = useExecutiveNotifications();
-  
+
   // Unified notification system - using global notifications
   const { createNotification } = useUnifiedNotifications();
-  
+
   // Real-time intelligence WebSocket integration
   const {
     connected: wsConnected,
@@ -93,67 +90,67 @@ export function MyCountryDataWrapper({
     latestUpdate,
     latestAlert,
     updateCount,
-    alertCount
+    alertCount,
   } = useIntelligenceWebSocket({
     countryId: country?.id,
-    subscribeToGlobal: viewMode === 'executive',
+    subscribeToGlobal: viewMode === "executive",
     subscribeToAlerts: true,
     onUpdate: (update) => {
       // Handle real-time intelligence updates
-      if (update.severity === 'critical' || update.priority === 'urgent') {
+      if (update.severity === "critical" || update.priority === "urgent") {
         createNotification({
-          source: 'system',
+          source: "system",
           title: update.title,
-          message: update.description || '',
-          type: update.severity === 'critical' ? 'error' : 'warning',
-          category: 'system',
-          priority: update.severity === 'critical' ? 'critical' : 'high',
-          severity: 'important',
+          message: update.description || "",
+          type: update.severity === "critical" ? "error" : "warning",
+          category: "system",
+          priority: update.severity === "critical" ? "critical" : "high",
+          severity: "important",
           context: {} as any,
           triggers: [],
-          deliveryMethod: 'toast',
-          actionable: false
+          deliveryMethod: "toast",
+          actionable: false,
         });
       }
     },
     onAlert: (alert) => {
-      console.log('Real-time intelligence alert:', alert);
+      console.log("Real-time intelligence alert:", alert);
       // Handle critical alerts
       createNotification({
-        source: 'intelligence',
+        source: "intelligence",
         title: `🚨 ${alert.title}`,
-        message: alert.description || '',
-        type: 'error',
-        category: 'crisis',
-        priority: 'critical',
-        severity: 'urgent',
+        message: alert.description || "",
+        type: "error",
+        category: "crisis",
+        priority: "critical",
+        severity: "urgent",
         context: {} as any,
         triggers: [],
-        deliveryMethod: 'modal',
+        deliveryMethod: "modal",
         actionable: true,
         actions: [
-          { 
+          {
             id: `action-${alert.id}`,
-            label: 'View Details',
-            type: 'primary',
-            onClick: () => console.log('View alert details:', alert.id)
-          }
-        ]
+            label: "View Details",
+            type: "primary",
+            onClick: () => console.log("View alert details:", alert.id),
+          },
+        ],
       });
-      
+
       // Update executive notifications for alerts
-      if (viewMode === 'executive') {
+      if (viewMode === "executive") {
         const newNotification: ExecutiveNotification = {
           id: alert.id,
-          type: alert.severity === 'critical' ? 'alert' : 'update',
-          severity: alert.severity as 'critical' | 'high' | 'medium' | 'low',
+          type: alert.severity === "critical" ? "alert" : "update",
+          severity: alert.severity as "critical" | "high" | "medium" | "low",
           title: alert.title,
-          description: (alert as any).message || alert.description || '',
-          category: 'security',
+          description: (alert as any).message || alert.description || "",
+          category: "security",
           timestamp: Date.now(),
           actionable: (alert as any).actionRequired || false,
           read: false,
-          source: 'intelligence'
+          source: "intelligence",
         };
         // Note: Would need to access current notifications to properly update
         // For now, just set a single notification as the setter expects a full array
@@ -162,141 +159,146 @@ export function MyCountryDataWrapper({
     },
     onConnect: () => {
       createNotification({
-        source: 'system',
-        title: '🔗 Real-time Intelligence Connected',
-        message: 'Live intelligence updates are now active',
-        type: 'success',
-        category: 'system',
-        priority: 'medium',
-        severity: 'informational',
+        source: "system",
+        title: "🔗 Real-time Intelligence Connected",
+        message: "Live intelligence updates are now active",
+        type: "success",
+        category: "system",
+        priority: "medium",
+        severity: "informational",
         context: {} as any,
         triggers: [],
-        deliveryMethod: 'toast',
-        actionable: false
+        deliveryMethod: "toast",
+        actionable: false,
       });
     },
     onDisconnect: () => {
       createNotification({
-        source: 'system',
-        title: '⚠️ Real-time Intelligence Disconnected',
-        message: 'Attempting to reconnect...',
-        type: 'warning',
-        category: 'system',
-        priority: 'high',
-        severity: 'important',
+        source: "system",
+        title: "⚠️ Real-time Intelligence Disconnected",
+        message: "Attempting to reconnect...",
+        type: "warning",
+        category: "system",
+        priority: "high",
+        severity: "important",
         context: {} as any,
         triggers: [],
-        deliveryMethod: 'toast',
-        actionable: false
+        deliveryMethod: "toast",
+        actionable: false,
       });
-    }
+    },
   });
-  
+
   // Real API call for executive actions
   const { data: executiveActions = [] } = api.mycountry.getExecutiveActions.useQuery(
-    { countryId: userProfile?.countryId || '' },
-    { enabled: !!userProfile?.countryId && isOwner && viewMode === 'executive' }
+    { countryId: userProfile?.countryId || "" },
+    { enabled: !!userProfile?.countryId && isOwner && viewMode === "executive" }
   );
-  
+
   // Executive action execution mutation
   const executeActionMutation = api.mycountry.executeAction.useMutation({
     onSuccess: (result) => {
-      console.log('[Executive Action] Success:', result.message);
+      console.log("[Executive Action] Success:", result.message);
       // Add success notification
       createNotification({
-        source: 'system',
-        type: 'success',
-        category: 'governance',
-        title: 'Action Executed',
+        source: "system",
+        type: "success",
+        category: "governance",
+        title: "Action Executed",
         message: result.message,
-        priority: 'medium',
-        severity: 'informational',
+        priority: "medium",
+        severity: "informational",
         context: {} as any,
         triggers: [],
-        deliveryMethod: 'toast',
-        actionable: false
+        deliveryMethod: "toast",
+        actionable: false,
       });
     },
     onError: (error) => {
-      console.error('[Executive Action] Error:', error.message);
+      console.error("[Executive Action] Error:", error.message);
       // Add error notification
       createNotification({
-        source: 'system',
-        type: 'error',
-        category: 'system',
-        title: 'Action Failed',
+        source: "system",
+        type: "error",
+        category: "system",
+        title: "Action Failed",
         message: error.message,
-        priority: 'high',
-        severity: 'important',
+        priority: "high",
+        severity: "important",
         context: {} as any,
         triggers: [],
-        deliveryMethod: 'toast',
-        actionable: false
+        deliveryMethod: "toast",
+        actionable: false,
       });
-    }
+    },
   });
-  
+
   // Data notification helpers
-  const createEconomicAlert = async (data: { metric: string; value: number; change: number; threshold?: number }) => {
+  const createEconomicAlert = async (data: {
+    metric: string;
+    value: number;
+    change: number;
+    threshold?: number;
+  }) => {
     const notification = {
-      source: 'system' as const,
-      type: 'alert' as const,
-      category: 'economic' as const,
+      source: "system" as const,
+      type: "alert" as const,
+      category: "economic" as const,
       title: `Economic Alert: ${data.metric}`,
-      message: `${data.metric} has changed by ${data.change > 0 ? '+' : ''}${data.change.toFixed(2)}% to ${data.value.toLocaleString()}`,
-      priority: Math.abs(data.change) > 5 ? 'high' as const : 'medium' as const,
-      severity: 'important' as const,
+      message: `${data.metric} has changed by ${data.change > 0 ? "+" : ""}${data.change.toFixed(2)}% to ${data.value.toLocaleString()}`,
+      priority: Math.abs(data.change) > 5 ? ("high" as const) : ("medium" as const),
+      severity: "important" as const,
       actionable: true,
       context: {} as any,
       triggers: [],
-      deliveryMethod: 'toast' as const
+      deliveryMethod: "toast" as const,
     };
     return createNotification(notification);
   };
-  
+
   // Track previous feed length to prevent unnecessary updates
   const prevFeedLengthRef = useRef(0);
 
   // Set executive mode and notifications based on view mode
   React.useEffect(() => {
-    console.log('[MyCountryDataWrapper] Setting executive mode:', viewMode === 'executive');
-    
-    setExecutiveMode(viewMode === 'executive');
-    
+    console.log("[MyCountryDataWrapper] Setting executive mode:", viewMode === "executive");
+
+    setExecutiveMode(viewMode === "executive");
+
     const currentLength = intelligenceFeed?.length || 0;
-    if (viewMode === 'executive' && intelligenceFeed && currentLength > 0) {
+    if (viewMode === "executive" && intelligenceFeed && currentLength > 0) {
       // Only process notifications if feed length actually changed
       if (currentLength !== prevFeedLengthRef.current) {
         prevFeedLengthRef.current = currentLength;
-        const processedNotifications = intelligenceFeed.map(item => ({
+        const processedNotifications = intelligenceFeed.map((item) => ({
           ...item,
-          read: false // Mark all as unread initially
+          read: false, // Mark all as unread initially
         }));
         setNotifications(processedNotifications);
       }
-    } else if (viewMode !== 'executive') {
+    } else if (viewMode !== "executive") {
       // Clear executive notifications when not in executive mode
       setNotifications([]);
       prevFeedLengthRef.current = 0;
     }
   }, [viewMode, intelligenceFeed]);
-  
+
   // Real-time data sync integration - simplified to prevent infinite loops
-  const { 
-    data: syncedCountryData, 
+  const {
+    data: syncedCountryData,
     isLoading: dataSyncLoading,
     syncState,
     isConnected,
     forceRefresh,
-    forceUpdateStats 
-  } = useDataSync(userProfile?.countryId || '', {
+    forceUpdateStats,
+  } = useDataSync(userProfile?.countryId || "", {
     enabled: !!userProfile?.countryId && !!user,
-    pollInterval: viewMode === 'executive' ? 60000 : 120000, // Executive mode gets faster updates
+    pollInterval: viewMode === "executive" ? 60000 : 120000, // Executive mode gets faster updates
     notificationsEnabled: false, // Use unified system instead
     onDataChange: async (data, changes) => {
       if (changes.length > 0) {
-        console.log(`[MyCountry] Data changed: ${changes.join(', ')}`);
-        
+        console.log(`[MyCountry] Data changed: ${changes.join(", ")}`);
+
         // Generate unified notifications for data changes
         for (const change of changes) {
           await handleDataChangeNotification(change, data, country);
@@ -305,71 +307,79 @@ export function MyCountryDataWrapper({
     },
     onStatusChange: (status) => {
       console.log(`[MyCountry] Sync status: ${status}`);
-    }
+    },
   });
 
   // Handle data change notifications through unified system
   const handleDataChangeNotification = async (change: string, newData: any, oldData: any) => {
     try {
       switch (change) {
-        case 'gdpPerCapita':
+        case "gdpPerCapita":
           if (oldData && newData.currentGdpPerCapita !== oldData.currentGdpPerCapita) {
-            const changePercent = ((newData.currentGdpPerCapita - oldData.currentGdpPerCapita) / oldData.currentGdpPerCapita) * 100;
+            const changePercent =
+              ((newData.currentGdpPerCapita - oldData.currentGdpPerCapita) /
+                oldData.currentGdpPerCapita) *
+              100;
             await createEconomicAlert({
-              metric: 'GDP per Capita',
+              metric: "GDP per Capita",
               value: newData.currentGdpPerCapita,
               change: changePercent,
               threshold: 5, // 5% threshold
             });
           }
           break;
-          
-        case 'economicTier':
+
+        case "economicTier":
           if (oldData && newData.economicTier !== oldData.economicTier) {
-            const isImprovement = getTierRank(newData.economicTier) > getTierRank(oldData.economicTier);
+            const isImprovement =
+              getTierRank(newData.economicTier) > getTierRank(oldData.economicTier);
             await createNotification({
-              source: 'system',
-              title: `Economic Tier ${isImprovement ? 'Advancement' : 'Change'}!`,
+              source: "system",
+              title: `Economic Tier ${isImprovement ? "Advancement" : "Change"}!`,
               message: `Your nation has moved from ${oldData.economicTier} to ${newData.economicTier}`,
-              category: 'achievement',
-              type: 'success',
-              priority: 'high',
-              severity: 'important',
+              category: "achievement",
+              type: "success",
+              priority: "high",
+              severity: "important",
               context: {} as any,
-              triggers: [{
-                type: 'threshold',
-                source: 'economic-tier-system',
-                data: { oldTier: oldData.economicTier, newTier: newData.economicTier },
-                confidence: 1.0,
-              }],
-              deliveryMethod: 'dynamic-island',
+              triggers: [
+                {
+                  type: "threshold",
+                  source: "economic-tier-system",
+                  data: { oldTier: oldData.economicTier, newTier: newData.economicTier },
+                  confidence: 1.0,
+                },
+              ],
+              deliveryMethod: "dynamic-island",
               actionable: true,
-              actions: [{
-                id: 'celebrate-tier',
-                label: 'View Achievement',
-                type: 'primary',
-                onClick: () => {
-                  window.location.href = createAbsoluteUrl('/mycountry/achievements');
-                }
-              }],
+              actions: [
+                {
+                  id: "celebrate-tier",
+                  label: "View Achievement",
+                  type: "primary",
+                  onClick: () => {
+                    window.location.href = createAbsoluteUrl("/mycountry/achievements");
+                  },
+                },
+              ],
             });
           }
           break;
       }
     } catch (error) {
-      console.error('[MyCountryDataWrapper] Failed to create notification:', error);
+      console.error("[MyCountryDataWrapper] Failed to create notification:", error);
     }
   };
 
   // Helper function to rank economic tiers
   const getTierRank = (tier: string): number => {
     const ranks = {
-      'Impoverished': 1,
-      'Developing': 2,
-      'Emerging': 3,
-      'Developed': 4,
-      'Advanced': 5,
-      'Elite': 6,
+      Impoverished: 1,
+      Developing: 2,
+      Emerging: 3,
+      Developed: 4,
+      Advanced: 5,
+      Elite: 6,
     };
     return ranks[tier as keyof typeof ranks] || 0;
   };
@@ -386,11 +396,11 @@ export function MyCountryDataWrapper({
         <RealTimeDataService
           countryId={enhancedCountryData.id}
           isActive={!!user && isConnected}
-          updateInterval={viewMode === 'executive' ? 'FAST' : 'NORMAL'}
+          updateInterval={viewMode === "executive" ? "FAST" : "NORMAL"}
           onDataUpdate={undefined}
         />
       )}
-      
+
       <UnifiedLayout
         country={enhancedCountryData}
         viewMode={viewMode}
@@ -414,22 +424,22 @@ export function MyCountryDataWrapper({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          {viewMode === 'executive' && isOwner ? (
-            <div className="text-center p-8">
+          {viewMode === "executive" && isOwner ? (
+            <div className="p-8 text-center">
               <p className="text-gray-600">Executive Dashboard - Component needs integration</p>
             </div>
           ) : (
-            <div className="text-center p-8">
+            <div className="p-8 text-center">
               <p className="text-gray-600">Public MyCountry Page - Component needs integration</p>
             </div>
           )}
         </motion.div>
 
         {/* Page title effect */}
-        {typeof window !== 'undefined' && enhancedCountryData && (
+        {typeof window !== "undefined" && enhancedCountryData && (
           <script
             dangerouslySetInnerHTML={{
-              __html: `document.title = "${viewMode === 'executive' ? 'Executive Command' : 'MyCountry'}: ${enhancedCountryData.name} - IxStats";`
+              __html: `document.title = "${viewMode === "executive" ? "Executive Command" : "MyCountry"}: ${enhancedCountryData.name} - IxStats";`,
             }}
           />
         )}

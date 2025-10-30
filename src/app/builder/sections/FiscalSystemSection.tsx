@@ -1,10 +1,22 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import { Coins, TrendingUp, TrendingDown, DollarSign, Building, Building2, CreditCard, Shield, PieChart, AlertTriangle, Zap } from 'lucide-react';
-import { AtomicEconomicEffectivenessPanel } from '~/components/economics/AtomicEconomicEffectivenessPanel';
-import { api } from '~/trpc/react';
-import type { ComponentType } from '~/types/government';
+import React, { useState, useMemo } from "react";
+import {
+  Coins,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Building,
+  Building2,
+  CreditCard,
+  Shield,
+  PieChart,
+  AlertTriangle,
+  Zap,
+} from "lucide-react";
+import { AtomicEconomicEffectivenessPanel } from "~/components/economics/AtomicEconomicEffectivenessPanel";
+import { api } from "~/trpc/react";
+import type { ComponentType } from "~/types/government";
 import {
   EnhancedSlider,
   EnhancedDial,
@@ -13,20 +25,20 @@ import {
   EnhancedBarChart,
   EnhancedPieChart,
   MetricCard,
-} from '../primitives/enhanced';
-import type { EconomicInputs, FiscalSystemData } from '../lib/economy-data-service';
-import type { SectionContentProps } from '../types/builder';
-import { 
-  SectionBase, 
-  SectionLayout, 
-  sectionConfigs, 
+} from "../primitives/enhanced";
+import type { EconomicInputs, FiscalSystemData } from "../lib/economy-data-service";
+import type { SectionContentProps } from "../types/builder";
+import {
+  SectionBase,
+  SectionLayout,
+  sectionConfigs,
   sectionUtils,
-  type ExtendedSectionProps
-} from '../components/glass/SectionBase';
+  type ExtendedSectionProps,
+} from "../components/glass/SectionBase";
 
 // Help System
-import { EconomicsHelpSystem } from '../components/help/GovernmentHelpSystem';
-import { EconomicsHelpContent } from '../components/help/EconomicsHelpContent';
+import { EconomicsHelpSystem } from "../components/help/GovernmentHelpSystem";
+import { EconomicsHelpContent } from "../components/help/EconomicsHelpContent";
 
 // Note: Tax system building is now handled by the atomic tax builder component
 // integrated into the unified builder workflow via TaxSystemStep component
@@ -36,8 +48,8 @@ interface FiscalSystemSectionProps extends ExtendedSectionProps {
   totalPopulation: number;
   countryId?: string;
   showAtomicIntegration?: boolean;
-  mode?: 'create' | 'edit';
-  fieldLocks?: Record<string, import('../components/enhanced/builderConfig').FieldLockConfig>;
+  mode?: "create" | "edit";
+  fieldLocks?: Record<string, import("../components/enhanced/builderConfig").FieldLockConfig>;
 }
 
 export function FiscalSystemSection({
@@ -51,139 +63,173 @@ export function FiscalSystemSection({
   className,
   countryId,
   showAtomicIntegration = false,
-  mode = 'create',
-  fieldLocks
+  mode = "create",
+  fieldLocks,
 }: FiscalSystemSectionProps) {
-  const isEditMode = mode === 'edit';
-  const { EDIT_MODE_FIELD_LOCKS } = require('../components/enhanced/builderConfig');
+  const isEditMode = mode === "edit";
+  const { EDIT_MODE_FIELD_LOCKS } = require("../components/enhanced/builderConfig");
   const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
 
-  const [selectedView, setSelectedView] = useState<'overview' | 'revenue' | 'spending' | 'debt' | 'atomic' | 'builder'>('overview');
-  
+  const [selectedView, setSelectedView] = useState<
+    "overview" | "revenue" | "spending" | "debt" | "atomic" | "builder"
+  >("overview");
+
   // Atomic component integration
   const { data: atomicComponents } = api.government.getComponents.useQuery(
-    { countryId: countryId || '' },
-    { 
+    { countryId: countryId || "" },
+    {
       enabled: !!countryId && showAtomicIntegration,
-      staleTime: 30000 
+      staleTime: 30000,
     }
   );
 
-  const activeComponents = atomicComponents?.filter(c => c.isActive).map(c => c.componentType as ComponentType) || [];
-  
+  const activeComponents =
+    atomicComponents?.filter((c) => c.isActive).map((c) => c.componentType as ComponentType) || [];
+
   const fiscalSystem = inputs.fiscalSystem;
-  
+
   // DEBUG: Check what we're receiving
-  console.log('FiscalSystemSection - Received fiscalSystem:', fiscalSystem);
-  console.log('FiscalSystemSection - Key values:', {
+  console.log("FiscalSystemSection - Received fiscalSystem:", fiscalSystem);
+  console.log("FiscalSystemSection - Key values:", {
     taxRevenueGDPPercent: fiscalSystem?.taxRevenueGDPPercent,
-    governmentBudgetGDPPercent: fiscalSystem?.governmentBudgetGDPPercent,  
+    governmentBudgetGDPPercent: fiscalSystem?.governmentBudgetGDPPercent,
     totalDebtGDPRatio: fiscalSystem?.totalDebtGDPRatio,
-    budgetDeficitSurplus: fiscalSystem?.budgetDeficitSurplus
+    budgetDeficitSurplus: fiscalSystem?.budgetDeficitSurplus,
   });
-  
+
   // Ensure all required fields exist with proper initialization
   if (!fiscalSystem) {
-    console.error('FiscalSystemSection: No fiscal system data provided');
-    return <div className="p-4 text-red-600 dark:text-red-400">Error: No fiscal system data available</div>;
+    console.error("FiscalSystemSection: No fiscal system data provided");
+    return (
+      <div className="p-4 text-red-600 dark:text-red-400">
+        Error: No fiscal system data available
+      </div>
+    );
   }
 
   const handleFiscalChange = (key: string, value: any) => {
-    const keys = key.split('.');
+    const keys = key.split(".");
     const updatedFiscal = { ...fiscalSystem };
-    
+
     if (keys.length === 1) {
       (updatedFiscal as any)[key] = value;
     } else if (keys.length === 2) {
       (updatedFiscal as any)[keys[0]] = {
         ...(updatedFiscal as any)[keys[0]],
-        [keys[1]]: value
+        [keys[1]]: value,
       };
     }
 
     onInputsChange({
       ...inputs,
-      fiscalSystem: updatedFiscal
+      fiscalSystem: updatedFiscal,
     });
   };
 
   // Live metrics from fiscal system - NO FALLBACKS
   const metrics = useMemo(() => {
-    console.log('Calculating metrics with fiscalSystem:', fiscalSystem);
-    
+    console.log("Calculating metrics with fiscalSystem:", fiscalSystem);
+
     // Use actual values with NaN protection
     const taxRevenue = Number(fiscalSystem.taxRevenueGDPPercent);
     const budgetBalance = Number(fiscalSystem.budgetDeficitSurplus);
     const totalDebt = Number(fiscalSystem.totalDebtGDPRatio);
     const debtService = Number(fiscalSystem.debtServiceCosts);
     const govRevenue = Number(fiscalSystem.governmentRevenueTotal);
-    
-    console.log('Parsed metric values:', {
-      taxRevenue, budgetBalance, totalDebt, debtService, govRevenue,
+
+    console.log("Parsed metric values:", {
+      taxRevenue,
+      budgetBalance,
+      totalDebt,
+      debtService,
+      govRevenue,
       isNaN_taxRevenue: isNaN(taxRevenue),
       isNaN_budgetBalance: isNaN(budgetBalance),
-      isNaN_totalDebt: isNaN(totalDebt)
+      isNaN_totalDebt: isNaN(totalDebt),
     });
-    
+
     // If ANY value is NaN, force defaults
     const safeTaxRevenue = isNaN(taxRevenue) ? 20 : taxRevenue;
     const safeBudgetBalance = isNaN(budgetBalance) ? -50000000000 : budgetBalance;
     const safeTotalDebt = isNaN(totalDebt) ? 60 : totalDebt;
     const safeGovRevenue = isNaN(govRevenue) ? 200000000000 : govRevenue;
-    
+
     return [
-      { 
-        label: 'Tax Revenue',
-        title: 'Tax Revenue', 
-        value: `${safeTaxRevenue.toFixed(1)}%`, 
-        subtitle: 'of GDP',
-        trend: safeTaxRevenue >= 20 ? 'up' as const : safeTaxRevenue >= 15 ? 'neutral' as const : 'down' as const,
-        color: safeTaxRevenue >= 20 ? 'green' as const : safeTaxRevenue >= 15 ? 'blue' as const : 'red' as const
+      {
+        label: "Tax Revenue",
+        title: "Tax Revenue",
+        value: `${safeTaxRevenue.toFixed(1)}%`,
+        subtitle: "of GDP",
+        trend:
+          safeTaxRevenue >= 20
+            ? ("up" as const)
+            : safeTaxRevenue >= 15
+              ? ("neutral" as const)
+              : ("down" as const),
+        color:
+          safeTaxRevenue >= 20
+            ? ("green" as const)
+            : safeTaxRevenue >= 15
+              ? ("blue" as const)
+              : ("red" as const),
       },
-      { 
-        label: 'Budget Balance',
-        title: 'Budget Balance', 
-        value: safeBudgetBalance >= 0 ? `$${(Math.abs(safeBudgetBalance) / 1e9).toFixed(1)}B` : `-$${(Math.abs(safeBudgetBalance) / 1e9).toFixed(1)}B`, 
-        subtitle: safeBudgetBalance >= 0 ? 'Surplus' : 'Deficit',
-        trend: safeBudgetBalance >= 0 ? 'up' as const : 'down' as const,
-        color: safeBudgetBalance >= 0 ? 'green' as const : 'red' as const
+      {
+        label: "Budget Balance",
+        title: "Budget Balance",
+        value:
+          safeBudgetBalance >= 0
+            ? `$${(Math.abs(safeBudgetBalance) / 1e9).toFixed(1)}B`
+            : `-$${(Math.abs(safeBudgetBalance) / 1e9).toFixed(1)}B`,
+        subtitle: safeBudgetBalance >= 0 ? "Surplus" : "Deficit",
+        trend: safeBudgetBalance >= 0 ? ("up" as const) : ("down" as const),
+        color: safeBudgetBalance >= 0 ? ("green" as const) : ("red" as const),
       },
-      { 
-        label: 'Public Debt',
-        title: 'Public Debt', 
-        value: `${safeTotalDebt.toFixed(1)}%`, 
-        subtitle: 'of GDP',
-        trend: safeTotalDebt <= 60 ? 'up' as const : safeTotalDebt <= 90 ? 'neutral' as const : 'down' as const,
-        color: safeTotalDebt <= 60 ? 'green' as const : safeTotalDebt <= 90 ? 'blue' as const : 'red' as const
+      {
+        label: "Public Debt",
+        title: "Public Debt",
+        value: `${safeTotalDebt.toFixed(1)}%`,
+        subtitle: "of GDP",
+        trend:
+          safeTotalDebt <= 60
+            ? ("up" as const)
+            : safeTotalDebt <= 90
+              ? ("neutral" as const)
+              : ("down" as const),
+        color:
+          safeTotalDebt <= 60
+            ? ("green" as const)
+            : safeTotalDebt <= 90
+              ? ("blue" as const)
+              : ("red" as const),
       },
-      { 
-        label: 'Government Revenue',
-        title: 'Gov Revenue', 
-        value: `$${(safeGovRevenue / 1e9).toFixed(1)}B`, 
-        subtitle: 'Total Annual',
-        trend: 'neutral' as const,
-        color: 'blue' as const
-      }
+      {
+        label: "Government Revenue",
+        title: "Gov Revenue",
+        value: `$${(safeGovRevenue / 1e9).toFixed(1)}B`,
+        subtitle: "Total Annual",
+        trend: "neutral" as const,
+        color: "blue" as const,
+      },
     ];
   }, [fiscalSystem]);
 
   // Calculate fiscal health score
   const fiscalHealthScore = useMemo(() => {
     let score = 100;
-    
+
     // Tax burden assessment
     if (fiscalSystem.taxRevenueGDPPercent < 15) score -= 20;
     else if (fiscalSystem.taxRevenueGDPPercent > 40) score -= 15;
-    
+
     // Debt assessment
     if (fiscalSystem.totalDebtGDPRatio > 90) score -= 30;
     else if (fiscalSystem.totalDebtGDPRatio > 60) score -= 20;
-    
+
     // Budget balance assessment
     const deficitPercent = Math.abs((fiscalSystem.budgetDeficitSurplus || 0) / nominalGDP) * 100;
     if (deficitPercent > 3) score -= 25;
     else if (deficitPercent > 1) score -= 10;
-    
+
     return Math.max(0, score);
   }, [fiscalSystem, nominalGDP]);
 
@@ -191,139 +237,159 @@ export function FiscalSystemSection({
   const taxData = useMemo(() => {
     const rates = fiscalSystem.taxRates;
     if (!rates) {
-      console.error('FiscalSystemSection: No tax rates data');
+      console.error("FiscalSystemSection: No tax rates data");
       return [];
     }
-    
+
     const personalRates = rates.personalIncomeTaxRates || rates.income || [];
     const corporateRates = rates.corporateTaxRates || rates.corporate || [];
-    
+
     // Get actual rates, validate numbers
-    const incomeRate = personalRates.length > 0 ? 
-      Number(personalRates[personalRates.length - 1]?.rate) : 
-      0;
-    const corporateRate = corporateRates.length > 0 ? 
-      Number(corporateRates[corporateRates.length - 1]?.rate) : 
-      0;
+    const incomeRate =
+      personalRates.length > 0 ? Number(personalRates[personalRates.length - 1]?.rate) : 0;
+    const corporateRate =
+      corporateRates.length > 0 ? Number(corporateRates[corporateRates.length - 1]?.rate) : 0;
     const salesRate = Number(rates.salesTaxRate || rates.sales);
     const propertyRate = Number(rates.propertyTaxRate);
-    
+
     return [
-      { name: 'Income Tax', rate: isNaN(incomeRate) ? 0 : incomeRate },
-      { name: 'Corporate Tax', rate: isNaN(corporateRate) ? 0 : corporateRate },
-      { name: 'Sales Tax', rate: isNaN(salesRate) ? 0 : salesRate },
-      { name: 'Property Tax', rate: isNaN(propertyRate) ? 0 : propertyRate }
-    ].filter(item => item.rate > 0); // Only show taxes that have rates
+      { name: "Income Tax", rate: isNaN(incomeRate) ? 0 : incomeRate },
+      { name: "Corporate Tax", rate: isNaN(corporateRate) ? 0 : corporateRate },
+      { name: "Sales Tax", rate: isNaN(salesRate) ? 0 : salesRate },
+      { name: "Property Tax", rate: isNaN(propertyRate) ? 0 : propertyRate },
+    ].filter((item) => item.rate > 0); // Only show taxes that have rates
   }, [fiscalSystem]);
 
   const taxBredownData = useMemo(() => {
     const totalRevenue = Number(fiscalSystem.governmentRevenueTotal);
     const taxRevenuePercent = Number(fiscalSystem.taxRevenueGDPPercent);
-    
+
     if (isNaN(totalRevenue) && isNaN(taxRevenuePercent)) {
-      console.error('FiscalSystemSection: No valid revenue data');
+      console.error("FiscalSystemSection: No valid revenue data");
       return [];
     }
-    
+
     // Calculate actual total revenue
-    const actualRevenue = !isNaN(totalRevenue) ? totalRevenue : 
-      (!isNaN(taxRevenuePercent) ? (nominalGDP * taxRevenuePercent / 100) : 0);
-      
+    const actualRevenue = !isNaN(totalRevenue)
+      ? totalRevenue
+      : !isNaN(taxRevenuePercent)
+        ? (nominalGDP * taxRevenuePercent) / 100
+        : 0;
+
     if (actualRevenue === 0) {
       return [];
     }
-    
+
     // Convert to billions for display, use proportional breakdown based on tax rates
     const rates = fiscalSystem.taxRates;
-    const incomeRate = Number(rates?.personalIncomeTaxRates?.[rates.personalIncomeTaxRates.length - 1]?.rate || 0);
-    const corporateRate = Number(rates?.corporateTaxRates?.[rates.corporateTaxRates.length - 1]?.rate || 0);
+    const incomeRate = Number(
+      rates?.personalIncomeTaxRates?.[rates.personalIncomeTaxRates.length - 1]?.rate || 0
+    );
+    const corporateRate = Number(
+      rates?.corporateTaxRates?.[rates.corporateTaxRates.length - 1]?.rate || 0
+    );
     const salesRate = Number(rates?.salesTaxRate || 0);
     const propertyRate = Number(rates?.propertyTaxRate || 0);
-    
+
     const totalRate = incomeRate + corporateRate + salesRate + propertyRate;
-    
+
     if (totalRate === 0) {
       return [];
     }
-    
+
     return [
-      { 
-        category: 'Income Tax', 
-        value: (actualRevenue * (incomeRate / totalRate)) / 1e9 
+      {
+        category: "Income Tax",
+        value: (actualRevenue * (incomeRate / totalRate)) / 1e9,
       },
-      { 
-        category: 'Corporate Tax', 
-        value: (actualRevenue * (corporateRate / totalRate)) / 1e9 
+      {
+        category: "Corporate Tax",
+        value: (actualRevenue * (corporateRate / totalRate)) / 1e9,
       },
-      { 
-        category: 'Sales Tax', 
-        value: (actualRevenue * (salesRate / totalRate)) / 1e9 
+      {
+        category: "Sales Tax",
+        value: (actualRevenue * (salesRate / totalRate)) / 1e9,
       },
-      { 
-        category: 'Property Tax', 
-        value: (actualRevenue * (propertyRate / totalRate)) / 1e9 
-      }
-    ].filter(item => item.value > 0);
+      {
+        category: "Property Tax",
+        value: (actualRevenue * (propertyRate / totalRate)) / 1e9,
+      },
+    ].filter((item) => item.value > 0);
   }, [fiscalSystem, nominalGDP]);
 
   const spendingCategories = useMemo(() => {
     // Use government spending data from inputs
     const govSpending = inputs.governmentSpending;
     if (!govSpending || !govSpending.spendingCategories) {
-      console.error('FiscalSystemSection: No government spending data');
+      console.error("FiscalSystemSection: No government spending data");
       return [];
     }
-    
+
     return govSpending.spendingCategories
       .filter((cat: any) => cat && (cat.amount > 0 || cat.value > 0))
       .map((cat: any) => ({
-        name: cat.category || cat.name || 'Unknown',
+        name: cat.category || cat.name || "Unknown",
         value: Number(cat.amount || cat.value || 0),
-        icon: Shield
+        icon: Shield,
       }))
-      .filter(item => !isNaN(item.value) && item.value > 0);
+      .filter((item) => !isNaN(item.value) && item.value > 0);
   }, [inputs.governmentSpending]);
 
   // Main content with sub-tabs
   const basicContent = (
     <>
       {/* View Selector - Always visible at top */}
-      <div className="md:col-span-2 mb-6">
-        <div className={`grid ${showAtomicIntegration ? 'grid-cols-6' : 'grid-cols-5'} bg-card rounded-lg p-1 border border-border gap-1`}>
-          {(['overview', 'revenue', 'spending', 'debt', ...(showAtomicIntegration ? ['atomic'] : []), 'builder'] as const).map((view) => (
+      <div className="mb-6 md:col-span-2">
+        <div
+          className={`grid ${showAtomicIntegration ? "grid-cols-6" : "grid-cols-5"} bg-card border-border gap-1 rounded-lg border p-1`}
+        >
+          {(
+            [
+              "overview",
+              "revenue",
+              "spending",
+              "debt",
+              ...(showAtomicIntegration ? ["atomic"] : []),
+              "builder",
+            ] as const
+          ).map((view) => (
             <button
               key={view}
-              onClick={() => setSelectedView(view as 'overview' | 'revenue' | 'spending' | 'debt' | 'atomic' | 'builder')}
-              className={`px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 capitalize ${
+              onClick={() =>
+                setSelectedView(
+                  view as "overview" | "revenue" | "spending" | "debt" | "atomic" | "builder"
+                )
+              }
+              className={`rounded-md px-3 py-2 text-sm font-medium capitalize transition-all duration-200 ${
                 selectedView === view
-                  ? 'bg-accent text-accent-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/10'
+                  ? "bg-accent text-accent-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
               }`}
             >
-              {view === 'overview' ? 'Overview' : 
-               view === 'revenue' ? 'Tax Revenue' : 
-               view === 'spending' ? 'Gov Spending' : 
-               view === 'debt' ? 'Debt Mgmt' : 
-               view === 'atomic' ? 'Atomic Effects' :
-               'Tax Builder'}
+              {view === "overview"
+                ? "Overview"
+                : view === "revenue"
+                  ? "Tax Revenue"
+                  : view === "spending"
+                    ? "Gov Spending"
+                    : view === "debt"
+                      ? "Debt Mgmt"
+                      : view === "atomic"
+                        ? "Atomic Effects"
+                        : "Tax Builder"}
             </button>
           ))}
         </div>
       </div>
 
       {/* Overview Section */}
-      {selectedView === 'overview' && (
+      {selectedView === "overview" && (
         <>
           {/* Overview Metrics */}
-          <div className="md:col-span-2 mb-6">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="mb-6 md:col-span-2">
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
               {metrics.map((metric, index) => (
-                <MetricCard
-                  key={index}
-                  {...metric}
-                  sectionId="fiscal"
-                  className="h-full"
-                />
+                <MetricCard key={index} {...metric} sectionId="fiscal" className="h-full" />
               ))}
             </div>
           </div>
@@ -332,8 +398,12 @@ export function FiscalSystemSection({
           <EnhancedSlider
             label="Tax Revenue (% of GDP)"
             description="Government revenue from all taxes as percentage of GDP"
-            value={isNaN(Number(fiscalSystem.taxRevenueGDPPercent)) ? 20 : Number(fiscalSystem.taxRevenueGDPPercent)}
-            onChange={(value) => handleFiscalChange('taxRevenueGDPPercent', value)}
+            value={
+              isNaN(Number(fiscalSystem.taxRevenueGDPPercent))
+                ? 20
+                : Number(fiscalSystem.taxRevenueGDPPercent)
+            }
+            onChange={(value) => handleFiscalChange("taxRevenueGDPPercent", value)}
             min={5}
             max={50}
             step={0.5}
@@ -353,8 +423,12 @@ export function FiscalSystemSection({
           <EnhancedSlider
             label="Government Spending (% of GDP)"
             description="Total government expenditure as percentage of GDP"
-            value={isNaN(Number(fiscalSystem.governmentBudgetGDPPercent)) ? 25 : Number(fiscalSystem.governmentBudgetGDPPercent)}
-            onChange={(value) => handleFiscalChange('governmentBudgetGDPPercent', value)}
+            value={
+              isNaN(Number(fiscalSystem.governmentBudgetGDPPercent))
+                ? 25
+                : Number(fiscalSystem.governmentBudgetGDPPercent)
+            }
+            onChange={(value) => handleFiscalChange("governmentBudgetGDPPercent", value)}
             min={10}
             max={60}
             step={0.5}
@@ -374,8 +448,12 @@ export function FiscalSystemSection({
           <EnhancedSlider
             label="Public Debt (% of GDP)"
             description="Total government debt as percentage of GDP"
-            value={isNaN(Number(fiscalSystem.totalDebtGDPRatio)) ? 60 : Number(fiscalSystem.totalDebtGDPRatio)}
-            onChange={(value) => handleFiscalChange('totalDebtGDPRatio', value)}
+            value={
+              isNaN(Number(fiscalSystem.totalDebtGDPRatio))
+                ? 60
+                : Number(fiscalSystem.totalDebtGDPRatio)
+            }
+            onChange={(value) => handleFiscalChange("totalDebtGDPRatio", value)}
             min={0}
             max={200}
             step={1}
@@ -409,9 +487,9 @@ export function FiscalSystemSection({
                 error={undefined}
               />
             ) : (
-              <div className="h-[250px] flex items-center justify-center border border-border rounded-lg bg-card">
-                <div className="text-center text-muted-foreground">
-                  <PieChart className="h-8 w-8 mx-auto mb-2" />
+              <div className="border-border bg-card flex h-[250px] items-center justify-center rounded-lg border">
+                <div className="text-muted-foreground text-center">
+                  <PieChart className="mx-auto mb-2 h-8 w-8" />
                   <p>No tax revenue data available</p>
                   <p className="text-xs">Configure tax rates to see breakdown</p>
                 </div>
@@ -422,7 +500,7 @@ export function FiscalSystemSection({
       )}
 
       {/* Tax Revenue System */}
-      {selectedView === 'revenue' && (
+      {selectedView === "revenue" && (
         <>
           <div className="md:col-span-2">
             <EnhancedBarChart
@@ -444,11 +522,14 @@ export function FiscalSystemSection({
           {Object.entries(fiscalSystem.taxRates || {}).map(([key, value]) => (
             <EnhancedSlider
               key={key}
-              label={key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).replace(/Tax Rate$/, ' Tax Rate')}
+              label={key
+                .replace(/([A-Z])/g, " $1")
+                .replace(/^./, (str) => str.toUpperCase())
+                .replace(/Tax Rate$/, " Tax Rate")}
               value={value}
               onChange={(newValue) => handleFiscalChange(`taxRates.${key}`, newValue)}
               min={0}
-              max={key === 'vatRate' ? 25 : 50}
+              max={key === "vatRate" ? 25 : 50}
               step={0.5}
               precision={1}
               unit="%"
@@ -462,7 +543,7 @@ export function FiscalSystemSection({
       )}
 
       {/* Government Spending */}
-      {selectedView === 'spending' && (
+      {selectedView === "spending" && (
         <>
           {spendingCategories.map((category, index) => (
             <EnhancedSlider
@@ -473,22 +554,22 @@ export function FiscalSystemSection({
                 // This would update spending data in inputs.governmentSpending
                 const newCategories = [...spendingCategories];
                 newCategories[index] = { ...newCategories[index], value };
-                
+
                 const totalSpending = newCategories.reduce((sum, cat) => sum + cat.value, 0);
                 const spendingGDPPercent = nominalGDP > 0 ? (totalSpending / nominalGDP) * 100 : 0;
-                
+
                 onInputsChange({
                   ...inputs,
                   governmentSpending: {
                     ...inputs.governmentSpending,
                     totalSpending,
                     spendingGDPPercent,
-                    spendingCategories: newCategories.map(cat => ({
+                    spendingCategories: newCategories.map((cat) => ({
                       category: cat.name,
                       amount: cat.value,
-                      percent: totalSpending > 0 ? (cat.value / totalSpending) * 100 : 0
-                    }))
-                  }
+                      percent: totalSpending > 0 ? (cat.value / totalSpending) * 100 : 0,
+                    })),
+                  },
                 });
               }}
               min={0}
@@ -506,14 +587,14 @@ export function FiscalSystemSection({
       )}
 
       {/* Debt Management */}
-      {selectedView === 'debt' && (
+      {selectedView === "debt" && (
         <>
           <div className="md:col-span-2">
             <EnhancedBarChart
               data={[
-                { name: 'Internal Debt', value: 25.0 },
-                { name: 'External Debt', value: 15.0 },
-                { name: 'Total Debt', value: 40.0 }
+                { name: "Internal Debt", value: 25.0 },
+                { name: "External Debt", value: 15.0 },
+                { name: "Total Debt", value: 40.0 },
               ]}
               xKey="name"
               yKey="value"
@@ -531,7 +612,7 @@ export function FiscalSystemSection({
           <EnhancedSlider
             label="Internal Debt (% of GDP)"
             value={Number(fiscalSystem.internalDebtGDPPercent) || 0}
-            onChange={(value) => handleFiscalChange('internalDebtGDPPercent', Number(value))}
+            onChange={(value) => handleFiscalChange("internalDebtGDPPercent", Number(value))}
             min={0}
             max={150}
             step={1}
@@ -545,7 +626,7 @@ export function FiscalSystemSection({
           <EnhancedSlider
             label="External Debt (% of GDP)"
             value={Number(fiscalSystem.externalDebtGDPPercent) || 0}
-            onChange={(value) => handleFiscalChange('externalDebtGDPPercent', Number(value))}
+            onChange={(value) => handleFiscalChange("externalDebtGDPPercent", Number(value))}
             min={0}
             max={100}
             step={1}
@@ -559,7 +640,7 @@ export function FiscalSystemSection({
           <EnhancedNumberInput
             label="Debt Service Costs"
             value={fiscalSystem.debtServiceCosts}
-            onChange={(value) => handleFiscalChange('debtServiceCosts', value)}
+            onChange={(value) => handleFiscalChange("debtServiceCosts", value)}
             min={0}
             max={nominalGDP * 0.1}
             step={1000}
@@ -573,7 +654,7 @@ export function FiscalSystemSection({
       )}
 
       {/* Atomic Integration */}
-      {selectedView === 'atomic' && showAtomicIntegration && (
+      {selectedView === "atomic" && showAtomicIntegration && (
         <div className="md:col-span-2">
           <AtomicEconomicEffectivenessPanel
             components={activeComponents}
@@ -582,22 +663,23 @@ export function FiscalSystemSection({
               inflationRate: inputs.coreIndicators.inflationRate || 2.0,
               gdpPerCapita: inputs.coreIndicators.gdpPerCapita || 50000,
               economicStability: 70,
-              policyEffectiveness: 60
+              policyEffectiveness: 60,
             }}
             showDetailedBreakdown={true}
           />
 
           {activeComponents.length === 0 && countryId && (
-            <div className="mt-6 p-6 rounded-lg bg-gradient-to-br from-yellow-50/50 to-amber-50/50 dark:from-yellow-950/20 dark:to-amber-950/20 border border-yellow-200/50 dark:border-yellow-700/50">
-              <div className="text-center space-y-4">
-                <Zap className="h-12 w-12 mx-auto text-yellow-500 dark:text-yellow-400" />
-                <h4 className="text-lg font-bold text-foreground">No Government Components</h4>
-                <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  Add atomic government components to see their impact on economic effectiveness and policy implementation.
+            <div className="mt-6 rounded-lg border border-yellow-200/50 bg-gradient-to-br from-yellow-50/50 to-amber-50/50 p-6 dark:border-yellow-700/50 dark:from-yellow-950/20 dark:to-amber-950/20">
+              <div className="space-y-4 text-center">
+                <Zap className="mx-auto h-12 w-12 text-yellow-500 dark:text-yellow-400" />
+                <h4 className="text-foreground text-lg font-bold">No Government Components</h4>
+                <p className="text-muted-foreground mx-auto max-w-md text-sm">
+                  Add atomic government components to see their impact on economic effectiveness and
+                  policy implementation.
                 </p>
                 <button
-                  onClick={() => window.open('/mycountry/editor#government', '_blank')}
-                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 dark:bg-yellow-600 dark:hover:bg-yellow-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  onClick={() => window.open("/mycountry/editor#government", "_blank")}
+                  className="rounded-lg bg-yellow-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-yellow-600 dark:bg-yellow-600 dark:hover:bg-yellow-700"
                 >
                   Configure Government Components
                 </button>
@@ -608,28 +690,28 @@ export function FiscalSystemSection({
       )}
 
       {/* Tax Builder */}
-      {selectedView === 'builder' && (
+      {selectedView === "builder" && (
         <div className="md:col-span-2">
-          <div className="p-6 rounded-lg bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-950/20 dark:to-orange-950/20 border border-amber-200/50 dark:border-amber-700/50">
-            <div className="text-center space-y-4">
-              <Building2 className="h-12 w-12 mx-auto text-amber-500" />
-              <h4 className="text-lg font-bold text-foreground">Advanced Tax System Builder</h4>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                Create custom tax brackets, deductions, and complex tax policies. 
-                This advanced feature is under development.
+          <div className="rounded-lg border border-amber-200/50 bg-gradient-to-br from-amber-50/50 to-orange-50/50 p-6 dark:border-amber-700/50 dark:from-amber-950/20 dark:to-orange-950/20">
+            <div className="space-y-4 text-center">
+              <Building2 className="mx-auto h-12 w-12 text-amber-500" />
+              <h4 className="text-foreground text-lg font-bold">Advanced Tax System Builder</h4>
+              <p className="text-muted-foreground mx-auto max-w-md text-sm">
+                Create custom tax brackets, deductions, and complex tax policies. This advanced
+                feature is under development.
               </p>
-              <div className="grid grid-cols-2 gap-4 mt-6">
-                <div className="p-3 rounded-lg bg-card border border-amber-200/30">
-                  <h5 className="font-medium text-sm mb-2">Coming Soon:</h5>
-                  <ul className="text-xs text-muted-foreground space-y-1">
+              <div className="mt-6 grid grid-cols-2 gap-4">
+                <div className="bg-card rounded-lg border border-amber-200/30 p-3">
+                  <h5 className="mb-2 text-sm font-medium">Coming Soon:</h5>
+                  <ul className="text-muted-foreground space-y-1 text-xs">
                     <li>• Progressive tax brackets</li>
                     <li>• Custom deductions</li>
                     <li>• Corporate tax tiers</li>
                   </ul>
                 </div>
-                <div className="p-3 rounded-lg bg-card border border-amber-200/30">
-                  <h5 className="font-medium text-sm mb-2">Advanced Features:</h5>
-                  <ul className="text-xs text-muted-foreground space-y-1">
+                <div className="bg-card rounded-lg border border-amber-200/30 p-3">
+                  <h5 className="mb-2 text-sm font-medium">Advanced Features:</h5>
+                  <ul className="text-muted-foreground space-y-1 text-xs">
                     <li>• Tax simulation modeling</li>
                     <li>• Revenue optimization</li>
                     <li>• Policy impact analysis</li>
@@ -647,8 +729,8 @@ export function FiscalSystemSection({
   const advancedContent = (
     <>
       <div className="md:col-span-2">
-        <div className="p-4 rounded-lg bg-muted/50 border">
-          <p className="text-sm text-muted-foreground">
+        <div className="bg-muted/50 rounded-lg border p-4">
+          <p className="text-muted-foreground text-sm">
             Advanced fiscal analytics and detailed reporting features will be available here.
           </p>
         </div>
@@ -660,23 +742,23 @@ export function FiscalSystemSection({
   const generateInsights = () => {
     const insights = [];
     const deficitPercent = Math.abs((fiscalSystem.budgetDeficitSurplus || 0) / nominalGDP) * 100;
-    
+
     if (deficitPercent > 5) {
       insights.push("High budget deficit may require fiscal consolidation measures");
     }
-    
+
     if (fiscalSystem.totalDebtGDPRatio > 90) {
       insights.push("Public debt exceeds 90% of GDP - consider debt reduction strategies");
     } else if (fiscalSystem.totalDebtGDPRatio > 60) {
       insights.push("Public debt approaching concerning levels - monitor carefully");
     }
-    
+
     if (fiscalSystem.taxRevenueGDPPercent < 15) {
       insights.push("Low tax revenue may limit government's ability to provide public services");
     } else if (fiscalSystem.taxRevenueGDPPercent > 40) {
       insights.push("High tax burden may impact economic competitiveness");
     }
-    
+
     return insights;
   };
 
@@ -684,12 +766,14 @@ export function FiscalSystemSection({
 
   return (
     <SectionBase
-      config={sectionConfigs.fiscal || { 
-        id: 'fiscal', 
-        title: 'Fiscal System', 
-        icon: Building2, 
-        theme: 'blue' as const
-      }}
+      config={
+        sectionConfigs.fiscal || {
+          id: "fiscal",
+          title: "Fiscal System",
+          icon: Building2,
+          theme: "blue" as const,
+        }
+      }
       inputs={inputs}
       onInputsChange={onInputsChange}
       isReadOnly={false}
@@ -703,8 +787,8 @@ export function FiscalSystemSection({
         warnings: insights,
         info: [
           `Fiscal Health Score: ${fiscalHealthScore.toFixed(0)}/100`,
-          `Debt Service Cost: ${sectionUtils.formatCurrency(fiscalSystem.debtServiceCosts)}/year`
-        ]
+          `Debt Service Cost: ${sectionUtils.formatCurrency(fiscalSystem.debtServiceCosts)}/year`,
+        ],
       }}
       className={className}
       helpContent={<EconomicsHelpSystem />}

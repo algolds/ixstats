@@ -29,7 +29,7 @@ export function AdminFavoriteButton({
   category = "general",
   className,
   size = "sm",
-  variant = "ghost"
+  variant = "ghost",
 }: AdminFavoriteButtonProps) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -45,11 +45,11 @@ export function AdminFavoriteButton({
 
   // Handle favorites loading error silently
   if (favoritesError) {
-    console.warn('Failed to load admin favorites for button:', favoritesError);
+    console.warn("Failed to load admin favorites for button:", favoritesError);
   }
 
   // Check if this panel is favorited
-  const isFavorited = favorites.some(fav => fav.panelId === panelId);
+  const isFavorited = favorites.some((fav) => fav.panelId === panelId);
 
   // Mutations
   const addFavoriteMutation = api.users.addAdminFavorite.useMutation();
@@ -103,23 +103,27 @@ export function AdminFavoriteButton({
       title={isFavorited ? "Remove from favorites" : "Add to favorites"}
     >
       {isFavorited ? (
-        <Star className={cn(
-          "transition-all duration-200",
-          size === "sm" && "h-4 w-4",
-          size === "default" && "h-5 w-5",
-          size === "lg" && "h-6 w-6",
-          size === "icon" && "h-5 w-5",
-          "fill-current"
-        )} />
+        <Star
+          className={cn(
+            "transition-all duration-200",
+            size === "sm" && "h-4 w-4",
+            size === "default" && "h-5 w-5",
+            size === "lg" && "h-6 w-6",
+            size === "icon" && "h-5 w-5",
+            "fill-current"
+          )}
+        />
       ) : (
-        <StarOff className={cn(
-          "transition-all duration-200",
-          size === "sm" && "h-4 w-4",
-          size === "default" && "h-5 w-5",
-          size === "lg" && "h-6 w-6",
-          size === "icon" && "h-5 w-5",
-          isHovered && "scale-110"
-        )} />
+        <StarOff
+          className={cn(
+            "transition-all duration-200",
+            size === "sm" && "h-4 w-4",
+            size === "default" && "h-5 w-5",
+            size === "lg" && "h-6 w-6",
+            size === "icon" && "h-5 w-5",
+            isHovered && "scale-110"
+          )}
+        />
       )}
     </Button>
   );

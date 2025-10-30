@@ -1,18 +1,18 @@
 /**
  * Real-time Atomic Effects Integration
- * 
+ *
  * This module integrates all atomic components (Government, Economic, Tax) into
  * real-time economic calculations, applying modifiers to GDP, tax revenue,
  * employment, inflation, and other key economic indicators.
  */
 
-import { ComponentType, EconomicComponentType, TaxComponentType } from '@prisma/client';
+import { ComponentType, EconomicComponentType, TaxComponentType } from "@prisma/client";
 import {
   calculateOverallEffectiveness,
   calculateClientAtomicEconomicImpact,
   detectPotentialSynergies,
-  detectConflicts
-} from './atomic-client-calculations';
+  detectConflicts,
+} from "./atomic-client-calculations";
 
 export interface RealTimeEffects {
   gdpModifiers: {
@@ -118,62 +118,62 @@ export function calculateRealTimeAtomicEffects(
       unemploymentModifier: 1.0,
       productivityModifier: 1.0,
       inflationModifier: 1.0,
-      priceStabilityModifier: 1.0
+      priceStabilityModifier: 1.0,
     },
     economic: economicModifiers,
     tax: taxComponentModifiers,
     stability: {
-      stabilityModifier: 1.0 + (governmentStabilityModifiers / 100),
+      stabilityModifier: 1.0 + governmentStabilityModifiers / 100,
       institutionalModifier: 1.0,
-      legitimacyModifier: 1.0
-    }
+      legitimacyModifier: 1.0,
+    },
   });
 
   return {
     gdpModifiers: {
       growthRateMultiplier: combinedModifiers.gdpGrowthModifier,
       baseValueMultiplier: combinedModifiers.gdpBaseModifier,
-      perCapitaMultiplier: combinedModifiers.gdpPerCapitaModifier
+      perCapitaMultiplier: combinedModifiers.gdpPerCapitaModifier,
     },
     taxModifiers: {
       revenueMultiplier: combinedModifiers.taxRevenueModifier,
       collectionEfficiencyMultiplier: combinedModifiers.taxCollectionModifier,
-      complianceRateMultiplier: combinedModifiers.taxComplianceModifier
+      complianceRateMultiplier: combinedModifiers.taxComplianceModifier,
     },
     employmentModifiers: {
       participationRateMultiplier: combinedModifiers.employmentParticipationModifier,
       unemploymentRateMultiplier: combinedModifiers.unemploymentModifier,
-      productivityMultiplier: combinedModifiers.productivityModifier
+      productivityMultiplier: combinedModifiers.productivityModifier,
     },
     inflationModifiers: {
       inflationRateMultiplier: combinedModifiers.inflationModifier,
-      priceStabilityMultiplier: combinedModifiers.priceStabilityModifier
+      priceStabilityMultiplier: combinedModifiers.priceStabilityModifier,
     },
     stabilityModifiers: {
       overallStabilityMultiplier: combinedModifiers.stabilityModifier,
       institutionalCapacityMultiplier: combinedModifiers.institutionalModifier,
-      legitimacyMultiplier: combinedModifiers.legitimacyModifier
+      legitimacyMultiplier: combinedModifiers.legitimacyModifier,
     },
     synergies: {
-      activeSynergies: synergies.map(synergy => ({
+      activeSynergies: synergies.map((synergy) => ({
         name: synergy.description,
         description: synergy.description,
         effectivenessBonus: (synergy.economicBonus + synergy.taxBonus) * 50, // Convert to percentage
-        affectedMetrics: ['gdpGrowth', 'taxRevenue', 'stability']
+        affectedMetrics: ["gdpGrowth", "taxRevenue", "stability"],
       })),
-      crossBuilderSynergies: crossBuilderSynergies.map(synergy => ({
+      crossBuilderSynergies: crossBuilderSynergies.map((synergy) => ({
         id: synergy.id,
         description: synergy.description,
         effectivenessBonus: synergy.effectivenessBonus,
-        affectedMetrics: synergy.affectedMetrics || []
-      }))
+        affectedMetrics: synergy.affectedMetrics || [],
+      })),
     },
-    conflicts: conflicts.map(conflict => ({
+    conflicts: conflicts.map((conflict) => ({
       name: conflict.description,
       description: conflict.description,
       effectivenessPenalty: (conflict.economicPenalty + conflict.taxPenalty) * 50, // Convert to percentage
-      affectedMetrics: ['gdpGrowth', 'taxRevenue', 'stability']
-    }))
+      affectedMetrics: ["gdpGrowth", "taxRevenue", "stability"],
+    })),
   };
 }
 
@@ -203,35 +203,45 @@ export function applyRealTimeEffects(
   totalConflictPenalty: number;
 } {
   // Calculate synergy and conflict bonuses
-  const totalSynergyBonus = effects.synergies.activeSynergies.reduce(
-    (sum, synergy) => sum + synergy.effectivenessBonus, 0
-  ) + effects.synergies.crossBuilderSynergies.reduce(
-    (sum, synergy) => sum + synergy.effectivenessBonus, 0
-  );
+  const totalSynergyBonus =
+    effects.synergies.activeSynergies.reduce(
+      (sum, synergy) => sum + synergy.effectivenessBonus,
+      0
+    ) +
+    effects.synergies.crossBuilderSynergies.reduce(
+      (sum, synergy) => sum + synergy.effectivenessBonus,
+      0
+    );
 
   const totalConflictPenalty = effects.conflicts.reduce(
-    (sum, conflict) => sum + conflict.effectivenessPenalty, 0
+    (sum, conflict) => sum + conflict.effectivenessPenalty,
+    0
   );
 
   // Apply modifiers with synergy/conflict adjustments
   const synergyMultiplier = 1 + (totalSynergyBonus - totalConflictPenalty) / 100;
 
   return {
-    enhancedGdpGrowthRate: baseData.gdpGrowthRate * 
-      effects.gdpModifiers.growthRateMultiplier * synergyMultiplier,
-    enhancedNominalGDP: baseData.nominalGDP * 
-      effects.gdpModifiers.baseValueMultiplier * synergyMultiplier,
-    enhancedGdpPerCapita: baseData.gdpPerCapita * 
-      effects.gdpModifiers.perCapitaMultiplier * synergyMultiplier,
-    enhancedTaxRevenueGDPPercent: baseData.taxRevenueGDPPercent * 
-      effects.taxModifiers.revenueMultiplier * synergyMultiplier,
-    enhancedUnemploymentRate: Math.max(0, baseData.unemploymentRate * 
-      effects.employmentModifiers.unemploymentRateMultiplier / synergyMultiplier),
-    enhancedInflationRate: baseData.inflationRate * 
-      effects.inflationModifiers.inflationRateMultiplier * synergyMultiplier,
+    enhancedGdpGrowthRate:
+      baseData.gdpGrowthRate * effects.gdpModifiers.growthRateMultiplier * synergyMultiplier,
+    enhancedNominalGDP:
+      baseData.nominalGDP * effects.gdpModifiers.baseValueMultiplier * synergyMultiplier,
+    enhancedGdpPerCapita:
+      baseData.gdpPerCapita * effects.gdpModifiers.perCapitaMultiplier * synergyMultiplier,
+    enhancedTaxRevenueGDPPercent:
+      baseData.taxRevenueGDPPercent * effects.taxModifiers.revenueMultiplier * synergyMultiplier,
+    enhancedUnemploymentRate: Math.max(
+      0,
+      (baseData.unemploymentRate * effects.employmentModifiers.unemploymentRateMultiplier) /
+        synergyMultiplier
+    ),
+    enhancedInflationRate:
+      baseData.inflationRate *
+      effects.inflationModifiers.inflationRateMultiplier *
+      synergyMultiplier,
     enhancedPopulation: baseData.population, // Population typically not affected by atomic components
     totalSynergyBonus,
-    totalConflictPenalty
+    totalConflictPenalty,
   };
 }
 
@@ -249,7 +259,7 @@ function calculateEconomicComponentModifiers(economicComponents: EconomicCompone
     unemploymentModifier: 1.0,
     productivityModifier: 1.0,
     inflationModifier: 1.0,
-    priceStabilityModifier: 1.0
+    priceStabilityModifier: 1.0,
   };
 }
 
@@ -262,7 +272,7 @@ function calculateTaxComponentModifiers(taxComponents: TaxComponentType[]): any 
   return {
     taxRevenueModifier: 1.0,
     taxCollectionModifier: 1.0,
-    taxComplianceModifier: 1.0
+    taxComplianceModifier: 1.0,
   };
 }
 
@@ -282,21 +292,28 @@ function calculateCrossBuilderSynergies(
   const synergies = [];
 
   // Example cross-builder synergies (simplified)
-  if (government.includes(ComponentType.DEMOCRATIC_PROCESS) && economic.includes(EconomicComponentType.FREE_MARKET_SYSTEM)) {
+  if (
+    government.includes(ComponentType.DEMOCRATIC_PROCESS) &&
+    economic.includes(EconomicComponentType.FREE_MARKET_SYSTEM)
+  ) {
     synergies.push({
-      id: 'democracy-free-market',
-      description: 'Democratic institutions enhance free market efficiency',
+      id: "democracy-free-market",
+      description: "Democratic institutions enhance free market efficiency",
       effectivenessBonus: 5,
-      affectedMetrics: ['gdpGrowth', 'taxRevenue', 'stability']
+      affectedMetrics: ["gdpGrowth", "taxRevenue", "stability"],
     });
   }
 
-  if (government.includes(ComponentType.PROFESSIONAL_BUREAUCRACY) && tax.includes(TaxComponentType.PROGRESSIVE_TAX)) {
+  if (
+    government.includes(ComponentType.PROFESSIONAL_BUREAUCRACY) &&
+    tax.includes(TaxComponentType.PROGRESSIVE_TAX)
+  ) {
     synergies.push({
-      id: 'bureaucracy-progressive-tax',
-      description: 'Professional bureaucracy coordination with progressive taxation improves economic stability',
+      id: "bureaucracy-progressive-tax",
+      description:
+        "Professional bureaucracy coordination with progressive taxation improves economic stability",
       effectivenessBonus: 3,
-      affectedMetrics: ['inflation', 'stability', 'taxRevenue']
+      affectedMetrics: ["inflation", "stability", "taxRevenue"],
     });
   }
 
@@ -313,31 +330,39 @@ function combineAllModifiers(modifiers: {
   stability: any;
 }): any {
   return {
-    gdpGrowthModifier: (modifiers.government.gdpGrowthModifier || 1.0) * 
+    gdpGrowthModifier:
+      (modifiers.government.gdpGrowthModifier || 1.0) *
       (modifiers.economic.gdpGrowthModifier || 1.0),
-    gdpBaseModifier: (modifiers.government.gdpBaseModifier || 1.0) * 
-      (modifiers.economic.gdpBaseModifier || 1.0),
-    gdpPerCapitaModifier: (modifiers.government.gdpPerCapitaModifier || 1.0) * 
+    gdpBaseModifier:
+      (modifiers.government.gdpBaseModifier || 1.0) * (modifiers.economic.gdpBaseModifier || 1.0),
+    gdpPerCapitaModifier:
+      (modifiers.government.gdpPerCapitaModifier || 1.0) *
       (modifiers.economic.gdpPerCapitaModifier || 1.0),
-    taxRevenueModifier: (modifiers.government.taxRevenueModifier || 1.0) * 
-      (modifiers.tax.taxRevenueModifier || 1.0),
-    taxCollectionModifier: (modifiers.government.taxCollectionModifier || 1.0) * 
+    taxRevenueModifier:
+      (modifiers.government.taxRevenueModifier || 1.0) * (modifiers.tax.taxRevenueModifier || 1.0),
+    taxCollectionModifier:
+      (modifiers.government.taxCollectionModifier || 1.0) *
       (modifiers.tax.taxCollectionModifier || 1.0),
-    taxComplianceModifier: (modifiers.government.taxComplianceModifier || 1.0) * 
+    taxComplianceModifier:
+      (modifiers.government.taxComplianceModifier || 1.0) *
       (modifiers.tax.taxComplianceModifier || 1.0),
-    employmentParticipationModifier: (modifiers.government.employmentParticipationModifier || 1.0) * 
+    employmentParticipationModifier:
+      (modifiers.government.employmentParticipationModifier || 1.0) *
       (modifiers.economic.employmentParticipationModifier || 1.0),
-    unemploymentModifier: (modifiers.government.unemploymentModifier || 1.0) * 
+    unemploymentModifier:
+      (modifiers.government.unemploymentModifier || 1.0) *
       (modifiers.economic.unemploymentModifier || 1.0),
-    productivityModifier: (modifiers.government.productivityModifier || 1.0) * 
+    productivityModifier:
+      (modifiers.government.productivityModifier || 1.0) *
       (modifiers.economic.productivityModifier || 1.0),
-    inflationModifier: (modifiers.government.inflationModifier || 1.0) * 
+    inflationModifier:
+      (modifiers.government.inflationModifier || 1.0) *
       (modifiers.economic.inflationModifier || 1.0),
-    priceStabilityModifier: (modifiers.government.priceStabilityModifier || 1.0) * 
+    priceStabilityModifier:
+      (modifiers.government.priceStabilityModifier || 1.0) *
       (modifiers.economic.priceStabilityModifier || 1.0),
     stabilityModifier: modifiers.stability.stabilityModifier || 1.0,
     institutionalModifier: modifiers.stability.institutionalModifier || 1.0,
-    legitimacyModifier: modifiers.stability.legitimacyModifier || 1.0
+    legitimacyModifier: modifiers.stability.legitimacyModifier || 1.0,
   };
 }
-

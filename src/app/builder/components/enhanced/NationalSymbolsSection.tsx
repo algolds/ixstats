@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { GlassCard, GlassCardContent, GlassCardHeader } from '../glass/GlassCard';
-import { Button } from '~/components/ui/button';
-import { Image as ImageIcon } from 'lucide-react';
-import { MediaSearchModal } from '~/components/MediaSearchModal';
-import { CountrySymbolsUploader } from '../CountrySymbolsUploader';
-import type { EconomicInputs, RealCountryData } from '~/app/builder/lib/economy-data-service';
-import { useBuilderTheming } from '~/hooks/useBuilderTheming';
-import { unifiedFlagService } from '~/lib/unified-flag-service';
-import { wikiCommonsFlagService } from '~/lib/wiki-commons-flag-service';
+import React, { useState, useEffect } from "react";
+import { GlassCard, GlassCardContent, GlassCardHeader } from "../glass/GlassCard";
+import { Button } from "~/components/ui/button";
+import { Image as ImageIcon } from "lucide-react";
+import { MediaSearchModal } from "~/components/MediaSearchModal";
+import { CountrySymbolsUploader } from "../CountrySymbolsUploader";
+import type { EconomicInputs, RealCountryData } from "~/app/builder/lib/economy-data-service";
+import { useBuilderTheming } from "~/hooks/useBuilderTheming";
+import { unifiedFlagService } from "~/lib/unified-flag-service";
+import { wikiCommonsFlagService } from "~/lib/wiki-commons-flag-service";
 
 interface NationalSymbolsSectionProps {
   inputs: EconomicInputs;
@@ -23,13 +23,13 @@ function getFoundationCountryName(referenceCountry: RealCountryData): string {
   if (referenceCountry.foundationCountryName) {
     return referenceCountry.foundationCountryName;
   }
-  
+
   // Fallback: extract from "New [Country]" format for backwards compatibility
   const name = referenceCountry.name;
-  if (name.startsWith('New ')) {
+  if (name.startsWith("New ")) {
     return name.substring(4); // Remove "New " prefix
   }
-  
+
   // Last resort: use the name as-is
   return name;
 }
@@ -42,22 +42,24 @@ export function NationalSymbolsSection({
   const [showFlagImageModal, setShowFlagImageModal] = useState(false);
   const [showCoatOfArmsImageModal, setShowCoatOfArmsImageModal] = useState(false);
   const [foundationFlagUrl, setFoundationFlagUrl] = useState<string | undefined>(undefined); // State for fetched flag URL
-  const [foundationCoatOfArmsUrl, setFoundationCoatOfArmsUrl] = useState<string | undefined>(undefined); // State for fetched coat of arms URL
+  const [foundationCoatOfArmsUrl, setFoundationCoatOfArmsUrl] = useState<string | undefined>(
+    undefined
+  ); // State for fetched coat of arms URL
 
   // Fetch foundation flag and coat of arms URLs using Wiki Commons API
   useEffect(() => {
     const fetchSymbols = async () => {
       // Get the stable foundation country name
       const foundationCountryName = getFoundationCountryName(referenceCountry);
-      
+
       if (foundationCountryName) {
         try {
           // Fetch flag from unified service (cache-first) and coat of arms from wiki commons
           const [flagUrl, coatOfArmsResult] = await Promise.all([
             unifiedFlagService.getFlagUrl(foundationCountryName),
-            wikiCommonsFlagService.getCoatOfArmsUrl(foundationCountryName)
+            wikiCommonsFlagService.getCoatOfArmsUrl(foundationCountryName),
           ]);
-          
+
           if (flagUrl) {
             setFoundationFlagUrl(flagUrl);
           } else {
@@ -69,7 +71,6 @@ export function NationalSymbolsSection({
           } else {
             setFoundationCoatOfArmsUrl(undefined);
           }
-
         } catch (error) {
           setFoundationFlagUrl(undefined);
           setFoundationCoatOfArmsUrl(undefined);
@@ -81,10 +82,10 @@ export function NationalSymbolsSection({
 
   // Auto-fill flag and coat of arms from foundation country when available
   useEffect(() => {
-    if (foundationFlagUrl && (!inputs.flagUrl || inputs.flagUrl === '')) {
+    if (foundationFlagUrl && (!inputs.flagUrl || inputs.flagUrl === "")) {
       handleFlagUrlChange(foundationFlagUrl);
     }
-    if (foundationCoatOfArmsUrl && (!inputs.coatOfArmsUrl || inputs.coatOfArmsUrl === '')) {
+    if (foundationCoatOfArmsUrl && (!inputs.coatOfArmsUrl || inputs.coatOfArmsUrl === "")) {
       handleCoatOfArmsUrlChange(foundationCoatOfArmsUrl);
     }
   }, [foundationFlagUrl, foundationCoatOfArmsUrl, inputs.flagUrl, inputs.coatOfArmsUrl]);
@@ -102,11 +103,11 @@ export function NationalSymbolsSection({
   };
 
   const handleFlagUrlChange = (url: string) => {
-    handleSymbolsChange(url, inputs.coatOfArmsUrl ?? '');
+    handleSymbolsChange(url, inputs.coatOfArmsUrl ?? "");
   };
 
   const handleCoatOfArmsUrlChange = (url: string) => {
-    handleSymbolsChange(inputs.flagUrl ?? '', url);
+    handleSymbolsChange(inputs.flagUrl ?? "", url);
   };
 
   return (
@@ -115,12 +116,12 @@ export function NationalSymbolsSection({
         <GlassCard depth="elevated" blur="medium">
           <GlassCardContent>
             <CountrySymbolsUploader
-              flagUrl={inputs.flagUrl ?? ''}
-              coatOfArmsUrl={inputs.coatOfArmsUrl ?? ''}
+              flagUrl={inputs.flagUrl ?? ""}
+              coatOfArmsUrl={inputs.coatOfArmsUrl ?? ""}
               foundationCountry={{
                 name: foundationCountryName, // Use the original foundation country name
                 flagUrl: foundationFlagUrl,
-                coatOfArmsUrl: foundationCoatOfArmsUrl // Now dynamically fetched from Wiki Commons
+                coatOfArmsUrl: foundationCoatOfArmsUrl, // Now dynamically fetched from Wiki Commons
               }}
               onSelectFlag={() => setShowFlagImageModal(true)}
               onSelectCoatOfArms={() => setShowCoatOfArmsImageModal(true)}

@@ -1,9 +1,9 @@
 // src/components/quickactions/MeetingDecisionsModal.tsx
 "use client";
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { api } from '~/trpc/react';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { api } from "~/trpc/react";
 import {
   Dialog,
   DialogContent,
@@ -11,32 +11,24 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '~/components/ui/dialog';
-import { Button } from '~/components/ui/button';
-import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
-import { Textarea } from '~/components/ui/textarea';
-import { Badge } from '~/components/ui/badge';
-import { Separator } from '~/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
+} from "~/components/ui/dialog";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
+import { Badge } from "~/components/ui/badge";
+import { Separator } from "~/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '~/components/ui/select';
-import { Checkbox } from '~/components/ui/checkbox';
-import {
-  CheckCircle2,
-  ListTodo,
-  Gavel,
-  Plus,
-  AlertCircle,
-  Sparkles,
-  X
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "~/components/ui/select";
+import { Checkbox } from "~/components/ui/checkbox";
+import { CheckCircle2, ListTodo, Gavel, Plus, AlertCircle, Sparkles, X } from "lucide-react";
+import { toast } from "sonner";
 
 interface MeetingDecisionsModalProps {
   meetingId: string;
@@ -74,12 +66,12 @@ interface ActionItem {
 }
 
 const DECISION_TYPES = [
-  { value: 'policy_approval', label: 'Policy Approval', icon: '📋' },
-  { value: 'budget_allocation', label: 'Budget Allocation', icon: '💰' },
-  { value: 'appointment', label: 'Appointment/Personnel', icon: '👤' },
-  { value: 'directive', label: 'Executive Directive', icon: '📄' },
-  { value: 'resolution', label: 'Resolution', icon: '✅' },
-  { value: 'other', label: 'Other', icon: '📌' },
+  { value: "policy_approval", label: "Policy Approval", icon: "📋" },
+  { value: "budget_allocation", label: "Budget Allocation", icon: "💰" },
+  { value: "appointment", label: "Appointment/Personnel", icon: "👤" },
+  { value: "directive", label: "Executive Directive", icon: "📄" },
+  { value: "resolution", label: "Resolution", icon: "✅" },
+  { value: "other", label: "Other", icon: "📌" },
 ];
 
 export function MeetingDecisionsModal({
@@ -89,22 +81,22 @@ export function MeetingDecisionsModal({
   onOpenChange,
   onComplete,
 }: MeetingDecisionsModalProps) {
-  const [activeTab, setActiveTab] = useState('suggested');
-  const [notes, setNotes] = useState('');
+  const [activeTab, setActiveTab] = useState("suggested");
+  const [notes, setNotes] = useState("");
 
   // Decisions
   const [decisions, setDecisions] = useState<Decision[]>([]);
-  const [newDecisionTitle, setNewDecisionTitle] = useState('');
-  const [newDecisionDesc, setNewDecisionDesc] = useState('');
-  const [newDecisionType, setNewDecisionType] = useState('resolution');
-  const [newDecisionImpact, setNewDecisionImpact] = useState('medium');
+  const [newDecisionTitle, setNewDecisionTitle] = useState("");
+  const [newDecisionDesc, setNewDecisionDesc] = useState("");
+  const [newDecisionType, setNewDecisionType] = useState("resolution");
+  const [newDecisionImpact, setNewDecisionImpact] = useState("medium");
 
   // Action Items
   const [actionItems, setActionItems] = useState<ActionItem[]>([]);
-  const [newActionTitle, setNewActionTitle] = useState('');
-  const [newActionDesc, setNewActionDesc] = useState('');
-  const [newActionAssignee, setNewActionAssignee] = useState('');
-  const [newActionPriority, setNewActionPriority] = useState('normal');
+  const [newActionTitle, setNewActionTitle] = useState("");
+  const [newActionDesc, setNewActionDesc] = useState("");
+  const [newActionAssignee, setNewActionAssignee] = useState("");
+  const [newActionPriority, setNewActionPriority] = useState("normal");
 
   // Complete meeting and get suggestions
   const completeMeeting = api.quickActions.completeMeeting.useMutation({
@@ -112,7 +104,7 @@ export function MeetingDecisionsModal({
       toast.success(result.message);
       // Auto-add suggested decisions
       if (result.suggestedDecisions && result.suggestedDecisions.length > 0) {
-        setActiveTab('decisions');
+        setActiveTab("decisions");
       }
     },
     onError: (error) => {
@@ -123,7 +115,7 @@ export function MeetingDecisionsModal({
   // Create decisions
   const createDecision = api.quickActions.createDecision.useMutation({
     onSuccess: () => {
-      toast.success('Decision recorded');
+      toast.success("Decision recorded");
     },
     onError: (error) => {
       toast.error(`Failed to record decision: ${error.message}`);
@@ -151,7 +143,7 @@ export function MeetingDecisionsModal({
 
   const addDecision = () => {
     if (!newDecisionTitle.trim() || !newDecisionDesc.trim()) {
-      toast.error('Decision title and description are required');
+      toast.error("Decision title and description are required");
       return;
     }
 
@@ -164,15 +156,15 @@ export function MeetingDecisionsModal({
     };
 
     setDecisions([...decisions, decision]);
-    setNewDecisionTitle('');
-    setNewDecisionDesc('');
-    setNewDecisionType('resolution');
-    setNewDecisionImpact('medium');
+    setNewDecisionTitle("");
+    setNewDecisionDesc("");
+    setNewDecisionType("resolution");
+    setNewDecisionImpact("medium");
   };
 
   const addActionItem = () => {
     if (!newActionTitle.trim()) {
-      toast.error('Action item title is required');
+      toast.error("Action item title is required");
       return;
     }
 
@@ -182,15 +174,15 @@ export function MeetingDecisionsModal({
       assignedTo: newActionAssignee,
       dueDate: null,
       priority: newActionPriority,
-      category: '',
+      category: "",
       tags: [],
     };
 
     setActionItems([...actionItems, action]);
-    setNewActionTitle('');
-    setNewActionDesc('');
-    setNewActionAssignee('');
-    setNewActionPriority('normal');
+    setNewActionTitle("");
+    setNewActionDesc("");
+    setNewActionAssignee("");
+    setNewActionPriority("normal");
   };
 
   const handleFinalizeAndSave = async () => {
@@ -203,10 +195,17 @@ export function MeetingDecisionsModal({
         decisionType: decision.decisionType as any,
         impact: decision.impact as any,
         createPolicy: decision.createPolicy,
-        policyData: decision.policyData ? {
-          ...decision.policyData,
-          policyType: decision.policyData.policyType as 'economic' | 'social' | 'diplomatic' | 'infrastructure' | 'governance',
-        } : undefined,
+        policyData: decision.policyData
+          ? {
+              ...decision.policyData,
+              policyType: decision.policyData.policyType as
+                | "economic"
+                | "social"
+                | "diplomatic"
+                | "infrastructure"
+                | "governance",
+            }
+          : undefined,
       });
     }
 
@@ -214,7 +213,7 @@ export function MeetingDecisionsModal({
     if (actionItems.length > 0) {
       await createActionItems.mutateAsync({
         meetingId,
-        items: actionItems.map(item => ({
+        items: actionItems.map((item) => ({
           title: item.title,
           description: item.description || undefined,
           assignedTo: item.assignedTo || undefined,
@@ -235,7 +234,7 @@ export function MeetingDecisionsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Gavel className="h-5 w-5 text-amber-600" />
@@ -249,15 +248,15 @@ export function MeetingDecisionsModal({
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="suggested">
-              <Sparkles className="h-4 w-4 mr-2" />
+              <Sparkles className="mr-2 h-4 w-4" />
               Suggested
             </TabsTrigger>
             <TabsTrigger value="decisions">
-              <Gavel className="h-4 w-4 mr-2" />
+              <Gavel className="mr-2 h-4 w-4" />
               Decisions ({decisions.length})
             </TabsTrigger>
             <TabsTrigger value="actions">
-              <ListTodo className="h-4 w-4 mr-2" />
+              <ListTodo className="mr-2 h-4 w-4" />
               Action Items ({actionItems.length})
             </TabsTrigger>
           </TabsList>
@@ -282,7 +281,9 @@ export function MeetingDecisionsModal({
                   disabled={completeMeeting.isPending}
                   className="w-full"
                 >
-                  {completeMeeting.isPending ? 'Completing...' : 'Complete Meeting & Get Suggestions'}
+                  {completeMeeting.isPending
+                    ? "Completing..."
+                    : "Complete Meeting & Get Suggestions"}
                 </Button>
               </div>
             ) : (
@@ -295,26 +296,30 @@ export function MeetingDecisionsModal({
                 {suggestedDecisions.length > 0 ? (
                   <div className="space-y-2">
                     {suggestedDecisions.map((suggestion, index) => {
-                      const typeConfig = DECISION_TYPES.find(t => t.value === suggestion.decisionType);
+                      const typeConfig = DECISION_TYPES.find(
+                        (t) => t.value === suggestion.decisionType
+                      );
                       return (
                         <motion.div
                           key={index}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.1 }}
-                          className="p-3 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
+                          className="bg-card hover:bg-accent/50 rounded-lg border p-3 transition-colors"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
+                              <div className="mb-1 flex items-center gap-2">
                                 <span className="text-lg">{typeConfig?.icon}</span>
-                                <h4 className="font-medium text-sm">{suggestion.title}</h4>
+                                <h4 className="text-sm font-medium">{suggestion.title}</h4>
                                 <Badge variant="outline" className="text-xs">
                                   {typeConfig?.label}
                                 </Badge>
                               </div>
-                              <p className="text-sm text-muted-foreground">{suggestion.description}</p>
-                              <p className="text-xs text-muted-foreground mt-1">
+                              <p className="text-muted-foreground text-sm">
+                                {suggestion.description}
+                              </p>
+                              <p className="text-muted-foreground mt-1 text-xs">
                                 From: {suggestion.agendaTitle}
                               </p>
                             </div>
@@ -322,14 +327,17 @@ export function MeetingDecisionsModal({
                               size="sm"
                               variant="outline"
                               onClick={() => {
-                                setDecisions([...decisions, {
-                                  title: suggestion.title,
-                                  description: suggestion.description,
-                                  decisionType: suggestion.decisionType,
-                                  impact: 'medium',
-                                  createPolicy: false,
-                                }]);
-                                toast.success('Added to decisions');
+                                setDecisions([
+                                  ...decisions,
+                                  {
+                                    title: suggestion.title,
+                                    description: suggestion.description,
+                                    decisionType: suggestion.decisionType,
+                                    impact: "medium",
+                                    createPolicy: false,
+                                  },
+                                ]);
+                                toast.success("Added to decisions");
                               }}
                             >
                               <Plus className="h-4 w-4" />
@@ -340,15 +348,15 @@ export function MeetingDecisionsModal({
                     })}
                   </div>
                 ) : (
-                  <div className="p-4 border rounded-lg bg-muted/30 text-sm text-muted-foreground">
-                    <AlertCircle className="h-4 w-4 inline mr-2" />
+                  <div className="bg-muted/30 text-muted-foreground rounded-lg border p-4 text-sm">
+                    <AlertCircle className="mr-2 inline h-4 w-4" />
                     No suggestions available. You can manually add decisions in the Decisions tab.
                   </div>
                 )}
 
                 <Button
                   variant="secondary"
-                  onClick={() => setActiveTab('decisions')}
+                  onClick={() => setActiveTab("decisions")}
                   className="w-full"
                 >
                   Continue to Decisions
@@ -360,27 +368,30 @@ export function MeetingDecisionsModal({
           {/* Decisions Tab */}
           <TabsContent value="decisions" className="space-y-4">
             {decisions.length > 0 && (
-              <div className="space-y-2 mb-4">
+              <div className="mb-4 space-y-2">
                 {decisions.map((decision, index) => (
-                  <div key={index} className="p-3 border rounded-lg bg-card">
+                  <div key={index} className="bg-card rounded-lg border p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium text-sm">{decision.title}</h4>
+                        <div className="mb-1 flex items-center gap-2">
+                          <h4 className="text-sm font-medium">{decision.title}</h4>
                           <Badge variant="outline" className="text-xs">
-                            {DECISION_TYPES.find(t => t.value === decision.decisionType)?.label}
+                            {DECISION_TYPES.find((t) => t.value === decision.decisionType)?.label}
                           </Badge>
                           <Badge
                             variant={
-                              decision.impact === 'high' ? 'destructive' :
-                              decision.impact === 'medium' ? 'default' : 'secondary'
+                              decision.impact === "high"
+                                ? "destructive"
+                                : decision.impact === "medium"
+                                  ? "default"
+                                  : "secondary"
                             }
                             className="text-xs"
                           >
                             {decision.impact} impact
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">{decision.description}</p>
+                        <p className="text-muted-foreground text-sm">{decision.description}</p>
                       </div>
                       <Button
                         size="sm"
@@ -396,7 +407,7 @@ export function MeetingDecisionsModal({
             )}
 
             {/* Add new decision */}
-            <div className="p-4 border-2 border-dashed rounded-lg space-y-3 bg-muted/20">
+            <div className="bg-muted/20 space-y-3 rounded-lg border-2 border-dashed p-4">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <Plus className="h-4 w-4" />
                 Add Decision
@@ -423,7 +434,7 @@ export function MeetingDecisionsModal({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {DECISION_TYPES.map(type => (
+                        {DECISION_TYPES.map((type) => (
                           <SelectItem key={type.value} value={type.value}>
                             {type.icon} {type.label}
                           </SelectItem>
@@ -453,17 +464,13 @@ export function MeetingDecisionsModal({
                   onClick={addDecision}
                   className="w-full"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Add Decision
                 </Button>
               </div>
             </div>
 
-            <Button
-              variant="secondary"
-              onClick={() => setActiveTab('actions')}
-              className="w-full"
-            >
+            <Button variant="secondary" onClick={() => setActiveTab("actions")} className="w-full">
               Continue to Action Items
             </Button>
           </TabsContent>
@@ -471,17 +478,20 @@ export function MeetingDecisionsModal({
           {/* Action Items Tab */}
           <TabsContent value="actions" className="space-y-4">
             {actionItems.length > 0 && (
-              <div className="space-y-2 mb-4">
+              <div className="mb-4 space-y-2">
                 {actionItems.map((action, index) => (
-                  <div key={index} className="p-3 border rounded-lg bg-card">
+                  <div key={index} className="bg-card rounded-lg border p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-medium text-sm">{action.title}</h4>
+                        <div className="mb-1 flex items-center gap-2">
+                          <h4 className="text-sm font-medium">{action.title}</h4>
                           <Badge
                             variant={
-                              action.priority === 'urgent' ? 'destructive' :
-                              action.priority === 'high' ? 'default' : 'secondary'
+                              action.priority === "urgent"
+                                ? "destructive"
+                                : action.priority === "high"
+                                  ? "default"
+                                  : "secondary"
                             }
                             className="text-xs"
                           >
@@ -489,10 +499,10 @@ export function MeetingDecisionsModal({
                           </Badge>
                         </div>
                         {action.description && (
-                          <p className="text-sm text-muted-foreground mb-1">{action.description}</p>
+                          <p className="text-muted-foreground mb-1 text-sm">{action.description}</p>
                         )}
                         {action.assignedTo && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-muted-foreground text-xs">
                             Assigned to: {action.assignedTo}
                           </p>
                         )}
@@ -511,7 +521,7 @@ export function MeetingDecisionsModal({
             )}
 
             {/* Add new action item */}
-            <div className="p-4 border-2 border-dashed rounded-lg space-y-3 bg-muted/20">
+            <div className="bg-muted/20 space-y-3 rounded-lg border-2 border-dashed p-4">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <Plus className="h-4 w-4" />
                 Add Action Item
@@ -558,7 +568,7 @@ export function MeetingDecisionsModal({
                   onClick={addActionItem}
                   className="w-full"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Add Action Item
                 </Button>
               </div>
@@ -567,7 +577,7 @@ export function MeetingDecisionsModal({
         </Tabs>
 
         <DialogFooter className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
+          <div className="text-muted-foreground text-sm">
             {decisions.length} decisions, {actionItems.length} action items
           </div>
           <div className="flex gap-2">
@@ -576,10 +586,14 @@ export function MeetingDecisionsModal({
             </Button>
             <Button
               onClick={handleFinalizeAndSave}
-              disabled={decisions.length === 0 || createDecision.isPending || createActionItems.isPending}
+              disabled={
+                decisions.length === 0 || createDecision.isPending || createActionItems.isPending
+              }
             >
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              {createDecision.isPending || createActionItems.isPending ? 'Saving...' : 'Finalize & Save'}
+              <CheckCircle2 className="mr-2 h-4 w-4" />
+              {createDecision.isPending || createActionItems.isPending
+                ? "Saving..."
+                : "Finalize & Save"}
             </Button>
           </div>
         </DialogFooter>

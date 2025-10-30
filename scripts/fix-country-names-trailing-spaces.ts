@@ -6,12 +6,12 @@
  * to ensure consistent flag loading and data integrity.
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🔍 Checking for country names with trailing/leading spaces...\n');
+  console.log("🔍 Checking for country names with trailing/leading spaces...\n");
 
   try {
     // Get all countries
@@ -51,14 +51,13 @@ async function main() {
         console.log(`   ${original} → ${fixed}`);
       });
     } else {
-      console.log('✅ No trailing/leading spaces found. All country names are clean!');
+      console.log("✅ No trailing/leading spaces found. All country names are clean!");
     }
 
     console.log(`\n📊 Total countries checked: ${countries.length}`);
     console.log(`🔧 Countries fixed: ${fixedCount}`);
-
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error("❌ Error:", error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();
@@ -67,10 +66,10 @@ async function main() {
 
 main()
   .then(() => {
-    console.log('\n✅ Done!');
+    console.log("\n✅ Done!");
     process.exit(0);
   })
   .catch((error) => {
-    console.error('❌ Fatal error:', error);
+    console.error("❌ Fatal error:", error);
     process.exit(1);
   });

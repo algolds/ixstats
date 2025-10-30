@@ -2,26 +2,28 @@
 
 // Unscaled areas (PostGIS calculations using Earth's ellipsoid)
 const unscaled = {
-  "Caphiria": 1818323,
-  "Cartadania": 1345448,
-  "Urcea": 1906572,
+  Caphiria: 1818323,
+  Cartadania: 1345448,
+  Urcea: 1906572,
 };
 
 // Canonical sizes (from IxWiki lore)
 const canonical = {
-  "Caphiria": 2300000,
-  "Cartadania": 1591610,
-  "Urcea": 2000000,
+  Caphiria: 2300000,
+  Cartadania: 1591610,
+  Urcea: 2000000,
 };
 
 console.log("📊 Scale Factor Analysis\n");
 console.log("Scale factors needed for each country:");
 for (const country in canonical) {
   const factor = canonical[country] / unscaled[country];
-  console.log(`  ${country}: ${factor.toFixed(4)}x (${unscaled[country].toLocaleString()} → ${canonical[country].toLocaleString()} sq mi)`);
+  console.log(
+    `  ${country}: ${factor.toFixed(4)}x (${unscaled[country].toLocaleString()} → ${canonical[country].toLocaleString()} sq mi)`
+  );
 }
 
-const factors = Object.keys(canonical).map(c => canonical[c] / unscaled[c]);
+const factors = Object.keys(canonical).map((c) => canonical[c] / unscaled[c]);
 const avgFactor = factors.reduce((a, b) => a + b, 0) / factors.length;
 const medianFactor = factors.sort()[1]; // Middle value of 3
 

@@ -6,15 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { 
-  Trophy, 
-  TrendingUp, 
-  DollarSign, 
-  Users, 
-  Crown,
-  Medal,
-  Award
-} from "lucide-react";
+import { Trophy, TrendingUp, DollarSign, Users, Crown, Medal, Award } from "lucide-react";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
 import { unifiedFlagService } from "~/lib/unified-flag-service";
@@ -76,13 +68,13 @@ const leaderboardConfig = {
 
 const getTierColor = (tier: string) => {
   const colors: Record<string, string> = {
-    "Extravagant": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+    Extravagant: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
     "Very Strong": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-    "Strong": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-    "Healthy": "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
-    "Developed": "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200",
-    "Developing": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-    "Impoverished": "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+    Strong: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+    Healthy: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
+    Developed: "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200",
+    Developing: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+    Impoverished: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
   };
   return colors[tier] || "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
 };
@@ -96,18 +88,24 @@ const getRankIcon = (rank: number) => {
     case 3:
       return <Award className="h-4 w-4 text-amber-600" />;
     default:
-      return <span className="text-sm font-medium text-muted-foreground">#{rank}</span>;
+      return <span className="text-muted-foreground text-sm font-medium">#{rank}</span>;
   }
 };
 
-const CountryFlag = ({ countryName, flagUrl, className = "w-6 h-4" }: { 
-  countryName: string; 
-  flagUrl: string | null; 
-  className?: string; 
+const CountryFlag = ({
+  countryName,
+  flagUrl,
+  className = "w-6 h-4",
+}: {
+  countryName: string;
+  flagUrl: string | null;
+  className?: string;
 }) => {
   if (!flagUrl) {
     return (
-      <div className={`${className} bg-gray-200 dark:bg-gray-700 rounded-sm flex items-center justify-center`}>
+      <div
+        className={`${className} flex items-center justify-center rounded-sm bg-gray-200 dark:bg-gray-700`}
+      >
         <span className="text-xs text-gray-500">🏴</span>
       </div>
     );
@@ -117,13 +115,13 @@ const CountryFlag = ({ countryName, flagUrl, className = "w-6 h-4" }: {
     <img
       src={flagUrl}
       alt={`${countryName} flag`}
-      className={`${className} object-cover rounded-sm border border-gray-200 dark:border-gray-700`}
+      className={`${className} rounded-sm border border-gray-200 object-cover dark:border-gray-700`}
       onError={(e) => {
         // Hide the broken image and show placeholder
-        e.currentTarget.style.display = 'none';
+        e.currentTarget.style.display = "none";
         const parent = e.currentTarget.parentElement;
         if (parent) {
-          const placeholder = document.createElement('div');
+          const placeholder = document.createElement("div");
           placeholder.className = `${className} bg-gray-200 dark:bg-gray-700 rounded-sm flex items-center justify-center`;
           placeholder.innerHTML = '<span class="text-xs text-gray-500">🏴</span>';
           parent.appendChild(placeholder);
@@ -142,7 +140,7 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
     if (countries.length === 0) return;
 
     const fetchFlags = async () => {
-      const countryNames = countries.map(c => c.name);
+      const countryNames = countries.map((c) => c.name);
       const flags = await unifiedFlagService.batchGetFlags(countryNames);
       setFlagUrls(flags);
     };
@@ -162,10 +160,10 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
         <CardContent>
           <div className="space-y-4">
             {[...Array(7)].map((_, i) => (
-              <div key={i} className="flex items-center gap-4 p-3 border rounded-lg">
+              <div key={i} className="flex items-center gap-4 rounded-lg border p-3">
                 <Skeleton className="h-8 w-8 rounded-full" />
                 <div className="flex-1">
-                  <Skeleton className="h-4 w-32 mb-2" />
+                  <Skeleton className="mb-2 h-4 w-32" />
                   <Skeleton className="h-3 w-24" />
                 </div>
                 <Skeleton className="h-6 w-20" />
@@ -190,54 +188,49 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
 
     return (
       <div className="space-y-3">
-        <div className="text-sm text-muted-foreground mb-4">
-          {config.description}
-        </div>
+        <div className="text-muted-foreground mb-4 text-sm">{config.description}</div>
         {topCountries.map((country, index) => {
           const rank = index + 1;
           const value = country[config.sortKey] as number;
-          
+
           return (
             <Link
               key={country.id}
               href={createUrl(`/countries/${country.slug}`)}
-              className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg group"
+              className="hover:bg-muted/50 group flex items-center gap-4 rounded-lg border p-4 transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
             >
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted">
+              <div className="bg-muted flex h-8 w-8 items-center justify-center rounded-full">
                 {getRankIcon(rank)}
               </div>
-              
-              <CountryFlag 
-                countryName={country.name} 
-                flagUrl={flagUrls[country.name] || null} 
-                className="w-10 h-8 flex-shrink-0"
+
+              <CountryFlag
+                countryName={country.name}
+                flagUrl={flagUrls[country.name] || null}
+                className="h-8 w-10 flex-shrink-0"
               />
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+
+              <div className="min-w-0 flex-1">
+                <div className="mb-1 flex items-center gap-2">
+                  <h3 className="text-foreground group-hover:text-primary truncate font-semibold transition-colors">
                     {country.name}
                   </h3>
-                  <Badge 
-                    variant="secondary" 
+                  <Badge
+                    variant="secondary"
                     className={`text-xs ${getTierColor(country.economicTier)}`}
                   >
                     {country.economicTier}
                   </Badge>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {formatPopulation(country.currentPopulation)} • {formatCurrency(country.currentGdpPerCapita)}/capita
+                <div className="text-muted-foreground text-sm">
+                  {formatPopulation(country.currentPopulation)} •{" "}
+                  {formatCurrency(country.currentGdpPerCapita)}/capita
                 </div>
               </div>
-              
+
               <div className="text-right">
-                <div className="font-semibold text-foreground">
-                  {config.formatValue(value)}
-                </div>
+                <div className="text-foreground font-semibold">{config.formatValue(value)}</div>
                 {type === "growth" && (
-                  <div className="text-xs text-muted-foreground">
-                    Annual rate
-                  </div>
+                  <div className="text-muted-foreground text-xs">Annual rate</div>
                 )}
               </div>
             </Link>
@@ -249,10 +242,10 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
 
   return (
     <Card
-      className="transition-all duration-300 hover:scale-[1.01] hover:shadow-xl group/card"
+      className="group/card transition-all duration-300 hover:scale-[1.01] hover:shadow-xl"
       style={{
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
         boxShadow: `
           0 4px 16px rgba(0, 0, 0, 0.1),
           0 1px 4px rgba(0, 0, 0, 0.05),
@@ -262,7 +255,7 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
     >
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Trophy className="h-5 w-5 text-yellow-500 group-hover/card:text-yellow-400 transition-colors" />
+          <Trophy className="h-5 w-5 text-yellow-500 transition-colors group-hover/card:text-yellow-400" />
           Global Leaderboards
           <Badge variant="secondary" className="ml-auto">
             Top 7
@@ -279,7 +272,7 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
               </TabsTrigger>
             ))}
           </TabsList>
-          
+
           {Object.keys(leaderboardConfig).map((type) => (
             <TabsContent key={type} value={type} className="mt-6">
               {renderLeaderboard(type as LeaderboardType)}
@@ -289,4 +282,4 @@ export function LeaderboardsSection({ countries, isLoading }: LeaderboardsSectio
       </CardContent>
     </Card>
   );
-} 
+}

@@ -1,25 +1,33 @@
-import type { BaseIntelligence, BaseEntity, StandardPriority, StandardCategory, StandardTrend, StandardTimeframe, IconReference } from './base';
+import type {
+  BaseIntelligence,
+  BaseEntity,
+  StandardPriority,
+  StandardCategory,
+  StandardTrend,
+  StandardTimeframe,
+  IconReference,
+} from "./base";
 
 // Re-export types from other modules for unified access
-export type { Country } from './ixstats';
-export type { VitalityIntelligence } from '../app/mycountry/types/intelligence';
+export type { Country } from "./ixstats";
+export type { VitalityIntelligence } from "../app/mycountry/types/intelligence";
 
 // Unified intelligence item (replaces all variants)
 export interface IntelligenceItem extends BaseIntelligence {
-  type: 'alert' | 'opportunity' | 'update' | 'prediction' | 'insight';
+  type: "alert" | "opportunity" | "update" | "prediction" | "insight";
   title: string;
   description: string;
-  severity: StandardPriority;    // Unified with priority
-  timestamp: number;             // Standardized Unix timestamp
+  severity: StandardPriority; // Unified with priority
+  timestamp: number; // Standardized Unix timestamp
   affectedRegions?: string[];
-  affectedCountries?: string[] | string;  // Added for API compatibility
+  affectedCountries?: string[] | string; // Added for API compatibility
   relatedItems?: string[];
   tags?: string[];
   metrics?: IntelligenceMetric[];
   // API compatibility fields
-  content?: string;              // Alternative to description
-  region?: string;               // Single region field
-  isActive?: boolean;           // Activity status
+  content?: string; // Alternative to description
+  region?: string; // Single region field
+  isActive?: boolean; // Activity status
 }
 
 // Standardized intelligence metric
@@ -27,11 +35,11 @@ export interface IntelligenceMetric extends BaseEntity {
   label: string;
   value: number | string;
   unit?: string;
-  trend: StandardTrend;          // Standardized trend type
+  trend: StandardTrend; // Standardized trend type
   changeValue: number;
   changePercent: number;
   changePeriod: string;
-  status: 'excellent' | 'good' | 'concerning' | 'critical';
+  status: "excellent" | "good" | "concerning" | "critical";
   rank?: {
     global: number;
     regional: number;
@@ -48,10 +56,10 @@ export interface IntelligenceMetric extends BaseEntity {
 export interface CriticalAlert extends BaseIntelligence {
   title: string;
   message: string;
-  severity: StandardPriority;    // Unified
-  category: StandardCategory;    // Unified  
+  severity: StandardPriority; // Unified
+  category: StandardCategory; // Unified
   actionRequired: boolean;
-  timeframe: StandardTimeframe;  // Unified
+  timeframe: StandardTimeframe; // Unified
   estimatedImpact: {
     magnitude: StandardPriority; // Reuse priority scale
     areas: string[];
@@ -64,9 +72,9 @@ export interface CriticalAlert extends BaseIntelligence {
 export interface ActionableRecommendation extends BaseIntelligence {
   title: string;
   description: string;
-  category: StandardCategory;    // Unified
-  priority: StandardPriority;    // Unified
-  complexity: 'simple' | 'moderate' | 'complex';
+  category: StandardCategory; // Unified
+  priority: StandardPriority; // Unified
+  complexity: "simple" | "moderate" | "complex";
   estimatedTime: string;
   estimatedCost: {
     economic: number;
@@ -75,13 +83,13 @@ export interface ActionableRecommendation extends BaseIntelligence {
   };
   requiredResources: string[];
   expectedOutcome: string;
-  confidence: number;            // 0-100 inherited from base
+  confidence: number; // 0-100 inherited from base
   implementationSteps?: string[];
 }
 
 // Economic intelligence specific interfaces
 export interface EconomicAlert extends CriticalAlert {
-  category: 'economic';
+  category: "economic";
   economicMetrics: {
     gdpImpact?: number;
     inflationChange?: number;
@@ -90,11 +98,11 @@ export interface EconomicAlert extends CriticalAlert {
   };
 }
 
-// Diplomatic intelligence specific interfaces  
+// Diplomatic intelligence specific interfaces
 export interface DiplomaticIntelligence extends IntelligenceItem {
-  category: 'diplomatic';
+  category: "diplomatic";
   involvedCountries: string[];
-  relationshipImpact: 'positive' | 'negative' | 'neutral';
+  relationshipImpact: "positive" | "negative" | "neutral";
   treatyRelevance?: string[];
   diplomaticPriority: StandardPriority;
 }

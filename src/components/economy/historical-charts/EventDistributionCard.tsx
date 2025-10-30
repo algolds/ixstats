@@ -15,10 +15,10 @@ interface EventDistributionCardProps {
 }
 
 const eventTypes = [
-  { value: 'dm_input', label: 'DM Input', icon: Zap },
-  { value: 'policy_change', label: 'Policy Change', icon: FileText },
-  { value: 'economic_shift', label: 'Economic Shift', icon: TrendingUp },
-  { value: 'external_event', label: 'External Event', icon: AlertCircle },
+  { value: "dm_input", label: "DM Input", icon: Zap },
+  { value: "policy_change", label: "Policy Change", icon: FileText },
+  { value: "economic_shift", label: "Economic Shift", icon: TrendingUp },
+  { value: "external_event", label: "External Event", icon: AlertCircle },
 ];
 
 export const EventDistributionCard = React.memo(function EventDistributionCard({
@@ -32,8 +32,8 @@ export const EventDistributionCard = React.memo(function EventDistributionCard({
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {eventTypes.map(type => {
-            const count = allEvents.filter(e => e.type === type.value).length;
+          {eventTypes.map((type) => {
+            const count = allEvents.filter((e) => e.type === type.value).length;
             const percentage = allEvents.length > 0 ? (count / allEvents.length) * 100 : 0;
             const TypeIcon = type.icon;
 
@@ -44,13 +44,10 @@ export const EventDistributionCard = React.memo(function EventDistributionCard({
                   <span className="text-sm">{type.label}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary"
-                      style={{ width: `${percentage}%` }}
-                    />
+                  <div className="bg-muted h-2 w-20 overflow-hidden rounded-full">
+                    <div className="bg-primary h-full" style={{ width: `${percentage}%` }} />
                   </div>
-                  <span className="text-sm font-medium w-8">{count}</span>
+                  <span className="w-8 text-sm font-medium">{count}</span>
                 </div>
               </div>
             );

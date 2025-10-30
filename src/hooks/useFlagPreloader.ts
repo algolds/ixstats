@@ -67,23 +67,22 @@ export function useGlobalFlagPreloader(): GlobalFlagPreloader {
 
     setIsPreloading(true);
     const startTime = Date.now();
-    
+
     try {
-      
       // Check which countries already have cached flags
       const cacheStats = ixnayWiki.getCacheStats();
-      
+
       // The service will handle filtering out already cached items
       await ixnayWiki.preloadCountryFlags(countryNames);
-      
+
       const endTime = Date.now();
-      
+
       // Update cache stats
       const newCacheStats = ixnayWiki.getCacheStats();
-      
+
       setLastPreloadTime(endTime);
     } catch (error) {
-      console.error('[FlagPreloader] Preload failed:', error);
+      console.error("[FlagPreloader] Preload failed:", error);
     } finally {
       setIsPreloading(false);
       updateStatsRef.current?.(); // Update stats after preloading is done
@@ -106,7 +105,7 @@ export function useGlobalFlagPreloader(): GlobalFlagPreloader {
   // Update stats on mount and periodically
   useEffect(() => {
     updateStatsRef.current?.();
-    
+
     // Update stats every 30 seconds
     const interval = setInterval(() => {
       updateStatsRef.current?.();
@@ -146,17 +145,17 @@ export function useFlagPreloader(countryName?: string) {
         setFlagUrl(cachedUrl);
         return;
       }
-      
+
       // Fetch if not cached (will automatically cache)
       const url = await unifiedFlagService.getFlagUrl(name);
       if (url) {
         setFlagUrl(url);
       } else {
-        setError('Flag not found');
+        setError("Flag not found");
         setFlagUrl(null);
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load flag';
+      const errorMessage = err instanceof Error ? err.message : "Failed to load flag";
       setError(errorMessage);
       setFlagUrl(null);
     } finally {
@@ -210,7 +209,7 @@ export function useFlagUrl(countryName: string) {
             setFlagUrl(url);
             setError(null);
           } else {
-            setError('Flag not found');
+            setError("Flag not found");
             setFlagUrl(null);
           }
           setIsLoading(false);
@@ -219,7 +218,7 @@ export function useFlagUrl(countryName: string) {
         if (isMounted) {
           // Only warn if it's not a rate limit error (which we expect during heavy loading)
           const errorMessage = error instanceof Error ? error.message : String(error);
-          if (!errorMessage.includes('429') && !errorMessage.includes('Too Many Requests')) {
+          if (!errorMessage.includes("429") && !errorMessage.includes("Too Many Requests")) {
             console.warn(`Failed to load flag for ${countryName}:`, error);
           }
           setError(errorMessage);
@@ -261,7 +260,7 @@ export function useBatchFlagPreloader() {
       await ixnayWiki.preloadCountryFlags(countryNames);
       setProgress({ loaded: countryNames.length, total: countryNames.length });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Batch preload failed';
+      const errorMessage = error instanceof Error ? error.message : "Batch preload failed";
       setErrors([errorMessage]);
     } finally {
       setIsLoading(false);

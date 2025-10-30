@@ -12,35 +12,39 @@
  * - Risk/reward balance creates tension
  */
 
-import { DiplomaticChoiceTracker, type DiplomaticChoice, type CumulativeEffects } from './diplomatic-choice-tracker';
+import {
+  DiplomaticChoiceTracker,
+  type DiplomaticChoice,
+  type CumulativeEffects,
+} from "./diplomatic-choice-tracker";
 
 // ==================== TYPES ====================
 
 export type ScenarioType =
-  | 'border_dispute'
-  | 'trade_renegotiation'
-  | 'cultural_misunderstanding'
-  | 'intelligence_breach'
-  | 'humanitarian_crisis'
-  | 'alliance_pressure'
-  | 'economic_sanctions_debate'
-  | 'technology_transfer_request'
-  | 'diplomatic_incident'
-  | 'mediation_opportunity'
-  | 'embassy_security_threat'
-  | 'treaty_renewal';
+  | "border_dispute"
+  | "trade_renegotiation"
+  | "cultural_misunderstanding"
+  | "intelligence_breach"
+  | "humanitarian_crisis"
+  | "alliance_pressure"
+  | "economic_sanctions_debate"
+  | "technology_transfer_request"
+  | "diplomatic_incident"
+  | "mediation_opportunity"
+  | "embassy_security_threat"
+  | "treaty_renewal";
 
 export type DiplomaticSkill =
-  | 'negotiation'
-  | 'intimidation'
-  | 'persuasion'
-  | 'compromise'
-  | 'firmness'
-  | 'empathy';
+  | "negotiation"
+  | "intimidation"
+  | "persuasion"
+  | "compromise"
+  | "firmness"
+  | "empathy";
 
-export type TimeFrame = 'urgent' | 'time_sensitive' | 'strategic' | 'long_term';
+export type TimeFrame = "urgent" | "time_sensitive" | "strategic" | "long_term";
 
-export type DifficultyLevel = 'trivial' | 'moderate' | 'challenging' | 'critical' | 'legendary';
+export type DifficultyLevel = "trivial" | "moderate" | "challenging" | "critical" | "legendary";
 
 export interface ScenarioChoice {
   id: string;
@@ -48,7 +52,7 @@ export interface ScenarioChoice {
   description: string;
   skillRequired: DiplomaticSkill;
   skillLevel: number; // 1-10 difficulty
-  riskLevel: 'low' | 'medium' | 'high' | 'extreme';
+  riskLevel: "low" | "medium" | "high" | "extreme";
   predictedOutcomes: {
     shortTerm: string; // Immediate consequences (1-7 days)
     mediumTerm: string; // Mid-range effects (1-3 months)
@@ -92,7 +96,12 @@ export interface DiplomaticScenario {
     triggeredBy: string; // What world condition triggered this
     relevanceScore: number; // 0-100 how relevant to player
     playerReputation?: CumulativeEffects;
-    recentPlayerActions?: Array<Pick<DiplomaticChoice, 'id' | 'type' | 'targetCountry' | 'targetCountryId' | 'timestamp' | 'ixTimeTimestamp'>>;
+    recentPlayerActions?: Array<
+      Pick<
+        DiplomaticChoice,
+        "id" | "type" | "targetCountry" | "targetCountryId" | "timestamp" | "ixTimeTimestamp"
+      >
+    >;
     lastFetched?: number;
   };
 }
@@ -190,11 +199,7 @@ export class DiplomaticScenarioGenerator {
       }
 
       // Find suitable target countries
-      const eligibleCountries = this.findEligibleCountries(
-        context,
-        countries,
-        template.type
-      );
+      const eligibleCountries = this.findEligibleCountries(context, countries, template.type);
 
       // Generate scenario for most relevant country
       if (eligibleCountries.length > 0) {
@@ -203,14 +208,16 @@ export class DiplomaticScenarioGenerator {
 
         // Enrich with player reputation
         scenario.metadata.playerReputation = playerProfile;
-        scenario.metadata.recentPlayerActions = context.diplomaticHistory.slice(-5).map(action => ({
-          id: action.id,
-          type: action.type,
-          targetCountry: action.targetCountry,
-          targetCountryId: action.targetCountryId,
-          timestamp: action.timestamp,
-          ixTimeTimestamp: action.ixTimeTimestamp
-        }));
+        scenario.metadata.recentPlayerActions = context.diplomaticHistory
+          .slice(-5)
+          .map((action) => ({
+            id: action.id,
+            type: action.type,
+            targetCountry: action.targetCountry,
+            targetCountryId: action.targetCountryId,
+            timestamp: action.timestamp,
+            ixTimeTimestamp: action.ixTimeTimestamp,
+          }));
         scenario.metadata.lastFetched = Date.now();
 
         // Calculate relevance score
@@ -238,7 +245,7 @@ export class DiplomaticScenarioGenerator {
     context: WorldContext,
     targetCountry: CountryData
   ): DiplomaticScenario | null {
-    const template = this.templates.find(t => t.type === type);
+    const template = this.templates.find((t) => t.type === type);
     if (!template) return null;
 
     if (!template.triggerConditions(context)) {
@@ -271,27 +278,26 @@ export class DiplomaticScenarioGenerator {
 
   private createBorderDisputeTemplate(): ScenarioTemplate {
     return {
-      type: 'border_dispute',
+      type: "border_dispute",
       weight: 1.0,
       triggerConditions: (context) => {
         // Trigger if we have tense relations with neighbors
-        return context.relationships.some(r =>
-          (r.relationship === 'tension' || r.relationship === 'hostile') &&
-          r.strength < 30
+        return context.relationships.some(
+          (r) => (r.relationship === "tension" || r.relationship === "hostile") && r.strength < 30
         );
       },
       generate: (context, target) => {
-        const relationship = context.relationships.find(r =>
-          (r.country1 === target.id || r.country2 === target.id)
+        const relationship = context.relationships.find(
+          (r) => r.country1 === target.id || r.country2 === target.id
         );
 
-        const embassy = context.embassies.find(e =>
-          e.hostCountryId === target.id || e.guestCountryId === target.id
+        const embassy = context.embassies.find(
+          (e) => e.hostCountryId === target.id || e.guestCountryId === target.id
         );
 
         return {
           id: `scenario_border_${Date.now()}`,
-          type: 'border_dispute',
+          type: "border_dispute",
           title: `Border Tensions Escalate with ${target.name}`,
           narrative: {
             introduction: `Intelligence reports indicate increased military activity along the border region shared with ${target.name}. Local commanders report unauthorized incursions and disputed territorial claims over a resource-rich valley.`,
@@ -302,26 +308,31 @@ export class DiplomaticScenarioGenerator {
           },
           involvedCountries: {
             primary: target.id,
-            secondary: relationship ? [relationship.country1, relationship.country2].filter(c => c !== target.id) : [],
+            secondary: relationship
+              ? [relationship.country1, relationship.country2].filter((c) => c !== target.id)
+              : [],
           },
           historicalContext: [
             `Border demarcation has been disputed since colonial withdrawal`,
             `Previous skirmishes in the region occurred during economic downturns`,
             `International arbitration was attempted in the past but failed to produce lasting agreement`,
-            embassy ? `Our embassy in ${target.name} has ${embassy.level >= 3 ? 'strong' : 'limited'} influence to facilitate dialogue` : `We lack diplomatic presence in ${target.name}, limiting our negotiation channels`,
+            embassy
+              ? `Our embassy in ${target.name} has ${embassy.level >= 3 ? "strong" : "limited"} influence to facilitate dialogue`
+              : `We lack diplomatic presence in ${target.name}, limiting our negotiation channels`,
           ],
-          timeFrame: 'urgent',
+          timeFrame: "urgent",
           expiresAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days
-          difficulty: 'critical',
+          difficulty: "critical",
           recommendedEmbassyLevel: 3,
           choices: [
             {
-              id: 'border_military_show',
-              label: 'Military Deterrence',
-              description: 'Deploy additional forces to the border as a show of strength and resolve',
-              skillRequired: 'firmness',
+              id: "border_military_show",
+              label: "Military Deterrence",
+              description:
+                "Deploy additional forces to the border as a show of strength and resolve",
+              skillRequired: "firmness",
               skillLevel: 7,
-              riskLevel: 'extreme',
+              riskLevel: "extreme",
               predictedOutcomes: {
                 shortTerm: `${target.name} will view this as provocation. Regional tensions escalate immediately. International observers express concern.`,
                 mediumTerm: `Arms race may develop. Economic cooperation freezes. Risk of accidental escalation remains high for months.`,
@@ -335,12 +346,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'border_negotiate',
-              label: 'Diplomatic Negotiation',
-              description: 'Propose immediate bilateral talks with international mediation',
-              skillRequired: 'negotiation',
+              id: "border_negotiate",
+              label: "Diplomatic Negotiation",
+              description: "Propose immediate bilateral talks with international mediation",
+              skillRequired: "negotiation",
               skillLevel: 6,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `${target.name} agrees to talks, de-escalating immediate crisis. Both sides pull back from border.`,
                 mediumTerm: `Negotiations prove difficult but prevent escalation. Compromise solution may emerge over resource sharing.`,
@@ -357,12 +368,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'border_international',
-              label: 'International Arbitration',
-              description: 'Escalate to international courts and multilateral organizations',
-              skillRequired: 'persuasion',
+              id: "border_international",
+              label: "International Arbitration",
+              description: "Escalate to international courts and multilateral organizations",
+              skillRequired: "persuasion",
               skillLevel: 8,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `Issue moves to international stage. ${target.name} forced to defend claims publicly. Immediate tensions pause.`,
                 mediumTerm: `Legal proceedings take months. International pressure builds on both sides to maintain peace during arbitration.`,
@@ -380,12 +391,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'border_joint_development',
-              label: 'Joint Development Zone',
-              description: 'Propose shared sovereignty and joint resource exploitation',
-              skillRequired: 'compromise',
+              id: "border_joint_development",
+              label: "Joint Development Zone",
+              description: "Propose shared sovereignty and joint resource exploitation",
+              skillRequired: "compromise",
               skillLevel: 9,
-              riskLevel: 'low',
+              riskLevel: "low",
               predictedOutcomes: {
                 shortTerm: `Creative solution surprises ${target.name}. Nationalist hardliners on both sides object, but pragmatists see economic benefits.`,
                 mediumTerm: `Joint administration established. Revenue sharing begins. Sets precedent for cooperative approach to disputes.`,
@@ -404,7 +415,7 @@ export class DiplomaticScenarioGenerator {
             },
           ],
           metadata: {
-            triggeredBy: 'Tense relationship with neighboring country',
+            triggeredBy: "Tense relationship with neighboring country",
             relevanceScore: 85,
           },
         };
@@ -414,22 +425,23 @@ export class DiplomaticScenarioGenerator {
 
   private createTradeRenegotiationTemplate(): ScenarioTemplate {
     return {
-      type: 'trade_renegotiation',
+      type: "trade_renegotiation",
       weight: 1.2,
       triggerConditions: (context) => {
         // Trigger if we have active trade relationships
-        return context.relationships.some(r => r.relationship === 'trade' && r.strength > 40);
+        return context.relationships.some((r) => r.relationship === "trade" && r.strength > 40);
       },
       generate: (context, target) => {
-        const relationship = context.relationships.find(r =>
-          (r.country1 === target.id || r.country2 === target.id) && r.relationship === 'trade'
+        const relationship = context.relationships.find(
+          (r) =>
+            (r.country1 === target.id || r.country2 === target.id) && r.relationship === "trade"
         );
 
         const tradeVolume = 500000000; // Default trade volume
 
         return {
           id: `scenario_trade_${Date.now()}`,
-          type: 'trade_renegotiation',
+          type: "trade_renegotiation",
           title: `${target.name} Seeks Trade Agreement Revision`,
           narrative: {
             introduction: `${target.name}'s Ministry of Commerce has formally requested renegotiation of our bilateral trade agreement, which currently governs $${(tradeVolume / 1000000).toFixed(0)}M in annual commerce.`,
@@ -446,18 +458,18 @@ export class DiplomaticScenarioGenerator {
             `Trade volume has grown 35% since agreement signed`,
             `Both economies have evolved significantly in intervening period`,
           ],
-          timeFrame: 'time_sensitive',
+          timeFrame: "time_sensitive",
           expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 2 weeks
-          difficulty: 'challenging',
+          difficulty: "challenging",
           recommendedEmbassyLevel: 3,
           choices: [
             {
-              id: 'trade_accept_terms',
-              label: 'Accept Proposed Terms',
-              description: 'Agree to their requests with minimal modifications',
-              skillRequired: 'compromise',
+              id: "trade_accept_terms",
+              label: "Accept Proposed Terms",
+              description: "Agree to their requests with minimal modifications",
+              skillRequired: "compromise",
               skillLevel: 4,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `${target.name} celebrates diplomatic success. Our agricultural sector protests. Tech companies begin planning expansion.`,
                 mediumTerm: `Trade volume increases 20%. Job losses in agriculture offset by gains in tech sector. Domestic political pressure builds.`,
@@ -471,12 +483,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'trade_counter_offer',
-              label: 'Strategic Counter-Proposal',
-              description: 'Accept some requests but negotiate hard on key sectors',
-              skillRequired: 'negotiation',
+              id: "trade_counter_offer",
+              label: "Strategic Counter-Proposal",
+              description: "Accept some requests but negotiate hard on key sectors",
+              skillRequired: "negotiation",
               skillLevel: 7,
-              riskLevel: 'low',
+              riskLevel: "low",
               predictedOutcomes: {
                 shortTerm: `Extended negotiations begin. Both sides stake out positions. Minor concessions exchanged to build goodwill.`,
                 mediumTerm: `Balanced agreement emerges protecting key domestic interests while expanding opportunities. Both sides claim victory.`,
@@ -493,12 +505,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'trade_reject',
-              label: 'Reject Renegotiation',
-              description: 'Insist current agreement remains fair and balanced',
-              skillRequired: 'firmness',
+              id: "trade_reject",
+              label: "Reject Renegotiation",
+              description: "Insist current agreement remains fair and balanced",
+              skillRequired: "firmness",
               skillLevel: 5,
-              riskLevel: 'high',
+              riskLevel: "high",
               predictedOutcomes: {
                 shortTerm: `${target.name} expresses disappointment. Trade relations cool. They begin exploring alternative markets.`,
                 mediumTerm: `Trade volume stagnates or declines. ${target.name} shifts focus to other partners. Domestic industries protected but opportunities lost.`,
@@ -512,12 +524,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'trade_expand_scope',
-              label: 'Propose Comprehensive Partnership',
-              description: 'Suggest broader economic integration beyond just trade',
-              skillRequired: 'persuasion',
+              id: "trade_expand_scope",
+              label: "Propose Comprehensive Partnership",
+              description: "Suggest broader economic integration beyond just trade",
+              skillRequired: "persuasion",
               skillLevel: 8,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `Ambitious proposal catches ${target.name} by surprise. Requires extensive study and domestic consultation on both sides.`,
                 mediumTerm: `If accepted, establishes framework for deep economic integration. Investment flows increase. Regulatory harmonization begins.`,
@@ -536,7 +548,7 @@ export class DiplomaticScenarioGenerator {
             },
           ],
           metadata: {
-            triggeredBy: 'Active trade relationship with shifting economic conditions',
+            triggeredBy: "Active trade relationship with shifting economic conditions",
             relevanceScore: 70,
           },
         };
@@ -546,16 +558,16 @@ export class DiplomaticScenarioGenerator {
 
   private createCulturalMisunderstandingTemplate(): ScenarioTemplate {
     return {
-      type: 'cultural_misunderstanding',
+      type: "cultural_misunderstanding",
       weight: 0.8,
       triggerConditions: (context) => {
         // Trigger if we have cultural exchange programs
-        return context.recentMissions.some(m => m.type === 'cultural_exchange');
+        return context.recentMissions.some((m) => m.type === "cultural_exchange");
       },
       generate: (context, target) => {
         return {
           id: `scenario_cultural_${Date.now()}`,
-          type: 'cultural_misunderstanding',
+          type: "cultural_misunderstanding",
           title: `Cultural Incident Strains Relations with ${target.name}`,
           narrative: {
             introduction: `A cultural exhibition from our national museum, currently on tour in ${target.name}, has sparked unexpected controversy and diplomatic complications.`,
@@ -572,18 +584,18 @@ export class DiplomaticScenarioGenerator {
             `Previous exhibitions have been well-received in both countries`,
             `Social media has amplified cultural controversies in recent years`,
           ],
-          timeFrame: 'urgent',
+          timeFrame: "urgent",
           expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days
-          difficulty: 'moderate',
+          difficulty: "moderate",
           recommendedEmbassyLevel: 2,
           choices: [
             {
-              id: 'cultural_apologize',
-              label: 'Issue Formal Apology',
-              description: 'Apologize for offense and modify exhibition content',
-              skillRequired: 'empathy',
+              id: "cultural_apologize",
+              label: "Issue Formal Apology",
+              description: "Apologize for offense and modify exhibition content",
+              skillRequired: "empathy",
               skillLevel: 5,
-              riskLevel: 'low',
+              riskLevel: "low",
               predictedOutcomes: {
                 shortTerm: `Controversy subsides. ${target.name} appreciates responsiveness. Domestic critics accuse us of capitulating to political pressure.`,
                 mediumTerm: `Modified exhibition continues with reduced controversy. Cultural ties resume positive trajectory. Sets precedent for handling future incidents.`,
@@ -597,12 +609,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'cultural_dialogue',
-              label: 'Organize Academic Dialogue',
-              description: 'Host joint academic forum to discuss historical interpretations',
-              skillRequired: 'persuasion',
+              id: "cultural_dialogue",
+              label: "Organize Academic Dialogue",
+              description: "Host joint academic forum to discuss historical interpretations",
+              skillRequired: "persuasion",
               skillLevel: 6,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `Announcement of dialogue reduces immediate pressure. Scholars from both countries agree to participate. Exhibition continues during discussions.`,
                 mediumTerm: `Dialogue produces nuanced understanding of different historical perspectives. Joint statement acknowledges complexity of shared history.`,
@@ -619,12 +631,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'cultural_defend',
-              label: 'Defend Academic Freedom',
-              description: 'Refuse modifications, citing historical accuracy and free expression',
-              skillRequired: 'firmness',
+              id: "cultural_defend",
+              label: "Defend Academic Freedom",
+              description: "Refuse modifications, citing historical accuracy and free expression",
+              skillRequired: "firmness",
               skillLevel: 7,
-              riskLevel: 'high',
+              riskLevel: "high",
               predictedOutcomes: {
                 shortTerm: `Controversy intensifies. ${target.name} government faces domestic pressure. Exhibition may be forced to close anyway.`,
                 mediumTerm: `Cultural relations damaged. Future exchange programs face additional scrutiny. Domestic audiences appreciate principled stance.`,
@@ -638,12 +650,13 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'cultural_collaborative',
-              label: 'Joint Curation Initiative',
-              description: 'Propose collaboration with local scholars to recontextualize exhibition',
-              skillRequired: 'compromise',
+              id: "cultural_collaborative",
+              label: "Joint Curation Initiative",
+              description:
+                "Propose collaboration with local scholars to recontextualize exhibition",
+              skillRequired: "compromise",
               skillLevel: 8,
-              riskLevel: 'low',
+              riskLevel: "low",
               predictedOutcomes: {
                 shortTerm: `Creative solution welcomed. Scholars from ${target.name} join curatorial team. Exhibition temporarily paused for revision.`,
                 mediumTerm: `Revised exhibition presents multiple perspectives. Becomes model of collaborative cultural diplomacy. Both countries claim success.`,
@@ -662,7 +675,7 @@ export class DiplomaticScenarioGenerator {
             },
           ],
           metadata: {
-            triggeredBy: 'Active cultural exchange program',
+            triggeredBy: "Active cultural exchange program",
             relevanceScore: 60,
           },
         };
@@ -672,21 +685,22 @@ export class DiplomaticScenarioGenerator {
 
   private createIntelligenceBreachTemplate(): ScenarioTemplate {
     return {
-      type: 'intelligence_breach',
+      type: "intelligence_breach",
       weight: 0.6,
       triggerConditions: (context) => {
         // Trigger if we have intelligence operations
-        return context.embassies.some(e => e.specialization === 'intelligence' && e.level >= 3);
+        return context.embassies.some((e) => e.specialization === "intelligence" && e.level >= 3);
       },
       generate: (context, target) => {
-        const embassy = context.embassies.find(e =>
-          (e.hostCountryId === target.id || e.guestCountryId === target.id) &&
-          e.specialization === 'intelligence'
+        const embassy = context.embassies.find(
+          (e) =>
+            (e.hostCountryId === target.id || e.guestCountryId === target.id) &&
+            e.specialization === "intelligence"
         );
 
         return {
           id: `scenario_intel_${Date.now()}`,
-          type: 'intelligence_breach',
+          type: "intelligence_breach",
           title: `Intelligence Operation Exposed in ${target.name}`,
           narrative: {
             introduction: `Classified diplomatic cables have been leaked to ${target.name}'s media, revealing details of our intelligence-gathering operations conducted through our embassy.`,
@@ -704,18 +718,18 @@ export class DiplomaticScenarioGenerator {
             `${target.name} conducts similar activities in our country`,
             `Leak timing suggests internal political motivations`,
           ],
-          timeFrame: 'urgent',
+          timeFrame: "urgent",
           expiresAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days
-          difficulty: 'critical',
+          difficulty: "critical",
           recommendedEmbassyLevel: 4,
           choices: [
             {
-              id: 'intel_deny',
-              label: 'Categorical Denial',
-              description: 'Deny all allegations and claim documents are fabricated',
-              skillRequired: 'firmness',
+              id: "intel_deny",
+              label: "Categorical Denial",
+              description: "Deny all allegations and claim documents are fabricated",
+              skillRequired: "firmness",
               skillLevel: 6,
-              riskLevel: 'high',
+              riskLevel: "high",
               predictedOutcomes: {
                 shortTerm: `${target.name} unconvinced. Expulsions proceed. Media skeptical of denial. Domestic audience divided.`,
                 mediumTerm: `Intelligence operations severely curtailed. Trust damaged. However, official deniability maintained for future operations.`,
@@ -729,12 +743,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'intel_acknowledge',
-              label: 'Limited Acknowledgment',
-              description: 'Acknowledge routine diplomatic information gathering, not espionage',
-              skillRequired: 'negotiation',
+              id: "intel_acknowledge",
+              label: "Limited Acknowledgment",
+              description: "Acknowledge routine diplomatic information gathering, not espionage",
+              skillRequired: "negotiation",
               skillLevel: 8,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `Honesty surprises ${target.name}. Reduces political pressure as we admit what everyone does. Expulsions may be reduced.`,
                 mediumTerm: `Relationship enters period of recalibration. New protocols established for intelligence cooperation. Sets realistic expectations.`,
@@ -751,12 +765,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'intel_counter',
-              label: 'Reciprocal Exposures',
-              description: 'Threaten to expose their intelligence activities in our country',
-              skillRequired: 'intimidation',
+              id: "intel_counter",
+              label: "Reciprocal Exposures",
+              description: "Threaten to expose their intelligence activities in our country",
+              skillRequired: "intimidation",
               skillLevel: 7,
-              riskLevel: 'extreme',
+              riskLevel: "extreme",
               predictedOutcomes: {
                 shortTerm: `Tit-for-tat escalation. Both countries begin expelling diplomats. Intelligence war threatens broader relationship.`,
                 mediumTerm: `Mutual recriminations damage relationship severely. Intelligence operations on both sides disrupted. Other countries avoid getting involved.`,
@@ -770,12 +784,13 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'intel_cooperative',
-              label: 'Propose Intelligence Partnership',
-              description: 'Turn crisis into opportunity by proposing formal intelligence cooperation',
-              skillRequired: 'persuasion',
+              id: "intel_cooperative",
+              label: "Propose Intelligence Partnership",
+              description:
+                "Turn crisis into opportunity by proposing formal intelligence cooperation",
+              skillRequired: "persuasion",
               skillLevel: 10,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `Bold proposal stuns ${target.name}. Requires high-level consultations. Expulsions paused pending discussions.`,
                 mediumTerm: `If successful, establishes unprecedented intelligence-sharing framework. Transforms competitive intelligence gathering into cooperation.`,
@@ -794,7 +809,7 @@ export class DiplomaticScenarioGenerator {
             },
           ],
           metadata: {
-            triggeredBy: 'High-level intelligence operations exposed',
+            triggeredBy: "High-level intelligence operations exposed",
             relevanceScore: 80,
           },
         };
@@ -804,7 +819,7 @@ export class DiplomaticScenarioGenerator {
 
   private createHumanitarianCrisisTemplate(): ScenarioTemplate {
     return {
-      type: 'humanitarian_crisis',
+      type: "humanitarian_crisis",
       weight: 0.7,
       triggerConditions: (context) => {
         // Can trigger at any time (natural disasters are unpredictable)
@@ -813,7 +828,7 @@ export class DiplomaticScenarioGenerator {
       generate: (context, target) => {
         return {
           id: `scenario_humanitarian_${Date.now()}`,
-          type: 'humanitarian_crisis',
+          type: "humanitarian_crisis",
           title: `Natural Disaster Strikes ${target.name}`,
           narrative: {
             introduction: `A devastating earthquake measuring 7.8 on the Richter scale has struck ${target.name}, causing widespread destruction in their capital city and surrounding regions.`,
@@ -824,7 +839,7 @@ export class DiplomaticScenarioGenerator {
           },
           involvedCountries: {
             primary: target.id,
-            secondary: context.embassies.map(e => e.hostCountryId),
+            secondary: context.embassies.map((e) => e.hostCountryId),
           },
           historicalContext: [
             `${target.name} is located in a seismically active region`,
@@ -832,18 +847,18 @@ export class DiplomaticScenarioGenerator {
             `Our nation has capabilities in disaster response and medical aid`,
             `Other nations are also mobilizing assistance`,
           ],
-          timeFrame: 'urgent',
+          timeFrame: "urgent",
           expiresAt: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // 1 day
-          difficulty: 'moderate',
+          difficulty: "moderate",
           recommendedEmbassyLevel: 1,
           choices: [
             {
-              id: 'humanitarian_limited',
-              label: 'Token Assistance',
-              description: 'Send symbolic aid and offer condolences',
-              skillRequired: 'empathy',
+              id: "humanitarian_limited",
+              label: "Token Assistance",
+              description: "Send symbolic aid and offer condolences",
+              skillRequired: "empathy",
               skillLevel: 3,
-              riskLevel: 'low',
+              riskLevel: "low",
               predictedOutcomes: {
                 shortTerm: `${target.name} acknowledges assistance. Fulfills minimum international obligation. Other nations provide more substantial aid.`,
                 mediumTerm: `Minimal impact on ground. ${target.name} remembers our limited response. Other donors gain diplomatic advantage.`,
@@ -857,12 +872,13 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'humanitarian_substantial',
-              label: 'Comprehensive Relief Package',
-              description: 'Deploy search and rescue teams, medical aid, and significant financial assistance',
-              skillRequired: 'empathy',
+              id: "humanitarian_substantial",
+              label: "Comprehensive Relief Package",
+              description:
+                "Deploy search and rescue teams, medical aid, and significant financial assistance",
+              skillRequired: "empathy",
               skillLevel: 6,
-              riskLevel: 'low',
+              riskLevel: "low",
               predictedOutcomes: {
                 shortTerm: `Our rescue teams save lives in critical first hours. Medical supplies reach hospitals. ${target.name} expresses deep gratitude.`,
                 mediumTerm: `Sustained assistance aids recovery. Our flag visible on relief supplies throughout affected areas. Builds genuine goodwill.`,
@@ -879,12 +895,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'humanitarian_coordinate',
-              label: 'Lead International Coordination',
-              description: 'Organize and coordinate multilateral relief effort',
-              skillRequired: 'persuasion',
+              id: "humanitarian_coordinate",
+              label: "Lead International Coordination",
+              description: "Organize and coordinate multilateral relief effort",
+              skillRequired: "persuasion",
               skillLevel: 8,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `Assume leadership role in coordinating international response. Multiple nations contribute under our coordination framework.`,
                 mediumTerm: `Effective coordination maximizes impact of all aid. Demonstrates organizational capability and humanitarian leadership.`,
@@ -902,12 +918,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'humanitarian_conditional',
-              label: 'Aid with Conditions',
-              description: 'Offer assistance tied to specific diplomatic concessions',
-              skillRequired: 'negotiation',
+              id: "humanitarian_conditional",
+              label: "Aid with Conditions",
+              description: "Offer assistance tied to specific diplomatic concessions",
+              skillRequired: "negotiation",
               skillLevel: 5,
-              riskLevel: 'extreme',
+              riskLevel: "extreme",
               predictedOutcomes: {
                 shortTerm: `${target.name} outraged at conditional aid during crisis. International condemnation. Severe reputational damage.`,
                 mediumTerm: `Relationship poisoned for years. Even if conditions accepted, resentment festers. Other nations distance themselves.`,
@@ -922,7 +938,7 @@ export class DiplomaticScenarioGenerator {
             },
           ],
           metadata: {
-            triggeredBy: 'Natural disaster in partner country',
+            triggeredBy: "Natural disaster in partner country",
             relevanceScore: 75,
           },
         };
@@ -932,30 +948,30 @@ export class DiplomaticScenarioGenerator {
 
   private createAlliancePressureTemplate(): ScenarioTemplate {
     return {
-      type: 'alliance_pressure',
+      type: "alliance_pressure",
       weight: 0.9,
       triggerConditions: (context) => {
         // Trigger if we have multiple alliance relationships
-        const alliances = context.relationships.filter(r => r.relationship === 'alliance');
+        const alliances = context.relationships.filter((r) => r.relationship === "alliance");
         return alliances.length >= 2;
       },
       generate: (context, target) => {
-        const alliances = context.relationships.filter(r => r.relationship === 'alliance');
-        const rival = alliances.find(a => a.country1 !== target.id && a.country2 !== target.id);
+        const alliances = context.relationships.filter((r) => r.relationship === "alliance");
+        const rival = alliances.find((a) => a.country1 !== target.id && a.country2 !== target.id);
 
         return {
           id: `scenario_alliance_${Date.now()}`,
-          type: 'alliance_pressure',
+          type: "alliance_pressure",
           title: `Competing Alliance Obligations Create Dilemma`,
           narrative: {
             introduction: `Our alliance partner ${target.name} has requested our support in a diplomatic dispute with another country. However, we also maintain close relations with their opponent, creating conflicting obligations.`,
-            context: `${target.name} and ${rival?.country1 || 'a regional power'} have been locked in an escalating trade dispute that threatens to spill over into broader confrontation. Both are calling on their respective partners to demonstrate solidarity.`,
+            context: `${target.name} and ${rival?.country1 || "a regional power"} have been locked in an escalating trade dispute that threatens to spill over into broader confrontation. Both are calling on their respective partners to demonstrate solidarity.`,
             situation: `${target.name} specifically requests we: (1) issue a joint statement supporting their position, (2) coordinate economic pressure on their opponent, and (3) reduce our own diplomatic engagement with the rival power. They frame this as a test of our alliance commitment. Meanwhile, our relationship with the other side represents significant economic interests and regional stability concerns.`,
             implications: `We cannot satisfy both parties. Our choice will define which relationship we prioritize and may force us to reconsider our network of alliances. Third parties are watching to see if our commitments are reliable.`,
           },
           involvedCountries: {
             primary: target.id,
-            secondary: [rival?.country1 || '', rival?.country2 || ''].filter(Boolean),
+            secondary: [rival?.country1 || "", rival?.country2 || ""].filter(Boolean),
           },
           historicalContext: [
             `Our alliance with ${target.name} has been cornerstone of foreign policy`,
@@ -963,18 +979,18 @@ export class DiplomaticScenarioGenerator {
             `Previous attempts to remain neutral in regional disputes have failed`,
             `The dispute between them has historical roots`,
           ],
-          timeFrame: 'time_sensitive',
+          timeFrame: "time_sensitive",
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week
-          difficulty: 'critical',
+          difficulty: "critical",
           recommendedEmbassyLevel: 4,
           choices: [
             {
-              id: 'alliance_support',
-              label: 'Stand with Alliance Partner',
-              description: 'Fully support our alliance partner as requested',
-              skillRequired: 'firmness',
+              id: "alliance_support",
+              label: "Stand with Alliance Partner",
+              description: "Fully support our alliance partner as requested",
+              skillRequired: "firmness",
               skillLevel: 6,
-              riskLevel: 'high',
+              riskLevel: "high",
               predictedOutcomes: {
                 shortTerm: `${target.name} celebrates our loyalty. Other relationship deteriorates rapidly. Regional tensions escalate.`,
                 mediumTerm: `Alliance strengthened significantly. Economic losses from damaged relationship. Region becomes more polarized.`,
@@ -988,12 +1004,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'alliance_neutral',
-              label: 'Maintain Neutrality',
-              description: 'Refuse to take sides, attempt to preserve both relationships',
-              skillRequired: 'compromise',
+              id: "alliance_neutral",
+              label: "Maintain Neutrality",
+              description: "Refuse to take sides, attempt to preserve both relationships",
+              skillRequired: "compromise",
               skillLevel: 8,
-              riskLevel: 'extreme',
+              riskLevel: "extreme",
               predictedOutcomes: {
                 shortTerm: `Both sides express disappointment. ${target.name} questions our alliance value. Trust damaged with both parties.`,
                 mediumTerm: `Relationships with both weaken. Alliance partner may seek more reliable partners. Isolation risk increases.`,
@@ -1007,12 +1023,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'alliance_mediate',
-              label: 'Active Mediation',
-              description: 'Use our unique position to mediate the underlying dispute',
-              skillRequired: 'persuasion',
+              id: "alliance_mediate",
+              label: "Active Mediation",
+              description: "Use our unique position to mediate the underlying dispute",
+              skillRequired: "persuasion",
               skillLevel: 10,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `Both sides skeptical but agree to talks. We facilitate direct dialogue. Immediate crisis de-escalates.`,
                 mediumTerm: `If successful, mediation resolves dispute and strengthens both relationships. If fails, may damage both relationships.`,
@@ -1030,12 +1046,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'alliance_restructure',
-              label: 'Propose Alliance Restructuring',
-              description: 'Suggest all parties join broader multilateral framework',
-              skillRequired: 'negotiation',
+              id: "alliance_restructure",
+              label: "Propose Alliance Restructuring",
+              description: "Suggest all parties join broader multilateral framework",
+              skillRequired: "negotiation",
               skillLevel: 9,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `Ambitious proposal requires extensive consultations. Immediate pressure relieved while framework debated.`,
                 mediumTerm: `If adopted, transforms bilateral tensions into multilateral cooperation. All parties gain face-saving solution.`,
@@ -1054,7 +1070,7 @@ export class DiplomaticScenarioGenerator {
             },
           ],
           metadata: {
-            triggeredBy: 'Conflicting alliance obligations',
+            triggeredBy: "Conflicting alliance obligations",
             relevanceScore: 90,
           },
         };
@@ -1064,25 +1080,25 @@ export class DiplomaticScenarioGenerator {
 
   private createEconomicSanctionsDebateTemplate(): ScenarioTemplate {
     return {
-      type: 'economic_sanctions_debate',
+      type: "economic_sanctions_debate",
       weight: 0.8,
       triggerConditions: (context) => {
         // Trigger if we have relationships with both friendly and tense countries
-        const friendly = context.relationships.filter(r => r.strength > 60).length;
-        const tense = context.relationships.filter(r => r.strength < 40).length;
+        const friendly = context.relationships.filter((r) => r.strength > 60).length;
+        const tense = context.relationships.filter((r) => r.strength < 40).length;
         return friendly > 0 && tense > 0;
       },
       generate: (context, target) => {
-        const hostileRelation = context.relationships.find(r =>
-          r.relationship === 'hostile' || r.relationship === 'tension'
+        const hostileRelation = context.relationships.find(
+          (r) => r.relationship === "hostile" || r.relationship === "tension"
         );
 
         return {
           id: `scenario_sanctions_${Date.now()}`,
-          type: 'economic_sanctions_debate',
+          type: "economic_sanctions_debate",
           title: `${target.name} Proposes Joint Sanctions Against Third Country`,
           narrative: {
-            introduction: `${target.name} is organizing an international coalition to impose economic sanctions on ${hostileRelation?.country1 || 'a regional power'} and has requested our participation.`,
+            introduction: `${target.name} is organizing an international coalition to impose economic sanctions on ${hostileRelation?.country1 || "a regional power"} and has requested our participation.`,
             context: `The targeted country has recently engaged in actions that ${target.name} and several other nations deem violations of international norms. The proposed sanctions would restrict trade, freeze assets, and limit financial transactions.`,
             situation: `${target.name} argues the sanctions are necessary to uphold international law and deter further violations. They've mobilized significant international support. However, we maintain $${Math.floor(Math.random() * 500 + 100)}M in annual trade with the sanctioned country, and joining sanctions would cost thousands of jobs in our export sector. Additionally, the targeted country has threatened counter-sanctions against any participants.`,
             implications: `This is fundamentally a choice between economic interests and international solidarity. Our decision will signal our foreign policy priorities and affect our standing with multiple countries.`,
@@ -1097,18 +1113,18 @@ export class DiplomaticScenarioGenerator {
             `International coalitions require broad participation to be effective`,
             `Counter-sanctions can escalate economic warfare`,
           ],
-          timeFrame: 'time_sensitive',
+          timeFrame: "time_sensitive",
           expiresAt: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days
-          difficulty: 'challenging',
+          difficulty: "challenging",
           recommendedEmbassyLevel: 3,
           choices: [
             {
-              id: 'sanctions_join',
-              label: 'Join Sanctions Coalition',
-              description: 'Participate fully in the proposed sanctions regime',
-              skillRequired: 'firmness',
+              id: "sanctions_join",
+              label: "Join Sanctions Coalition",
+              description: "Participate fully in the proposed sanctions regime",
+              skillRequired: "firmness",
               skillLevel: 6,
-              riskLevel: 'high',
+              riskLevel: "high",
               predictedOutcomes: {
                 shortTerm: `${target.name} welcomes our participation. Trade with sanctioned country halts. Counter-sanctions imposed on us.`,
                 mediumTerm: `Economic pain from lost trade and counter-sanctions. Domestic criticism from affected industries. International reputation for principled stance.`,
@@ -1122,12 +1138,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'sanctions_symbolic',
-              label: 'Symbolic Participation',
-              description: 'Join coalition but implement only limited sanctions',
-              skillRequired: 'negotiation',
+              id: "sanctions_symbolic",
+              label: "Symbolic Participation",
+              description: "Join coalition but implement only limited sanctions",
+              skillRequired: "negotiation",
               skillLevel: 7,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `${target.name} disappointed but accepts our limited participation. Sanctioned country moderately annoyed but grateful for restraint.`,
                 mediumTerm: `Balancing act maintains relationships with both sides. Neither fully satisfied. Economic impact minimized.`,
@@ -1141,12 +1157,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'sanctions_refuse',
-              label: 'Refuse Participation',
-              description: 'Decline to join sanctions, prioritize economic interests',
-              skillRequired: 'firmness',
+              id: "sanctions_refuse",
+              label: "Refuse Participation",
+              description: "Decline to join sanctions, prioritize economic interests",
+              skillRequired: "firmness",
               skillLevel: 5,
-              riskLevel: 'high',
+              riskLevel: "high",
               predictedOutcomes: {
                 shortTerm: `${target.name} expresses strong disappointment. Coalition members question our commitment to shared values. Sanctioned country grateful.`,
                 mediumTerm: `Trade continues uninterrupted. Relationship with ${target.name} cools significantly. May benefit from others' sanctions as trade diverted to us.`,
@@ -1160,12 +1176,13 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'sanctions_alternative',
-              label: 'Propose Diplomatic Alternative',
-              description: 'Suggest targeted diplomatic pressure instead of broad economic sanctions',
-              skillRequired: 'persuasion',
+              id: "sanctions_alternative",
+              label: "Propose Diplomatic Alternative",
+              description:
+                "Suggest targeted diplomatic pressure instead of broad economic sanctions",
+              skillRequired: "persuasion",
               skillLevel: 9,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `${target.name} and coalition skeptical but willing to consider alternative approach. Buys time for diplomatic solution.`,
                 mediumTerm: `If diplomacy succeeds, avoids economic damage while achieving goals. If fails, we may be forced to join sanctions anyway.`,
@@ -1184,7 +1201,7 @@ export class DiplomaticScenarioGenerator {
             },
           ],
           metadata: {
-            triggeredBy: 'International sanctions coalition formation',
+            triggeredBy: "International sanctions coalition formation",
             relevanceScore: 75,
           },
         };
@@ -1194,17 +1211,19 @@ export class DiplomaticScenarioGenerator {
 
   private createTechnologyTransferTemplate(): ScenarioTemplate {
     return {
-      type: 'technology_transfer_request',
+      type: "technology_transfer_request",
       weight: 0.7,
       triggerConditions: (context) => {
         // Trigger if we have higher-tier economy or research specialization
-        return context.economicData?.playerTier === 'developed' ||
-               context.embassies.some(e => e.specialization === 'research');
+        return (
+          context.economicData?.playerTier === "developed" ||
+          context.embassies.some((e) => e.specialization === "research")
+        );
       },
       generate: (context, target) => {
         return {
           id: `scenario_tech_${Date.now()}`,
-          type: 'technology_transfer_request',
+          type: "technology_transfer_request",
           title: `${target.name} Requests Advanced Technology Transfer`,
           narrative: {
             introduction: `${target.name} has formally requested access to our advanced ${this.randomTechnology()} technology through a collaborative development agreement.`,
@@ -1221,17 +1240,17 @@ export class DiplomaticScenarioGenerator {
             `${target.name} has invested heavily in research infrastructure`,
             `Our technology sector leads globally in this field`,
           ],
-          timeFrame: 'strategic',
-          difficulty: 'challenging',
+          timeFrame: "strategic",
+          difficulty: "challenging",
           recommendedEmbassyLevel: 4,
           choices: [
             {
-              id: 'tech_full_transfer',
-              label: 'Comprehensive Partnership',
-              description: 'Agree to full technology transfer with extensive collaboration',
-              skillRequired: 'compromise',
+              id: "tech_full_transfer",
+              label: "Comprehensive Partnership",
+              description: "Agree to full technology transfer with extensive collaboration",
+              skillRequired: "compromise",
               skillLevel: 7,
-              riskLevel: 'high',
+              riskLevel: "high",
               predictedOutcomes: {
                 shortTerm: `${target.name} celebrates breakthrough agreement. Technology sector protests potential competitive disadvantage. Joint facilities established.`,
                 mediumTerm: `${target.name}'s capabilities improve rapidly. Shared R&D produces innovations. Some domestic jobs move to joint facilities.`,
@@ -1249,12 +1268,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'tech_limited',
-              label: 'Conditional Licensing',
-              description: 'License technology with strict controls and oversight',
-              skillRequired: 'negotiation',
+              id: "tech_limited",
+              label: "Conditional Licensing",
+              description: "License technology with strict controls and oversight",
+              skillRequired: "negotiation",
               skillLevel: 8,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `${target.name} accepts conditional terms. Detailed legal framework negotiated. Technology sector cautiously supportive.`,
                 mediumTerm: `Controlled technology transfer proceeds. Robust IP protections maintained. Market access benefits realized.`,
@@ -1271,12 +1290,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'tech_refuse',
-              label: 'Decline Transfer',
-              description: 'Refuse technology transfer to maintain competitive advantage',
-              skillRequired: 'firmness',
+              id: "tech_refuse",
+              label: "Decline Transfer",
+              description: "Refuse technology transfer to maintain competitive advantage",
+              skillRequired: "firmness",
               skillLevel: 6,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `${target.name} disappointed. Seeks technology from other sources. Domestic technology sector relieved.`,
                 mediumTerm: `${target.name} develops alternative partnerships. We maintain technology lead but miss market opportunities.`,
@@ -1290,12 +1309,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'tech_multilateral',
-              label: 'Multilateral Research Consortium',
-              description: 'Propose broader international research collaboration',
-              skillRequired: 'persuasion',
+              id: "tech_multilateral",
+              label: "Multilateral Research Consortium",
+              description: "Propose broader international research collaboration",
+              skillRequired: "persuasion",
               skillLevel: 9,
-              riskLevel: 'low',
+              riskLevel: "low",
               predictedOutcomes: {
                 shortTerm: `Ambitious proposal to include multiple nations. ${target.name} interested but wants guarantees of access. Requires extensive negotiation.`,
                 mediumTerm: `If successful, creates international research consortium. Spreads costs and benefits across multiple nations.`,
@@ -1314,7 +1333,7 @@ export class DiplomaticScenarioGenerator {
             },
           ],
           metadata: {
-            triggeredBy: 'Advanced technology capabilities',
+            triggeredBy: "Advanced technology capabilities",
             relevanceScore: 70,
           },
         };
@@ -1324,7 +1343,7 @@ export class DiplomaticScenarioGenerator {
 
   private createDiplomaticIncidentTemplate(): ScenarioTemplate {
     return {
-      type: 'diplomatic_incident',
+      type: "diplomatic_incident",
       weight: 0.6,
       triggerConditions: (context) => {
         // Can happen with any embassy relationship
@@ -1333,7 +1352,7 @@ export class DiplomaticScenarioGenerator {
       generate: (context, target) => {
         return {
           id: `scenario_incident_${Date.now()}`,
-          type: 'diplomatic_incident',
+          type: "diplomatic_incident",
           title: `Embassy Staff Arrested in ${target.name}`,
           narrative: {
             introduction: `Two members of our embassy staff in ${target.name} have been detained by local authorities on allegations of "activities incompatible with diplomatic status."`,
@@ -1351,18 +1370,18 @@ export class DiplomaticScenarioGenerator {
             `Previous incidents resolved through quiet diplomacy`,
             `Domestic politics in ${target.name} currently unstable`,
           ],
-          timeFrame: 'urgent',
+          timeFrame: "urgent",
           expiresAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days
-          difficulty: 'critical',
+          difficulty: "critical",
           recommendedEmbassyLevel: 3,
           choices: [
             {
-              id: 'incident_strong',
-              label: 'Demand Immediate Release',
-              description: 'Issue ultimatum threatening severe consequences',
-              skillRequired: 'intimidation',
+              id: "incident_strong",
+              label: "Demand Immediate Release",
+              description: "Issue ultimatum threatening severe consequences",
+              skillRequired: "intimidation",
               skillLevel: 8,
-              riskLevel: 'extreme',
+              riskLevel: "extreme",
               predictedOutcomes: {
                 shortTerm: `${target.name} hardens position. Detained staff face formal charges. Diplomatic crisis escalates rapidly.`,
                 mediumTerm: `Extended detention possible. May require months of negotiation. Bilateral relations severely damaged.`,
@@ -1376,12 +1395,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'incident_negotiate',
-              label: 'Quiet Diplomacy',
-              description: 'Engage in confidential negotiations for staff release',
-              skillRequired: 'negotiation',
+              id: "incident_negotiate",
+              label: "Quiet Diplomacy",
+              description: "Engage in confidential negotiations for staff release",
+              skillRequired: "negotiation",
               skillLevel: 7,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `Back-channel communications initiated. ${target.name} signals willingness to resolve quietly if given face-saving exit.`,
                 mediumTerm: `Staff released after "investigation concludes no wrongdoing." Both sides avoid public confrontation.`,
@@ -1398,12 +1417,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'incident_reciprocal',
-              label: 'Reciprocal Detention',
-              description: 'Detain their diplomatic staff in our country as leverage',
-              skillRequired: 'intimidation',
+              id: "incident_reciprocal",
+              label: "Reciprocal Detention",
+              description: "Detain their diplomatic staff in our country as leverage",
+              skillRequired: "intimidation",
               skillLevel: 6,
-              riskLevel: 'extreme',
+              riskLevel: "extreme",
               predictedOutcomes: {
                 shortTerm: `Tit-for-tat escalation. Both countries detain each other's diplomats. International condemnation of both sides.`,
                 mediumTerm: `Hostage diplomacy ensues. Extended negotiations to exchange detained personnel. Relationships poisoned.`,
@@ -1417,12 +1436,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'incident_international',
-              label: 'International Legal Action',
-              description: 'File formal complaint with international courts',
-              skillRequired: 'persuasion',
+              id: "incident_international",
+              label: "International Legal Action",
+              description: "File formal complaint with international courts",
+              skillRequired: "persuasion",
               skillLevel: 7,
-              riskLevel: 'low',
+              riskLevel: "low",
               predictedOutcomes: {
                 shortTerm: `Issue internationalized. ${target.name} faces diplomatic pressure from multiple countries. Staff situation stabilizes.`,
                 mediumTerm: `International scrutiny forces ${target.name} to improve treatment of detained staff. Legal proceedings advance slowly.`,
@@ -1441,7 +1460,7 @@ export class DiplomaticScenarioGenerator {
             },
           ],
           metadata: {
-            triggeredBy: 'Embassy personnel detention',
+            triggeredBy: "Embassy personnel detention",
             relevanceScore: 85,
           },
         };
@@ -1451,24 +1470,24 @@ export class DiplomaticScenarioGenerator {
 
   private createMediationOpportunityTemplate(): ScenarioTemplate {
     return {
-      type: 'mediation_opportunity',
+      type: "mediation_opportunity",
       weight: 0.8,
       triggerConditions: (context) => {
         // Trigger if we have good relationships with multiple countries
-        const goodRelations = context.relationships.filter(r => r.strength > 60);
+        const goodRelations = context.relationships.filter((r) => r.strength > 60);
         return goodRelations.length >= 3;
       },
       generate: (context, target) => {
         // Find two countries in conflict that we both have relationships with
-        const conflicts = context.relationships.filter(r =>
-          r.relationship === 'tension' || r.relationship === 'hostile'
+        const conflicts = context.relationships.filter(
+          (r) => r.relationship === "tension" || r.relationship === "hostile"
         );
 
-        const conflict = conflicts[0] || { country1: 'Country A', country2: 'Country B' };
+        const conflict = conflicts[0] || { country1: "Country A", country2: "Country B" };
 
         return {
           id: `scenario_mediation_${Date.now()}`,
-          type: 'mediation_opportunity',
+          type: "mediation_opportunity",
           title: `Opportunity to Mediate Regional Dispute`,
           narrative: {
             introduction: `${conflict.country1} and ${conflict.country2} have been locked in an escalating dispute that threatens regional stability. Both parties have privately approached us about serving as a neutral mediator.`,
@@ -1486,17 +1505,17 @@ export class DiplomaticScenarioGenerator {
             `We maintain balanced relations with both parties`,
             `Economic costs of continued tension affect multiple countries`,
           ],
-          timeFrame: 'strategic',
-          difficulty: 'legendary',
+          timeFrame: "strategic",
+          difficulty: "legendary",
           recommendedEmbassyLevel: 5,
           choices: [
             {
-              id: 'mediation_accept',
-              label: 'Accept Mediation Role',
-              description: 'Commit to facilitating comprehensive peace negotiations',
-              skillRequired: 'persuasion',
+              id: "mediation_accept",
+              label: "Accept Mediation Role",
+              description: "Commit to facilitating comprehensive peace negotiations",
+              skillRequired: "persuasion",
               skillLevel: 10,
-              riskLevel: 'high',
+              riskLevel: "high",
               predictedOutcomes: {
                 shortTerm: `We host high-level peace talks. International attention focused on mediation efforts. Both sides make initial demands.`,
                 mediumTerm: `Negotiations prove difficult. Small confidence-building measures achieved. Risk of breakdown constant. Regional tensions pause.`,
@@ -1514,12 +1533,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'mediation_facilitate',
-              label: 'Limited Facilitation',
-              description: 'Provide venue and support but let international organization lead',
-              skillRequired: 'negotiation',
+              id: "mediation_facilitate",
+              label: "Limited Facilitation",
+              description: "Provide venue and support but let international organization lead",
+              skillRequired: "negotiation",
               skillLevel: 7,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `We host talks but share responsibility with international body. Reduces our exposure to failure.`,
                 mediumTerm: `Progress depends on international organization's effectiveness. We gain credit for facilitating without bearing full responsibility.`,
@@ -1537,12 +1556,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'mediation_decline',
-              label: 'Decline Mediation',
-              description: 'Politely refuse to avoid risk of mediation failure',
-              skillRequired: 'firmness',
+              id: "mediation_decline",
+              label: "Decline Mediation",
+              description: "Politely refuse to avoid risk of mediation failure",
+              skillRequired: "firmness",
               skillLevel: 5,
-              riskLevel: 'low',
+              riskLevel: "low",
               predictedOutcomes: {
                 shortTerm: `Both parties disappointed. Conflict continues without mediation. They seek other mediators.`,
                 mediumTerm: `Missed opportunity for regional influence. Another country may successfully mediate and gain prestige.`,
@@ -1556,12 +1575,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'mediation_track2',
-              label: 'Track II Diplomacy',
-              description: 'Sponsor unofficial dialogue between civil society leaders',
-              skillRequired: 'compromise',
+              id: "mediation_track2",
+              label: "Track II Diplomacy",
+              description: "Sponsor unofficial dialogue between civil society leaders",
+              skillRequired: "compromise",
               skillLevel: 8,
-              riskLevel: 'low',
+              riskLevel: "low",
               predictedOutcomes: {
                 shortTerm: `We organize meetings between academics, business leaders, and civil society from both sides. Lower stakes than official talks.`,
                 mediumTerm: `Track II dialogue builds personal relationships and generates creative solutions. Gradual trust-building at grassroots level.`,
@@ -1580,7 +1599,7 @@ export class DiplomaticScenarioGenerator {
             },
           ],
           metadata: {
-            triggeredBy: 'Regional conflict between countries we have relationships with',
+            triggeredBy: "Regional conflict between countries we have relationships with",
             relevanceScore: 80,
           },
         };
@@ -1590,20 +1609,21 @@ export class DiplomaticScenarioGenerator {
 
   private createEmbassySecurityThreatTemplate(): ScenarioTemplate {
     return {
-      type: 'embassy_security_threat',
+      type: "embassy_security_threat",
       weight: 0.5,
       triggerConditions: (context) => {
         // Can happen with any embassy
         return context.embassies.length > 0;
       },
       generate: (context, target) => {
-        const embassy = context.embassies.find(e =>
-          e.hostCountryId === target.id || e.guestCountryId === target.id
-        ) || context.embassies[0];
+        const embassy =
+          context.embassies.find(
+            (e) => e.hostCountryId === target.id || e.guestCountryId === target.id
+          ) || context.embassies[0];
 
         return {
           id: `scenario_security_${Date.now()}`,
-          type: 'embassy_security_threat',
+          type: "embassy_security_threat",
           title: `Security Threat Against Embassy in ${target.name}`,
           narrative: {
             introduction: `Intelligence reports indicate credible threats against our embassy in ${target.name}. A terrorist organization has specifically named our diplomatic facilities in their propaganda materials.`,
@@ -1621,18 +1641,18 @@ export class DiplomaticScenarioGenerator {
             `Previous embassy attacks in region have occurred`,
             `Our embassy serves as important diplomatic hub`,
           ],
-          timeFrame: 'urgent',
+          timeFrame: "urgent",
           expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days
-          difficulty: 'critical',
+          difficulty: "critical",
           recommendedEmbassyLevel: 2,
           choices: [
             {
-              id: 'security_evacuate',
-              label: 'Partial Evacuation',
-              description: 'Reduce staff to essential personnel only',
-              skillRequired: 'firmness',
+              id: "security_evacuate",
+              label: "Partial Evacuation",
+              description: "Reduce staff to essential personnel only",
+              skillRequired: "firmness",
               skillLevel: 5,
-              riskLevel: 'low',
+              riskLevel: "low",
               predictedOutcomes: {
                 shortTerm: `Non-essential staff safely evacuated. Embassy operations reduced. ${target.name} understands but concerned about appearance.`,
                 mediumTerm: `Reduced operations limit diplomatic effectiveness. Security situation may stabilize allowing staff return.`,
@@ -1646,12 +1666,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'security_enhanced',
-              label: 'Request Enhanced Host Protection',
-              description: 'Work with host government to significantly upgrade security',
-              skillRequired: 'negotiation',
+              id: "security_enhanced",
+              label: "Request Enhanced Host Protection",
+              description: "Work with host government to significantly upgrade security",
+              skillRequired: "negotiation",
               skillLevel: 6,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `${target.name} commits additional security forces. Visible protection increased. Operations continue with enhanced vigilance.`,
                 mediumTerm: `Collaborative security arrangement strengthens ties. Demonstrates trust in ${target.name}'s capabilities.`,
@@ -1668,12 +1688,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'security_contractors',
-              label: 'Deploy Private Security',
-              description: 'Bring in our own security contractors for embassy protection',
-              skillRequired: 'firmness',
+              id: "security_contractors",
+              label: "Deploy Private Security",
+              description: "Bring in our own security contractors for embassy protection",
+              skillRequired: "firmness",
               skillLevel: 7,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `Private contractors deployed. ${target.name} objects to armed foreign personnel but reluctantly accepts. Security significantly upgraded.`,
                 mediumTerm: `Embassy operates as fortified compound. Effective security but signals lack of trust in host country.`,
@@ -1690,12 +1710,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'security_close',
-              label: 'Temporary Closure',
-              description: 'Close embassy until security situation improves',
-              skillRequired: 'firmness',
+              id: "security_close",
+              label: "Temporary Closure",
+              description: "Close embassy until security situation improves",
+              skillRequired: "firmness",
               skillLevel: 4,
-              riskLevel: 'high',
+              riskLevel: "high",
               predictedOutcomes: {
                 shortTerm: `Embassy closed. All staff evacuated. ${target.name} government embarrassed by closure. Diplomatic functions suspended.`,
                 mediumTerm: `Critical diplomatic work halted. Other countries maintain presence, gaining advantage. Reopening timeline uncertain.`,
@@ -1710,7 +1730,7 @@ export class DiplomaticScenarioGenerator {
             },
           ],
           metadata: {
-            triggeredBy: 'Security threat intelligence',
+            triggeredBy: "Security threat intelligence",
             relevanceScore: 75,
           },
         };
@@ -1720,20 +1740,20 @@ export class DiplomaticScenarioGenerator {
 
   private createTreatyRenewalTemplate(): ScenarioTemplate {
     return {
-      type: 'treaty_renewal',
+      type: "treaty_renewal",
       weight: 1.0,
       triggerConditions: (context) => {
         // Trigger if we have treaties expiring soon
-        const expiringTreaties = context.treaties.filter(t => {
+        const expiringTreaties = context.treaties.filter((t) => {
           const daysUntilExpiry = (t.expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-          return daysUntilExpiry > 0 && daysUntilExpiry < 90 && t.status === 'active';
+          return daysUntilExpiry > 0 && daysUntilExpiry < 90 && t.status === "active";
         });
         return expiringTreaties.length > 0;
       },
       generate: (context, target) => {
-        const treaty = context.treaties.find(t => {
+        const treaty = context.treaties.find((t) => {
           const daysUntilExpiry = (t.expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-          return daysUntilExpiry > 0 && daysUntilExpiry < 90 && t.status === 'active';
+          return daysUntilExpiry > 0 && daysUntilExpiry < 90 && t.status === "active";
         });
 
         if (!treaty) {
@@ -1741,16 +1761,18 @@ export class DiplomaticScenarioGenerator {
           return this.createBorderDisputeTemplate().generate(context, target);
         }
 
-        const daysUntilExpiry = Math.floor((treaty.expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        const daysUntilExpiry = Math.floor(
+          (treaty.expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        );
 
         return {
           id: `scenario_treaty_${Date.now()}`,
-          type: 'treaty_renewal',
+          type: "treaty_renewal",
           title: `${treaty.name} Nears Expiration`,
           narrative: {
             introduction: `The ${treaty.name} with ${target.name}, a cornerstone of our bilateral relationship, expires in ${daysUntilExpiry} days. Both parties must decide whether to renew, renegotiate, or allow it to lapse.`,
             context: `This ${treaty.type} treaty has governed our relationship for years. During that time, both our nations and the regional environment have evolved significantly. What made sense years ago may need updating for current realities.`,
-            situation: `${target.name} has indicated interest in renewal but seeks modifications to reflect changed circumstances. They propose: (1) extending the treaty duration from 5 to 10 years, (2) updating specific provisions related to ${treaty.type === 'trade' ? 'tariff schedules and digital commerce' : treaty.type === 'defense' ? 'technology sharing and joint exercises' : 'monitoring mechanisms'}, and (3) adding new clauses addressing issues that weren't relevant when originally signed. Our foreign ministry is divided on whether renewal serves our current interests.`,
+            situation: `${target.name} has indicated interest in renewal but seeks modifications to reflect changed circumstances. They propose: (1) extending the treaty duration from 5 to 10 years, (2) updating specific provisions related to ${treaty.type === "trade" ? "tariff schedules and digital commerce" : treaty.type === "defense" ? "technology sharing and joint exercises" : "monitoring mechanisms"}, and (3) adding new clauses addressing issues that weren't relevant when originally signed. Our foreign ministry is divided on whether renewal serves our current interests.`,
             implications: `Treaty renewal signals continuity and reliability. Renegotiation allows updating terms but risks contentious negotiations. Allowing expiration opens new possibilities but creates uncertainty and potential vacuum.`,
           },
           involvedCountries: {
@@ -1762,18 +1784,18 @@ export class DiplomaticScenarioGenerator {
             `Regional circumstances have evolved since original signing`,
             `Both parties have new leadership since treaty inception`,
           ],
-          timeFrame: 'time_sensitive',
+          timeFrame: "time_sensitive",
           expiresAt: new Date(Date.now() + daysUntilExpiry * 24 * 60 * 60 * 1000),
-          difficulty: 'moderate',
+          difficulty: "moderate",
           recommendedEmbassyLevel: 3,
           choices: [
             {
-              id: 'treaty_renew',
-              label: 'Straightforward Renewal',
-              description: 'Renew treaty with minimal modifications',
-              skillRequired: 'compromise',
+              id: "treaty_renew",
+              label: "Straightforward Renewal",
+              description: "Renew treaty with minimal modifications",
+              skillRequired: "compromise",
               skillLevel: 5,
-              riskLevel: 'low',
+              riskLevel: "low",
               predictedOutcomes: {
                 shortTerm: `Treaty renewed quickly and efficiently. ${target.name} satisfied. Continuity preserved.`,
                 mediumTerm: `Relationship stability maintained. However, outdated provisions may cause friction as circumstances evolve.`,
@@ -1787,12 +1809,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'treaty_modernize',
-              label: 'Comprehensive Modernization',
-              description: 'Renegotiate treaty with significant updates for current era',
-              skillRequired: 'negotiation',
+              id: "treaty_modernize",
+              label: "Comprehensive Modernization",
+              description: "Renegotiate treaty with significant updates for current era",
+              skillRequired: "negotiation",
               skillLevel: 8,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `Extensive negotiations begin. Both sides present updated proposals. Risk of missing expiration deadline.`,
                 mediumTerm: `If successful, produces treaty fit for current realities. If negotiations stall, may need interim extension or lapse.`,
@@ -1809,12 +1831,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'treaty_expire',
-              label: 'Allow Expiration',
-              description: 'Let treaty lapse and pursue new framework',
-              skillRequired: 'firmness',
+              id: "treaty_expire",
+              label: "Allow Expiration",
+              description: "Let treaty lapse and pursue new framework",
+              skillRequired: "firmness",
               skillLevel: 6,
-              riskLevel: 'high',
+              riskLevel: "high",
               predictedOutcomes: {
                 shortTerm: `${target.name} surprised and disappointed. Treaty expires. Uncertainty about future framework.`,
                 mediumTerm: `Period without formal agreement. Ad-hoc arrangements replace treaty structure. Relationship less predictable.`,
@@ -1828,12 +1850,12 @@ export class DiplomaticScenarioGenerator {
               },
             },
             {
-              id: 'treaty_upgrade',
-              label: 'Upgrade to Comprehensive Partnership',
-              description: 'Propose replacing single treaty with broader partnership framework',
-              skillRequired: 'persuasion',
+              id: "treaty_upgrade",
+              label: "Upgrade to Comprehensive Partnership",
+              description: "Propose replacing single treaty with broader partnership framework",
+              skillRequired: "persuasion",
               skillLevel: 9,
-              riskLevel: 'medium',
+              riskLevel: "medium",
               predictedOutcomes: {
                 shortTerm: `Ambitious proposal requires careful consideration by ${target.name}. Current treaty extended while new framework negotiated.`,
                 mediumTerm: `If accepted, transforms relationship from single-issue treaty to comprehensive partnership. Requires significant diplomatic investment.`,
@@ -1852,7 +1874,7 @@ export class DiplomaticScenarioGenerator {
             },
           ],
           metadata: {
-            triggeredBy: 'Treaty expiration approaching',
+            triggeredBy: "Treaty expiration approaching",
             relevanceScore: 85,
           },
         };
@@ -1868,38 +1890,49 @@ export class DiplomaticScenarioGenerator {
     scenarioType: ScenarioType
   ): CountryData[] {
     // Filter countries based on scenario requirements
-    const eligible = countries.filter(country => {
+    const eligible = countries.filter((country) => {
       // Don't create scenarios about player's own country
       if (country.id === context.playerCountryId) return false;
 
       // Check if we have diplomatic relationship
-      const hasRelationship = context.relationships.some(r =>
-        r.country1 === country.id || r.country2 === country.id
+      const hasRelationship = context.relationships.some(
+        (r) => r.country1 === country.id || r.country2 === country.id
       );
 
       // Check if we have embassy
-      const hasEmbassy = context.embassies.some(e =>
-        e.hostCountryId === country.id || e.guestCountryId === country.id
+      const hasEmbassy = context.embassies.some(
+        (e) => e.hostCountryId === country.id || e.guestCountryId === country.id
       );
 
       // Scenario-specific filters
       switch (scenarioType) {
-        case 'border_dispute':
-          return hasRelationship && context.relationships.some(r =>
-            (r.country1 === country.id || r.country2 === country.id) &&
-            (r.relationship === 'tension' || r.relationship === 'hostile')
+        case "border_dispute":
+          return (
+            hasRelationship &&
+            context.relationships.some(
+              (r) =>
+                (r.country1 === country.id || r.country2 === country.id) &&
+                (r.relationship === "tension" || r.relationship === "hostile")
+            )
           );
 
-        case 'trade_renegotiation':
-          return hasRelationship && context.relationships.some(r =>
-            (r.country1 === country.id || r.country2 === country.id) &&
-            r.relationship === 'trade'
+        case "trade_renegotiation":
+          return (
+            hasRelationship &&
+            context.relationships.some(
+              (r) =>
+                (r.country1 === country.id || r.country2 === country.id) &&
+                r.relationship === "trade"
+            )
           );
 
-        case 'intelligence_breach':
-          return hasEmbassy && context.embassies.some(e =>
-            (e.hostCountryId === country.id || e.guestCountryId === country.id) &&
-            e.level >= 3
+        case "intelligence_breach":
+          return (
+            hasEmbassy &&
+            context.embassies.some(
+              (e) =>
+                (e.hostCountryId === country.id || e.guestCountryId === country.id) && e.level >= 3
+            )
           );
 
         default:
@@ -1909,8 +1942,8 @@ export class DiplomaticScenarioGenerator {
 
     // Sort by relevance (relationship strength, embassy level, etc.)
     return eligible.sort((a, b) => {
-      const relA = context.relationships.find(r => r.country1 === a.id || r.country2 === a.id);
-      const relB = context.relationships.find(r => r.country1 === b.id || r.country2 === b.id);
+      const relA = context.relationships.find((r) => r.country1 === a.id || r.country2 === a.id);
+      const relB = context.relationships.find((r) => r.country1 === b.id || r.country2 === b.id);
       return (relB?.strength || 0) - (relA?.strength || 0);
     });
   }
@@ -1923,18 +1956,20 @@ export class DiplomaticScenarioGenerator {
     let relevance = 50; // Base relevance
 
     // Adjust based on relationship strength
-    const relationship = context.relationships.find(r =>
-      r.country1 === scenario.involvedCountries.primary ||
-      r.country2 === scenario.involvedCountries.primary
+    const relationship = context.relationships.find(
+      (r) =>
+        r.country1 === scenario.involvedCountries.primary ||
+        r.country2 === scenario.involvedCountries.primary
     );
     if (relationship) {
       relevance += Math.min(relationship.strength / 2, 25);
     }
 
     // Adjust based on embassy presence
-    const embassy = context.embassies.find(e =>
-      e.hostCountryId === scenario.involvedCountries.primary ||
-      e.guestCountryId === scenario.involvedCountries.primary
+    const embassy = context.embassies.find(
+      (e) =>
+        e.hostCountryId === scenario.involvedCountries.primary ||
+        e.guestCountryId === scenario.involvedCountries.primary
     );
     if (embassy) {
       relevance += embassy.level * 3;
@@ -1942,13 +1977,19 @@ export class DiplomaticScenarioGenerator {
     }
 
     // Adjust based on player's diplomatic history
-    if (playerProfile.historicalPatterns.culturallyActive && scenario.type === 'cultural_misunderstanding') {
+    if (
+      playerProfile.historicalPatterns.culturallyActive &&
+      scenario.type === "cultural_misunderstanding"
+    ) {
       relevance += 15;
     }
-    if (playerProfile.historicalPatterns.interventionist && scenario.type === 'mediation_opportunity') {
+    if (
+      playerProfile.historicalPatterns.interventionist &&
+      scenario.type === "mediation_opportunity"
+    ) {
       relevance += 20;
     }
-    if (playerProfile.historicalPatterns.prefersTrade && scenario.type === 'trade_renegotiation') {
+    if (playerProfile.historicalPatterns.prefersTrade && scenario.type === "trade_renegotiation") {
       relevance += 15;
     }
 
@@ -1960,7 +2001,7 @@ export class DiplomaticScenarioGenerator {
     }
 
     // Time-sensitive scenarios get boost
-    if (scenario.timeFrame === 'urgent') {
+    if (scenario.timeFrame === "urgent") {
       relevance += 10;
     }
 
@@ -1968,31 +2009,40 @@ export class DiplomaticScenarioGenerator {
   }
 
   private describeRelationship(context: WorldContext, countryId: string): string {
-    const relationship = context.relationships.find(r =>
-      r.country1 === countryId || r.country2 === countryId
+    const relationship = context.relationships.find(
+      (r) => r.country1 === countryId || r.country2 === countryId
     );
 
-    if (!relationship) return 'minimal';
+    if (!relationship) return "minimal";
 
     switch (relationship.relationship) {
-      case 'alliance': return 'strong and allied';
-      case 'trade': return 'economically cooperative';
-      case 'tension': return 'tense';
-      case 'hostile': return 'hostile';
-      default: return relationship.strength > 60 ? 'positive' : relationship.strength > 30 ? 'neutral' : 'strained';
+      case "alliance":
+        return "strong and allied";
+      case "trade":
+        return "economically cooperative";
+      case "tension":
+        return "tense";
+      case "hostile":
+        return "hostile";
+      default:
+        return relationship.strength > 60
+          ? "positive"
+          : relationship.strength > 30
+            ? "neutral"
+            : "strained";
     }
   }
 
   private randomTechnology(): string {
     const technologies = [
-      'renewable energy',
-      'advanced manufacturing',
-      'artificial intelligence',
-      'biotechnology',
-      'quantum computing',
-      'aerospace',
-      'telecommunications',
-      'semiconductor',
+      "renewable energy",
+      "advanced manufacturing",
+      "artificial intelligence",
+      "biotechnology",
+      "quantum computing",
+      "aerospace",
+      "telecommunications",
+      "semiconductor",
     ];
     return technologies[Math.floor(Math.random() * technologies.length)];
   }

@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
-import { useUser } from '~/context/auth-context';
-import { api } from '~/trpc/react';
+import React, { useMemo } from "react";
+import { useUser } from "~/context/auth-context";
+import { api } from "~/trpc/react";
 
 export interface UserRole {
   id: string;
@@ -35,32 +35,32 @@ export function usePermissions(): UserPermissionData {
   const { user: authUser, isSignedIn, isLoaded } = useUser();
 
   // Query user data including role and permissions
-  const { data: userData, isLoading, error } = api.users.getCurrentUserWithRole.useQuery(
-    undefined,
-    {
-      enabled: isSignedIn && isLoaded && !!authUser,
-      retry: false
-    }
-  );
-
+  const {
+    data: userData,
+    isLoading,
+    error,
+  } = api.users.getCurrentUserWithRole.useQuery(undefined, {
+    enabled: isSignedIn && isLoaded && !!authUser,
+    retry: false,
+  });
 
   const permissions = useMemo(() => {
     if (!userData?.user?.role?.permissions) return [];
-    return userData.user.role.permissions.map(p => p.name);
+    return userData.user.role.permissions.map((p) => p.name);
   }, [userData]);
 
   return {
     user: userData?.user || null,
     permissions,
     isLoading: isLoading || !isLoaded,
-    error: error?.message || null
+    error: error?.message || null,
   };
 }
 
 // Hook to check if user has specific permission
 export function useHasPermission(permission: string): boolean {
   const { permissions, isLoading } = usePermissions();
-  
+
   if (isLoading) return false;
   return permissions.includes(permission);
 }
@@ -68,23 +68,23 @@ export function useHasPermission(permission: string): boolean {
 // Hook to check if user has any of the specified permissions
 export function useHasAnyPermission(permissionList: string[]): boolean {
   const { permissions, isLoading } = usePermissions();
-  
+
   if (isLoading) return false;
-  return permissionList.some(permission => permissions.includes(permission));
+  return permissionList.some((permission) => permissions.includes(permission));
 }
 
 // Hook to check if user has all specified permissions
 export function useHasAllPermissions(permissionList: string[]): boolean {
   const { permissions, isLoading } = usePermissions();
-  
+
   if (isLoading) return false;
-  return permissionList.every(permission => permissions.includes(permission));
+  return permissionList.every((permission) => permissions.includes(permission));
 }
 
 // Hook to check role level (lower numbers = higher privilege)
 export function useHasRoleLevel(minimumLevel: number): boolean {
   const { user, isLoading } = usePermissions();
-  
+
   if (isLoading || !user?.role) return false;
   return user.role.level <= minimumLevel;
 }
@@ -113,12 +113,12 @@ export const PermissionUtils = {
 
   // Check if user has any of the permissions
   hasAnyPermission(userPermissions: string[], permissions: string[]): boolean {
-    return permissions.some(permission => userPermissions.includes(permission));
+    return permissions.some((permission) => userPermissions.includes(permission));
   },
 
   // Check if user has all permissions
   hasAllPermissions(userPermissions: string[], permissions: string[]): boolean {
-    return permissions.every(permission => userPermissions.includes(permission));
+    return permissions.every((permission) => userPermissions.includes(permission));
   },
 
   // Check role level
@@ -130,43 +130,43 @@ export const PermissionUtils = {
   // Get permissions from role
   extractPermissions(role: UserRole | null): string[] {
     if (!role) return [];
-    return role.permissions.map(p => p.name);
-  }
+    return role.permissions.map((p) => p.name);
+  },
 };
 
 // Permission constants for easy reference
 export const PERMISSIONS = {
   // System
-  SYSTEM_CONFIG: 'system.config',
-  SYSTEM_MAINTENANCE: 'system.maintenance', 
-  SYSTEM_LOGS: 'system.logs',
+  SYSTEM_CONFIG: "system.config",
+  SYSTEM_MAINTENANCE: "system.maintenance",
+  SYSTEM_LOGS: "system.logs",
 
   // User Management
-  USER_VIEW: 'user.view',
-  USER_MANAGE: 'user.manage',
-  USER_BAN: 'user.ban',
-  USER_DELETE: 'user.delete',
+  USER_VIEW: "user.view",
+  USER_MANAGE: "user.manage",
+  USER_BAN: "user.ban",
+  USER_DELETE: "user.delete",
 
   // Content Management
-  CONTENT_VIEW: 'content.view',
-  CONTENT_EDIT: 'content.edit',
-  CONTENT_DELETE: 'content.delete',
-  CONTENT_PUBLISH: 'content.publish',
+  CONTENT_VIEW: "content.view",
+  CONTENT_EDIT: "content.edit",
+  CONTENT_DELETE: "content.delete",
+  CONTENT_PUBLISH: "content.publish",
 
   // Moderation
-  MODERATION_REPORTS: 'moderation.reports',
-  MODERATION_ACTIONS: 'moderation.actions',
+  MODERATION_REPORTS: "moderation.reports",
+  MODERATION_ACTIONS: "moderation.actions",
 
   // Analytics
-  ANALYTICS_VIEW: 'analytics.view',
-  ANALYTICS_EXPORT: 'analytics.export',
+  ANALYTICS_VIEW: "analytics.view",
+  ANALYTICS_EXPORT: "analytics.export",
 
   // Role Management
-  ROLE_VIEW: 'role.view',
-  ROLE_CREATE: 'role.create',
-  ROLE_EDIT: 'role.edit',
-  ROLE_DELETE: 'role.delete',
-  ROLE_ASSIGN: 'role.assign'
+  ROLE_VIEW: "role.view",
+  ROLE_CREATE: "role.create",
+  ROLE_EDIT: "role.edit",
+  ROLE_DELETE: "role.delete",
+  ROLE_ASSIGN: "role.assign",
 } as const;
 
 // Role level constants
@@ -175,5 +175,5 @@ export const ROLE_LEVELS = {
   ADMIN: 10,
   STAFF: 20,
   MODERATOR: 30,
-  USER: 100
+  USER: 100,
 } as const;

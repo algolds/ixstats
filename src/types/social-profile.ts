@@ -13,11 +13,11 @@ export interface NationalMilestone {
   id: string;
   title: string;
   description: string;
-  category: 'economic' | 'diplomatic' | 'social' | 'development';
-  tier: 'bronze' | 'silver' | 'gold' | 'platinum' | 'legendary';
+  category: "economic" | "diplomatic" | "social" | "development";
+  tier: "bronze" | "silver" | "gold" | "platinum" | "legendary";
   achievedAt: string; // IxTime timestamp
   ixTimeEpoch: number; // Exact IxTime when achieved
-  celebrationState: 'new' | 'acknowledged' | 'archived';
+  celebrationState: "new" | "acknowledged" | "archived";
   socialReactions: PlayerReaction[];
   rarity: number; // 1-100, how rare this achievement is
   requirements?: string[];
@@ -28,14 +28,14 @@ export interface PlayerReaction {
   id: string;
   playerId: string;
   playerCountryName: string;
-  reactionType: 'congratulate' | 'impressed' | 'inspired' | 'applaud';
+  reactionType: "congratulate" | "impressed" | "inspired" | "applaud";
   timestamp: string;
   message?: string;
 }
 
 export interface GrowthStreak {
   id: string;
-  type: 'economic' | 'population' | 'development' | 'diplomatic';
+  type: "economic" | "population" | "development" | "diplomatic";
   currentStreak: number;
   bestStreak: number;
   lastUpdate: string;
@@ -54,7 +54,12 @@ export interface UniqueAchievement {
   id: string;
   title: string;
   description: string;
-  uniqueCategory: 'first_to_achieve' | 'fastest_growth' | 'highest_tier' | 'diplomatic_master' | 'social_leader';
+  uniqueCategory:
+    | "first_to_achieve"
+    | "fastest_growth"
+    | "highest_tier"
+    | "diplomatic_master"
+    | "social_leader";
   globalRarity: number; // How many countries have this achievement
   specialBadge?: string;
   historicalSignificance?: string;
@@ -64,12 +69,12 @@ export interface MilestoneTarget {
   id: string;
   title: string;
   description: string;
-  category: 'economic' | 'diplomatic' | 'social' | 'development';
+  category: "economic" | "diplomatic" | "social" | "development";
   targetValue: number;
   currentValue: number;
   progressPercentage: number;
   estimatedCompletion?: string; // IxTime estimate
-  difficulty: 'easy' | 'medium' | 'hard' | 'legendary';
+  difficulty: "easy" | "medium" | "hard" | "legendary";
   rewards: string[];
 }
 
@@ -78,7 +83,7 @@ export interface DiplomaticRelation {
   countryId: string;
   countryName: string;
   flagUrl?: string;
-  relationType: 'alliance' | 'trade' | 'neutral' | 'tension';
+  relationType: "alliance" | "trade" | "neutral" | "tension";
   relationshipStrength: number; // 0-100
   strength?: number; // Alternative property name for compatibility
   establishedDate: string; // IxTime
@@ -92,18 +97,23 @@ export interface DiplomaticRelation {
 
 export interface DiplomaticActivity {
   id: string;
-  type: 'treaty_signed' | 'trade_agreement' | 'diplomatic_visit' | 'alliance_formed' | 'tension_escalated';
+  type:
+    | "treaty_signed"
+    | "trade_agreement"
+    | "diplomatic_visit"
+    | "alliance_formed"
+    | "tension_escalated";
   title: string;
   description: string;
   timestamp: string;
-  impact: 'positive' | 'negative' | 'neutral';
+  impact: "positive" | "negative" | "neutral";
   participants: string[];
 }
 
 export interface Treaty {
   id: string;
   name: string;
-  type: 'trade' | 'defense' | 'non_aggression' | 'alliance' | 'cultural';
+  type: "trade" | "defense" | "non_aggression" | "alliance" | "cultural";
   signedDate: string; // IxTime
   expirationDate?: string;
   isActive: boolean;
@@ -113,14 +123,19 @@ export interface Treaty {
 
 export interface SocialActivity {
   id: string;
-  type: 'achievement_earned' | 'diplomatic_event' | 'visitor_milestone' | 'growth_streak' | 'social_interaction';
+  type:
+    | "achievement_earned"
+    | "diplomatic_event"
+    | "visitor_milestone"
+    | "growth_streak"
+    | "social_interaction";
   title: string;
   description: string;
   timestamp: string; // IxTime
-  importance: 'low' | 'medium' | 'high' | 'critical';
+  importance: "low" | "medium" | "high" | "critical";
   relatedCountries?: string[];
-  category: 'achievement' | 'diplomacy' | 'economy' | 'social';
-  visibilityLevel: 'public' | 'followers' | 'allies' | 'private';
+  category: "achievement" | "diplomacy" | "economy" | "social";
+  visibilityLevel: "public" | "followers" | "allies" | "private";
   engagementMetrics: {
     views: number;
     reactions: number;
@@ -135,7 +150,7 @@ export interface CountryFollower {
   countryName: string;
   flagUrl?: string;
   followedSince: string; // IxTime
-  interactionLevel: 'active' | 'moderate' | 'passive';
+  interactionLevel: "active" | "moderate" | "passive";
   lastInteraction?: string;
   notifications: boolean;
 }
@@ -159,7 +174,7 @@ export interface PublicMessage {
   fromFlagUrl?: string;
   message: string;
   timestamp: string; // IxTime
-  messageType: 'congratulations' | 'diplomatic' | 'trade_inquiry' | 'general' | 'alliance_proposal';
+  messageType: "congratulations" | "diplomatic" | "trade_inquiry" | "general" | "alliance_proposal";
   isPublic: boolean;
   responses?: PublicMessage[];
   reactions: MessageReaction[];
@@ -168,7 +183,7 @@ export interface PublicMessage {
 export interface MessageReaction {
   id: string;
   countryId: string;
-  reactionType: 'like' | 'support' | 'applause' | 'diplomatic' | 'trade_interested';
+  reactionType: "like" | "support" | "applause" | "diplomatic" | "trade_interested";
   timestamp: string;
 }
 
@@ -177,13 +192,18 @@ export interface CollaborationRequest {
   fromCountryId: string;
   fromCountryName: string;
   fromFlagUrl?: string;
-  requestType: 'alliance_proposal' | 'trade_agreement' | 'defense_pact' | 'cultural_exchange' | 'joint_project';
+  requestType:
+    | "alliance_proposal"
+    | "trade_agreement"
+    | "defense_pact"
+    | "cultural_exchange"
+    | "joint_project";
   title: string;
   description: string;
   proposedTerms: string[];
   benefits: string[];
   timeline?: string;
-  status: 'pending' | 'accepted' | 'declined' | 'negotiating';
+  status: "pending" | "accepted" | "declined" | "negotiating";
   timestamp: string; // IxTime
   expiresAt?: string; // IxTime
 }
@@ -207,34 +227,44 @@ export interface RegionalEvent {
   id: string;
   title: string;
   description: string;
-  eventType: 'economic_summit' | 'trade_agreement' | 'regional_crisis' | 'cultural_festival' | 'diplomatic_meeting';
+  eventType:
+    | "economic_summit"
+    | "trade_agreement"
+    | "regional_crisis"
+    | "cultural_festival"
+    | "diplomatic_meeting";
   timestamp: string; // IxTime
   participatingCountries: string[];
-  impact: 'positive' | 'negative' | 'neutral';
+  impact: "positive" | "negative" | "neutral";
   outcomes?: string[];
 }
 
 export interface SocialNotification {
   id: string;
-  type: 'new_follower' | 'achievement_reaction' | 'diplomatic_message' | 'collaboration_request' | 'milestone_reached';
+  type:
+    | "new_follower"
+    | "achievement_reaction"
+    | "diplomatic_message"
+    | "collaboration_request"
+    | "milestone_reached";
   title: string;
   message: string;
   fromCountryId?: string;
   fromCountryName?: string;
   timestamp: string; // IxTime
   isRead: boolean;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
+  priority: "low" | "medium" | "high" | "urgent";
   actionUrl?: string;
   actionLabel?: string;
 }
 
 export interface PlayerInteraction {
   id: string;
-  interactionType: 'profile_view' | 'follow' | 'message' | 'reaction' | 'collaboration';
+  interactionType: "profile_view" | "follow" | "message" | "reaction" | "collaboration";
   participantCountries: string[];
   timestamp: string; // IxTime
   context?: string;
-  outcome?: 'positive' | 'neutral' | 'negative';
+  outcome?: "positive" | "neutral" | "negative";
   followUpRequired?: boolean;
 }
 
@@ -288,7 +318,7 @@ export interface EnhancedCountryProfileData {
   capital?: string;
   lastCalculated?: string;
   baselineDate?: string;
-  
+
   // Economic data
   currentPopulation: number;
   currentGdpPerCapita: number;
@@ -300,26 +330,26 @@ export interface EnhancedCountryProfileData {
   gdpDensity?: number;
   adjustedGdpGrowth?: number;
   populationGrowthRate?: number;
-  
+
   // Enhanced social features
   socialMetrics: SocialMetrics;
   achievementConstellation: AchievementConstellation;
   diplomaticRelations: DiplomaticRelation[];
   recentActivities: SocialActivity[];
-  
+
   // Social interactions
   followers: CountryFollower[];
   recentVisitors: CountryVisitor[];
   publicMessages: PublicMessage[];
   collaborationRequests: CollaborationRequest[];
-  
+
   // Context and rankings
   regionalContext: RegionalContext;
   globalRanking?: number;
   regionalRanking?: number;
   growthStreak: number;
-  influenceLevel: 'emerging' | 'regional' | 'major' | 'global' | 'superpower';
-  
+  influenceLevel: "emerging" | "regional" | "major" | "global" | "superpower";
+
   // Temporal context
   lastUpdated: string; // IxTime
   profileCreated: string; // IxTime
@@ -327,16 +357,16 @@ export interface EnhancedCountryProfileData {
 }
 
 // Action types for social interactions
-export type SocialActionType = 
-  | 'follow' 
-  | 'unfollow' 
-  | 'message' 
-  | 'congratulate' 
-  | 'propose_alliance' 
-  | 'propose_trade' 
-  | 'visit_profile' 
-  | 'react_to_achievement' 
-  | 'invite_collaboration';
+export type SocialActionType =
+  | "follow"
+  | "unfollow"
+  | "message"
+  | "congratulate"
+  | "propose_alliance"
+  | "propose_trade"
+  | "visit_profile"
+  | "react_to_achievement"
+  | "invite_collaboration";
 
 export interface SocialActionPayload {
   action: SocialActionType;

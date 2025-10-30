@@ -26,14 +26,16 @@ interface GlobalStatsIslandProviderProps {
 
 export function GlobalStatsIslandProvider({ children }: GlobalStatsIslandProviderProps) {
   const [isVisible, setIsVisible] = useState(true);
-  const [mode, setMode] = useState<"compact" | "stats" | "search" | "notifications" | "settings">("compact");
+  const [mode, setMode] = useState<"compact" | "stats" | "search" | "notifications" | "settings">(
+    "compact"
+  );
 
   // Hide/show based on certain routes
   useEffect(() => {
     const shouldHide = () => {
       const pathname = window.location.pathname;
       // Hide on setup page or certain admin pages
-      return pathname.includes('/setup') || pathname.includes('/admin/setup');
+      return pathname.includes("/setup") || pathname.includes("/admin/setup");
     };
 
     setIsVisible(!shouldHide());
@@ -44,10 +46,10 @@ export function GlobalStatsIslandProvider({ children }: GlobalStatsIslandProvide
     };
 
     // For client-side navigation
-    window.addEventListener('popstate', handleRouteChange);
-    
+    window.addEventListener("popstate", handleRouteChange);
+
     return () => {
-      window.removeEventListener('popstate', handleRouteChange);
+      window.removeEventListener("popstate", handleRouteChange);
     };
   }, []);
 

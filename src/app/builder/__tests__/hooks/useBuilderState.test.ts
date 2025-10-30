@@ -2,9 +2,9 @@
  * Tests for useBuilderState Hook
  */
 
-import { renderHook, act, waitFor } from '@testing-library/react';
-import { useBuilderState } from '../../hooks/useBuilderState';
-import type { BuilderState } from '../../hooks/useBuilderState';
+import { renderHook, act, waitFor } from "@testing-library/react";
+import { useBuilderState } from "../../hooks/useBuilderState";
+import type { BuilderState } from "../../hooks/useBuilderState";
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -23,58 +23,58 @@ const localStorageMock = (() => {
   };
 })();
 
-Object.defineProperty(window, 'localStorage', {
+Object.defineProperty(window, "localStorage", {
   value: localStorageMock,
 });
 
-describe('useBuilderState', () => {
+describe("useBuilderState", () => {
   beforeEach(() => {
     localStorage.clear();
     jest.clearAllMocks();
   });
 
-  describe('Initialization', () => {
-    it('initializes with default state', () => {
+  describe("Initialization", () => {
+    it("initializes with default state", () => {
       const { result } = renderHook(() => useBuilderState());
 
-      expect(result.current.builderState.step).toBe('foundation');
+      expect(result.current.builderState.step).toBe("foundation");
       expect(result.current.builderState.selectedCountry).toBeNull();
       expect(result.current.builderState.economicInputs).toBeNull();
       expect(result.current.builderState.governmentComponents).toEqual([]);
     });
 
-    it('provides update handlers', () => {
+    it("provides update handlers", () => {
       const { result } = renderHook(() => useBuilderState());
 
-      expect(typeof result.current.updateEconomicInputs).toBe('function');
-      expect(typeof result.current.updateGovernmentComponents).toBe('function');
-      expect(typeof result.current.updateGovernmentStructure).toBe('function');
-      expect(typeof result.current.updateTaxSystem).toBe('function');
-      expect(typeof result.current.updateStep).toBe('function');
+      expect(typeof result.current.updateEconomicInputs).toBe("function");
+      expect(typeof result.current.updateGovernmentComponents).toBe("function");
+      expect(typeof result.current.updateGovernmentStructure).toBe("function");
+      expect(typeof result.current.updateTaxSystem).toBe("function");
+      expect(typeof result.current.updateStep).toBe("function");
     });
 
-    it('initializes with null lastSaved', () => {
+    it("initializes with null lastSaved", () => {
       const { result } = renderHook(() => useBuilderState());
 
       expect(result.current.lastSaved).toBeNull();
     });
 
-    it('initializes with isAutoSaving false', () => {
+    it("initializes with isAutoSaving false", () => {
       const { result } = renderHook(() => useBuilderState());
 
       expect(result.current.isAutoSaving).toBe(false);
     });
   });
 
-  describe('State Updates', () => {
-    it('updates economic inputs', () => {
+  describe("State Updates", () => {
+    it("updates economic inputs", () => {
       const { result } = renderHook(() => useBuilderState());
 
       const mockInputs = {
         nationalIdentity: {
-          countryName: 'Test Country',
-          capitalCity: 'Test Capital',
-          currency: 'TST',
+          countryName: "Test Country",
+          capitalCity: "Test Capital",
+          currency: "TST",
         },
       } as any;
 
@@ -85,10 +85,10 @@ describe('useBuilderState', () => {
       expect(result.current.builderState.economicInputs).toEqual(mockInputs);
     });
 
-    it('updates government components', () => {
+    it("updates government components", () => {
       const { result } = renderHook(() => useBuilderState());
 
-      const mockComponents = ['parliament', 'judiciary', 'executive'] as any;
+      const mockComponents = ["parliament", "judiciary", "executive"] as any;
 
       act(() => {
         result.current.updateGovernmentComponents(mockComponents);
@@ -97,10 +97,10 @@ describe('useBuilderState', () => {
       expect(result.current.builderState.governmentComponents).toEqual(mockComponents);
     });
 
-    it('updates government structure', () => {
+    it("updates government structure", () => {
       const { result } = renderHook(() => useBuilderState());
 
-      const mockStructure = { type: 'democracy' };
+      const mockStructure = { type: "democracy" };
 
       act(() => {
         result.current.updateGovernmentStructure(mockStructure);
@@ -109,7 +109,7 @@ describe('useBuilderState', () => {
       expect(result.current.builderState.governmentStructure).toEqual(mockStructure);
     });
 
-    it('updates tax system', () => {
+    it("updates tax system", () => {
       const { result } = renderHook(() => useBuilderState());
 
       const mockTaxData = { progressive: true } as any;
@@ -122,75 +122,75 @@ describe('useBuilderState', () => {
     });
   });
 
-  describe('Step Navigation', () => {
-    it('updates step and marks as completed', () => {
+  describe("Step Navigation", () => {
+    it("updates step and marks as completed", () => {
       const { result } = renderHook(() => useBuilderState());
 
       act(() => {
-        result.current.updateStep('core', null);
+        result.current.updateStep("core", null);
       });
 
-      expect(result.current.builderState.step).toBe('government');
-      expect(result.current.builderState.completedSteps).toContain('core');
+      expect(result.current.builderState.step).toBe("government");
+      expect(result.current.builderState.completedSteps).toContain("core");
     });
 
-    it('maintains completed steps list', () => {
+    it("maintains completed steps list", () => {
       const { result } = renderHook(() => useBuilderState());
 
       act(() => {
-        result.current.updateStep('foundation', null);
-        result.current.updateStep('core', null);
+        result.current.updateStep("foundation", null);
+        result.current.updateStep("core", null);
       });
 
-      expect(result.current.builderState.completedSteps).toContain('foundation');
-      expect(result.current.builderState.completedSteps).toContain('core');
+      expect(result.current.builderState.completedSteps).toContain("foundation");
+      expect(result.current.builderState.completedSteps).toContain("core");
     });
 
-    it('prevents duplicate completed steps', () => {
+    it("prevents duplicate completed steps", () => {
       const { result } = renderHook(() => useBuilderState());
 
       act(() => {
-        result.current.updateStep('foundation', null);
-        result.current.updateStep('foundation', null);
+        result.current.updateStep("foundation", null);
+        result.current.updateStep("foundation", null);
       });
 
       const foundationCount = result.current.builderState.completedSteps.filter(
-        (s) => s === 'foundation'
+        (s) => s === "foundation"
       ).length;
       expect(foundationCount).toBe(1);
     });
   });
 
-  describe('Step Access Control', () => {
-    it('allows access to current step', () => {
+  describe("Step Access Control", () => {
+    it("allows access to current step", () => {
       const { result } = renderHook(() => useBuilderState());
 
-      expect(result.current.canAccessStep('foundation')).toBe(true);
+      expect(result.current.canAccessStep("foundation")).toBe(true);
     });
 
-    it('allows access to completed steps', () => {
+    it("allows access to completed steps", () => {
       const { result } = renderHook(() => useBuilderState());
 
       act(() => {
-        result.current.updateStep('foundation', null);
+        result.current.updateStep("foundation", null);
       });
 
-      expect(result.current.canAccessStep('foundation')).toBe(true);
+      expect(result.current.canAccessStep("foundation")).toBe(true);
     });
 
-    it('allows access to next step after current', () => {
+    it("allows access to next step after current", () => {
       const { result } = renderHook(() => useBuilderState());
 
-      expect(result.current.canAccessStep('foundation')).toBe(true);
+      expect(result.current.canAccessStep("foundation")).toBe(true);
     });
   });
 
-  describe('LocalStorage Persistence', () => {
-    it('saves state to localStorage', async () => {
+  describe("LocalStorage Persistence", () => {
+    it("saves state to localStorage", async () => {
       const { result } = renderHook(() => useBuilderState());
 
       const mockInputs = {
-        nationalIdentity: { countryName: 'Test' },
+        nationalIdentity: { countryName: "Test" },
       } as any;
 
       act(() => {
@@ -199,36 +199,36 @@ describe('useBuilderState', () => {
 
       await waitFor(
         () => {
-          const saved = localStorage.getItem('builder_state');
+          const saved = localStorage.getItem("builder_state");
           expect(saved).toBeTruthy();
         },
         { timeout: 1000 }
       );
     });
 
-    it('loads state from localStorage on mount', () => {
+    it("loads state from localStorage on mount", () => {
       const savedState: BuilderState = {
-        step: 'core',
+        step: "core",
         selectedCountry: null,
-        economicInputs: { nationalIdentity: { countryName: 'Saved Country' } } as any,
+        economicInputs: { nationalIdentity: { countryName: "Saved Country" } } as any,
         governmentComponents: [],
         taxSystemData: null,
         governmentStructure: null,
-        completedSteps: ['foundation'],
-        activeCoreTab: 'identity',
-        activeGovernmentTab: 'components',
-        activeEconomicsTab: 'economy',
+        completedSteps: ["foundation"],
+        activeCoreTab: "identity",
+        activeGovernmentTab: "components",
+        activeEconomicsTab: "economy",
         showAdvancedMode: false,
       };
 
-      localStorage.setItem('builder_state', JSON.stringify(savedState));
+      localStorage.setItem("builder_state", JSON.stringify(savedState));
 
       const { result } = renderHook(() => useBuilderState());
 
       expect(result.current.builderState.economicInputs).toEqual(savedState.economicInputs);
     });
 
-    it('updates lastSaved timestamp', async () => {
+    it("updates lastSaved timestamp", async () => {
       const { result } = renderHook(() => useBuilderState());
 
       act(() => {
@@ -244,32 +244,32 @@ describe('useBuilderState', () => {
     });
   });
 
-  describe('Clear Draft', () => {
-    it('clears builder state', () => {
+  describe("Clear Draft", () => {
+    it("clears builder state", () => {
       const { result } = renderHook(() => useBuilderState());
 
       act(() => {
-        result.current.updateEconomicInputs({ test: 'data' } as any);
+        result.current.updateEconomicInputs({ test: "data" } as any);
         result.current.clearDraft();
       });
 
       expect(result.current.builderState.economicInputs).toBeNull();
-      expect(result.current.builderState.step).toBe('foundation');
+      expect(result.current.builderState.step).toBe("foundation");
     });
 
-    it('clears localStorage', () => {
+    it("clears localStorage", () => {
       const { result } = renderHook(() => useBuilderState());
 
-      localStorage.setItem('builder_state', 'test');
+      localStorage.setItem("builder_state", "test");
 
       act(() => {
         result.current.clearDraft();
       });
 
-      expect(localStorage.getItem('builder_state')).toBeNull();
+      expect(localStorage.getItem("builder_state")).toBeNull();
     });
 
-    it('resets lastSaved', () => {
+    it("resets lastSaved", () => {
       const { result } = renderHook(() => useBuilderState());
 
       act(() => {
@@ -280,8 +280,8 @@ describe('useBuilderState', () => {
     });
   });
 
-  describe('Auto-save', () => {
-    it('triggers auto-save on state change', async () => {
+  describe("Auto-save", () => {
+    it("triggers auto-save on state change", async () => {
       const { result } = renderHook(() => useBuilderState());
 
       act(() => {
@@ -296,7 +296,7 @@ describe('useBuilderState', () => {
       );
     });
 
-    it('debounces auto-save', async () => {
+    it("debounces auto-save", async () => {
       const { result } = renderHook(() => useBuilderState());
 
       act(() => {
@@ -312,49 +312,49 @@ describe('useBuilderState', () => {
     });
   });
 
-  describe('Tab State Management', () => {
-    it('manages core tab state', () => {
+  describe("Tab State Management", () => {
+    it("manages core tab state", () => {
       const { result } = renderHook(() => useBuilderState());
 
       act(() => {
         result.current.setBuilderState((prev) => ({
           ...prev,
-          activeCoreTab: 'indicators',
+          activeCoreTab: "indicators",
         }));
       });
 
-      expect(result.current.builderState.activeCoreTab).toBe('indicators');
+      expect(result.current.builderState.activeCoreTab).toBe("indicators");
     });
 
-    it('manages government tab state', () => {
+    it("manages government tab state", () => {
       const { result } = renderHook(() => useBuilderState());
 
       act(() => {
         result.current.setBuilderState((prev) => ({
           ...prev,
-          activeGovernmentTab: 'structure',
+          activeGovernmentTab: "structure",
         }));
       });
 
-      expect(result.current.builderState.activeGovernmentTab).toBe('structure');
+      expect(result.current.builderState.activeGovernmentTab).toBe("structure");
     });
 
-    it('manages economics tab state', () => {
+    it("manages economics tab state", () => {
       const { result } = renderHook(() => useBuilderState());
 
       act(() => {
         result.current.setBuilderState((prev) => ({
           ...prev,
-          activeEconomicsTab: 'sectors',
+          activeEconomicsTab: "sectors",
         }));
       });
 
-      expect(result.current.builderState.activeEconomicsTab).toBe('sectors');
+      expect(result.current.builderState.activeEconomicsTab).toBe("sectors");
     });
   });
 
-  describe('Advanced Mode', () => {
-    it('toggles advanced mode', () => {
+  describe("Advanced Mode", () => {
+    it("toggles advanced mode", () => {
       const { result } = renderHook(() => useBuilderState());
 
       act(() => {
@@ -368,12 +368,12 @@ describe('useBuilderState', () => {
     });
   });
 
-  describe('Error Handling', () => {
-    it('handles localStorage errors gracefully', () => {
+  describe("Error Handling", () => {
+    it("handles localStorage errors gracefully", () => {
       // Override localStorage to throw error
       const originalSetItem = localStorage.setItem;
       localStorage.setItem = jest.fn(() => {
-        throw new Error('Quota exceeded');
+        throw new Error("Quota exceeded");
       });
 
       const { result } = renderHook(() => useBuilderState());
@@ -389,13 +389,13 @@ describe('useBuilderState', () => {
       localStorage.setItem = originalSetItem;
     });
 
-    it('handles invalid saved state gracefully', () => {
-      localStorage.setItem('builder_state', 'invalid json{');
+    it("handles invalid saved state gracefully", () => {
+      localStorage.setItem("builder_state", "invalid json{");
 
       const { result } = renderHook(() => useBuilderState());
 
       // Should fall back to default state
-      expect(result.current.builderState.step).toBe('foundation');
+      expect(result.current.builderState.step).toBe("foundation");
     });
   });
 });

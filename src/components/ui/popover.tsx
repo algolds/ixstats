@@ -5,42 +5,26 @@ import { Popover as PopoverPrimitive } from "@base-ui-components/react/popover";
 
 import { cn } from "~/lib/utils";
 
-function Popover({
-  ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Root>) {
+function Popover({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
 }
 
-function PopoverTrigger({
-  ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
+function PopoverTrigger({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Trigger>) {
   return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />;
 }
 
-function PopoverBackdrop({
-  ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Backdrop>) {
+function PopoverBackdrop({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Backdrop>) {
   return <PopoverPrimitive.Backdrop data-slot="popover-backdrop" {...props} />;
 }
 
-function PopoverPortal({
-  ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Portal>) {
+function PopoverPortal({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Portal>) {
   return <PopoverPrimitive.Portal data-slot="popover-portal" {...props} />;
 }
 
 interface PopoverContentProps
-  extends Omit<
-    React.ComponentProps<typeof PopoverPrimitive.Positioner>,
-    "render"
-  > {}
+  extends Omit<React.ComponentProps<typeof PopoverPrimitive.Positioner>, "render"> {}
 
-function PopoverContent({
-  className,
-  sideOffset = 4,
-  children,
-  ...props
-}: PopoverContentProps) {
+function PopoverContent({ className, sideOffset = 4, children, ...props }: PopoverContentProps) {
   return (
     <PopoverPortal>
       <PopoverBackdrop />
@@ -56,7 +40,8 @@ function PopoverContent({
             "group max-h-[var(--available-height)] w-72 max-w-[var(--available-width)] overflow-x-hidden overflow-y-auto overscroll-contain rounded-xl p-4 transition-[transform,scale,opacity] duration-150 ease-out",
             "origin-[var(--transform-origin)] data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
             // Default glass styling with contextual depth detection
-            !(typeof className === 'string' && className.includes('glass-')) && "glass-contextual-popover glass-refraction",
+            !(typeof className === "string" && className.includes("glass-")) &&
+              "glass-contextual-popover glass-refraction",
             className
           )}
         >
@@ -69,11 +54,7 @@ function PopoverContent({
 
 function PopoverHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <div
-      data-slot="popover-header"
-      className={cn("flex flex-col gap-2", className)}
-      {...props}
-    />
+    <div data-slot="popover-header" className={cn("flex flex-col gap-2", className)} {...props} />
   );
 }
 
@@ -103,9 +84,7 @@ function PopoverDescription({
   );
 }
 
-function PopoverCLose({
-  ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Close>) {
+function PopoverCLose({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Close>) {
   return <PopoverPrimitive.Close data-slot="popover-close" {...props} />;
 }
 

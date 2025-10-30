@@ -24,19 +24,22 @@ export interface GrowthModifiers {
   // Logarithmic growth parameters
   gdpDiminishingThreshold: number; // GDP per capita where diminishing returns start
   gdpDiminishingFactor: number; // How strong the diminishing effect is
-  
+
   // Population modifiers
   populationBonus: Record<string, number>; // Bonus growth based on population tier
   populationPenalty: Record<string, number>; // Penalty for very large populations
-  
+
   // Economic tier modifiers (more sophisticated)
-  tierModifiers: Record<string, {
-    gdpMultiplier: number;
-    populationMultiplier: number;
-    stabilityFactor: number; // How stable the economy is
-    innovationBonus: number; // Innovation-driven growth
-  }>;
-  
+  tierModifiers: Record<
+    string,
+    {
+      gdpMultiplier: number;
+      populationMultiplier: number;
+      stabilityFactor: number; // How stable the economy is
+      innovationBonus: number; // Innovation-driven growth
+    }
+  >;
+
   // Time-based modifiers
   volatilityFactor: number; // Random fluctuations
   cyclicalPeriod: number; // Economic cycles (boom/bust)
@@ -50,53 +53,53 @@ export class IxSheetzCalculator {
     this.modifiers = {
       gdpDiminishingThreshold: 75000,
       gdpDiminishingFactor: 1.5,
-      
+
       populationBonus: {
-        "Micro": 1.15,    // Small countries can be more agile
-        "Small": 1.10,    // Moderate bonus
-        "Medium": 1.05,   // Slight bonus
-        "Large": 1.00,    // No bonus/penalty
-        "Massive": 0.95,  // Slight penalty for coordination challenges
+        Micro: 1.15, // Small countries can be more agile
+        Small: 1.1, // Moderate bonus
+        Medium: 1.05, // Slight bonus
+        Large: 1.0, // No bonus/penalty
+        Massive: 0.95, // Slight penalty for coordination challenges
       },
-      
+
       populationPenalty: {
-        "Micro": 0.95,    // May lack resources
-        "Small": 1.00,    // No penalty
-        "Medium": 1.05,   // Sweet spot
-        "Large": 1.02,    // Good market size
-        "Massive": 0.98,  // Infrastructure challenges
+        Micro: 0.95, // May lack resources
+        Small: 1.0, // No penalty
+        Medium: 1.05, // Sweet spot
+        Large: 1.02, // Good market size
+        Massive: 0.98, // Infrastructure challenges
       },
-      
+
       tierModifiers: {
-        "Developing": {
-          gdpMultiplier: 1.3,     // High growth potential
+        Developing: {
+          gdpMultiplier: 1.3, // High growth potential
           populationMultiplier: 1.1,
-          stabilityFactor: 0.8,   // Less stable
-          innovationBonus: 0.7,   // Lower innovation
+          stabilityFactor: 0.8, // Less stable
+          innovationBonus: 0.7, // Lower innovation
         },
-        "Emerging": {
+        Emerging: {
           gdpMultiplier: 1.2,
           populationMultiplier: 1.05,
           stabilityFactor: 0.9,
           innovationBonus: 0.85,
         },
-        "Developed": {
+        Developed: {
           gdpMultiplier: 1.0,
           populationMultiplier: 1.0,
-          stabilityFactor: 1.0,   // Baseline stability
-          innovationBonus: 1.0,   // Baseline innovation
+          stabilityFactor: 1.0, // Baseline stability
+          innovationBonus: 1.0, // Baseline innovation
         },
-        "Advanced": {
-          gdpMultiplier: 0.8,     // Slower growth, higher base
+        Advanced: {
+          gdpMultiplier: 0.8, // Slower growth, higher base
           populationMultiplier: 0.95,
-          stabilityFactor: 1.1,   // More stable
-          innovationBonus: 1.3,   // High innovation
+          stabilityFactor: 1.1, // More stable
+          innovationBonus: 1.3, // High innovation
         },
       },
-      
-      volatilityFactor: 0.05,  // ±5% random variation
-      cyclicalPeriod: 7,       // 7-year economic cycles
-      trendStrength: 0.3,      // 30% trend influence
+
+      volatilityFactor: 0.05, // ±5% random variation
+      cyclicalPeriod: 7, // 7-year economic cycles
+      trendStrength: 0.3, // 30% trend influence
     };
   }
 
@@ -132,13 +135,15 @@ export class IxSheetzCalculator {
     effectiveGrowthRate *= globalGrowthFactor * localGrowthFactor;
 
     // Add cyclical effects (population cycles are longer and less volatile)
-    const cyclicalAdjustment = this.calculateCyclicalEffect(timeElapsed, this.modifiers.cyclicalPeriod * 1.5) * 0.3;
-    effectiveGrowthRate *= (1 + cyclicalAdjustment);
+    const cyclicalAdjustment =
+      this.calculateCyclicalEffect(timeElapsed, this.modifiers.cyclicalPeriod * 1.5) * 0.3;
+    effectiveGrowthRate *= 1 + cyclicalAdjustment;
 
     // Apply logarithmic diminishing returns for very high populations
-    if (basePopulation > 500000000) { // 500M threshold
+    if (basePopulation > 500000000) {
+      // 500M threshold
       const diminishingFactor = Math.log(basePopulation / 500000000 + 1) / Math.log(2);
-      effectiveGrowthRate /= (1 + diminishingFactor * 0.3);
+      effectiveGrowthRate /= 1 + diminishingFactor * 0.3;
     }
 
     // Cap growth rates (populations can't grow infinitely fast)
@@ -171,16 +176,16 @@ export class IxSheetzCalculator {
     const tierMod = this.modifiers.tierModifiers[economicTier];
     if (tierMod) {
       effectiveGrowthRate *= tierMod.gdpMultiplier;
-      
+
       // Innovation-driven growth (higher for advanced economies)
       const innovationEffect = tierMod.innovationBonus * this.calculateInnovationCycle(params);
-      effectiveGrowthRate *= (1 + innovationEffect * 0.1);
+      effectiveGrowthRate *= 1 + innovationEffect * 0.1;
 
       // Add stability factor (reduces volatility for developed economies)
       const stabilityAdjustment = (tierMod.stabilityFactor - 1) * 0.2;
       const volatility = this.modifiers.volatilityFactor * (1 - stabilityAdjustment);
       const deterministicAdjustment = this.calculateDeterministicVolatility(params) * volatility;
-      effectiveGrowthRate *= (1 + deterministicAdjustment);
+      effectiveGrowthRate *= 1 + deterministicAdjustment;
     }
 
     // Apply population effects (larger markets can drive growth)
@@ -191,19 +196,23 @@ export class IxSheetzCalculator {
     effectiveGrowthRate *= globalGrowthFactor * localGrowthFactor;
 
     // Add economic cyclical effects
-    const cyclicalAdjustment = this.calculateCyclicalEffect(timeElapsed, this.modifiers.cyclicalPeriod);
-    effectiveGrowthRate *= (1 + cyclicalAdjustment);
+    const cyclicalAdjustment = this.calculateCyclicalEffect(
+      timeElapsed,
+      this.modifiers.cyclicalPeriod
+    );
+    effectiveGrowthRate *= 1 + cyclicalAdjustment;
 
     // Apply diminishing returns for very high GDP per capita
     if (baseGdpPerCapita > this.modifiers.gdpDiminishingThreshold) {
-      const diminishingFactor = Math.log(baseGdpPerCapita / this.modifiers.gdpDiminishingThreshold + 1) / 
-                               Math.log(this.modifiers.gdpDiminishingFactor);
-      effectiveGrowthRate /= (1 + diminishingFactor);
+      const diminishingFactor =
+        Math.log(baseGdpPerCapita / this.modifiers.gdpDiminishingThreshold + 1) /
+        Math.log(this.modifiers.gdpDiminishingFactor);
+      effectiveGrowthRate /= 1 + diminishingFactor;
     }
 
     // Apply convergence theory (poorer countries grow faster)
     if (baseGdpPerCapita < 30000) {
-      const convergenceBonus = (30000 - baseGdpPerCapita) / 30000 * 0.02; // Up to 2% bonus
+      const convergenceBonus = ((30000 - baseGdpPerCapita) / 30000) * 0.02; // Up to 2% bonus
       effectiveGrowthRate += convergenceBonus;
     }
 
@@ -213,13 +222,13 @@ export class IxSheetzCalculator {
 
     // Calculate final GDP per capita with compound growth
     let finalGdpPerCapita = baseGdpPerCapita;
-    
+
     // Apply growth year by year for more realistic compound effects
     for (let year = 0; year < Math.floor(timeElapsed); year++) {
       const yearlyRate = effectiveGrowthRate + this.calculateYearlyVariation(year);
-      finalGdpPerCapita *= (1 + yearlyRate);
+      finalGdpPerCapita *= 1 + yearlyRate;
     }
-    
+
     // Apply fractional year growth
     const fractionalYear = timeElapsed - Math.floor(timeElapsed);
     if (fractionalYear > 0) {
@@ -246,7 +255,7 @@ export class IxSheetzCalculator {
     // Create a deterministic seed from country ID
     let seed = 0;
     for (let i = 0; i < countryId.length; i++) {
-      seed = ((seed << 5) - seed) + countryId.charCodeAt(i);
+      seed = (seed << 5) - seed + countryId.charCodeAt(i);
       seed = seed & seed; // Convert to 32bit integer
     }
 
@@ -272,12 +281,11 @@ export class IxSheetzCalculator {
     const tradeVolatility = tradeOpenness / 200; // 0-0.5 range
 
     // Combine volatility factors
-    const totalVolatilityFactor = (
+    const totalVolatilityFactor =
       unemploymentVolatility * 0.3 +
       inflationVolatility * 0.3 +
       politicalVolatility * 0.25 +
-      tradeVolatility * 0.15
-    );
+      tradeVolatility * 0.15;
 
     // Use time-based seeding for deterministic but varying results
     const timeComponent = seededRandom(timeElapsed * 1.7);
@@ -291,7 +299,7 @@ export class IxSheetzCalculator {
    * Calculate cyclical economic effects (boom/bust cycles)
    */
   private calculateCyclicalEffect(timeElapsed: number, period: number): number {
-    const phase = (timeElapsed % period) / period * 2 * Math.PI;
+    const phase = ((timeElapsed % period) / period) * 2 * Math.PI;
     return Math.sin(phase) * 0.1; // ±10% cyclical variation
   }
 
@@ -300,24 +308,28 @@ export class IxSheetzCalculator {
    * Uses deterministic breakthrough detection based on economic factors
    */
   private calculateInnovationCycle(params: IxSheetzGrowthParams): number {
-    const { timeElapsed, baseGdpPerCapita, politicalStability = 70, countryId = "default" } = params;
+    const {
+      timeElapsed,
+      baseGdpPerCapita,
+      politicalStability = 70,
+      countryId = "default",
+    } = params;
 
     // Innovation comes in waves, with major breakthroughs every ~20 years
-    const innovationPhase = (timeElapsed % 20) / 20 * 2 * Math.PI;
+    const innovationPhase = ((timeElapsed % 20) / 20) * 2 * Math.PI;
     const baseInnovation = Math.sin(innovationPhase) * 0.5 + 0.5; // 0 to 1
 
     // Deterministic breakthrough detection based on economic capacity
     // Higher GDP per capita and stability increase breakthrough likelihood
-    const breakthroughCapacity = (
+    const breakthroughCapacity =
       (baseGdpPerCapita / 100000) * 0.5 + // Wealth factor
       (politicalStability / 100) * 0.3 + // Stability factor
-      0.2 // Base factor
-    );
+      0.2; // Base factor
 
     // Create deterministic seed for breakthrough timing
     let seed = 0;
     for (let i = 0; i < countryId.length; i++) {
-      seed = ((seed << 5) - seed) + countryId.charCodeAt(i);
+      seed = (seed << 5) - seed + countryId.charCodeAt(i);
     }
 
     // Deterministic breakthrough function

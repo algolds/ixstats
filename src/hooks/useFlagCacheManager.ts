@@ -48,7 +48,7 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
   // Refresh stats from the API
   const refreshStats = useCallback(async () => {
     try {
-      const response = await fetch(withBasePath('/api/flag-cache?action=status'));
+      const response = await fetch(withBasePath("/api/flag-cache?action=status"));
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.flagCache) {
@@ -56,8 +56,8 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
         }
       }
     } catch (error) {
-      console.warn('[FlagCacheManager] Could not refresh stats from API:', error);
-      setError(error instanceof Error ? error.message : 'Failed to fetch stats');
+      console.warn("[FlagCacheManager] Could not refresh stats from API:", error);
+      setError(error instanceof Error ? error.message : "Failed to fetch stats");
     }
   }, []);
 
@@ -68,17 +68,17 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
   const updateAllFlags = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
-      const response = await fetch(withBasePath('/api/flag-cache?action=update'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch(withBasePath("/api/flag-cache?action=update"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ countries: [] }), // Empty array means all countries
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update flags');
+        throw new Error(errorData.error || "Failed to update flags");
       }
 
       const data = await response.json();
@@ -87,9 +87,9 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
         await refreshStats();
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       setError(errorMessage);
-      console.error('[FlagCacheManager] Update failed:', error);
+      console.error("[FlagCacheManager] Update failed:", error);
     } finally {
       setIsLoading(false);
     }
@@ -99,15 +99,15 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
   const initializeCache = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
-      const response = await fetch(withBasePath('/api/flag-cache?action=initialize'), {
-        method: 'POST',
+      const response = await fetch(withBasePath("/api/flag-cache?action=initialize"), {
+        method: "POST",
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to initialize cache');
+        throw new Error(errorData.error || "Failed to initialize cache");
       }
 
       const data = await response.json();
@@ -116,9 +116,9 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
         await refreshStats();
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       setError(errorMessage);
-      console.error('[FlagCacheManager] Initialization failed:', error);
+      console.error("[FlagCacheManager] Initialization failed:", error);
     } finally {
       setIsLoading(false);
     }
@@ -128,23 +128,23 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
   const clearCache = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
-      const response = await fetch(withBasePath('/api/flag-cache?action=clear'), {
-        method: 'DELETE',
+      const response = await fetch(withBasePath("/api/flag-cache?action=clear"), {
+        method: "DELETE",
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to clear cache');
+        throw new Error(errorData.error || "Failed to clear cache");
       }
 
       // Refresh stats after clearing
       await refreshStats();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       setError(errorMessage);
-      console.error('[FlagCacheManager] Clear failed:', error);
+      console.error("[FlagCacheManager] Clear failed:", error);
     } finally {
       setIsLoading(false);
     }
@@ -154,10 +154,10 @@ export function useFlagCacheManager(): FlagCacheManagerHook {
   useEffect(() => {
     // Initial stats update
     refreshStats();
-    
+
     // Update stats every 5 seconds when updating, otherwise every 30 seconds
     const updateInterval = stats.isUpdating ? 5000 : 30000;
-    
+
     statsIntervalRef.current = setInterval(() => {
       refreshStats();
     }, updateInterval);
@@ -207,7 +207,7 @@ export function useFlagCacheStats(): FlagCacheStats {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch(withBasePath('/api/flag-cache?action=status'));
+        const response = await fetch(withBasePath("/api/flag-cache?action=status"));
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.flagCache) {
@@ -215,7 +215,7 @@ export function useFlagCacheStats(): FlagCacheStats {
           }
         }
       } catch (error) {
-        console.warn('[FlagCacheStats] Could not fetch stats:', error);
+        console.warn("[FlagCacheStats] Could not fetch stats:", error);
       }
     };
 
@@ -229,4 +229,4 @@ export function useFlagCacheStats(): FlagCacheStats {
   }, []);
 
   return stats;
-} 
+}

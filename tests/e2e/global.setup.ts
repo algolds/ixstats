@@ -1,13 +1,13 @@
-import { request, FullConfig } from '@playwright/test';
-import fs from 'fs';
-import path from 'path';
+import { request, FullConfig } from "@playwright/test";
+import fs from "fs";
+import path from "path";
 
 export default async function globalSetup(config: FullConfig) {
-  const baseURL = process.env.PROD_CLONE_BASE_URL || 'http://localhost:3000';
+  const baseURL = process.env.PROD_CLONE_BASE_URL || "http://localhost:3000";
   const authEmail = process.env.E2E_USER_EMAIL;
   const authPassword = process.env.E2E_USER_PASSWORD;
 
-  const storagePath = path.resolve('.auth/prodclone.json');
+  const storagePath = path.resolve(".auth/prodclone.json");
   if (!fs.existsSync(path.dirname(storagePath))) {
     fs.mkdirSync(path.dirname(storagePath), { recursive: true });
   }
@@ -23,7 +23,7 @@ export default async function globalSetup(config: FullConfig) {
   // Attempt programmatic sign-in via UI endpoints (Clerk-hosted pages should be available)
   // Fallback to saved storage if already valid
   try {
-    const res = await requestContext.post('/api/auth/e2e-login', {
+    const res = await requestContext.post("/api/auth/e2e-login", {
       data: { email: authEmail, password: authPassword },
     });
     if (!res.ok()) throw new Error(`Login failed: ${res.status()} ${res.statusText()}`);
@@ -35,5 +35,3 @@ export default async function globalSetup(config: FullConfig) {
   fs.writeFileSync(storagePath, JSON.stringify({ cookies: [], origins: [] }));
   await requestContext.dispose();
 }
-
-

@@ -2,18 +2,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  BarChart3, 
-  Briefcase, 
-  Building, 
-  Scale, 
-  Building2, 
-  Users, 
-  Edit3, 
-  Save, 
+import {
+  BarChart3,
+  Briefcase,
+  Building,
+  Scale,
+  Building2,
+  Users,
+  Edit3,
+  Save,
   X,
   Loader2,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import { Button } from "~/components/ui/button";
@@ -99,10 +99,10 @@ const defaultEconomicData: EconomicData = {
   },
 };
 
-export function CountryEconomicDataSection({ 
-  countryId, 
+export function CountryEconomicDataSection({
+  countryId,
   countryName,
-  isEditable = false 
+  isEditable = false,
 }: CountryEconomicDataSectionProps) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedTab, setSelectedTab] = useState("core");
@@ -110,11 +110,11 @@ export function CountryEconomicDataSection({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Fetch country economic data
-  const { 
-    data: countryData, 
-    isLoading, 
+  const {
+    data: countryData,
+    isLoading,
     error,
-    refetch 
+    refetch,
   } = api.countries.getByIdWithEconomicData.useQuery({
     id: countryId,
   });
@@ -137,7 +137,9 @@ export function CountryEconomicDataSection({
       const loadedData: EconomicData = {
         coreIndicators: {
           totalPopulation: countryData.baselinePopulation,
-          nominalGDP: countryData.nominalGDP || (countryData.baselinePopulation * countryData.baselineGdpPerCapita),
+          nominalGDP:
+            countryData.nominalGDP ||
+            countryData.baselinePopulation * countryData.baselineGdpPerCapita,
           gdpPerCapita: countryData.baselineGdpPerCapita,
           realGDPGrowthRate: countryData.realGDPGrowthRate || countryData.adjustedGdpGrowth || 0.03,
           inflationRate: countryData.inflationRate || 0.02,
@@ -147,12 +149,19 @@ export function CountryEconomicDataSection({
           laborForceParticipationRate: countryData.laborForceParticipationRate || 65,
           employmentRate: countryData.employmentRate || 95,
           unemploymentRate: countryData.unemploymentRate || 5,
-          totalWorkforce: countryData.totalWorkforce || Math.round(countryData.baselinePopulation * 0.65),
+          totalWorkforce:
+            countryData.totalWorkforce || Math.round(countryData.baselinePopulation * 0.65),
           averageWorkweekHours: countryData.averageWorkweekHours || 40,
           minimumWage: countryData.minimumWage || 12,
           averageAnnualIncome: countryData.averageAnnualIncome || 35000,
           employmentBySector: { agriculture: 10, industry: 30, services: 60 },
-          employmentByType: { fullTime: 70, partTime: 15, temporary: 5, selfEmployed: 5, informal: 5 },
+          employmentByType: {
+            fullTime: 70,
+            partTime: 15,
+            temporary: 5,
+            selfEmployed: 5,
+            informal: 5,
+          },
           skillsAndProductivity: {
             averageEducationYears: 12,
             tertiaryEducationRate: 30,
@@ -188,9 +197,9 @@ export function CountryEconomicDataSection({
   }, [countryData]);
 
   const handleDataChange = (section: keyof EconomicData, newData: any) => {
-    setEconomicData(prev => ({
+    setEconomicData((prev) => ({
       ...prev,
-      [section]: newData
+      [section]: newData,
     }));
     setHasUnsavedChanges(true);
   };
@@ -205,7 +214,7 @@ export function CountryEconomicDataSection({
           realGDPGrowthRate: economicData.coreIndicators.realGDPGrowthRate,
           inflationRate: economicData.coreIndicators.inflationRate,
           currencyExchangeRate: economicData.coreIndicators.currencyExchangeRate,
-          
+
           // Labor & Employment
           laborForceParticipationRate: economicData.laborEmployment.laborForceParticipationRate,
           employmentRate: economicData.laborEmployment.employmentRate,
@@ -214,7 +223,7 @@ export function CountryEconomicDataSection({
           averageWorkweekHours: economicData.laborEmployment.averageWorkweekHours,
           minimumWage: economicData.laborEmployment.minimumWage,
           averageAnnualIncome: economicData.laborEmployment.averageAnnualIncome,
-          
+
           // Add other sections as they're implemented
         },
       });
@@ -289,9 +298,7 @@ export function CountryEconomicDataSection({
       <GlassCard variant="glass">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Failed to load economic data: {error.message}
-          </AlertDescription>
+          <AlertDescription>Failed to load economic data: {error.message}</AlertDescription>
         </Alert>
       </GlassCard>
     );
@@ -305,11 +312,11 @@ export function CountryEconomicDataSection({
             <BarChart3 className="h-5 w-5" />
             Economic Data
           </h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Comprehensive economic profile for {countryName}
           </p>
         </div>
-        
+
         {isEditable && (
           <div className="flex items-center gap-2">
             {hasUnsavedChanges && (
@@ -317,7 +324,7 @@ export function CountryEconomicDataSection({
                 Unsaved Changes
               </Badge>
             )}
-            
+
             {isEditMode ? (
               <div className="flex gap-2">
                 <Button
@@ -327,49 +334,41 @@ export function CountryEconomicDataSection({
                 >
                   {updateEconomicDataMutation.isPending ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Saving...
                     </>
                   ) : (
                     <>
-                      <Save className="h-4 w-4 mr-2" />
+                      <Save className="mr-2 h-4 w-4" />
                       Save
                     </>
                   )}
                 </Button>
-                <Button
-                  onClick={handleCancel}
-                  variant="outline"
-                  size="sm"
-                >
-                  <X className="h-4 w-4 mr-2" />
+                <Button onClick={handleCancel} variant="outline" size="sm">
+                  <X className="mr-2 h-4 w-4" />
                   Cancel
                 </Button>
               </div>
             ) : (
-              <Button
-                onClick={() => setIsEditMode(true)}
-                variant="outline"
-                size="sm"
-              >
-                <Edit3 className="h-4 w-4 mr-2" />
+              <Button onClick={() => setIsEditMode(true)} variant="outline" size="sm">
+                <Edit3 className="mr-2 h-4 w-4" />
                 Edit
               </Button>
             )}
           </div>
         )}
       </div>
-      
+
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <TabsList className="grid w-full grid-cols-6">
           {economicSections.map((section) => {
             const Icon = section.icon;
             return (
-              <TabsTrigger 
-                key={section.id} 
+              <TabsTrigger
+                key={section.id}
                 value={section.id}
                 disabled={section.disabled}
-                className="flex flex-col gap-1 p-2 h-auto"
+                className="flex h-auto flex-col gap-1 p-2"
               >
                 <Icon className="h-4 w-4" />
                 <span className="text-xs">{section.label}</span>
@@ -382,7 +381,7 @@ export function CountryEconomicDataSection({
           <TabsContent value="core" className="space-y-0">
             <CoreEconomicIndicators
               indicators={economicData.coreIndicators}
-              onIndicatorsChangeAction={(data) => handleDataChange('coreIndicators', data)}
+              onIndicatorsChangeAction={(data) => handleDataChange("coreIndicators", data)}
               isReadOnly={!isEditMode}
               showComparison={false}
             />
@@ -393,45 +392,47 @@ export function CountryEconomicDataSection({
             <LaborEmployment
               laborData={economicData.laborEmployment}
               totalPopulation={economicData.coreIndicators.totalPopulation}
-              onLaborDataChangeAction={(data: LaborEmploymentData) => handleDataChange('laborEmployment', data)}
+              onLaborDataChangeAction={(data: LaborEmploymentData) =>
+                handleDataChange("laborEmployment", data)
+              }
               isReadOnly={!isEditMode}
               showComparison={false}
             />
           </TabsContent>
 
           <TabsContent value="fiscal" className="space-y-0">
-            <div className="text-center py-8 text-muted-foreground">
-              <Building className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium mb-2">Fiscal System</h3>
+            <div className="text-muted-foreground py-8 text-center">
+              <Building className="mx-auto mb-4 h-12 w-12 opacity-50" />
+              <h3 className="mb-2 text-lg font-medium">Fiscal System</h3>
               <p>Tax rates, government budget, and debt management</p>
-              <p className="text-sm mt-2">Coming soon...</p>
+              <p className="mt-2 text-sm">Coming soon...</p>
             </div>
           </TabsContent>
 
           <TabsContent value="income" className="space-y-0">
-            <div className="text-center py-8 text-muted-foreground">
-              <Scale className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium mb-2">Income & Wealth Distribution</h3>
+            <div className="text-muted-foreground py-8 text-center">
+              <Scale className="mx-auto mb-4 h-12 w-12 opacity-50" />
+              <h3 className="mb-2 text-lg font-medium">Income & Wealth Distribution</h3>
               <p>Economic classes, inequality metrics, and social mobility</p>
-              <p className="text-sm mt-2">Coming soon...</p>
+              <p className="mt-2 text-sm">Coming soon...</p>
             </div>
           </TabsContent>
 
           <TabsContent value="spending" className="space-y-0">
-            <div className="text-center py-8 text-muted-foreground">
-              <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium mb-2">Government Spending</h3>
+            <div className="text-muted-foreground py-8 text-center">
+              <Building2 className="mx-auto mb-4 h-12 w-12 opacity-50" />
+              <h3 className="mb-2 text-lg font-medium">Government Spending</h3>
               <p>Budget allocation and spending priorities</p>
-              <p className="text-sm mt-2">Coming soon...</p>
+              <p className="mt-2 text-sm">Coming soon...</p>
             </div>
           </TabsContent>
 
           <TabsContent value="demographics" className="space-y-0">
-            <div className="text-center py-8 text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium mb-2">Demographics</h3>
+            <div className="text-muted-foreground py-8 text-center">
+              <Users className="mx-auto mb-4 h-12 w-12 opacity-50" />
+              <h3 className="mb-2 text-lg font-medium">Demographics</h3>
               <p>Population structure, education levels, and regional distribution</p>
-              <p className="text-sm mt-2">Coming soon...</p>
+              <p className="mt-2 text-sm">Coming soon...</p>
             </div>
           </TabsContent>
         </div>

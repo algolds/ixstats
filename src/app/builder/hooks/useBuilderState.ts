@@ -11,16 +11,16 @@
  * - Cross-subsystem integration via UnifiedBuilderService
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import type { BuilderStep } from '../components/enhanced/builderConfig';
-import type { RealCountryData, EconomicInputs } from '../lib/economy-data-service';
-import type { EconomyBuilderState } from '~/types/economy-builder';
-import { ComponentType } from '@prisma/client';
-import type { TaxBuilderState } from '~/hooks/useTaxBuilderState';
-import { safeGetItemSync, safeSetItemSync, safeRemoveItemSync } from '~/lib/localStorageMutex';
-import { createDefaultEconomicInputs } from '../lib/economy-data-service';
-import { unifiedBuilderService } from '../services/UnifiedBuilderIntegrationService';
-import { api } from '~/trpc/react';
+import { useState, useCallback, useEffect, useRef } from "react";
+import type { BuilderStep } from "../components/enhanced/builderConfig";
+import type { RealCountryData, EconomicInputs } from "../lib/economy-data-service";
+import type { EconomyBuilderState } from "~/types/economy-builder";
+import { ComponentType } from "@prisma/client";
+import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
+import { safeGetItemSync, safeSetItemSync, safeRemoveItemSync } from "~/lib/localStorageMutex";
+import { createDefaultEconomicInputs } from "../lib/economy-data-service";
+import { unifiedBuilderService } from "../services/UnifiedBuilderIntegrationService";
+import { api } from "~/trpc/react";
 
 /**
  * Complete state structure for the country builder workflow.
@@ -89,27 +89,27 @@ export interface UseBuilderStateReturn {
 }
 
 const baseInitialState: BuilderState = {
-  step: 'foundation',
+  step: "foundation",
   selectedCountry: null,
   economicInputs: null,
   governmentComponents: [],
   taxSystemData: null,
   governmentStructure: null,
   completedSteps: [],
-  activeCoreTab: 'identity',
-  activeGovernmentTab: 'components',
-  activeEconomicsTab: 'economy',
+  activeCoreTab: "identity",
+  activeGovernmentTab: "components",
+  activeEconomicsTab: "economy",
   showAdvancedMode: false,
   economyBuilderState: null,
 };
 
-const getInitialState = (mode: 'create' | 'edit' = 'create'): BuilderState => {
-  if (mode === 'edit') {
+const getInitialState = (mode: "create" | "edit" = "create"): BuilderState => {
+  if (mode === "edit") {
     return {
       ...baseInitialState,
-      step: 'core',
-      completedSteps: ['foundation'],
-      activeCoreTab: 'identity',
+      step: "core",
+      completedSteps: ["foundation"],
+      activeCoreTab: "identity",
     };
   }
 
@@ -173,7 +173,10 @@ const getInitialState = (mode: 'create' | 'edit' = 'create'): BuilderState => {
  *   return <button onClick={handleQuickStart}>Quick Start</button>;
  * }
  */
-export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: string): UseBuilderStateReturn {
+export function useBuilderState(
+  mode: "create" | "edit" = "create",
+  countryId?: string
+): UseBuilderStateReturn {
   const [builderState, setBuilderState] = useState<BuilderState>(() => getInitialState(mode));
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isAutoSaving, setIsAutoSaving] = useState(false);
@@ -181,38 +184,32 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
   const editModeInitialized = useRef(false);
 
   // Edit mode: Load existing country data
-  const {
-    data: existingCountry,
-    isLoading: countryLoading
-  } = api.countries.getByIdAtTime.useQuery(
-    { id: countryId || '' },
-    { 
-      enabled: mode === 'edit' && !!countryId && countryId.trim() !== '',
-      retry: false
+  const { data: existingCountry, isLoading: countryLoading } = api.countries.getByIdAtTime.useQuery(
+    { id: countryId || "" },
+    {
+      enabled: mode === "edit" && !!countryId && countryId.trim() !== "",
+      retry: false,
     }
   );
 
-  const {
-    data: existingGovernment,
-    isLoading: governmentLoading
-  } = api.government.getByCountryId.useQuery(
-    { countryId: countryId || '' },
-    { enabled: mode === 'edit' && !!countryId }
-  );
+  const { data: existingGovernment, isLoading: governmentLoading } =
+    api.government.getByCountryId.useQuery(
+      { countryId: countryId || "" },
+      { enabled: mode === "edit" && !!countryId }
+    );
 
-  const {
-    data: existingTaxSystem,
-    isLoading: taxSystemLoading
-  } = api.taxSystem.getByCountryId.useQuery(
-    { countryId: countryId || '' },
-    { enabled: mode === 'edit' && !!countryId }
-  );
+  const { data: existingTaxSystem, isLoading: taxSystemLoading } =
+    api.taxSystem.getByCountryId.useQuery(
+      { countryId: countryId || "" },
+      { enabled: mode === "edit" && !!countryId }
+    );
 
-  const isLoadingCountry = mode === 'edit' && (countryLoading || governmentLoading || taxSystemLoading);
+  const isLoadingCountry =
+    mode === "edit" && (countryLoading || governmentLoading || taxSystemLoading);
 
   // Initialize edit mode with existing data
   useEffect(() => {
-    if (mode === 'edit' && existingCountry && !editModeInitialized.current && !isLoadingCountry) {
+    if (mode === "edit" && existingCountry && !editModeInitialized.current && !isLoadingCountry) {
       editModeInitialized.current = true;
 
       const inputs = createDefaultEconomicInputs();
@@ -221,8 +218,14 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
       inputs.countryName = existingCountry.name;
 
       const calculatedStats = (existingCountry as any).calculatedStats;
-      const currentPop = Number(calculatedStats?.currentPopulation) || Number((existingCountry as any).baselinePopulation) || 0;
-      const currentGdpPerCap = Number(calculatedStats?.currentGdpPerCapita) || Number((existingCountry as any).baselineGdpPerCapita) || 0;
+      const currentPop =
+        Number(calculatedStats?.currentPopulation) ||
+        Number((existingCountry as any).baselinePopulation) ||
+        0;
+      const currentGdpPerCap =
+        Number(calculatedStats?.currentGdpPerCapita) ||
+        Number((existingCountry as any).baselineGdpPerCapita) ||
+        0;
       const currentTotalGdp = Number(calculatedStats?.currentTotalGdp) || 0;
 
       inputs.coreIndicators = {
@@ -236,21 +239,28 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
 
       // Labor & Employment
       inputs.laborEmployment.unemploymentRate = (existingCountry as any).unemploymentRate ?? 0;
-      inputs.laborEmployment.laborForceParticipationRate = (existingCountry as any).laborForceParticipationRate ?? 0;
+      inputs.laborEmployment.laborForceParticipationRate =
+        (existingCountry as any).laborForceParticipationRate ?? 0;
       inputs.laborEmployment.employmentRate = (existingCountry as any).employmentRate ?? 0;
       inputs.laborEmployment.totalWorkforce = (existingCountry as any).totalWorkforce ?? 0;
-      inputs.laborEmployment.averageWorkweekHours = (existingCountry as any).averageWorkweekHours ?? 0;
+      inputs.laborEmployment.averageWorkweekHours =
+        (existingCountry as any).averageWorkweekHours ?? 0;
       inputs.laborEmployment.minimumWage = (existingCountry as any).minimumWage ?? 0;
-      inputs.laborEmployment.averageAnnualIncome = (existingCountry as any).averageAnnualIncome ?? 0;
+      inputs.laborEmployment.averageAnnualIncome =
+        (existingCountry as any).averageAnnualIncome ?? 0;
 
       // Fiscal system
       inputs.fiscalSystem.taxRevenueGDPPercent = (existingCountry as any).taxRevenueGDPPercent ?? 0;
-      inputs.fiscalSystem.governmentRevenueTotal = (existingCountry as any).governmentRevenueTotal ?? 0;
+      inputs.fiscalSystem.governmentRevenueTotal =
+        (existingCountry as any).governmentRevenueTotal ?? 0;
       inputs.fiscalSystem.totalDebtGDPRatio = (existingCountry as any).totalDebtGDPRatio ?? 0;
       inputs.fiscalSystem.budgetDeficitSurplus = (existingCountry as any).budgetDeficitSurplus ?? 0;
-      inputs.fiscalSystem.governmentBudgetGDPPercent = (existingCountry as any).governmentBudgetGDPPercent ?? 0;
-      inputs.fiscalSystem.internalDebtGDPPercent = (existingCountry as any).internalDebtGDPPercent ?? 0;
-      inputs.fiscalSystem.externalDebtGDPPercent = (existingCountry as any).externalDebtGDPPercent ?? 0;
+      inputs.fiscalSystem.governmentBudgetGDPPercent =
+        (existingCountry as any).governmentBudgetGDPPercent ?? 0;
+      inputs.fiscalSystem.internalDebtGDPPercent =
+        (existingCountry as any).internalDebtGDPPercent ?? 0;
+      inputs.fiscalSystem.externalDebtGDPPercent =
+        (existingCountry as any).externalDebtGDPPercent ?? 0;
       inputs.fiscalSystem.interestRates = (existingCountry as any).interestRates ?? 0;
       inputs.fiscalSystem.debtServiceCosts = (existingCountry as any).debtServiceCosts ?? 0;
 
@@ -260,7 +270,7 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
       if ((existingCountry as any).urbanPopulationPercent !== undefined) {
         inputs.demographics.urbanRuralSplit = {
           urban: (existingCountry as any).urbanPopulationPercent,
-          rural: 100 - (existingCountry as any).urbanPopulationPercent
+          rural: 100 - (existingCountry as any).urbanPopulationPercent,
         };
       }
 
@@ -270,49 +280,54 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
       inputs.incomeWealth.socialMobilityIndex = (existingCountry as any).socialMobilityIndex ?? 0;
 
       // Government Spending
-      inputs.governmentSpending.totalSpending = (existingCountry as any).totalGovernmentSpending ?? 0;
-      inputs.governmentSpending.spendingGDPPercent = (existingCountry as any).spendingGDPPercent ?? 0;
+      inputs.governmentSpending.totalSpending =
+        (existingCountry as any).totalGovernmentSpending ?? 0;
+      inputs.governmentSpending.spendingGDPPercent =
+        (existingCountry as any).spendingGDPPercent ?? 0;
       inputs.governmentSpending.spendingPerCapita = (existingCountry as any).spendingPerCapita ?? 0;
       inputs.governmentSpending.deficitSurplus = (existingCountry as any).budgetDeficitSurplus ?? 0;
 
       // National Identity
       const nationalIdentity = (existingCountry as any).nationalIdentity;
       inputs.nationalIdentity = {
-        countryName: nationalIdentity?.countryName || existingCountry.name || '',
-        officialName: nationalIdentity?.officialName || '',
-        governmentType: nationalIdentity?.governmentType || existingCountry.governmentType || 'republic',
-        motto: nationalIdentity?.motto || '',
-        mottoNative: nationalIdentity?.mottoNative || '',
-        capitalCity: nationalIdentity?.capitalCity || '',
-        largestCity: nationalIdentity?.largestCity || '',
-        demonym: nationalIdentity?.demonym || '',
-        currency: nationalIdentity?.currency || (existingCountry as any).currencyName || '',
-        currencySymbol: nationalIdentity?.currencySymbol || (existingCountry as any).currencySymbol || '$',
-        officialLanguages: nationalIdentity?.officialLanguages || '',
-        nationalLanguage: nationalIdentity?.nationalLanguage || '',
-        nationalAnthem: nationalIdentity?.nationalAnthem || '',
-        nationalReligion: nationalIdentity?.nationalReligion || (existingCountry as any).religion || '',
-        nationalDay: nationalIdentity?.nationalDay || '',
-        callingCode: nationalIdentity?.callingCode || '',
-        internetTLD: nationalIdentity?.internetTLD || '',
-        drivingSide: nationalIdentity?.drivingSide || 'right',
-        timeZone: nationalIdentity?.timeZone || '',
-        isoCode: nationalIdentity?.isoCode || (existingCountry as any).countryCode || '',
-        coordinatesLatitude: nationalIdentity?.coordinatesLatitude || '',
-        coordinatesLongitude: nationalIdentity?.coordinatesLongitude || '',
-        emergencyNumber: nationalIdentity?.emergencyNumber || '',
-        postalCodeFormat: nationalIdentity?.postalCodeFormat || '',
-        nationalSport: nationalIdentity?.nationalSport || '',
-        weekStartDay: nationalIdentity?.weekStartDay || 'monday'
+        countryName: nationalIdentity?.countryName || existingCountry.name || "",
+        officialName: nationalIdentity?.officialName || "",
+        governmentType:
+          nationalIdentity?.governmentType || existingCountry.governmentType || "republic",
+        motto: nationalIdentity?.motto || "",
+        mottoNative: nationalIdentity?.mottoNative || "",
+        capitalCity: nationalIdentity?.capitalCity || "",
+        largestCity: nationalIdentity?.largestCity || "",
+        demonym: nationalIdentity?.demonym || "",
+        currency: nationalIdentity?.currency || (existingCountry as any).currencyName || "",
+        currencySymbol:
+          nationalIdentity?.currencySymbol || (existingCountry as any).currencySymbol || "$",
+        officialLanguages: nationalIdentity?.officialLanguages || "",
+        nationalLanguage: nationalIdentity?.nationalLanguage || "",
+        nationalAnthem: nationalIdentity?.nationalAnthem || "",
+        nationalReligion:
+          nationalIdentity?.nationalReligion || (existingCountry as any).religion || "",
+        nationalDay: nationalIdentity?.nationalDay || "",
+        callingCode: nationalIdentity?.callingCode || "",
+        internetTLD: nationalIdentity?.internetTLD || "",
+        drivingSide: nationalIdentity?.drivingSide || "right",
+        timeZone: nationalIdentity?.timeZone || "",
+        isoCode: nationalIdentity?.isoCode || (existingCountry as any).countryCode || "",
+        coordinatesLatitude: nationalIdentity?.coordinatesLatitude || "",
+        coordinatesLongitude: nationalIdentity?.coordinatesLongitude || "",
+        emergencyNumber: nationalIdentity?.emergencyNumber || "",
+        postalCodeFormat: nationalIdentity?.postalCodeFormat || "",
+        nationalSport: nationalIdentity?.nationalSport || "",
+        weekStartDay: nationalIdentity?.weekStartDay || "monday",
       };
 
-      inputs.flagUrl = nationalIdentity?.flagUrl || '';
-      inputs.coatOfArmsUrl = nationalIdentity?.coatOfArmsUrl || '';
+      inputs.flagUrl = nationalIdentity?.flagUrl || "";
+      inputs.coatOfArmsUrl = nationalIdentity?.coatOfArmsUrl || "";
 
       // Geography
       inputs.geography = {
-        continent: existingCountry.continent || '',
-        region: existingCountry.region || ''
+        continent: existingCountry.continent || "",
+        region: existingCountry.region || "",
       };
 
       // Convert existing government to builder format
@@ -329,7 +344,7 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
             judicialName: existingGovernment.judicialName ?? undefined,
             totalBudget: existingGovernment.totalBudget,
             fiscalYear: existingGovernment.fiscalYear,
-            budgetCurrency: existingGovernment.budgetCurrency
+            budgetCurrency: existingGovernment.budgetCurrency,
           },
           departments: (existingGovernment.departments as any[]).map((dept: any) => ({
             name: dept.name,
@@ -346,12 +361,12 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
             priority: dept.priority ?? undefined,
             parentDepartmentId: dept.parentDepartmentId ?? undefined,
             organizationalLevel: dept.organizationalLevel ?? undefined,
-            functions: Array.isArray(dept.functions) ? dept.functions : []
+            functions: Array.isArray(dept.functions) ? dept.functions : [],
           })),
           budgetAllocations: existingGovernment.budgetAllocations,
           revenueSources: existingGovernment.revenueSources,
           isValid: true,
-          errors: { structure: [], departments: {}, budget: [], revenue: [] }
+          errors: { structure: [], departments: {}, budget: [], revenue: [] },
         };
       }
 
@@ -363,48 +378,51 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
 
       // Set initial state for edit mode
       setBuilderState({
-        step: 'core', // Skip foundation step in edit mode
+        step: "core", // Skip foundation step in edit mode
         selectedCountry: null, // No foundation selection in edit mode
         economicInputs: inputs,
         governmentComponents: [], // TODO: Extract from existing government if atomic components exist
         taxSystemData,
         governmentStructure,
-        completedSteps: ['foundation'], // Auto-complete foundation step
-        activeCoreTab: 'identity',
-        activeGovernmentTab: 'components',
-        activeEconomicsTab: 'economy',
+        completedSteps: ["foundation"], // Auto-complete foundation step
+        activeCoreTab: "identity",
+        activeGovernmentTab: "components",
+        activeEconomicsTab: "economy",
         showAdvancedMode: false,
         economyBuilderState: null,
       });
 
-      console.log('[useBuilderState] Edit mode initialized with existing country data:', existingCountry.name);
+      console.log(
+        "[useBuilderState] Edit mode initialized with existing country data:",
+        existingCountry.name
+      );
     }
   }, [mode, existingCountry, existingGovernment, existingTaxSystem, isLoadingCountry]);
 
   // Load saved state on mount (create mode only)
   useEffect(() => {
     // Skip localStorage in edit mode
-    if (mode === 'edit') return;
+    if (mode === "edit") return;
 
     try {
-      const quickStartSection = safeGetItemSync('builder_quick_start_section');
+      const quickStartSection = safeGetItemSync("builder_quick_start_section");
 
-      if (quickStartSection === 'core' && !quickStartProcessed.current) {
+      if (quickStartSection === "core" && !quickStartProcessed.current) {
         quickStartProcessed.current = true;
 
-        setBuilderState(prev => ({
+        setBuilderState((prev) => ({
           ...prev,
-          step: 'core',
+          step: "core",
           selectedCountry: null,
           economicInputs: createDefaultEconomicInputs(),
-          completedSteps: [...new Set([...prev.completedSteps, 'foundation' as BuilderStep])]
+          completedSteps: [...new Set([...prev.completedSteps, "foundation" as BuilderStep])],
         }));
-        safeRemoveItemSync('builder_quick_start_section');
+        safeRemoveItemSync("builder_quick_start_section");
         return;
       }
 
       // Check for wiki import data
-      const importedData = safeGetItemSync('builder_imported_data');
+      const importedData = safeGetItemSync("builder_imported_data");
       if (importedData && !quickStartProcessed.current) {
         quickStartProcessed.current = true;
 
@@ -428,22 +446,22 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
           // National identity (ensure object exists)
           if (!inputs.nationalIdentity) {
             inputs.nationalIdentity = {
-              countryName: '',
-              officialName: '',
-              governmentType: 'republic',
-              motto: '',
-              mottoNative: '',
-              capitalCity: '',
-              largestCity: '',
-              demonym: '',
-              currency: '',
-              officialLanguages: '',
-              nationalLanguage: '',
-              nationalAnthem: '',
-              nationalDay: '',
-              callingCode: '',
-              internetTLD: '',
-              drivingSide: 'right',
+              countryName: "",
+              officialName: "",
+              governmentType: "republic",
+              motto: "",
+              mottoNative: "",
+              capitalCity: "",
+              largestCity: "",
+              demonym: "",
+              currency: "",
+              officialLanguages: "",
+              nationalLanguage: "",
+              nationalAnthem: "",
+              nationalDay: "",
+              callingCode: "",
+              internetTLD: "",
+              drivingSide: "right",
             };
           }
 
@@ -466,38 +484,38 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
           }
 
           // Set builder state with imported data
-          setBuilderState(prev => ({
+          setBuilderState((prev) => ({
             ...prev,
-            step: 'core',
+            step: "core",
             economicInputs: inputs,
-            completedSteps: ['foundation']
+            completedSteps: ["foundation"],
           }));
 
           // Clean up imported data
-          safeRemoveItemSync('builder_imported_data');
+          safeRemoveItemSync("builder_imported_data");
 
-          console.log('[useBuilderState] Wiki import data loaded:', wikiData.name);
+          console.log("[useBuilderState] Wiki import data loaded:", wikiData.name);
           return;
         } catch (parseError) {
-          console.error('[useBuilderState] Failed to parse wiki import data:', parseError);
+          console.error("[useBuilderState] Failed to parse wiki import data:", parseError);
           // Continue to normal state loading
         }
       }
 
       if (!quickStartProcessed.current) {
-        let savedState = safeGetItemSync('builder_state');
-        let savedLastSaved = safeGetItemSync('builder_last_saved');
+        let savedState = safeGetItemSync("builder_state");
+        let savedLastSaved = safeGetItemSync("builder_last_saved");
 
         // Fallback to sessionStorage if localStorage fails
         if (!savedState) {
           try {
-            savedState = sessionStorage.getItem('builder_state');
-            savedLastSaved = sessionStorage.getItem('builder_last_saved');
+            savedState = sessionStorage.getItem("builder_state");
+            savedLastSaved = sessionStorage.getItem("builder_last_saved");
             if (savedState) {
-              console.log('[BuilderState] Recovered state from sessionStorage');
+              console.log("[BuilderState] Recovered state from sessionStorage");
             }
           } catch (error) {
-            console.warn('[BuilderState] Failed to access sessionStorage:', error);
+            console.warn("[BuilderState] Failed to access sessionStorage:", error);
           }
         }
 
@@ -528,28 +546,35 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
       setIsAutoSaving(true);
       try {
         // Use country-specific keys in edit mode
-        const stateKey = mode === 'edit' && countryId ? `builder_state_${countryId}` : 'builder_state';
-        const savedKey = mode === 'edit' && countryId ? `builder_last_saved_${countryId}` : 'builder_last_saved';
+        const stateKey =
+          mode === "edit" && countryId ? `builder_state_${countryId}` : "builder_state";
+        const savedKey =
+          mode === "edit" && countryId ? `builder_last_saved_${countryId}` : "builder_last_saved";
 
         const stateSaved = safeSetItemSync(stateKey, JSON.stringify(builderStateRef.current));
         const now = new Date();
         const timestampSaved = safeSetItemSync(savedKey, now.toISOString());
-        
+
         if (stateSaved && timestampSaved) {
           setLastSaved(now);
         } else {
-          console.warn('[BuilderState] Failed to save to localStorage, data may be lost on page refresh');
+          console.warn(
+            "[BuilderState] Failed to save to localStorage, data may be lost on page refresh"
+          );
           // Try fallback to sessionStorage
           try {
             sessionStorage.setItem(stateKey, JSON.stringify(builderStateRef.current));
             sessionStorage.setItem(savedKey, now.toISOString());
-            console.log('[BuilderState] Fallback to sessionStorage successful');
+            console.log("[BuilderState] Fallback to sessionStorage successful");
           } catch (sessionError) {
-            console.error('[BuilderState] Both localStorage and sessionStorage failed:', sessionError);
+            console.error(
+              "[BuilderState] Both localStorage and sessionStorage failed:",
+              sessionError
+            );
           }
         }
       } catch (error) {
-        console.error('[BuilderState] Failed to save state:', error);
+        console.error("[BuilderState] Failed to save state:", error);
       } finally {
         setIsAutoSaving(false);
       }
@@ -564,8 +589,10 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
     const handleBeforeUnload = () => {
       try {
         // Use country-specific keys in edit mode
-        const stateKey = mode === 'edit' && countryId ? `builder_state_${countryId}` : 'builder_state';
-        const savedKey = mode === 'edit' && countryId ? `builder_last_saved_${countryId}` : 'builder_last_saved';
+        const stateKey =
+          mode === "edit" && countryId ? `builder_state_${countryId}` : "builder_state";
+        const savedKey =
+          mode === "edit" && countryId ? `builder_last_saved_${countryId}` : "builder_last_saved";
 
         safeSetItemSync(stateKey, JSON.stringify(builderStateRef.current));
         safeSetItemSync(savedKey, new Date().toISOString());
@@ -574,8 +601,8 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [mode, countryId]);
 
   // Unified Builder Integration - Sync all data across subsystems with refs to prevent loops
@@ -591,10 +618,10 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
   taxSystemDataRef.current = builderState.taxSystemData;
 
   // Track last sent values to prevent redundant updates
-  const lastSentNationalIdentityRef = useRef<string>('');
-  const lastSentGovernmentComponentsRef: React.MutableRefObject<string> = useRef<string>(''); // Track last sent components
-  const lastSentGovernmentStructureRef = useRef<string>('');
-  const lastSentTaxSystemDataRef = useRef<string>('');
+  const lastSentNationalIdentityRef = useRef<string>("");
+  const lastSentGovernmentComponentsRef: React.MutableRefObject<string> = useRef<string>(""); // Track last sent components
+  const lastSentGovernmentStructureRef = useRef<string>("");
+  const lastSentTaxSystemDataRef = useRef<string>("");
 
   useEffect(() => {
     // Update national identity if changed
@@ -606,10 +633,10 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
           countryName: economicInputsRef.current.nationalIdentity.countryName,
           capital: economicInputsRef.current.nationalIdentity.capitalCity,
           currency: economicInputsRef.current.nationalIdentity.currency,
-          language: economicInputsRef.current.nationalIdentity.officialLanguages || '',
+          language: economicInputsRef.current.nationalIdentity.officialLanguages || "",
           flag: undefined,
           anthem: economicInputsRef.current.nationalIdentity.nationalAnthem,
-          motto: economicInputsRef.current.nationalIdentity.motto
+          motto: economicInputsRef.current.nationalIdentity.motto,
         });
       }
     }
@@ -647,32 +674,32 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
     builderState.economicInputs,
     builderState.governmentComponents,
     builderState.governmentStructure,
-    builderState.taxSystemData
+    builderState.taxSystemData,
   ]);
 
   // Update handlers
   const updateEconomicInputs = useCallback((inputs: EconomicInputs) => {
-    setBuilderState(prev => ({ ...prev, economicInputs: inputs }));
+    setBuilderState((prev) => ({ ...prev, economicInputs: inputs }));
   }, []);
 
   const updateGovernmentComponents = useCallback((components: ComponentType[]) => {
-    setBuilderState(prev => ({ ...prev, governmentComponents: components }));
+    setBuilderState((prev) => ({ ...prev, governmentComponents: components }));
   }, []);
 
   const updateGovernmentStructure = useCallback((structure: any) => {
-    setBuilderState(prev => ({ ...prev, governmentStructure: structure }));
+    setBuilderState((prev) => ({ ...prev, governmentStructure: structure }));
   }, []);
 
   const updateTaxSystem = useCallback((taxData: TaxBuilderState) => {
-    setBuilderState(prev => ({ ...prev, taxSystemData: taxData }));
+    setBuilderState((prev) => ({ ...prev, taxSystemData: taxData }));
   }, []);
 
   const updateEconomyBuilderState = useCallback((economyState: EconomyBuilderState | null) => {
-    setBuilderState(prev => ({ ...prev, economyBuilderState: economyState }));
+    setBuilderState((prev) => ({ ...prev, economyBuilderState: economyState }));
   }, []);
 
   const updateStep = useCallback((step: BuilderStep, data?: any) => {
-    setBuilderState(prev => {
+    setBuilderState((prev) => {
       const newState = { ...prev };
 
       if (!prev.completedSteps.includes(step)) {
@@ -680,24 +707,24 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
       }
 
       switch (step) {
-        case 'foundation':
+        case "foundation":
           newState.selectedCountry = data;
-          newState.step = 'core';
+          newState.step = "core";
           if (data) {
             newState.economicInputs = createDefaultEconomicInputs(data);
           }
           break;
-        case 'core':
+        case "core":
           newState.economicInputs = data;
-          newState.step = 'government';
+          newState.step = "government";
           break;
-        case 'government':
+        case "government":
           newState.governmentComponents = data;
-          newState.step = 'economics';
+          newState.step = "economics";
           break;
-        case 'economics':
+        case "economics":
           newState.economicInputs = data;
-          newState.step = 'preview';
+          newState.step = "preview";
           break;
       }
 
@@ -707,10 +734,12 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
 
   const clearDraft = useCallback(() => {
     try {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         // Use country-specific keys in edit mode
-        const stateKey = mode === 'edit' && countryId ? `builder_state_${countryId}` : 'builder_state';
-        const savedKey = mode === 'edit' && countryId ? `builder_last_saved_${countryId}` : 'builder_last_saved';
+        const stateKey =
+          mode === "edit" && countryId ? `builder_state_${countryId}` : "builder_state";
+        const savedKey =
+          mode === "edit" && countryId ? `builder_last_saved_${countryId}` : "builder_last_saved";
 
         localStorage.removeItem(stateKey);
         localStorage.removeItem(savedKey);
@@ -722,12 +751,15 @@ export function useBuilderState(mode: 'create' | 'edit' = 'create', countryId?: 
     }
   }, [mode, countryId]);
 
-  const canAccessStep = useCallback((step: BuilderStep): boolean => {
-    const stepOrder: BuilderStep[] = ['foundation', 'core', 'government', 'economics', 'preview'];
-    const currentIndex = stepOrder.indexOf(builderState.step);
-    const targetIndex = stepOrder.indexOf(step);
-    return targetIndex <= currentIndex || builderState.completedSteps.includes(step);
-  }, [builderState.step, builderState.completedSteps]);
+  const canAccessStep = useCallback(
+    (step: BuilderStep): boolean => {
+      const stepOrder: BuilderStep[] = ["foundation", "core", "government", "economics", "preview"];
+      const currentIndex = stepOrder.indexOf(builderState.step);
+      const targetIndex = stepOrder.indexOf(step);
+      return targetIndex <= currentIndex || builderState.completedSteps.includes(step);
+    },
+    [builderState.step, builderState.completedSteps]
+  );
 
   return {
     builderState,

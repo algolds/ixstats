@@ -10,7 +10,7 @@ import type {
   NotificationPriority,
   NotificationSeverity,
   NotificationType,
-} from '~/types/unified-notifications';
+} from "~/types/unified-notifications";
 
 // Enhanced category definitions with sub-categories
 export interface EnhancedCategory {
@@ -79,27 +79,25 @@ export class NotificationCategorization {
   ): Promise<ClassificationResult> {
     // Extract content features
     const contentFeatures = this.extractContentFeatures(notification);
-    
+
     // Apply pattern matching
     const patternMatches = this.applyPatternMatching(contentFeatures, context);
-    
+
     // Apply contextual scoring
     const contextualScores = await this.applyContextualScoring(patternMatches, context);
-    
+
     // Select best category
     const bestMatch = this.selectBestCategory(contextualScores);
-    
+
     // Check for escalation conditions
     const escalationCheck = this.checkEscalationConditions(notification, bestMatch, context);
-    
+
     // Generate alternative suggestions
-    const alternatives = contextualScores
-      .slice(1, 4)
-      .map(match => match.category);
-    
+    const alternatives = contextualScores.slice(1, 4).map((match) => match.category);
+
     // Generate reasoning
     const reasoning = this.generateCategoringReasoning(bestMatch, contentFeatures, context);
-    
+
     // Suggest actions
     const suggestedActions = this.generateActionSuggestions(bestMatch, notification, context);
 
@@ -122,19 +120,19 @@ export class NotificationCategorization {
     category: EnhancedCategory
   ): 1 | 2 | 3 | 4 | 5 {
     let urgency = category.urgencyLevel;
-    
+
     // Time-based urgency modifiers
     const timeFactors = this.calculateTimeUrgency(notification, context);
     urgency = Math.min(5, urgency + timeFactors) as 1 | 2 | 3 | 4 | 5;
-    
+
     // Context-based urgency modifiers
     const contextFactors = this.calculateContextUrgency(context, category);
     urgency = Math.min(5, urgency + contextFactors) as 1 | 2 | 3 | 4 | 5;
-    
+
     // Content-based urgency modifiers
     const contentFactors = this.calculateContentUrgency(notification);
     urgency = Math.min(5, urgency + contentFactors) as 1 | 2 | 3 | 4 | 5;
-    
+
     return urgency;
   }
 
@@ -146,49 +144,55 @@ export class NotificationCategorization {
     context: NotificationContext
   ): {
     affectedCategories: NotificationCategory[];
-    impactLevel: 'low' | 'medium' | 'high' | 'critical';
+    impactLevel: "low" | "medium" | "high" | "critical";
     cascadingEffects: string[];
     recommendedBroadcast: boolean;
   } {
     const affectedCategories: NotificationCategory[] = [];
-    let impactLevel: 'low' | 'medium' | 'high' | 'critical' = 'low';
+    let impactLevel: "low" | "medium" | "high" | "critical" = "low";
     const cascadingEffects: string[] = [];
     let recommendedBroadcast = false;
 
     // Economic notifications can affect diplomatic and governance
-    if (notification.category === 'economic') {
-      if (notification.title.toLowerCase().includes('crisis') || 
-          notification.title.toLowerCase().includes('crash')) {
-        affectedCategories.push('diplomatic', 'governance', 'social');
-        impactLevel = 'critical';
-        cascadingEffects.push('Potential diplomatic strain', 'Government stability concerns', 'Social unrest risk');
+    if (notification.category === "economic") {
+      if (
+        notification.title.toLowerCase().includes("crisis") ||
+        notification.title.toLowerCase().includes("crash")
+      ) {
+        affectedCategories.push("diplomatic", "governance", "social");
+        impactLevel = "critical";
+        cascadingEffects.push(
+          "Potential diplomatic strain",
+          "Government stability concerns",
+          "Social unrest risk"
+        );
         recommendedBroadcast = true;
       }
     }
 
     // Crisis notifications affect all categories
-    if (notification.category === 'crisis') {
-      affectedCategories.push('economic', 'diplomatic', 'governance', 'social', 'security');
-      impactLevel = 'critical';
-      cascadingEffects.push('Multi-sector emergency response required');
+    if (notification.category === "crisis") {
+      affectedCategories.push("economic", "diplomatic", "governance", "social", "security");
+      impactLevel = "critical";
+      cascadingEffects.push("Multi-sector emergency response required");
       recommendedBroadcast = true;
     }
 
     // Security notifications can affect diplomatic relations
-    if (notification.category === 'security') {
-      if (notification.severity === 'urgent') {
-        affectedCategories.push('diplomatic', 'governance');
-        impactLevel = 'high';
-        cascadingEffects.push('Diplomatic implications', 'Government response required');
+    if (notification.category === "security") {
+      if (notification.severity === "urgent") {
+        affectedCategories.push("diplomatic", "governance");
+        impactLevel = "high";
+        cascadingEffects.push("Diplomatic implications", "Government response required");
       }
     }
 
     // Achievement notifications can boost other areas
-    if (notification.category === 'achievement') {
-      if (notification.priority === 'high') {
-        affectedCategories.push('economic', 'diplomatic');
-        impactLevel = 'medium';
-        cascadingEffects.push('Positive reputation effects', 'Economic confidence boost');
+    if (notification.category === "achievement") {
+      if (notification.priority === "high") {
+        affectedCategories.push("economic", "diplomatic");
+        impactLevel = "medium";
+        cascadingEffects.push("Positive reputation effects", "Economic confidence boost");
       }
     }
 
@@ -204,18 +208,18 @@ export class NotificationCategorization {
 
   private initializeCategories() {
     // Economic category definitions
-    this.categories.set('economic-growth', {
-      primary: 'economic',
-      subcategory: 'growth',
+    this.categories.set("economic-growth", {
+      primary: "economic",
+      subcategory: "growth",
       urgencyLevel: 2,
-      defaultPriority: 'medium',
-      contextualFactors: ['market_hours', 'executive_mode', 'economic_dashboard'],
+      defaultPriority: "medium",
+      contextualFactors: ["market_hours", "executive_mode", "economic_dashboard"],
       escalationTriggers: [
         {
-          condition: 'growth_rate_drop > 5%',
-          priorityUpgrade: 'high',
-          reasoning: 'Significant economic decline detected'
-        }
+          condition: "growth_rate_drop > 5%",
+          priorityUpgrade: "high",
+          reasoning: "Significant economic decline detected",
+        },
       ],
       confidence: 0.85,
       deliveryPreferences: {
@@ -223,15 +227,15 @@ export class NotificationCategorization {
         batchable: true,
         suppressible: true,
         requiresAction: false,
-      }
+      },
     });
 
-    this.categories.set('economic-crisis', {
-      primary: 'economic',
-      subcategory: 'crisis',
+    this.categories.set("economic-crisis", {
+      primary: "economic",
+      subcategory: "crisis",
       urgencyLevel: 5,
-      defaultPriority: 'critical',
-      contextualFactors: ['any_time', 'any_mode'],
+      defaultPriority: "critical",
+      contextualFactors: ["any_time", "any_mode"],
       escalationTriggers: [],
       confidence: 1.0,
       deliveryPreferences: {
@@ -239,44 +243,44 @@ export class NotificationCategorization {
         batchable: false,
         suppressible: false,
         requiresAction: true,
-      }
+      },
     });
 
     // Diplomatic categories
-    this.categories.set('diplomatic-relations', {
-      primary: 'diplomatic',
-      subcategory: 'relations',
+    this.categories.set("diplomatic-relations", {
+      primary: "diplomatic",
+      subcategory: "relations",
       urgencyLevel: 3,
-      defaultPriority: 'medium',
-      contextualFactors: ['executive_mode', 'diplomatic_dashboard'],
+      defaultPriority: "medium",
+      contextualFactors: ["executive_mode", "diplomatic_dashboard"],
       escalationTriggers: [
         {
-          condition: 'relations_drop > 20%',
-          priorityUpgrade: 'high',
-          reasoning: 'Significant diplomatic deterioration'
-        }
+          condition: "relations_drop > 20%",
+          priorityUpgrade: "high",
+          reasoning: "Significant diplomatic deterioration",
+        },
       ],
-      confidence: 0.80,
+      confidence: 0.8,
       deliveryPreferences: {
         immediate: false,
         batchable: true,
         suppressible: false,
         requiresAction: false,
-      }
+      },
     });
 
-    this.categories.set('diplomatic-conflict', {
-      primary: 'diplomatic',
-      subcategory: 'conflict',
+    this.categories.set("diplomatic-conflict", {
+      primary: "diplomatic",
+      subcategory: "conflict",
       urgencyLevel: 4,
-      defaultPriority: 'high',
-      contextualFactors: ['any_time', 'executive_mode'],
+      defaultPriority: "high",
+      contextualFactors: ["any_time", "executive_mode"],
       escalationTriggers: [
         {
-          condition: 'conflict_escalation',
-          priorityUpgrade: 'critical',
-          reasoning: 'Diplomatic conflict requires immediate attention'
-        }
+          condition: "conflict_escalation",
+          priorityUpgrade: "critical",
+          reasoning: "Diplomatic conflict requires immediate attention",
+        },
       ],
       confidence: 0.95,
       deliveryPreferences: {
@@ -284,22 +288,22 @@ export class NotificationCategorization {
         batchable: false,
         suppressible: false,
         requiresAction: true,
-      }
+      },
     });
 
     // Governance categories
-    this.categories.set('governance-efficiency', {
-      primary: 'governance',
-      subcategory: 'efficiency',
+    this.categories.set("governance-efficiency", {
+      primary: "governance",
+      subcategory: "efficiency",
       urgencyLevel: 2,
-      defaultPriority: 'medium',
-      contextualFactors: ['business_hours', 'governance_dashboard'],
+      defaultPriority: "medium",
+      contextualFactors: ["business_hours", "governance_dashboard"],
       escalationTriggers: [
         {
-          condition: 'efficiency_drop > 15%',
-          priorityUpgrade: 'high',
-          reasoning: 'Government efficiency decline'
-        }
+          condition: "efficiency_drop > 15%",
+          priorityUpgrade: "high",
+          reasoning: "Government efficiency decline",
+        },
       ],
       confidence: 0.85,
       deliveryPreferences: {
@@ -307,16 +311,16 @@ export class NotificationCategorization {
         batchable: true,
         suppressible: true,
         requiresAction: false,
-      }
+      },
     });
 
     // Crisis categories
-    this.categories.set('crisis-emergency', {
-      primary: 'crisis',
-      subcategory: 'emergency',
+    this.categories.set("crisis-emergency", {
+      primary: "crisis",
+      subcategory: "emergency",
       urgencyLevel: 5,
-      defaultPriority: 'critical',
-      contextualFactors: ['any_time', 'any_mode'],
+      defaultPriority: "critical",
+      contextualFactors: ["any_time", "any_mode"],
       escalationTriggers: [],
       confidence: 1.0,
       deliveryPreferences: {
@@ -324,45 +328,45 @@ export class NotificationCategorization {
         batchable: false,
         suppressible: false,
         requiresAction: true,
-      }
+      },
     });
 
     // Achievement categories
-    this.categories.set('achievement-milestone', {
-      primary: 'achievement',
-      subcategory: 'milestone',
+    this.categories.set("achievement-milestone", {
+      primary: "achievement",
+      subcategory: "milestone",
       urgencyLevel: 1,
-      defaultPriority: 'low',
-      contextualFactors: ['business_hours', 'achievement_context'],
+      defaultPriority: "low",
+      contextualFactors: ["business_hours", "achievement_context"],
       escalationTriggers: [
         {
-          condition: 'major_milestone',
-          priorityUpgrade: 'medium',
-          reasoning: 'Significant achievement milestone reached'
-        }
+          condition: "major_milestone",
+          priorityUpgrade: "medium",
+          reasoning: "Significant achievement milestone reached",
+        },
       ],
-      confidence: 0.90,
+      confidence: 0.9,
       deliveryPreferences: {
         immediate: false,
         batchable: true,
         suppressible: true,
         requiresAction: false,
-      }
+      },
     });
 
     // System categories
-    this.categories.set('system-error', {
-      primary: 'system',
-      subcategory: 'error',
+    this.categories.set("system-error", {
+      primary: "system",
+      subcategory: "error",
       urgencyLevel: 4,
-      defaultPriority: 'high',
-      contextualFactors: ['admin_mode', 'technical_context'],
+      defaultPriority: "high",
+      contextualFactors: ["admin_mode", "technical_context"],
       escalationTriggers: [
         {
-          condition: 'critical_system_failure',
-          priorityUpgrade: 'critical',
-          reasoning: 'System stability at risk'
-        }
+          condition: "critical_system_failure",
+          priorityUpgrade: "critical",
+          reasoning: "System stability at risk",
+        },
       ],
       confidence: 0.95,
       deliveryPreferences: {
@@ -370,82 +374,80 @@ export class NotificationCategorization {
         batchable: false,
         suppressible: false,
         requiresAction: true,
-      }
+      },
     });
   }
 
   private initializePatterns() {
     // Economic patterns
     this.patterns.push({
-      keywords: ['gdp', 'growth', 'economy', 'market', 'trade', 'revenue'],
-      context: ['economic_data', 'financial_metrics'],
+      keywords: ["gdp", "growth", "economy", "market", "trade", "revenue"],
+      context: ["economic_data", "financial_metrics"],
       priority: 8,
-      category: this.categories.get('economic-growth')!,
+      category: this.categories.get("economic-growth")!,
     });
 
     this.patterns.push({
-      keywords: ['crisis', 'crash', 'recession', 'collapse', 'emergency', 'critical'],
-      context: ['economic_data'],
+      keywords: ["crisis", "crash", "recession", "collapse", "emergency", "critical"],
+      context: ["economic_data"],
       priority: 10,
-      category: this.categories.get('economic-crisis')!,
+      category: this.categories.get("economic-crisis")!,
     });
 
     // Diplomatic patterns
     this.patterns.push({
-      keywords: ['diplomatic', 'relations', 'treaty', 'alliance', 'ambassador'],
-      context: ['diplomatic_context'],
+      keywords: ["diplomatic", "relations", "treaty", "alliance", "ambassador"],
+      context: ["diplomatic_context"],
       priority: 7,
-      category: this.categories.get('diplomatic-relations')!,
+      category: this.categories.get("diplomatic-relations")!,
     });
 
     this.patterns.push({
-      keywords: ['conflict', 'war', 'sanctions', 'dispute', 'tension'],
-      context: ['diplomatic_context'],
+      keywords: ["conflict", "war", "sanctions", "dispute", "tension"],
+      context: ["diplomatic_context"],
       priority: 9,
-      category: this.categories.get('diplomatic-conflict')!,
+      category: this.categories.get("diplomatic-conflict")!,
     });
 
     // Achievement patterns
     this.patterns.push({
-      keywords: ['achievement', 'milestone', 'award', 'recognition', 'success'],
-      context: ['achievement_context'],
+      keywords: ["achievement", "milestone", "award", "recognition", "success"],
+      context: ["achievement_context"],
       priority: 5,
-      category: this.categories.get('achievement-milestone')!,
+      category: this.categories.get("achievement-milestone")!,
     });
 
     // System patterns
     this.patterns.push({
-      keywords: ['error', 'failure', 'bug', 'crash', 'system', 'technical'],
-      context: ['system_context'],
+      keywords: ["error", "failure", "bug", "crash", "system", "technical"],
+      context: ["system_context"],
       priority: 8,
-      category: this.categories.get('system-error')!,
+      category: this.categories.get("system-error")!,
     });
   }
 
   private initializeContextualRules() {
     // Executive mode boosts certain categories
-    this.contextualRules.set('executive_mode', (context) => 
-      context.isExecutiveMode ? 0.3 : 0
-    );
+    this.contextualRules.set("executive_mode", (context) => (context.isExecutiveMode ? 0.3 : 0));
 
     // Business hours relevance
-    this.contextualRules.set('business_hours', (context) => {
+    this.contextualRules.set("business_hours", (context) => {
       const hour = new Date().getHours();
-      return (hour >= 9 && hour <= 17) ? 0.2 : -0.1;
+      return hour >= 9 && hour <= 17 ? 0.2 : -0.1;
     });
 
     // Page context relevance
-    this.contextualRules.set('page_relevance', (context) => {
-      if (context.currentRoute.includes('dashboard')) return 0.2;
-      if (context.currentRoute.includes('mycountry')) return 0.15;
-      if (context.currentRoute.includes('admin')) return 0.1;
+    this.contextualRules.set("page_relevance", (context) => {
+      if (context.currentRoute.includes("dashboard")) return 0.2;
+      if (context.currentRoute.includes("mycountry")) return 0.15;
+      if (context.currentRoute.includes("admin")) return 0.1;
       return 0;
     });
   }
 
   private extractContentFeatures(notification: UnifiedNotification): {
     keywords: string[];
-    sentiment: 'positive' | 'negative' | 'neutral';
+    sentiment: "positive" | "negative" | "neutral";
     urgencyIndicators: string[];
     actionWords: string[];
   } {
@@ -453,25 +455,29 @@ export class NotificationCategorization {
     const words = text.split(/\s+/);
 
     // Extract keywords
-    const keywords = words.filter(word => word.length > 3);
+    const keywords = words.filter((word) => word.length > 3);
 
     // Simple sentiment analysis
-    const positiveWords = ['success', 'achievement', 'growth', 'improvement', 'positive'];
-    const negativeWords = ['crisis', 'failure', 'decline', 'error', 'problem', 'critical'];
-    
-    const positiveCount = positiveWords.filter(word => text.includes(word)).length;
-    const negativeCount = negativeWords.filter(word => text.includes(word)).length;
-    
-    const sentiment = positiveCount > negativeCount ? 'positive' :
-                     negativeCount > positiveCount ? 'negative' : 'neutral';
+    const positiveWords = ["success", "achievement", "growth", "improvement", "positive"];
+    const negativeWords = ["crisis", "failure", "decline", "error", "problem", "critical"];
+
+    const positiveCount = positiveWords.filter((word) => text.includes(word)).length;
+    const negativeCount = negativeWords.filter((word) => text.includes(word)).length;
+
+    const sentiment =
+      positiveCount > negativeCount
+        ? "positive"
+        : negativeCount > positiveCount
+          ? "negative"
+          : "neutral";
 
     // Urgency indicators
-    const urgencyWords = ['urgent', 'immediate', 'critical', 'emergency', 'asap'];
-    const urgencyIndicators = urgencyWords.filter(word => text.includes(word));
+    const urgencyWords = ["urgent", "immediate", "critical", "emergency", "asap"];
+    const urgencyIndicators = urgencyWords.filter((word) => text.includes(word));
 
     // Action words
-    const actionWords = ['requires', 'needs', 'must', 'should', 'action', 'respond'];
-    const foundActionWords = actionWords.filter(word => text.includes(word));
+    const actionWords = ["requires", "needs", "must", "should", "action", "respond"];
+    const foundActionWords = actionWords.filter((word) => text.includes(word));
 
     return {
       keywords,
@@ -521,7 +527,7 @@ export class NotificationCategorization {
     matches: Array<{ category: EnhancedCategory; score: number; matches: string[] }>,
     context: NotificationContext
   ): Promise<Array<{ category: EnhancedCategory; score: number; matches: string[] }>> {
-    return matches.map(match => {
+    return matches.map((match) => {
       let contextualBoost = 0;
 
       // Apply contextual rules
@@ -542,11 +548,13 @@ export class NotificationCategorization {
   private selectBestCategory(
     matches: Array<{ category: EnhancedCategory; score: number; matches: string[] }>
   ): { category: EnhancedCategory; score: number; matches: string[] } {
-    return matches[0] || {
-      category: this.categories.get('system-error')!, // Default fallback
-      score: 0.1,
-      matches: [],
-    };
+    return (
+      matches[0] || {
+        category: this.categories.get("system-error")!, // Default fallback
+        score: 0.1,
+        matches: [],
+      }
+    );
   }
 
   private checkEscalationConditions(
@@ -571,13 +579,13 @@ export class NotificationCategorization {
     context: NotificationContext
   ): boolean {
     // Simple condition evaluation - would be more sophisticated in practice
-    if (condition.includes('growth_rate_drop') && notification.title.includes('decline')) {
+    if (condition.includes("growth_rate_drop") && notification.title.includes("decline")) {
       return true;
     }
-    if (condition.includes('relations_drop') && notification.message.includes('deteriorat')) {
+    if (condition.includes("relations_drop") && notification.message.includes("deteriorat")) {
       return true;
     }
-    if (condition === 'major_milestone' && notification.priority === 'high') {
+    if (condition === "major_milestone" && notification.priority === "high") {
       return true;
     }
     return false;
@@ -604,7 +612,7 @@ export class NotificationCategorization {
   ): number {
     let urgency = 0;
 
-    if (context.isExecutiveMode && category.contextualFactors.includes('executive_mode')) {
+    if (context.isExecutiveMode && category.contextualFactors.includes("executive_mode")) {
       urgency += 1;
     }
 
@@ -616,10 +624,10 @@ export class NotificationCategorization {
   }
 
   private calculateContentUrgency(notification: UnifiedNotification): number {
-    const urgentKeywords = ['critical', 'urgent', 'emergency', 'immediate'];
+    const urgentKeywords = ["critical", "urgent", "emergency", "immediate"];
     const text = `${notification.title} ${notification.message}`.toLowerCase();
-    
-    return urgentKeywords.filter(keyword => text.includes(keyword)).length;
+
+    return urgentKeywords.filter((keyword) => text.includes(keyword)).length;
   }
 
   private generateCategoringReasoning(
@@ -629,18 +637,20 @@ export class NotificationCategorization {
   ): string[] {
     const reasoning: string[] = [];
 
-    reasoning.push(`Categorized as ${match.category.primary}/${match.category.subcategory} with ${(match.score * 100).toFixed(0)}% confidence`);
+    reasoning.push(
+      `Categorized as ${match.category.primary}/${match.category.subcategory} with ${(match.score * 100).toFixed(0)}% confidence`
+    );
 
     if (match.matches.length > 0) {
-      reasoning.push(`Keyword matches: ${match.matches.join(', ')}`);
+      reasoning.push(`Keyword matches: ${match.matches.join(", ")}`);
     }
 
     if (features.urgencyIndicators.length > 0) {
-      reasoning.push(`Urgency indicators detected: ${features.urgencyIndicators.join(', ')}`);
+      reasoning.push(`Urgency indicators detected: ${features.urgencyIndicators.join(", ")}`);
     }
 
     if (context.isExecutiveMode) {
-      reasoning.push('Executive mode context considered');
+      reasoning.push("Executive mode context considered");
     }
 
     return reasoning;
@@ -654,17 +664,17 @@ export class NotificationCategorization {
     const suggestions: string[] = [];
 
     if (match.category.deliveryPreferences.requiresAction) {
-      suggestions.push('Immediate action required');
+      suggestions.push("Immediate action required");
     }
 
     if (match.category.deliveryPreferences.immediate) {
-      suggestions.push('Deliver immediately');
+      suggestions.push("Deliver immediately");
     } else if (match.category.deliveryPreferences.batchable) {
-      suggestions.push('Can be batched with similar notifications');
+      suggestions.push("Can be batched with similar notifications");
     }
 
     if (!match.category.deliveryPreferences.suppressible) {
-      suggestions.push('Do not suppress this notification');
+      suggestions.push("Do not suppress this notification");
     }
 
     return suggestions;
@@ -680,9 +690,9 @@ export const categorizeNotification = (
 ): Promise<ClassificationResult> => {
   // Create basic context if not provided
   const defaultContext: NotificationContext = {
-    userId: '',
+    userId: "",
     isExecutiveMode: false,
-    currentRoute: '',
+    currentRoute: "",
     ixTime: Date.now(),
     realTime: Date.now(),
     timeMultiplier: 2,
@@ -692,26 +702,26 @@ export const categorizeNotification = (
     sessionDuration: 0,
     isUserActive: true,
     lastInteraction: Date.now(),
-    deviceType: 'desktop',
-    screenSize: 'large',
-    networkQuality: 'high',
+    deviceType: "desktop",
+    screenSize: "large",
+    networkQuality: "high",
     batteryLevel: 100,
-    userPreferences: { 
+    userPreferences: {
       preferredMethods: [],
-      quietHours: { start: '22:00', end: '07:00' },
+      quietHours: { start: "22:00", end: "07:00" },
       batchingEnabled: false,
       maxNotificationsPerHour: 10,
       categories: {} as any,
-      executiveModeFilters: ['economic', 'governance', 'security', 'crisis'],
-      publicModeFilters: ['achievement', 'opportunity', 'system'],
+      executiveModeFilters: ["economic", "governance", "security", "crisis"],
+      publicModeFilters: ["achievement", "opportunity", "system"],
       allowMLPersonalization: true,
-      trackEngagement: true
+      trackEngagement: true,
     },
     historicalEngagement: [],
     interactionHistory: [],
     contextualFactors: {},
     urgencyFactors: [],
-    contextualRelevance: 0.5
+    contextualRelevance: 0.5,
   };
   return categorizationInstance.categorizeNotification(notification, defaultContext);
 };
@@ -722,10 +732,10 @@ export const calculateDynamicUrgency = (
 ): number => {
   // Add default category - will be determined during actual categorization
   const defaultCategory: EnhancedCategory = {
-    primary: 'system',
-    subcategory: 'default',
+    primary: "system",
+    subcategory: "default",
     urgencyLevel: 2,
-    defaultPriority: 'medium',
+    defaultPriority: "medium",
     contextualFactors: [],
     escalationTriggers: [],
     confidence: 0.5,
@@ -734,7 +744,7 @@ export const calculateDynamicUrgency = (
       batchable: true,
       suppressible: true,
       requiresAction: false,
-    }
+    },
   };
   return categorizationInstance.calculateDynamicUrgency(notification, context, defaultCategory);
 };

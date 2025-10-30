@@ -5,16 +5,16 @@
 
 "use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { HealthRing } from '~/components/ui/health-ring';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
-import { 
-  TrendingUp, 
-  Users, 
-  DollarSign, 
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { HealthRing } from "~/components/ui/health-ring";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import {
+  TrendingUp,
+  Users,
+  DollarSign,
   Globe,
   Activity,
   BarChart3,
@@ -22,11 +22,11 @@ import {
   Target,
   Crown,
   ChevronDown,
-  ChevronUp
-} from 'lucide-react';
-import { formatCurrency, formatPopulation } from '~/lib/chart-utils';
-import { getFlagColors } from '~/lib/flag-color-extractor';
-import { cn } from '~/lib/utils';
+  ChevronUp,
+} from "lucide-react";
+import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import { getFlagColors } from "~/lib/flag-color-extractor";
+import { cn } from "~/lib/utils";
 
 interface CountryData {
   name: string;
@@ -59,93 +59,107 @@ interface PublicVitalityRingsProps {
 export const PublicVitalityRings: React.FC<PublicVitalityRingsProps> = ({
   country,
   activityRingsData,
-  className
+  className,
 }) => {
   const [showAllMetrics, setShowAllMetrics] = useState(false);
   const flagColors = getFlagColors(country.name);
 
   // Calculate comprehensive vitality metrics
   const economicHealth = Math.min(100, (country.currentGdpPerCapita / 50000) * 100);
-  const populationGrowth = Math.min(100, Math.max(0, (((country.populationGrowthRate ?? 0) * 100) + 2) * 25));
-  const developmentIndex = country.economicTier === "Extravagant" ? 100 : 
-                          country.economicTier === "Very Strong" ? 85 :
-                          country.economicTier === "Strong" ? 70 :
-                          country.economicTier === "Healthy" ? 55 :
-                          country.economicTier === "Developed" ? 40 :
-                          country.economicTier === "Developing" ? 25 : 10;
+  const populationGrowth = Math.min(
+    100,
+    Math.max(0, ((country.populationGrowthRate ?? 0) * 100 + 2) * 25)
+  );
+  const developmentIndex =
+    country.economicTier === "Extravagant"
+      ? 100
+      : country.economicTier === "Very Strong"
+        ? 85
+        : country.economicTier === "Strong"
+          ? 70
+          : country.economicTier === "Healthy"
+            ? 55
+            : country.economicTier === "Developed"
+              ? 40
+              : country.economicTier === "Developing"
+                ? 25
+                : 10;
 
   // Calculate additional metrics
-  const economicGrowth = Math.min(100, Math.max(0, ((country.adjustedGdpGrowth ?? 0) * 100 + 3) * 20));
+  const economicGrowth = Math.min(
+    100,
+    Math.max(0, ((country.adjustedGdpGrowth ?? 0) * 100 + 3) * 20)
+  );
   const infrastructureIndex = developmentIndex; // Using development as proxy for infrastructure
   const globalRelevance = Math.min(100, Math.log10(country.currentTotalGdp / 1000000000 + 1) * 25);
 
   const vitalityMetrics = [
     {
-      id: 'economic-power',
-      label: 'Economic Power',
+      id: "economic-power",
+      label: "Economic Power",
       icon: DollarSign,
       value: economicHealth,
       color: flagColors.primary,
-      description: 'GDP per capita and economic strength',
+      description: "GDP per capita and economic strength",
       details: formatCurrency(country.currentGdpPerCapita),
-      subtitle: 'Per Capita',
-      category: 'Economy'
+      subtitle: "Per Capita",
+      category: "Economy",
     },
     {
-      id: 'population-dynamics',
-      label: 'Demographics',
+      id: "population-dynamics",
+      label: "Demographics",
       icon: Users,
       value: populationGrowth,
       color: flagColors.secondary,
-      description: 'Population growth and demographic trends',
+      description: "Population growth and demographic trends",
       details: formatPopulation(country.currentPopulation),
-      subtitle: 'Total Population',
-      category: 'Society'
+      subtitle: "Total Population",
+      category: "Society",
     },
     {
-      id: 'development-level',
-      label: 'Development',
+      id: "development-level",
+      label: "Development",
       icon: TrendingUp,
       value: developmentIndex,
       color: flagColors.accent,
-      description: 'Overall development and infrastructure quality',
+      description: "Overall development and infrastructure quality",
       details: country.economicTier,
-      subtitle: 'Economic Tier',
-      category: 'Progress'
+      subtitle: "Economic Tier",
+      category: "Progress",
     },
     {
-      id: 'economic-growth',
-      label: 'Growth Rate',
+      id: "economic-growth",
+      label: "Growth Rate",
       icon: BarChart3,
       value: economicGrowth,
-      color: '#10b981',
-      description: 'Economic expansion and growth momentum',
+      color: "#10b981",
+      description: "Economic expansion and growth momentum",
       details: `${((country.adjustedGdpGrowth ?? 0) * 100).toFixed(2)}%`,
-      subtitle: 'Annual Growth',
-      category: 'Economy'
+      subtitle: "Annual Growth",
+      category: "Economy",
     },
     {
-      id: 'infrastructure',
-      label: 'Infrastructure',
+      id: "infrastructure",
+      label: "Infrastructure",
       icon: Globe,
       value: infrastructureIndex,
-      color: '#8b5cf6',
-      description: 'Infrastructure development and modernization',
-      details: `Tier ${developmentIndex > 90 ? 'I' : developmentIndex > 70 ? 'II' : developmentIndex > 50 ? 'III' : 'IV'}`,
-      subtitle: 'Development Level',
-      category: 'Infrastructure'
+      color: "#8b5cf6",
+      description: "Infrastructure development and modernization",
+      details: `Tier ${developmentIndex > 90 ? "I" : developmentIndex > 70 ? "II" : developmentIndex > 50 ? "III" : "IV"}`,
+      subtitle: "Development Level",
+      category: "Infrastructure",
     },
     {
-      id: 'global-presence',
-      label: 'Global Impact',
+      id: "global-presence",
+      label: "Global Impact",
       icon: Activity,
       value: globalRelevance,
-      color: '#f59e0b',
-      description: 'Economic influence and global relevance',
+      color: "#f59e0b",
+      description: "Economic influence and global relevance",
       details: formatCurrency(country.currentTotalGdp),
-      subtitle: 'Total GDP',
-      category: 'Influence'
-    }
+      subtitle: "Total GDP",
+      category: "Influence",
+    },
   ];
 
   // Performance indicators
@@ -158,11 +172,11 @@ export const PublicVitalityRings: React.FC<PublicVitalityRingsProps> = ({
   };
 
   const getPerformanceLevel = (value: number): { label: string; color: string } => {
-    if (value > 80) return { label: 'Excellent', color: 'text-green-500' };
-    if (value > 60) return { label: 'Strong', color: 'text-blue-500' };
-    if (value > 40) return { label: 'Moderate', color: 'text-yellow-500' };
-    if (value > 20) return { label: 'Developing', color: 'text-orange-500' };
-    return { label: 'Emerging', color: 'text-red-500' };
+    if (value > 80) return { label: "Excellent", color: "text-green-500" };
+    if (value > 60) return { label: "Strong", color: "text-blue-500" };
+    if (value > 40) return { label: "Moderate", color: "text-yellow-500" };
+    if (value > 20) return { label: "Developing", color: "text-orange-500" };
+    return { label: "Emerging", color: "text-red-500" };
   };
 
   return (
@@ -179,47 +193,62 @@ export const PublicVitalityRings: React.FC<PublicVitalityRingsProps> = ({
       <CardContent>
         {/* Overall Vitality Score */}
         <div className="mb-6 text-center">
-          <div className="flex items-center justify-center mb-3">
+          <div className="mb-3 flex items-center justify-center">
             <HealthRing
-              value={activityRingsData ?
-                Math.round((activityRingsData.economicVitality + activityRingsData.populationWellbeing + activityRingsData.diplomaticStanding + activityRingsData.governmentalEfficiency) / 4) :
-                Math.round((economicHealth + populationGrowth + developmentIndex) / 3)
+              value={
+                activityRingsData
+                  ? Math.round(
+                      (activityRingsData.economicVitality +
+                        activityRingsData.populationWellbeing +
+                        activityRingsData.diplomaticStanding +
+                        activityRingsData.governmentalEfficiency) /
+                        4
+                    )
+                  : Math.round((economicHealth + populationGrowth + developmentIndex) / 3)
               }
               size={120}
               color={flagColors.primary}
               label="Overall Vitality"
-              tooltip={activityRingsData ?
-                "Live calculation based on economic vitality, population wellbeing, diplomatic standing, and governmental efficiency" :
-                "Composite score based on economic, demographic, and development metrics"
+              tooltip={
+                activityRingsData
+                  ? "Live calculation based on economic vitality, population wellbeing, diplomatic standing, and governmental efficiency"
+                  : "Composite score based on economic, demographic, and development metrics"
               }
             />
           </div>
-          <h3 className="text-2xl font-bold mb-1" style={{ color: flagColors.primary }}>
-            {activityRingsData ?
-              Math.round((activityRingsData.economicVitality + activityRingsData.populationWellbeing + activityRingsData.diplomaticStanding + activityRingsData.governmentalEfficiency) / 4) :
-              Math.round((economicHealth + populationGrowth + developmentIndex) / 3)
-            }%
+          <h3 className="mb-1 text-2xl font-bold" style={{ color: flagColors.primary }}>
+            {activityRingsData
+              ? Math.round(
+                  (activityRingsData.economicVitality +
+                    activityRingsData.populationWellbeing +
+                    activityRingsData.diplomaticStanding +
+                    activityRingsData.governmentalEfficiency) /
+                    4
+                )
+              : Math.round((economicHealth + populationGrowth + developmentIndex) / 3)}
+            %
           </h3>
-          <p className="text-sm text-muted-foreground">
-            {activityRingsData ? "National Vitality Index (Live Data)" : "Overall National Vitality"}
+          <p className="text-muted-foreground text-sm">
+            {activityRingsData
+              ? "National Vitality Index (Live Data)"
+              : "Overall National Vitality"}
           </p>
         </div>
 
-
         {/* Quick Stats Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-border">
+        <div className="border-border grid grid-cols-2 gap-4 border-t pt-4 md:grid-cols-4">
           <div className="text-center">
             <div className="text-lg font-bold" style={{ color: flagColors.primary }}>
-              {country.populationTier?.replace('Tier ', '') || '1'}
+              {country.populationTier?.replace("Tier ", "") || "1"}
             </div>
-            <div className="text-xs text-muted-foreground">Population Tier</div>
+            <div className="text-muted-foreground text-xs">Population Tier</div>
           </div>
           {country.populationDensity && (
             <div className="text-center">
               <div className="text-lg font-bold" style={{ color: flagColors.secondary }}>
                 {country.populationDensity.toFixed(0)}
               </div>
-              <div className="text-xs text-muted-foreground">People/km²</div>
+              <div className="text-muted-foreground text-xs">People/km²</div>
             </div>
           )}
           {country.landArea && (
@@ -227,20 +256,20 @@ export const PublicVitalityRings: React.FC<PublicVitalityRingsProps> = ({
               <div className="text-lg font-bold" style={{ color: flagColors.accent }}>
                 {(country.landArea / 1000).toFixed(0)}K
               </div>
-              <div className="text-xs text-muted-foreground">km² Area</div>
+              <div className="text-muted-foreground text-xs">km² Area</div>
             </div>
           )}
           <div className="text-center">
             <div className="text-lg font-bold text-green-500">
               {((country.adjustedGdpGrowth ?? 0) * 100).toFixed(1)}%
             </div>
-            <div className="text-xs text-muted-foreground">GDP Growth</div>
+            <div className="text-muted-foreground text-xs">GDP Growth</div>
           </div>
         </div>
 
         {/* Update Information */}
-        <div className="mt-4 pt-4 border-t border-border text-center">
-          <p className="text-xs text-muted-foreground">
+        <div className="border-border mt-4 border-t pt-4 text-center">
+          <p className="text-muted-foreground text-xs">
             Vitality metrics updated based on latest economic and demographic data
           </p>
         </div>

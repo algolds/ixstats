@@ -7,120 +7,122 @@
  * - Complete data continuity from start to finish
  */
 
-import { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
-import { EconomicComponentType } from '~/lib/atomic-economic-data';
-import type { GovernmentBuilderState } from '~/types/government';
-import type { EconomyBuilderState } from '~/types/economy-builder';
-import type { EconomicInputs } from '../lib/economy-data-service';
-import type { TaxBuilderState } from '~/components/tax-system/TaxBuilder';
+import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { EconomicComponentType } from "~/lib/atomic-economic-data";
+import type { GovernmentBuilderState } from "~/types/government";
+import type { EconomyBuilderState } from "~/types/economy-builder";
+import type { EconomicInputs } from "../lib/economy-data-service";
+import type { TaxBuilderState } from "~/components/tax-system/TaxBuilder";
 
 /**
  * Government → Economy Component Mapping
  * Maps government atomic components to their corresponding economic components
  */
-export const GOVERNMENT_TO_ECONOMY_MAPPING: Partial<Record<ComponentType, EconomicComponentType[]>> = {
+export const GOVERNMENT_TO_ECONOMY_MAPPING: Partial<
+  Record<ComponentType, EconomicComponentType[]>
+> = {
   // Economic System Components (Direct Mapping)
   [ComponentType.FREE_MARKET_SYSTEM]: [
     EconomicComponentType.FREE_MARKET_SYSTEM,
     EconomicComponentType.FLEXIBLE_LABOR,
-    EconomicComponentType.FREE_TRADE
+    EconomicComponentType.FREE_TRADE,
   ],
   [ComponentType.PLANNED_ECONOMY]: [
     EconomicComponentType.PLANNED_ECONOMY,
     EconomicComponentType.PROTECTED_WORKERS,
-    EconomicComponentType.IMPORT_SUBSTITUTION
+    EconomicComponentType.IMPORT_SUBSTITUTION,
   ],
   [ComponentType.MIXED_ECONOMY]: [
     EconomicComponentType.MIXED_ECONOMY,
-    EconomicComponentType.BALANCED_TRADE
+    EconomicComponentType.BALANCED_TRADE,
   ],
   [ComponentType.SOCIAL_MARKET_ECONOMY]: [
     EconomicComponentType.SOCIAL_MARKET_ECONOMY,
     EconomicComponentType.PROTECTED_WORKERS,
-    EconomicComponentType.UNION_BASED
+    EconomicComponentType.UNION_BASED,
   ],
   [ComponentType.STATE_CAPITALISM]: [
     EconomicComponentType.STATE_CAPITALISM,
-    EconomicComponentType.EXPORT_ORIENTED
+    EconomicComponentType.EXPORT_ORIENTED,
   ],
   [ComponentType.RESOURCE_BASED_ECONOMY]: [
     EconomicComponentType.RESOURCE_BASED_ECONOMY,
-    EconomicComponentType.EXTRACTION_FOCUSED
+    EconomicComponentType.EXTRACTION_FOCUSED,
   ],
   [ComponentType.KNOWLEDGE_ECONOMY]: [
     EconomicComponentType.KNOWLEDGE_ECONOMY,
     EconomicComponentType.EDUCATION_FIRST,
     EconomicComponentType.RD_INVESTMENT,
-    EconomicComponentType.UNIVERSITY_PARTNERSHIPS
+    EconomicComponentType.UNIVERSITY_PARTNERSHIPS,
   ],
 
   // Power Distribution → Economic Effects
   [ComponentType.CENTRALIZED_POWER]: [
     EconomicComponentType.STATE_CAPITALISM,
-    EconomicComponentType.PLANNED_ECONOMY
+    EconomicComponentType.PLANNED_ECONOMY,
   ],
   [ComponentType.FEDERAL_SYSTEM]: [
     EconomicComponentType.MIXED_ECONOMY,
-    EconomicComponentType.BALANCED_TRADE
+    EconomicComponentType.BALANCED_TRADE,
   ],
   [ComponentType.CONFEDERATE_SYSTEM]: [
     EconomicComponentType.FREE_MARKET_SYSTEM,
-    EconomicComponentType.FREE_TRADE
+    EconomicComponentType.FREE_TRADE,
   ],
 
   // Decision Process → Labor & Innovation
   [ComponentType.DEMOCRATIC_PROCESS]: [
     EconomicComponentType.SOCIAL_MARKET_ECONOMY,
-    EconomicComponentType.PROTECTED_WORKERS
+    EconomicComponentType.PROTECTED_WORKERS,
   ],
   [ComponentType.TECHNOCRATIC_PROCESS]: [
     EconomicComponentType.KNOWLEDGE_ECONOMY,
     EconomicComponentType.INNOVATION_ECONOMY,
-    EconomicComponentType.MERIT_BASED
+    EconomicComponentType.MERIT_BASED,
   ],
   [ComponentType.AUTOCRATIC_PROCESS]: [
     EconomicComponentType.STATE_CAPITALISM,
-    EconomicComponentType.EXPORT_ORIENTED
+    EconomicComponentType.EXPORT_ORIENTED,
   ],
 
   // Economic Incentives → Market Structure
   [ComponentType.ECONOMIC_INCENTIVES]: [
     EconomicComponentType.FREE_MARKET_SYSTEM,
     EconomicComponentType.FLEXIBLE_LABOR,
-    EconomicComponentType.GIG_ECONOMY
+    EconomicComponentType.GIG_ECONOMY,
   ],
 
   // Professional Bureaucracy → Service Economy
   [ComponentType.PROFESSIONAL_BUREAUCRACY]: [
     EconomicComponentType.PROFESSIONAL_SERVICES,
-    EconomicComponentType.SERVICE_BASED
+    EconomicComponentType.SERVICE_BASED,
   ],
 
   // Digital Government → Tech Focus
   [ComponentType.DIGITAL_GOVERNMENT]: [
     EconomicComponentType.TECHNOLOGY_FOCUSED,
     EconomicComponentType.INNOVATION_ECONOMY,
-    EconomicComponentType.STARTUP_ECOSYSTEM
+    EconomicComponentType.STARTUP_ECOSYSTEM,
   ],
   [ComponentType.E_GOVERNANCE]: [
     EconomicComponentType.TECHNOLOGY_FOCUSED,
-    EconomicComponentType.INNOVATION_ECONOMY
+    EconomicComponentType.INNOVATION_ECONOMY,
   ],
 
   // Performance Management → Merit-Based Systems
   [ComponentType.PERFORMANCE_MANAGEMENT]: [
     EconomicComponentType.MERIT_BASED,
-    EconomicComponentType.SKILL_BASED
+    EconomicComponentType.SKILL_BASED,
   ],
   [ComponentType.MERIT_BASED_SYSTEM]: [
     EconomicComponentType.MERIT_BASED,
-    EconomicComponentType.EDUCATION_FIRST
+    EconomicComponentType.EDUCATION_FIRST,
   ],
 
   // Strategic Planning → Innovation
   [ComponentType.STRATEGIC_PLANNING]: [
     EconomicComponentType.RD_INVESTMENT,
-    EconomicComponentType.TECH_TRANSFER
+    EconomicComponentType.TECH_TRANSFER,
   ],
 
   // Environmental Protection → Green Economy
@@ -128,65 +130,63 @@ export const GOVERNMENT_TO_ECONOMY_MAPPING: Partial<Record<ComponentType, Econom
     EconomicComponentType.SUSTAINABLE_DEVELOPMENT,
     EconomicComponentType.RENEWABLE_ENERGY,
     EconomicComponentType.GREEN_TECHNOLOGY,
-    EconomicComponentType.CIRCULAR_ECONOMY
+    EconomicComponentType.CIRCULAR_ECONOMY,
   ],
 
   // Social Programs → Labor Protection
   [ComponentType.WELFARE_STATE]: [
     EconomicComponentType.SOCIAL_MARKET_ECONOMY,
     EconomicComponentType.PROTECTED_WORKERS,
-    EconomicComponentType.UNION_BASED
+    EconomicComponentType.UNION_BASED,
   ],
-  [ComponentType.UNIVERSAL_HEALTHCARE]: [
-    EconomicComponentType.SOCIAL_MARKET_ECONOMY
-  ],
+  [ComponentType.UNIVERSAL_HEALTHCARE]: [EconomicComponentType.SOCIAL_MARKET_ECONOMY],
 
   // Social Policy Components
   [ComponentType.COMPREHENSIVE_WELFARE]: [
     EconomicComponentType.SOCIAL_MARKET_ECONOMY,
     EconomicComponentType.PROTECTED_WORKERS,
-    EconomicComponentType.HEALTHCARE_FOCUSED
+    EconomicComponentType.HEALTHCARE_FOCUSED,
   ],
 
   // Additional Government Systems
   [ComponentType.MINIMAL_GOVERNMENT]: [
     EconomicComponentType.FREE_MARKET_SYSTEM,
-    EconomicComponentType.FLEXIBLE_LABOR
+    EconomicComponentType.FLEXIBLE_LABOR,
   ],
   [ComponentType.PRIVATE_SECTOR_LEADERSHIP]: [
     EconomicComponentType.FREE_MARKET_SYSTEM,
-    EconomicComponentType.STARTUP_ECOSYSTEM
+    EconomicComponentType.STARTUP_ECOSYSTEM,
   ],
   [ComponentType.SOCIAL_DEMOCRACY]: [
     EconomicComponentType.SOCIAL_MARKET_ECONOMY,
     EconomicComponentType.PROTECTED_WORKERS,
-    EconomicComponentType.UNION_BASED
+    EconomicComponentType.UNION_BASED,
   ],
   [ComponentType.PUBLIC_SECTOR_LEADERSHIP]: [
     EconomicComponentType.STATE_CAPITALISM,
-    EconomicComponentType.MIXED_ECONOMY
+    EconomicComponentType.MIXED_ECONOMY,
   ],
   [ComponentType.ENVIRONMENTAL_FOCUS]: [
     EconomicComponentType.SUSTAINABLE_DEVELOPMENT,
     EconomicComponentType.RENEWABLE_ENERGY,
-    EconomicComponentType.GREEN_TECHNOLOGY
+    EconomicComponentType.GREEN_TECHNOLOGY,
   ],
   [ComponentType.ECONOMIC_PLANNING]: [
     EconomicComponentType.PLANNED_ECONOMY,
-    EconomicComponentType.STATE_CAPITALISM
+    EconomicComponentType.STATE_CAPITALISM,
   ],
   [ComponentType.DEVELOPMENTAL_STATE]: [
     EconomicComponentType.STATE_CAPITALISM,
     EconomicComponentType.EXPORT_ORIENTED,
-    EconomicComponentType.MANUFACTURING_LED
+    EconomicComponentType.MANUFACTURING_LED,
   ],
   [ComponentType.MERITOCRATIC_SYSTEM]: [
     EconomicComponentType.MERIT_BASED,
-    EconomicComponentType.EDUCATION_FIRST
+    EconomicComponentType.EDUCATION_FIRST,
   ],
   [ComponentType.REGIONAL_DEVELOPMENT]: [
     EconomicComponentType.BALANCED_TRADE,
-    EconomicComponentType.DOMESTIC_FOCUSED
+    EconomicComponentType.DOMESTIC_FOCUSED,
   ],
 
   // Default mappings for components without specific economic implications
@@ -241,7 +241,7 @@ export const GOVERNMENT_TO_ECONOMY_MAPPING: Partial<Record<ComponentType, Econom
   [ComponentType.RECOVERY_PLANNING]: [],
   [ComponentType.RESILIENCE_BUILDING]: [],
   [ComponentType.RISK_MANAGEMENT]: [],
-  [ComponentType.REGIONAL_INTEGRATION]: []
+  [ComponentType.REGIONAL_INTEGRATION]: [],
 };
 
 export interface UnifiedBuilderState {
@@ -282,30 +282,30 @@ export class UnifiedBuilderIntegrationService {
   constructor() {
     this.state = {
       nationalIdentity: {
-        countryName: '',
-        capital: '',
-        currency: '',
-        language: ''
+        countryName: "",
+        capital: "",
+        currency: "",
+        language: "",
       },
       government: {
         components: [],
-        builder: null
+        builder: null,
       },
       economy: {
         components: [],
         builder: null,
-        inputs: null
+        inputs: null,
       },
       tax: {
-        builder: null
+        builder: null,
       },
       lastUpdate: Date.now(),
       syncStatus: {
         nationalIdentity: false,
         government: false,
         economy: false,
-        tax: false
-      }
+        tax: false,
+      },
     };
   }
 
@@ -332,10 +332,10 @@ export class UnifiedBuilderIntegrationService {
   /**
    * Update National Identity and cascade changes
    */
-  updateNationalIdentity(identity: Partial<UnifiedBuilderState['nationalIdentity']>): void {
+  updateNationalIdentity(identity: Partial<UnifiedBuilderState["nationalIdentity"]>): void {
     this.state.nationalIdentity = {
       ...this.state.nationalIdentity,
-      ...identity
+      ...identity,
     };
     this.state.syncStatus.nationalIdentity = true;
     this.state.lastUpdate = Date.now();
@@ -347,7 +347,7 @@ export class UnifiedBuilderIntegrationService {
         countryName: this.state.nationalIdentity.countryName,
         capitalCity: this.state.nationalIdentity.capital,
         currency: this.state.nationalIdentity.currency,
-        officialName: this.state.nationalIdentity.countryName
+        officialName: this.state.nationalIdentity.countryName,
       };
     }
 
@@ -367,7 +367,7 @@ export class UnifiedBuilderIntegrationService {
 
     // Merge with existing economic components (don't replace, add)
     const existingComponents = new Set(this.state.economy.components);
-    suggestedEconomicComponents.forEach(comp => existingComponents.add(comp));
+    suggestedEconomicComponents.forEach((comp) => existingComponents.add(comp));
     this.state.economy.components = Array.from(existingComponents);
 
     this.state.syncStatus.government = true;
@@ -447,13 +447,15 @@ export class UnifiedBuilderIntegrationService {
   /**
    * Map government components to suggested economic components
    */
-  private mapGovernmentToEconomyComponents(govComponents: ComponentType[]): EconomicComponentType[] {
+  private mapGovernmentToEconomyComponents(
+    govComponents: ComponentType[]
+  ): EconomicComponentType[] {
     const suggested = new Set<EconomicComponentType>();
 
-    govComponents.forEach(govComp => {
+    govComponents.forEach((govComp) => {
       const mapping = GOVERNMENT_TO_ECONOMY_MAPPING[govComp];
       if (mapping) {
-        mapping.forEach(econComp => suggested.add(econComp));
+        mapping.forEach((econComp) => suggested.add(econComp));
       }
     });
 
@@ -475,7 +477,7 @@ export class UnifiedBuilderIntegrationService {
       spendingGDPPercent: gdp > 0 ? (totalBudget / gdp) * 100 : 35,
       spendingCategories: this.state.government.builder.departments.map((dept, index) => {
         const allocation = this.state.government.builder!.budgetAllocations.find(
-          a => a.departmentId === index.toString()
+          (a) => a.departmentId === index.toString()
         );
         return {
           category: dept.name,
@@ -483,9 +485,9 @@ export class UnifiedBuilderIntegrationService {
           percent: allocation?.allocatedPercent || 0,
           icon: dept.icon,
           color: dept.color,
-          description: dept.description
+          description: dept.description,
         };
-      })
+      }),
     };
   }
 
@@ -496,13 +498,17 @@ export class UnifiedBuilderIntegrationService {
     if (!this.state.government.builder || !this.state.tax.builder) return;
 
     const totalBudget = this.state.government.builder.structure?.totalBudget || 0;
-    const currentRevenue = this.state.government.builder.revenueSources?.reduce(
-      (sum, r) => sum + (r.revenueAmount || 0), 0
-    ) || 0;
+    const currentRevenue =
+      this.state.government.builder.revenueSources?.reduce(
+        (sum, r) => sum + (r.revenueAmount || 0),
+        0
+      ) || 0;
 
     // Calculate current revenue from tax categories
     const taxRevenue = this.state.tax.builder.categories.reduce(
-      (sum, cat) => sum + ((cat.baseRate || 0) * (this.state.economy.inputs?.coreIndicators.nominalGDP || 0) / 100),
+      (sum, cat) =>
+        sum +
+        ((cat.baseRate || 0) * (this.state.economy.inputs?.coreIndicators.nominalGDP || 0)) / 100,
       0
     );
 
@@ -528,7 +534,7 @@ export class UnifiedBuilderIntegrationService {
         gdp,
         corporateRevenue: gdp * 0.6, // Simplified: 60% of GDP is corporate
         individualIncome: gdp * 0.4, // 40% is individual income
-        consumption: gdp * 0.7 // Total consumption spending
+        consumption: gdp * 0.7, // Total consumption spending
       };
     }
   }
@@ -541,24 +547,26 @@ export class UnifiedBuilderIntegrationService {
 
     // Calculate tax revenue from categories
     const taxRevenue = this.state.tax.builder.categories.reduce(
-      (sum, cat) => sum + ((cat.baseRate || 0) * (this.state.economy.inputs?.coreIndicators.nominalGDP || 0) / 100),
+      (sum, cat) =>
+        sum +
+        ((cat.baseRate || 0) * (this.state.economy.inputs?.coreIndicators.nominalGDP || 0)) / 100,
       0
     );
 
     // Update government revenue sources with tax data
     const taxRevenueSource = this.state.government.builder.revenueSources.find(
-      r => r.name === 'Tax Revenue'
+      (r) => r.name === "Tax Revenue"
     );
 
     if (taxRevenueSource) {
       taxRevenueSource.revenueAmount = taxRevenue;
     } else {
       this.state.government.builder.revenueSources.push({
-        name: 'Tax Revenue',
-        category: 'Direct Tax',
+        name: "Tax Revenue",
+        category: "Direct Tax",
         revenueAmount: taxRevenue,
         revenuePercent: 100,
-        description: 'Revenue from tax system'
+        description: "Revenue from tax system",
       });
     }
   }
@@ -570,13 +578,13 @@ export class UnifiedBuilderIntegrationService {
     if (!this.state.tax.builder || !this.state.economy.inputs) return;
 
     // Update fiscal system with tax rates
-    const avgTaxRate = this.state.tax.builder.categories?.reduce(
-      (sum, cat) => sum + (cat.baseRate || 0), 0
-    ) / (this.state.tax.builder.categories?.length || 1);
+    const avgTaxRate =
+      this.state.tax.builder.categories?.reduce((sum, cat) => sum + (cat.baseRate || 0), 0) /
+      (this.state.tax.builder.categories?.length || 1);
 
     this.state.economy.inputs.fiscalSystem = {
       ...this.state.economy.inputs.fiscalSystem,
-      taxRevenueGDPPercent: avgTaxRate
+      taxRevenueGDPPercent: avgTaxRate,
     };
   }
 
@@ -591,14 +599,14 @@ export class UnifiedBuilderIntegrationService {
    * Check if all builders are synced
    */
   isFullySynced(): boolean {
-    return Object.values(this.state.syncStatus).every(status => status);
+    return Object.values(this.state.syncStatus).every((status) => status);
   }
 
   /**
    * Notify all listeners of state changes
    */
   private notifyListeners(): void {
-    this.listeners.forEach(listener => listener(this.state));
+    this.listeners.forEach((listener) => listener(this.state));
   }
 }
 

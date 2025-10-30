@@ -5,15 +5,15 @@
  * Optimized with React.memo for performance.
  */
 
-'use client';
+"use client";
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
-import { X, Package } from 'lucide-react';
-import { ATOMIC_ECONOMIC_COMPONENTS, type EconomicComponentType } from '~/lib/atomic-economic-data';
-import { formatCurrency } from '~/lib/atomic-economic-utils';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { X, Package } from "lucide-react";
+import { ATOMIC_ECONOMIC_COMPONENTS, type EconomicComponentType } from "~/lib/atomic-economic-data";
+import { formatCurrency } from "~/lib/atomic-economic-utils";
 
 export interface SelectedComponentsListProps {
   selectedComponents: EconomicComponentType[];
@@ -27,20 +27,21 @@ export interface SelectedComponentsListProps {
 function SelectedComponentsListComponent({
   selectedComponents,
   onDeselect,
-  maxComponents = 12
+  maxComponents = 12,
 }: SelectedComponentsListProps) {
   if (selectedComponents.length === 0) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Package className="w-5 h-5" />
+            <Package className="h-5 w-5" />
             Selected Components (0/{maxComponents})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-gray-500 text-center py-8">
-            No components selected. Choose components from the library to build your economic system.
+          <p className="py-8 text-center text-sm text-gray-500">
+            No components selected. Choose components from the library to build your economic
+            system.
           </p>
         </CardContent>
       </Card>
@@ -52,7 +53,7 @@ function SelectedComponentsListComponent({
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span className="flex items-center gap-2">
-            <Package className="w-5 h-5" />
+            <Package className="h-5 w-5" />
             Selected Components ({selectedComponents.length}/{maxComponents})
           </span>
         </CardTitle>
@@ -68,17 +69,15 @@ function SelectedComponentsListComponent({
             return (
               <div
                 key={componentType}
-                className="flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3 transition-colors hover:bg-gray-50"
               >
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className={`p-2 rounded-lg bg-${component.color}-100 shrink-0`}>
-                    <Icon className={`w-4 h-4 text-${component.color}-600`} />
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <div className={`rounded-lg p-2 bg-${component.color}-100 shrink-0`}>
+                    <Icon className={`h-4 w-4 text-${component.color}-600`} />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm truncate">
-                      {component.name}
-                    </h4>
-                    <div className="flex items-center gap-2 mt-1">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="truncate text-sm font-medium">{component.name}</h4>
+                    <div className="mt-1 flex items-center gap-2">
                       <Badge variant="secondary" className="text-xs">
                         {component.category}
                       </Badge>
@@ -92,9 +91,9 @@ function SelectedComponentsListComponent({
                   size="sm"
                   variant="ghost"
                   onClick={() => onDeselect(componentType)}
-                  className="shrink-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="shrink-0 text-red-600 hover:bg-red-50 hover:text-red-700"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
             );

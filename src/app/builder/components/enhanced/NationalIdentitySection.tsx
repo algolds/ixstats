@@ -1,18 +1,28 @@
 "use client";
 
-import React from 'react';
-import { MediaSearchModal } from '~/components/MediaSearchModal';
-import { Flag, Globe, Landmark, Heart, ChevronDown, ChevronUp, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
-import type { EconomicInputs, RealCountryData } from '~/app/builder/lib/economy-data-service';
+import React from "react";
+import { MediaSearchModal } from "~/components/MediaSearchModal";
+import {
+  Flag,
+  Globe,
+  Landmark,
+  Heart,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
+import type { EconomicInputs, RealCountryData } from "~/app/builder/lib/economy-data-service";
 import {
   BasicInfoForm,
   SymbolsUpload,
   GeographyForm,
   CultureForm,
-  IdentityAutocomplete
-} from './national-identity';
-import { useNationalIdentityState } from './national-identity/useNationalIdentityState';
+  IdentityAutocomplete,
+} from "./national-identity";
+import { useNationalIdentityState } from "./national-identity/useNationalIdentityState";
 
 /**
  * Props for the NationalIdentitySection component
@@ -79,7 +89,7 @@ export function NationalIdentitySection({
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
           <p className="text-muted-foreground">Loading national identity data...</p>
         </div>
       </div>
@@ -124,9 +134,9 @@ export function NationalIdentitySection({
   // Helper function to render autosave status
   const renderAutosaveStatus = () => {
     if (!countryId) return null; // Only show in edit mode
-    
+
     const { syncState } = autoSync;
-    
+
     if (syncState.isSyncing) {
       return (
         <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
@@ -135,7 +145,7 @@ export function NationalIdentitySection({
         </div>
       );
     }
-    
+
     if (syncState.syncError) {
       return (
         <div className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
@@ -144,7 +154,7 @@ export function NationalIdentitySection({
         </div>
       );
     }
-    
+
     if (syncState.lastSyncTime) {
       return (
         <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
@@ -153,16 +163,16 @@ export function NationalIdentitySection({
         </div>
       );
     }
-    
+
     if (syncState.pendingChanges) {
       return (
         <div className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
-          <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+          <div className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
           <span>Pending</span>
         </div>
       );
     }
-    
+
     return null;
   };
 
@@ -171,23 +181,31 @@ export function NationalIdentitySection({
       <div className="space-y-8">
         {/* National Symbols */}
         <Collapsible open={isSymbolsOpen} onOpenChange={setIsSymbolsOpen}>
-          <div className="rounded-lg border border-border bg-card">
-            <CollapsibleTrigger className="w-full p-6 flex items-center justify-between hover:bg-accent/5 transition-colors">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
+          <div className="border-border bg-card rounded-lg border">
+            <CollapsibleTrigger className="hover:bg-accent/5 flex w-full items-center justify-between p-6 transition-colors">
+              <h3 className="flex items-center gap-2 text-lg font-semibold">
                 <Flag className="h-5 w-5" />
                 National Symbols
               </h3>
-              {isSymbolsOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              {isSymbolsOpen ? (
+                <ChevronUp className="h-5 w-5" />
+              ) : (
+                <ChevronDown className="h-5 w-5" />
+              )}
             </CollapsibleTrigger>
             <CollapsibleContent className="px-6 pb-6">
               <SymbolsUpload
-                flagUrl={inputs.flagUrl ?? ''}
-                coatOfArmsUrl={inputs.coatOfArmsUrl ?? ''}
-                foundationCountry={foundationCountryName ? {
-                  name: foundationCountryName,
-                  flagUrl: flag?.flagUrl ?? '',
-                  coatOfArmsUrl: foundationCoatOfArmsUrl
-                } : undefined}
+                flagUrl={inputs.flagUrl ?? ""}
+                coatOfArmsUrl={inputs.coatOfArmsUrl ?? ""}
+                foundationCountry={
+                  foundationCountryName
+                    ? {
+                        name: foundationCountryName,
+                        flagUrl: flag?.flagUrl ?? "",
+                        coatOfArmsUrl: foundationCoatOfArmsUrl,
+                      }
+                    : undefined
+                }
                 onSelectFlag={() => setShowFlagImageModal(true)}
                 onSelectCoatOfArms={() => setShowCoatOfArmsImageModal(true)}
                 onFlagUrlChange={handleFlagUrlChange}
@@ -200,16 +218,20 @@ export function NationalIdentitySection({
 
         {/* Basic Identity Information */}
         <Collapsible open={isBasicInfoOpen} onOpenChange={setIsBasicInfoOpen}>
-          <div className="rounded-lg border border-border bg-card">
-            <CollapsibleTrigger className="w-full p-6 flex items-center justify-between hover:bg-accent/5 transition-colors">
+          <div className="border-border bg-card rounded-lg border">
+            <CollapsibleTrigger className="hover:bg-accent/5 flex w-full items-center justify-between p-6 transition-colors">
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
+                <h3 className="flex items-center gap-2 text-lg font-semibold">
                   <Globe className="h-5 w-5" />
                   Basic Identity Information
                 </h3>
                 {renderAutosaveStatus()}
               </div>
-              {isBasicInfoOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              {isBasicInfoOpen ? (
+                <ChevronUp className="h-5 w-5" />
+              ) : (
+                <ChevronDown className="h-5 w-5" />
+              )}
             </CollapsibleTrigger>
             <CollapsibleContent className="p-6">
               <BasicInfoForm
@@ -220,13 +242,13 @@ export function NationalIdentitySection({
                 isEditingCustomName={isEditingCustomName}
                 onGovernmentTypeChange={(value) => {
                   setSelectedGovernmentType(value);
-                  handleIdentityChange('governmentType', value);
+                  handleIdentityChange("governmentType", value);
                 }}
                 onCustomOfficialNameChange={setCustomOfficialName}
                 onCustomOfficialNameFocus={() => setIsEditingCustomName(true)}
                 onCustomOfficialNameBlur={(value) => {
                   setIsEditingCustomName(false);
-                  handleIdentityChange('officialName', value);
+                  handleIdentityChange("officialName", value);
                   if (value.trim()) {
                     upsertCustomGovernmentType.mutate({ customTypeName: value.trim() });
                   }
@@ -243,16 +265,20 @@ export function NationalIdentitySection({
 
         {/* Culture & Language */}
         <Collapsible open={isCultureOpen} onOpenChange={setIsCultureOpen}>
-          <div className="rounded-lg border border-border bg-card">
-            <CollapsibleTrigger className="w-full p-6 flex items-center justify-between hover:bg-accent/5 transition-colors">
+          <div className="border-border bg-card rounded-lg border">
+            <CollapsibleTrigger className="hover:bg-accent/5 flex w-full items-center justify-between p-6 transition-colors">
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
+                <h3 className="flex items-center gap-2 text-lg font-semibold">
                   <Heart className="h-5 w-5" />
                   Culture & Language
                 </h3>
                 {renderAutosaveStatus()}
               </div>
-              {isCultureOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              {isCultureOpen ? (
+                <ChevronUp className="h-5 w-5" />
+              ) : (
+                <ChevronDown className="h-5 w-5" />
+              )}
             </CollapsibleTrigger>
             <CollapsibleContent className="p-6">
               <CultureForm
@@ -268,22 +294,23 @@ export function NationalIdentitySection({
 
         {/* Technical Details & Geography */}
         <Collapsible open={isGeographyOpen} onOpenChange={setIsGeographyOpen}>
-          <div className="rounded-lg border border-border bg-card">
-            <CollapsibleTrigger className="w-full p-6 flex items-center justify-between hover:bg-accent/5 transition-colors">
+          <div className="border-border bg-card rounded-lg border">
+            <CollapsibleTrigger className="hover:bg-accent/5 flex w-full items-center justify-between p-6 transition-colors">
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
+                <h3 className="flex items-center gap-2 text-lg font-semibold">
                   <Landmark className="h-5 w-5" />
                   Technical Details & Geography
                 </h3>
                 {renderAutosaveStatus()}
               </div>
-              {isGeographyOpen ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+              {isGeographyOpen ? (
+                <ChevronUp className="h-5 w-5" />
+              ) : (
+                <ChevronDown className="h-5 w-5" />
+              )}
             </CollapsibleTrigger>
             <CollapsibleContent className="p-6">
-              <GeographyForm
-                identity={identity}
-                onIdentityChange={handleIdentityChange as any}
-              />
+              <GeographyForm identity={identity} onIdentityChange={handleIdentityChange as any} />
             </CollapsibleContent>
           </div>
         </Collapsible>

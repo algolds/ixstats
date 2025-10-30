@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
-import { calculateScheduledDate, type ChangeType, type ImpactLevel } from "~/lib/change-impact-calculator";
+import {
+  calculateScheduledDate,
+  type ChangeType,
+  type ImpactLevel,
+} from "~/lib/change-impact-calculator";
 import type { Country } from "@prisma/client";
 
 interface ChangeTrackingChange {
@@ -45,7 +49,7 @@ export function useEditorSave({
   existingGovernment,
   existingTaxSystem,
   clearChanges,
-  refetchCountry
+  refetchCountry,
 }: UseEditorSaveProps) {
   const [isSaving, setIsSaving] = useState(false);
 
@@ -62,19 +66,29 @@ export function useEditorSave({
     setIsSaving(true);
 
     try {
-      const instantChanges = changes.filter(c => c.impact?.changeType === "instant");
-      const delayedChanges = changes.filter(c => c.impact?.changeType !== "instant");
+      const instantChanges = changes.filter((c) => c.impact?.changeType === "instant");
+      const delayedChanges = changes.filter((c) => c.impact?.changeType !== "instant");
 
       // Save instant country field changes
       if (instantChanges.length > 0) {
-        const nationalIdentityFields = new Set(['officialName', 'motto', 'nationalAnthem', 'capitalCity', 'officialLanguages', 'currencyName', 'currencySymbol', 'demonym', 'governmentType']);
+        const nationalIdentityFields = new Set([
+          "officialName",
+          "motto",
+          "nationalAnthem",
+          "capitalCity",
+          "officialLanguages",
+          "currencyName",
+          "currencySymbol",
+          "demonym",
+          "governmentType",
+        ]);
 
         const countryUpdates: Record<string, unknown> = {};
         const nationalIdentityUpdates: Record<string, unknown> = { countryId };
 
         instantChanges.forEach((change) => {
           if (nationalIdentityFields.has(change.fieldPath)) {
-            const fieldName = change.fieldPath === 'currencyName' ? 'currency' : change.fieldPath;
+            const fieldName = change.fieldPath === "currencyName" ? "currency" : change.fieldPath;
             nationalIdentityUpdates[fieldName] = change.newValue;
           } else {
             countryUpdates[change.fieldPath] = change.newValue;
@@ -112,12 +126,12 @@ export function useEditorSave({
         if (existingGovernment) {
           await updateGovernmentMutation.mutateAsync({
             countryId,
-            data: pendingGovernmentData
+            data: pendingGovernmentData,
           });
         } else {
           await createGovernmentMutation.mutateAsync({
             countryId,
-            data: pendingGovernmentData
+            data: pendingGovernmentData,
           });
         }
       }
@@ -127,12 +141,12 @@ export function useEditorSave({
         if (existingTaxSystem) {
           await updateTaxSystemMutation.mutateAsync({
             countryId,
-            data: pendingTaxSystemData
+            data: pendingTaxSystemData,
           });
         } else {
           await createTaxSystemMutation.mutateAsync({
             countryId,
-            data: pendingTaxSystemData
+            data: pendingTaxSystemData,
           });
         }
       }
@@ -143,7 +157,8 @@ export function useEditorSave({
           realGDPGrowthRate: economicInputs.coreIndicators.realGDPGrowthRate || 0,
           inflationRate: economicInputs.coreIndicators.inflationRate || 0,
           currencyExchangeRate: economicInputs.coreIndicators.currencyExchangeRate || 1.0,
-          laborForceParticipationRate: economicInputs.laborEmployment.laborForceParticipationRate || 0,
+          laborForceParticipationRate:
+            economicInputs.laborEmployment.laborForceParticipationRate || 0,
           employmentRate: economicInputs.laborEmployment.employmentRate || 0,
           unemploymentRate: economicInputs.laborEmployment.unemploymentRate || 0,
           totalWorkforce: economicInputs.laborEmployment.totalWorkforce || 0,
@@ -175,7 +190,7 @@ export function useEditorSave({
 
         await updateCountryMutation.mutateAsync({
           id: countryId,
-          ...economicData
+          ...economicData,
         });
       }
 
@@ -185,7 +200,9 @@ export function useEditorSave({
       await utils.government.invalidate();
       await utils.taxSystem.invalidate();
 
-      const totalChanges = instantChanges.length + delayedChanges.length +
+      const totalChanges =
+        instantChanges.length +
+        delayedChanges.length +
         (hasGovernmentChanges ? 1 : 0) +
         (hasEconomicChanges ? 1 : 0) +
         (hasTaxSystemChanges ? 1 : 0);
@@ -193,19 +210,19 @@ export function useEditorSave({
       const saveParts = [];
       if (instantChanges.length > 0) saveParts.push(`${instantChanges.length} instant`);
       if (delayedChanges.length > 0) saveParts.push(`${delayedChanges.length} scheduled`);
-      if (hasEconomicChanges) saveParts.push('1 economic update');
-      if (hasGovernmentChanges) saveParts.push('1 government update');
-      if (hasTaxSystemChanges) saveParts.push('1 tax system update');
+      if (hasEconomicChanges) saveParts.push("1 economic update");
+      if (hasGovernmentChanges) saveParts.push("1 government update");
+      if (hasTaxSystemChanges) saveParts.push("1 tax system update");
 
       return {
         success: true,
-        message: `Success! ${totalChanges} change${totalChanges !== 1 ? 's' : ''} saved (${saveParts.join(', ')}).`
+        message: `Success! ${totalChanges} change${totalChanges !== 1 ? "s" : ""} saved (${saveParts.join(", ")}).`,
       };
     } catch (error) {
       console.error("Save failed:", error);
       return {
         success: false,
-        message: "Failed to save changes."
+        message: "Failed to save changes.",
       };
     } finally {
       setIsSaving(false);
@@ -214,6 +231,6 @@ export function useEditorSave({
 
   return {
     isSaving,
-    saveChanges
+    saveChanges,
   };
 }

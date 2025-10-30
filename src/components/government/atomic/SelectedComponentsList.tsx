@@ -7,13 +7,13 @@
  * @module SelectedComponentsList
  */
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { X, Package } from 'lucide-react';
-import type { AtomicGovernmentComponent } from '~/lib/atomic-government-data';
-import { ComponentType } from '@prisma/client';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { X, Package } from "lucide-react";
+import type { AtomicGovernmentComponent } from "~/lib/atomic-government-data";
+import { ComponentType } from "@prisma/client";
 
 export interface SelectedComponentsListProps {
   selectedComponents: AtomicGovernmentComponent[];
@@ -27,13 +27,19 @@ export interface SelectedComponentsListProps {
  * Display list of selected components with remove controls
  */
 export const SelectedComponentsList = React.memo<SelectedComponentsListProps>(
-  ({ selectedComponents, onDeselect, isReadOnly = false, totalCost = 0, totalEffectiveness = 0 }) => {
+  ({
+    selectedComponents,
+    onDeselect,
+    isReadOnly = false,
+    totalCost = 0,
+    totalEffectiveness = 0,
+  }) => {
     if (selectedComponents.length === 0) {
       return (
         <Card className="border-dashed">
-          <CardContent className="pt-6 text-center py-12">
-            <Package className="h-12 w-12 mx-auto mb-3 text-gray-400 dark:text-gray-600" />
-            <p className="text-gray-500 dark:text-gray-400 text-sm">
+          <CardContent className="py-12 pt-6 text-center">
+            <Package className="mx-auto mb-3 h-12 w-12 text-gray-400 dark:text-gray-600" />
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               No components selected yet.
               <br />
               Select components from the library to build your government.
@@ -71,21 +77,25 @@ export const SelectedComponentsList = React.memo<SelectedComponentsListProps>(
               return (
                 <div
                   key={component.id}
-                  className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+                  className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/50"
                 >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className={`p-1.5 rounded bg-${component.color}-100 dark:bg-${component.color}-900/20 flex-shrink-0`}>
-                      <Icon className={`h-4 w-4 text-${component.color}-600 dark:text-${component.color}-400`} />
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <div
+                      className={`rounded p-1.5 bg-${component.color}-100 dark:bg-${component.color}-900/20 flex-shrink-0`}
+                    >
+                      <Icon
+                        className={`h-4 w-4 text-${component.color}-600 dark:text-${component.color}-400`}
+                      />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm text-gray-900 dark:text-white truncate">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
                         {component.name}
                       </p>
                       <p className="text-xs text-gray-600 dark:text-gray-400">
                         {component.category}
                       </p>
                     </div>
-                    <Badge variant="outline" className="text-xs flex-shrink-0">
+                    <Badge variant="outline" className="flex-shrink-0 text-xs">
                       {component.effectiveness}%
                     </Badge>
                   </div>
@@ -94,7 +104,7 @@ export const SelectedComponentsList = React.memo<SelectedComponentsListProps>(
                       size="sm"
                       variant="ghost"
                       onClick={() => onDeselect(component.type)}
-                      className="ml-2 h-8 w-8 p-0 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                      className="ml-2 h-8 w-8 p-0 text-gray-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -109,4 +119,4 @@ export const SelectedComponentsList = React.memo<SelectedComponentsListProps>(
   }
 );
 
-SelectedComponentsList.displayName = 'SelectedComponentsList';
+SelectedComponentsList.displayName = "SelectedComponentsList";

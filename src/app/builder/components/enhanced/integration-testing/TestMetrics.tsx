@@ -1,10 +1,10 @@
 "use client";
 
-import React from 'react';
-import { Card, CardContent } from '~/components/ui/card';
-import { Progress } from '~/components/ui/progress';
-import { CheckCircle, TestTube, Shield, Timer } from 'lucide-react';
-import type { ComprehensiveIntegrationReport } from '~/app/builder/services/IntegrationTestingService';
+import React from "react";
+import { Card, CardContent } from "~/components/ui/card";
+import { Progress } from "~/components/ui/progress";
+import { CheckCircle, TestTube, Shield, Timer } from "lucide-react";
+import type { ComprehensiveIntegrationReport } from "~/app/builder/services/IntegrationTestingService";
 
 interface TestMetricsProps {
   report: ComprehensiveIntegrationReport;
@@ -15,10 +15,10 @@ interface TestMetricsProps {
 export function TestMetricsOverview({
   report,
   formatDuration,
-  getPassRateColor
+  getPassRateColor,
 }: TestMetricsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
@@ -39,9 +39,7 @@ export function TestMetricsOverview({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Tests</p>
-              <p className="text-2xl font-bold text-blue-600">
-                {report.totalTests}
-              </p>
+              <p className="text-2xl font-bold text-blue-600">{report.totalTests}</p>
             </div>
             <TestTube className="h-8 w-8 text-blue-600" />
           </div>
@@ -56,7 +54,9 @@ export function TestMetricsOverview({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">System Integration</p>
-              <p className={`text-2xl font-bold ${getPassRateColor(report.systemIntegration.overall)}`}>
+              <p
+                className={`text-2xl font-bold ${getPassRateColor(report.systemIntegration.overall)}`}
+              >
                 {report.systemIntegration.overall.toFixed(0)}
               </p>
             </div>

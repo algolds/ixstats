@@ -9,13 +9,13 @@
  */
 export interface ThinkShareClientState {
   /** Current user's presence status */
-  presenceStatus: 'online' | 'away' | 'busy' | 'offline';
+  presenceStatus: "online" | "away" | "busy" | "offline";
 
   /** Map of active typing indicators by indicator ID */
   typingIndicators: Map<string, TypingIndicator>;
 
   /** Connection status to real-time services */
-  connectionStatus: 'connected' | 'connecting' | 'disconnected' | 'error';
+  connectionStatus: "connected" | "connecting" | "disconnected" | "error";
 
   /** Last sync timestamp */
   lastSyncTime?: Date;
@@ -81,7 +81,7 @@ export interface ThinkShareAccount {
   username: string;
   displayName: string;
   profileImageUrl?: string | null;
-  accountType: 'government' | 'media' | 'citizen' | 'country';
+  accountType: "government" | "media" | "citizen" | "country";
 }
 
 /**
@@ -105,7 +105,7 @@ export interface ThinkShareMessage {
   accountId: string;
   account: ThinkShareAccount;
   content: string;
-  messageType: 'text' | 'system' | 'announcement';
+  messageType: "text" | "system" | "announcement";
   ixTimeTimestamp: Date;
   createdAt?: Date;
   reactions?: MessageReaction[];
@@ -168,7 +168,7 @@ export interface MessageReadReceipt {
  */
 export interface ThinkShareConversation {
   id: string;
-  type: 'direct' | 'group' | 'channel';
+  type: "direct" | "group" | "channel";
   name?: string | null;
   avatar?: string | null;
   isActive: boolean;
@@ -188,8 +188,8 @@ export interface ConversationFilters {
   searchQuery: string;
   showArchived: boolean;
   showMuted: boolean;
-  filterByType?: 'direct' | 'group' | 'channel';
-  sortBy: 'recent' | 'unread' | 'alphabetical';
+  filterByType?: "direct" | "group" | "channel";
+  sortBy: "recent" | "unread" | "alphabetical";
 }
 
 /**
@@ -198,7 +198,7 @@ export interface ConversationFilters {
 export interface ThinkShareNotification {
   id: string;
   accountId: string;
-  type: 'message' | 'mention' | 'reaction' | 'invitation';
+  type: "message" | "mention" | "reaction" | "invitation";
   conversationId?: string;
   messageId?: string;
   content: string;
@@ -210,11 +210,14 @@ export interface ThinkShareNotification {
  * Real-time event types for ThinkShare
  */
 export type ThinkShareEvent =
-  | { type: 'message.new'; data: ThinkShareMessage }
-  | { type: 'message.edited'; data: ThinkShareMessage }
-  | { type: 'message.deleted'; data: { messageId: string; conversationId: string } }
-  | { type: 'typing.start'; data: TypingIndicator }
-  | { type: 'typing.stop'; data: { accountId: string; conversationId: string } }
-  | { type: 'presence.update'; data: { accountId: string; status: ThinkShareClientState['presenceStatus'] } }
-  | { type: 'conversation.updated'; data: ThinkShareConversation }
-  | { type: 'read.receipt'; data: MessageReadReceipt };
+  | { type: "message.new"; data: ThinkShareMessage }
+  | { type: "message.edited"; data: ThinkShareMessage }
+  | { type: "message.deleted"; data: { messageId: string; conversationId: string } }
+  | { type: "typing.start"; data: TypingIndicator }
+  | { type: "typing.stop"; data: { accountId: string; conversationId: string } }
+  | {
+      type: "presence.update";
+      data: { accountId: string; status: ThinkShareClientState["presenceStatus"] };
+    }
+  | { type: "conversation.updated"; data: ThinkShareConversation }
+  | { type: "read.receipt"; data: MessageReadReceipt };

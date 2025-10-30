@@ -1,45 +1,45 @@
 // src/lib/calculations.ts
 // FIXED: Proper growth factor handling and updated tier classifications
 
-import { IxTime } from './ixtime';
-import type { 
-  BaseCountryData, 
-  CountryStats, 
-  EconomicConfig, 
+import { IxTime } from "./ixtime";
+import type {
+  BaseCountryData,
+  CountryStats,
+  EconomicConfig,
   DmInputs as DmInputRecord,
-  HistoricalDataPoint 
-} from '../types/ixstats';
+  HistoricalDataPoint,
+} from "../types/ixstats";
 
 // FIXED: Updated tier enums to match user specifications
 export enum EconomicTier {
-  IMPOVERISHED = "Impoverished",    // $0-$9,999 (10% max growth)
-  DEVELOPING = "Developing",        // $10,000-$24,999 (7.50% max growth)
-  DEVELOPED = "Developed",          // $25,000-$34,999 (5% max growth)
-  HEALTHY = "Healthy",              // $35,000-$44,999 (3.50% max growth)
-  STRONG = "Strong",                // $45,000-$54,999 (2.75% max growth)
-  VERY_STRONG = "Very Strong",      // $55,000-$64,999 (1.50% max growth)
-  EXTRAVAGANT = "Extravagant"       // $65,000+ (0.50% max growth)
+  IMPOVERISHED = "Impoverished", // $0-$9,999 (10% max growth)
+  DEVELOPING = "Developing", // $10,000-$24,999 (7.50% max growth)
+  DEVELOPED = "Developed", // $25,000-$34,999 (5% max growth)
+  HEALTHY = "Healthy", // $35,000-$44,999 (3.50% max growth)
+  STRONG = "Strong", // $45,000-$54,999 (2.75% max growth)
+  VERY_STRONG = "Very Strong", // $55,000-$64,999 (1.50% max growth)
+  EXTRAVAGANT = "Extravagant", // $65,000+ (0.50% max growth)
 }
 
 export enum PopulationTier {
-  TIER_1 = "1",    // 0-9,999,999
-  TIER_2 = "2",    // 10,000,000-29,999,999
-  TIER_3 = "3",    // 30,000,000-49,999,999
-  TIER_4 = "4",    // 50,000,000-79,999,999
-  TIER_5 = "5",    // 80,000,000-119,999,999
-  TIER_6 = "6",    // 120,000,000-349,999,999
-  TIER_7 = "7",    // 350,000,000-499,999,999
-  TIER_X = "X"     // 500,000,000+
+  TIER_1 = "1", // 0-9,999,999
+  TIER_2 = "2", // 10,000,000-29,999,999
+  TIER_3 = "3", // 30,000,000-49,999,999
+  TIER_4 = "4", // 50,000,000-79,999,999
+  TIER_5 = "5", // 80,000,000-119,999,999
+  TIER_6 = "6", // 120,000,000-349,999,999
+  TIER_7 = "7", // 350,000,000-499,999,999
+  TIER_X = "X", // 500,000,000+
 }
 
 export enum DmInputType {
   POPULATION_ADJUSTMENT = "population_adjustment",
-  GDP_ADJUSTMENT = "gdp_adjustment", 
+  GDP_ADJUSTMENT = "gdp_adjustment",
   GROWTH_RATE_MODIFIER = "growth_rate_modifier",
   SPECIAL_EVENT = "special_event",
   TRADE_AGREEMENT = "trade_agreement",
   NATURAL_DISASTER = "natural_disaster",
-  ECONOMIC_POLICY = "economic_policy"
+  ECONOMIC_POLICY = "economic_policy",
 }
 
 export interface StatsCalculationResult {
@@ -65,7 +65,7 @@ export class IxStatsCalculator {
   initializeCountryStats(baseData: BaseCountryData): CountryStats {
     const totalGdp = baseData.population * baseData.gdpPerCapita;
     const gameEpoch = IxTime.getInGameEpoch();
-    
+
     const landArea = baseData.landArea || 0;
     const populationDensity = landArea > 0 ? baseData.population / landArea : undefined;
     const gdpDensity = landArea > 0 ? totalGdp / landArea : undefined;
@@ -74,7 +74,9 @@ export class IxStatsCalculator {
     const populationGrowthDecimal = this.validateGrowthRate(baseData.populationGrowthRate);
     const maxGdpGrowthDecimal = this.validateGrowthRate(baseData.maxGdpGrowthRate);
     const adjustedGdpGrowthDecimal = this.validateGrowthRate(baseData.adjustedGdpGrowth);
-    const actualGdpGrowthDecimal = baseData.actualGdpGrowth ? this.validateGrowthRate(baseData.actualGdpGrowth) : 0;
+    const actualGdpGrowthDecimal = baseData.actualGdpGrowth
+      ? this.validateGrowthRate(baseData.actualGdpGrowth)
+      : 0;
 
     // FIXED: Determine tiers before creating stats
     const economicTier = this.calculateEconomicTier(baseData.gdpPerCapita);
@@ -88,45 +90,45 @@ export class IxStatsCalculator {
       governmentType: baseData.governmentType,
       religion: baseData.religion,
       leader: baseData.leader,
-      
+
       // Area information
       landArea,
       areaSqMi: baseData.areaSqMi,
-      
+
       // FIXED: Growth rates stored as decimals for calculations
       maxGdpGrowthRate: maxGdpGrowthDecimal,
       adjustedGdpGrowth: adjustedGdpGrowthDecimal,
       populationGrowthRate: populationGrowthDecimal,
       actualGdpGrowth: actualGdpGrowthDecimal,
-      
+
       // Required fields
       projected2040Population: baseData.projected2040Population || 0,
       projected2040Gdp: baseData.projected2040Gdp || 0,
       projected2040GdpPerCapita: baseData.projected2040GdpPerCapita || 0,
-      
+
       // Baseline values
       population: baseData.population,
       gdpPerCapita: baseData.gdpPerCapita,
-      
+
       name: baseData.country,
       totalGdp,
-      
+
       // Current stats start as baseline stats
       currentPopulation: baseData.population,
       currentGdpPerCapita: baseData.gdpPerCapita,
       currentTotalGdp: totalGdp,
-      
+
       // Timestamps
       lastCalculated: new Date(gameEpoch),
       baselineDate: new Date(gameEpoch),
-      
+
       // FIXED: Use calculated tiers
       economicTier,
       populationTier,
       populationDensity,
       gdpDensity,
       localGrowthFactor: baseData.localGrowthFactor || 1.0,
-      globalGrowthFactor: this.config.globalGrowthFactor || 1.0321
+      globalGrowthFactor: this.config.globalGrowthFactor || 1.0321,
     };
   }
 
@@ -136,7 +138,7 @@ export class IxStatsCalculator {
   private validateGrowthRate(rate: number): number {
     const numValue = Number(rate);
     if (!isFinite(numValue) || isNaN(numValue)) return 0;
-    
+
     // Growth rates should be reasonable decimals
     // Cap at -50% to +50% annually
     return Math.min(Math.max(numValue, -0.5), 0.5);
@@ -147,30 +149,30 @@ export class IxStatsCalculator {
    */
   calculateTimeProgression(
     baselineStats: CountryStats,
-    targetTime?: number, 
+    targetTime?: number,
     dmInputs: DmInputRecord[] = []
   ): StatsCalculationResult {
     const targetTimeMs = targetTime || IxTime.getCurrentIxTime();
     const baselineTimeMs = this.baselineDate;
-    
+
     const yearsFromBaseline = IxTime.getYearsElapsed(baselineTimeMs, targetTimeMs);
-    
+
     if (Math.abs(yearsFromBaseline) < 0.001) {
       return {
         country: baselineStats.country,
         oldStats: baselineStats,
-        newStats: { 
-          ...baselineStats, 
-          lastCalculated: new Date(targetTimeMs)
+        newStats: {
+          ...baselineStats,
+          lastCalculated: new Date(targetTimeMs),
         },
         timeElapsed: 0,
-        calculationDate: targetTimeMs
+        calculationDate: targetTimeMs,
       };
     }
 
     const oldStats = { ...baselineStats };
     const activeDmInputs = this.getActiveDmInputs(dmInputs, baselineTimeMs, targetTimeMs);
-    
+
     const newPopulation = this.calculatePopulationProgression(
       baselineStats.population,
       baselineStats.populationGrowthRate,
@@ -191,7 +193,7 @@ export class IxStatsCalculator {
     const newTotalGdp = newPopulation * newGdpPerCapita;
     const newEconomicTier = this.calculateEconomicTier(newGdpPerCapita);
     const newPopulationTier = this.calculatePopulationTier(newPopulation);
-    
+
     const landArea = baselineStats.landArea || 0;
     const newPopulationDensity = landArea > 0 ? newPopulation / landArea : undefined;
     const newGdpDensity = landArea > 0 ? newTotalGdp / landArea : undefined;
@@ -205,15 +207,19 @@ export class IxStatsCalculator {
       populationTier: newPopulationTier,
       populationDensity: newPopulationDensity,
       gdpDensity: newGdpDensity,
-      lastCalculated: new Date(targetTimeMs)
+      lastCalculated: new Date(targetTimeMs),
     };
-    
+
     const modifiedStats = this.applySpecialModifiers(updatedStats, activeDmInputs);
-    
-    if (modifiedStats.currentPopulation !== updatedStats.currentPopulation || 
-        modifiedStats.currentTotalGdp !== updatedStats.currentTotalGdp) {
-      modifiedStats.populationDensity = landArea > 0 ? modifiedStats.currentPopulation / landArea : undefined;
-      modifiedStats.gdpDensity = landArea > 0 ? modifiedStats.currentTotalGdp / landArea : undefined;
+
+    if (
+      modifiedStats.currentPopulation !== updatedStats.currentPopulation ||
+      modifiedStats.currentTotalGdp !== updatedStats.currentTotalGdp
+    ) {
+      modifiedStats.populationDensity =
+        landArea > 0 ? modifiedStats.currentPopulation / landArea : undefined;
+      modifiedStats.gdpDensity =
+        landArea > 0 ? modifiedStats.currentTotalGdp / landArea : undefined;
     }
 
     return {
@@ -221,7 +227,7 @@ export class IxStatsCalculator {
       oldStats,
       newStats: modifiedStats,
       timeElapsed: Math.abs(yearsFromBaseline),
-      calculationDate: targetTimeMs
+      calculationDate: targetTimeMs,
     };
   }
 
@@ -232,14 +238,14 @@ export class IxStatsCalculator {
     dmInputs: DmInputRecord[]
   ): number {
     let adjustedRate = growthRateDecimal;
-    
-    dmInputs.forEach(input => {
+
+    dmInputs.forEach((input) => {
       const inputValue = this.validateGrowthRate(input.value);
       if (input.inputType === DmInputType.POPULATION_ADJUSTMENT) {
         adjustedRate += inputValue;
       }
     });
-    
+
     return baselinePopulation * Math.pow(1 + adjustedRate, yearsFromBaseline);
   }
 
@@ -257,39 +263,39 @@ export class IxStatsCalculator {
   ): number {
     // Start with the base adjusted growth rate
     let effectiveGrowthRate = adjustedGrowthDecimal;
-    
+
     // FIXED: Apply global growth factor (3.21% = 1.0321 multiplier)
     // The global growth factor amplifies the base growth rate
     effectiveGrowthRate *= this.config.globalGrowthFactor;
-    
+
     // Apply local growth factor
     effectiveGrowthRate *= localGrowthFactor;
-    
+
     // Apply tier growth modifiers (usually 1.0 unless specified otherwise)
     const tierModifier = this.config.tierGrowthModifiers[tier] || 1.0;
     effectiveGrowthRate *= tierModifier;
 
     // Apply DM inputs
-    dmInputs.forEach(input => {
+    dmInputs.forEach((input) => {
       const inputValue = this.validateGrowthRate(input.value);
       if (input.inputType === DmInputType.GDP_ADJUSTMENT) {
         effectiveGrowthRate += inputValue;
       } else if (input.inputType === DmInputType.GROWTH_RATE_MODIFIER) {
-        effectiveGrowthRate *= (1 + inputValue);
+        effectiveGrowthRate *= 1 + inputValue;
       }
     });
 
     // FIXED: Apply tier-based growth rate caps AFTER global factor
     const tierMaxRate = this.getTierMaxGrowthRate(tier);
     effectiveGrowthRate = Math.min(effectiveGrowthRate, tierMaxRate);
-    
+
     // Ensure no extreme negative growth
     effectiveGrowthRate = Math.max(effectiveGrowthRate, -0.1); // -10% minimum
 
     // Apply diminishing returns for very high GDP per capita
     if (yearsFromBaseline > 0 && baselineGdpPerCapita > 60000) {
       const diminishingFactor = Math.log(baselineGdpPerCapita / 60000 + 1) / Math.log(2);
-      effectiveGrowthRate /= (1 + diminishingFactor * 0.5);
+      effectiveGrowthRate /= 1 + diminishingFactor * 0.5;
     }
 
     return baselineGdpPerCapita * Math.pow(1 + effectiveGrowthRate, yearsFromBaseline);
@@ -300,15 +306,15 @@ export class IxStatsCalculator {
    */
   private getTierMaxGrowthRate(tier: EconomicTier): number {
     const maxRates = {
-      [EconomicTier.IMPOVERISHED]: 0.10,    // 10%
-      [EconomicTier.DEVELOPING]: 0.075,     // 7.50%
-      [EconomicTier.DEVELOPED]: 0.05,       // 5%
-      [EconomicTier.HEALTHY]: 0.035,        // 3.50%
-      [EconomicTier.STRONG]: 0.0275,        // 2.75%
-      [EconomicTier.VERY_STRONG]: 0.015,    // 1.50%
-      [EconomicTier.EXTRAVAGANT]: 0.005,    // 0.50%
+      [EconomicTier.IMPOVERISHED]: 0.1, // 10%
+      [EconomicTier.DEVELOPING]: 0.075, // 7.50%
+      [EconomicTier.DEVELOPED]: 0.05, // 5%
+      [EconomicTier.HEALTHY]: 0.035, // 3.50%
+      [EconomicTier.STRONG]: 0.0275, // 2.75%
+      [EconomicTier.VERY_STRONG]: 0.015, // 1.50%
+      [EconomicTier.EXTRAVAGANT]: 0.005, // 0.50%
     };
-    
+
     return maxRates[tier] ?? 0.05; // Default to 5% if tier not found
   }
 
@@ -344,32 +350,33 @@ export class IxStatsCalculator {
    */
   calculateCurrentTimeProgression(
     currentStats: CountryStats,
-    targetTime?: number, 
+    targetTime?: number,
     dmInputs: DmInputRecord[] = []
   ): StatsCalculationResult {
     const nowIxTimeMs = targetTime || IxTime.getCurrentIxTime();
-    const lastCalculatedMs = currentStats.lastCalculated instanceof Date 
-      ? currentStats.lastCalculated.getTime() 
-      : currentStats.lastCalculated;
-    
+    const lastCalculatedMs =
+      currentStats.lastCalculated instanceof Date
+        ? currentStats.lastCalculated.getTime()
+        : currentStats.lastCalculated;
+
     const yearsElapsed = IxTime.getYearsElapsed(lastCalculatedMs, nowIxTimeMs);
-    
+
     if (yearsElapsed <= 0) {
       return {
         country: currentStats.country,
         oldStats: currentStats,
-        newStats: { 
-          ...currentStats, 
-          lastCalculated: new Date(nowIxTimeMs) 
+        newStats: {
+          ...currentStats,
+          lastCalculated: new Date(nowIxTimeMs),
         },
         timeElapsed: 0,
-        calculationDate: nowIxTimeMs
+        calculationDate: nowIxTimeMs,
       };
     }
 
     const oldStats = { ...currentStats };
     const activeDmInputs = this.getActiveDmInputs(dmInputs, lastCalculatedMs, nowIxTimeMs);
-    
+
     const newPopulation = this.calculatePopulationProgression(
       currentStats.currentPopulation,
       currentStats.populationGrowthRate,
@@ -390,7 +397,7 @@ export class IxStatsCalculator {
     const newTotalGdp = newPopulation * newGdpPerCapita;
     const newEconomicTier = this.calculateEconomicTier(newGdpPerCapita);
     const newPopulationTier = this.calculatePopulationTier(newPopulation);
-    
+
     const landArea = currentStats.landArea || 0;
     const newPopulationDensity = landArea > 0 ? newPopulation / landArea : undefined;
     const newGdpDensity = landArea > 0 ? newTotalGdp / landArea : undefined;
@@ -404,15 +411,19 @@ export class IxStatsCalculator {
       populationTier: newPopulationTier,
       populationDensity: newPopulationDensity,
       gdpDensity: newGdpDensity,
-      lastCalculated: new Date(nowIxTimeMs)
+      lastCalculated: new Date(nowIxTimeMs),
     };
-    
+
     const modifiedStats = this.applySpecialModifiers(updatedStats, activeDmInputs);
-    
-    if (modifiedStats.currentPopulation !== updatedStats.currentPopulation || 
-        modifiedStats.currentTotalGdp !== updatedStats.currentTotalGdp) {
-      modifiedStats.populationDensity = landArea > 0 ? modifiedStats.currentPopulation / landArea : undefined;
-      modifiedStats.gdpDensity = landArea > 0 ? modifiedStats.currentTotalGdp / landArea : undefined;
+
+    if (
+      modifiedStats.currentPopulation !== updatedStats.currentPopulation ||
+      modifiedStats.currentTotalGdp !== updatedStats.currentTotalGdp
+    ) {
+      modifiedStats.populationDensity =
+        landArea > 0 ? modifiedStats.currentPopulation / landArea : undefined;
+      modifiedStats.gdpDensity =
+        landArea > 0 ? modifiedStats.currentTotalGdp / landArea : undefined;
     }
 
     return {
@@ -420,58 +431,66 @@ export class IxStatsCalculator {
       oldStats,
       newStats: modifiedStats,
       timeElapsed: yearsElapsed,
-      calculationDate: nowIxTimeMs
+      calculationDate: nowIxTimeMs,
     };
   }
 
-  private getActiveDmInputs(dmInputs: DmInputRecord[], startTime: number, endTime: number): DmInputRecord[] {
-    return dmInputs.filter(input => {
-      const inputTime = input.ixTimeTimestamp instanceof Date 
-        ? input.ixTimeTimestamp.getTime() 
-        : input.ixTimeTimestamp;
-      
+  private getActiveDmInputs(
+    dmInputs: DmInputRecord[],
+    startTime: number,
+    endTime: number
+  ): DmInputRecord[] {
+    return dmInputs.filter((input) => {
+      const inputTime =
+        input.ixTimeTimestamp instanceof Date
+          ? input.ixTimeTimestamp.getTime()
+          : input.ixTimeTimestamp;
+
       if (inputTime > endTime) return false;
-      
+
       if (input.duration) {
         const inputEndTime = IxTime.addYears(inputTime, input.duration);
         return inputEndTime >= startTime;
       }
-      
+
       return inputTime <= endTime;
     });
   }
 
   private applySpecialModifiers(stats: CountryStats, dmInputs: DmInputRecord[]): CountryStats {
     const modifiedStats = { ...stats };
-    
-    dmInputs.forEach(input => {
+
+    dmInputs.forEach((input) => {
       const inputValue = this.validateGrowthRate(input.value);
       switch (input.inputType) {
         case DmInputType.NATURAL_DISASTER:
-          modifiedStats.currentPopulation *= (1 + inputValue);
-          modifiedStats.currentTotalGdp *= (1 + inputValue * 1.5);
+          modifiedStats.currentPopulation *= 1 + inputValue;
+          modifiedStats.currentTotalGdp *= 1 + inputValue * 1.5;
           break;
-          
+
         case DmInputType.TRADE_AGREEMENT:
-          modifiedStats.currentGdpPerCapita *= (1 + inputValue); 
+          modifiedStats.currentGdpPerCapita *= 1 + inputValue;
           break;
-          
+
         case DmInputType.ECONOMIC_POLICY:
-          modifiedStats.localGrowthFactor *= (1 + inputValue);
+          modifiedStats.localGrowthFactor *= 1 + inputValue;
           break;
-          
+
         case DmInputType.SPECIAL_EVENT:
-          modifiedStats.currentPopulation *= (1 + inputValue * 0.5);
-          modifiedStats.currentGdpPerCapita *= (1 + inputValue * 0.8);
+          modifiedStats.currentPopulation *= 1 + inputValue * 0.5;
+          modifiedStats.currentGdpPerCapita *= 1 + inputValue * 0.8;
           break;
       }
     });
 
-    if (modifiedStats.currentPopulation !== stats.currentPopulation || 
-        modifiedStats.currentGdpPerCapita !== stats.currentGdpPerCapita) {
-      modifiedStats.currentTotalGdp = modifiedStats.currentPopulation * modifiedStats.currentGdpPerCapita;
+    if (
+      modifiedStats.currentPopulation !== stats.currentPopulation ||
+      modifiedStats.currentGdpPerCapita !== stats.currentGdpPerCapita
+    ) {
+      modifiedStats.currentTotalGdp =
+        modifiedStats.currentPopulation * modifiedStats.currentGdpPerCapita;
     }
-    
+
     modifiedStats.economicTier = this.calculateEconomicTier(modifiedStats.currentGdpPerCapita);
     modifiedStats.populationTier = this.calculatePopulationTier(modifiedStats.currentPopulation);
 
@@ -479,10 +498,12 @@ export class IxStatsCalculator {
   }
 
   createHistoricalDataPoint(stats: CountryStats, ixTime?: number): HistoricalDataPoint {
-    const timestamp = ixTime || (stats.lastCalculated instanceof Date 
-      ? stats.lastCalculated.getTime() 
-      : stats.lastCalculated);
-      
+    const timestamp =
+      ixTime ||
+      (stats.lastCalculated instanceof Date
+        ? stats.lastCalculated.getTime()
+        : stats.lastCalculated);
+
     return {
       ixTimeTimestamp: new Date(timestamp),
       population: stats.currentPopulation,
@@ -510,7 +531,7 @@ export class IxStatsCalculator {
 
   getTimeDescription(targetTime: number): string {
     const yearsFromBaseline = IxTime.getYearsElapsed(this.baselineDate, targetTime);
-    
+
     if (Math.abs(yearsFromBaseline) < 0.1) {
       return "Baseline Period (Roster Data)";
     } else if (yearsFromBaseline < 0) {
@@ -536,12 +557,12 @@ export class IxStatsCalculator {
     baseGrowthRate: number,
     tier: EconomicTier,
     localGrowthFactor = 1.0
-  ): { 
-    baseRate: number; 
-    withGlobalFactor: number; 
-    withLocalFactor: number; 
-    withTierModifier: number; 
-    finalRate: number; 
+  ): {
+    baseRate: number;
+    withGlobalFactor: number;
+    withLocalFactor: number;
+    withTierModifier: number;
+    finalRate: number;
     tierMax: number;
   } {
     const baseRate = this.validateGrowthRate(baseGrowthRate);
@@ -551,7 +572,7 @@ export class IxStatsCalculator {
     const withTierModifier = withLocalFactor * tierModifier;
     const tierMax = this.getTierMaxGrowthRate(tier);
     const finalRate = Math.min(withTierModifier, tierMax);
-    
+
     return {
       baseRate,
       withGlobalFactor,

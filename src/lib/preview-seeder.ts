@@ -14,12 +14,12 @@ export interface PreviewSeedOptions {
 }
 
 export class PreviewSeeder {
-  private static readonly IS_PRODUCTION = process.env.NODE_ENV === 'production'
-  
+  private static readonly IS_PRODUCTION = process.env.NODE_ENV === "production";
+
   constructor(private db: PrismaClient) {
     // Prevent running in production
     if (PreviewSeeder.IS_PRODUCTION) {
-      throw new Error('PreviewSeeder cannot run in production environment');
+      throw new Error("PreviewSeeder cannot run in production environment");
     }
   }
 
@@ -29,17 +29,17 @@ export class PreviewSeeder {
    */
   async seedPreviewData(options: PreviewSeedOptions = {}): Promise<void> {
     if (PreviewSeeder.IS_PRODUCTION) {
-      throw new Error('Preview data seeding is disabled in production');
+      throw new Error("Preview data seeding is disabled in production");
     }
     const {
       countriesCount = 20,
       usersCount = 10,
       historicalMonths = 12,
-      clearExisting = false
+      clearExisting = false,
     } = options;
 
     // Only log in development environment
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       console.log("🌱 Starting preview data seeding...");
     }
 
@@ -48,58 +48,58 @@ export class PreviewSeeder {
     }
 
     // Step 1: Generate and insert countries
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       console.log(`📍 Creating ${countriesCount} countries...`);
     }
     const countries = await this.seedCountries(countriesCount);
 
     // Step 2: Generate historical data
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       console.log(`📊 Generating ${historicalMonths} months of historical data...`);
     }
     // Historical data generation temporarily disabled
     // await this.seedHistoricalData(countries, historicalMonths);
 
     // Step 3: Create preview users
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       console.log(`👥 Creating ${usersCount} preview users...`);
     }
     const users = await this.seedUsers(usersCount, countries);
 
     // Step 4: Generate user activities
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       console.log(`🎯 Generating user activities...`);
     }
     await this.seedUserActivities(users);
 
     // Step 5: Add DM inputs for dynamic scenarios
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       console.log(`🎛️ Adding DM inputs for scenario testing...`);
     }
     await this.seedDmInputs(countries);
 
     // Step 6: Create calculation logs
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       console.log(`📋 Creating calculation logs...`);
     }
     await this.seedCalculationLogs();
 
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       console.log("✅ Preview data seeding completed successfully!");
     }
   }
 
   private async clearExistingData(): Promise<void> {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       console.log("🧹 Clearing existing data...");
     }
-    
+
     // Clear in order to respect foreign key constraints
     await this.db.calculationLog.deleteMany();
     await this.db.dmInputs.deleteMany();
     await this.db.historicalDataPoint.deleteMany();
     await this.db.user.deleteMany();
-    
+
     // Clear country-related tables (if they exist)
     try {
       await this.db.economicProfile.deleteMany();
@@ -111,7 +111,7 @@ export class PreviewSeeder {
     } catch (error) {
       console.log("Note: Some advanced tables don't exist yet, skipping...");
     }
-    
+
     await this.db.country.deleteMany();
   }
 
@@ -355,15 +355,21 @@ export class PreviewSeeder {
           overallNationalHealth,
           activeAlliances: 6 + replicationIndex,
           activeTreaties: 12 + replicationIndex * 2,
-          diplomaticReputation: diplomaticStanding > 85 ? "Exemplary" : diplomaticStanding > 75 ? "Strong" : "Stable",
+          diplomaticReputation:
+            diplomaticStanding > 85 ? "Exemplary" : diplomaticStanding > 75 ? "Strong" : "Stable",
           publicApproval: template.publicApproval,
-          governmentEfficiency: governmentalEfficiency > 85 ? "Exceptional" : governmentalEfficiency > 75 ? "High" : "Moderate",
+          governmentEfficiency:
+            governmentalEfficiency > 85
+              ? "Exceptional"
+              : governmentalEfficiency > 75
+                ? "High"
+                : "Moderate",
           politicalStability: governmentalEfficiency > 80 ? "Stable" : "Emerging",
           tradeBalance: currentTotalGdp * 0.015,
           infrastructureRating: 72 + replicationIndex * 2,
           lastCalculated: new Date(now),
           baselineDate,
-        }
+        },
       });
 
       countries.push(createdCountry);
@@ -534,28 +540,39 @@ export class PreviewSeeder {
   private async seedUsers(count: number, countries: any[]): Promise<any[]> {
     const users = [];
     const userNames = [
-      "Alexander Chen", "Sophia Rodriguez", "Marcus Johnson", "Elena Petrov", 
-      "David Kim", "Isabella Santos", "James Wilson", "Maria García",
-      "Robert Taylor", "Anna Kowalski", "Michael Brown", "Victoria Lee",
-      "Thomas Anderson", "Catherine Moore", "Daniel Jackson"
+      "Alexander Chen",
+      "Sophia Rodriguez",
+      "Marcus Johnson",
+      "Elena Petrov",
+      "David Kim",
+      "Isabella Santos",
+      "James Wilson",
+      "Maria García",
+      "Robert Taylor",
+      "Anna Kowalski",
+      "Michael Brown",
+      "Victoria Lee",
+      "Thomas Anderson",
+      "Catherine Moore",
+      "Daniel Jackson",
     ];
 
     for (let i = 0; i < count; i++) {
       const clerkUserId = `user_${Date.now()}_${i}`;
       const assignedCountry = countries[i % countries.length];
-      
+
       const user = await this.db.user.create({
         data: {
           clerkUserId,
           countryId: assignedCountry?.id || null,
           // Add any additional user fields as needed
-        }
+        },
       });
 
       users.push({
         ...user,
         displayName: userNames[i % userNames.length],
-        country: assignedCountry
+        country: assignedCountry,
       });
     }
 
@@ -570,28 +587,34 @@ export class PreviewSeeder {
 
     // const activities = MockDataGenerator.generateUserActivities(userCountryPairs, 30);
 
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       console.log(`User activities seeding temporarily disabled`);
     }
   }
 
   private async seedDmInputs(countries: any[]): Promise<void> {
     const inputTypes = [
-      "economic_stimulus", "trade_policy", "infrastructure_investment",
-      "education_reform", "healthcare_expansion", "tax_reform",
-      "environmental_policy", "social_program", "regulatory_change"
+      "economic_stimulus",
+      "trade_policy",
+      "infrastructure_investment",
+      "education_reform",
+      "healthcare_expansion",
+      "tax_reform",
+      "environmental_policy",
+      "social_program",
+      "regulatory_change",
     ];
 
     const descriptions = {
-      "economic_stimulus": "Government economic stimulus package",
-      "trade_policy": "New international trade agreement",
-      "infrastructure_investment": "Major infrastructure development project",
-      "education_reform": "Educational system modernization",
-      "healthcare_expansion": "Healthcare system expansion",
-      "tax_reform": "Tax system restructuring",
-      "environmental_policy": "Environmental protection initiative",
-      "social_program": "Social welfare program expansion",
-      "regulatory_change": "Regulatory framework update"
+      economic_stimulus: "Government economic stimulus package",
+      trade_policy: "New international trade agreement",
+      infrastructure_investment: "Major infrastructure development project",
+      education_reform: "Educational system modernization",
+      healthcare_expansion: "Healthcare system expansion",
+      tax_reform: "Tax system restructuring",
+      environmental_policy: "Environmental protection initiative",
+      social_program: "Social welfare program expansion",
+      regulatory_change: "Regulatory framework update",
     };
 
     for (let i = 0; i < 15; i++) {
@@ -601,7 +624,7 @@ export class PreviewSeeder {
       const duration = Math.floor(Math.random() * 12) + 1; // 1-12 months
 
       const daysAgo = Math.floor(Math.random() * 90); // Last 90 days
-      const timestamp = IxTime.getCurrentIxTime() - (daysAgo * 24 * 60 * 60 * 1000);
+      const timestamp = IxTime.getCurrentIxTime() - daysAgo * 24 * 60 * 60 * 1000;
 
       await this.db.dmInputs.create({
         data: {
@@ -609,11 +632,12 @@ export class PreviewSeeder {
           ixTimeTimestamp: new Date(timestamp),
           inputType: inputType!,
           value,
-          description: descriptions[inputType as keyof typeof descriptions] || "Economic policy change",
+          description:
+            descriptions[inputType as keyof typeof descriptions] || "Economic policy change",
           duration,
           isActive: Math.random() > 0.2, // 80% are still active
-          createdBy: "preview_admin"
-        }
+          createdBy: "preview_admin",
+        },
       });
     }
   }
@@ -624,7 +648,7 @@ export class PreviewSeeder {
 
     // Create logs for the last 30 days
     for (let i = 0; i < 30; i++) {
-      const timestamp = now - (i * dayMs);
+      const timestamp = now - i * dayMs;
       const countriesUpdated = 15 + Math.floor(Math.random() * 10);
       const executionTime = 500 + Math.floor(Math.random() * 2000);
 
@@ -635,11 +659,15 @@ export class PreviewSeeder {
           countriesUpdated,
           executionTimeMs: executionTime,
           globalGrowthFactor: 1.0321,
-          notes: i === 0 ? "Preview data initialization" : 
-                 i < 5 ? "Regular calculation cycle" :
-                 Math.random() > 0.8 ? "Economic event triggered calculation" :
-                 "Scheduled system update"
-        }
+          notes:
+            i === 0
+              ? "Preview data initialization"
+              : i < 5
+                ? "Regular calculation cycle"
+                : Math.random() > 0.8
+                  ? "Economic event triggered calculation"
+                  : "Scheduled system update",
+        },
       });
     }
   }
@@ -647,13 +675,13 @@ export class PreviewSeeder {
   private calculatePopulationGrowthRate(country: any): number {
     // Base rate influenced by economic tier
     const tierMultiplier = {
-      "Impoverished": 0.025,
-      "Developing": 0.02,
-      "Developed": 0.012,
-      "Healthy": 0.008,
-      "Strong": 0.006,
+      Impoverished: 0.025,
+      Developing: 0.02,
+      Developed: 0.012,
+      Healthy: 0.008,
+      Strong: 0.006,
       "Very Strong": 0.004,
-      "Extravagant": 0.002
+      Extravagant: 0.002,
     };
 
     const baseRate = tierMultiplier[country.economicTier as keyof typeof tierMultiplier] || 0.01;
@@ -665,9 +693,12 @@ export class PreviewSeeder {
  * Utility function to quickly seed preview data
  * @throws Error in production environment
  */
-export async function seedPreviewDatabase(db: PrismaClient, options?: PreviewSeedOptions): Promise<void> {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('Preview database seeding is disabled in production');
+export async function seedPreviewDatabase(
+  db: PrismaClient,
+  options?: PreviewSeedOptions
+): Promise<void> {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Preview database seeding is disabled in production");
   }
 
   const seeder = new PreviewSeeder(db);
@@ -679,8 +710,8 @@ export async function seedPreviewDatabase(db: PrismaClient, options?: PreviewSee
  * @throws Error in production environment
  */
 export async function runPreviewSeeder(): Promise<void> {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('Preview seeder CLI is disabled in production');
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Preview seeder CLI is disabled in production");
   }
 
   const { PrismaClient } = await import("@prisma/client");
@@ -691,9 +722,9 @@ export async function runPreviewSeeder(): Promise<void> {
       countriesCount: 25,
       usersCount: 15,
       historicalMonths: 18,
-      clearExisting: true
+      clearExisting: true,
     });
-    
+
     console.log("🎉 Preview database successfully seeded!");
   } catch (error) {
     console.error("❌ Error seeding preview database:", error);

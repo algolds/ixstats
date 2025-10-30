@@ -8,9 +8,9 @@
  */
 
 // Production safety guard
-if (process.env.NODE_ENV === 'production') {
-  console.error('❌ CRITICAL ERROR: This test script cannot run in production!');
-  console.error('   This script creates test data and should only be used in development.');
+if (process.env.NODE_ENV === "production") {
+  console.error("❌ CRITICAL ERROR: This test script cannot run in production!");
+  console.error("   This script creates test data and should only be used in development.");
   process.exit(1);
 }
 
@@ -29,7 +29,14 @@ const results: TestResult[] = [];
 
 function logResult(result: TestResult) {
   results.push(result);
-  const icon = result.status === "PASS" ? "✅" : result.status === "FAIL" ? "❌" : result.status === "SKIP" ? "⏭️" : "ℹ️";
+  const icon =
+    result.status === "PASS"
+      ? "✅"
+      : result.status === "FAIL"
+        ? "❌"
+        : result.status === "SKIP"
+          ? "⏭️"
+          : "ℹ️";
   console.log(`${icon} [${result.router}] ${result.operation}: ${result.message}`);
 }
 
@@ -305,7 +312,7 @@ async function testThinkPagesRouter() {
     const users = await db.user.findMany({ take: 1 });
     if (users[0]) {
       const startCreate = Date.now();
-      
+
       // First create a test country for the account
       const testCountry = await db.country.create({
         data: {
@@ -346,7 +353,7 @@ async function testThinkPagesRouter() {
           baselineDate: new Date(),
         },
       });
-      
+
       // First create a ThinkpagesAccount for the user
       const testAccount = await db.thinkpagesAccount.create({
         data: {
@@ -359,7 +366,7 @@ async function testThinkPagesRouter() {
           lastName: "User",
         },
       });
-      
+
       const testPost = await db.thinkpagesPost.create({
         data: {
           accountId: testAccount.id,
@@ -401,7 +408,7 @@ async function testThinkPagesRouter() {
         message: `Deleted test post`,
         duration: Date.now() - startDelete,
       });
-      
+
       // Clean up test account and country
       await db.thinkpagesAccount.delete({ where: { id: testAccount.id } });
       await db.country.delete({ where: { id: testCountry.id } });
@@ -554,7 +561,11 @@ async function testIntelligenceRouter() {
           area: "ECONOMIC",
           confidence: 75,
           urgency: "THIS_WEEK",
-          impactMagnitude: JSON.stringify({ magnitude: "medium", scope: "national", timeframe: "short" }),
+          impactMagnitude: JSON.stringify({
+            magnitude: "medium",
+            scope: "national",
+            timeframe: "short",
+          }),
           evidence: JSON.stringify({ metrics: [], trends: [], comparisons: [] }),
         },
       });
@@ -633,7 +644,7 @@ async function testQuickActionsRouter() {
 // Main test execution
 async function runAllTests() {
   console.log("\n🚀 IxStats v1.0 - Comprehensive CRUD Test Suite\n");
-  console.log("=" .repeat(80));
+  console.log("=".repeat(80));
 
   // Additional routers coverage (safe where possible)
   await testCountriesRouter();
@@ -671,9 +682,9 @@ async function runAllTests() {
   console.log("\n" + "=".repeat(80));
   console.log("\n📊 Test Summary\n");
 
-  const passCount = results.filter(r => r.status === "PASS").length;
-  const failCount = results.filter(r => r.status === "FAIL").length;
-  const skipCount = results.filter(r => r.status === "SKIP").length;
+  const passCount = results.filter((r) => r.status === "PASS").length;
+  const failCount = results.filter((r) => r.status === "FAIL").length;
+  const skipCount = results.filter((r) => r.status === "SKIP").length;
   const totalTests = results.length;
 
   console.log(`Total Tests: ${totalTests}`);
@@ -684,13 +695,13 @@ async function runAllTests() {
   if (failCount > 0) {
     console.log("\n⚠️  Failed Tests:");
     results
-      .filter(r => r.status === "FAIL")
-      .forEach(r => console.log(`   - [${r.router}] ${r.operation}: ${r.message}`));
+      .filter((r) => r.status === "FAIL")
+      .forEach((r) => console.log(`   - [${r.router}] ${r.operation}: ${r.message}`));
   }
 
-  const avgDuration = results
-    .filter(r => r.duration)
-    .reduce((acc, r) => acc + (r.duration || 0), 0) / results.filter(r => r.duration).length;
+  const avgDuration =
+    results.filter((r) => r.duration).reduce((acc, r) => acc + (r.duration || 0), 0) /
+    results.filter((r) => r.duration).length;
 
   console.log(`\n⏱️  Average Operation Duration: ${avgDuration.toFixed(2)}ms`);
   console.log("\n" + "=".repeat(80) + "\n");

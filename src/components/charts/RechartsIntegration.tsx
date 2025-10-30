@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -17,12 +17,12 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  type TooltipProps
-} from 'recharts';
-import { motion } from 'framer-motion';
-import { cn } from '~/lib/utils';
-import { GlassChart, chartTheme } from './GlassChart';
-import { getChartColor, generateChartColors } from '~/lib/builder-theme-utils';
+  type TooltipProps,
+} from "recharts";
+import { motion } from "framer-motion";
+import { cn } from "~/lib/utils";
+import { GlassChart, chartTheme } from "./GlassChart";
+import { getChartColor, generateChartColors } from "~/lib/builder-theme-utils";
 
 interface BaseChartProps {
   data: any[];
@@ -32,7 +32,7 @@ interface BaseChartProps {
   className?: string;
   loading?: boolean;
   error?: string;
-  theme?: 'default' | 'gold' | 'blue' | 'emerald' | 'purple';
+  theme?: "default" | "gold" | "blue" | "emerald" | "purple";
 }
 
 interface BarChartProps extends BaseChartProps {
@@ -68,27 +68,22 @@ function GlassTooltip({ active, payload, label, labelFormatter, formatter }: any
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       className={cn(
-        'backdrop-blur-md bg-[var(--color-bg-secondary)]/90',
-        'border border-[var(--color-border-primary)]/50',
-        'rounded-lg p-3 shadow-lg'
+        "bg-[var(--color-bg-secondary)]/90 backdrop-blur-md",
+        "border border-[var(--color-border-primary)]/50",
+        "rounded-lg p-3 shadow-lg"
       )}
     >
       {label && (
-        <p className="text-sm font-medium text-[var(--color-text-primary)] mb-2">
+        <p className="mb-2 text-sm font-medium text-[var(--color-text-primary)]">
           {labelFormatter ? labelFormatter(label, payload) : label}
         </p>
       )}
       <div className="space-y-1">
         {payload.map((entry: any, index: number) => (
           <div key={index} className="flex items-center gap-2 text-xs">
-            <div
-              className="w-3 h-3 rounded-sm"
-              style={{ backgroundColor: entry.color }}
-            />
-            <span className="text-[var(--color-text-secondary)]">
-              {entry.name}:
-            </span>
-            <span className="text-[var(--color-text-primary)] font-medium">
+            <div className="h-3 w-3 rounded-sm" style={{ backgroundColor: entry.color }} />
+            <span className="text-[var(--color-text-secondary)]">{entry.name}:</span>
+            <span className="font-medium text-[var(--color-text-primary)]">
               {formatter ? formatter(entry.value, entry.name, entry, index, payload) : entry.value}
             </span>
           </div>
@@ -111,17 +106,17 @@ export function GlassBarChart({
   className,
   loading,
   error,
-  theme = 'default',
-  valueFormatter
+  theme = "default",
+  valueFormatter,
 }: BarChartProps) {
   const chartColors = useMemo(() => {
     if (colors) return colors;
     const keys = Array.isArray(yKey) ? yKey : [yKey];
-    return generateChartColors(keys.length, 'primary');
+    return generateChartColors(keys.length, "primary");
   }, [colors, yKey]);
 
   const formatYAxis = (value: any) => {
-    if (typeof value === 'number') {
+    if (typeof value === "number") {
       if (valueFormatter) return valueFormatter(value);
       if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
       if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
@@ -143,8 +138,8 @@ export function GlassBarChart({
     >
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-          <CartesianGrid 
-            strokeDasharray="3 3" 
+          <CartesianGrid
+            strokeDasharray="3 3"
             stroke={chartTheme.grid.stroke}
             opacity={chartTheme.grid.opacity}
           />
@@ -160,39 +155,37 @@ export function GlassBarChart({
             tickLine={{ stroke: chartTheme.grid.stroke }}
             tickFormatter={formatYAxis}
           />
-          <Tooltip content={<GlassTooltip formatter={valueFormatter ? (value: number) => valueFormatter(value) : undefined} />} />
-          <Legend
-            wrapperStyle={{ color: chartTheme.text.secondary }}
+          <Tooltip
+            content={
+              <GlassTooltip
+                formatter={valueFormatter ? (value: number) => valueFormatter(value) : undefined}
+              />
+            }
           />
+          <Legend wrapperStyle={{ color: chartTheme.text.secondary }} />
           {Array.isArray(yKey) ? (
             yKey.map((key, index) => (
               <Bar
                 key={key}
                 dataKey={key}
                 fill={chartColors[index % chartColors.length]}
-                stackId={stacked ? 'stack' : undefined}
+                stackId={stacked ? "stack" : undefined}
                 radius={[2, 2, 0, 0]}
               >
                 {/* Individual cell colors for non-stacked multi-key charts */}
-                {!stacked && data.map((entry, cellIndex) => (
-                  <Cell 
-                    key={`cell-${key}-${cellIndex}`} 
-                    fill={chartColors[index % chartColors.length]} 
-                  />
-                ))}
+                {!stacked &&
+                  data.map((entry, cellIndex) => (
+                    <Cell
+                      key={`cell-${key}-${cellIndex}`}
+                      fill={chartColors[index % chartColors.length]}
+                    />
+                  ))}
               </Bar>
             ))
           ) : (
-            <Bar
-              dataKey={yKey}
-              fill={chartColors[0]}
-              radius={[4, 4, 0, 0]}
-            >
+            <Bar dataKey={yKey} fill={chartColors[0]} radius={[4, 4, 0, 0]}>
               {data.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={chartColors[index % chartColors.length]}
-                />
+                <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
               ))}
             </Bar>
           )}
@@ -216,12 +209,12 @@ export function GlassLineChart({
   className,
   loading,
   error,
-  theme = 'default'
+  theme = "default",
 }: LineChartProps) {
   const chartColors = useMemo(() => {
     if (colors) return colors;
     const keys = Array.isArray(yKey) ? yKey : [yKey];
-    return generateChartColors(keys.length, 'primary');
+    return generateChartColors(keys.length, "primary");
   }, [colors, yKey]);
 
   const ChartComponent = area ? AreaChart : LineChart;
@@ -238,8 +231,8 @@ export function GlassLineChart({
     >
       <ResponsiveContainer width="100%" height="100%">
         <ChartComponent data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-          <CartesianGrid 
-            strokeDasharray="3 3" 
+          <CartesianGrid
+            strokeDasharray="3 3"
             stroke={chartTheme.grid.stroke}
             opacity={chartTheme.grid.opacity}
           />
@@ -281,26 +274,24 @@ export function GlassLineChart({
                 />
               );
             })
+          ) : area ? (
+            <Area
+              type={curved ? "monotone" : "linear"}
+              dataKey={yKey}
+              stroke={chartColors[0]}
+              fill={chartColors[0]}
+              fillOpacity={0.3}
+              strokeWidth={2}
+            />
           ) : (
-            area ? (
-              <Area
-                type={curved ? "monotone" : "linear"}
-                dataKey={yKey}
-                stroke={chartColors[0]}
-                fill={chartColors[0]}
-                fillOpacity={0.3}
-                strokeWidth={2}
-              />
-            ) : (
-              <Line
-                type={curved ? "monotone" : "linear"}
-                dataKey={yKey}
-                stroke={chartColors[0]}
-                strokeWidth={2}
-                dot={{ fill: chartColors[0], strokeWidth: 2, r: 4 }}
-                activeDot={{ r: 6, fill: chartColors[0] }}
-              />
-            )
+            <Line
+              type={curved ? "monotone" : "linear"}
+              dataKey={yKey}
+              stroke={chartColors[0]}
+              strokeWidth={2}
+              dot={{ fill: chartColors[0], strokeWidth: 2, r: 4 }}
+              activeDot={{ r: 6, fill: chartColors[0] }}
+            />
           )}
         </ChartComponent>
       </ResponsiveContainer>
@@ -322,11 +313,11 @@ export function GlassPieChart({
   className,
   loading,
   error,
-  theme = 'default'
+  theme = "default",
 }: PieChartProps) {
   const chartColors = useMemo(() => {
     if (colors) return colors;
-    return generateChartColors(data.length, 'primary');
+    return generateChartColors(data.length, "primary");
   }, [colors, data.length]);
 
   return (
@@ -352,10 +343,7 @@ export function GlassPieChart({
             nameKey={nameKey}
           >
             {data.map((entry, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={chartColors[index % chartColors.length]}
-              />
+              <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
             ))}
           </Pie>
           <Tooltip content={<GlassTooltip />} />

@@ -4,7 +4,13 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
 import { Button } from "~/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Globe, MapPin, Plus } from "lucide-react";
 import { AddGeographyModal } from "../components/AddGeographyModal";
 import { api } from "~/trpc/react";
@@ -30,22 +36,22 @@ const DEFAULT_CONTINENTS = [
   "Europe",
   "North America",
   "South America",
-  "Oceania"
+  "Oceania",
 ];
 
 const DEFAULT_REGIONS: Record<string, string[]> = {
-  "Levantia": ["Northern Levantia", "Southern Levantia", "Western Levantia", "Eastern Levantia"],
-  "Sarpedon": ["Northern Sarpedon", "Southern Sarpedon", "Western Sarpedon", "Eastern Sarpedon"],
-  "Crona": ["Northern Crona", "Southern Crona", "Western Crona", "Eastern Crona"],
-  "Alshar": ["Northern Alshar", "Southern Alshar", "Central Alshar"],
-  "Audonia": ["Northern Audonia", "Southern Audonia", "Western Audonia", "Eastern Audonia"],
-  "Ixnay": ["Caphiria", "Pelaxia", "Vallos", "Cartadania", "Other Ixnay"],
-  "Africa": ["North Africa", "West Africa", "East Africa", "Central Africa", "Southern Africa"],
-  "Asia": ["East Asia", "Southeast Asia", "South Asia", "Central Asia", "Western Asia"],
-  "Europe": ["Northern Europe", "Southern Europe", "Western Europe", "Eastern Europe"],
+  Levantia: ["Northern Levantia", "Southern Levantia", "Western Levantia", "Eastern Levantia"],
+  Sarpedon: ["Northern Sarpedon", "Southern Sarpedon", "Western Sarpedon", "Eastern Sarpedon"],
+  Crona: ["Northern Crona", "Southern Crona", "Western Crona", "Eastern Crona"],
+  Alshar: ["Northern Alshar", "Southern Alshar", "Central Alshar"],
+  Audonia: ["Northern Audonia", "Southern Audonia", "Western Audonia", "Eastern Audonia"],
+  Ixnay: ["Caphiria", "Pelaxia", "Vallos", "Cartadania", "Other Ixnay"],
+  Africa: ["North Africa", "West Africa", "East Africa", "Central Africa", "Southern Africa"],
+  Asia: ["East Asia", "Southeast Asia", "South Asia", "Central Asia", "Western Asia"],
+  Europe: ["Northern Europe", "Southern Europe", "Western Europe", "Eastern Europe"],
   "North America": ["Northern America", "Central America", "Caribbean"],
   "South America": ["Northern South America", "Southern South America"],
-  "Oceania": ["Australasia", "Melanesia", "Micronesia", "Polynesia"]
+  Oceania: ["Australasia", "Melanesia", "Micronesia", "Polynesia"],
 };
 
 export function GeographySection({ inputs, onInputsChange, countryId }: GeographySectionProps) {
@@ -59,13 +65,10 @@ export function GeographySection({ inputs, onInputsChange, countryId }: Geograph
   const utils = api.useUtils();
 
   // Combine default and custom continents
-  const allContinents = [
-    ...DEFAULT_CONTINENTS,
-    ...(customGeography?.continents || [])
-  ].sort();
+  const allContinents = [...DEFAULT_CONTINENTS, ...(customGeography?.continents || [])].sort();
 
   // Get regions for selected continent
-  const selectedContinent = inputs.geography?.continent || '';
+  const selectedContinent = inputs.geography?.continent || "";
   const defaultRegions = DEFAULT_REGIONS[selectedContinent] || [];
   const customRegions = customGeography?.regions?.[selectedContinent] || [];
   const allRegions = [...defaultRegions, ...customRegions].sort();
@@ -76,8 +79,8 @@ export function GeographySection({ inputs, onInputsChange, countryId }: Geograph
       geography: {
         ...inputs.geography,
         continent,
-        region: '' // Reset region when continent changes
-      }
+        region: "", // Reset region when continent changes
+      },
     });
   };
 
@@ -86,8 +89,8 @@ export function GeographySection({ inputs, onInputsChange, countryId }: Geograph
       ...inputs,
       geography: {
         ...inputs.geography,
-        region
-      }
+        region,
+      },
     });
   };
 
@@ -122,10 +125,7 @@ export function GeographySection({ inputs, onInputsChange, countryId }: Geograph
           <div className="space-y-2">
             <Label htmlFor="continent">Continent</Label>
             <div className="flex gap-2">
-              <Select
-                value={selectedContinent}
-                onValueChange={handleContinentChange}
-              >
+              <Select value={selectedContinent} onValueChange={handleContinentChange}>
                 <SelectTrigger id="continent" className="flex-1">
                   <SelectValue placeholder="Select a continent" />
                 </SelectTrigger>
@@ -153,12 +153,14 @@ export function GeographySection({ inputs, onInputsChange, countryId }: Geograph
             <Label htmlFor="region">Region</Label>
             <div className="flex gap-2">
               <Select
-                value={inputs.geography?.region || ''}
+                value={inputs.geography?.region || ""}
                 onValueChange={handleRegionChange}
                 disabled={!selectedContinent}
               >
                 <SelectTrigger id="region" className="flex-1">
-                  <SelectValue placeholder={selectedContinent ? "Select a region" : "Select a continent first"} />
+                  <SelectValue
+                    placeholder={selectedContinent ? "Select a region" : "Select a continent first"}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {allRegions.map((region) => (
@@ -179,9 +181,7 @@ export function GeographySection({ inputs, onInputsChange, countryId }: Geograph
               </Button>
             </div>
             {!selectedContinent && (
-              <p className="text-sm text-muted-foreground">
-                Select a continent to choose a region
-              </p>
+              <p className="text-muted-foreground text-sm">Select a continent to choose a region</p>
             )}
           </div>
         </CardContent>

@@ -60,12 +60,10 @@ export function ChangePreviewDialog({
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   // Calculate impacts for all changes
-  const changeImpacts: Array<PendingChange & { impact: ChangeImpact }> = changes.map(
-    (change) => ({
-      ...change,
-      impact: calculateChangeImpact(change.fieldPath, change.oldValue, change.newValue),
-    })
-  );
+  const changeImpacts: Array<PendingChange & { impact: ChangeImpact }> = changes.map((change) => ({
+    ...change,
+    impact: calculateChangeImpact(change.fieldPath, change.oldValue, change.newValue),
+  }));
 
   // Group changes by impact level
   const instantChanges = changeImpacts.filter((c) => c.impact.changeType === "instant");
@@ -101,7 +99,7 @@ export function ChangePreviewDialog({
           {icon}
           <div>
             <h4 className={`font-semibold ${color}`}>{title}</h4>
-            <p className="text-xs text-muted-foreground">{description}</p>
+            <p className="text-muted-foreground text-xs">{description}</p>
           </div>
           <Badge variant="outline" className="ml-auto">
             {groupChanges.length} {groupChanges.length === 1 ? "change" : "changes"}
@@ -119,13 +117,13 @@ export function ChangePreviewDialog({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className={`rounded-lg border p-3 ${getImpactBgColor(change.impact.impactLevel)} cursor-pointer hover:shadow-md transition-shadow`}
+                className={`rounded-lg border p-3 ${getImpactBgColor(change.impact.impactLevel)} cursor-pointer transition-shadow hover:shadow-md`}
                 onClick={() => setExpandedIndex(isExpanded ? null : globalIndex)}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-sm">{change.fieldLabel}</span>
+                    <div className="mb-1 flex items-center gap-2">
+                      <span className="text-sm font-medium">{change.fieldLabel}</span>
                       <Badge
                         variant="outline"
                         className={`text-xs ${getImpactColor(change.impact.impactLevel)}`}
@@ -133,15 +131,15 @@ export function ChangePreviewDialog({
                         {change.impact.impactLevel} impact
                       </Badge>
                     </div>
-                    <div className="text-xs text-muted-foreground flex items-center gap-2">
+                    <div className="text-muted-foreground flex items-center gap-2 text-xs">
                       <span className="line-through">{formatValue(change.oldValue)}</span>
                       <span>→</span>
-                      <span className="font-semibold text-foreground">
+                      <span className="text-foreground font-semibold">
                         {formatValue(change.newValue)}
                       </span>
                     </div>
                   </div>
-                  <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <Clock className="text-muted-foreground h-4 w-4 flex-shrink-0" />
                 </div>
 
                 <AnimatePresence>
@@ -150,14 +148,14 @@ export function ChangePreviewDialog({
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="mt-3 pt-3 border-t space-y-2"
+                      className="mt-3 space-y-2 border-t pt-3"
                     >
                       {change.impact.warnings.length > 0 && (
                         <div className="space-y-1">
-                          <p className="text-xs font-semibold text-muted-foreground">Warnings:</p>
+                          <p className="text-muted-foreground text-xs font-semibold">Warnings:</p>
                           {change.impact.warnings.map((warning, i) => (
-                            <p key={i} className="text-xs text-muted-foreground flex gap-2">
-                              <AlertTriangle className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                            <p key={i} className="text-muted-foreground flex gap-2 text-xs">
+                              <AlertTriangle className="mt-0.5 h-3 w-3 flex-shrink-0" />
                               {warning}
                             </p>
                           ))}
@@ -165,10 +163,12 @@ export function ChangePreviewDialog({
                       )}
                       {change.impact.reasons.length > 0 && (
                         <div className="space-y-1">
-                          <p className="text-xs font-semibold text-muted-foreground">Why the delay?</p>
+                          <p className="text-muted-foreground text-xs font-semibold">
+                            Why the delay?
+                          </p>
                           {change.impact.reasons.map((reason, i) => (
-                            <p key={i} className="text-xs text-muted-foreground flex gap-2">
-                              <Info className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                            <p key={i} className="text-muted-foreground flex gap-2 text-xs">
+                              <Info className="mt-0.5 h-3 w-3 flex-shrink-0" />
                               {reason}
                             </p>
                           ))}
@@ -187,14 +187,15 @@ export function ChangePreviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-amber-500" />
             Review Your Changes
           </DialogTitle>
           <DialogDescription>
-            Changes will take effect based on their economic impact. Click any change to see details.
+            Changes will take effect based on their economic impact. Click any change to see
+            details.
           </DialogDescription>
         </DialogHeader>
 
@@ -206,15 +207,17 @@ export function ChangePreviewDialog({
               <AlertDescription>
                 {hasHighImpact && (
                   <p className="font-semibold">
-                    High-impact changes detected! These changes will take 7 days game time (3.5 days real time) to implement.
+                    High-impact changes detected! These changes will take 7 days game time (3.5 days
+                    real time) to implement.
                   </p>
                 )}
                 {hasMediumImpact && !hasHighImpact && (
                   <p className="font-semibold">
-                    Medium-impact changes detected! These changes will take 3-5 days game time (1.5-2.5 days real time) to implement.
+                    Medium-impact changes detected! These changes will take 3-5 days game time
+                    (1.5-2.5 days real time) to implement.
                   </p>
                 )}
-                <p className="text-sm mt-1">
+                <p className="mt-1 text-sm">
                   Your country's economy needs time to adjust to major policy changes.
                 </p>
               </AlertDescription>
@@ -267,8 +270,9 @@ export function ChangePreviewDialog({
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription className="text-sm">
-              <strong>Why delays?</strong> Major economic changes require time for markets, businesses,
-              and citizens to adjust. This simulates realistic policy implementation timelines.
+              <strong>Why delays?</strong> Major economic changes require time for markets,
+              businesses, and citizens to adjust. This simulates realistic policy implementation
+              timelines.
             </AlertDescription>
           </Alert>
         </div>
@@ -295,7 +299,7 @@ export function ChangePreviewDialog({
               </>
             ) : (
               <>
-                <CheckCircle className="h-4 w-4 mr-2" />
+                <CheckCircle className="mr-2 h-4 w-4" />
                 Confirm All Changes
               </>
             )}

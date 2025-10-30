@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React from "react";
 
 // ==================== CORE INTERFACES ====================
 
@@ -16,7 +16,7 @@ export interface UnifiedAtomicComponent {
   synergies: string[];
   conflicts: string[];
   metadata: {
-    complexity: 'Low' | 'Medium' | 'High';
+    complexity: "Low" | "Medium" | "High";
     timeToImplement: string;
     staffRequired: number;
     technologyRequired: boolean;
@@ -25,11 +25,11 @@ export interface UnifiedAtomicComponent {
 }
 
 export interface AtomicComponentTheme {
-  type: 'unified' | 'category-based';
-  
+  type: "unified" | "category-based";
+
   // For unified themes (tax=gold, government=blue)
   primary?: string; // e.g., 'gold' or 'blue'
-  
+
   // For category-based themes (economy)
   categoryColors?: Record<string, string>; // e.g., { 'economicModel': 'emerald' }
 }
@@ -51,16 +51,16 @@ export interface UnifiedAtomicComponentSelectorProps<T extends string> {
   categories: Record<string, string[]>;
   selectedComponents: T[];
   onComponentChange: (components: T[]) => void;
-  
+
   // Configuration
   maxComponents?: number;
   isReadOnly?: boolean;
-  
+
   // Theming
   theme: AtomicComponentTheme;
   systemName: string;
   systemIcon: React.ComponentType<{ className?: string }>;
-  
+
   // Synergy/Conflict Calculations
   calculateEffectiveness: (selected: T[]) => EffectivenessMetrics;
   checkSynergy: (comp1: string, comp2: string) => number;
@@ -82,17 +82,28 @@ export interface UnifiedAtomicCardProps {
 
 // ==================== UTILITY TYPES ====================
 
-export type ComponentComplexity = 'Low' | 'Medium' | 'High';
+export type ComponentComplexity = "Low" | "Medium" | "High";
 
-export type ThemeType = 'unified' | 'category-based';
+export type ThemeType = "unified" | "category-based";
 
-export type ColorVariant = 
-  | 'gold' | 'blue' | 'emerald' | 'indigo' | 'cyan' 
-  | 'amber' | 'purple' | 'teal' | 'green' | 'red';
+export type ColorVariant =
+  | "gold"
+  | "blue"
+  | "emerald"
+  | "indigo"
+  | "cyan"
+  | "amber"
+  | "purple"
+  | "teal"
+  | "green"
+  | "red";
 
 // ==================== THEME UTILITIES ====================
 
-export function getThemeClasses(theme: AtomicComponentTheme, category?: string): {
+export function getThemeClasses(
+  theme: AtomicComponentTheme,
+  category?: string
+): {
   primary: string;
   primaryLight: string;
   primaryDark: string;
@@ -103,7 +114,7 @@ export function getThemeClasses(theme: AtomicComponentTheme, category?: string):
   conflictBorder: string;
   conflictBg: string;
 } {
-  if (theme.type === 'unified' && theme.primary) {
+  if (theme.type === "unified" && theme.primary) {
     const color = theme.primary;
     return {
       primary: `${color}-600`,
@@ -111,38 +122,38 @@ export function getThemeClasses(theme: AtomicComponentTheme, category?: string):
       primaryDark: `${color}-700`,
       selectedBg: `${color}-50`,
       selectedBorder: `${color}-500`,
-      synergyBorder: 'green-300',
-      synergyBg: 'green-50',
-      conflictBorder: 'red-300',
-      conflictBg: 'red-50',
+      synergyBorder: "green-300",
+      synergyBg: "green-50",
+      conflictBorder: "red-300",
+      conflictBg: "red-50",
     };
   }
-  
-  if (theme.type === 'category-based' && theme.categoryColors && category) {
-    const color = theme.categoryColors[category] || 'blue';
+
+  if (theme.type === "category-based" && theme.categoryColors && category) {
+    const color = theme.categoryColors[category] || "blue";
     return {
       primary: `${color}-600`,
       primaryLight: `${color}-500`,
       primaryDark: `${color}-700`,
       selectedBg: `${color}-50`,
       selectedBorder: `${color}-500`,
-      synergyBorder: 'green-300',
-      synergyBg: 'green-50',
-      conflictBorder: 'red-300',
-      conflictBg: 'red-50',
+      synergyBorder: "green-300",
+      synergyBg: "green-50",
+      conflictBorder: "red-300",
+      conflictBg: "red-50",
     };
   }
-  
+
   // Default fallback
   return {
-    primary: 'blue-600',
-    primaryLight: 'blue-500',
-    primaryDark: 'blue-700',
-    selectedBg: 'blue-50',
-    selectedBorder: 'blue-500',
-    synergyBorder: 'green-300',
-    synergyBg: 'green-50',
-    conflictBorder: 'red-300',
-    conflictBg: 'red-50',
+    primary: "blue-600",
+    primaryLight: "blue-500",
+    primaryDark: "blue-700",
+    selectedBg: "blue-50",
+    selectedBorder: "blue-500",
+    synergyBorder: "green-300",
+    synergyBg: "green-50",
+    conflictBorder: "red-300",
+    conflictBg: "red-50",
   };
 }

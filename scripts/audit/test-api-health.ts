@@ -513,19 +513,15 @@ async function runHealthChecks() {
   if (downEndpoints.length > 0) {
     console.log("\n❌ Down Endpoints:");
     downEndpoints.forEach((e) => {
-      console.log(
-        `   [${e.router}] ${e.endpoint}: ${e.error || "Timeout"}`
-      );
+      console.log(`   [${e.router}] ${e.endpoint}: ${e.error || "Timeout"}`);
     });
   }
 
-  const avgResponseTime =
-    results.reduce((acc, r) => acc + r.responseTime, 0) / results.length;
+  const avgResponseTime = results.reduce((acc, r) => acc + r.responseTime, 0) / results.length;
 
   console.log(`\n⏱️  Average Response Time: ${avgResponseTime.toFixed(2)}ms`);
 
-  const healthScore =
-    (healthyEndpoints.length / results.length) * 100;
+  const healthScore = (healthyEndpoints.length / results.length) * 100;
 
   let grade: string;
   if (healthScore >= 95) grade = "A+ (Excellent)";

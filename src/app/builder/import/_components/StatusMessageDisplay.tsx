@@ -23,7 +23,7 @@ export const StatusMessageDisplay: React.FC<StatusMessageDisplayProps> = ({
   error,
 }) => {
   let content;
-  
+
   let motionPreset: "fade" | "slide" | "scale" = "fade";
   let theme: "neutral" | "red" = "neutral";
 
@@ -57,9 +57,7 @@ export const StatusMessageDisplay: React.FC<StatusMessageDisplayProps> = ({
 
   return (
     <GlassCard depth="elevated" blur="medium" theme={theme} motionPreset={motionPreset}>
-      <GlassCardContent className="text-center py-12">
-        {content}
-      </GlassCardContent>
+      <GlassCardContent className="py-12 text-center">{content}</GlassCardContent>
     </GlassCard>
   );
 };

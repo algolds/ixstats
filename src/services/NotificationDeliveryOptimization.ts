@@ -11,8 +11,8 @@ import type {
   NotificationPriority,
   NotificationCategory,
   DeliveryContext,
-} from '~/types/unified-notifications';
-import type { BatchAnalysis } from './NotificationGrouping';
+} from "~/types/unified-notifications";
+import type { BatchAnalysis } from "./NotificationGrouping";
 
 // Delivery optimization configuration
 export interface DeliveryOptimizationConfig {
@@ -27,7 +27,7 @@ export interface DeliveryOptimizationConfig {
 
 // User attention state analysis
 export interface AttentionState {
-  level: 'focused' | 'partial' | 'distracted' | 'away';
+  level: "focused" | "partial" | "distracted" | "away";
   confidence: number; // 0-1
   indicators: AttentionIndicator[];
   lastUpdate: number;
@@ -35,7 +35,12 @@ export interface AttentionState {
 }
 
 export interface AttentionIndicator {
-  type: 'mouse_activity' | 'keyboard_activity' | 'tab_focus' | 'scroll_activity' | 'page_visibility';
+  type:
+    | "mouse_activity"
+    | "keyboard_activity"
+    | "tab_focus"
+    | "scroll_activity"
+    | "page_visibility";
   strength: number; // 0-1
   timestamp: number;
 }
@@ -54,7 +59,7 @@ export interface DeliveryOptimization {
 
 export interface OptimizationReasoning {
   factor: string;
-  impact: 'positive' | 'negative' | 'neutral';
+  impact: "positive" | "negative" | "neutral";
   weight: number;
   description: string;
 }
@@ -69,7 +74,7 @@ export interface DeliveryOption {
 
 export interface FallbackStrategy {
   condition: string;
-  action: 'retry' | 'escalate' | 'redirect' | 'delay';
+  action: "retry" | "escalate" | "redirect" | "delay";
   parameters: Record<string, any>;
   maxAttempts: number;
 }
@@ -113,7 +118,7 @@ export class NotificationDeliveryOptimization {
       maxDeliveryDelay: 2 * 60 * 60 * 1000, // 2 hours
       minDeliveryInterval: 30 * 1000, // 30 seconds
       urgencyOverrides: true,
-      ...config
+      ...config,
     };
   }
 
@@ -128,10 +133,10 @@ export class NotificationDeliveryOptimization {
   ): Promise<DeliveryOptimization> {
     // Analyze current user attention state
     const attentionState = await this.analyzeUserAttention(context);
-    
+
     // Get user behavior patterns
     const behaviorPattern = await this.getUserBehaviorPattern(context.userId);
-    
+
     // Calculate optimal delivery timing
     const optimalTiming = await this.calculateOptimalTiming(
       notification,
@@ -140,7 +145,7 @@ export class NotificationDeliveryOptimization {
       attentionState,
       behaviorPattern
     );
-    
+
     // Select best delivery method
     const deliveryMethod = await this.selectOptimalDeliveryMethod(
       notification,
@@ -149,7 +154,7 @@ export class NotificationDeliveryOptimization {
       attentionState,
       behaviorPattern
     );
-    
+
     // Generate alternative options
     const alternatives = await this.generateAlternativeOptions(
       notification,
@@ -157,7 +162,7 @@ export class NotificationDeliveryOptimization {
       preferences,
       attentionState
     );
-    
+
     // Calculate confidence and engagement prediction
     const confidence = this.calculateOptimizationConfidence(
       notification,
@@ -165,7 +170,7 @@ export class NotificationDeliveryOptimization {
       behaviorPattern,
       attentionState
     );
-    
+
     const estimatedEngagement = await this.predictEngagement(
       notification,
       context,
@@ -173,7 +178,7 @@ export class NotificationDeliveryOptimization {
       attentionState,
       deliveryMethod
     );
-    
+
     // Generate reasoning
     const reasoning = this.generateOptimizationReasoning(
       notification,
@@ -182,13 +187,9 @@ export class NotificationDeliveryOptimization {
       behaviorPattern,
       optimalTiming
     );
-    
+
     // Create fallback strategies
-    const fallbackStrategies = this.createFallbackStrategies(
-      notification,
-      context,
-      deliveryMethod
-    );
+    const fallbackStrategies = this.createFallbackStrategies(notification, context, deliveryMethod);
 
     return {
       originalDeliveryTime: Date.now(),
@@ -198,7 +199,7 @@ export class NotificationDeliveryOptimization {
       reasoning,
       alternativeOptions: alternatives,
       estimatedEngagement,
-      fallbackStrategies
+      fallbackStrategies,
     };
   }
 
@@ -215,32 +216,30 @@ export class NotificationDeliveryOptimization {
   ): Promise<DeliveryOptimization[]> {
     const constraints = globalConstraints || {};
     const maxConcurrent = constraints.maxConcurrentDeliveries || 100;
-    
+
     // Group optimizations by time windows
     const timeWindows = this.groupByTimeWindows(optimizations, 5 * 60 * 1000); // 5-minute windows
-    
+
     const balancedOptimizations: DeliveryOptimization[] = [];
-    
+
     for (const [windowStart, windowOptimizations] of timeWindows) {
       if (windowOptimizations.length <= maxConcurrent) {
         balancedOptimizations.push(...windowOptimizations);
         continue;
       }
-      
+
       // Apply load balancing within the window
       const prioritized = this.prioritizeWithinWindow(windowOptimizations);
       const immediate = prioritized.slice(0, maxConcurrent);
       const deferred = prioritized.slice(maxConcurrent);
-      
+
       // Reschedule deferred notifications
       const rescheduled = await this.rescheduleDeferred(deferred, windowStart);
-      
+
       balancedOptimizations.push(...immediate, ...rescheduled);
     }
-    
-    return balancedOptimizations.sort((a, b) => 
-      a.optimizedDeliveryTime - b.optimizedDeliveryTime
-    );
+
+    return balancedOptimizations.sort((a, b) => a.optimizedDeliveryTime - b.optimizedDeliveryTime);
   }
 
   /**
@@ -251,31 +250,31 @@ export class NotificationDeliveryOptimization {
     indicators: AttentionIndicator[]
   ): Promise<AttentionState> {
     const currentState = this.attentionStates.get(userId) || {
-      level: 'partial',
+      level: "partial",
       confidence: 0.5,
       indicators: [],
       lastUpdate: Date.now(),
-      predictedDuration: 5 * 60 * 1000 // 5 minutes default
+      predictedDuration: 5 * 60 * 1000, // 5 minutes default
     };
-    
+
     // Merge new indicators with recent ones
-    const cutoffTime = Date.now() - (5 * 60 * 1000); // 5 minutes
-    const recentIndicators = currentState.indicators.filter(i => i.timestamp > cutoffTime);
+    const cutoffTime = Date.now() - 5 * 60 * 1000; // 5 minutes
+    const recentIndicators = currentState.indicators.filter((i) => i.timestamp > cutoffTime);
     const allIndicators = [...recentIndicators, ...indicators];
-    
+
     // Analyze attention level
     const attentionLevel = this.calculateAttentionLevel(allIndicators);
     const confidence = this.calculateAttentionConfidence(allIndicators);
     const predictedDuration = this.predictAttentionDuration(allIndicators, attentionLevel);
-    
+
     const newState: AttentionState = {
       level: attentionLevel,
       confidence,
       indicators: allIndicators,
       lastUpdate: Date.now(),
-      predictedDuration
+      predictedDuration,
     };
-    
+
     this.attentionStates.set(userId, newState);
     return newState;
   }
@@ -289,33 +288,33 @@ export class NotificationDeliveryOptimization {
     outcome: DeliveryOutcome
   ): Promise<void> {
     if (!this.config.enableBehaviorLearning) return;
-    
+
     const userId = outcome.userId;
     let pattern = this.userBehaviorPatterns.get(userId);
-    
+
     if (!pattern) {
       pattern = this.initializeUserBehaviorPattern(userId);
     }
-    
+
     // Update response time patterns
-    if (outcome.responseTime && outcome.action !== 'dismissed') {
+    if (outcome.responseTime && outcome.action !== "dismissed") {
       this.updateResponseTimePatterns(pattern, notification, outcome.responseTime);
     }
-    
+
     // Update engagement patterns
     this.updateEngagementPatterns(pattern, notification, outcome, optimization);
-    
+
     // Update dismissal patterns
-    if (outcome.action === 'dismissed') {
+    if (outcome.action === "dismissed") {
       this.updateDismissalPatterns(pattern, notification, outcome);
     }
-    
+
     // Update delivery method preferences
     this.updateDeliveryMethodPreferences(pattern, notification, outcome, optimization);
-    
+
     pattern.lastUpdated = Date.now();
     pattern.confidenceLevel = this.calculatePatternConfidence(pattern);
-    
+
     this.userBehaviorPatterns.set(userId, pattern);
   }
 
@@ -324,93 +323,97 @@ export class NotificationDeliveryOptimization {
   private async analyzeUserAttention(context: NotificationContext): Promise<AttentionState> {
     const userId = context.userId;
     const existingState = this.attentionStates.get(userId);
-    
-    if (existingState && Date.now() - existingState.lastUpdate < 60000) { // 1 minute
+
+    if (existingState && Date.now() - existingState.lastUpdate < 60000) {
+      // 1 minute
       return existingState;
     }
-    
+
     // Generate indicators from context
     const indicators: AttentionIndicator[] = [];
-    
+
     if (context.focusMode) {
       indicators.push({
-        type: 'tab_focus',
+        type: "tab_focus",
         strength: 0.9,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
-    
+
     if (context.recentActions.length > 0) {
       indicators.push({
-        type: 'mouse_activity',
+        type: "mouse_activity",
         strength: Math.min(1.0, context.recentActions.length / 10),
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
-    
+
     const attentionLevel = this.calculateAttentionLevel(indicators);
     const confidence = this.calculateAttentionConfidence(indicators);
-    
+
     const state: AttentionState = {
       level: attentionLevel,
       confidence,
       indicators,
       lastUpdate: Date.now(),
-      predictedDuration: 5 * 60 * 1000 // 5 minutes default
+      predictedDuration: 5 * 60 * 1000, // 5 minutes default
     };
-    
+
     this.attentionStates.set(userId, state);
     return state;
   }
 
-  private calculateAttentionLevel(indicators: AttentionIndicator[]): 'focused' | 'partial' | 'distracted' | 'away' {
-    if (indicators.length === 0) return 'away';
-    
+  private calculateAttentionLevel(
+    indicators: AttentionIndicator[]
+  ): "focused" | "partial" | "distracted" | "away" {
+    if (indicators.length === 0) return "away";
+
     const avgStrength = indicators.reduce((sum, i) => sum + i.strength, 0) / indicators.length;
-    const recentActivity = indicators.filter(i => Date.now() - i.timestamp < 60000).length;
-    
-    if (avgStrength > 0.8 && recentActivity > 2) return 'focused';
-    if (avgStrength > 0.5 && recentActivity > 0) return 'partial';
-    if (recentActivity > 0) return 'distracted';
-    return 'away';
+    const recentActivity = indicators.filter((i) => Date.now() - i.timestamp < 60000).length;
+
+    if (avgStrength > 0.8 && recentActivity > 2) return "focused";
+    if (avgStrength > 0.5 && recentActivity > 0) return "partial";
+    if (recentActivity > 0) return "distracted";
+    return "away";
   }
 
   private calculateAttentionConfidence(indicators: AttentionIndicator[]): number {
     if (indicators.length === 0) return 0.3;
-    
-    const recency = indicators.reduce((sum, i) => {
-      const age = Date.now() - i.timestamp;
-      return sum + Math.max(0, 1 - age / (5 * 60 * 1000)); // Decay over 5 minutes
-    }, 0) / indicators.length;
-    
-    const diversity = new Set(indicators.map(i => i.type)).size / 5; // 5 possible types
-    
+
+    const recency =
+      indicators.reduce((sum, i) => {
+        const age = Date.now() - i.timestamp;
+        return sum + Math.max(0, 1 - age / (5 * 60 * 1000)); // Decay over 5 minutes
+      }, 0) / indicators.length;
+
+    const diversity = new Set(indicators.map((i) => i.type)).size / 5; // 5 possible types
+
     return Math.min(1.0, (recency + diversity) / 2);
   }
 
   private predictAttentionDuration(
     indicators: AttentionIndicator[],
-    level: AttentionState['level']
+    level: AttentionState["level"]
   ): number {
     // Simplified prediction based on attention level
     const baseDurations = {
-      focused: 15 * 60 * 1000,   // 15 minutes
-      partial: 10 * 60 * 1000,   // 10 minutes
-      distracted: 5 * 60 * 1000,  // 5 minutes
-      away: 30 * 60 * 1000       // 30 minutes
+      focused: 15 * 60 * 1000, // 15 minutes
+      partial: 10 * 60 * 1000, // 10 minutes
+      distracted: 5 * 60 * 1000, // 5 minutes
+      away: 30 * 60 * 1000, // 30 minutes
     };
-    
+
     return baseDurations[level];
   }
 
   private async getUserBehaviorPattern(userId: string): Promise<UserBehaviorPattern> {
     let pattern = this.userBehaviorPatterns.get(userId);
-    
+
     if (!pattern) {
       pattern = this.initializeUserBehaviorPattern(userId);
       this.userBehaviorPatterns.set(userId, pattern);
     }
-    
+
     return pattern;
   }
 
@@ -424,10 +427,10 @@ export class NotificationDeliveryOptimization {
         responseTimeByPriority: new Map(),
         preferredDeliveryMethods: new Map(),
         engagementByTimeOfDay: new Map(),
-        dismissalPatterns: []
+        dismissalPatterns: [],
       },
       lastUpdated: Date.now(),
-      confidenceLevel: 0.1 // Low initial confidence
+      confidenceLevel: 0.1, // Low initial confidence
     };
   }
 
@@ -439,17 +442,17 @@ export class NotificationDeliveryOptimization {
     behaviorPattern: UserBehaviorPattern
   ): Promise<number> {
     let optimalTime = Date.now();
-    
+
     // Critical notifications get immediate delivery
-    if (notification.priority === 'critical' && this.config.urgencyOverrides) {
+    if (notification.priority === "critical" && this.config.urgencyOverrides) {
       return optimalTime;
     }
-    
+
     // Consider user attention state
-    if (attentionState.level === 'away' && notification.priority !== 'high') {
+    if (attentionState.level === "away" && notification.priority !== "high") {
       optimalTime += attentionState.predictedDuration * 0.5; // Wait for user to return
     }
-    
+
     // Consider user behavior patterns
     const currentHour = new Date().getHours();
     if (!behaviorPattern.patterns.dailyActiveHours.includes(currentHour)) {
@@ -457,23 +460,23 @@ export class NotificationDeliveryOptimization {
       const nextActiveHour = this.findNextActiveHour(currentHour, behaviorPattern);
       optimalTime = this.getNextHourTimestamp(nextActiveHour);
     }
-    
+
     // Consider quiet hours
     if (preferences.quietHours && this.isInQuietHours(preferences.quietHours)) {
-      if (notification.priority !== 'critical') {
+      if (notification.priority !== "critical") {
         optimalTime = this.getQuietHoursEndTime(preferences.quietHours);
       }
     }
-    
+
     // Apply minimum delivery interval
     const lastDeliveryTime = this.getLastDeliveryTime(context.userId);
     const minNextDelivery = lastDeliveryTime + this.config.minDeliveryInterval;
     optimalTime = Math.max(optimalTime, minNextDelivery);
-    
+
     // Respect maximum delay
     const maxDeliveryTime = Date.now() + this.config.maxDeliveryDelay;
     optimalTime = Math.min(optimalTime, maxDeliveryTime);
-    
+
     return optimalTime;
   }
 
@@ -490,22 +493,22 @@ export class NotificationDeliveryOptimization {
       const method = categoryPrefs.deliveryMethods[0];
       if (method) return method;
     }
-    
+
     // Critical notifications use most prominent method
-    if (notification.priority === 'critical') {
-      return attentionState.level === 'focused' ? 'dynamic-island' : 'modal';
+    if (notification.priority === "critical") {
+      return attentionState.level === "focused" ? "dynamic-island" : "modal";
     }
-    
+
     // Adapt based on attention state
     switch (attentionState.level) {
-      case 'focused':
-        return notification.priority === 'high' ? 'dynamic-island' : 'toast';
-      case 'partial':
-        return 'toast';
-      case 'distracted':
-        return notification.priority === 'high' ? 'badge' : 'silent';
-      case 'away':
-        return 'badge';
+      case "focused":
+        return notification.priority === "high" ? "dynamic-island" : "toast";
+      case "partial":
+        return "toast";
+      case "distracted":
+        return notification.priority === "high" ? "badge" : "silent";
+      case "away":
+        return "badge";
     }
   }
 
@@ -516,21 +519,21 @@ export class NotificationDeliveryOptimization {
     attentionState: AttentionState
   ): Promise<DeliveryOption[]> {
     const options: DeliveryOption[] = [];
-    const methods: DeliveryMethod[] = ['dynamic-island', 'toast', 'modal', 'badge', 'silent'];
-    
+    const methods: DeliveryMethod[] = ["dynamic-island", "toast", "modal", "badge", "silent"];
+
     for (const method of methods) {
       const score = this.scoreDeliveryMethod(method, notification, attentionState);
-      const timing = Date.now() + (method === 'silent' ? 0 : 30000); // Delay for non-silent
-      
+      const timing = Date.now() + (method === "silent" ? 0 : 30000); // Delay for non-silent
+
       options.push({
         method,
         timing,
         score,
         pros: this.getMethodPros(method, notification, attentionState),
-        cons: this.getMethodCons(method, notification, attentionState)
+        cons: this.getMethodCons(method, notification, attentionState),
       });
     }
-    
+
     return options.sort((a, b) => b.score - a.score).slice(0, 3);
   }
 
@@ -540,22 +543,22 @@ export class NotificationDeliveryOptimization {
     attentionState: AttentionState
   ): number {
     let score = 50; // Base score
-    
+
     // Priority adjustments
     const priorityScores = { critical: 90, high: 70, medium: 50, low: 30 };
     score += (priorityScores[notification.priority] - 50) * 0.5;
-    
+
     // Attention state adjustments
     const attentionBonus = {
-      focused: { 'dynamic-island': 20, toast: 15, modal: -10 },
-      partial: { toast: 20, 'dynamic-island': 10, badge: 5 },
+      focused: { "dynamic-island": 20, toast: 15, modal: -10 },
+      partial: { toast: 20, "dynamic-island": 10, badge: 5 },
       distracted: { badge: 15, silent: 10, toast: -5 },
-      away: { badge: 20, silent: 15, toast: -10 }
+      away: { badge: 20, silent: 15, toast: -10 },
     };
-    
+
     const levelBonus = attentionBonus[attentionState.level];
-    score += (levelBonus && method in levelBonus ? levelBonus[method as keyof typeof levelBonus] : 0);
-    
+    score += levelBonus && method in levelBonus ? levelBonus[method as keyof typeof levelBonus] : 0;
+
     return Math.max(0, Math.min(100, score));
   }
 
@@ -565,15 +568,15 @@ export class NotificationDeliveryOptimization {
     attentionState: AttentionState
   ): string[] {
     const pros: Record<DeliveryMethod, string[]> = {
-      'dynamic-island': ['Highly visible', 'Interactive', 'Modern UX'],
-      'toast': ['Non-intrusive', 'Auto-dismiss', 'Good visibility'],
-      'modal': ['Guaranteed attention', 'Action required', 'Clear message'],
-      'badge': ['Persistent', 'Low interruption', 'Cumulative info'],
-      'silent': ['Zero interruption', 'Background processing', 'Batch friendly'],
-      'command-palette': ['Contextual', 'User-initiated', 'Organized'],
-      'push': ['Works offline', 'System native', 'High reach']
+      "dynamic-island": ["Highly visible", "Interactive", "Modern UX"],
+      toast: ["Non-intrusive", "Auto-dismiss", "Good visibility"],
+      modal: ["Guaranteed attention", "Action required", "Clear message"],
+      badge: ["Persistent", "Low interruption", "Cumulative info"],
+      silent: ["Zero interruption", "Background processing", "Batch friendly"],
+      "command-palette": ["Contextual", "User-initiated", "Organized"],
+      push: ["Works offline", "System native", "High reach"],
     };
-    
+
     return pros[method] || [];
   }
 
@@ -583,15 +586,15 @@ export class NotificationDeliveryOptimization {
     attentionState: AttentionState
   ): string[] {
     const cons: Record<DeliveryMethod, string[]> = {
-      'dynamic-island': ['Requires modern browser', 'Can be missed'],
-      'toast': ['Temporary', 'Can be dismissed quickly'],
-      'modal': ['Highly intrusive', 'Blocks workflow'],
-      'badge': ['Easy to ignore', 'No immediate action'],
-      'silent': ['No immediate awareness', 'Delay in response'],
-      'command-palette': ['Requires user action', 'Not immediate'],
-      'push': ['Permission required', 'Platform dependent']
+      "dynamic-island": ["Requires modern browser", "Can be missed"],
+      toast: ["Temporary", "Can be dismissed quickly"],
+      modal: ["Highly intrusive", "Blocks workflow"],
+      badge: ["Easy to ignore", "No immediate action"],
+      silent: ["No immediate awareness", "Delay in response"],
+      "command-palette": ["Requires user action", "Not immediate"],
+      push: ["Permission required", "Platform dependent"],
     };
-    
+
     return cons[method] || [];
   }
 
@@ -602,17 +605,17 @@ export class NotificationDeliveryOptimization {
     attentionState: AttentionState
   ): number {
     let confidence = 0.5; // Base confidence
-    
+
     // Higher confidence with more behavior data
     confidence += behaviorPattern.confidenceLevel * 0.3;
-    
+
     // Higher confidence with recent attention data
     confidence += attentionState.confidence * 0.2;
-    
+
     // Lower confidence for edge cases
-    if (notification.priority === 'critical') confidence += 0.2;
+    if (notification.priority === "critical") confidence += 0.2;
     if (context.isExecutiveMode) confidence += 0.1;
-    
+
     return Math.min(1.0, Math.max(0.1, confidence));
   }
 
@@ -624,28 +627,28 @@ export class NotificationDeliveryOptimization {
     deliveryMethod: DeliveryMethod
   ): Promise<number> {
     let engagement = 0.5; // Base engagement
-    
+
     // Adjust based on attention state
     const attentionMultiplier = {
       focused: 0.9,
       partial: 0.7,
       distracted: 0.4,
-      away: 0.2
+      away: 0.2,
     };
     engagement *= attentionMultiplier[attentionState.level];
-    
+
     // Adjust based on delivery method effectiveness
     const methodMultiplier = {
-      'dynamic-island': 0.8,
-      'toast': 0.7,
-      'modal': 0.9,
-      'badge': 0.4,
-      'silent': 0.1,
-      'command-palette': 0.6,
-      'push': 0.7
+      "dynamic-island": 0.8,
+      toast: 0.7,
+      modal: 0.9,
+      badge: 0.4,
+      silent: 0.1,
+      "command-palette": 0.6,
+      push: 0.7,
     };
     engagement *= methodMultiplier[deliveryMethod] || 0.5;
-    
+
     // Adjust based on historical engagement
     const hourlyEngagement = behaviorPattern.patterns.engagementByTimeOfDay.get(
       new Date().getHours()
@@ -653,7 +656,7 @@ export class NotificationDeliveryOptimization {
     if (hourlyEngagement !== undefined) {
       engagement = (engagement + hourlyEngagement) / 2;
     }
-    
+
     return Math.min(1.0, Math.max(0.0, engagement));
   }
 
@@ -665,34 +668,34 @@ export class NotificationDeliveryOptimization {
     optimalTiming: number
   ): OptimizationReasoning[] {
     const reasoning: OptimizationReasoning[] = [];
-    
+
     if (optimalTiming > Date.now()) {
       reasoning.push({
-        factor: 'Timing Optimization',
-        impact: 'positive',
+        factor: "Timing Optimization",
+        impact: "positive",
         weight: 0.3,
-        description: `Delayed delivery to improve user engagement based on ${attentionState.level} attention state`
+        description: `Delayed delivery to improve user engagement based on ${attentionState.level} attention state`,
       });
     }
-    
+
     if (attentionState.confidence > 0.7) {
       reasoning.push({
-        factor: 'Attention Analysis',
-        impact: 'positive',
+        factor: "Attention Analysis",
+        impact: "positive",
         weight: 0.4,
-        description: `High confidence (${Math.round(attentionState.confidence * 100)}%) in attention state analysis`
+        description: `High confidence (${Math.round(attentionState.confidence * 100)}%) in attention state analysis`,
       });
     }
-    
+
     if (behaviorPattern.confidenceLevel > 0.5) {
       reasoning.push({
-        factor: 'Behavior Learning',
-        impact: 'positive',
+        factor: "Behavior Learning",
+        impact: "positive",
         weight: 0.3,
-        description: `Leveraging learned user behavior patterns with ${Math.round(behaviorPattern.confidenceLevel * 100)}% confidence`
+        description: `Leveraging learned user behavior patterns with ${Math.round(behaviorPattern.confidenceLevel * 100)}% confidence`,
       });
     }
-    
+
     return reasoning;
   }
 
@@ -702,54 +705,54 @@ export class NotificationDeliveryOptimization {
     deliveryMethod: DeliveryMethod
   ): FallbackStrategy[] {
     const strategies: FallbackStrategy[] = [];
-    
+
     // Retry strategy for failed deliveries
     strategies.push({
-      condition: 'delivery_failed',
-      action: 'retry',
-      parameters: { delay: 60000, alternativeMethod: 'toast' },
-      maxAttempts: 3
+      condition: "delivery_failed",
+      action: "retry",
+      parameters: { delay: 60000, alternativeMethod: "toast" },
+      maxAttempts: 3,
     });
-    
+
     // Escalation for critical notifications
-    if (notification.priority === 'critical') {
+    if (notification.priority === "critical") {
       strategies.push({
-        condition: 'no_user_response_5min',
-        action: 'escalate',
-        parameters: { method: 'modal', sound: true },
-        maxAttempts: 2
+        condition: "no_user_response_5min",
+        action: "escalate",
+        parameters: { method: "modal", sound: true },
+        maxAttempts: 2,
       });
     }
-    
+
     // Redirect for overloaded methods
     strategies.push({
-      condition: 'method_overloaded',
-      action: 'redirect',
-      parameters: { fallbackMethods: ['toast', 'badge'] },
-      maxAttempts: 1
+      condition: "method_overloaded",
+      action: "redirect",
+      parameters: { fallbackMethods: ["toast", "badge"] },
+      maxAttempts: 1,
     });
-    
+
     return strategies;
   }
 
   // Helper methods (simplified implementations)
-  
+
   private groupByTimeWindows(
     optimizations: DeliveryOptimization[],
     windowSize: number
   ): Map<number, DeliveryOptimization[]> {
     const windows = new Map<number, DeliveryOptimization[]>();
-    
+
     for (const optimization of optimizations) {
       const windowStart = Math.floor(optimization.optimizedDeliveryTime / windowSize) * windowSize;
-      
+
       if (!windows.has(windowStart)) {
         windows.set(windowStart, []);
       }
-      
+
       windows.get(windowStart)!.push(optimization);
     }
-    
+
     return windows;
   }
 
@@ -772,27 +775,27 @@ export class NotificationDeliveryOptimization {
       reasoning: [
         ...opt.reasoning,
         {
-          factor: 'Load Balancing',
-          impact: 'neutral' as const,
+          factor: "Load Balancing",
+          impact: "neutral" as const,
           weight: 0.2,
-          description: 'Rescheduled due to delivery load constraints'
-        }
-      ]
+          description: "Rescheduled due to delivery load constraints",
+        },
+      ],
     }));
-    
+
     return rescheduled;
   }
 
   private findNextActiveHour(currentHour: number, pattern: UserBehaviorPattern): number {
     const activeHours = pattern.patterns.dailyActiveHours;
-    
+
     // Find next active hour today
     for (let hour = currentHour + 1; hour < 24; hour++) {
       if (activeHours.includes(hour)) {
         return hour;
       }
     }
-    
+
     // Return first active hour of next day
     return activeHours[0] || 9;
   }
@@ -800,11 +803,11 @@ export class NotificationDeliveryOptimization {
   private getNextHourTimestamp(hour: number): number {
     const now = new Date();
     const nextTime = new Date(now);
-    
+
     if (hour <= now.getHours()) {
       nextTime.setDate(nextTime.getDate() + 1);
     }
-    
+
     nextTime.setHours(hour, 0, 0, 0);
     return nextTime.getTime();
   }
@@ -812,17 +815,22 @@ export class NotificationDeliveryOptimization {
   private isInQuietHours(quietHours: { start: string; end: string }): boolean {
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    
-    const [startHour, startMinute] = quietHours.start.split(':').map(Number);
-    const [endHour, endMinute] = quietHours.end.split(':').map(Number);
-    
-    if (startHour === undefined || startMinute === undefined || endHour === undefined || endMinute === undefined) {
+
+    const [startHour, startMinute] = quietHours.start.split(":").map(Number);
+    const [endHour, endMinute] = quietHours.end.split(":").map(Number);
+
+    if (
+      startHour === undefined ||
+      startMinute === undefined ||
+      endHour === undefined ||
+      endMinute === undefined
+    ) {
       return false; // Invalid time format
     }
-    
+
     const startMinutes = startHour * 60 + startMinute;
     const endMinutes = endHour * 60 + endMinute;
-    
+
     if (startMinutes <= endMinutes) {
       return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
     } else {
@@ -832,32 +840,32 @@ export class NotificationDeliveryOptimization {
 
   private getQuietHoursEndTime(quietHours: { start: string; end: string }): number {
     const now = new Date();
-    const [endHour, endMinute] = quietHours.end.split(':').map(Number);
-    
+    const [endHour, endMinute] = quietHours.end.split(":").map(Number);
+
     if (endHour === undefined || endMinute === undefined) {
       return now.getTime() + 1000 * 60 * 60; // Default to 1 hour from now
     }
-    
+
     const endTime = new Date(now);
     endTime.setHours(endHour, endMinute, 0, 0);
-    
+
     if (endTime <= now) {
       endTime.setDate(endTime.getDate() + 1);
     }
-    
+
     return endTime.getTime();
   }
 
   private getLastDeliveryTime(userId: string): number {
     // Stub - would query actual delivery history
-    return Date.now() - (2 * 60 * 1000); // 2 minutes ago
+    return Date.now() - 2 * 60 * 1000; // 2 minutes ago
   }
 
   private calculatePatternConfidence(pattern: UserBehaviorPattern): number {
     // Simplified confidence calculation
     const dataAge = Date.now() - pattern.lastUpdated;
     const maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
-    
+
     return Math.max(0.1, 1 - dataAge / maxAge);
   }
 
@@ -868,12 +876,12 @@ export class NotificationDeliveryOptimization {
   ): void {
     const categoryTimes = pattern.patterns.responseTimeByCategory;
     const priorityTimes = pattern.patterns.responseTimeByPriority;
-    
+
     // Update category response time (exponential moving average)
     const currentCategoryTime = categoryTimes.get(notification.category) || responseTime;
     const newCategoryTime = currentCategoryTime * 0.8 + responseTime * 0.2;
     categoryTimes.set(notification.category, newCategoryTime);
-    
+
     // Update priority response time
     const currentPriorityTime = priorityTimes.get(notification.priority) || responseTime;
     const newPriorityTime = currentPriorityTime * 0.8 + responseTime * 0.2;
@@ -888,11 +896,16 @@ export class NotificationDeliveryOptimization {
   ): void {
     const hour = new Date(outcome.timestamp).getHours();
     const engagementByHour = pattern.patterns.engagementByTimeOfDay;
-    
-    const engagement = outcome.action === 'action-taken' ? 1.0 :
-                      outcome.action === 'clicked' ? 0.8 :
-                      outcome.action === 'viewed' ? 0.5 : 0.0;
-    
+
+    const engagement =
+      outcome.action === "action-taken"
+        ? 1.0
+        : outcome.action === "clicked"
+          ? 0.8
+          : outcome.action === "viewed"
+            ? 0.5
+            : 0.0;
+
     const currentEngagement = engagementByHour.get(hour) || 0.5;
     const newEngagement = currentEngagement * 0.9 + engagement * 0.1;
     engagementByHour.set(hour, newEngagement);
@@ -905,19 +918,21 @@ export class NotificationDeliveryOptimization {
   ): void {
     const hour = new Date(outcome.timestamp).getHours();
     const dismissalPatterns = pattern.patterns.dismissalPatterns;
-    
+
     // Find or create dismissal pattern for this category and time
-    let dismissalPattern = dismissalPatterns.find(p => 
-      p.category === notification.category &&
-      hour >= p.timeWindow.start && hour <= p.timeWindow.end
+    let dismissalPattern = dismissalPatterns.find(
+      (p) =>
+        p.category === notification.category &&
+        hour >= p.timeWindow.start &&
+        hour <= p.timeWindow.end
     );
-    
+
     if (!dismissalPattern) {
       dismissalPattern = {
         category: notification.category,
         timeWindow: { start: hour, end: hour },
         dismissalRate: 1.0,
-        reasons: ['User dismissed notification']
+        reasons: ["User dismissed notification"],
       };
       dismissalPatterns.push(dismissalPattern);
     } else {
@@ -933,8 +948,8 @@ export class NotificationDeliveryOptimization {
     optimization: DeliveryOptimization
   ): void {
     const methodPrefs = pattern.patterns.preferredDeliveryMethods;
-    
-    if (outcome.action === 'action-taken' || outcome.action === 'clicked') {
+
+    if (outcome.action === "action-taken" || outcome.action === "clicked") {
       // Positive outcome - reinforce this method for this category
       const currentMethods = methodPrefs.get(notification.category) || [];
       if (!currentMethods.includes(optimization.selectedMethod)) {
@@ -967,7 +982,7 @@ interface DeliveryMetrics {
 interface DeliveryOutcome {
   userId: string;
   timestamp: number;
-  action: 'viewed' | 'clicked' | 'dismissed' | 'action-taken' | 'expired';
+  action: "viewed" | "clicked" | "dismissed" | "action-taken" | "expired";
   responseTime?: number; // milliseconds from delivery to action
   deliveryMethod: DeliveryMethod;
 }
@@ -982,7 +997,12 @@ export const optimizeDelivery = async (
   preferences: UserNotificationPreferences,
   batch?: BatchAnalysis
 ): Promise<DeliveryOptimization> => {
-  return await deliveryOptimizationInstance.optimizeDelivery(notification, context, preferences, batch);
+  return await deliveryOptimizationInstance.optimizeDelivery(
+    notification,
+    context,
+    preferences,
+    batch
+  );
 };
 
 export const updateUserAttention = async (

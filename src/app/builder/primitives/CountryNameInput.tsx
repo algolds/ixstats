@@ -10,7 +10,7 @@ export function CountryNameInput({ value, onChange, placeholder }: CountryNameIn
   return (
     <div className="mb-6">
       <label className="form-label">
-        <Building className="h-4 w-4 mr-2 text-[var(--color-brand-primary)]" />
+        <Building className="mr-2 h-4 w-4 text-[var(--color-brand-primary)]" />
         Country Name
       </label>
       <input

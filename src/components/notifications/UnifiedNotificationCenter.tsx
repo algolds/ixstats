@@ -3,43 +3,43 @@
  * Main notification hub integrating with enhanced notification system
  */
 
-'use client';
+"use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Bell, 
-  X, 
-  Settings, 
-  Filter, 
-  CheckCircle, 
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Bell,
+  X,
+  Settings,
+  Filter,
+  CheckCircle,
   AlertTriangle,
   Info,
   Zap,
   Clock,
   Eye,
   ChevronDown,
-  ChevronUp
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '~/components/ui/dropdown-menu';
+  ChevronUp,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import type {
   UnifiedNotification,
   NotificationCategory,
   NotificationPriority,
   NotificationStatus,
   UserNotificationPreferences,
-} from '~/types/unified-notifications';
-import { generateSafeKey } from '~/app/mycountry/utils/keyValidation';
-import { useLiveNotifications } from '~/hooks/useLiveNotifications';
+} from "~/types/unified-notifications";
+import { generateSafeKey } from "~/app/mycountry/utils/keyValidation";
+import { useLiveNotifications } from "~/hooks/useLiveNotifications";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 
 // Notification center configuration
@@ -65,7 +65,7 @@ interface NotificationFilters {
   categories: NotificationCategory[];
   priorities: NotificationPriority[];
   status: NotificationStatus[];
-  timeRange: 'hour' | 'day' | 'week' | 'month' | 'all';
+  timeRange: "hour" | "day" | "week" | "month" | "all";
 }
 
 // Notification stats
@@ -95,48 +95,48 @@ const defaultConfig: NotificationCenterConfig = {
 
 const priorityConfig = {
   critical: {
-    color: 'text-red-600 bg-red-50 border-red-200',
+    color: "text-red-600 bg-red-50 border-red-200",
     icon: AlertTriangle,
-    badge: 'bg-red-500 text-white'
+    badge: "bg-red-500 text-white",
   },
   high: {
-    color: 'text-orange-600 bg-orange-50 border-orange-200',
+    color: "text-orange-600 bg-orange-50 border-orange-200",
     icon: Zap,
-    badge: 'bg-orange-500 text-white'
+    badge: "bg-orange-500 text-white",
   },
   medium: {
-    color: 'text-blue-600 bg-blue-50 border-blue-200',
+    color: "text-blue-600 bg-blue-50 border-blue-200",
     icon: Info,
-    badge: 'bg-blue-500 text-white'
+    badge: "bg-blue-500 text-white",
   },
   low: {
-    color: 'text-gray-600 bg-gray-50 border-gray-200',
+    color: "text-gray-600 bg-gray-50 border-gray-200",
     icon: Clock,
-    badge: 'bg-gray-500 text-white'
-  }
+    badge: "bg-gray-500 text-white",
+  },
 };
 
 const categoryConfig: Record<string, { icon: string; color: string }> = {
-  economic: { icon: '💰', color: 'text-green-600' },
-  diplomatic: { icon: '🌍', color: 'text-blue-600' },
-  governance: { icon: '🏛️', color: 'text-purple-600' },
-  social: { icon: '👥', color: 'text-cyan-600' },
-  security: { icon: '🛡️', color: 'text-red-600' },
-  system: { icon: '⚙️', color: 'text-gray-600' },
-  achievement: { icon: '🏆', color: 'text-yellow-600' },
-  crisis: { icon: '🚨', color: 'text-red-700' },
-  opportunity: { icon: '✨', color: 'text-green-700' },
-  intelligence: { icon: '🧠', color: 'text-indigo-600' },
-  policy: { icon: '📜', color: 'text-gray-700' },
-  global: { icon: '🌐', color: 'text-teal-600' },
-  military: { icon: '⚔️', color: 'text-red-800' }
+  economic: { icon: "💰", color: "text-green-600" },
+  diplomatic: { icon: "🌍", color: "text-blue-600" },
+  governance: { icon: "🏛️", color: "text-purple-600" },
+  social: { icon: "👥", color: "text-cyan-600" },
+  security: { icon: "🛡️", color: "text-red-600" },
+  system: { icon: "⚙️", color: "text-gray-600" },
+  achievement: { icon: "🏆", color: "text-yellow-600" },
+  crisis: { icon: "🚨", color: "text-red-700" },
+  opportunity: { icon: "✨", color: "text-green-700" },
+  intelligence: { icon: "🧠", color: "text-indigo-600" },
+  policy: { icon: "📜", color: "text-gray-700" },
+  global: { icon: "🌐", color: "text-teal-600" },
+  military: { icon: "⚔️", color: "text-red-800" },
 };
 
-function NotificationDisplay({ 
-  notification, 
-  onAction, 
-  onDismiss, 
-  compact = false 
+function NotificationDisplay({
+  notification,
+  onAction,
+  onDismiss,
+  compact = false,
 }: NotificationDisplayProps) {
   const [expanded, setExpanded] = useState(false);
   const priorityConf = priorityConfig[notification.priority];
@@ -150,7 +150,7 @@ function NotificationDisplay({
     const hours = Math.floor(diff / (60 * 60 * 1000));
     const days = Math.floor(diff / (24 * 60 * 60 * 1000));
 
-    if (minutes < 1) return 'Just now';
+    if (minutes < 1) return "Just now";
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     return `${days}d ago`;
@@ -161,36 +161,31 @@ function NotificationDisplay({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10, scale: 0.95 }}
-      className={`
-        relative p-4 rounded-lg border transition-all duration-200 hover:shadow-sm
-        ${priorityConf.color}
-        ${notification.status === 'read' ? 'opacity-75' : ''}
-        ${compact ? 'p-3' : 'p-4'}
-      `}
+      className={`relative rounded-lg border p-4 transition-all duration-200 hover:shadow-sm ${priorityConf.color} ${notification.status === "read" ? "opacity-75" : ""} ${compact ? "p-3" : "p-4"} `}
     >
       {/* Priority indicator */}
       <div className="absolute top-2 right-2 flex items-center gap-2">
         <Badge className={priorityConf.badge}>
-          <PriorityIcon className="w-3 h-3 mr-1" />
+          <PriorityIcon className="mr-1 h-3 w-3" />
           {notification.priority}
         </Badge>
         <Button
           variant="ghost"
           size="sm"
           onClick={onDismiss}
-          className="w-6 h-6 p-0 hover:bg-red-100"
+          className="h-6 w-6 p-0 hover:bg-red-100"
         >
-          <X className="w-3 h-3" />
+          <X className="h-3 w-3" />
         </Button>
       </div>
 
       {/* Header */}
-      <div className="pr-20 mb-2">
+      <div className="mb-2 pr-20">
         <div className="flex items-start gap-3">
           <span className="text-lg">{categoryConf.icon}</span>
           <div className="flex-1">
-            <h4 className="font-medium text-sm line-clamp-1">{notification.title}</h4>
-            <p className="text-xs text-muted-foreground">
+            <h4 className="line-clamp-1 text-sm font-medium">{notification.title}</h4>
+            <p className="text-muted-foreground text-xs">
               {categoryConf.color} • {formatTimestamp(notification.timestamp)}
             </p>
           </div>
@@ -199,10 +194,12 @@ function NotificationDisplay({
 
       {/* Content */}
       <div className="ml-8">
-        <p className={`text-sm text-gray-700 ${compact ? 'line-clamp-2' : expanded ? '' : 'line-clamp-3'}`}>
+        <p
+          className={`text-sm text-gray-700 ${compact ? "line-clamp-2" : expanded ? "" : "line-clamp-3"}`}
+        >
           {notification.message}
         </p>
-        
+
         {notification.message.length > 150 && !compact && (
           <Button
             variant="ghost"
@@ -211,9 +208,13 @@ function NotificationDisplay({
             className="mt-1 h-auto p-0 text-xs"
           >
             {expanded ? (
-              <>Show less <ChevronUp className="w-3 h-3 ml-1" /></>
+              <>
+                Show less <ChevronUp className="ml-1 h-3 w-3" />
+              </>
             ) : (
-              <>Show more <ChevronDown className="w-3 h-3 ml-1" /></>
+              <>
+                Show more <ChevronDown className="ml-1 h-3 w-3" />
+              </>
             )}
           </Button>
         )}
@@ -221,14 +222,14 @@ function NotificationDisplay({
 
       {/* Actions */}
       {notification.actions && notification.actions.length > 0 && (
-        <div className="ml-8 mt-3 flex gap-2">
+        <div className="mt-3 ml-8 flex gap-2">
           {notification.actions.slice(0, 2).map((action, index) => (
             <Button
-              key={generateSafeKey(action.id, 'action', index)}
+              key={generateSafeKey(action.id, "action", index)}
               variant="outline"
               size="sm"
               onClick={() => onAction(action.id)}
-              className="text-xs h-7"
+              className="h-7 text-xs"
             >
               {action.label}
             </Button>
@@ -238,13 +239,15 @@ function NotificationDisplay({
 
       {/* Metadata */}
       {notification.metadata && Object.keys(notification.metadata).length > 0 && expanded && (
-        <div className="ml-8 mt-3 p-2 bg-gray-50 rounded text-xs">
-          <div className="font-medium mb-1">Additional Info:</div>
-          {Object.entries(notification.metadata).slice(0, 3).map(([key, value]) => (
-            <div key={key} className="text-gray-600">
-              {key}: {String(value)}
-            </div>
-          ))}
+        <div className="mt-3 ml-8 rounded bg-gray-50 p-2 text-xs">
+          <div className="mb-1 font-medium">Additional Info:</div>
+          {Object.entries(notification.metadata)
+            .slice(0, 3)
+            .map(([key, value]) => (
+              <div key={key} className="text-gray-600">
+                {key}: {String(value)}
+              </div>
+            ))}
         </div>
       )}
     </motion.div>
@@ -256,49 +259,64 @@ export function UnifiedNotificationCenter({
   userPreferences,
   onNotificationAction,
   onPreferencesChange,
-  className = ''
+  className = "",
 }: UnifiedNotificationCenterProps) {
   const config = { ...defaultConfig, ...userConfig };
-  
+
   // State management
-  const [activeTab, setActiveTab] = useState<'all' | 'unread' | 'priority'>('all');
+  const [activeTab, setActiveTab] = useState<"all" | "unread" | "priority">("all");
   const [filters, setFilters] = useState<NotificationFilters>({
     categories: [],
     priorities: [],
     status: [],
-    timeRange: 'day'
+    timeRange: "day",
   });
 
   // Import live notifications hook
-  const { notifications: liveNotifications, unreadCount: liveUnreadCount, isLoading, markAsRead: liveMarkAsRead, markAllAsRead: liveMarkAllAsRead, dismiss: liveDismiss } = useLiveNotifications();
+  const {
+    notifications: liveNotifications,
+    unreadCount: liveUnreadCount,
+    isLoading,
+    markAsRead: liveMarkAsRead,
+    markAllAsRead: liveMarkAllAsRead,
+    dismiss: liveDismiss,
+  } = useLiveNotifications();
 
   // Convert live notifications to UnifiedNotification format
   const notifications = React.useMemo(() => {
-    return liveNotifications.map(n => ({
+    return liveNotifications.map((n) => ({
       id: n.id,
-      source: (n.source as 'intelligence' | 'realtime' | 'system') || 'system',
+      source: (n.source as "intelligence" | "realtime" | "system") || "system",
       timestamp: new Date(n.createdAt).getTime(),
       title: n.title,
-      message: n.message || n.description || '',
-      category: (n.category as NotificationCategory) || 'system',
-      type: (n.type as any) || 'info',
-      priority: (n.priority as NotificationPriority) || 'medium',
-      severity: (n.severity as any) || 'informational',
+      message: n.message || n.description || "",
+      category: (n.category as NotificationCategory) || "system",
+      type: (n.type as any) || "info",
+      priority: (n.priority as NotificationPriority) || "medium",
+      severity: (n.severity as any) || "informational",
       context: {} as any, // Not needed for display
       triggers: [],
       relevanceScore: n.relevanceScore || 0,
-      deliveryMethod: (n.deliveryMethod as any) || 'toast',
-      status: n.read ? 'read' as const : n.dismissed ? 'dismissed' as const : 'delivered' as const,
+      deliveryMethod: (n.deliveryMethod as any) || "toast",
+      status: n.read
+        ? ("read" as const)
+        : n.dismissed
+          ? ("dismissed" as const)
+          : ("delivered" as const),
       actionable: n.actionable,
-      actions: n.href ? [{
-        id: 'view',
-        label: 'View Details',
-        type: 'primary' as const,
-        onClick: () => {
-          if (!n.href) return;
-          window.location.href = createAbsoluteUrl(n.href);
-        }
-      }] : undefined,
+      actions: n.href
+        ? [
+            {
+              id: "view",
+              label: "View Details",
+              type: "primary" as const,
+              onClick: () => {
+                if (!n.href) return;
+                window.location.href = createAbsoluteUrl(n.href);
+              },
+            },
+          ]
+        : undefined,
       metadata: n.metadata ? JSON.parse(n.metadata) : undefined,
     }));
   }, [liveNotifications]);
@@ -306,17 +324,23 @@ export function UnifiedNotificationCenter({
   // Calculate stats
   const stats = useMemo((): NotificationStats => {
     const total = notifications.length;
-    const unread = notifications.filter(n => n.status !== 'read').length;
-    
-    const byCategory = notifications.reduce((acc, n) => {
-      acc[n.category] = (acc[n.category] || 0) + 1;
-      return acc;
-    }, {} as Record<NotificationCategory, number>);
-    
-    const byPriority = notifications.reduce((acc, n) => {
-      acc[n.priority] = (acc[n.priority] || 0) + 1;
-      return acc;
-    }, {} as Record<NotificationPriority, number>);
+    const unread = notifications.filter((n) => n.status !== "read").length;
+
+    const byCategory = notifications.reduce(
+      (acc, n) => {
+        acc[n.category] = (acc[n.category] || 0) + 1;
+        return acc;
+      },
+      {} as Record<NotificationCategory, number>
+    );
+
+    const byPriority = notifications.reduce(
+      (acc, n) => {
+        acc[n.priority] = (acc[n.priority] || 0) + 1;
+        return acc;
+      },
+      {} as Record<NotificationPriority, number>
+    );
 
     return { total, unread, byCategory, byPriority };
   }, [notifications]);
@@ -326,19 +350,19 @@ export function UnifiedNotificationCenter({
     let filtered = [...notifications];
 
     // Filter by tab
-    if (activeTab === 'unread') {
-      filtered = filtered.filter(n => n.status !== 'read');
-    } else if (activeTab === 'priority') {
-      filtered = filtered.filter(n => ['critical', 'high'].includes(n.priority));
+    if (activeTab === "unread") {
+      filtered = filtered.filter((n) => n.status !== "read");
+    } else if (activeTab === "priority") {
+      filtered = filtered.filter((n) => ["critical", "high"].includes(n.priority));
     }
 
     // Apply additional filters
     if (filters.categories.length > 0) {
-      filtered = filtered.filter(n => filters.categories.includes(n.category));
+      filtered = filtered.filter((n) => filters.categories.includes(n.category));
     }
 
     if (filters.priorities.length > 0) {
-      filtered = filtered.filter(n => filters.priorities.includes(n.priority));
+      filtered = filtered.filter((n) => filters.priorities.includes(n.priority));
     }
 
     // Sort by timestamp (newest first) and priority
@@ -350,15 +374,21 @@ export function UnifiedNotificationCenter({
   }, [notifications, activeTab, filters]);
 
   // Handlers
-  const handleNotificationAction = useCallback(async (notification: UnifiedNotification, action: string) => {
-    // Mark as read if action taken
-    await liveMarkAsRead(notification.id);
-    onNotificationAction?.(notification, action);
-  }, [liveMarkAsRead, onNotificationAction]);
+  const handleNotificationAction = useCallback(
+    async (notification: UnifiedNotification, action: string) => {
+      // Mark as read if action taken
+      await liveMarkAsRead(notification.id);
+      onNotificationAction?.(notification, action);
+    },
+    [liveMarkAsRead, onNotificationAction]
+  );
 
-  const handleDismiss = useCallback(async (notificationId: string) => {
-    await liveDismiss(notificationId);
-  }, [liveDismiss]);
+  const handleDismiss = useCallback(
+    async (notificationId: string) => {
+      await liveDismiss(notificationId);
+    },
+    [liveDismiss]
+  );
 
   const markAllAsRead = useCallback(async () => {
     await liveMarkAllAsRead();
@@ -370,7 +400,7 @@ export function UnifiedNotificationCenter({
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <Bell className="w-5 h-5" />
+              <Bell className="h-5 w-5" />
               Notifications
               {stats.unread > 0 && (
                 <Badge variant="destructive" className="ml-2">
@@ -378,22 +408,22 @@ export function UnifiedNotificationCenter({
                 </Badge>
               )}
             </CardTitle>
-            
+
             <div className="flex items-center gap-2">
               {config.enableFiltering && (
                 <DropdownMenu>
                   <DropdownMenuTrigger>
                     <Button variant="outline" size="sm">
-                      <Filter className="w-4 h-4" />
+                      <Filter className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
                     <DropdownMenuItem onClick={markAllAsRead}>
-                      <CheckCircle className="w-4 h-4 mr-2" />
+                      <CheckCircle className="mr-2 h-4 w-4" />
                       Mark All Read
                     </DropdownMenuItem>
                     <DropdownMenuItem>
-                      <Settings className="w-4 h-4 mr-2" />
+                      <Settings className="mr-2 h-4 w-4" />
                       Preferences
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -403,7 +433,7 @@ export function UnifiedNotificationCenter({
           </div>
 
           {/* Stats */}
-          <div className="flex gap-4 text-sm text-muted-foreground">
+          <div className="text-muted-foreground flex gap-4 text-sm">
             <span>{stats.total} total</span>
             <span>{stats.unread} unread</span>
             <span>{Object.keys(stats.byPriority).length} categories</span>
@@ -414,37 +444,37 @@ export function UnifiedNotificationCenter({
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="all">All ({stats.total})</TabsTrigger>
-              <TabsTrigger value="unread">
-                Unread ({stats.unread})
-              </TabsTrigger>
+              <TabsTrigger value="unread">Unread ({stats.unread})</TabsTrigger>
               <TabsTrigger value="priority">
                 Priority ({(stats.byPriority.critical || 0) + (stats.byPriority.high || 0)})
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value={activeTab} className="mt-4">
-              <div className="space-y-3 max-h-96 overflow-y-auto">
+              <div className="max-h-96 space-y-3 overflow-y-auto">
                 <AnimatePresence mode="popLayout">
                   {filteredNotifications.length > 0 ? (
-                    filteredNotifications.slice(0, config.maxVisible).map((notification) => (
-                      <NotificationDisplay
-                        key={generateSafeKey(notification.id, 'notification', 0)}
-                        notification={notification}
-                        onAction={(action) => handleNotificationAction(notification, action)}
-                        onDismiss={() => handleDismiss(notification.id)}
-                        compact={false}
-                      />
-                    ))
+                    filteredNotifications
+                      .slice(0, config.maxVisible)
+                      .map((notification) => (
+                        <NotificationDisplay
+                          key={generateSafeKey(notification.id, "notification", 0)}
+                          notification={notification}
+                          onAction={(action) => handleNotificationAction(notification, action)}
+                          onDismiss={() => handleDismiss(notification.id)}
+                          compact={false}
+                        />
+                      ))
                   ) : (
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="text-center py-8 text-muted-foreground"
+                      className="text-muted-foreground py-8 text-center"
                     >
-                      <Eye className="w-12 mx-auto mb-4 opacity-50" />
+                      <Eye className="mx-auto mb-4 w-12 opacity-50" />
                       <p>No notifications to display</p>
-                      <p className="text-xs mt-1">
-                        {activeTab === 'unread' ? 'All caught up!' : 'Check back later for updates'}
+                      <p className="mt-1 text-xs">
+                        {activeTab === "unread" ? "All caught up!" : "Check back later for updates"}
                       </p>
                     </motion.div>
                   )}

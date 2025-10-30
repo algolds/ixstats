@@ -1,10 +1,10 @@
 "use client";
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Progress } from '~/components/ui/progress';
-import { Users, Heart } from 'lucide-react';
-import type { LaborSummary, DemographicsSummary } from '../utils/previewCalculations';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Progress } from "~/components/ui/progress";
+import { Users, Heart } from "lucide-react";
+import type { LaborSummary, DemographicsSummary } from "../utils/previewCalculations";
 
 interface LaborDemographicsSummaryProps {
   laborSummary: LaborSummary;
@@ -13,10 +13,10 @@ interface LaborDemographicsSummaryProps {
 
 export function LaborDemographicsSummary({
   laborSummary,
-  demographicsSummary
+  demographicsSummary,
 }: LaborDemographicsSummaryProps) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {/* Labor Market */}
       <Card>
         <CardHeader>
@@ -28,12 +28,14 @@ export function LaborDemographicsSummary({
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold">{laborSummary.totalWorkforce.toLocaleString()}</div>
-              <div className="text-sm text-muted-foreground">Total Workforce</div>
+              <div className="text-2xl font-bold">
+                {laborSummary.totalWorkforce.toLocaleString()}
+              </div>
+              <div className="text-muted-foreground text-sm">Total Workforce</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold">{laborSummary.employed.toLocaleString()}</div>
-              <div className="text-sm text-muted-foreground">Employed</div>
+              <div className="text-muted-foreground text-sm">Employed</div>
             </div>
           </div>
 
@@ -85,19 +87,25 @@ export function LaborDemographicsSummary({
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold">{demographicsSummary.totalPopulation.toLocaleString()}</div>
-              <div className="text-sm text-muted-foreground">Total Population</div>
+              <div className="text-2xl font-bold">
+                {demographicsSummary.totalPopulation.toLocaleString()}
+              </div>
+              <div className="text-muted-foreground text-sm">Total Population</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold">{demographicsSummary.workingAgePopulation.toLocaleString()}</div>
-              <div className="text-sm text-muted-foreground">Working Age</div>
+              <div className="text-2xl font-bold">
+                {demographicsSummary.workingAgePopulation.toLocaleString()}
+              </div>
+              <div className="text-muted-foreground text-sm">Working Age</div>
             </div>
           </div>
 
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Life Expectancy</span>
-              <span className="font-medium">{demographicsSummary.lifeExpectancy.toFixed(1)} years</span>
+              <span className="font-medium">
+                {demographicsSummary.lifeExpectancy.toFixed(1)} years
+              </span>
             </div>
             <Progress value={demographicsSummary.lifeExpectancy / 100} className="h-2" />
           </div>
@@ -113,19 +121,27 @@ export function LaborDemographicsSummary({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">Urban:</span>
-              <span className="ml-1 font-medium">{demographicsSummary.urbanPopulation.toLocaleString()}</span>
+              <span className="ml-1 font-medium">
+                {demographicsSummary.urbanPopulation.toLocaleString()}
+              </span>
             </div>
             <div>
               <span className="text-muted-foreground">Rural:</span>
-              <span className="ml-1 font-medium">{demographicsSummary.ruralPopulation.toLocaleString()}</span>
+              <span className="ml-1 font-medium">
+                {demographicsSummary.ruralPopulation.toLocaleString()}
+              </span>
             </div>
             <div>
               <span className="text-muted-foreground">Growth Rate:</span>
-              <span className="ml-1 font-medium">{demographicsSummary.populationGrowth.toFixed(1)}%</span>
+              <span className="ml-1 font-medium">
+                {demographicsSummary.populationGrowth.toFixed(1)}%
+              </span>
             </div>
             <div>
               <span className="text-muted-foreground">Dependency:</span>
-              <span className="ml-1 font-medium">{demographicsSummary.dependencyRatio.toFixed(1)}%</span>
+              <span className="ml-1 font-medium">
+                {demographicsSummary.dependencyRatio.toFixed(1)}%
+              </span>
             </div>
           </div>
         </CardContent>

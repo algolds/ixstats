@@ -3,16 +3,21 @@
  * Supports diplomatic relations, embassy management, missions, upgrades, and data sharing
  */
 
-export type SharedDataType = 'economic' | 'intelligence' | 'research' | 'cultural' | 'policy';
-export type ShareLevel = 'view' | 'collaborate';
-export type RelationType = 'alliance' | 'trade' | 'neutral' | 'tension';
-export type SecurityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'MAXIMUM';
-export type EmbassyStatus = 'ACTIVE' | 'MAINTENANCE' | 'SUSPENDED' | 'CLOSED';
-export type MissionType = 'TRADE_NEGOTIATION' | 'CULTURAL_EXCHANGE' | 'INTELLIGENCE_GATHERING' | 'CRISIS_MANAGEMENT' | 'ECONOMIC_COOPERATION';
-export type MissionDifficulty = 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT';
-export type MissionStatus = 'AVAILABLE' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
-export type UpgradeType = 'SECURITY' | 'STAFF' | 'FACILITIES' | 'TECHNOLOGY' | 'SPECIALIZATION';
-export type ClearanceLevel = 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
+export type SharedDataType = "economic" | "intelligence" | "research" | "cultural" | "policy";
+export type ShareLevel = "view" | "collaborate";
+export type RelationType = "alliance" | "trade" | "neutral" | "tension";
+export type SecurityLevel = "LOW" | "MEDIUM" | "HIGH" | "MAXIMUM";
+export type EmbassyStatus = "ACTIVE" | "MAINTENANCE" | "SUSPENDED" | "CLOSED";
+export type MissionType =
+  | "TRADE_NEGOTIATION"
+  | "CULTURAL_EXCHANGE"
+  | "INTELLIGENCE_GATHERING"
+  | "CRISIS_MANAGEMENT"
+  | "ECONOMIC_COOPERATION";
+export type MissionDifficulty = "EASY" | "MEDIUM" | "HARD" | "EXPERT";
+export type MissionStatus = "AVAILABLE" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
+export type UpgradeType = "SECURITY" | "STAFF" | "FACILITIES" | "TECHNOLOGY" | "SPECIALIZATION";
+export type ClearanceLevel = "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
 
 /**
  * Diplomatic relation between countries
@@ -145,8 +150,8 @@ export interface SharedEconomicData {
 }
 
 export interface SharedIntelligenceData {
-  reportType: 'economic' | 'political' | 'security' | 'social';
-  classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
+  reportType: "economic" | "political" | "security" | "social";
+  classification: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
   summary: string;
   keyFindings: string[];
   confidence: number; // 0-100
@@ -173,8 +178,8 @@ export interface SharedCulturalData {
 
 export interface SharedPolicyData {
   policyFramework: string;
-  agreementType: 'bilateral' | 'framework' | 'memorandum';
-  status: 'draft' | 'under_review' | 'ratified';
+  agreementType: "bilateral" | "framework" | "memorandum";
+  status: "draft" | "under_review" | "ratified";
   effectiveDate?: string;
   keyProvisions: string[];
   compliance: number; // 0-100
@@ -205,7 +210,7 @@ export interface Embassy {
   countrySlug: string | null;
   status: string;
   strength: number;
-  role: 'host' | 'guest';
+  role: "host" | "guest";
   ambassadorName?: string | null;
   location?: string | null;
   staffCount?: number | null;

@@ -42,7 +42,14 @@ export const cacheRouter = createTRPCRouter({
   clearService: adminProcedure
     .input(
       z.object({
-        service: z.enum(["mediawiki", "unsplash", "wikimedia", "flagcdn", "restcountries", "custom"]),
+        service: z.enum([
+          "mediawiki",
+          "unsplash",
+          "wikimedia",
+          "flagcdn",
+          "restcountries",
+          "custom",
+        ]),
       })
     )
     .mutation(async ({ input }) => {
@@ -119,9 +126,8 @@ export const cacheRouter = createTRPCRouter({
         };
       }
 
-      const stalePercentage = stats.total > 0
-        ? ((stats.stale / stats.total) * 100).toFixed(2)
-        : "0.00";
+      const stalePercentage =
+        stats.total > 0 ? ((stats.stale / stats.total) * 100).toFixed(2) : "0.00";
 
       return {
         status: "healthy",
@@ -171,7 +177,9 @@ export const cacheRouter = createTRPCRouter({
   getTopHits: adminProcedure
     .input(
       z.object({
-        service: z.enum(["mediawiki", "unsplash", "wikimedia", "flagcdn", "restcountries"]).optional(),
+        service: z
+          .enum(["mediawiki", "unsplash", "wikimedia", "flagcdn", "restcountries"])
+          .optional(),
         limit: z.number().min(1).max(100).default(20),
       })
     )

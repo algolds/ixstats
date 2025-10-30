@@ -7,14 +7,14 @@
  * Run with: npx tsx prisma/seeds/economic-archetypes.ts
  */
 
-import { PrismaClient } from '@prisma/client';
-import { modernArchetypes } from '../../src/app/builder/data/archetypes/modern';
-import { historicalArchetypes } from '../../src/app/builder/data/archetypes/historical';
+import { PrismaClient } from "@prisma/client";
+import { modernArchetypes } from "../../src/app/builder/data/archetypes/modern";
+import { historicalArchetypes } from "../../src/app/builder/data/archetypes/historical";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting Economic Archetypes seed...\n');
+  console.log("🌱 Starting Economic Archetypes seed...\n");
 
   let createdCount = 0;
   let skippedCount = 0;
@@ -42,7 +42,7 @@ async function main() {
       }
 
       // Determine era (modern vs historical)
-      const era = modernArchetypes.has(key) ? 'modern' : 'historical';
+      const era = modernArchetypes.has(key) ? "modern" : "historical";
 
       // Create the archetype
       await prisma.economicArchetype.create({
@@ -84,7 +84,7 @@ async function main() {
     }
   }
 
-  console.log('\n📈 Seed Summary:');
+  console.log("\n📈 Seed Summary:");
   console.log(`  ✅ Created: ${createdCount}`);
   console.log(`  ⏭️  Skipped: ${skippedCount}`);
   console.log(`  ❌ Errors: ${errorCount}`);
@@ -94,12 +94,12 @@ async function main() {
   const totalCount = await prisma.economicArchetype.count();
   console.log(`\n🗄️  Total archetypes in database: ${totalCount}`);
 
-  console.log('\n✨ Economic Archetypes seed completed!\n');
+  console.log("\n✨ Economic Archetypes seed completed!\n");
 }
 
 main()
   .catch((e) => {
-    console.error('💥 Fatal error during seed:', e);
+    console.error("💥 Fatal error during seed:", e);
     process.exit(1);
   })
   .finally(async () => {

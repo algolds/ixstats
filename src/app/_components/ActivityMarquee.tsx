@@ -4,14 +4,7 @@ import React, { useState, useEffect, useMemo, memo } from "react";
 import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~/lib/chart-utils";
 import { Badge } from "~/components/ui/badge";
 import { Marquee } from "~/components/ui/marquee";
-import { 
-  Activity, 
-  TrendingUp, 
-  Star, 
-  Users, 
-  DollarSign,
-  ArrowUp
-} from "lucide-react";
+import { Activity, TrendingUp, Star, Users, DollarSign, ArrowUp } from "lucide-react";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
 
@@ -51,7 +44,10 @@ interface ActivityItem {
   priority: number;
 }
 
-export const ActivityMarquee = memo(function ActivityMarquee({ countries, isLoading }: ActivityMarqueeProps) {
+export const ActivityMarquee = memo(function ActivityMarquee({
+  countries,
+  isLoading,
+}: ActivityMarqueeProps) {
   // Memoize activities generation to prevent unnecessary recalculations
   const activities = useMemo(() => {
     if (countries.length === 0) return [];
@@ -63,12 +59,19 @@ export const ActivityMarquee = memo(function ActivityMarquee({ countries, isLoad
       try {
         // Find top performers for milestones (using spread to avoid mutating original array)
         const topGdp = [...countries].sort((a, b) => b.currentTotalGdp - a.currentTotalGdp)[0];
-        const topPerCapita = [...countries].sort((a, b) => b.currentGdpPerCapita - a.currentGdpPerCapita)[0];
-        const topGrowth = [...countries].sort((a, b) => b.adjustedGdpGrowth - a.adjustedGdpGrowth)[0];
-        const topPopulation = [...countries].sort((a, b) => b.currentPopulation - a.currentPopulation)[0];
+        const topPerCapita = [...countries].sort(
+          (a, b) => b.currentGdpPerCapita - a.currentGdpPerCapita
+        )[0];
+        const topGrowth = [...countries].sort(
+          (a, b) => b.adjustedGdpGrowth - a.adjustedGdpGrowth
+        )[0];
+        const topPopulation = [...countries].sort(
+          (a, b) => b.currentPopulation - a.currentPopulation
+        )[0];
 
         // Milestones
-        if (topGdp && topGdp.currentTotalGdp > 1000000000000) { // 1 trillion
+        if (topGdp && topGdp.currentTotalGdp > 1000000000000) {
+          // 1 trillion
           newActivities.push({
             id: "milestone-gdp",
             type: "milestone",
@@ -100,7 +103,8 @@ export const ActivityMarquee = memo(function ActivityMarquee({ countries, isLoad
           });
         }
 
-        if (topGrowth && topGrowth.adjustedGdpGrowth > 0.05) { // 5% growth
+        if (topGrowth && topGrowth.adjustedGdpGrowth > 0.05) {
+          // 5% growth
           newActivities.push({
             id: "milestone-growth",
             type: "growth",
@@ -116,7 +120,8 @@ export const ActivityMarquee = memo(function ActivityMarquee({ countries, isLoad
           });
         }
 
-        if (topPopulation && topPopulation.currentPopulation > 100000000) { // 100 million
+        if (topPopulation && topPopulation.currentPopulation > 100000000) {
+          // 100 million
           newActivities.push({
             id: "milestone-population",
             type: "milestone",
@@ -133,9 +138,9 @@ export const ActivityMarquee = memo(function ActivityMarquee({ countries, isLoad
         }
 
         // Tier changes (simulated)
-        const tierChangeCandidates = countries.filter(c => 
-          c.economicTier === "Developing" || c.economicTier === "Developed"
-        ).slice(0, 2);
+        const tierChangeCandidates = countries
+          .filter((c) => c.economicTier === "Developing" || c.economicTier === "Developed")
+          .slice(0, 2);
 
         tierChangeCandidates.forEach((country, index) => {
           const newTier = country.economicTier === "Developing" ? "Developed" : "Healthy";
@@ -173,11 +178,11 @@ export const ActivityMarquee = memo(function ActivityMarquee({ countries, isLoad
       if (iconCache.has(key)) {
         return iconCache.get(key);
       }
-      
+
       try {
         const Icon = activity.icon;
-        if (!Icon || typeof Icon !== 'function') {
-          const fallback = <Activity className="h-4 w-4 text-muted-foreground" />;
+        if (!Icon || typeof Icon !== "function") {
+          const fallback = <Activity className="text-muted-foreground h-4 w-4" />;
           iconCache.set(key, fallback);
           return fallback;
         }
@@ -186,7 +191,7 @@ export const ActivityMarquee = memo(function ActivityMarquee({ countries, isLoad
         return icon;
       } catch (error) {
         console.error("Error rendering activity icon:", error);
-        const fallback = <Activity className="h-4 w-4 text-muted-foreground" />;
+        const fallback = <Activity className="text-muted-foreground h-4 w-4" />;
         iconCache.set(key, fallback);
         return fallback;
       }
@@ -194,13 +199,31 @@ export const ActivityMarquee = memo(function ActivityMarquee({ countries, isLoad
   }, []);
 
   // Memoize badge config to prevent recreating objects
-  const badgeConfig = useMemo(() => ({
-    milestone: { label: "Milestone", color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
-    tier_change: { label: "Tier Change", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" },
-    growth: { label: "Growth", color: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200" },
-    new_country: { label: "New", color: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200" },
-    default: { label: "Activity", color: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200" }
-  }), []);
+  const badgeConfig = useMemo(
+    () => ({
+      milestone: {
+        label: "Milestone",
+        color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+      },
+      tier_change: {
+        label: "Tier Change",
+        color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+      },
+      growth: {
+        label: "Growth",
+        color: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+      },
+      new_country: {
+        label: "New",
+        color: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+      },
+      default: {
+        label: "Activity",
+        color: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+      },
+    }),
+    []
+  );
 
   const getActivityBadge = (type: ActivityItem["type"]) => {
     return badgeConfig[type] || badgeConfig.default;
@@ -208,9 +231,9 @@ export const ActivityMarquee = memo(function ActivityMarquee({ countries, isLoad
 
   if (isLoading || activities.length === 0) {
     return (
-      <div className="py-3 marquee-container">
-        <div className="flex items-center justify-center h-10 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-          <span className="text-sm text-muted-foreground">
+      <div className="marquee-container py-3">
+        <div className="flex h-10 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-800/50">
+          <span className="text-muted-foreground text-sm">
             {isLoading ? "Loading activities..." : "No recent activity"}
           </span>
         </div>
@@ -219,43 +242,39 @@ export const ActivityMarquee = memo(function ActivityMarquee({ countries, isLoad
   }
 
   return (
-    <div className="py-3 relative overflow-hidden marquee-container">
+    <div className="marquee-container relative overflow-hidden py-3">
       <Marquee
         speed={40}
         pauseOnHover={true}
-        className="bg-transparent relative z-[9999] marquee-content will-change-transform"
+        className="marquee-content relative z-[9999] bg-transparent will-change-transform"
         gap="1.5rem"
         autoFill={true}
       >
         {activities.map((activity) => (
           <div
             key={activity.id}
-            className="marquee-item flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800/70 rounded-lg border border-gray-200/50 dark:border-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors min-w-0 whitespace-nowrap group"
+            className="marquee-item group flex min-w-0 items-center gap-2 rounded-lg border border-gray-200/50 bg-gray-50 px-3 py-2 whitespace-nowrap transition-colors hover:bg-gray-100 dark:border-gray-700/50 dark:bg-gray-800/70 dark:hover:bg-gray-700"
           >
-            <div className="flex items-center justify-center w-6 h-6 rounded-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 group-hover:border-primary/20 transition-colors flex-shrink-0">
+            <div className="group-hover:border-primary/20 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white transition-colors dark:border-gray-700 dark:bg-gray-900">
               {getActivityIcon(activity)}
             </div>
-            
+
             <div className="flex items-center gap-1.5">
-              <Badge 
-                variant="outline" 
-                className={`text-xs border-0 px-1.5 py-0.5 ${getActivityBadge(activity.type).color}`}
+              <Badge
+                variant="outline"
+                className={`border-0 px-1.5 py-0.5 text-xs ${getActivityBadge(activity.type).color}`}
               >
                 {getActivityBadge(activity.type).label}
               </Badge>
-              
-              <span className="font-medium text-sm text-foreground">
-                {activity.title}:
-              </span>
-              
-              <span className="text-sm text-muted-foreground">
-                {activity.description}
-              </span>
-              
+
+              <span className="text-foreground text-sm font-medium">{activity.title}:</span>
+
+              <span className="text-muted-foreground text-sm">{activity.description}</span>
+
               {activity.country && activity.countryId && (
                 <Link
                   href={`/countries/${activity.countrySlug || activity.countryId}`}
-                  className="text-sm text-primary hover:text-primary/80 transition-colors ml-1 font-medium"
+                  className="text-primary hover:text-primary/80 ml-1 text-sm font-medium transition-colors"
                   onClick={(e) => e.stopPropagation()}
                 >
                   →

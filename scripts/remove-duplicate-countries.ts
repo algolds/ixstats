@@ -4,23 +4,23 @@
  * Keeps the newest entry for each country name
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 // Note: Uses DATABASE_URL from environment (PostgreSQL, October 2025)
 const prisma = new PrismaClient();
 
 async function removeDuplicates() {
-  console.log('🔍 Scanning for duplicate countries...\n');
+  console.log("🔍 Scanning for duplicate countries...\n");
 
   try {
     // Get all countries
     const allCountries = await prisma.country.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         name: true,
         createdAt: true,
-      }
+      },
     });
 
     console.log(`📊 Total countries in database: ${allCountries.length}\n`);
@@ -49,7 +49,9 @@ async function removeDuplicates() {
 
         console.log(`\n🔄 Found ${countries.length} entries for "${countries[0].name}":`);
         countries.forEach((c, i) => {
-          console.log(`   ${i === 0 ? '✓ KEEP' : '✗ DELETE'}: ${c.id.slice(0, 8)}... (${c.createdAt.toISOString()})`);
+          console.log(
+            `   ${i === 0 ? "✓ KEEP" : "✗ DELETE"}: ${c.id.slice(0, 8)}... (${c.createdAt.toISOString()})`
+          );
         });
 
         // Add all but the first (newest) to duplicates list
@@ -58,7 +60,7 @@ async function removeDuplicates() {
     }
 
     if (duplicates.length === 0) {
-      console.log('\n✅ No duplicates found! Database is clean.\n');
+      console.log("\n✅ No duplicates found! Database is clean.\n");
       return;
     }
 
@@ -68,16 +70,16 @@ async function removeDuplicates() {
     console.log(`\n⚠️  This will DELETE ${duplicates.length} country records!\n`);
 
     // Delete duplicates
-    const idsToDelete = duplicates.map(c => c.id);
+    const idsToDelete = duplicates.map((c) => c.id);
 
-    console.log('🗑️  Deleting duplicate entries...\n');
+    console.log("🗑️  Deleting duplicate entries...\n");
 
     const result = await prisma.country.deleteMany({
       where: {
         id: {
-          in: idsToDelete
-        }
-      }
+          in: idsToDelete,
+        },
+      },
     });
 
     console.log(`✅ Deleted ${result.count} duplicate countries\n`);
@@ -85,16 +87,15 @@ async function removeDuplicates() {
     // Verify
     const finalCount = await prisma.country.count();
     console.log(`📊 Final country count: ${finalCount}\n`);
-
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error("❌ Error:", error);
     throw error;
   } finally {
     await prisma.$disconnect();
   }
 }
 
-removeDuplicates().catch(error => {
-  console.error('Fatal error:', error);
+removeDuplicates().catch((error) => {
+  console.error("Fatal error:", error);
   process.exit(1);
 });

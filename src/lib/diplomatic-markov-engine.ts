@@ -17,7 +17,7 @@
  *                     geographic_weight * 0.1 + alliance_weight * 0.1
  */
 
-import type { DiplomaticChoice } from './diplomatic-choice-tracker';
+import type { DiplomaticChoice } from "./diplomatic-choice-tracker";
 
 // ==================== RELATIONSHIP STATES ====================
 
@@ -25,7 +25,7 @@ import type { DiplomaticChoice } from './diplomatic-choice-tracker';
  * Five-state Markov model for diplomatic relationships
  * States are ordered from least to most favorable
  */
-export type RelationshipState = 'hostile' | 'tense' | 'neutral' | 'friendly' | 'allied';
+export type RelationshipState = "hostile" | "tense" | "neutral" | "friendly" | "allied";
 
 /**
  * State ranking for distance calculations
@@ -43,11 +43,11 @@ const STATE_RANK: Record<RelationshipState, number> = {
  * Reverse mapping for state lookup
  */
 const RANK_TO_STATE: Record<number, RelationshipState> = {
-  0: 'hostile',
-  1: 'tense',
-  2: 'neutral',
-  3: 'friendly',
-  4: 'allied',
+  0: "hostile",
+  1: "tense",
+  2: "neutral",
+  3: "friendly",
+  4: "allied",
 };
 
 // ==================== CONTEXT FACTORS ====================
@@ -74,7 +74,7 @@ export interface TransitionContext {
 
   // Cultural similarity and exchanges
   cultural: {
-    culturalExchangeLevel: 'none' | 'low' | 'medium' | 'high';
+    culturalExchangeLevel: "none" | "low" | "medium" | "high";
     culturalAffinityScore: number; // 0-100 scale
     sharedLanguage: boolean;
     historicalTies: boolean;
@@ -157,23 +157,23 @@ export class MarkovDiplomacyEngine {
     Record<RelationshipState, number>
   > = {
     hostile: {
-      hostile: 0.70, // Strong tendency to remain hostile
-      tense: 0.20, // Can improve to tense with effort
+      hostile: 0.7, // Strong tendency to remain hostile
+      tense: 0.2, // Can improve to tense with effort
       neutral: 0.08, // Rare direct jump
       friendly: 0.02, // Nearly impossible
-      allied: 0.00, // Impossible without intermediate steps
+      allied: 0.0, // Impossible without intermediate steps
     },
     tense: {
       hostile: 0.15, // Can deteriorate
-      tense: 0.60, // Stable but uncomfortable
-      neutral: 0.20, // Natural improvement path
+      tense: 0.6, // Stable but uncomfortable
+      neutral: 0.2, // Natural improvement path
       friendly: 0.04, // Possible with strong actions
       allied: 0.01, // Extremely rare
     },
     neutral: {
       hostile: 0.05, // Unlikely deterioration
       tense: 0.15, // Moderate deterioration
-      neutral: 0.50, // Default stable state
+      neutral: 0.5, // Default stable state
       friendly: 0.25, // Natural improvement path
       allied: 0.05, // Requires strong cooperation
     },
@@ -182,10 +182,10 @@ export class MarkovDiplomacyEngine {
       tense: 0.08, // Possible deterioration
       neutral: 0.15, // Can cool off
       friendly: 0.65, // Stable positive relationship
-      allied: 0.10, // Natural progression
+      allied: 0.1, // Natural progression
     },
     allied: {
-      hostile: 0.00, // Impossible direct jump
+      hostile: 0.0, // Impossible direct jump
       tense: 0.02, // Severe crisis required
       neutral: 0.05, // Major breach of trust
       friendly: 0.18, // Can downgrade
@@ -263,11 +263,7 @@ export class MarkovDiplomacyEngine {
 
     let totalProbability = 0;
     for (const targetState of Object.keys(STATE_RANK) as RelationshipState[]) {
-      const probability = this.calculateTransitionProbabilities(
-        currentState,
-        targetState,
-        context
-      );
+      const probability = this.calculateTransitionProbabilities(currentState, targetState, context);
       transitionProbabilities.push({ state: targetState, probability });
       totalProbability += probability;
     }
@@ -290,8 +286,7 @@ export class MarkovDiplomacyEngine {
     const predictionCertainty = mostLikely.probability * 100;
     const policyConsistency = context.actionHistory.consistencyScore;
 
-    const confidence =
-      (dataQuality * 0.3 + predictionCertainty * 0.5 + policyConsistency * 0.2);
+    const confidence = dataQuality * 0.3 + predictionCertainty * 0.5 + policyConsistency * 0.2;
 
     // Identify key drivers (top factors influencing prediction)
     const keyDrivers = this.identifyKeyDrivers(currentState, mostLikely.state, context);
@@ -580,31 +575,35 @@ export class MarkovDiplomacyEngine {
 
     // Analyze each factor's contribution
     if (context.actionHistory.cooperativeActions > 60 && stateChange > 0) {
-      drivers.push('Strong pattern of cooperative diplomatic actions');
+      drivers.push("Strong pattern of cooperative diplomatic actions");
     }
     if (context.actionHistory.aggressiveActions > 60 && stateChange < 0) {
-      drivers.push('Increasing aggressive diplomatic posture');
+      drivers.push("Increasing aggressive diplomatic posture");
     }
     if (context.economic.tradeVolume > 5000000) {
-      drivers.push('Significant economic interdependence ($' + (context.economic.tradeVolume / 1000000).toFixed(1) + 'M trade)');
+      drivers.push(
+        "Significant economic interdependence ($" +
+          (context.economic.tradeVolume / 1000000).toFixed(1) +
+          "M trade)"
+      );
     }
     if (context.economic.hasTradeTreaty) {
-      drivers.push('Active trade treaty framework');
+      drivers.push("Active trade treaty framework");
     }
-    if (context.cultural.culturalExchangeLevel === 'high') {
-      drivers.push('High-level cultural exchange programs');
+    if (context.cultural.culturalExchangeLevel === "high") {
+      drivers.push("High-level cultural exchange programs");
     }
     if (context.cultural.culturalAffinityScore > 70) {
-      drivers.push('Strong cultural affinity and shared values');
+      drivers.push("Strong cultural affinity and shared values");
     }
     if (context.geographic.adjacency) {
-      drivers.push('Geographic adjacency and border dynamics');
+      drivers.push("Geographic adjacency and border dynamics");
     }
     if (context.alliances.mutualAllies > 2) {
       drivers.push(`${context.alliances.mutualAllies} shared allies supporting cooperation`);
     }
     if (context.alliances.inCompetingBlocs) {
-      drivers.push('Competition within opposing alliance structures');
+      drivers.push("Competition within opposing alliance structures");
     }
 
     return drivers.slice(0, 5); // Top 5 drivers
@@ -622,25 +621,28 @@ export class MarkovDiplomacyEngine {
     const stateChange = STATE_RANK[toState] - STATE_RANK[fromState];
 
     if (context.actionHistory.consistencyScore < 40) {
-      warnings.push('Low policy consistency increases unpredictability');
+      warnings.push("Low policy consistency increases unpredictability");
     }
     if (context.economic.tradeGrowth < -10) {
-      warnings.push('Declining trade volume may strain relations');
+      warnings.push("Declining trade volume may strain relations");
     }
     if (context.alliances.mutualRivals > context.alliances.mutualAllies) {
-      warnings.push('More shared rivals than allies creates instability');
+      warnings.push("More shared rivals than allies creates instability");
     }
     if (context.alliances.inCompetingBlocs && stateChange > 0) {
-      warnings.push('Competing bloc membership may limit cooperation potential');
+      warnings.push("Competing bloc membership may limit cooperation potential");
     }
     if (stateChange > 2) {
-      warnings.push('Large state jump requires sustained effort and may face resistance');
+      warnings.push("Large state jump requires sustained effort and may face resistance");
     }
-    if (fromState === 'allied' && stateChange < 0) {
-      warnings.push('Alliance degradation could trigger regional instability');
+    if (fromState === "allied" && stateChange < 0) {
+      warnings.push("Alliance degradation could trigger regional instability");
     }
-    if (context.actionHistory.aggressiveActions > 40 && context.actionHistory.cooperativeActions > 40) {
-      warnings.push('Mixed signals may confuse diplomatic partners');
+    if (
+      context.actionHistory.aggressiveActions > 40 &&
+      context.actionHistory.cooperativeActions > 40
+    ) {
+      warnings.push("Mixed signals may confuse diplomatic partners");
     }
 
     return warnings.slice(0, 4); // Top 4 warnings
@@ -660,30 +662,30 @@ export class MarkovDiplomacyEngine {
     if (stateChange > 0) {
       // Positive transitions
       if (stateChange >= 2) {
-        events.push('Major diplomatic breakthrough');
-        events.push('Resolution of long-standing dispute');
+        events.push("Major diplomatic breakthrough");
+        events.push("Resolution of long-standing dispute");
       }
-      events.push('Signing of comprehensive cooperation treaty');
-      events.push('High-level state visit');
-      events.push('Joint economic initiative launch');
-      if (context.cultural.culturalExchangeLevel !== 'high') {
-        events.push('Expanded cultural exchange program');
+      events.push("Signing of comprehensive cooperation treaty");
+      events.push("High-level state visit");
+      events.push("Joint economic initiative launch");
+      if (context.cultural.culturalExchangeLevel !== "high") {
+        events.push("Expanded cultural exchange program");
       }
     } else if (stateChange < 0) {
       // Negative transitions
       if (stateChange <= -2) {
-        events.push('Major diplomatic crisis');
-        events.push('Breach of treaty obligations');
+        events.push("Major diplomatic crisis");
+        events.push("Breach of treaty obligations");
       }
-      events.push('Border incident or territorial dispute');
-      events.push('Trade dispute escalation');
-      events.push('Diplomatic expulsion or recall');
-      events.push('Sanctions or economic restrictions');
+      events.push("Border incident or territorial dispute");
+      events.push("Trade dispute escalation");
+      events.push("Diplomatic expulsion or recall");
+      events.push("Sanctions or economic restrictions");
     } else {
       // Maintaining state
-      events.push('Continued engagement at current level');
-      events.push('Routine diplomatic exchanges');
-      events.push('Maintenance of existing agreements');
+      events.push("Continued engagement at current level");
+      events.push("Routine diplomatic exchanges");
+      events.push("Maintenance of existing agreements");
     }
 
     return events.slice(0, 4);
@@ -696,7 +698,7 @@ export class MarkovDiplomacyEngine {
     fromState: RelationshipState,
     toState: RelationshipState,
     context: TransitionContext
-  ): StateTransitionEvent['effects'] {
+  ): StateTransitionEvent["effects"] {
     const stateChange = STATE_RANK[toState] - STATE_RANK[fromState];
     const magnitude = Math.abs(stateChange);
 
@@ -708,11 +710,17 @@ export class MarkovDiplomacyEngine {
     const economicImpact = baseImpact * tradeMultiplier * (stateChange > 0 ? 1 : -1);
 
     // Security impact higher for hostile/allied states
-    const securitySensitive = fromState === 'hostile' || fromState === 'allied' || toState === 'hostile' || toState === 'allied';
+    const securitySensitive =
+      fromState === "hostile" ||
+      fromState === "allied" ||
+      toState === "hostile" ||
+      toState === "allied";
     const securityImpact = baseImpact * (securitySensitive ? 1.5 : 1) * (stateChange > 0 ? 1 : -1);
 
     // Cultural impact correlates with cultural programs
-    const culturalMultiplier = { none: 0.5, low: 0.8, medium: 1.2, high: 1.5 }[context.cultural.culturalExchangeLevel];
+    const culturalMultiplier = { none: 0.5, low: 0.8, medium: 1.2, high: 1.5 }[
+      context.cultural.culturalExchangeLevel
+    ];
     const culturalImpact = baseImpact * culturalMultiplier * (stateChange > 0 ? 1 : -1);
 
     // Reputation impact based on consistency
@@ -756,7 +764,10 @@ export class MarkovDiplomacyEngine {
           allied: `${country1} and ${country2} formalize relationship with strategic alliance`,
         },
       };
-      return improvements[fromState]?.[toState] || `Relations between ${country1} and ${country2} improve from ${fromState} to ${toState}`;
+      return (
+        improvements[fromState]?.[toState] ||
+        `Relations between ${country1} and ${country2} improve from ${fromState} to ${toState}`
+      );
     } else if (stateChange < 0) {
       const deteriorations: Record<string, Record<string, string>> = {
         allied: {
@@ -775,7 +786,10 @@ export class MarkovDiplomacyEngine {
           hostile: `Tensions between ${country1} and ${country2} escalate to hostility`,
         },
       };
-      return deteriorations[fromState]?.[toState] || `Relations between ${country1} and ${country2} deteriorate from ${fromState} to ${toState}`;
+      return (
+        deteriorations[fromState]?.[toState] ||
+        `Relations between ${country1} and ${country2} deteriorate from ${fromState} to ${toState}`
+      );
     } else {
       return `${country1} and ${country2} maintain ${fromState} relations`;
     }
@@ -802,7 +816,7 @@ export function createDefaultContext(): TransitionContext {
       economicTierSimilarity: 50,
     },
     cultural: {
-      culturalExchangeLevel: 'low',
+      culturalExchangeLevel: "low",
       culturalAffinityScore: 50,
       sharedLanguage: false,
       historicalTies: false,
@@ -827,24 +841,24 @@ export function createDefaultContext(): TransitionContext {
  */
 export function mapToRelationshipState(dbRelationship: string): RelationshipState {
   const mapping: Record<string, RelationshipState> = {
-    hostile: 'hostile',
-    tension: 'tense',
-    strained: 'tense',
-    cool: 'tense',
-    neutral: 'neutral',
-    cooperative: 'neutral',
-    friendly: 'friendly',
-    alliance: 'allied',
+    hostile: "hostile",
+    tension: "tense",
+    strained: "tense",
+    cool: "tense",
+    neutral: "neutral",
+    cooperative: "neutral",
+    friendly: "friendly",
+    alliance: "allied",
   };
 
-  return mapping[dbRelationship.toLowerCase()] || 'neutral';
+  return mapping[dbRelationship.toLowerCase()] || "neutral";
 }
 
 /**
  * Get all possible relationship states
  */
 export function getAllRelationshipStates(): RelationshipState[] {
-  return ['hostile', 'tense', 'neutral', 'friendly', 'allied'];
+  return ["hostile", "tense", "neutral", "friendly", "allied"];
 }
 
 /**

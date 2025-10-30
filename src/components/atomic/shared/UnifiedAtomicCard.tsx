@@ -1,27 +1,27 @@
 "use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Badge } from '~/components/ui/badge';
-import { 
-  CheckCircle, 
-  AlertCircle, 
-  TrendingUp, 
-  Clock, 
-  Users, 
+import React from "react";
+import { motion } from "framer-motion";
+import { Badge } from "~/components/ui/badge";
+import {
+  CheckCircle,
+  AlertCircle,
+  TrendingUp,
+  Clock,
+  Users,
   Zap,
   Shield,
-  Info
-} from 'lucide-react';
-import { cn } from '~/lib/utils';
-import type { UnifiedAtomicCardProps } from './types';
-import { 
-  getThemeColorClasses, 
-  getComplexityColor, 
+  Info,
+} from "lucide-react";
+import { cn } from "~/lib/utils";
+import type { UnifiedAtomicCardProps } from "./types";
+import {
+  getThemeColorClasses,
+  getComplexityColor,
   getComplexityBgColor,
   getEffectivenessColor,
-  getEffectivenessBgColor
-} from './themes';
+  getEffectivenessBgColor,
+} from "./themes";
 
 export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
   component,
@@ -31,10 +31,10 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
   hasConflict = false,
   hasSynergy = false,
   theme,
-  className
+  className,
 }) => {
   const themeClasses = getThemeColorClasses(theme, component.category);
-  
+
   const getCardClasses = () => {
     if (isSelected) {
       return `border-2 ${themeClasses.selectedBorder} ${themeClasses.selectedBg} dark:${themeClasses.selectedBgDark} shadow-lg`;
@@ -46,7 +46,7 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
       return `border-2 ${themeClasses.synergyBorder} ${themeClasses.synergyBg} dark:${themeClasses.synergyBgDark}`;
     }
     if (isDisabled) {
-      return 'border-2 border-border opacity-50 cursor-not-allowed';
+      return "border-2 border-border opacity-50 cursor-not-allowed";
     }
     return `border-2 border-border hover:border-${themeClasses.primaryLight}/50 hover:shadow-md`;
   };
@@ -55,7 +55,7 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
     if (isSelected) {
       return `text-${themeClasses.primary}`;
     }
-    return 'text-muted-foreground';
+    return "text-muted-foreground";
   };
 
   return (
@@ -66,44 +66,45 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
       whileHover={{ scale: isDisabled ? 1 : 1.02 }}
       whileTap={{ scale: isDisabled ? 1 : 0.98 }}
       transition={{ duration: 0.2 }}
-      className={cn(
-        "p-4 rounded-lg cursor-pointer transition-all",
-        getCardClasses(),
-        className
-      )}
+      className={cn("cursor-pointer rounded-lg p-4 transition-all", getCardClasses(), className)}
       onClick={isDisabled ? undefined : onToggle}
     >
       {/* Header */}
-      <div className="flex items-start justify-between mb-2">
+      <div className="mb-2 flex items-start justify-between">
         <div className="flex items-center gap-2">
-          <div className={cn(
-            "p-2 rounded-lg",
-            isSelected
-              ? `${getEffectivenessBgColor(component.effectiveness)} ${getIconColor()}`
-              : 'bg-muted'
-          )}>
-            {component.icon && typeof component.icon === 'function'
-              ? React.createElement(component.icon, { className: "h-4 w-4" })
-              : <Info className="h-4 w-4" />
-            }
+          <div
+            className={cn(
+              "rounded-lg p-2",
+              isSelected
+                ? `${getEffectivenessBgColor(component.effectiveness)} ${getIconColor()}`
+                : "bg-muted"
+            )}
+          >
+            {component.icon && typeof component.icon === "function" ? (
+              React.createElement(component.icon, { className: "h-4 w-4" })
+            ) : (
+              <Info className="h-4 w-4" />
+            )}
           </div>
-          <h4 className="font-semibold text-sm text-foreground">{component.name}</h4>
+          <h4 className="text-foreground text-sm font-semibold">{component.name}</h4>
         </div>
-        
+
         <div className="flex items-center gap-1">
           <Badge variant="outline" className="text-xs">
             {component.effectiveness}%
           </Badge>
           {isSelected && <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />}
-          {hasConflict && !isSelected && <AlertCircle className="h-4 w-4 text-red-500 dark:text-red-400" />}
-          {hasSynergy && !isSelected && <TrendingUp className="h-4 w-4 text-green-500 dark:text-green-400" />}
+          {hasConflict && !isSelected && (
+            <AlertCircle className="h-4 w-4 text-red-500 dark:text-red-400" />
+          )}
+          {hasSynergy && !isSelected && (
+            <TrendingUp className="h-4 w-4 text-green-500 dark:text-green-400" />
+          )}
         </div>
       </div>
 
       {/* Description */}
-      <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
-        {component.description}
-      </p>
+      <p className="text-muted-foreground mb-3 line-clamp-2 text-xs">{component.description}</p>
 
       {/* Metadata Grid */}
       <div className="space-y-2">
@@ -117,8 +118,8 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
         </div>
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground">Complexity:</span>
-          <Badge 
-            variant="secondary" 
+          <Badge
+            variant="secondary"
             className={cn(
               "text-xs",
               getComplexityBgColor(component.metadata.complexity),
@@ -131,7 +132,7 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
       </div>
 
       {/* Additional Metadata */}
-      <div className="mt-2 pt-2 border-t border-border/50 space-y-1">
+      <div className="border-border/50 mt-2 space-y-1 border-t pt-2">
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground flex items-center gap-1">
             <Clock className="h-3 w-3" />
@@ -159,9 +160,9 @@ export const UnifiedAtomicCard: React.FC<UnifiedAtomicCardProps> = ({
 
       {/* Prerequisites */}
       {component.prerequisites.length > 0 && (
-        <div className="mt-2 pt-2 border-t border-border/50">
-          <p className="text-xs text-muted-foreground">
-            <span className="font-medium">Requires:</span> {component.prerequisites.join(', ')}
+        <div className="border-border/50 mt-2 border-t pt-2">
+          <p className="text-muted-foreground text-xs">
+            <span className="font-medium">Requires:</span> {component.prerequisites.join(", ")}
           </p>
         </div>
       )}

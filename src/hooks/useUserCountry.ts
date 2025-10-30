@@ -25,21 +25,18 @@ export function useUserCountry() {
   const {
     data: userProfile,
     isLoading: profileLoading,
-    error: profileError
-  } = api.users.getProfile.useQuery(
-    undefined,
-    { enabled: !!user?.id }
-  );
+    error: profileError,
+  } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
 
   const {
     data: country,
     isLoading: countryLoading,
-    error: countryError
+    error: countryError,
   } = api.countries.getByIdAtTime.useQuery(
-    { id: userProfile?.countryId ?? '' },
-    { 
-      enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== '',
-      retry: false
+    { id: userProfile?.countryId ?? "" },
+    {
+      enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== "",
+      retry: false,
     }
   );
 

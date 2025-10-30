@@ -1,6 +1,6 @@
 /**
  * Wiki Cache Preload Service
- * 
+ *
  * Pre-populates wiki cache on deployment and provides manual warm-up capabilities.
  * Useful for ensuring fast initial page loads and preparing for major wiki updates.
  */
@@ -26,7 +26,7 @@ export class WikiPreloadService {
    */
   async preloadAllCountries(maxCountries: number = 100): Promise<PreloadResult> {
     if (this.isPreloading) {
-      throw new Error('Preload already in progress');
+      throw new Error("Preload already in progress");
     }
 
     const startTime = Date.now();
@@ -43,12 +43,12 @@ export class WikiPreloadService {
         },
         take: maxCountries,
         orderBy: {
-          createdAt: 'desc', // Prioritize newer countries
+          createdAt: "desc", // Prioritize newer countries
         },
       });
 
-      const countryNames = countries.map(c => c.name);
-      
+      const countryNames = countries.map((c) => c.name);
+
       console.log(`[WikiPreload] Found ${countryNames.length} countries to preload`);
 
       if (countryNames.length === 0) {
@@ -74,10 +74,10 @@ export class WikiPreloadService {
         countries: countryNames,
       };
 
-      console.log('[WikiPreload] Preload complete:', preloadResult);
+      console.log("[WikiPreload] Preload complete:", preloadResult);
       return preloadResult;
     } catch (error) {
-      console.error('[WikiPreload] Error during preload:', error);
+      console.error("[WikiPreload] Error during preload:", error);
       throw error;
     } finally {
       this.isPreloading = false;
@@ -89,7 +89,7 @@ export class WikiPreloadService {
    */
   async preloadCountries(countryNames: string[]): Promise<PreloadResult> {
     if (this.isPreloading) {
-      throw new Error('Preload already in progress');
+      throw new Error("Preload already in progress");
     }
 
     const startTime = Date.now();
@@ -109,10 +109,10 @@ export class WikiPreloadService {
         countries: countryNames,
       };
 
-      console.log('[WikiPreload] Preload complete:', preloadResult);
+      console.log("[WikiPreload] Preload complete:", preloadResult);
       return preloadResult;
     } catch (error) {
-      console.error('[WikiPreload] Error during preload:', error);
+      console.error("[WikiPreload] Error during preload:", error);
       throw error;
     } finally {
       this.isPreloading = false;
@@ -124,7 +124,7 @@ export class WikiPreloadService {
    */
   async preloadByContinent(continent: string, maxCountries: number = 50): Promise<PreloadResult> {
     if (this.isPreloading) {
-      throw new Error('Preload already in progress');
+      throw new Error("Preload already in progress");
     }
 
     const startTime = Date.now();
@@ -146,8 +146,8 @@ export class WikiPreloadService {
         take: maxCountries,
       });
 
-      const countryNames = countries.map(c => c.name);
-      
+      const countryNames = countries.map((c) => c.name);
+
       console.log(`[WikiPreload] Found ${countryNames.length} countries in ${continent}`);
 
       if (countryNames.length === 0) {
@@ -172,10 +172,10 @@ export class WikiPreloadService {
         countries: countryNames,
       };
 
-      console.log('[WikiPreload] Preload complete for continent:', preloadResult);
+      console.log("[WikiPreload] Preload complete for continent:", preloadResult);
       return preloadResult;
     } catch (error) {
-      console.error('[WikiPreload] Error during continent preload:', error);
+      console.error("[WikiPreload] Error during continent preload:", error);
       throw error;
     } finally {
       this.isPreloading = false;
@@ -187,7 +187,7 @@ export class WikiPreloadService {
    */
   async preloadPopularCountries(limit: number = 30): Promise<PreloadResult> {
     if (this.isPreloading) {
-      throw new Error('Preload already in progress');
+      throw new Error("Preload already in progress");
     }
 
     const startTime = Date.now();
@@ -199,10 +199,10 @@ export class WikiPreloadService {
       // Get countries with highest cache hit counts
       const popularEntries = await db.wikiCache.findMany({
         where: {
-          type: 'infobox',
+          type: "infobox",
         },
         orderBy: {
-          hitCount: 'desc',
+          hitCount: "desc",
         },
         take: limit,
         select: {
@@ -211,12 +211,12 @@ export class WikiPreloadService {
       });
 
       const countryNames = popularEntries
-        .map(entry => entry.countryName)
+        .map((entry) => entry.countryName)
         .filter((name): name is string => name !== null);
 
       if (countryNames.length === 0) {
-        console.log('[WikiPreload] No popular countries found in cache');
-        
+        console.log("[WikiPreload] No popular countries found in cache");
+
         // Fallback: Get recently viewed countries
         const recentCountries = await db.country.findMany({
           select: {
@@ -224,12 +224,12 @@ export class WikiPreloadService {
           },
           take: limit,
           orderBy: {
-            updatedAt: 'desc',
+            updatedAt: "desc",
           },
         });
 
-        const fallbackNames = recentCountries.map(c => c.name);
-        
+        const fallbackNames = recentCountries.map((c) => c.name);
+
         if (fallbackNames.length === 0) {
           return {
             total: 0,
@@ -264,10 +264,10 @@ export class WikiPreloadService {
         countries: countryNames,
       };
 
-      console.log('[WikiPreload] Popular countries preload complete:', preloadResult);
+      console.log("[WikiPreload] Popular countries preload complete:", preloadResult);
       return preloadResult;
     } catch (error) {
-      console.error('[WikiPreload] Error during popular countries preload:', error);
+      console.error("[WikiPreload] Error during popular countries preload:", error);
       throw error;
     } finally {
       this.isPreloading = false;
@@ -286,7 +286,7 @@ export class WikiPreloadService {
    */
   async getPreloadStats() {
     const cacheStats = await wikiCacheService.getCacheStats();
-    
+
     return {
       isPreloading: this.isPreloading,
       cacheStats,
@@ -307,27 +307,22 @@ export async function initializeWikiCache(options?: {
   preloadPopular?: boolean;
   maxCountries?: number;
 }) {
-  const {
-    preloadAll = false,
-    preloadPopular = true,
-    maxCountries = 30,
-  } = options || {};
+  const { preloadAll = false, preloadPopular = true, maxCountries = 30 } = options || {};
 
   try {
-    console.log('[WikiPreload] Initializing wiki cache...');
+    console.log("[WikiPreload] Initializing wiki cache...");
 
     if (preloadAll) {
-      console.log('[WikiPreload] Preloading all countries...');
+      console.log("[WikiPreload] Preloading all countries...");
       await wikiPreloadService.preloadAllCountries(maxCountries);
     } else if (preloadPopular) {
-      console.log('[WikiPreload] Preloading popular countries...');
+      console.log("[WikiPreload] Preloading popular countries...");
       await wikiPreloadService.preloadPopularCountries(maxCountries);
     }
 
-    console.log('[WikiPreload] Wiki cache initialization complete');
+    console.log("[WikiPreload] Wiki cache initialization complete");
   } catch (error) {
-    console.error('[WikiPreload] Error initializing wiki cache:', error);
+    console.error("[WikiPreload] Error initializing wiki cache:", error);
     // Don't throw - initialization errors shouldn't prevent app startup
   }
 }
-

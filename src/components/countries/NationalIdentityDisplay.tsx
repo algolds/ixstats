@@ -2,12 +2,12 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { 
-  Building, 
-  Crown, 
-  Users, 
-  MapPin, 
-  Heart, 
+import {
+  Building,
+  Crown,
+  Users,
+  MapPin,
+  Heart,
   Globe,
   FileText,
   Calendar,
@@ -17,7 +17,7 @@ import {
   Clock,
   Car,
   Flag,
-  Music
+  Music,
 } from "lucide-react";
 import type { CountryInfobox } from "~/lib/mediawiki-service";
 
@@ -64,14 +64,18 @@ interface NationalIdentityDisplayProps {
  * Shared component for displaying national identity information
  * Used in both country profiles and MyCountry overview
  */
-export function NationalIdentityDisplay({ 
-  nationalIdentity, 
-  wikiInfobox, 
+export function NationalIdentityDisplay({
+  nationalIdentity,
+  wikiInfobox,
   showTitle = true,
-  className = ""
+  className = "",
 }: NationalIdentityDisplayProps) {
   // Helper function to get the best available value
-  const getValue = (nationalIdentityValue?: string | null, wikiValue?: string | null, fallback?: string | null) => {
+  const getValue = (
+    nationalIdentityValue?: string | null,
+    wikiValue?: string | null,
+    fallback?: string | null
+  ) => {
     return nationalIdentityValue || wikiValue || fallback;
   };
 
@@ -92,13 +96,13 @@ export function NationalIdentityDisplay({
         </CardHeader>
       )}
       <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {/* Government Information */}
           {getValue(nationalIdentity?.officialName, wikiInfobox?.name) && (
             <div className="flex items-start gap-3">
-              <Building className="h-5 w-5 text-primary mt-0.5" />
+              <Building className="text-primary mt-0.5 h-5 w-5" />
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Official Name</p>
+                <p className="text-muted-foreground mb-1 text-xs">Official Name</p>
                 <p className="font-semibold">
                   {getValue(nationalIdentity?.officialName, wikiInfobox?.name)}
                 </p>
@@ -108,9 +112,9 @@ export function NationalIdentityDisplay({
 
           {getValue(nationalIdentity?.governmentType, wikiInfobox?.government_type) && (
             <div className="flex items-start gap-3">
-              <Crown className="h-5 w-5 text-primary mt-0.5" />
+              <Crown className="text-primary mt-0.5 h-5 w-5" />
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Government Type</p>
+                <p className="text-muted-foreground mb-1 text-xs">Government Type</p>
                 <p className="font-semibold">
                   {getValue(nationalIdentity?.governmentType, wikiInfobox?.government_type)}
                 </p>
@@ -121,9 +125,9 @@ export function NationalIdentityDisplay({
           {/* Geographic Information */}
           {getValue(nationalIdentity?.capitalCity, wikiInfobox?.capital) && (
             <div className="flex items-start gap-3">
-              <MapPin className="h-5 w-5 text-primary mt-0.5" />
+              <MapPin className="text-primary mt-0.5 h-5 w-5" />
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Capital</p>
+                <p className="text-muted-foreground mb-1 text-xs">Capital</p>
                 <p className="font-semibold">
                   {getValue(nationalIdentity?.capitalCity, wikiInfobox?.capital)}
                 </p>
@@ -133,24 +137,20 @@ export function NationalIdentityDisplay({
 
           {getValue(nationalIdentity?.largestCity) && (
             <div className="flex items-start gap-3">
-              <MapPin className="h-5 w-5 text-primary mt-0.5" />
+              <MapPin className="text-primary mt-0.5 h-5 w-5" />
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Largest City</p>
-                <p className="font-semibold">
-                  {nationalIdentity?.largestCity}
-                </p>
+                <p className="text-muted-foreground mb-1 text-xs">Largest City</p>
+                <p className="font-semibold">{nationalIdentity?.largestCity}</p>
               </div>
             </div>
           )}
 
           {getValue(nationalIdentity?.demonym) && (
             <div className="flex items-start gap-3">
-              <Users className="h-5 w-5 text-primary mt-0.5" />
+              <Users className="text-primary mt-0.5 h-5 w-5" />
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Demonym</p>
-                <p className="font-semibold">
-                  {nationalIdentity?.demonym}
-                </p>
+                <p className="text-muted-foreground mb-1 text-xs">Demonym</p>
+                <p className="font-semibold">{nationalIdentity?.demonym}</p>
               </div>
             </div>
           )}
@@ -158,9 +158,9 @@ export function NationalIdentityDisplay({
           {/* Economic Information */}
           {getValue(nationalIdentity?.currency, wikiInfobox?.currency) && (
             <div className="flex items-start gap-3">
-              <Globe className="h-5 w-5 text-primary mt-0.5" />
+              <Globe className="text-primary mt-0.5 h-5 w-5" />
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Currency</p>
+                <p className="text-muted-foreground mb-1 text-xs">Currency</p>
                 <p className="font-semibold">
                   {getValue(nationalIdentity?.currency, wikiInfobox?.currency)}
                   {nationalIdentity?.currencySymbol && ` (${nationalIdentity.currencySymbol})`}
@@ -172,9 +172,9 @@ export function NationalIdentityDisplay({
           {/* Language Information */}
           {getValue(nationalIdentity?.officialLanguages, wikiInfobox?.languages) && (
             <div className="flex items-start gap-3">
-              <FileText className="h-5 w-5 text-primary mt-0.5" />
+              <FileText className="text-primary mt-0.5 h-5 w-5" />
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Official Languages</p>
+                <p className="text-muted-foreground mb-1 text-xs">Official Languages</p>
                 <p className="font-semibold">
                   {getValue(nationalIdentity?.officialLanguages, wikiInfobox?.languages)}
                 </p>
@@ -184,12 +184,10 @@ export function NationalIdentityDisplay({
 
           {getValue(nationalIdentity?.nationalLanguage) && (
             <div className="flex items-start gap-3">
-              <FileText className="h-5 w-5 text-primary mt-0.5" />
+              <FileText className="text-primary mt-0.5 h-5 w-5" />
               <div>
-                <p className="text-xs text-muted-foreground mb-1">National Language</p>
-                <p className="font-semibold">
-                  {nationalIdentity?.nationalLanguage}
-                </p>
+                <p className="text-muted-foreground mb-1 text-xs">National Language</p>
+                <p className="font-semibold">{nationalIdentity?.nationalLanguage}</p>
               </div>
             </div>
           )}
@@ -197,36 +195,30 @@ export function NationalIdentityDisplay({
           {/* Cultural Information */}
           {getValue(nationalIdentity?.nationalDay) && (
             <div className="flex items-start gap-3">
-              <Calendar className="h-5 w-5 text-primary mt-0.5" />
+              <Calendar className="text-primary mt-0.5 h-5 w-5" />
               <div>
-                <p className="text-xs text-muted-foreground mb-1">National Day</p>
-                <p className="font-semibold">
-                  {nationalIdentity?.nationalDay}
-                </p>
+                <p className="text-muted-foreground mb-1 text-xs">National Day</p>
+                <p className="font-semibold">{nationalIdentity?.nationalDay}</p>
               </div>
             </div>
           )}
 
           {getValue(nationalIdentity?.nationalAnthem) && (
             <div className="flex items-start gap-3">
-              <Music className="h-5 w-5 text-primary mt-0.5" />
+              <Music className="text-primary mt-0.5 h-5 w-5" />
               <div>
-                <p className="text-xs text-muted-foreground mb-1">National Anthem</p>
-                <p className="font-semibold">
-                  {nationalIdentity?.nationalAnthem}
-                </p>
+                <p className="text-muted-foreground mb-1 text-xs">National Anthem</p>
+                <p className="font-semibold">{nationalIdentity?.nationalAnthem}</p>
               </div>
             </div>
           )}
 
           {getValue(nationalIdentity?.nationalSport) && (
             <div className="flex items-start gap-3">
-              <Heart className="h-5 w-5 text-primary mt-0.5" />
+              <Heart className="text-primary mt-0.5 h-5 w-5" />
               <div>
-                <p className="text-xs text-muted-foreground mb-1">National Sport</p>
-                <p className="font-semibold">
-                  {nationalIdentity?.nationalSport}
-                </p>
+                <p className="text-muted-foreground mb-1 text-xs">National Sport</p>
+                <p className="font-semibold">{nationalIdentity?.nationalSport}</p>
               </div>
             </div>
           )}
@@ -234,9 +226,9 @@ export function NationalIdentityDisplay({
           {/* Technical Information */}
           {getValue(nationalIdentity?.callingCode, wikiInfobox?.calling_code) && (
             <div className="flex items-start gap-3">
-              <Phone className="h-5 w-5 text-primary mt-0.5" />
+              <Phone className="text-primary mt-0.5 h-5 w-5" />
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Calling Code</p>
+                <p className="text-muted-foreground mb-1 text-xs">Calling Code</p>
                 <p className="font-semibold">
                   {getValue(nationalIdentity?.callingCode, wikiInfobox?.calling_code)}
                 </p>
@@ -246,9 +238,9 @@ export function NationalIdentityDisplay({
 
           {getValue(nationalIdentity?.internetTLD, wikiInfobox?.internetTld) && (
             <div className="flex items-start gap-3">
-              <Mail className="h-5 w-5 text-primary mt-0.5" />
+              <Mail className="text-primary mt-0.5 h-5 w-5" />
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Internet TLD</p>
+                <p className="text-muted-foreground mb-1 text-xs">Internet TLD</p>
                 <p className="font-semibold">
                   {getValue(nationalIdentity?.internetTLD, wikiInfobox?.internetTld)}
                 </p>
@@ -258,9 +250,9 @@ export function NationalIdentityDisplay({
 
           {getValue(nationalIdentity?.isoCode, wikiInfobox?.isoCode) && (
             <div className="flex items-start gap-3">
-              <Globe className="h-5 w-5 text-primary mt-0.5" />
+              <Globe className="text-primary mt-0.5 h-5 w-5" />
               <div>
-                <p className="text-xs text-muted-foreground mb-1">ISO Code</p>
+                <p className="text-muted-foreground mb-1 text-xs">ISO Code</p>
                 <p className="font-semibold">
                   {getValue(nationalIdentity?.isoCode, wikiInfobox?.isoCode)}
                 </p>
@@ -270,24 +262,20 @@ export function NationalIdentityDisplay({
 
           {getValue(nationalIdentity?.timeZone) && (
             <div className="flex items-start gap-3">
-              <Clock className="h-5 w-5 text-primary mt-0.5" />
+              <Clock className="text-primary mt-0.5 h-5 w-5" />
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Time Zone</p>
-                <p className="font-semibold">
-                  {nationalIdentity?.timeZone}
-                </p>
+                <p className="text-muted-foreground mb-1 text-xs">Time Zone</p>
+                <p className="font-semibold">{nationalIdentity?.timeZone}</p>
               </div>
             </div>
           )}
 
           {getValue(nationalIdentity?.drivingSide) && (
             <div className="flex items-start gap-3">
-              <Car className="h-5 w-5 text-primary mt-0.5" />
+              <Car className="text-primary mt-0.5 h-5 w-5" />
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Driving Side</p>
-                <p className="font-semibold">
-                  {nationalIdentity?.drivingSide}
-                </p>
+                <p className="text-muted-foreground mb-1 text-xs">Driving Side</p>
+                <p className="font-semibold">{nationalIdentity?.drivingSide}</p>
               </div>
             </div>
           )}
@@ -295,18 +283,19 @@ export function NationalIdentityDisplay({
 
         {/* National Motto */}
         {getValue(nationalIdentity?.motto, wikiInfobox?.motto) && (
-          <div className="mt-6 pt-6 border-t">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
+          <div className="mt-6 border-t pt-6">
+            <p className="text-muted-foreground mb-2 text-xs tracking-wide uppercase">
               National Motto
             </p>
-            <p className="text-base italic text-muted-foreground border-l-4 border-primary/30 pl-4">
+            <p className="text-muted-foreground border-primary/30 border-l-4 pl-4 text-base italic">
               &ldquo;{getValue(nationalIdentity?.motto, wikiInfobox?.motto)}&rdquo;
             </p>
-            {nationalIdentity?.mottoNative && nationalIdentity.mottoNative !== nationalIdentity.motto && (
-              <p className="text-sm text-muted-foreground/70 mt-2 border-l-4 border-primary/20 pl-4">
-                {nationalIdentity.mottoNative}
-              </p>
-            )}
+            {nationalIdentity?.mottoNative &&
+              nationalIdentity.mottoNative !== nationalIdentity.motto && (
+                <p className="text-muted-foreground/70 border-primary/20 mt-2 border-l-4 pl-4 text-sm">
+                  {nationalIdentity.mottoNative}
+                </p>
+              )}
           </div>
         )}
       </CardContent>

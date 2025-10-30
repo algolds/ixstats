@@ -9,41 +9,41 @@
 // CORE ENCRYPTION TYPES
 // ============================================================================
 
-export type ClassificationLevel = 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL' | 'SECRET';
-export type EncryptionVersion = 'v1' | 'v2';
-export type KeyStatus = 'ACTIVE' | 'ROTATED' | 'REVOKED' | 'EXPIRED';
+export type ClassificationLevel = "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL" | "SECRET";
+export type EncryptionVersion = "v1" | "v2";
+export type KeyStatus = "ACTIVE" | "ROTATED" | "REVOKED" | "EXPIRED";
 export type EncryptionOperation =
-  | 'GENERATE_KEY'
-  | 'ENCRYPT'
-  | 'DECRYPT'
-  | 'SIGN'
-  | 'VERIFY'
-  | 'ROTATE_KEY'
-  | 'REVOKE_KEY';
+  | "GENERATE_KEY"
+  | "ENCRYPT"
+  | "DECRYPT"
+  | "SIGN"
+  | "VERIFY"
+  | "ROTATE_KEY"
+  | "REVOKE_KEY";
 
 /**
  * Encryption key pair for a country
  */
 export interface KeyPair {
-  publicKey: string;              // Base64-encoded RSA public key
-  privateKey: string;             // Base64-encoded encrypted private key
-  keyId: string;                  // Unique identifier
-  version: EncryptionVersion;     // Encryption algorithm version
-  createdAt: Date;                // Key creation timestamp
-  expiresAt: Date;                // Key expiration timestamp
+  publicKey: string; // Base64-encoded RSA public key
+  privateKey: string; // Base64-encoded encrypted private key
+  keyId: string; // Unique identifier
+  version: EncryptionVersion; // Encryption algorithm version
+  createdAt: Date; // Key creation timestamp
+  expiresAt: Date; // Key expiration timestamp
 }
 
 /**
  * Encrypted message structure
  */
 export interface EncryptedMessage {
-  encryptedContent: string;       // Base64-encoded encrypted content
-  signature: string;              // Base64-encoded RSA signature
+  encryptedContent: string; // Base64-encoded encrypted content
+  signature: string; // Base64-encoded RSA signature
   encryptionVersion: EncryptionVersion; // Version used for encryption
-  iv: string;                     // Initialization vector (base64)
-  encryptedKey: string;           // RSA-encrypted AES key (base64)
-  senderKeyId: string;            // Sender's key identifier
-  timestamp: number;              // Unix timestamp
+  iv: string; // Initialization vector (base64)
+  encryptedKey: string; // RSA-encrypted AES key (base64)
+  senderKeyId: string; // Sender's key identifier
+  timestamp: number; // Unix timestamp
   classification: ClassificationLevel; // Message classification
 }
 
@@ -51,10 +51,10 @@ export interface EncryptedMessage {
  * Decrypted message with verification status
  */
 export interface DecryptedMessage {
-  content: string;                // Decrypted message content
-  verified: boolean;              // Signature verification result
-  senderCountryId: string;        // Sender's country ID
-  timestamp: number;              // Message timestamp
+  content: string; // Decrypted message content
+  verified: boolean; // Signature verification result
+  senderCountryId: string; // Sender's country ID
+  timestamp: number; // Message timestamp
   classification: ClassificationLevel; // Message classification
 }
 
@@ -142,8 +142,8 @@ export interface DiplomaticMessageWithEncryption {
   subject?: string | null;
   content: string;
   classification: ClassificationLevel;
-  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
-  status: 'SENT' | 'DELIVERED' | 'READ' | 'ARCHIVED';
+  priority: "LOW" | "NORMAL" | "HIGH" | "URGENT";
+  status: "SENT" | "DELIVERED" | "READ" | "ARCHIVED";
   encrypted: boolean;
   ixTimeTimestamp: number;
   createdAt: Date;
@@ -344,7 +344,7 @@ export interface KeySecurityStatus {
   expiresIn: number; // Days until expiration
   isExpired: boolean;
   isNearExpiry: boolean; // Within 30 days of expiration
-  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  riskLevel: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
   recommendations: string[];
 }
 
@@ -410,15 +410,15 @@ export interface AuditLogSummary {
  * Encryption error types
  */
 export type EncryptionErrorType =
-  | 'KEY_NOT_FOUND'
-  | 'KEY_EXPIRED'
-  | 'KEY_REVOKED'
-  | 'INVALID_SIGNATURE'
-  | 'DECRYPTION_FAILED'
-  | 'ENCRYPTION_FAILED'
-  | 'INVALID_CLASSIFICATION'
-  | 'UNAUTHORIZED'
-  | 'CRYPTO_API_UNAVAILABLE';
+  | "KEY_NOT_FOUND"
+  | "KEY_EXPIRED"
+  | "KEY_REVOKED"
+  | "INVALID_SIGNATURE"
+  | "DECRYPTION_FAILED"
+  | "ENCRYPTION_FAILED"
+  | "INVALID_CLASSIFICATION"
+  | "UNAUTHORIZED"
+  | "CRYPTO_API_UNAVAILABLE";
 
 /**
  * Encryption error
@@ -448,7 +448,11 @@ export interface ValidationResult {
  * Check if classification requires encryption
  */
 export function requiresEncryption(classification: ClassificationLevel): boolean {
-  return classification === 'RESTRICTED' || classification === 'CONFIDENTIAL' || classification === 'SECRET';
+  return (
+    classification === "RESTRICTED" ||
+    classification === "CONFIDENTIAL" ||
+    classification === "SECRET"
+  );
 }
 
 /**
@@ -462,7 +466,7 @@ export function isKeyExpired(key: EncryptionKeyModel): boolean {
  * Check if key is active
  */
 export function isKeyActive(key: EncryptionKeyModel): boolean {
-  return key.status === 'ACTIVE' && !isKeyExpired(key);
+  return key.status === "ACTIVE" && !isKeyExpired(key);
 }
 
 /**
@@ -478,12 +482,12 @@ export function needsKeyRotation(key: EncryptionKeyModel, warningDays: number = 
 /**
  * Get risk level for a key
  */
-export function getKeyRiskLevel(key: EncryptionKeyModel): 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' {
-  if (key.status === 'REVOKED') return 'CRITICAL';
-  if (isKeyExpired(key)) return 'CRITICAL';
-  if (needsKeyRotation(key, 7)) return 'HIGH';
-  if (needsKeyRotation(key, 30)) return 'MEDIUM';
-  return 'LOW';
+export function getKeyRiskLevel(key: EncryptionKeyModel): "LOW" | "MEDIUM" | "HIGH" | "CRITICAL" {
+  if (key.status === "REVOKED") return "CRITICAL";
+  if (isKeyExpired(key)) return "CRITICAL";
+  if (needsKeyRotation(key, 7)) return "HIGH";
+  if (needsKeyRotation(key, 30)) return "MEDIUM";
+  return "LOW";
 }
 
 // ============================================================================

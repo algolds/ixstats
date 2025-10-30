@@ -3,10 +3,10 @@
  * Manages page title badge with unread notification count
  */
 
-'use client';
+"use client";
 
-import React from 'react';
-import { useNotificationBadge } from '~/hooks/useLiveNotifications';
+import React from "react";
+import { useNotificationBadge } from "~/hooks/useLiveNotifications";
 
 interface NotificationBadgeProviderProps {
   children: React.ReactNode;

@@ -4,42 +4,42 @@
  * Keeps only the new roster with checkmarks
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 // Note: Uses DATABASE_URL from environment (PostgreSQL, October 2025)
 const prisma = new PrismaClient();
 
 async function removeOldRoster() {
-  console.log('🔍 Finding old roster entries (without ✔)...\n');
+  console.log("🔍 Finding old roster entries (without ✔)...\n");
 
   try {
     // Get all countries
     const allCountries = await prisma.country.findMany({
-      orderBy: { name: 'asc' },
+      orderBy: { name: "asc" },
       select: {
         id: true,
         name: true,
         createdAt: true,
-      }
+      },
     });
 
     console.log(`📊 Total countries: ${allCountries.length}\n`);
 
     // Separate old (no checkmark) and new (with checkmark)
-    const oldCountries = allCountries.filter(c => !c.name.includes('✔'));
-    const newCountries = allCountries.filter(c => c.name.includes('✔'));
+    const oldCountries = allCountries.filter((c) => !c.name.includes("✔"));
+    const newCountries = allCountries.filter((c) => c.name.includes("✔"));
 
     console.log(`📋 Roster breakdown:`);
     console.log(`   Old roster (no ✔): ${oldCountries.length}`);
     console.log(`   New roster (with ✔): ${newCountries.length}\n`);
 
     if (oldCountries.length === 0) {
-      console.log('✅ No old roster entries found!\n');
+      console.log("✅ No old roster entries found!\n");
       return;
     }
 
-    console.log('🗑️  Countries to be deleted:');
-    oldCountries.slice(0, 10).forEach(c => {
+    console.log("🗑️  Countries to be deleted:");
+    oldCountries.slice(0, 10).forEach((c) => {
       console.log(`   - ${c.name} (${c.id.slice(0, 8)}...)`);
     });
     if (oldCountries.length > 10) {
@@ -51,16 +51,16 @@ async function removeOldRoster() {
     console.log(`⚠️  This will DELETE ${oldCountries.length} old roster entries!\n`);
 
     // Delete old roster
-    const idsToDelete = oldCountries.map(c => c.id);
+    const idsToDelete = oldCountries.map((c) => c.id);
 
-    console.log('🗑️  Deleting old roster entries...\n');
+    console.log("🗑️  Deleting old roster entries...\n");
 
     const result = await prisma.country.deleteMany({
       where: {
         id: {
-          in: idsToDelete
-        }
-      }
+          in: idsToDelete,
+        },
+      },
     });
 
     console.log(`✅ Deleted ${result.count} old roster entries\n`);
@@ -69,16 +69,15 @@ async function removeOldRoster() {
     const finalCount = await prisma.country.count();
     console.log(`📊 Final country count: ${finalCount}`);
     console.log(`   (Should be ${newCountries.length} - new roster only)\n`);
-
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error("❌ Error:", error);
     throw error;
   } finally {
     await prisma.$disconnect();
   }
 }
 
-removeOldRoster().catch(error => {
-  console.error('Fatal error:', error);
+removeOldRoster().catch((error) => {
+  console.error("Fatal error:", error);
   process.exit(1);
 });

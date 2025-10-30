@@ -1,9 +1,9 @@
 "use client";
 
-import React from 'react';
-import { EnhancedNumberInput, EnhancedSlider } from '../../../../primitives/enhanced';
-import { DollarSign, Users, Shield } from 'lucide-react';
-import type { LaborConfiguration } from '~/types/economy-builder';
+import React from "react";
+import { EnhancedNumberInput, EnhancedSlider } from "../../../../primitives/enhanced";
+import { DollarSign, Users, Shield } from "lucide-react";
+import type { LaborConfiguration } from "~/types/economy-builder";
 
 interface IncomeSectionProps {
   laborMarket: LaborConfiguration;
@@ -18,7 +18,7 @@ export function IncomeSection({ laborMarket, onChange, showAdvanced }: IncomeSec
         label="Minimum Wage (Hourly)"
         description="Minimum hourly wage rate"
         value={laborMarket.minimumWageHourly}
-        onChange={(value) => onChange('minimumWageHourly', value)}
+        onChange={(value) => onChange("minimumWageHourly", value)}
         min={5}
         max={50}
         step={0.25}
@@ -32,10 +32,10 @@ export function IncomeSection({ laborMarket, onChange, showAdvanced }: IncomeSec
         label="Living Wage (Hourly)"
         description="Living wage for basic needs"
         value={laborMarket.livingWageHourly}
-        onChange={(value) => onChange('livingWageHourly', value)}
+        onChange={(value) => onChange("livingWageHourly", value)}
         min={10}
         max={100}
-        step={0.50}
+        step={0.5}
         sectionId="labor"
         icon={DollarSign}
         showButtons={true}
@@ -43,12 +43,12 @@ export function IncomeSection({ laborMarket, onChange, showAdvanced }: IncomeSec
       />
 
       {showAdvanced && (
-        <div className="space-y-4 pt-4 border-t">
+        <div className="space-y-4 border-t pt-4">
           <EnhancedSlider
             label="Unionization Rate"
             description="Percentage of workers in unions"
             value={laborMarket.unionizationRate}
-            onChange={(value) => onChange('unionizationRate', value)}
+            onChange={(value) => onChange("unionizationRate", value)}
             min={0}
             max={50}
             step={0.1}
@@ -62,7 +62,7 @@ export function IncomeSection({ laborMarket, onChange, showAdvanced }: IncomeSec
             label="Collective Bargaining Coverage"
             description="Percentage covered by collective agreements"
             value={laborMarket.collectiveBargainingCoverage}
-            onChange={(value) => onChange('collectiveBargainingCoverage', value)}
+            onChange={(value) => onChange("collectiveBargainingCoverage", value)}
             min={0}
             max={80}
             step={0.1}

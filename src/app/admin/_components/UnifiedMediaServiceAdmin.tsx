@@ -30,15 +30,15 @@ export function UnifiedMediaServiceAdmin() {
   const fetchStats = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(withBasePath('/api/flag-cache?action=stats'));
+      const response = await fetch(withBasePath("/api/flag-cache?action=stats"));
       const data = await response.json();
-      
+
       if (data.success) {
         setStats(data.stats);
         setLastUpdated(new Date());
       }
     } catch (error) {
-      console.error('Failed to fetch cache stats:', error);
+      console.error("Failed to fetch cache stats:", error);
     } finally {
       setIsLoading(false);
     }
@@ -47,20 +47,20 @@ export function UnifiedMediaServiceAdmin() {
   const initializeCache = async () => {
     try {
       setIsInitializing(true);
-      const response = await fetch(withBasePath('/api/flag-cache?action=flags'), {
-        method: 'GET',
+      const response = await fetch(withBasePath("/api/flag-cache?action=flags"), {
+        method: "GET",
       });
       const data = await response.json();
-      
+
       if (data.success) {
         await fetchStats(); // Refresh stats
         alert(`Cache initialized! Loaded ${Object.keys(data.flags).length} flags.`);
       } else {
-        alert('Failed to initialize cache: ' + data.error);
+        alert("Failed to initialize cache: " + data.error);
       }
     } catch (error) {
-      console.error('Failed to initialize cache:', error);
-      alert('Failed to initialize cache: ' + error);
+      console.error("Failed to initialize cache:", error);
+      alert("Failed to initialize cache: " + error);
     } finally {
       setIsInitializing(false);
     }
@@ -70,20 +70,20 @@ export function UnifiedMediaServiceAdmin() {
     try {
       setIsLoading(true);
       // Call the unified service clear method
-      const response = await fetch(withBasePath('/api/flag-cache?action=clear'), {
-        method: 'DELETE',
+      const response = await fetch(withBasePath("/api/flag-cache?action=clear"), {
+        method: "DELETE",
       });
       const data = await response.json();
-      
+
       if (data.success) {
         await fetchStats(); // Refresh stats
-        alert('Cache cleared successfully!');
+        alert("Cache cleared successfully!");
       } else {
-        alert('Failed to clear cache: ' + data.error);
+        alert("Failed to clear cache: " + data.error);
       }
     } catch (error) {
-      console.error('Failed to clear cache:', error);
-      alert('Failed to clear cache: ' + error);
+      console.error("Failed to clear cache:", error);
+      alert("Failed to clear cache: " + error);
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +93,7 @@ export function UnifiedMediaServiceAdmin() {
     fetchStats();
   }, []);
 
-  const hitRate = stats ? (stats.hitRate * 100).toFixed(1) : '0';
+  const hitRate = stats ? (stats.hitRate * 100).toFixed(1) : "0";
 
   return (
     <Card className="w-full">
@@ -102,36 +102,30 @@ export function UnifiedMediaServiceAdmin() {
           <Database className="h-5 w-5" />
           Unified Media Service
         </CardTitle>
-        <CardDescription>
-          Centralized flag and wiki data caching system
-        </CardDescription>
+        <CardDescription>Centralized flag and wiki data caching system</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">
-              {stats?.cacheSize ?? 0}
-            </div>
-            <div className="text-sm text-muted-foreground">Cached Items</div>
+            <div className="text-2xl font-bold text-blue-600">{stats?.cacheSize ?? 0}</div>
+            <div className="text-muted-foreground text-sm">Cached Items</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {hitRate}%
-            </div>
-            <div className="text-sm text-muted-foreground">Hit Rate</div>
+            <div className="text-2xl font-bold text-green-600">{hitRate}%</div>
+            <div className="text-muted-foreground text-sm">Hit Rate</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-orange-600">
               {stats?.serviceStats.flagRequests ?? 0}
             </div>
-            <div className="text-sm text-muted-foreground">Flag Requests</div>
+            <div className="text-muted-foreground text-sm">Flag Requests</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-600">
               {stats?.serviceStats.totalRequests ?? 0}
             </div>
-            <div className="text-sm text-muted-foreground">Total Requests</div>
+            <div className="text-muted-foreground text-sm">Total Requests</div>
           </div>
         </div>
 
@@ -144,15 +138,13 @@ export function UnifiedMediaServiceAdmin() {
             Performance: {parseFloat(hitRate) > 80 ? "Good" : "Needs Improvement"}
           </Badge>
           {lastUpdated && (
-            <Badge variant="outline">
-              Updated: {lastUpdated.toLocaleTimeString()}
-            </Badge>
+            <Badge variant="outline">Updated: {lastUpdated.toLocaleTimeString()}</Badge>
           )}
         </div>
 
         {/* Cache Health Warning */}
         {stats && stats.cacheSize === 0 && (
-          <div className="flex items-center gap-2 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="flex items-center gap-2 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
             <AlertTriangle className="h-5 w-5 text-yellow-600" />
             <div className="text-sm text-yellow-800">
               Cache is empty. Initialize the cache to improve performance.
@@ -162,49 +154,34 @@ export function UnifiedMediaServiceAdmin() {
 
         {/* Actions */}
         <div className="flex flex-wrap gap-3">
-          <Button
-            onClick={fetchStats}
-            disabled={isLoading}
-            variant="outline"
-            size="sm"
-          >
+          <Button onClick={fetchStats} disabled={isLoading} variant="outline" size="sm">
             {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
-              <RefreshCw className="h-4 w-4 mr-2" />
+              <RefreshCw className="mr-2 h-4 w-4" />
             )}
             Refresh Stats
           </Button>
 
-          <Button
-            onClick={initializeCache}
-            disabled={isInitializing}
-            variant="default"
-            size="sm"
-          >
+          <Button onClick={initializeCache} disabled={isInitializing} variant="default" size="sm">
             {isInitializing ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
-              <Zap className="h-4 w-4 mr-2" />
+              <Zap className="mr-2 h-4 w-4" />
             )}
             Initialize Cache
           </Button>
 
-          <Button
-            onClick={clearCache}
-            disabled={isLoading}
-            variant="destructive"
-            size="sm"
-          >
+          <Button onClick={clearCache} disabled={isLoading} variant="destructive" size="sm">
             Clear Cache
           </Button>
         </div>
 
         {/* Detailed Stats */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+          <div className="grid grid-cols-1 gap-4 border-t pt-4 md:grid-cols-2">
             <div>
-              <h4 className="font-medium mb-2">Request Statistics</h4>
+              <h4 className="mb-2 font-medium">Request Statistics</h4>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span>Cache Hits:</span>
@@ -220,9 +197,9 @@ export function UnifiedMediaServiceAdmin() {
                 </div>
               </div>
             </div>
-            
+
             <div>
-              <h4 className="font-medium mb-2">Service Breakdown</h4>
+              <h4 className="mb-2 font-medium">Service Breakdown</h4>
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span>Flag Requests:</span>

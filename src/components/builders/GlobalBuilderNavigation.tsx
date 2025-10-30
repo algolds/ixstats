@@ -1,10 +1,10 @@
 "use client";
 
-import React from 'react';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { ArrowLeft, ArrowRight, CheckCircle, AlertTriangle } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import React from "react";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { ArrowLeft, ArrowRight, CheckCircle, AlertTriangle } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 export interface BuilderStep {
   id: string;
@@ -47,18 +47,19 @@ export function GlobalBuilderNavigation({
   isValid = true,
   validationErrors = {},
   isReadOnly = false,
-  className = ''
+  className = "",
 }: GlobalBuilderNavigationProps) {
-  const currentStepIndex = steps.findIndex(step => step.id === currentStep);
+  const currentStepIndex = steps.findIndex((step) => step.id === currentStep);
   const currentStepData = steps[currentStepIndex];
 
   // Calculate if we're on the last internal tab (if tabs exist)
   const hasInternalTabs = currentStepData?.internalTabs && currentStepData.internalTabs.length > 0;
-  const currentInternalTabIndex = hasInternalTabs && currentInternalTab
-    ? currentStepData!.internalTabs!.findIndex(tab => tab.id === currentInternalTab)
-    : -1;
-  const isOnLastInternalTab = !hasInternalTabs ||
-    currentInternalTabIndex === currentStepData!.internalTabs!.length - 1;
+  const currentInternalTabIndex =
+    hasInternalTabs && currentInternalTab
+      ? currentStepData!.internalTabs!.findIndex((tab) => tab.id === currentInternalTab)
+      : -1;
+  const isOnLastInternalTab =
+    !hasInternalTabs || currentInternalTabIndex === currentStepData!.internalTabs!.length - 1;
   const isOnFirstInternalTab = !hasInternalTabs || currentInternalTabIndex === 0;
 
   // Handle Previous navigation
@@ -113,7 +114,7 @@ export function GlobalBuilderNavigation({
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Progress Steps */}
-      <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border">
+      <div className="bg-muted/50 border-border flex items-center justify-between rounded-lg border p-4">
         {steps.map((step, index) => {
           const StepIcon = step.icon;
           const isActive = step.id === currentStep;
@@ -131,14 +132,14 @@ export function GlobalBuilderNavigation({
                   }
                 }}
                 disabled={isReadOnly}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors relative ${
+                className={`relative flex items-center gap-2 rounded-lg px-3 py-2 transition-colors ${
                   isActive
-                    ? 'bg-primary text-primary-foreground'
+                    ? "bg-primary text-primary-foreground"
                     : isCompleted && !hasErrors
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
+                      ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
                       : hasErrors
-                        ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'
-                        : 'hover:bg-muted text-muted-foreground'
+                        ? "bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                        : "hover:bg-muted text-muted-foreground"
                 }`}
               >
                 <StepIcon className="h-4 w-4" />
@@ -154,7 +155,7 @@ export function GlobalBuilderNavigation({
                 )}
               </button>
               {index < steps.length - 1 && (
-                <ArrowRight className="h-4 w-4 mx-2 text-muted-foreground" />
+                <ArrowRight className="text-muted-foreground mx-2 h-4 w-4" />
               )}
             </div>
           );
@@ -163,8 +164,8 @@ export function GlobalBuilderNavigation({
 
       {/* Internal Tab Progress (if applicable) */}
       {hasInternalTabs && currentStepData && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-muted/30 rounded-lg border border-border/50">
-          <span className="text-sm text-muted-foreground mr-2">
+        <div className="bg-muted/30 border-border/50 flex items-center gap-2 rounded-lg border px-4 py-2">
+          <span className="text-muted-foreground mr-2 text-sm">
             {currentStepData.label} Section:
           </span>
           {currentStepData.internalTabs!.map((tab, index) => {
@@ -176,18 +177,18 @@ export function GlobalBuilderNavigation({
                 <button
                   onClick={() => onInternalTabChange?.(tab.id)}
                   disabled={isReadOnly}
-                  className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                  className={`rounded px-2 py-1 text-xs font-medium transition-colors ${
                     isActiveTab
-                      ? 'bg-primary text-primary-foreground'
+                      ? "bg-primary text-primary-foreground"
                       : isCompletedTab
-                        ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                        : 'hover:bg-muted/50 text-muted-foreground'
+                        ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+                        : "hover:bg-muted/50 text-muted-foreground"
                   }`}
                 >
                   {tab.label}
                 </button>
                 {index < currentStepData.internalTabs!.length - 1 && (
-                  <ArrowRight className="h-3 w-3 text-muted-foreground/50" />
+                  <ArrowRight className="text-muted-foreground/50 h-3 w-3" />
                 )}
               </React.Fragment>
             );
@@ -196,36 +197,32 @@ export function GlobalBuilderNavigation({
       )}
 
       {/* Navigation Buttons */}
-      <div className="flex items-center justify-between pt-6 border-t border-border">
-        <Button
-          variant="outline"
-          onClick={handlePrevious}
-          disabled={isOnFirstStep || isReadOnly}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
+      <div className="border-border flex items-center justify-between border-t pt-6">
+        <Button variant="outline" onClick={handlePrevious} disabled={isOnFirstStep || isReadOnly}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Previous
         </Button>
 
         <div className="flex items-center gap-2">
           {isValid ? (
-            <Badge variant="default" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-              <CheckCircle className="h-3 w-3 mr-1" />
+            <Badge
+              variant="default"
+              className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+            >
+              <CheckCircle className="mr-1 h-3 w-3" />
               Valid Configuration
             </Badge>
           ) : (
             <Badge variant="destructive">
-              <AlertTriangle className="h-3 w-3 mr-1" />
-              {errorCount} {errorCount === 1 ? 'Issue' : 'Issues'}
+              <AlertTriangle className="mr-1 h-3 w-3" />
+              {errorCount} {errorCount === 1 ? "Issue" : "Issues"}
             </Badge>
           )}
         </div>
 
-        <Button
-          onClick={handleNext}
-          disabled={isOnLastStep || isReadOnly}
-        >
+        <Button onClick={handleNext} disabled={isOnLastStep || isReadOnly}>
           Next
-          <ArrowRight className="h-4 w-4 ml-2" />
+          <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
     </div>

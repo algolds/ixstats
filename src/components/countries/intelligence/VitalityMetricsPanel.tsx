@@ -29,16 +29,16 @@ export const VitalityMetricsPanel: React.FC<VitalityMetricsPanelProps> = ({
   metrics,
   viewerClearanceLevel,
   showClassified = false,
-  flagColors = { primary: '#3b82f6', secondary: '#6366f1', accent: '#8b5cf6' },
-  className
+  flagColors = { primary: "#3b82f6", secondary: "#6366f1", accent: "#8b5cf6" },
+  className,
 }) => {
   // Filter metrics based on clearance level
   const filteredMetrics = React.useMemo(() => {
     if (showClassified) return metrics;
 
-    const levels = { 'PUBLIC': 1, 'RESTRICTED': 2, 'CONFIDENTIAL': 3 };
-    return metrics.filter(metric =>
-      levels[viewerClearanceLevel] >= levels[metric.classification]
+    const levels = { PUBLIC: 1, RESTRICTED: 2, CONFIDENTIAL: 3 };
+    return metrics.filter(
+      (metric) => levels[viewerClearanceLevel] >= levels[metric.classification]
     );
   }, [metrics, viewerClearanceLevel, showClassified]);
 
@@ -48,11 +48,14 @@ export const VitalityMetricsPanel: React.FC<VitalityMetricsPanelProps> = ({
         <CardTitle>Vitality Metrics</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {filteredMetrics.map((metric) => {
             const TrendIcon = getTrendIcon(metric.trend);
             const trendColor = getTrendColor(metric.trend);
-            const Icon = metric.icon as React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+            const Icon = metric.icon as React.ComponentType<{
+              className?: string;
+              style?: React.CSSProperties;
+            }>;
 
             return (
               <motion.div
@@ -64,23 +67,16 @@ export const VitalityMetricsPanel: React.FC<VitalityMetricsPanelProps> = ({
               >
                 {/* Vitality Ring */}
                 <div className="relative">
-                  <HealthRing
-                    value={metric.value}
-                    size={120}
-                    color={metric.color}
-                  />
+                  <HealthRing value={metric.value} size={120} color={metric.color} />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Icon
-                      className="h-8 w-8"
-                      style={{ color: metric.color }}
-                    />
+                    <Icon className="h-8 w-8" style={{ color: metric.color }} />
                   </div>
                 </div>
 
                 {/* Metric Details */}
-                <div className="text-center space-y-2 w-full">
+                <div className="w-full space-y-2 text-center">
                   <div className="flex items-center justify-center gap-2">
-                    <h3 className="font-semibold text-lg">{metric.label}</h3>
+                    <h3 className="text-lg font-semibold">{metric.label}</h3>
                     <TrendIcon className={cn("h-4 w-4", trendColor)} />
                   </div>
 
@@ -100,7 +96,7 @@ export const VitalityMetricsPanel: React.FC<VitalityMetricsPanelProps> = ({
                   </Badge>
 
                   {/* Classification Badge */}
-                  {metric.classification !== 'PUBLIC' && (
+                  {metric.classification !== "PUBLIC" && (
                     <Badge
                       variant="outline"
                       className={cn(

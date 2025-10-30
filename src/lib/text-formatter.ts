@@ -1,11 +1,11 @@
 // Text formatting utilities for SSR compatibility
 // No external dependencies that use 'self' or browser globals
 
-import { sanitizeUserContent, escapeHtml } from './sanitize-html';
+import { sanitizeUserContent, escapeHtml } from "./sanitize-html";
 
 // Enhanced text formatting with better mention and hashtag styling
 export function formatContentEnhanced(content: string): string {
-  if (!content) return '';
+  if (!content) return "";
 
   // SECURITY: First escape HTML to prevent XSS, then apply formatting
   let formattedContent = escapeHtml(content);
@@ -37,7 +37,7 @@ export function extractHashtags(text: string): string[] {
   if (!text) return [];
   const hashtagRegex = /#([a-zA-Z0-9_]+)/g;
   const matches = text.match(hashtagRegex);
-  return matches ? matches.map(tag => tag.slice(1)) : [];
+  return matches ? matches.map((tag) => tag.slice(1)) : [];
 }
 
 // Extract mentions from text
@@ -45,7 +45,7 @@ export function extractMentions(text: string): string[] {
   if (!text) return [];
   const mentionRegex = /@([a-zA-Z0-9_]+)/g;
   const matches = text.match(mentionRegex);
-  return matches ? matches.map(mention => mention.slice(1)) : [];
+  return matches ? matches.map((mention) => mention.slice(1)) : [];
 }
 
 // Validate if text contains valid URLs

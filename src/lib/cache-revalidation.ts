@@ -62,10 +62,7 @@ export async function findStaleEntries(limit = 50) {
 /**
  * Mark entries as needing revalidation
  */
-export async function markForRevalidation(
-  service?: string,
-  countryName?: string
-): Promise<number> {
+export async function markForRevalidation(service?: string, countryName?: string): Promise<number> {
   try {
     const where: any = {};
 

@@ -57,10 +57,7 @@ const GlowingEffect = memo(
 
           const center = [left + width * 0.5, top + height * 0.5];
           if (center?.[0] === undefined || center[1] === undefined) return;
-          const distanceFromCenter = Math.hypot(
-            mouseX - center[0],
-            mouseY - center[1]
-          );
+          const distanceFromCenter = Math.hypot(mouseX - center[0], mouseY - center[1]);
           const inactiveRadius = 0.5 * Math.min(width, height) * inactiveZone;
 
           if (distanceFromCenter < inactiveRadius) {
@@ -78,12 +75,9 @@ const GlowingEffect = memo(
 
           if (!isActive) return;
 
-          const currentAngle =
-            parseFloat(element.style.getPropertyValue("--start")) || 0;
+          const currentAngle = parseFloat(element.style.getPropertyValue("--start")) || 0;
           const targetAngle =
-            (180 * Math.atan2(mouseY - center[1], mouseX - center[0])) /
-              Math.PI +
-            90;
+            (180 * Math.atan2(mouseY - center[1], mouseX - center[0])) / Math.PI + 90;
 
           const angleDiff = ((targetAngle - currentAngle + 180) % 360) - 180;
           const newAngle = currentAngle + angleDiff;
@@ -164,7 +158,7 @@ const GlowingEffect = memo(
           className={cn(
             "pointer-events-none absolute inset-0 rounded-[inherit] opacity-100 transition-opacity",
             glow && "opacity-100",
-            blur > 0 && "blur-[var(--blur)] ",
+            blur > 0 && "blur-[var(--blur)]",
             className,
             disabled && "!hidden"
           )}
@@ -173,9 +167,9 @@ const GlowingEffect = memo(
             className={cn(
               "glow",
               "rounded-[inherit]",
-              'after:content-[""] after:rounded-[inherit] after:absolute after:inset-[calc(-1*var(--glowingeffect-border-width))]',
+              'after:absolute after:inset-[calc(-1*var(--glowingeffect-border-width))] after:rounded-[inherit] after:content-[""]',
               "after:[border:var(--glowingeffect-border-width)_solid_transparent]",
-              "after:[background:var(--gradient)] after:[background-attachment:fixed]",
+              "after:[background-attachment:fixed] after:[background:var(--gradient)]",
               "after:opacity-[var(--active)] after:transition-opacity after:duration-300",
               "after:[mask-clip:padding-box,border-box]",
               "after:[mask-composite:intersect]",

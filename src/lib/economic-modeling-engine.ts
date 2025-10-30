@@ -78,7 +78,7 @@ export interface AdjustedRates {
  */
 export interface ModelHealth {
   score: number;
-  status: 'excellent' | 'good' | 'fair' | 'poor';
+  status: "excellent" | "good" | "fair" | "poor";
   warnings: string[];
 }
 
@@ -122,8 +122,7 @@ export function applyPolicyEffects(
 
   policies.forEach((policy) => {
     const isActive =
-      year >= policy.yearImplemented &&
-      year < policy.yearImplemented + (policy.durationYears ?? 0);
+      year >= policy.yearImplemented && year < policy.yearImplemented + (policy.durationYears ?? 0);
 
     if (isActive) {
       gdpGrowthRate += policy.gdpEffectPercentage ?? 0;
@@ -228,9 +227,9 @@ export function calculateModelHealth(parameters: ModelParameters): ModelHealth {
     score += 10;
   } else if (parameters.gdpGrowthRate < 0) {
     score -= 15;
-    warnings.push('Negative GDP growth indicates economic contraction');
+    warnings.push("Negative GDP growth indicates economic contraction");
   } else if (parameters.gdpGrowthRate > 10) {
-    warnings.push('Very high GDP growth may indicate overheating');
+    warnings.push("Very high GDP growth may indicate overheating");
   }
 
   // Inflation Assessment (optimal: 1-3%)
@@ -238,9 +237,9 @@ export function calculateModelHealth(parameters: ModelParameters): ModelHealth {
     score += 10;
   } else if (parameters.inflationRate > 8) {
     score -= 15;
-    warnings.push('High inflation may erode purchasing power');
+    warnings.push("High inflation may erode purchasing power");
   } else if (parameters.inflationRate < 0) {
-    warnings.push('Deflation detected - may indicate weak demand');
+    warnings.push("Deflation detected - may indicate weak demand");
   }
 
   // Unemployment Assessment (lower is better)
@@ -248,9 +247,9 @@ export function calculateModelHealth(parameters: ModelParameters): ModelHealth {
     score += 10;
   } else if (parameters.unemploymentRate > 15) {
     score -= 15;
-    warnings.push('Very high unemployment indicates labor market stress');
+    warnings.push("Very high unemployment indicates labor market stress");
   } else if (parameters.unemploymentRate > 10) {
-    warnings.push('Elevated unemployment levels');
+    warnings.push("Elevated unemployment levels");
   }
 
   // Fiscal Balance Assessment (optimal: ±3%)
@@ -259,30 +258,28 @@ export function calculateModelHealth(parameters: ModelParameters): ModelHealth {
   } else if (Math.abs(parameters.fiscalBalance) > 10) {
     score -= 10;
     if (parameters.fiscalBalance < -10) {
-      warnings.push('Large fiscal deficit may indicate unsustainable debt');
+      warnings.push("Large fiscal deficit may indicate unsustainable debt");
     } else {
-      warnings.push('Large fiscal surplus - consider productive investments');
+      warnings.push("Large fiscal surplus - consider productive investments");
     }
   }
 
   // Trade Balance Assessment
   if (Math.abs(parameters.tradeBalance) > 15) {
-    warnings.push('Large trade imbalance may indicate structural issues');
+    warnings.push("Large trade imbalance may indicate structural issues");
   }
 
   // Interest Rate Assessment
   if (parameters.interestRate < 0) {
-    warnings.push('Negative interest rates - unconventional monetary policy');
+    warnings.push("Negative interest rates - unconventional monetary policy");
   } else if (parameters.interestRate > 15) {
-    warnings.push('Very high interest rates may constrain growth');
+    warnings.push("Very high interest rates may constrain growth");
   }
 
   const finalScore = Math.max(0, Math.min(100, Math.round(score)));
 
-  const status: ModelHealth['status'] =
-    finalScore >= 85 ? 'excellent' :
-    finalScore >= 70 ? 'good' :
-    finalScore >= 55 ? 'fair' : 'poor';
+  const status: ModelHealth["status"] =
+    finalScore >= 85 ? "excellent" : finalScore >= 70 ? "good" : finalScore >= 55 ? "fair" : "poor";
 
   return {
     score: finalScore,
@@ -313,57 +310,57 @@ export function validateModelParameters(params: ModelParameters): ValidationResu
 
   // Base Year validation
   if (!params.baseYear || params.baseYear < 1900 || params.baseYear > 2100) {
-    errors.push('Base year must be between 1900 and 2100');
+    errors.push("Base year must be between 1900 and 2100");
   }
 
   // Projection Years validation
   if (!params.projectionYears || params.projectionYears < 1 || params.projectionYears > 50) {
-    errors.push('Projection years must be between 1 and 50');
+    errors.push("Projection years must be between 1 and 50");
   }
 
   // GDP Growth Rate validation
   if (params.gdpGrowthRate < -20 || params.gdpGrowthRate > 20) {
-    errors.push('GDP growth rate must be between -20% and 20%');
+    errors.push("GDP growth rate must be between -20% and 20%");
   }
 
   // Inflation Rate validation
   if (params.inflationRate < -10 || params.inflationRate > 50) {
-    errors.push('Inflation rate must be between -10% and 50%');
+    errors.push("Inflation rate must be between -10% and 50%");
   }
 
   // Unemployment Rate validation
   if (params.unemploymentRate < 0 || params.unemploymentRate > 50) {
-    errors.push('Unemployment rate must be between 0% and 50%');
+    errors.push("Unemployment rate must be between 0% and 50%");
   }
 
   // Interest Rate validation
   if (params.interestRate < -5 || params.interestRate > 30) {
-    errors.push('Interest rate must be between -5% and 30%');
+    errors.push("Interest rate must be between -5% and 30%");
   }
 
   // Exchange Rate validation
   if (params.exchangeRate < 0 || params.exchangeRate > 1000) {
-    errors.push('Exchange rate must be between 0 and 1000');
+    errors.push("Exchange rate must be between 0 and 1000");
   }
 
   // Population Growth Rate validation
   if (params.populationGrowthRate < -5 || params.populationGrowthRate > 10) {
-    errors.push('Population growth rate must be between -5% and 10%');
+    errors.push("Population growth rate must be between -5% and 10%");
   }
 
   // Investment Rate validation
   if (params.investmentRate < 0 || params.investmentRate > 50) {
-    errors.push('Investment rate must be between 0% and 50%');
+    errors.push("Investment rate must be between 0% and 50%");
   }
 
   // Fiscal Balance validation
   if (params.fiscalBalance < -20 || params.fiscalBalance > 20) {
-    errors.push('Fiscal balance must be between -20% and 20%');
+    errors.push("Fiscal balance must be between -20% and 20%");
   }
 
   // Trade Balance validation
   if (params.tradeBalance < -20 || params.tradeBalance > 20) {
-    errors.push('Trade balance must be between -20% and 20%');
+    errors.push("Trade balance must be between -20% and 20%");
   }
 
   return {
@@ -449,8 +446,7 @@ export function generateYearlyProjectionData(
 ): YearProjection[] {
   // Find base GDP from sectoral outputs or use provided GDP
   const baseGdp =
-    baseData.sectoralOutputs.find((s) => s.year === params.baseYear)?.totalGDP ??
-    baseData.gdp;
+    baseData.sectoralOutputs.find((s) => s.year === params.baseYear)?.totalGDP ?? baseData.gdp;
 
   // Calculate projections
   return calculateGdpProjections(params, baseGdp, baseData.population, policies);

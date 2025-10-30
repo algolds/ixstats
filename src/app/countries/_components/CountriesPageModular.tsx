@@ -17,8 +17,8 @@ interface CountriesPageModularProps {
   onSearchChange?: (query: string) => void;
 }
 
-type SortOption = 'random' | 'name' | 'population' | 'gdp' | 'gdpPerCapita' | 'tier';
-type FilterOption = 'all' | 'developed' | 'developing' | 'superpower';
+type SortOption = "random" | "name" | "population" | "gdp" | "gdpPerCapita" | "tier";
+type FilterOption = "all" | "developed" | "developing" | "superpower";
 
 export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   countries,
@@ -26,12 +26,12 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   onLoadMore,
   hasMore = false,
   searchQuery = "",
-  onSearchChange
+  onSearchChange,
 }) => {
   const [hovered, setHovered] = useState<number | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
-  const [sortBy, setSortBy] = useState<SortOption>('random');
-  const [filterBy, setFilterBy] = useState<FilterOption>('all');
+  const [sortBy, setSortBy] = useState<SortOption>("random");
+  const [filterBy, setFilterBy] = useState<FilterOption>("all");
   const [visibleCount, setVisibleCount] = useState(12);
   const [searchInput, setSearchInput] = useState(searchQuery);
   const [showDynamicIsland, setShowDynamicIsland] = useState(false);
@@ -49,7 +49,7 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   // Reshuffle function
   const handleReshuffle = () => {
     setRandomSeed(Date.now());
-    setSortBy('random');
+    setSortBy("random");
   };
 
   // Filter and sort countries
@@ -57,14 +57,16 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
     let filtered = countries;
 
     // Apply filters
-    if (filterBy !== 'all') {
-      filtered = countries.filter(country => {
+    if (filterBy !== "all") {
+      filtered = countries.filter((country) => {
         switch (filterBy) {
-          case 'developed':
-            return ['Developed', 'Healthy', 'Strong', 'Very Strong', 'Extravagant'].includes(country.economicTier);
-          case 'developing':
-            return ['Impoverished', 'Developing'].includes(country.economicTier);
-          case 'superpower':
+          case "developed":
+            return ["Developed", "Healthy", "Strong", "Very Strong", "Extravagant"].includes(
+              country.economicTier
+            );
+          case "developing":
+            return ["Impoverished", "Developing"].includes(country.economicTier);
+          case "superpower":
             return country.currentTotalGdp > 5e12; // $5T+ GDP
           default:
             return true;
@@ -74,31 +76,42 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
 
     // Apply search filter
     if (searchQuery) {
-      filtered = filtered.filter(country =>
-        country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        country.economicTier.toLowerCase().includes(searchQuery.toLowerCase())
+      filtered = filtered.filter(
+        (country) =>
+          country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          country.economicTier.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
     // Apply sorting
-    if (sortBy === 'random') {
+    if (sortBy === "random") {
       // Create a stable random sort based on country ID and randomSeed to maintain consistency but allow reshuffling
       filtered.sort((a, b) => {
-        const aHash = (a.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) + randomSeed) % 10000;
-        const bHash = (b.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) + randomSeed) % 10000;
+        const aHash =
+          (a.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) + randomSeed) % 10000;
+        const bHash =
+          (b.id.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0) + randomSeed) % 10000;
         return aHash - bHash;
       });
     } else {
       filtered.sort((a, b) => {
         switch (sortBy) {
-          case 'population':
+          case "population":
             return b.currentPopulation - a.currentPopulation;
-          case 'gdp':
+          case "gdp":
             return b.currentTotalGdp - a.currentTotalGdp;
-          case 'gdpPerCapita':
+          case "gdpPerCapita":
             return b.currentGdpPerCapita - a.currentGdpPerCapita;
-          case 'tier':
-            const tierOrder = ['Extravagant', 'Very Strong', 'Strong', 'Healthy', 'Developed', 'Developing', 'Impoverished'];
+          case "tier":
+            const tierOrder = [
+              "Extravagant",
+              "Very Strong",
+              "Strong",
+              "Healthy",
+              "Developed",
+              "Developing",
+              "Impoverished",
+            ];
             return tierOrder.indexOf(a.economicTier) - tierOrder.indexOf(b.economicTier);
           default:
             return a.name.localeCompare(b.name);
@@ -123,19 +136,19 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   // Tab key handler for command palette and clickaway for expanded cards
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Tab' && !e.ctrlKey) {
+      if (e.key === "Tab" && !e.ctrlKey) {
         e.preventDefault();
-        setShowDynamicIsland(prev => !prev);
+        setShowDynamicIsland((prev) => !prev);
       }
-      if (e.key === 'Tab' && e.ctrlKey) {
+      if (e.key === "Tab" && e.ctrlKey) {
         e.preventDefault();
         handleImFeelingLucky();
       }
-      if (e.key === 'r' && showDynamicIsland) {
+      if (e.key === "r" && showDynamicIsland) {
         e.preventDefault();
         handleReshuffle();
       }
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         setShowDynamicIsland(false);
         setExpanded(null);
       }
@@ -143,24 +156,24 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
 
     const handleClickAway = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('.country-focus-card') && expanded !== null) {
+      if (!target.closest(".country-focus-card") && expanded !== null) {
         setExpanded(null);
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('click', handleClickAway);
-    
+    window.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("click", handleClickAway);
+
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('click', handleClickAway);
+      window.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("click", handleClickAway);
     };
   }, [expanded, showDynamicIsland, processedCountries]);
 
   // Infinite scroll
   const loadMore = useCallback(() => {
     if (visibleCount < processedCountries.length) {
-      setVisibleCount(prev => Math.min(prev + 12, processedCountries.length));
+      setVisibleCount((prev) => Math.min(prev + 12, processedCountries.length));
     } else if (hasMore && onLoadMore) {
       onLoadMore();
     }
@@ -169,21 +182,18 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   // Scroll detection for infinite loading
   useEffect(() => {
     const handleScroll = () => {
-      if (
-        window.innerHeight + window.scrollY >= 
-        document.documentElement.scrollHeight - 1000
-      ) {
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 1000) {
         loadMore();
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [loadMore]);
 
   const handleCountryClick = (countryId: string, countryName: string) => {
     // Use country name for pretty URLs, replace spaces with underscores
-    const slug = countryName.replace(/\s+/g, '_');
+    const slug = countryName.replace(/\s+/g, "_");
     window.location.href = createAbsoluteUrl(`/countries/${slug}`);
   };
 
@@ -193,13 +203,13 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
   };
 
   return (
-    <div className="relative min-h-screen bg-background">
+    <div className="bg-background relative min-h-screen">
       <div className="relative z-50 container mx-auto px-4 py-8">
         {/* Header */}
         <CountriesHeader onOpenCommandPalette={() => setShowDynamicIsland(true)} />
-        
+
         {/* Stats */}
-        <CountriesStats 
+        <CountriesStats
           countries={processedCountries}
           searchQuery={searchQuery}
           filterBy={filterBy}
@@ -221,7 +231,6 @@ export const CountriesPageModular: React.FC<CountriesPageModularProps> = ({
           filterBy={filterBy}
           onClearFilters={handleClearFilters}
         />
-
       </div>
 
       {/* Command Palette */}

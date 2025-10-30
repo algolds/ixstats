@@ -1,32 +1,32 @@
 "use client";
 
-import React, { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '~/lib/utils';
-import { 
-  Send, 
-  Image, 
-  BarChart3, 
-  TrendingUp, 
-  Globe, 
-  Loader2, 
-  X, 
+import React, { useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "~/lib/utils";
+import {
+  Send,
+  Image,
+  BarChart3,
+  TrendingUp,
+  Globe,
+  Loader2,
+  X,
   Plus,
   Sparkles,
   Repeat2,
   ChevronDown,
   ChevronUp,
-  Users
-} from 'lucide-react';
-import { Button } from '~/components/ui/button';
-import { Textarea } from '~/components/ui/textarea';
-import { Card, CardContent } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
-import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
-import { api } from '~/trpc/react';
-import { toast } from 'sonner';
-import { MediaSearchModal } from '~/components/MediaSearchModal';
+  Users,
+} from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { Textarea } from "~/components/ui/textarea";
+import { Card, CardContent } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { api } from "~/trpc/react";
+import { toast } from "sonner";
+import { MediaSearchModal } from "~/components/MediaSearchModal";
 
 interface GlassCanvasComposerProps {
   account: any;
@@ -40,13 +40,13 @@ interface GlassCanvasComposerProps {
   countryId: string;
   repostData?: {
     originalPost: any;
-    mode: 'repost';
+    mode: "repost";
   };
 }
 
 interface DataVisualization {
   id: string;
-  type: 'economic_chart' | 'diplomatic_map' | 'trade_flow' | 'gdp_growth';
+  type: "economic_chart" | "diplomatic_map" | "trade_flow" | "gdp_growth";
   title: string;
   data: any;
   config: any;
@@ -62,9 +62,9 @@ export function GlassCanvasComposer({
   onPost,
   placeholder = "What's happening in your nation?",
   countryId,
-  repostData
+  repostData,
 }: GlassCanvasComposerProps) {
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState("");
   const [selectedVisualizations, setSelectedVisualizations] = useState<DataVisualization[]>([]);
   const [showVisualizationPanel, setShowVisualizationPanel] = useState(false);
   const [isGeneratingVisualization, setIsGeneratingVisualization] = useState(false);
@@ -74,18 +74,21 @@ export function GlassCanvasComposer({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Get latest economic data for visualizations - live wired
-  const { data: economicData, isLoading: isLoadingEconomic } = api.countries.getEconomicData.useQuery(
-    { countryId },
-    { enabled: !!countryId, refetchOnWindowFocus: false }
-  );
-  const { data: gdpHistoryData, isLoading: isLoadingHistory } = api.countries.getHistoricalData.useQuery(
-    { countryId, limit: 30 },
-    { enabled: !!countryId, refetchOnWindowFocus: false }
-  );
-  const { data: diplomaticData, isLoading: isLoadingDiplomatic } = api.diplomatic.getRelationships.useQuery(
-    { countryId },
-    { enabled: !!countryId, refetchOnWindowFocus: false }
-  );
+  const { data: economicData, isLoading: isLoadingEconomic } =
+    api.countries.getEconomicData.useQuery(
+      { countryId },
+      { enabled: !!countryId, refetchOnWindowFocus: false }
+    );
+  const { data: gdpHistoryData, isLoading: isLoadingHistory } =
+    api.countries.getHistoricalData.useQuery(
+      { countryId, limit: 30 },
+      { enabled: !!countryId, refetchOnWindowFocus: false }
+    );
+  const { data: diplomaticData, isLoading: isLoadingDiplomatic } =
+    api.diplomatic.getRelationships.useQuery(
+      { countryId },
+      { enabled: !!countryId, refetchOnWindowFocus: false }
+    );
   const { data: tradeData, isLoading: isLoadingTrade } = api.countries.getTradeData.useQuery(
     { countryId },
     { enabled: !!countryId, refetchOnWindowFocus: false }
@@ -100,14 +103,14 @@ export function GlassCanvasComposer({
   const createPostMutation = api.thinkpages.createPost.useMutation({
     onSuccess: () => {
       toast.success("Post shared successfully!");
-      setContent('');
+      setContent("");
       setSelectedVisualizations([]);
       setSelectedImages([]);
       onPost();
     },
     onError: (error) => {
       toast.error(error.message || "Failed to create post");
-    }
+    },
   });
 
   const handleSubmit = useCallback(() => {
@@ -122,14 +125,14 @@ export function GlassCanvasComposer({
       content: content.trim(),
       hashtags: extractHashtags(content),
       mentions: extractMentions(content),
-      visibility: 'public' as const,
-      visualizations: selectedVisualizations.map(viz => ({
+      visibility: "public" as const,
+      visualizations: selectedVisualizations.map((viz) => ({
         type: viz.type,
         title: viz.title,
-        config: viz.config
+        config: viz.config,
       })),
       mediaUrls: selectedImages,
-      repostOfId: repostData?.originalPost?.id
+      repostOfId: repostData?.originalPost?.id,
     };
 
     createPostMutation.mutate(postData);
@@ -137,35 +140,35 @@ export function GlassCanvasComposer({
 
   const extractHashtags = (text: string): string[] => {
     const hashtags = text.match(/#[\w]+/g);
-    return hashtags ? hashtags.map(tag => tag.substring(1)) : [];
+    return hashtags ? hashtags.map((tag) => tag.substring(1)) : [];
   };
 
   const extractMentions = (text: string): string[] => {
     const mentions = text.match(/@[\w]+/g);
-    return mentions ? mentions.map(mention => mention.substring(1)) : [];
+    return mentions ? mentions.map((mention) => mention.substring(1)) : [];
   };
 
-  const addVisualization = (type: DataVisualization['type']) => {
+  const addVisualization = (type: DataVisualization["type"]) => {
     // Validate data availability before adding visualization
     let hasRequiredData = false;
-    let errorMessage = '';
+    let errorMessage = "";
 
     switch (type) {
-      case 'economic_chart':
+      case "economic_chart":
         hasRequiredData = hasHistoricalData;
-        errorMessage = 'No historical GDP data available for this country';
+        errorMessage = "No historical GDP data available for this country";
         break;
-      case 'diplomatic_map':
+      case "diplomatic_map":
         hasRequiredData = hasDiplomaticData;
-        errorMessage = 'No diplomatic relationships data available';
+        errorMessage = "No diplomatic relationships data available";
         break;
-      case 'trade_flow':
+      case "trade_flow":
         hasRequiredData = hasTradeData;
-        errorMessage = 'No trade data available for this country';
+        errorMessage = "No trade data available for this country";
         break;
-      case 'gdp_growth':
+      case "gdp_growth":
         hasRequiredData = hasEconomicData;
-        errorMessage = 'No economic data available for this country';
+        errorMessage = "No economic data available for this country";
         break;
     }
 
@@ -175,63 +178,63 @@ export function GlassCanvasComposer({
     }
 
     setIsGeneratingVisualization(true);
-    
+
     // Create visualization based on live data
     setTimeout(() => {
       let newVisualization: DataVisualization;
-      
+
       switch (type) {
-        case 'economic_chart':
+        case "economic_chart":
           newVisualization = {
             id: `econ-${Date.now()}`,
-            type: 'economic_chart',
-            title: 'GDP Growth Trajectory',
+            type: "economic_chart",
+            title: "GDP Growth Trajectory",
             data: gdpHistoryData!,
             config: {
-              chartType: 'line',
-              colors: ['#3B82F6', '#10B981'],
+              chartType: "line",
+              colors: ["#3B82F6", "#10B981"],
               showGrid: true,
-              timeRange: '6M'
-            }
+              timeRange: "6M",
+            },
           };
           break;
-        case 'diplomatic_map':
+        case "diplomatic_map":
           newVisualization = {
             id: `diplo-${Date.now()}`,
-            type: 'diplomatic_map',
-            title: 'Diplomatic Relations Map',
+            type: "diplomatic_map",
+            title: "Diplomatic Relations Map",
             data: diplomaticData!,
             config: {
-              mapType: 'world',
+              mapType: "world",
               showRelationStrength: true,
-              colorScheme: 'diplomatic'
-            }
+              colorScheme: "diplomatic",
+            },
           };
           break;
-        case 'trade_flow':
+        case "trade_flow":
           newVisualization = {
             id: `trade-${Date.now()}`,
-            type: 'trade_flow',
-            title: 'Trade Flow Analysis',
+            type: "trade_flow",
+            title: "Trade Flow Analysis",
             data: tradeData!,
             config: {
-              flowType: 'sankey',
+              flowType: "sankey",
               showVolumes: true,
-              timeframe: 'current_quarter'
-            }
+              timeframe: "current_quarter",
+            },
           };
           break;
-        case 'gdp_growth':
+        case "gdp_growth":
           newVisualization = {
             id: `gdp-${Date.now()}`,
-            type: 'gdp_growth',
-            title: 'Economic Performance Overview',
+            type: "gdp_growth",
+            title: "Economic Performance Overview",
             data: economicData!,
             config: {
-              metrics: ['gdp', 'inflation', 'unemployment'],
-              displayType: 'dashboard',
-              comparison: 'regional_average'
-            }
+              metrics: ["gdp", "inflation", "unemployment"],
+              displayType: "dashboard",
+              comparison: "regional_average",
+            },
           };
           break;
         default:
@@ -239,14 +242,14 @@ export function GlassCanvasComposer({
           return;
       }
 
-      setSelectedVisualizations(prev => [...prev, newVisualization]);
+      setSelectedVisualizations((prev) => [...prev, newVisualization]);
       setIsGeneratingVisualization(false);
       toast.success(`${newVisualization.title} added to post`);
     }, 800);
   };
 
   const removeVisualization = (id: string) => {
-    setSelectedVisualizations(prev => prev.filter(viz => viz.id !== id));
+    setSelectedVisualizations((prev) => prev.filter((viz) => viz.id !== id));
   };
 
   const handleImageSelect = (imageUrl: string) => {
@@ -254,13 +257,13 @@ export function GlassCanvasComposer({
       toast.error("Maximum 4 images per post");
       return;
     }
-    setSelectedImages(prev => [...prev, imageUrl]);
+    setSelectedImages((prev) => [...prev, imageUrl]);
     setShowMediaModal(false);
     toast.success("Image added to post");
   };
 
   const removeImage = (imageUrl: string) => {
-    setSelectedImages(prev => prev.filter(url => url !== imageUrl));
+    setSelectedImages((prev) => prev.filter((url) => url !== imageUrl));
   };
 
   const handleFileUpload = async (file: File) => {
@@ -272,23 +275,23 @@ export function GlassCanvasComposer({
     setIsUploadingImage(true);
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append("file", file);
 
-      const response = await fetch('/api/upload/image', {
-        method: 'POST',
+      const response = await fetch("/api/upload/image", {
+        method: "POST",
         body: formData,
       });
 
       const result = await response.json();
 
       if (result.success) {
-        setSelectedImages(prev => [...prev, result.dataUrl]);
+        setSelectedImages((prev) => [...prev, result.dataUrl]);
         toast.success("Image uploaded successfully");
       } else {
         toast.error(result.error || "Failed to upload image");
       }
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error("Upload error:", error);
       toast.error("Failed to upload image");
     } finally {
       setIsUploadingImage(false);
@@ -297,45 +300,49 @@ export function GlassCanvasComposer({
 
   const getVisualizationPreview = (viz: DataVisualization) => {
     switch (viz.type) {
-      case 'economic_chart':
+      case "economic_chart":
         return (
-          <div className="w-full h-24 bg-gradient-to-r from-blue-500/20 to-green-500/20 rounded flex items-center justify-center">
+          <div className="flex h-24 w-full items-center justify-center rounded bg-gradient-to-r from-blue-500/20 to-green-500/20">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-6 w-6 text-green-400" />
               <div className="text-sm">
-                <div className="font-medium">GDP: +{(((economicData as any)?.adjustedGdpGrowth || 0.03) * 100).toFixed(1)}%</div>
-                <div className="text-xs text-muted-foreground">Q4 Performance</div>
+                <div className="font-medium">
+                  GDP: +{(((economicData as any)?.adjustedGdpGrowth || 0.03) * 100).toFixed(1)}%
+                </div>
+                <div className="text-muted-foreground text-xs">Q4 Performance</div>
               </div>
             </div>
           </div>
         );
-      case 'diplomatic_map':
+      case "diplomatic_map":
         return (
-          <div className="w-full h-24 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded flex items-center justify-center">
+          <div className="flex h-24 w-full items-center justify-center rounded bg-gradient-to-r from-blue-500/20 to-purple-500/20">
             <div className="flex items-center gap-2">
               <Globe className="h-6 w-6 text-blue-400" />
               <div className="text-sm">
                 <div className="font-medium">{diplomaticData?.length || 12} Relations</div>
-                <div className="text-xs text-muted-foreground">Global Network</div>
+                <div className="text-muted-foreground text-xs">Global Network</div>
               </div>
             </div>
           </div>
         );
-      case 'trade_flow':
+      case "trade_flow":
         return (
-          <div className="w-full h-24 bg-gradient-to-r from-purple-500/20 to-orange-500/20 rounded flex items-center justify-center">
+          <div className="flex h-24 w-full items-center justify-center rounded bg-gradient-to-r from-purple-500/20 to-orange-500/20">
             <div className="flex items-center gap-2">
               <BarChart3 className="h-6 w-6 text-purple-400" />
               <div className="text-sm">
-                <div className="font-medium">${((tradeData?.totalVolume || 2.4) / 1000).toFixed(1)}B</div>
-                <div className="text-xs text-muted-foreground">Trade Volume</div>
+                <div className="font-medium">
+                  ${((tradeData?.totalVolume || 2.4) / 1000).toFixed(1)}B
+                </div>
+                <div className="text-muted-foreground text-xs">Trade Volume</div>
               </div>
             </div>
           </div>
         );
       default:
         return (
-          <div className="w-full h-24 bg-gradient-to-r from-gray-500/20 to-gray-400/20 rounded flex items-center justify-center">
+          <div className="flex h-24 w-full items-center justify-center rounded bg-gradient-to-r from-gray-500/20 to-gray-400/20">
             <BarChart3 className="h-6 w-6 text-gray-400" />
           </div>
         );
@@ -354,23 +361,19 @@ export function GlassCanvasComposer({
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={account.profileImageUrl} alt={account.displayName} />
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 font-semibold text-white">
                   {account.displayName.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <div className="font-medium text-sm">{account.displayName}</div>
-                <div className="text-xs text-muted-foreground">@{account.username}</div>
+                <div className="text-sm font-medium">{account.displayName}</div>
+                <div className="text-muted-foreground text-xs">@{account.username}</div>
               </div>
               <Badge variant="outline" className="mr-2">
                 Glass Canvas
               </Badge>
               <CollapsibleTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                >
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                   {showAccountManager ? (
                     <ChevronUp className="h-4 w-4" />
                   ) : (
@@ -379,11 +382,11 @@ export function GlassCanvasComposer({
                 </Button>
               </CollapsibleTrigger>
             </div>
-            
+
             <CollapsibleContent className="mt-3">
               <div className="border-t border-white/10 pt-3">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-medium text-sm">Switch Account</h4>
+                <div className="mb-3 flex items-center justify-between">
+                  <h4 className="text-sm font-medium">Switch Account</h4>
                   {isOwner && accounts.length < 25 && (
                     <Button
                       variant="outline"
@@ -391,13 +394,13 @@ export function GlassCanvasComposer({
                       onClick={onCreateAccount}
                       className="h-7 text-xs"
                     >
-                      <Plus className="h-3 w-3 mr-1" />
+                      <Plus className="mr-1 h-3 w-3" />
                       New Account
                     </Button>
                   )}
                 </div>
-                
-                <div className="grid gap-2 max-h-40 overflow-y-auto">
+
+                <div className="grid max-h-40 gap-2 overflow-y-auto">
                   {accounts.map((acc) => (
                     <div
                       key={acc.id}
@@ -406,10 +409,10 @@ export function GlassCanvasComposer({
                         setShowAccountManager(false);
                       }}
                       className={cn(
-                        "flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors",
+                        "flex cursor-pointer items-center gap-2 rounded-lg p-2 transition-colors",
                         acc.id === account.id
-                          ? "bg-blue-500/20 border border-blue-500/30"
-                          : "hover:bg-white/10 border border-transparent"
+                          ? "border border-blue-500/30 bg-blue-500/20"
+                          : "border border-transparent hover:bg-white/10"
                       )}
                     >
                       <Avatar className="h-6 w-6">
@@ -418,11 +421,13 @@ export function GlassCanvasComposer({
                           {acc.displayName.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-xs truncate">{acc.displayName}</div>
-                        <div className="text-xs text-muted-foreground truncate">@{acc.username}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-xs font-medium">{acc.displayName}</div>
+                        <div className="text-muted-foreground truncate text-xs">
+                          @{acc.username}
+                        </div>
                       </div>
-                      <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
+                      <Badge variant="outline" className="h-4 px-1 py-0 text-[10px]">
                         {acc.accountType}
                       </Badge>
                     </div>
@@ -435,25 +440,32 @@ export function GlassCanvasComposer({
           {/* Embedded Repost Display */}
           {repostData && (
             <Card className="border-green-500/30 bg-green-500/5 p-3">
-              <div className="flex items-center gap-2 text-green-500 text-xs mb-2">
+              <div className="mb-2 flex items-center gap-2 text-xs text-green-500">
                 <Repeat2 className="h-3 w-3" />
                 <span>Reposting</span>
               </div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="mb-2 flex items-center gap-2">
                 <Avatar className="h-6 w-6">
-                  <AvatarImage src={repostData.originalPost.account?.profileImageUrl} alt={repostData.originalPost.account?.displayName} />
-                  <AvatarFallback className="bg-gradient-to-br from-gray-400 to-gray-600 text-white text-xs font-semibold">
-                    {repostData.originalPost.account?.displayName?.charAt(0) || '?'}
+                  <AvatarImage
+                    src={repostData.originalPost.account?.profileImageUrl}
+                    alt={repostData.originalPost.account?.displayName}
+                  />
+                  <AvatarFallback className="bg-gradient-to-br from-gray-400 to-gray-600 text-xs font-semibold text-white">
+                    {repostData.originalPost.account?.displayName?.charAt(0) || "?"}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1">
-                    <span className="font-semibold text-sm">{repostData.originalPost.account?.displayName || 'Unknown'}</span>
-                    <span className="text-muted-foreground text-xs">@{repostData.originalPost.account?.username || 'unknown'}</span>
+                    <span className="text-sm font-semibold">
+                      {repostData.originalPost.account?.displayName || "Unknown"}
+                    </span>
+                    <span className="text-muted-foreground text-xs">
+                      @{repostData.originalPost.account?.username || "unknown"}
+                    </span>
                   </div>
                 </div>
               </div>
-              <div className="text-sm text-muted-foreground line-clamp-3">
+              <div className="text-muted-foreground line-clamp-3 text-sm">
                 {repostData.originalPost.content}
               </div>
             </Card>
@@ -465,24 +477,31 @@ export function GlassCanvasComposer({
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder={placeholder}
-              className="min-h-24 resize-none border-0 bg-white/5 backdrop-blur-sm focus:bg-white/10 transition-all"
+              className="min-h-24 resize-none border-0 bg-white/5 backdrop-blur-sm transition-all focus:bg-white/10"
               maxLength={characterLimit}
             />
             <div className="flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">
-                  Enhanced with live data
-                </span>
+                <span className="text-muted-foreground">Enhanced with live data</span>
                 {(hasEconomicData || hasHistoricalData || hasDiplomaticData || hasTradeData) && (
-                  <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 bg-green-500/10 text-green-400 border-green-500/30">
+                  <Badge
+                    variant="outline"
+                    className="h-4 border-green-500/30 bg-green-500/10 px-1 py-0 text-[10px] text-green-400"
+                  >
                     Live
                   </Badge>
                 )}
               </div>
-              <span className={cn(
-                "font-medium",
-                remainingChars < 20 ? "text-red-400" : remainingChars < 50 ? "text-orange-400" : "text-muted-foreground"
-              )}>
+              <span
+                className={cn(
+                  "font-medium",
+                  remainingChars < 20
+                    ? "text-red-400"
+                    : remainingChars < 50
+                      ? "text-orange-400"
+                      : "text-muted-foreground"
+                )}
+              >
                 {remainingChars}
               </span>
             </div>
@@ -493,7 +512,7 @@ export function GlassCanvasComposer({
             {selectedImages.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
+                animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
                 className="grid grid-cols-2 gap-2"
               >
@@ -503,18 +522,18 @@ export function GlassCanvasComposer({
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
-                    className="relative aspect-video rounded-lg overflow-hidden border border-white/10 bg-white/5"
+                    className="relative aspect-video overflow-hidden rounded-lg border border-white/10 bg-white/5"
                   >
                     <button
                       onClick={() => removeImage(imageUrl)}
-                      className="absolute top-2 right-2 p-1 bg-black/60 hover:bg-red-500/80 rounded-full transition-colors z-10"
+                      className="absolute top-2 right-2 z-10 rounded-full bg-black/60 p-1 transition-colors hover:bg-red-500/80"
                     >
                       <X className="h-4 w-4 text-white" />
                     </button>
                     <img
                       src={imageUrl}
                       alt={`Selected image ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      className="h-full w-full object-cover"
                     />
                   </motion.div>
                 ))}
@@ -527,7 +546,7 @@ export function GlassCanvasComposer({
             {selectedVisualizations.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
+                animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
                 className="space-y-2"
               >
@@ -537,16 +556,16 @@ export function GlassCanvasComposer({
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
-                    className="relative p-3 border border-white/10 rounded-lg bg-white/5"
+                    className="relative rounded-lg border border-white/10 bg-white/5 p-3"
                   >
                     <button
                       onClick={() => removeVisualization(viz.id)}
-                      className="absolute top-2 right-2 p-1 hover:bg-red-500/20 rounded-full transition-colors"
+                      className="absolute top-2 right-2 rounded-full p-1 transition-colors hover:bg-red-500/20"
                     >
                       <X className="h-4 w-4 text-red-400" />
                     </button>
                     <div className="space-y-2">
-                      <div className="font-medium text-sm">{viz.title}</div>
+                      <div className="text-sm font-medium">{viz.title}</div>
                       {getVisualizationPreview(viz)}
                     </div>
                   </motion.div>
@@ -560,16 +579,19 @@ export function GlassCanvasComposer({
             {showVisualizationPanel && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
+                animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="border border-white/10 rounded-lg p-3 bg-white/5"
+                className="rounded-lg border border-white/10 bg-white/5 p-3"
               >
-                <div className="flex items-center justify-between mb-3">
+                <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-blue-400" />
-                    <span className="font-medium text-sm">Add Live Data Visualization</span>
+                    <span className="text-sm font-medium">Add Live Data Visualization</span>
                   </div>
-                  {(isLoadingEconomic || isLoadingHistory || isLoadingDiplomatic || isLoadingTrade) && (
+                  {(isLoadingEconomic ||
+                    isLoadingHistory ||
+                    isLoadingDiplomatic ||
+                    isLoadingTrade) && (
                     <div className="flex items-center gap-1 text-xs text-blue-400">
                       <Loader2 className="h-3 w-3 animate-spin" />
                       <span>Loading data...</span>
@@ -580,14 +602,14 @@ export function GlassCanvasComposer({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => addVisualization('economic_chart')}
+                    onClick={() => addVisualization("economic_chart")}
                     disabled={isGeneratingVisualization || isLoadingHistory || !hasHistoricalData}
                     className="h-auto flex-col p-3"
                   >
                     {isLoadingHistory ? (
-                      <Loader2 className="h-6 w-6 mb-1 animate-spin" />
+                      <Loader2 className="mb-1 h-6 w-6 animate-spin" />
                     ) : (
-                      <TrendingUp className="h-6 w-6 mb-1" />
+                      <TrendingUp className="mb-1 h-6 w-6" />
                     )}
                     <span className="text-xs">Economic Chart</span>
                     {!hasHistoricalData && !isLoadingHistory && (
@@ -597,14 +619,16 @@ export function GlassCanvasComposer({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => addVisualization('diplomatic_map')}
-                    disabled={isGeneratingVisualization || isLoadingDiplomatic || !hasDiplomaticData}
+                    onClick={() => addVisualization("diplomatic_map")}
+                    disabled={
+                      isGeneratingVisualization || isLoadingDiplomatic || !hasDiplomaticData
+                    }
                     className="h-auto flex-col p-3"
                   >
                     {isLoadingDiplomatic ? (
-                      <Loader2 className="h-6 w-6 mb-1 animate-spin" />
+                      <Loader2 className="mb-1 h-6 w-6 animate-spin" />
                     ) : (
-                      <Globe className="h-6 w-6 mb-1" />
+                      <Globe className="mb-1 h-6 w-6" />
                     )}
                     <span className="text-xs">Diplomatic Map</span>
                     {!hasDiplomaticData && !isLoadingDiplomatic && (
@@ -614,14 +638,14 @@ export function GlassCanvasComposer({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => addVisualization('trade_flow')}
+                    onClick={() => addVisualization("trade_flow")}
                     disabled={isGeneratingVisualization || isLoadingTrade || !hasTradeData}
                     className="h-auto flex-col p-3"
                   >
                     {isLoadingTrade ? (
-                      <Loader2 className="h-6 w-6 mb-1 animate-spin" />
+                      <Loader2 className="mb-1 h-6 w-6 animate-spin" />
                     ) : (
-                      <BarChart3 className="h-6 w-6 mb-1" />
+                      <BarChart3 className="mb-1 h-6 w-6" />
                     )}
                     <span className="text-xs">Trade Flows</span>
                     {!hasTradeData && !isLoadingTrade && (
@@ -631,14 +655,14 @@ export function GlassCanvasComposer({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => addVisualization('gdp_growth')}
+                    onClick={() => addVisualization("gdp_growth")}
                     disabled={isGeneratingVisualization || isLoadingEconomic || !hasEconomicData}
                     className="h-auto flex-col p-3"
                   >
                     {isLoadingEconomic ? (
-                      <Loader2 className="h-6 w-6 mb-1 animate-spin" />
+                      <Loader2 className="mb-1 h-6 w-6 animate-spin" />
                     ) : (
-                      <BarChart3 className="h-6 w-6 mb-1" />
+                      <BarChart3 className="mb-1 h-6 w-6" />
                     )}
                     <span className="text-xs">GDP Dashboard</span>
                     {!hasEconomicData && !isLoadingEconomic && (
@@ -680,7 +704,7 @@ export function GlassCanvasComposer({
                 )}
                 Media
                 {selectedImages.length > 0 && (
-                  <Badge variant="outline" className="ml-1 text-[10px] px-1 py-0 h-4">
+                  <Badge variant="outline" className="ml-1 h-4 px-1 py-0 text-[10px]">
                     {selectedImages.length}/4
                   </Badge>
                 )}
@@ -689,13 +713,18 @@ export function GlassCanvasComposer({
 
             <Button
               onClick={handleSubmit}
-              disabled={createPostMutation.isPending || (!content.trim() && selectedVisualizations.length === 0 && selectedImages.length === 0)}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={
+                createPostMutation.isPending ||
+                (!content.trim() &&
+                  selectedVisualizations.length === 0 &&
+                  selectedImages.length === 0)
+              }
+              className="bg-blue-600 text-white hover:bg-blue-700"
             >
               {createPostMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <Send className="h-4 w-4 mr-2" />
+                <Send className="mr-2 h-4 w-4" />
               )}
               Share
             </Button>

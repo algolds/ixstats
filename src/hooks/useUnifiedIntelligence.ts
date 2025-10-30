@@ -5,31 +5,47 @@
  * Integrates all intelligence systems with real-time updates and computed analytics.
  */
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import { api } from '~/trpc/react';
-import { toast } from 'sonner';
-import { IntelligenceWebSocketClient } from '~/lib/websocket/intelligence-websocket-client';
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { api } from "~/trpc/react";
+import { toast } from "sonner";
+import { IntelligenceWebSocketClient } from "~/lib/websocket/intelligence-websocket-client";
 
 // ===== TYPES =====
 
 export type IntelligenceTab =
-  | 'overview'
-  | 'meetings'
-  | 'policies'
-  | 'communications'
-  | 'diplomatic-ops'
-  | 'intelligence-feed'
-  | 'analytics';
+  | "overview"
+  | "meetings"
+  | "policies"
+  | "communications"
+  | "diplomatic-ops"
+  | "intelligence-feed"
+  | "analytics";
 
-export type ClassificationLevel = 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL' | 'SECRET' | 'TOP_SECRET';
-export type PriorityLevel = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT' | 'CRITICAL';
-export type CategoryFilter = 'all' | 'economic' | 'ECONOMIC' | 'crisis' | 'CRISIS' | 'diplomatic' | 'DIPLOMATIC' | 'security' | 'SECURITY' | 'technology' | 'environment';
+export type ClassificationLevel =
+  | "PUBLIC"
+  | "RESTRICTED"
+  | "CONFIDENTIAL"
+  | "SECRET"
+  | "TOP_SECRET";
+export type PriorityLevel = "LOW" | "NORMAL" | "HIGH" | "URGENT" | "CRITICAL";
+export type CategoryFilter =
+  | "all"
+  | "economic"
+  | "ECONOMIC"
+  | "crisis"
+  | "CRISIS"
+  | "diplomatic"
+  | "DIPLOMATIC"
+  | "security"
+  | "SECURITY"
+  | "technology"
+  | "environment";
 
 export interface FilterState {
-  classification: ClassificationLevel | 'all';
-  priority: PriorityLevel | 'all';
+  classification: ClassificationLevel | "all";
+  priority: PriorityLevel | "all";
   category: CategoryFilter;
-  dateRange: 'today' | 'week' | 'month' | 'all';
+  dateRange: "today" | "week" | "month" | "all";
   searchQuery: string;
 }
 
@@ -63,11 +79,13 @@ export interface UseUnifiedIntelligenceReturn {
   pagination: PaginationState;
 
   // Data
-  overview: ReturnType<typeof api.unifiedIntelligence.getOverview.useQuery>['data'];
-  quickActions: ReturnType<typeof api.unifiedIntelligence.getQuickActions.useQuery>['data'];
-  intelligenceFeed: ReturnType<typeof api.unifiedIntelligence.getIntelligenceFeed.useQuery>['data'];
-  analytics: ReturnType<typeof api.unifiedIntelligence.getAnalytics.useQuery>['data'];
-  diplomaticChannels: ReturnType<typeof api.unifiedIntelligence.getDiplomaticChannels.useQuery>['data'];
+  overview: ReturnType<typeof api.unifiedIntelligence.getOverview.useQuery>["data"];
+  quickActions: ReturnType<typeof api.unifiedIntelligence.getQuickActions.useQuery>["data"];
+  intelligenceFeed: ReturnType<typeof api.unifiedIntelligence.getIntelligenceFeed.useQuery>["data"];
+  analytics: ReturnType<typeof api.unifiedIntelligence.getAnalytics.useQuery>["data"];
+  diplomaticChannels: ReturnType<
+    typeof api.unifiedIntelligence.getDiplomaticChannels.useQuery
+  >["data"];
 
   // Loading states
   isLoading: boolean;
@@ -96,16 +114,16 @@ export interface UseUnifiedIntelligenceReturn {
 // ===== DEFAULT VALUES =====
 
 const DEFAULT_FILTERS: FilterState = {
-  classification: 'all',
-  priority: 'all',
-  category: 'all',
-  dateRange: 'week',
-  searchQuery: ''
+  classification: "all",
+  priority: "all",
+  category: "all",
+  dateRange: "week",
+  searchQuery: "",
 };
 
 const DEFAULT_PAGINATION: PaginationState = {
   offset: 0,
-  limit: 20
+  limit: 20,
 };
 
 // ===== HOOK =====
@@ -114,10 +132,10 @@ export function useUnifiedIntelligence({
   countryId,
   userId,
   autoRefresh = false,
-  refreshInterval = 30000 // 30 seconds
+  refreshInterval = 30000, // 30 seconds
 }: UseUnifiedIntelligenceOptions): UseUnifiedIntelligenceReturn {
   // Local state
-  const [activeTab, setActiveTab] = useState<IntelligenceTab>('overview');
+  const [activeTab, setActiveTab] = useState<IntelligenceTab>("overview");
   const [filters, setFiltersState] = useState<FilterState>(DEFAULT_FILTERS);
   const [pagination, setPaginationState] = useState<PaginationState>(DEFAULT_PAGINATION);
 
@@ -130,12 +148,12 @@ export function useUnifiedIntelligence({
     data: overview,
     isLoading: overviewLoading,
     refetch: refetchOverview,
-    isFetching: overviewRefreshing
+    isFetching: overviewRefreshing,
   } = api.unifiedIntelligence.getOverview.useQuery(
     { countryId },
     {
       enabled: !!countryId,
-      refetchInterval: autoRefresh ? refreshInterval : false
+      refetchInterval: autoRefresh ? refreshInterval : false,
     }
   );
 
@@ -143,12 +161,12 @@ export function useUnifiedIntelligence({
     data: quickActions,
     isLoading: actionsLoading,
     refetch: refetchActions,
-    isFetching: actionsRefreshing
+    isFetching: actionsRefreshing,
   } = api.unifiedIntelligence.getQuickActions.useQuery(
     { countryId },
     {
       enabled: !!countryId,
-      refetchInterval: autoRefresh ? refreshInterval : false
+      refetchInterval: autoRefresh ? refreshInterval : false,
     }
   );
 
@@ -156,18 +174,18 @@ export function useUnifiedIntelligence({
     data: intelligenceFeed,
     isLoading: feedLoading,
     refetch: refetchFeed,
-    isFetching: feedRefreshing
+    isFetching: feedRefreshing,
   } = api.unifiedIntelligence.getIntelligenceFeed.useQuery(
     {
       countryId,
-      category: filters.category !== 'all' ? filters.category : undefined,
-      priority: filters.priority !== 'all' ? (filters.priority as any) : undefined,
+      category: filters.category !== "all" ? filters.category : undefined,
+      priority: filters.priority !== "all" ? (filters.priority as any) : undefined,
       limit: pagination.limit,
-      offset: pagination.offset
+      offset: pagination.offset,
     },
     {
       enabled: !!countryId,
-      refetchInterval: autoRefresh ? refreshInterval : false
+      refetchInterval: autoRefresh ? refreshInterval : false,
     }
   );
 
@@ -175,12 +193,12 @@ export function useUnifiedIntelligence({
     data: analytics,
     isLoading: analyticsLoading,
     refetch: refetchAnalytics,
-    isFetching: analyticsRefreshing
+    isFetching: analyticsRefreshing,
   } = api.unifiedIntelligence.getAnalytics.useQuery(
-    { countryId, timeframe: '30d' },
+    { countryId, timeframe: "30d" },
     {
-      enabled: !!countryId && activeTab === 'analytics',
-      refetchInterval: autoRefresh ? refreshInterval * 2 : false // Less frequent for analytics
+      enabled: !!countryId && activeTab === "analytics",
+      refetchInterval: autoRefresh ? refreshInterval * 2 : false, // Less frequent for analytics
     }
   );
 
@@ -188,66 +206,66 @@ export function useUnifiedIntelligence({
     data: diplomaticChannels,
     isLoading: channelsLoading,
     refetch: refetchChannels,
-    isFetching: channelsRefreshing
+    isFetching: channelsRefreshing,
   } = api.unifiedIntelligence.getDiplomaticChannels.useQuery(
     {
       countryId,
-      clearanceLevel: filters.classification !== 'all' ? filters.classification : 'PUBLIC'
+      clearanceLevel: filters.classification !== "all" ? filters.classification : "PUBLIC",
     },
     {
-      enabled: !!countryId && activeTab === 'communications',
-      refetchInterval: autoRefresh ? refreshInterval : false
+      enabled: !!countryId && activeTab === "communications",
+      refetchInterval: autoRefresh ? refreshInterval : false,
     }
   );
 
   // Mutations
   const executeActionMutation = api.unifiedIntelligence.executeAction.useMutation({
     onSuccess: (result) => {
-      toast.success('Action Executed', {
-        description: `${result.message} - ${result.effect}`
+      toast.success("Action Executed", {
+        description: `${result.message} - ${result.effect}`,
       });
       void refetchOverview();
       void refetchActions();
     },
     onError: (error) => {
-      toast.error('Action Failed', {
-        description: error.message
+      toast.error("Action Failed", {
+        description: error.message,
       });
-    }
+    },
   });
 
   const acknowledgeAlertMutation = api.unifiedIntelligence.acknowledgeAlert.useMutation({
     onSuccess: () => {
-      toast.success('Alert Acknowledged');
+      toast.success("Alert Acknowledged");
       void refetchOverview();
     },
     onError: (error) => {
-      toast.error('Failed to acknowledge alert', { description: error.message });
-    }
+      toast.error("Failed to acknowledge alert", { description: error.message });
+    },
   });
 
   const archiveAlertMutation = api.unifiedIntelligence.archiveAlert.useMutation({
     onSuccess: () => {
-      toast.success('Alert archived');
+      toast.success("Alert archived");
       void refetchOverview();
     },
     onError: (error) => {
-      toast.error('Failed to archive alert', { description: error.message });
-    }
+      toast.error("Failed to archive alert", { description: error.message });
+    },
   });
 
   const sendMessageMutation = api.unifiedIntelligence.sendSecureMessage.useMutation({
     onSuccess: (result) => {
-      toast.success('Message Sent', {
-        description: `Secure message sent to ${result.recipientCount} recipient(s)`
+      toast.success("Message Sent", {
+        description: `Secure message sent to ${result.recipientCount} recipient(s)`,
       });
       void refetchChannels();
     },
     onError: (error) => {
-      toast.error('Message Failed', {
-        description: error.message
+      toast.error("Message Failed", {
+        description: error.message,
       });
-    }
+    },
   });
 
   // Computed metrics
@@ -260,16 +278,18 @@ export function useUnifiedIntelligence({
       unreadBriefings: overview.briefings?.items?.filter((b: any) => !b.isRead).length || 0,
       activeMeetings: overview.activity?.recentMeetings || 0,
       pendingDecisions: overview.activity?.pendingDecisions || 0,
-      activeRecommendations: quickActions?.actions?.filter((a: any) => !a.isImplemented).length || 0,
+      activeRecommendations:
+        quickActions?.actions?.filter((a: any) => !a.isImplemented).length || 0,
       overallHealth: overview.vitality
-        ? Math.round((
-            (overview.vitality.economic || 0) +
-            (overview.vitality.social || 0) +
-            (overview.vitality.diplomatic || 0) +
-            (overview.vitality.governance || 0)
-          ) / 4)
+        ? Math.round(
+            ((overview.vitality.economic || 0) +
+              (overview.vitality.social || 0) +
+              (overview.vitality.diplomatic || 0) +
+              (overview.vitality.governance || 0)) /
+              4
+          )
         : 0,
-      lastUpdated: overview.lastUpdated ? new Date(overview.lastUpdated) : new Date()
+      lastUpdated: overview.lastUpdated ? new Date(overview.lastUpdated) : new Date(),
     };
   }, [overview, quickActions]);
 
@@ -282,66 +302,93 @@ export function useUnifiedIntelligence({
   }, [overviewLoading, actionsLoading, feedLoading, analyticsLoading, channelsLoading]);
 
   const isRefreshing = useMemo(() => {
-    return overviewRefreshing || actionsRefreshing || feedRefreshing || analyticsRefreshing || channelsRefreshing;
-  }, [overviewRefreshing, actionsRefreshing, feedRefreshing, analyticsRefreshing, channelsRefreshing]);
+    return (
+      overviewRefreshing ||
+      actionsRefreshing ||
+      feedRefreshing ||
+      analyticsRefreshing ||
+      channelsRefreshing
+    );
+  }, [
+    overviewRefreshing,
+    actionsRefreshing,
+    feedRefreshing,
+    analyticsRefreshing,
+    channelsRefreshing,
+  ]);
 
   // Action handlers
-  const executeQuickAction = useCallback(async (actionId: string, parameters?: Record<string, any>) => {
-    await executeActionMutation.mutateAsync({
-      countryId,
-      actionType: actionId as any,
-      parameters: parameters || {}
-    });
-  }, [countryId, executeActionMutation]);
+  const executeQuickAction = useCallback(
+    async (actionId: string, parameters?: Record<string, any>) => {
+      await executeActionMutation.mutateAsync({
+        countryId,
+        actionType: actionId as any,
+        parameters: parameters || {},
+      });
+    },
+    [countryId, executeActionMutation]
+  );
 
-  const acknowledgeAlert = useCallback(async (alertId: string) => {
-    try {
-      await acknowledgeAlertMutation.mutateAsync({ alertId });
-      await refetchFeed();
-    } catch (error) {
-      console.error('[useUnifiedIntelligence] Failed to acknowledge alert:', error);
-    }
-  }, [acknowledgeAlertMutation, refetchFeed]);
+  const acknowledgeAlert = useCallback(
+    async (alertId: string) => {
+      try {
+        await acknowledgeAlertMutation.mutateAsync({ alertId });
+        await refetchFeed();
+      } catch (error) {
+        console.error("[useUnifiedIntelligence] Failed to acknowledge alert:", error);
+      }
+    },
+    [acknowledgeAlertMutation, refetchFeed]
+  );
 
-  const archiveAlert = useCallback(async (alertId: string) => {
-    try {
-      await archiveAlertMutation.mutateAsync({ alertId });
-      await Promise.all([refetchOverview(), refetchFeed()]);
-    } catch (error) {
-      console.error('[useUnifiedIntelligence] Failed to archive alert:', error);
-    }
-  }, [archiveAlertMutation, refetchOverview, refetchFeed]);
+  const archiveAlert = useCallback(
+    async (alertId: string) => {
+      try {
+        await archiveAlertMutation.mutateAsync({ alertId });
+        await Promise.all([refetchOverview(), refetchFeed()]);
+      } catch (error) {
+        console.error("[useUnifiedIntelligence] Failed to archive alert:", error);
+      }
+    },
+    [archiveAlertMutation, refetchOverview, refetchFeed]
+  );
 
-  const executeRecommendation = useCallback(async (recommendationId: string) => {
-    await executeQuickAction(`recommendation_${recommendationId}`, {
-      recommendationId
-    });
-  }, [executeQuickAction]);
+  const executeRecommendation = useCallback(
+    async (recommendationId: string) => {
+      await executeQuickAction(`recommendation_${recommendationId}`, {
+        recommendationId,
+      });
+    },
+    [executeQuickAction]
+  );
 
-  const sendSecureMessage = useCallback(async (messageData: any) => {
-    await sendMessageMutation.mutateAsync(messageData);
-  }, [sendMessageMutation]);
+  const sendSecureMessage = useCallback(
+    async (messageData: any) => {
+      await sendMessageMutation.mutateAsync(messageData);
+    },
+    [sendMessageMutation]
+  );
 
   const refreshAll = useCallback(async () => {
-    toast.info('Refreshing Intelligence', { description: 'Updating all intelligence data...' });
+    toast.info("Refreshing Intelligence", { description: "Updating all intelligence data..." });
     await Promise.all([
       refetchOverview(),
       refetchActions(),
       refetchFeed(),
       refetchAnalytics(),
-      refetchChannels()
+      refetchChannels(),
     ]);
-    toast.success('Intelligence Updated', { description: 'All data has been refreshed' });
+    toast.success("Intelligence Updated", { description: "All data has been refreshed" });
   }, [refetchOverview, refetchActions, refetchFeed, refetchAnalytics, refetchChannels]);
 
   const setFilters = useCallback((newFilters: Partial<FilterState>) => {
-    setFiltersState(prev => ({ ...prev, ...newFilters }));
+    setFiltersState((prev) => ({ ...prev, ...newFilters }));
     // Reset pagination when filters change
     setPaginationState(DEFAULT_PAGINATION);
   }, []);
 
   const setPagination = useCallback((newPagination: Partial<PaginationState>) => {
-    setPaginationState(prev => ({ ...prev, ...newPagination }));
+    setPaginationState((prev) => ({ ...prev, ...newPagination }));
   }, []);
 
   const resetFilters = useCallback(() => {
@@ -378,55 +425,58 @@ export function useUnifiedIntelligence({
     if (!countryId || !userId) return;
 
     // Check if WebSocket should be enabled based on environment
-    const isProduction = process.env.NODE_ENV === 'production';
-    const websocketEnabled = process.env.NEXT_PUBLIC_ENABLE_WEBSOCKET === 'true';
-    
+    const isProduction = process.env.NODE_ENV === "production";
+    const websocketEnabled = process.env.NEXT_PUBLIC_ENABLE_WEBSOCKET === "true";
+
     if (!isProduction && !websocketEnabled) {
-      console.log('[useUnifiedIntelligence] WebSocket disabled in development mode');
+      console.log("[useUnifiedIntelligence] WebSocket disabled in development mode");
       return;
     }
 
-    console.log('[useUnifiedIntelligence] Initializing WebSocket connection for country:', countryId);
+    console.log(
+      "[useUnifiedIntelligence] Initializing WebSocket connection for country:",
+      countryId
+    );
 
     const client = new IntelligenceWebSocketClient({
       countryId,
       autoReconnect: true,
       onUpdate: (update) => {
-        console.log('[useUnifiedIntelligence] Received WebSocket update:', update.type, update);
+        console.log("[useUnifiedIntelligence] Received WebSocket update:", update.type, update);
         // Trigger refetch of overview and intelligence feed on updates
         stableRefetchOverview();
         stableRefetchFeed();
       },
       onAlert: (alert) => {
-        console.log('[useUnifiedIntelligence] Received WebSocket alert:', alert);
+        console.log("[useUnifiedIntelligence] Received WebSocket alert:", alert);
         // Show toast notification for alerts
         toast.warning(alert.title, {
-          description: alert.description || 'New intelligence alert received'
+          description: alert.description || "New intelligence alert received",
         });
         // Refresh data to show new alert
         stableRefetchOverview();
       },
       onConnect: () => {
-        console.log('[useUnifiedIntelligence] WebSocket connected');
+        console.log("[useUnifiedIntelligence] WebSocket connected");
         setWsConnected(true);
       },
       onDisconnect: () => {
-        console.log('[useUnifiedIntelligence] WebSocket disconnected');
+        console.log("[useUnifiedIntelligence] WebSocket disconnected");
         setWsConnected(false);
       },
       onError: (error) => {
-        console.error('[useUnifiedIntelligence] WebSocket error:', error);
-      }
+        console.error("[useUnifiedIntelligence] WebSocket error:", error);
+      },
     });
 
     client.connect(userId, countryId).catch((error) => {
-      console.error('[useUnifiedIntelligence] Failed to connect WebSocket:', error);
+      console.error("[useUnifiedIntelligence] Failed to connect WebSocket:", error);
     });
 
     setWsClient(client);
 
     return () => {
-      console.log('[useUnifiedIntelligence] Cleaning up WebSocket connection');
+      console.log("[useUnifiedIntelligence] Cleaning up WebSocket connection");
       client.disconnect();
     };
   }, [countryId, userId, stableRefetchOverview, stableRefetchFeed]);
@@ -465,7 +515,7 @@ export function useUnifiedIntelligence({
     executeRecommendation,
     sendSecureMessage,
     refreshAll,
-    resetFilters
+    resetFilters,
   };
 }
 
@@ -481,7 +531,7 @@ export function useIntelligenceOverview(countryId: string) {
   return {
     overview: data,
     isLoading,
-    refresh: refetch
+    refresh: refetch,
   };
 }
 
@@ -497,22 +547,25 @@ export function useQuickActions(countryId: string) {
   const executeMutation = api.unifiedIntelligence.executeAction.useMutation({
     onSuccess: () => {
       void refetch();
-    }
+    },
   });
 
-  const execute = useCallback(async (actionType: string, parameters?: Record<string, any>) => {
-    await executeMutation.mutateAsync({
-      countryId,
-      actionType: actionType as any,
-      parameters: parameters || {}
-    });
-  }, [countryId, executeMutation]);
+  const execute = useCallback(
+    async (actionType: string, parameters?: Record<string, any>) => {
+      await executeMutation.mutateAsync({
+        countryId,
+        actionType: actionType as any,
+        parameters: parameters || {},
+      });
+    },
+    [countryId, executeMutation]
+  );
 
   return {
     actions: data?.actions || [],
     context: data?.context,
     isLoading,
     execute,
-    isExecuting: executeMutation.isPending
+    isExecuting: executeMutation.isPending,
   };
 }

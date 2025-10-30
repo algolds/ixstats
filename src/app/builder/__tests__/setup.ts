@@ -3,42 +3,42 @@
  * Configures React Testing Library, mocks, and utilities for builder component tests
  */
 
-import '@testing-library/jest-dom';
-import { configure } from '@testing-library/react';
+import "@testing-library/jest-dom";
+import { configure } from "@testing-library/react";
 
 // Configure React Testing Library
 configure({
-  testIdAttribute: 'data-testid',
+  testIdAttribute: "data-testid",
   asyncUtilTimeout: 5000,
 });
 
 // Mock Next.js router
-jest.mock('next/navigation', () => ({
+jest.mock("next/navigation", () => ({
   useRouter: jest.fn(() => ({
     push: jest.fn(),
     replace: jest.fn(),
     prefetch: jest.fn(),
     back: jest.fn(),
-    pathname: '/builder',
+    pathname: "/builder",
     query: {},
   })),
-  usePathname: jest.fn(() => '/builder'),
+  usePathname: jest.fn(() => "/builder"),
   useSearchParams: jest.fn(() => new URLSearchParams()),
 }));
 
 // Mock Clerk authentication
-jest.mock('@clerk/nextjs', () => ({
+jest.mock("@clerk/nextjs", () => ({
   useUser: jest.fn(() => ({
     isSignedIn: true,
     user: {
-      id: 'test-user-id',
-      firstName: 'Test',
-      lastName: 'User',
-      emailAddresses: [{ emailAddress: 'test@example.com' }],
+      id: "test-user-id",
+      firstName: "Test",
+      lastName: "User",
+      emailAddresses: [{ emailAddress: "test@example.com" }],
     },
   })),
   useAuth: jest.fn(() => ({
-    userId: 'test-user-id',
+    userId: "test-user-id",
     isLoaded: true,
     isSignedIn: true,
   })),
@@ -52,7 +52,7 @@ const mockTRPCContext = {
   },
 };
 
-jest.mock('~/lib/api', () => ({
+jest.mock("~/lib/api", () => ({
   api: {
     economics: {
       create: {
@@ -115,7 +115,7 @@ const localStorageMock = (() => {
   };
 })();
 
-Object.defineProperty(window, 'localStorage', {
+Object.defineProperty(window, "localStorage", {
   value: localStorageMock,
 });
 
@@ -139,7 +139,7 @@ global.ResizeObserver = class ResizeObserver {
 } as any;
 
 // Mock window.matchMedia
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: jest.fn().mockImplementation((query) => ({
     matches: false,
@@ -158,9 +158,9 @@ const originalError = console.error;
 beforeAll(() => {
   console.error = (...args: any[]) => {
     if (
-      typeof args[0] === 'string' &&
-      (args[0].includes('Warning: ReactDOM.render') ||
-        args[0].includes('Not implemented: HTMLFormElement.prototype.submit'))
+      typeof args[0] === "string" &&
+      (args[0].includes("Warning: ReactDOM.render") ||
+        args[0].includes("Not implemented: HTMLFormElement.prototype.submit"))
     ) {
       return;
     }

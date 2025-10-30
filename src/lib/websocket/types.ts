@@ -3,13 +3,19 @@
 
 export interface IntelligenceUpdate {
   id: string;
-  type: 'new_intelligence' | 'vitality_update' | 'alert' | 'system_update' | 'economic_change' | 'cache-invalidation';
+  type:
+    | "new_intelligence"
+    | "vitality_update"
+    | "alert"
+    | "system_update"
+    | "economic_change"
+    | "cache-invalidation";
   title: string;
   description?: string;
   countryId?: string;
-  category: 'economic' | 'population' | 'diplomatic' | 'governance' | 'security' | 'system';
-  priority: 'low' | 'medium' | 'high' | 'urgent' | 'critical';
-  severity: 'info' | 'warning' | 'critical';
+  category: "economic" | "population" | "diplomatic" | "governance" | "security" | "system";
+  priority: "low" | "medium" | "high" | "urgent" | "critical";
+  severity: "info" | "warning" | "critical";
   data: any;
   isGlobal: boolean;
   timestamp: number;
@@ -30,7 +36,7 @@ export interface GlobalIntelligenceChannel {
 }
 
 export interface WebSocketIntelligenceEvent {
-  type: 'intelligence:update' | 'intelligence:alert' | 'intelligence:initial' | 'vitality:update';
+  type: "intelligence:update" | "intelligence:alert" | "intelligence:initial" | "vitality:update";
   data: any;
   timestamp: number;
   channel: string;

@@ -2,13 +2,13 @@
  * Tests for EconomySectorsTab Component
  */
 
-import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { EconomySectorsTab } from '../../components/enhanced/tabs/EconomySectorsTab';
-import { mockEconomyBuilder, mockAtomicComponents, mockSectors } from '../fixtures';
-import type { EconomyBuilderState, SectorConfiguration } from '~/types/economy-builder';
+import React from "react";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { EconomySectorsTab } from "../../components/enhanced/tabs/EconomySectorsTab";
+import { mockEconomyBuilder, mockAtomicComponents, mockSectors } from "../fixtures";
+import type { EconomyBuilderState, SectorConfiguration } from "~/types/economy-builder";
 
-describe('EconomySectorsTab', () => {
+describe("EconomySectorsTab", () => {
   const mockOnChange = jest.fn();
 
   const defaultProps = {
@@ -22,14 +22,14 @@ describe('EconomySectorsTab', () => {
     mockOnChange.mockClear();
   });
 
-  describe('Rendering', () => {
-    it('renders the sectors tab', () => {
+  describe("Rendering", () => {
+    it("renders the sectors tab", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       expect(screen.getByText(/Economy/i) || screen.getByText(/Sectors/i)).toBeTruthy();
     });
 
-    it('displays existing sectors', () => {
+    it("displays existing sectors", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       // Should render without errors
@@ -37,15 +37,15 @@ describe('EconomySectorsTab', () => {
     });
   });
 
-  describe('Sector Templates', () => {
-    it('loads sector templates for selection', () => {
+  describe("Sector Templates", () => {
+    it("loads sector templates for selection", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       // Template selector should be available
       expect(document.body).toBeInTheDocument();
     });
 
-    it('applies template when selected', () => {
+    it("applies template when selected", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       // Template application logic is tested
@@ -53,43 +53,43 @@ describe('EconomySectorsTab', () => {
     });
   });
 
-  describe('Sector Management', () => {
-    it('adds new sector from template', () => {
+  describe("Sector Management", () => {
+    it("adds new sector from template", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       // Initially no change calls
       expect(mockOnChange).toHaveBeenCalledTimes(0);
     });
 
-    it('removes sector when requested', () => {
+    it("removes sector when requested", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       expect(mockOnChange).toHaveBeenCalledTimes(0);
     });
 
-    it('updates sector field values', () => {
+    it("updates sector field values", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       expect(mockOnChange).toHaveBeenCalledTimes(0);
     });
   });
 
-  describe('Sector Validation', () => {
-    it('validates GDP contributions sum to 100%', () => {
+  describe("Sector Validation", () => {
+    it("validates GDP contributions sum to 100%", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       const total = mockSectors.reduce((sum, s) => sum + s.gdpContribution, 0);
       expect(total).toBe(100);
     });
 
-    it('validates employment shares sum to 100%', () => {
+    it("validates employment shares sum to 100%", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       const total = mockSectors.reduce((sum, s) => sum + s.employmentShare, 0);
       expect(total).toBe(100);
     });
 
-    it('shows validation warning when totals exceed 100%', () => {
+    it("shows validation warning when totals exceed 100%", () => {
       const invalidSectors: SectorConfiguration[] = [
         { ...mockSectors[0], gdpContribution: 60 },
         { ...mockSectors[1], gdpContribution: 50 }, // Sum = 110%
@@ -100,26 +100,21 @@ describe('EconomySectorsTab', () => {
         sectors: invalidSectors,
       };
 
-      render(
-        <EconomySectorsTab
-          {...defaultProps}
-          economyBuilder={invalidBuilder}
-        />
-      );
+      render(<EconomySectorsTab {...defaultProps} economyBuilder={invalidBuilder} />);
 
       expect(document.body).toBeInTheDocument();
     });
   });
 
-  describe('Sector Normalization', () => {
-    it('normalizes sectors to sum to 100%', () => {
+  describe("Sector Normalization", () => {
+    it("normalizes sectors to sum to 100%", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       // Normalization function should be available
       expect(document.body).toBeInTheDocument();
     });
 
-    it('maintains sector ratios during normalization', () => {
+    it("maintains sector ratios during normalization", () => {
       const sectors: SectorConfiguration[] = [
         { ...mockSectors[0], gdpContribution: 30 },
         { ...mockSectors[1], gdpContribution: 45 },
@@ -141,15 +136,15 @@ describe('EconomySectorsTab', () => {
     });
   });
 
-  describe('Atomic Component Impact', () => {
-    it('calculates sector impacts from components', () => {
+  describe("Atomic Component Impact", () => {
+    it("calculates sector impacts from components", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       // Impact calculation happens in useMemo
       expect(document.body).toBeInTheDocument();
     });
 
-    it('applies component modifiers to sectors', () => {
+    it("applies component modifiers to sectors", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       // Modifiers are applied during rendering
@@ -157,21 +152,21 @@ describe('EconomySectorsTab', () => {
     });
   });
 
-  describe('Sector Categories', () => {
-    it('categorizes sectors as Primary, Secondary, or Tertiary', () => {
+  describe("Sector Categories", () => {
+    it("categorizes sectors as Primary, Secondary, or Tertiary", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
-      expect(mockSectors[0].category).toBe('Primary');
-      expect(mockSectors[1].category).toBe('Secondary');
-      expect(mockSectors[2].category).toBe('Tertiary');
+      expect(mockSectors[0].category).toBe("Primary");
+      expect(mockSectors[1].category).toBe("Secondary");
+      expect(mockSectors[2].category).toBe("Tertiary");
     });
 
-    it('groups sectors by category', () => {
+    it("groups sectors by category", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
-      const primary = mockSectors.filter((s) => s.category === 'Primary');
-      const secondary = mockSectors.filter((s) => s.category === 'Secondary');
-      const tertiary = mockSectors.filter((s) => s.category === 'Tertiary');
+      const primary = mockSectors.filter((s) => s.category === "Primary");
+      const secondary = mockSectors.filter((s) => s.category === "Secondary");
+      const tertiary = mockSectors.filter((s) => s.category === "Tertiary");
 
       expect(primary.length).toBe(1);
       expect(secondary.length).toBe(1);
@@ -179,22 +174,22 @@ describe('EconomySectorsTab', () => {
     });
   });
 
-  describe('Sector Metrics', () => {
-    it('displays total GDP calculation', () => {
+  describe("Sector Metrics", () => {
+    it("displays total GDP calculation", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       const totalGDP = mockSectors.reduce((sum, s) => sum + s.gdpContribution, 0);
       expect(totalGDP).toBe(100);
     });
 
-    it('displays total employment calculation', () => {
+    it("displays total employment calculation", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       const totalEmployment = mockSectors.reduce((sum, s) => sum + s.employmentShare, 0);
       expect(totalEmployment).toBe(100);
     });
 
-    it('calculates average productivity', () => {
+    it("calculates average productivity", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       const avgProductivity =
@@ -203,16 +198,16 @@ describe('EconomySectorsTab', () => {
     });
   });
 
-  describe('Sector Technology', () => {
-    it('tracks technology levels per sector', () => {
+  describe("Sector Technology", () => {
+    it("tracks technology levels per sector", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
-      expect(mockSectors[0].technologyLevel).toBe('Modern');
-      expect(mockSectors[1].technologyLevel).toBe('Advanced');
-      expect(mockSectors[2].technologyLevel).toBe('Modern');
+      expect(mockSectors[0].technologyLevel).toBe("Modern");
+      expect(mockSectors[1].technologyLevel).toBe("Advanced");
+      expect(mockSectors[2].technologyLevel).toBe("Modern");
     });
 
-    it('tracks automation percentages', () => {
+    it("tracks automation percentages", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       expect(mockSectors[0].automation).toBe(30);
@@ -221,20 +216,20 @@ describe('EconomySectorsTab', () => {
     });
   });
 
-  describe('Trade Metrics', () => {
-    it('displays export percentages', () => {
+  describe("Trade Metrics", () => {
+    it("displays export percentages", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       expect(mockSectors[1].exports).toBe(45);
     });
 
-    it('displays import percentages', () => {
+    it("displays import percentages", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       expect(mockSectors[1].imports).toBe(30);
     });
 
-    it('calculates net trade balance per sector', () => {
+    it("calculates net trade balance per sector", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       mockSectors.forEach((sector) => {
@@ -244,34 +239,34 @@ describe('EconomySectorsTab', () => {
     });
   });
 
-  describe('Visualizations', () => {
-    it('renders sector visualizations', () => {
+  describe("Visualizations", () => {
+    it("renders sector visualizations", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       expect(document.body).toBeInTheDocument();
     });
 
-    it('generates chart data for GDP distribution', () => {
+    it("generates chart data for GDP distribution", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       expect(document.body).toBeInTheDocument();
     });
 
-    it('generates chart data for employment distribution', () => {
+    it("generates chart data for employment distribution", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       expect(document.body).toBeInTheDocument();
     });
   });
 
-  describe('State Updates', () => {
-    it('calls onChange when sector is modified', () => {
+  describe("State Updates", () => {
+    it("calls onChange when sector is modified", () => {
       render(<EconomySectorsTab {...defaultProps} />);
 
       expect(mockOnChange).toHaveBeenCalledTimes(0);
     });
 
-    it('updates multiple sectors simultaneously', () => {
+    it("updates multiple sectors simultaneously", () => {
       const { rerender } = render(<EconomySectorsTab {...defaultProps} />);
 
       const updatedBuilder: EconomyBuilderState = {
@@ -283,19 +278,14 @@ describe('EconomySectorsTab', () => {
         ],
       };
 
-      rerender(
-        <EconomySectorsTab
-          {...defaultProps}
-          economyBuilder={updatedBuilder}
-        />
-      );
+      rerender(<EconomySectorsTab {...defaultProps} economyBuilder={updatedBuilder} />);
 
       expect(document.body).toBeInTheDocument();
     });
   });
 
-  describe('Performance', () => {
-    it('memoizes sector impacts', () => {
+  describe("Performance", () => {
+    it("memoizes sector impacts", () => {
       const { rerender } = render(<EconomySectorsTab {...defaultProps} />);
 
       rerender(<EconomySectorsTab {...defaultProps} />);
@@ -303,7 +293,7 @@ describe('EconomySectorsTab', () => {
       expect(document.body).toBeInTheDocument();
     });
 
-    it('handles large number of sectors efficiently', () => {
+    it("handles large number of sectors efficiently", () => {
       const manySectors = Array.from({ length: 20 }, (_, i) => ({
         ...mockSectors[0],
         id: `sector_${i}`,
@@ -318,29 +308,22 @@ describe('EconomySectorsTab', () => {
       };
 
       const { container } = render(
-        <EconomySectorsTab
-          {...defaultProps}
-          economyBuilder={largeBuilder}
-        />
+        <EconomySectorsTab {...defaultProps} economyBuilder={largeBuilder} />
       );
 
       expect(container).toBeInTheDocument();
     });
   });
 
-  describe('Advanced Features', () => {
-    it('shows advanced settings when enabled', () => {
-      render(
-        <EconomySectorsTab {...defaultProps} showAdvanced={true} />
-      );
+  describe("Advanced Features", () => {
+    it("shows advanced settings when enabled", () => {
+      render(<EconomySectorsTab {...defaultProps} showAdvanced={true} />);
 
       expect(document.body).toBeInTheDocument();
     });
 
-    it('hides advanced settings by default', () => {
-      render(
-        <EconomySectorsTab {...defaultProps} showAdvanced={false} />
-      );
+    it("hides advanced settings by default", () => {
+      render(<EconomySectorsTab {...defaultProps} showAdvanced={false} />);
 
       expect(document.body).toBeInTheDocument();
     });

@@ -1,6 +1,6 @@
 // src/types/government.ts
 
-import type { ComponentType } from '@prisma/client';
+import type { ComponentType } from "@prisma/client";
 
 export interface GovernmentStructure {
   id: string;
@@ -17,7 +17,7 @@ export interface GovernmentStructure {
   budgetCurrency: string;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Relations
   departments: GovernmentDepartment[];
   budgetAllocations: BudgetAllocation[];
@@ -46,7 +46,7 @@ export interface GovernmentDepartment {
   kpis?: KeyPerformanceIndicator[]; // JSON array parsed as KPI[]
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Relations
   parentDepartment?: GovernmentDepartment;
   subDepartments: GovernmentDepartment[];
@@ -69,7 +69,7 @@ export interface BudgetAllocation {
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Relations
   department: GovernmentDepartment;
 }
@@ -111,112 +111,123 @@ export interface KeyPerformanceIndicator {
   targetValue: number;
   currentValue: number;
   unit: string;
-  frequency: 'Daily' | 'Weekly' | 'Monthly' | 'Quarterly' | 'Annually';
-  trend: 'Up' | 'Down' | 'Stable';
-  category: 'Performance' | 'Efficiency' | 'Quality' | 'Financial' | 'Citizen Satisfaction';
+  frequency: "Daily" | "Weekly" | "Monthly" | "Quarterly" | "Annually";
+  trend: "Up" | "Down" | "Stable";
+  category: "Performance" | "Efficiency" | "Quality" | "Financial" | "Citizen Satisfaction";
 }
 
 // Enums and Union Types
-export type BudgetStatus = 'Allocated' | 'In Use' | 'Overspent' | 'Underutilized' | 'Completed';
+export type BudgetStatus = "Allocated" | "In Use" | "Overspent" | "Underutilized" | "Completed";
 
-export type BudgetType = 'Personnel' | 'Operations' | 'Capital' | 'Research' | 'Other';
+export type BudgetType = "Personnel" | "Operations" | "Capital" | "Research" | "Other";
 
-export type BudgetPriority = 'Critical' | 'High' | 'Medium' | 'Low';
+export type BudgetPriority = "Critical" | "High" | "Medium" | "Low";
 
-export type RevenueCategory = 'Direct Tax' | 'Indirect Tax' | 'Non-Tax Revenue' | 'Fees and Fines' | 'Other';
+export type RevenueCategory =
+  | "Direct Tax"
+  | "Indirect Tax"
+  | "Non-Tax Revenue"
+  | "Fees and Fines"
+  | "Other";
 
-export type OrganizationalLevel = 'Ministry' | 'Department' | 'Agency' | 'Bureau' | 'Office' | 'Commission';
+export type OrganizationalLevel =
+  | "Ministry"
+  | "Department"
+  | "Agency"
+  | "Bureau"
+  | "Office"
+  | "Commission";
 
-export type GovernmentType = 
-  | 'Constitutional Monarchy'
-  | 'Federal Republic' 
-  | 'Parliamentary Democracy'
-  | 'Presidential Republic'
-  | 'Federal Constitutional Republic'
-  | 'Unitary State'
-  | 'Federation'
-  | 'Confederation'
-  | 'Empire'
-  | 'City-State'
-  | 'Other';
+export type GovernmentType =
+  | "Constitutional Monarchy"
+  | "Federal Republic"
+  | "Parliamentary Democracy"
+  | "Presidential Republic"
+  | "Federal Constitutional Republic"
+  | "Unitary State"
+  | "Federation"
+  | "Confederation"
+  | "Empire"
+  | "City-State"
+  | "Other";
 
-export type DepartmentCategory = 
-  | 'Defense'
-  | 'Education' 
-  | 'Health'
-  | 'Finance'
-  | 'Foreign Affairs'
-  | 'Interior'
-  | 'Justice'
-  | 'Transportation'
-  | 'Agriculture'
-  | 'Environment'
-  | 'Labor'
-  | 'Commerce'
-  | 'Energy'
-  | 'Communications'
-  | 'Culture'
-  | 'Science and Technology'
-  | 'Social Services'
-  | 'Housing'
-  | 'Veterans Affairs'
-  | 'Intelligence'
-  | 'Emergency Management'
-  | 'Other';
+export type DepartmentCategory =
+  | "Defense"
+  | "Education"
+  | "Health"
+  | "Finance"
+  | "Foreign Affairs"
+  | "Interior"
+  | "Justice"
+  | "Transportation"
+  | "Agriculture"
+  | "Environment"
+  | "Labor"
+  | "Commerce"
+  | "Energy"
+  | "Communications"
+  | "Culture"
+  | "Science and Technology"
+  | "Social Services"
+  | "Housing"
+  | "Veterans Affairs"
+  | "Intelligence"
+  | "Emergency Management"
+  | "Other";
 
 // Atomic Component Types - Use Prisma generated enum
-export { ComponentType } from '@prisma/client';
+export { ComponentType } from "@prisma/client";
 
 // ComponentType values for Zod validation
 export const COMPONENT_TYPE_VALUES = [
   // Power Distribution
-  'CENTRALIZED_POWER',
-  'FEDERAL_SYSTEM',
-  'CONFEDERATE_SYSTEM',
-  'UNITARY_SYSTEM',
+  "CENTRALIZED_POWER",
+  "FEDERAL_SYSTEM",
+  "CONFEDERATE_SYSTEM",
+  "UNITARY_SYSTEM",
 
   // Decision Process
-  'DEMOCRATIC_PROCESS',
-  'AUTOCRATIC_PROCESS',
-  'TECHNOCRATIC_PROCESS',
-  'CONSENSUS_PROCESS',
-  'OLIGARCHIC_PROCESS',
+  "DEMOCRATIC_PROCESS",
+  "AUTOCRATIC_PROCESS",
+  "TECHNOCRATIC_PROCESS",
+  "CONSENSUS_PROCESS",
+  "OLIGARCHIC_PROCESS",
 
   // Legitimacy Sources
-  'ELECTORAL_LEGITIMACY',
-  'TRADITIONAL_LEGITIMACY',
-  'PERFORMANCE_LEGITIMACY',
-  'CHARISMATIC_LEGITIMACY',
-  'RELIGIOUS_LEGITIMACY',
-  'INSTITUTIONAL_LEGITIMACY',
+  "ELECTORAL_LEGITIMACY",
+  "TRADITIONAL_LEGITIMACY",
+  "PERFORMANCE_LEGITIMACY",
+  "CHARISMATIC_LEGITIMACY",
+  "RELIGIOUS_LEGITIMACY",
+  "INSTITUTIONAL_LEGITIMACY",
 
   // Institution Types
-  'PROFESSIONAL_BUREAUCRACY',
-  'MILITARY_ADMINISTRATION',
-  'INDEPENDENT_JUDICIARY',
-  'PARTISAN_INSTITUTIONS',
-  'TECHNOCRATIC_AGENCIES',
-  'DIGITAL_GOVERNMENT',
+  "PROFESSIONAL_BUREAUCRACY",
+  "MILITARY_ADMINISTRATION",
+  "INDEPENDENT_JUDICIARY",
+  "PARTISAN_INSTITUTIONS",
+  "TECHNOCRATIC_AGENCIES",
+  "DIGITAL_GOVERNMENT",
 
   // Control Mechanisms
-  'RULE_OF_LAW',
-  'SURVEILLANCE_SYSTEM',
-  'ECONOMIC_INCENTIVES',
-  'SOCIAL_PRESSURE',
-  'MILITARY_ENFORCEMENT',
+  "RULE_OF_LAW",
+  "SURVEILLANCE_SYSTEM",
+  "ECONOMIC_INCENTIVES",
+  "SOCIAL_PRESSURE",
+  "MILITARY_ENFORCEMENT",
 
   // Government Systems
-  'MINIMAL_GOVERNMENT',
-  'PRIVATE_SECTOR_LEADERSHIP',
-  'SOCIAL_DEMOCRACY',
-  'COMPREHENSIVE_WELFARE',
-  'PUBLIC_SECTOR_LEADERSHIP',
-  'ENVIRONMENTAL_FOCUS',
-  'ECONOMIC_PLANNING',
-  'DEVELOPMENTAL_STATE',
-  'WORKER_PROTECTION',
-  'REGIONAL_DEVELOPMENT',
-  'MERITOCRATIC_SYSTEM',
+  "MINIMAL_GOVERNMENT",
+  "PRIVATE_SECTOR_LEADERSHIP",
+  "SOCIAL_DEMOCRACY",
+  "COMPREHENSIVE_WELFARE",
+  "PUBLIC_SECTOR_LEADERSHIP",
+  "ENVIRONMENTAL_FOCUS",
+  "ECONOMIC_PLANNING",
+  "DEVELOPMENTAL_STATE",
+  "WORKER_PROTECTION",
+  "REGIONAL_DEVELOPMENT",
+  "MERITOCRATIC_SYSTEM",
 ] as const;
 
 // Input/Form Types
@@ -346,8 +357,8 @@ export interface DepartmentTemplate {
   priority: number;
   functions: string[];
   typicalBudgetPercent: number;
-  subBudgets: Omit<SubBudgetInput, 'amount'>[];
-  kpis: Omit<KeyPerformanceIndicator, 'id' | 'currentValue'>[];
+  subBudgets: Omit<SubBudgetInput, "amount">[];
+  kpis: Omit<KeyPerformanceIndicator, "id" | "currentValue">[];
 }
 
 export interface GovernmentTemplate {
@@ -356,5 +367,5 @@ export interface GovernmentTemplate {
   description: string;
   departments: DepartmentTemplate[];
   fiscalYear: string;
-  typicalRevenueSources: Omit<RevenueSourceInput, 'revenueAmount'>[];
+  typicalRevenueSources: Omit<RevenueSourceInput, "revenueAmount">[];
 }

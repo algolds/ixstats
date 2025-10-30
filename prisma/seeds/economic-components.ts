@@ -7,8 +7,8 @@
  * Run with: npx tsx prisma/seeds/economic-components.ts
  */
 
-import { PrismaClient } from '@prisma/client';
-import { ATOMIC_ECONOMIC_COMPONENTS } from '../../src/lib/atomic-economic-data';
+import { PrismaClient } from "@prisma/client";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "../../src/lib/atomic-economic-data";
 
 const prisma = new PrismaClient();
 
@@ -18,20 +18,20 @@ const prisma = new PrismaClient();
  */
 function getIconName(iconComponent: React.ComponentType<{ className?: string }>): string {
   // Try to get the display name or function name
-  if ('displayName' in iconComponent && iconComponent.displayName) {
+  if ("displayName" in iconComponent && iconComponent.displayName) {
     return iconComponent.displayName as string;
   }
-  if ('name' in iconComponent && iconComponent.name) {
+  if ("name" in iconComponent && iconComponent.name) {
     return iconComponent.name as string;
   }
   // Fallback to parsing the function string
   const iconString = iconComponent.toString();
   const match = iconString.match(/function\s+(\w+)/);
-  return match ? match[1] : 'DollarSign';
+  return match ? match[1] : "DollarSign";
 }
 
 async function main() {
-  console.log('\n💰 Starting Economic Components seed...\n');
+  console.log("\n💰 Starting Economic Components seed...\n");
 
   let createdCount = 0;
   let updatedCount = 0;
@@ -40,7 +40,7 @@ async function main() {
   // Track components by category for summary
   const categoryStats: Record<string, number> = {};
 
-  const components = Object.values(ATOMIC_ECONOMIC_COMPONENTS).filter(c => c !== undefined);
+  const components = Object.values(ATOMIC_ECONOMIC_COMPONENTS).filter((c) => c !== undefined);
   console.log(`📊 Found ${components.length} economic components to process\n`);
 
   for (const component of components) {
@@ -115,25 +115,25 @@ async function main() {
   }
 
   // Print summary
-  console.log('\n' + '='.repeat(60));
-  console.log('📊 Economic Components Seed Summary\n');
+  console.log("\n" + "=".repeat(60));
+  console.log("📊 Economic Components Seed Summary\n");
   console.log(`✅ Created: ${createdCount}`);
   console.log(`🔄 Updated: ${updatedCount}`);
   console.log(`❌ Errors: ${errorCount}`);
   console.log(`📦 Total Processed: ${createdCount + updatedCount}`);
 
-  console.log('\n📂 Components by Category:');
+  console.log("\n📂 Components by Category:");
   for (const [category, count] of Object.entries(categoryStats)) {
     console.log(`   ${category}: ${count}`);
   }
 
-  console.log('='.repeat(60) + '\n');
+  console.log("=".repeat(60) + "\n");
 
   // Fetch and display sample records
-  console.log('📋 Sample Economic Components:\n');
+  console.log("📋 Sample Economic Components:\n");
   const sampleComponents = await prisma.economicComponentData.findMany({
     take: 5,
-    orderBy: { effectiveness: 'desc' },
+    orderBy: { effectiveness: "desc" },
     select: {
       componentType: true,
       name: true,
@@ -149,13 +149,13 @@ async function main() {
     console.log(`   Category: ${comp.category}`);
     console.log(`   Effectiveness: ${comp.effectiveness}`);
     console.log(`   Cost: $${comp.implementationCost.toLocaleString()}`);
-    console.log('');
+    console.log("");
   });
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seed script failed:', e);
+    console.error("❌ Seed script failed:", e);
     process.exit(1);
   })
   .finally(async () => {

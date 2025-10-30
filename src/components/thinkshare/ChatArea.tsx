@@ -1,23 +1,23 @@
 "use client";
 
-import React, { useRef, useEffect, useCallback, useState } from 'react';
-import { Card } from '~/components/ui/card';
-import { Separator } from '~/components/ui/separator';
-import { api } from '~/trpc/react';
-import { toast } from 'sonner';
+import React, { useRef, useEffect, useCallback, useState } from "react";
+import { Card } from "~/components/ui/card";
+import { Separator } from "~/components/ui/separator";
+import { api } from "~/trpc/react";
+import { toast } from "sonner";
 
 // Import new sub-components
-import { ChatHeader } from './ChatHeader';
-import { MessageList } from './MessageList';
-import { MessageInput } from './MessageInput';
-import { ReplyPreview } from './ReplyPreview';
+import { ChatHeader } from "./ChatHeader";
+import { MessageList } from "./MessageList";
+import { MessageInput } from "./MessageInput";
+import { ReplyPreview } from "./ReplyPreview";
 
 import type {
   ThinkShareConversation,
   ThinkShareMessage,
   ThinkShareAccount,
-  ThinkShareClientState
-} from '~/types/thinkshare';
+  ThinkShareClientState,
+} from "~/types/thinkshare";
 
 interface ChatAreaProps {
   selectedConversation: ThinkShareConversation;
@@ -27,9 +27,17 @@ interface ChatAreaProps {
   refetchMessages: () => Promise<any>;
   refetchConversations: () => Promise<any>;
   clientState: ThinkShareClientState;
-  sendTypingIndicator: (conversationId: string, accountId: string | undefined, isTyping: boolean) => void;
+  sendTypingIndicator: (
+    conversationId: string,
+    accountId: string | undefined,
+    isTyping: boolean
+  ) => void;
   markMessagesAsReadMutation: {
-    mutate: (data: { conversationId: string; userId: string; messageIds?: string[] }) => Promise<void>;
+    mutate: (data: {
+      conversationId: string;
+      userId: string;
+      messageIds?: string[];
+    }) => Promise<void>;
     isLoading: boolean;
   };
 }
@@ -59,20 +67,20 @@ export function ChatArea({
       void refetchConversations(); // Update last message in conversation list
     },
     onError: (error: any) => {
-      console.error('Send message error:', error);
-      
+      console.error("Send message error:", error);
+
       // Enhanced error handling
-      let errorMessage = 'Failed to send message';
-      if (error.message?.includes('conversation')) {
-        errorMessage = 'Conversation not found or you\'re not a participant';
-      } else if (error.message?.includes('content')) {
-        errorMessage = 'Message content is invalid or too long';
-      } else if (error.message?.includes('permission')) {
-        errorMessage = 'You don\'t have permission to send messages in this conversation';
+      let errorMessage = "Failed to send message";
+      if (error.message?.includes("conversation")) {
+        errorMessage = "Conversation not found or you're not a participant";
+      } else if (error.message?.includes("content")) {
+        errorMessage = "Message content is invalid or too long";
+      } else if (error.message?.includes("permission")) {
+        errorMessage = "You don't have permission to send messages in this conversation";
       }
-      
+
       toast.error(errorMessage);
-    }
+    },
   });
 
   useEffect(() => {
@@ -80,31 +88,37 @@ export function ChatArea({
       markMessagesAsReadMutation.mutate({
         conversationId: selectedConversation.id,
         userId: currentAccount.id,
-        messageIds: [] // Empty array to mark all as read
+        messageIds: [], // Empty array to mark all as read
       });
     }
   }, [selectedConversation?.id, currentAccount?.id]); // Removed markMessagesAsReadMutation from deps!
 
-  const handleSendMessage = useCallback((content?: string, plainText?: string) => {
-    const finalContent = content || ''; // RichTextEditor provides content
-    const finalPlainText = plainText || ''; // RichTextEditor provides plainText
-    
-    if (!finalPlainText.trim() || !selectedConversation || !currentAccount) return;
+  const handleSendMessage = useCallback(
+    (content?: string, plainText?: string) => {
+      const finalContent = content || ""; // RichTextEditor provides content
+      const finalPlainText = plainText || ""; // RichTextEditor provides plainText
 
-    sendMessageMutation.mutate({
-      conversationId: selectedConversation.id,
-      userId: currentAccount.id,
-      content: finalContent,
-      messageType: 'text' // Use 'text' instead of 'rich_text'
-    });
+      if (!finalPlainText.trim() || !selectedConversation || !currentAccount) return;
 
-    setReplyingToMessage(null);
-  }, [selectedConversation, currentAccount, sendMessageMutation]);
+      sendMessageMutation.mutate({
+        conversationId: selectedConversation.id,
+        userId: currentAccount.id,
+        content: finalContent,
+        messageType: "text", // Use 'text' instead of 'rich_text'
+      });
+
+      setReplyingToMessage(null);
+    },
+    [selectedConversation, currentAccount, sendMessageMutation]
+  );
 
   return (
     <Card className="glass-hierarchy-child flex flex-col">
       {/* Chat Header */}
-      <ChatHeader selectedConversation={selectedConversation} currentAccountId={currentAccount?.id} />
+      <ChatHeader
+        selectedConversation={selectedConversation}
+        currentAccountId={currentAccount?.id}
+      />
 
       <Separator />
 
@@ -123,7 +137,7 @@ export function ChatArea({
       <MessageInput
         onSendMessage={handleSendMessage}
         onTyping={(isTyping) => {
-          if (selectedConversation && clientState.connectionStatus === 'connected') {
+          if (selectedConversation && clientState.connectionStatus === "connected") {
             sendTypingIndicator(selectedConversation.id, undefined, isTyping);
           }
         }}
@@ -134,4 +148,3 @@ export function ChatArea({
     </Card>
   );
 }
-

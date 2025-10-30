@@ -15,10 +15,14 @@
 import {
   MarkovDiplomacyEngine,
   type RelationshipState,
-  type TransitionContext
-} from './diplomatic-markov-engine';
-import type { CulturalScenarioType } from './cultural-scenario-generator';
-import { DiplomaticChoiceTracker, type DiplomaticChoice, type CumulativeEffects } from './diplomatic-choice-tracker';
+  type TransitionContext,
+} from "./diplomatic-markov-engine";
+import type { CulturalScenarioType } from "./cultural-scenario-generator";
+import {
+  DiplomaticChoiceTracker,
+  type DiplomaticChoice,
+  type CumulativeEffects,
+} from "./diplomatic-choice-tracker";
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -30,7 +34,7 @@ export interface CulturalExchangeData {
   scenarioType?: CulturalScenarioType;
   hostCountryId: string;
   participantCountryIds: string[];
-  status: 'planning' | 'active' | 'completed' | 'cancelled';
+  status: "planning" | "active" | "completed" | "cancelled";
   culturalImpact: number; // 0-100
   diplomaticValue: number; // 0-100
   participants: number;
@@ -109,11 +113,13 @@ export class CulturalImpactCalculator {
     );
 
     // Calculate total impact
-    const totalCulturalImpact = Math.min(100,
+    const totalCulturalImpact = Math.min(
+      100,
       baseCulturalImpact * outcomeMultiplier * synergylier + historyBonus
     );
-    const totalDiplomaticValue = Math.min(100,
-      baseDiplomaticValue * outcomeMultiplier * historyBonus / 100
+    const totalDiplomaticValue = Math.min(
+      100,
+      (baseDiplomaticValue * outcomeMultiplier * historyBonus) / 100
     );
 
     // Calculate relationship strength delta
@@ -126,45 +132,54 @@ export class CulturalImpactCalculator {
 
     // Build transition context for Markov engine
     const transitionContext: TransitionContext = {
-      recentActions: [{
-        id: `cultural_exchange_${Date.now()}`,
-        countryId: exchange.hostCountryId,
-        type: 'cultural_exchange',
-        targetCountry: exchange.participantCountryIds[0] || '',
-        targetCountryId: exchange.participantCountryIds[0] || '',
-        details: { culturalImpact: outcome.culturalImpactChange },
-        timestamp: new Date().toISOString(),
-        ixTimeTimestamp: Date.now(),
-      }],
+      recentActions: [
+        {
+          id: `cultural_exchange_${Date.now()}`,
+          countryId: exchange.hostCountryId,
+          type: "cultural_exchange",
+          targetCountry: exchange.participantCountryIds[0] || "",
+          targetCountryId: exchange.participantCountryIds[0] || "",
+          details: { culturalImpact: outcome.culturalImpactChange },
+          timestamp: new Date().toISOString(),
+          ixTimeTimestamp: Date.now(),
+        },
+      ],
       actionHistory: {
         cooperativeActions: 50,
         aggressiveActions: 0,
-        consistencyScore: 50
+        consistencyScore: 50,
       },
       economic: {
         tradeVolume: currentRelationship.tradeVolume,
         tradeGrowth: 0, // Cultural exchanges don't directly affect trade growth
         hasTradeTreaty: false,
-        economicTierSimilarity: 50
+        economicTierSimilarity: 50,
       },
       cultural: {
-        culturalExchangeLevel: history.totalExchanges > 10 ? 'high' : history.totalExchanges > 5 ? 'medium' : history.totalExchanges > 0 ? 'low' : 'none',
+        culturalExchangeLevel:
+          history.totalExchanges > 10
+            ? "high"
+            : history.totalExchanges > 5
+              ? "medium"
+              : history.totalExchanges > 0
+                ? "low"
+                : "none",
         culturalAffinityScore: currentRelationship.existingCulturalTies,
         sharedLanguage: false,
-        historicalTies: history.totalExchanges > 0
+        historicalTies: history.totalExchanges > 0,
       },
       geographic: {
         adjacency: false,
         sameRegion: false,
         sameContinent: false,
-        distance: 50
+        distance: 50,
       },
       alliances: {
         mutualAllies: 0,
         mutualRivals: 0,
         inCompetingBlocs: false,
-        thirdPartyMediation: false
-      }
+        thirdPartyMediation: false,
+      },
     };
 
     // Determine potential state transitions
@@ -219,7 +234,7 @@ export class CulturalImpactCalculator {
       culturalBonusDelta,
       diplomaticBonusDelta,
       longTermEffects,
-      reasoning
+      reasoning,
     };
   }
 
@@ -235,31 +250,31 @@ export class CulturalImpactCalculator {
     // Participant satisfaction impact
     if (outcome.participantSatisfaction > 80) {
       multiplier *= 1.3;
-      reasoning.push('Exceptional participant satisfaction (+30%)');
+      reasoning.push("Exceptional participant satisfaction (+30%)");
     } else if (outcome.participantSatisfaction > 60) {
       multiplier *= 1.1;
-      reasoning.push('Good participant satisfaction (+10%)');
+      reasoning.push("Good participant satisfaction (+10%)");
     } else if (outcome.participantSatisfaction < 40) {
       multiplier *= 0.7;
-      reasoning.push('Poor participant satisfaction (-30%)');
+      reasoning.push("Poor participant satisfaction (-30%)");
     }
 
     // Public perception impact
     if (outcome.publicPerception > 80) {
       multiplier *= 1.25;
-      reasoning.push('Excellent public perception (+25%)');
+      reasoning.push("Excellent public perception (+25%)");
     } else if (outcome.publicPerception < 40) {
       multiplier *= 0.75;
-      reasoning.push('Negative public perception (-25%)');
+      reasoning.push("Negative public perception (-25%)");
     }
 
     // Cultural impact change
     if (outcome.culturalImpactChange > 50) {
       multiplier *= 1.2;
-      reasoning.push('Major positive cultural impact (+20%)');
+      reasoning.push("Major positive cultural impact (+20%)");
     } else if (outcome.culturalImpactChange < -30) {
       multiplier *= 0.6;
-      reasoning.push('Significant negative cultural impact (-40%)');
+      reasoning.push("Significant negative cultural impact (-40%)");
     }
 
     return multiplier;
@@ -302,27 +317,29 @@ export class CulturalImpactCalculator {
     // Strong existing ties amplify new exchanges
     if (existingCulturalTies > 70) {
       multiplier *= 1.25;
-      reasoning.push('Strong existing cultural ties amplify impact (+25%)');
+      reasoning.push("Strong existing cultural ties amplify impact (+25%)");
     } else if (existingCulturalTies > 40) {
       multiplier *= 1.1;
-      reasoning.push('Moderate cultural ties provide synergy (+10%)');
+      reasoning.push("Moderate cultural ties provide synergy (+10%)");
     }
 
     // Certain exchange types have inherent multipliers
     const typeMultipliers: Record<string, number> = {
-      'education': 1.2, // Long-term people-to-people impact
-      'festival': 1.15, // High public visibility
-      'diplomacy': 1.25, // Direct diplomatic engagement
-      'exhibition': 1.1, // Cultural showcase
-      'arts': 1.1, // Creative collaboration
-      'technology': 1.15, // Innovation partnership
-      'cuisine': 1.05, // Accessible cultural exchange
-      'sports': 1.1 // Popular engagement
+      education: 1.2, // Long-term people-to-people impact
+      festival: 1.15, // High public visibility
+      diplomacy: 1.25, // Direct diplomatic engagement
+      exhibition: 1.1, // Cultural showcase
+      arts: 1.1, // Creative collaboration
+      technology: 1.15, // Innovation partnership
+      cuisine: 1.05, // Accessible cultural exchange
+      sports: 1.1, // Popular engagement
     };
 
     if (typeMultipliers[exchangeType]) {
       multiplier *= typeMultipliers[exchangeType]!;
-      reasoning.push(`${exchangeType.charAt(0).toUpperCase() + exchangeType.slice(1)} exchange type bonus (+${Math.round((typeMultipliers[exchangeType]! - 1) * 100)}%)`);
+      reasoning.push(
+        `${exchangeType.charAt(0).toUpperCase() + exchangeType.slice(1)} exchange type bonus (+${Math.round((typeMultipliers[exchangeType]! - 1) * 100)}%)`
+      );
     }
 
     return multiplier;
@@ -365,7 +382,7 @@ export class CulturalImpactCalculator {
     culturalImpact: number,
     reasoning: string[]
   ): RelationshipState[] {
-    const stateOrder: RelationshipState[] = ['hostile', 'tense', 'neutral', 'friendly', 'allied'];
+    const stateOrder: RelationshipState[] = ["hostile", "tense", "neutral", "friendly", "allied"];
     const currentIndex = stateOrder.indexOf(currentState);
     const potentialStates: RelationshipState[] = [currentState];
 
@@ -373,21 +390,21 @@ export class CulturalImpactCalculator {
     if (strengthDelta > 12 && culturalImpact > 70) {
       if (currentIndex < stateOrder.length - 1) {
         potentialStates.push(stateOrder[currentIndex + 1]!);
-        reasoning.push('Exceptional cultural exchange enables relationship advancement');
+        reasoning.push("Exceptional cultural exchange enables relationship advancement");
       }
     }
     // Positive outcome - slight chance of improvement
     else if (strengthDelta > 8 && culturalImpact > 55) {
       if (currentIndex < stateOrder.length - 1) {
         potentialStates.push(stateOrder[currentIndex + 1]!);
-        reasoning.push('Strong cultural ties may advance relationship');
+        reasoning.push("Strong cultural ties may advance relationship");
       }
     }
     // Negative outcome - risk of deterioration
     else if (strengthDelta < -8 && culturalImpact < 30) {
       if (currentIndex > 0) {
         potentialStates.push(stateOrder[currentIndex - 1]!);
-        reasoning.push('Failed cultural exchange risks relationship damage');
+        reasoning.push("Failed cultural exchange risks relationship damage");
       }
     }
 
@@ -422,10 +439,10 @@ export class CulturalImpactCalculator {
     outcome: CulturalExchangeOutcome,
     history: CulturalExchangeHistory,
     culturalImpact: number
-  ): RelationshipImpactResult['longTermEffects'] {
+  ): RelationshipImpactResult["longTermEffects"] {
     // Cultural ties strength builds over time
     const baseStrength = culturalImpact / 2;
-    const historyMultiplier = 1 + (history.successfulExchanges * 0.05);
+    const historyMultiplier = 1 + history.successfulExchanges * 0.05;
     const culturalTiesStrength = Math.min(100, baseStrength * historyMultiplier);
 
     // Soft power gain depends on public perception and participant count
@@ -435,25 +452,26 @@ export class CulturalImpactCalculator {
 
     // People-to-people bonds strongest for education/exchange types
     const bondMultipliers: Record<string, number> = {
-      'education': 1.4,
-      'festival': 1.2,
-      'arts': 1.15,
-      'sports': 1.2,
-      'cuisine': 1.1,
-      'exhibition': 1.05,
-      'technology': 1.1,
-      'diplomacy': 1.0
+      education: 1.4,
+      festival: 1.2,
+      arts: 1.15,
+      sports: 1.2,
+      cuisine: 1.1,
+      exhibition: 1.05,
+      technology: 1.1,
+      diplomacy: 1.0,
     };
 
     const bondMultiplier = bondMultipliers[exchange.type] || 1.0;
-    const peopleTopeopleBonds = Math.min(100,
+    const peopleTopeopleBonds = Math.min(
+      100,
       (culturalImpact * 0.6 + outcome.participantSatisfaction * 0.4) * bondMultiplier
     );
 
     return {
       culturalTiesStrength,
       softPowerGain,
-      peopleTopeopleBonds
+      peopleTopeopleBonds,
     };
   }
 
@@ -470,57 +488,60 @@ export class CulturalImpactCalculator {
     riskFactor: number;
   } {
     // Different scenarios have different risk/reward profiles
-    const scenarioProfiles: Record<CulturalScenarioType, {
-      baseRisk: number;
-      culturalWeight: number;
-      diplomaticWeight: number;
-    }> = {
-      'festival_collaboration': { baseRisk: 0.3, culturalWeight: 1.2, diplomaticWeight: 0.9 },
-      'artifact_repatriation': { baseRisk: 0.7, culturalWeight: 1.5, diplomaticWeight: 1.4 },
-      'cultural_appropriation': { baseRisk: 0.6, culturalWeight: 1.3, diplomaticWeight: 1.1 },
-      'exhibition_censorship': { baseRisk: 0.55, culturalWeight: 1.1, diplomaticWeight: 1.2 },
-      'student_visa_crisis': { baseRisk: 0.5, culturalWeight: 1.0, diplomaticWeight: 1.3 },
-      'heritage_restoration': { baseRisk: 0.35, culturalWeight: 1.4, diplomaticWeight: 1.1 },
-      'language_preservation': { baseRisk: 0.25, culturalWeight: 1.3, diplomaticWeight: 0.8 },
-      'knowledge_sharing': { baseRisk: 0.4, culturalWeight: 1.2, diplomaticWeight: 1.0 },
-      'festival_security': { baseRisk: 0.65, culturalWeight: 0.8, diplomaticWeight: 1.2 },
-      'artistic_freedom': { baseRisk: 0.75, culturalWeight: 1.1, diplomaticWeight: 1.3 }
+    const scenarioProfiles: Record<
+      CulturalScenarioType,
+      {
+        baseRisk: number;
+        culturalWeight: number;
+        diplomaticWeight: number;
+      }
+    > = {
+      festival_collaboration: { baseRisk: 0.3, culturalWeight: 1.2, diplomaticWeight: 0.9 },
+      artifact_repatriation: { baseRisk: 0.7, culturalWeight: 1.5, diplomaticWeight: 1.4 },
+      cultural_appropriation: { baseRisk: 0.6, culturalWeight: 1.3, diplomaticWeight: 1.1 },
+      exhibition_censorship: { baseRisk: 0.55, culturalWeight: 1.1, diplomaticWeight: 1.2 },
+      student_visa_crisis: { baseRisk: 0.5, culturalWeight: 1.0, diplomaticWeight: 1.3 },
+      heritage_restoration: { baseRisk: 0.35, culturalWeight: 1.4, diplomaticWeight: 1.1 },
+      language_preservation: { baseRisk: 0.25, culturalWeight: 1.3, diplomaticWeight: 0.8 },
+      knowledge_sharing: { baseRisk: 0.4, culturalWeight: 1.2, diplomaticWeight: 1.0 },
+      festival_security: { baseRisk: 0.65, culturalWeight: 0.8, diplomaticWeight: 1.2 },
+      artistic_freedom: { baseRisk: 0.75, culturalWeight: 1.1, diplomaticWeight: 1.3 },
     };
 
     const profile = scenarioProfiles[scenarioType] || {
       baseRisk: 0.5,
       culturalWeight: 1.0,
-      diplomaticWeight: 1.0
+      diplomaticWeight: 1.0,
     };
 
     // Response choice affects risk
     const responseRiskModifiers: Record<string, number> = {
       // Cooperative/diplomatic responses
-      'mediation': 0.7,
-      'negotiate': 0.8,
-      'compromise': 0.75,
-      'collaborative_redesign': 0.7,
-      'cooperative': 0.75,
-      'full_repatriation': 0.6,
-      'joint_custody': 0.7,
+      mediation: 0.7,
+      negotiate: 0.8,
+      compromise: 0.75,
+      collaborative_redesign: 0.7,
+      cooperative: 0.75,
+      full_repatriation: 0.6,
+      joint_custody: 0.7,
 
       // Assertive responses
-      'assert_dominance': 1.3,
-      'stand_firm': 1.4,
-      'counter_tariffs': 1.5,
-      'assertive': 1.2,
-      'demand_withdrawal': 1.3,
+      assert_dominance: 1.3,
+      stand_firm: 1.4,
+      counter_tariffs: 1.5,
+      assertive: 1.2,
+      demand_withdrawal: 1.3,
 
       // Cautious responses
-      'postpone': 0.9,
-      'conditional_return': 1.0,
-      'cautious': 0.85,
-      'maintain_status': 1.2,
+      postpone: 0.9,
+      conditional_return: 1.0,
+      cautious: 0.85,
+      maintain_status: 1.2,
 
       // Neutral/default
-      'pilot_program': 0.9,
-      'educational_campaign': 0.8,
-      'limited_involvement': 0.85
+      pilot_program: 0.9,
+      educational_campaign: 0.8,
+      limited_involvement: 0.85,
     };
 
     const responseModifier = responseRiskModifiers[responseChoice] || 1.0;
@@ -532,7 +553,7 @@ export class CulturalImpactCalculator {
     return {
       culturalImpactModifier: profile.culturalWeight * strengthFactor,
       diplomaticImpactModifier: profile.diplomaticWeight * strengthFactor,
-      riskFactor: finalRiskFactor
+      riskFactor: finalRiskFactor,
     };
   }
 
@@ -548,7 +569,7 @@ export class CulturalImpactCalculator {
     playerChoiceHistory?: DiplomaticChoice[] // Optional: player's diplomatic history
   ): {
     successProbability: number;
-    confidenceLevel: 'low' | 'medium' | 'high';
+    confidenceLevel: "low" | "medium" | "high";
     keyFactors: string[];
   } {
     const factors: string[] = [];
@@ -564,47 +585,51 @@ export class CulturalImpactCalculator {
       // 'culturallyActive' pattern increases success probability
       if (cumulativeEffects.historicalPatterns.culturallyActive) {
         baseProbability += 0.15;
-        factors.push('Culturally active reputation (+15%)');
+        factors.push("Culturally active reputation (+15%)");
       }
 
       // High cooperativeness improves outcomes
       if (cumulativeEffects.cooperativeness > 70) {
-        baseProbability += 0.10;
-        factors.push('High cooperativeness score (+10%)');
+        baseProbability += 0.1;
+        factors.push("High cooperativeness score (+10%)");
       }
 
       // High trust level reduces risk
       if (cumulativeEffects.trustLevel > 70) {
-        baseProbability += 0.10;
-        factors.push('Strong trust level (+10%)');
+        baseProbability += 0.1;
+        factors.push("Strong trust level (+10%)");
       }
 
       // Exchange success rate from player's history
       if (cumulativeEffects.exchangeSuccessRate > 70) {
         baseProbability += 0.12;
-        factors.push(`Proven exchange track record: ${Math.round(cumulativeEffects.exchangeSuccessRate)}% (+12%)`);
+        factors.push(
+          `Proven exchange track record: ${Math.round(cumulativeEffects.exchangeSuccessRate)}% (+12%)`
+        );
       } else if (cumulativeEffects.exchangeSuccessRate < 40) {
-        baseProbability -= 0.10;
-        factors.push(`Troubled exchange history: ${Math.round(cumulativeEffects.exchangeSuccessRate)}% (-10%)`);
+        baseProbability -= 0.1;
+        factors.push(
+          `Troubled exchange history: ${Math.round(cumulativeEffects.exchangeSuccessRate)}% (-10%)`
+        );
       }
 
       // Cultural diplomacy score bonus
       if (cumulativeEffects.culturalDiplomacyScore > 75) {
         baseProbability += 0.08;
-        factors.push('Exceptional cultural diplomacy skill (+8%)');
+        factors.push("Exceptional cultural diplomacy skill (+8%)");
       }
     }
 
     // Relationship strength impact
     if (relationshipStrength > 70) {
       baseProbability += 0.25;
-      factors.push('Strong bilateral relationship (+25%)');
+      factors.push("Strong bilateral relationship (+25%)");
     } else if (relationshipStrength > 50) {
       baseProbability += 0.15;
-      factors.push('Solid relationship (+15%)');
+      factors.push("Solid relationship (+15%)");
     } else if (relationshipStrength < 30) {
       baseProbability -= 0.15;
-      factors.push('Weak relationship (-15%)');
+      factors.push("Weak relationship (-15%)");
     }
 
     // Historical track record
@@ -623,47 +648,50 @@ export class CulturalImpactCalculator {
     // Resource commitment impact
     if (resourceCommitment > 80) {
       baseProbability += 0.15;
-      factors.push('Exceptional resource commitment (+15%)');
+      factors.push("Exceptional resource commitment (+15%)");
     } else if (resourceCommitment > 60) {
       baseProbability += 0.08;
-      factors.push('Strong resource support (+8%)');
+      factors.push("Strong resource support (+8%)");
     } else if (resourceCommitment < 40) {
-      baseProbability -= 0.10;
-      factors.push('Insufficient resources (-10%)');
+      baseProbability -= 0.1;
+      factors.push("Insufficient resources (-10%)");
     }
 
     // Exchange complexity impact
     const complexityFactors = {
-      'diplomacy': -0.05,
-      'exhibition': -0.02,
-      'technology': -0.08,
-      'education': 0.05,
-      'festival': 0.03,
-      'cuisine': 0.08,
-      'arts': 0.0,
-      'sports': 0.05
+      diplomacy: -0.05,
+      exhibition: -0.02,
+      technology: -0.08,
+      education: 0.05,
+      festival: 0.03,
+      cuisine: 0.08,
+      arts: 0.0,
+      sports: 0.05,
     };
 
-    const complexityImpact = complexityFactors[exchange.type as keyof typeof complexityFactors] || 0;
+    const complexityImpact =
+      complexityFactors[exchange.type as keyof typeof complexityFactors] || 0;
     if (Math.abs(complexityImpact) > 0.03) {
       baseProbability += complexityImpact;
-      factors.push(`Exchange type complexity (${complexityImpact > 0 ? '+' : ''}${Math.round(complexityImpact * 100)}%)`);
+      factors.push(
+        `Exchange type complexity (${complexityImpact > 0 ? "+" : ""}${Math.round(complexityImpact * 100)}%)`
+      );
     }
 
     const finalProbability = Math.max(0.1, Math.min(0.95, baseProbability));
 
     // Determine confidence level based on data quality
-    let confidenceLevel: 'low' | 'medium' | 'high' = 'medium';
+    let confidenceLevel: "low" | "medium" | "high" = "medium";
     if (history.totalExchanges >= 5 && resourceCommitment > 60) {
-      confidenceLevel = 'high';
+      confidenceLevel = "high";
     } else if (history.totalExchanges < 2 || resourceCommitment < 40) {
-      confidenceLevel = 'low';
+      confidenceLevel = "low";
     }
 
     return {
       successProbability: finalProbability,
       confidenceLevel,
-      keyFactors: factors
+      keyFactors: factors,
     };
   }
 }

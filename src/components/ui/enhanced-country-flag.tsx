@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '~/lib/utils';
-import { useCountryFlag } from '~/hooks/useCountryFlags';
-import { Globe, AlertCircle } from 'lucide-react';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "~/lib/utils";
+import { useCountryFlag } from "~/hooks/useCountryFlags";
+import { Globe, AlertCircle } from "lucide-react";
 
 interface EnhancedCountryFlagProps {
   countryName: string;
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  size?: "xs" | "sm" | "md" | "lg" | "xl" | "full";
   showName?: boolean;
   className?: string;
   hoverBlur?: boolean;
@@ -18,31 +18,31 @@ interface EnhancedCountryFlagProps {
 }
 
 const sizeClasses = {
-  xs: 'w-4 h-3',
-  sm: 'w-6 h-4',
-  md: 'w-8 h-6',
-  lg: 'w-12 h-8',
-  xl: 'w-16 h-12',
-  full: 'w-full h-full' // Added full size
+  xs: "w-4 h-3",
+  sm: "w-6 h-4",
+  md: "w-8 h-6",
+  lg: "w-12 h-8",
+  xl: "w-16 h-12",
+  full: "w-full h-full", // Added full size
 };
 
 const textSizes = {
-  xs: 'text-xs',
-  sm: 'text-sm',
-  md: 'text-base',
-  lg: 'text-lg',
-  xl: 'text-xl'
+  xs: "text-xs",
+  sm: "text-sm",
+  md: "text-base",
+  lg: "text-lg",
+  xl: "text-xl",
 };
 
 export function EnhancedCountryFlag({
   countryName,
-  size = 'md',
+  size = "md",
   showName = false,
   className,
   hoverBlur = true,
   rounded = false,
   fallbackIcon: FallbackIcon = Globe,
-  priority = false
+  priority = false,
 }: EnhancedCountryFlagProps) {
   const { flag, loading, error } = useCountryFlag(countryName);
   const [imageError, setImageError] = useState(false);
@@ -51,24 +51,33 @@ export function EnhancedCountryFlag({
   const renderFlagImage = () => {
     if (loading) {
       return (
-        <div className={cn(
-          'flex items-center justify-center',
-          'bg-gradient-to-br from-[var(--color-bg-secondary)]/50 to-[var(--color-bg-tertiary)]/30',
-          'border border-[var(--color-border-primary)]',
-          sizeClasses[size as keyof typeof sizeClasses],
-          rounded ? 'rounded-full' : 'rounded'
-        )}>
+        <div
+          className={cn(
+            "flex items-center justify-center",
+            "bg-gradient-to-br from-[var(--color-bg-secondary)]/50 to-[var(--color-bg-tertiary)]/30",
+            "border border-[var(--color-border-primary)]",
+            sizeClasses[size as keyof typeof sizeClasses],
+            rounded ? "rounded-full" : "rounded"
+          )}
+        >
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           >
-            <Globe className={cn(
-              'text-[var(--color-text-muted)]',
-              size === 'xs' ? 'h-2 w-2' :
-              size === 'sm' ? 'h-3 w-3' :
-              size === 'md' ? 'h-4 w-4' :
-              size === 'lg' ? 'h-6 w-6' : 'h-8 w-8'
-            )} />
+            <Globe
+              className={cn(
+                "text-[var(--color-text-muted)]",
+                size === "xs"
+                  ? "h-2 w-2"
+                  : size === "sm"
+                    ? "h-3 w-3"
+                    : size === "md"
+                      ? "h-4 w-4"
+                      : size === "lg"
+                        ? "h-6 w-6"
+                        : "h-8 w-8"
+              )}
+            />
           </motion.div>
         </div>
       );
@@ -76,20 +85,29 @@ export function EnhancedCountryFlag({
 
     if (error || imageError || !flag?.flagUrl) {
       return (
-        <div className={cn(
-          'flex items-center justify-center',
-          'bg-gradient-to-br from-[var(--color-bg-secondary)]/50 to-[var(--color-bg-tertiary)]/30',
-          'border border-[var(--color-border-primary)]',
-          sizeClasses[size as keyof typeof sizeClasses],
-          rounded ? 'rounded-full' : 'rounded'
-        )}>
-          <FallbackIcon className={cn(
-            'text-[var(--color-text-muted)]',
-            size === 'xs' ? 'h-2 w-2' :
-            size === 'sm' ? 'h-3 w-3' :
-            size === 'md' ? 'h-4 w-4' :
-            size === 'lg' ? 'h-6 w-6' : 'h-8 w-8'
-          )} />
+        <div
+          className={cn(
+            "flex items-center justify-center",
+            "bg-gradient-to-br from-[var(--color-bg-secondary)]/50 to-[var(--color-bg-tertiary)]/30",
+            "border border-[var(--color-border-primary)]",
+            sizeClasses[size as keyof typeof sizeClasses],
+            rounded ? "rounded-full" : "rounded"
+          )}
+        >
+          <FallbackIcon
+            className={cn(
+              "text-[var(--color-text-muted)]",
+              size === "xs"
+                ? "h-2 w-2"
+                : size === "sm"
+                  ? "h-3 w-3"
+                  : size === "md"
+                    ? "h-4 w-4"
+                    : size === "lg"
+                      ? "h-6 w-6"
+                      : "h-8 w-8"
+            )}
+          />
         </div>
       );
     }
@@ -97,10 +115,10 @@ export function EnhancedCountryFlag({
     return (
       <motion.div
         className={cn(
-          'relative overflow-hidden',
+          "relative overflow-hidden",
           sizeClasses[size as keyof typeof sizeClasses],
-          rounded ? 'rounded-full' : 'rounded',
-          'border border-[var(--color-border-primary)]'
+          rounded ? "rounded-full" : "rounded",
+          "border border-[var(--color-border-primary)]"
         )}
         onHoverStart={() => setIsHovered(true)}
         onHoverEnd={() => setIsHovered(false)}
@@ -110,11 +128,11 @@ export function EnhancedCountryFlag({
         <img
           src={flag.flagUrl}
           alt={`Flag of ${countryName}`}
-          className="w-full h-full object-fill"
+          className="h-full w-full object-fill"
           onError={() => setImageError(true)}
           loading={priority ? "eager" : "lazy"}
         />
-        
+
         {/* Hover blur effect */}
         <AnimatePresence>
           {hoverBlur && isHovered && (
@@ -123,15 +141,15 @@ export function EnhancedCountryFlag({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className={cn(
-                'absolute inset-0',
-                'bg-[var(--color-warning)]/20',
-                'backdrop-blur-sm',
-                rounded ? 'rounded-full' : 'rounded',
-                'border border-[var(--color-warning)]/30'
+                "absolute inset-0",
+                "bg-[var(--color-warning)]/20",
+                "backdrop-blur-sm",
+                rounded ? "rounded-full" : "rounded",
+                "border border-[var(--color-warning)]/30"
               )}
               style={{
-                backdropFilter: 'blur(2px)',
-                WebkitBackdropFilter: 'blur(2px)'
+                backdropFilter: "blur(2px)",
+                WebkitBackdropFilter: "blur(2px)",
               }}
             />
           )}
@@ -139,11 +157,13 @@ export function EnhancedCountryFlag({
 
         {/* Source indicator */}
         {flag?.source && (
-          <div className="absolute bottom-0 right-0 transform translate-x-1 translate-y-1">
-            <div className={cn(
-              'w-2 h-2 rounded-full border border-white/50',
-              flag.source === 'wikimedia' ? 'bg-green-500' : 'bg-gray-500'
-            )} />
+          <div className="absolute right-0 bottom-0 translate-x-1 translate-y-1 transform">
+            <div
+              className={cn(
+                "h-2 w-2 rounded-full border border-white/50",
+                flag.source === "wikimedia" ? "bg-green-500" : "bg-gray-500"
+              )}
+            />
           </div>
         )}
       </motion.div>
@@ -152,13 +172,15 @@ export function EnhancedCountryFlag({
 
   if (showName) {
     return (
-      <div className={cn('flex items-center gap-3', className)}>
+      <div className={cn("flex items-center gap-3", className)}>
         {renderFlagImage()}
-        <div className="flex flex-col min-w-0">
-          <span className={cn(
-            'font-medium text-[var(--color-text-primary)] truncate',
-            textSizes[size as keyof typeof textSizes] || 'text-xl'
-          )}>
+        <div className="flex min-w-0 flex-col">
+          <span
+            className={cn(
+              "truncate font-medium text-[var(--color-text-primary)]",
+              textSizes[size as keyof typeof textSizes] || "text-xl"
+            )}
+          >
             {countryName}
           </span>
           {flag?.error && (
@@ -172,9 +194,5 @@ export function EnhancedCountryFlag({
     );
   }
 
-  return (
-    <div className={className}>
-      {renderFlagImage()}
-    </div>
-  );
+  return <div className={className}>{renderFlagImage()}</div>;
 }

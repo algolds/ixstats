@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { unifiedFlagService } from '~/lib/unified-flag-service';
+import React, { useState, useEffect } from "react";
+import { unifiedFlagService } from "~/lib/unified-flag-service";
 
 const CountryFlag = ({
   countryCode,
@@ -20,7 +20,7 @@ const CountryFlag = ({
     const loadFlag = async () => {
       setIsLoading(true);
       setHasError(false);
-      
+
       try {
         // Use countryName for flag lookup, fallback to countryCode if needed
         const url = await unifiedFlagService.getFlagUrl(countryName || countryCode);
@@ -44,13 +44,17 @@ const CountryFlag = ({
 
   if (isLoading) {
     return (
-      <div className={`h-6 w-8 bg-gray-200 dark:bg-gray-700 rounded-sm animate-pulse ${className ?? ''}`} />
+      <div
+        className={`h-6 w-8 animate-pulse rounded-sm bg-gray-200 dark:bg-gray-700 ${className ?? ""}`}
+      />
     );
   }
 
   if (hasError || !flagUrl) {
     return (
-      <div className={`h-6 w-8 bg-gray-200 dark:bg-gray-700 rounded-sm flex items-center justify-center ${className ?? ''}`}>
+      <div
+        className={`flex h-6 w-8 items-center justify-center rounded-sm bg-gray-200 dark:bg-gray-700 ${className ?? ""}`}
+      >
         <span className="text-xs text-gray-500">🏴</span>
       </div>
     );
@@ -60,7 +64,7 @@ const CountryFlag = ({
     <img
       src={flagUrl}
       alt={`Flag of ${countryName}`}
-      className={`h-6 w-8 object-cover rounded-sm border border-gray-200 dark:border-gray-700 ${className ?? ''}`}
+      className={`h-6 w-8 rounded-sm border border-gray-200 object-cover dark:border-gray-700 ${className ?? ""}`}
       onError={handleError}
     />
   );

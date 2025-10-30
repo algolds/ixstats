@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { api } from '~/trpc/react';
-import type { NationalIdentityData } from '~/app/builder/lib/economy-data-service';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { api } from "~/trpc/react";
+import type { NationalIdentityData } from "~/app/builder/lib/economy-data-service";
 
 interface AutoSyncOptions {
   enabled?: boolean;
@@ -23,7 +23,7 @@ interface AutoSyncState {
 
 /**
  * Auto-sync hook for National Identity data
- * 
+ *
  * Provides debounced autosave functionality for national identity fields
  * with conflict detection and error handling.
  */
@@ -55,7 +55,7 @@ export function useNationalIdentityAutoSync(
   // API mutations
   const autosaveMutation = api.nationalIdentity.autosave.useMutation({
     onSuccess: () => {
-      setSyncState(prev => ({
+      setSyncState((prev) => ({
         ...prev,
         isSyncing: false,
         lastSyncTime: new Date(),
@@ -65,7 +65,7 @@ export function useNationalIdentityAutoSync(
       onSyncSuccess?.();
     },
     onError: (error) => {
-      setSyncState(prev => ({
+      setSyncState((prev) => ({
         ...prev,
         isSyncing: false,
         syncError: error.message,
@@ -79,15 +79,15 @@ export function useNationalIdentityAutoSync(
     if (!enabled || !countryId) return;
 
     const hasChanges = JSON.stringify(nationalIdentity) !== JSON.stringify(previousDataRef.current);
-    
+
     if (hasChanges) {
-      setSyncState(prev => ({ ...prev, pendingChanges: true }));
-      
+      setSyncState((prev) => ({ ...prev, pendingChanges: true }));
+
       // Clear existing timer
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
-      
+
       // Set new timer
       debounceTimerRef.current = setTimeout(() => {
         handleAutoSync();
@@ -108,7 +108,7 @@ export function useNationalIdentityAutoSync(
   const handleAutoSync = useCallback(async () => {
     if (!countryId || !enabled) return;
 
-    setSyncState(prev => ({ ...prev, isSyncing: true }));
+    setSyncState((prev) => ({ ...prev, isSyncing: true }));
 
     try {
       await autosaveMutation.mutateAsync({
@@ -117,7 +117,7 @@ export function useNationalIdentityAutoSync(
       });
     } catch (error) {
       // Error handling is done in the mutation's onError callback
-      console.warn('National identity autosave failed:', error);
+      console.warn("National identity autosave failed:", error);
     }
   }, [countryId, enabled, nationalIdentity, autosaveMutation]);
 
@@ -131,7 +131,7 @@ export function useNationalIdentityAutoSync(
 
   // Clear conflicts
   const clearConflicts = useCallback(() => {
-    setSyncState(prev => ({
+    setSyncState((prev) => ({
       ...prev,
       conflictWarnings: [],
       syncError: null,

@@ -3,13 +3,13 @@
  * Run with: npx tsx scripts/recalculate-vitality-scores.ts
  */
 
-import { PrismaClient } from '@prisma/client';
-import { calculateAllVitalityScores } from '../src/lib/vitality-calculator';
+import { PrismaClient } from "@prisma/client";
+import { calculateAllVitalityScores } from "../src/lib/vitality-calculator";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Starting vitality scores recalculation...\n');
+  console.log("Starting vitality scores recalculation...\n");
 
   const countries = await prisma.country.findMany({
     select: {
@@ -40,7 +40,7 @@ async function main() {
       politicalStability: true,
       infrastructureRating: true,
       budgetDeficitSurplus: true,
-    }
+    },
   });
 
   console.log(`Found ${countries.length} countries to process\n`);
@@ -60,13 +60,17 @@ async function main() {
           diplomaticStanding: scores.diplomaticStanding,
           governmentalEfficiency: scores.governmentalEfficiency,
           overallNationalHealth: scores.overallNationalHealth,
-        }
+        },
       });
 
-      console.log(`✓ ${country.name.padEnd(30)} | Economic: ${scores.economicVitality.toFixed(1)}% | Population: ${scores.populationWellbeing.toFixed(1)}% | Diplomatic: ${scores.diplomaticStanding.toFixed(1)}% | Government: ${scores.governmentalEfficiency.toFixed(1)}% | Overall: ${scores.overallNationalHealth.toFixed(1)}%`);
+      console.log(
+        `✓ ${country.name.padEnd(30)} | Economic: ${scores.economicVitality.toFixed(1)}% | Population: ${scores.populationWellbeing.toFixed(1)}% | Diplomatic: ${scores.diplomaticStanding.toFixed(1)}% | Government: ${scores.governmentalEfficiency.toFixed(1)}% | Overall: ${scores.overallNationalHealth.toFixed(1)}%`
+      );
       updated++;
     } catch (error) {
-      console.error(`✗ ${country.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error(
+        `✗ ${country.name}: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
       errors++;
     }
   }
@@ -82,7 +86,7 @@ main()
     await prisma.$disconnect();
   })
   .catch(async (e) => {
-    console.error('Fatal error:', e);
+    console.error("Fatal error:", e);
     await prisma.$disconnect();
     process.exit(1);
   });

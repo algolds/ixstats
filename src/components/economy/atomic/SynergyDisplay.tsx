@@ -5,13 +5,13 @@
  * Optimized with React.memo for performance.
  */
 
-'use client';
+"use client";
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Zap, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
-import { ATOMIC_ECONOMIC_COMPONENTS, type EconomicComponentType } from '~/lib/atomic-economic-data';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Zap, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
+import { ATOMIC_ECONOMIC_COMPONENTS, type EconomicComponentType } from "~/lib/atomic-economic-data";
 
 export interface SynergyDisplayProps {
   synergies: Array<{
@@ -32,11 +32,7 @@ export interface SynergyDisplayProps {
 /**
  * Synergy Display Component
  */
-function SynergyDisplayComponent({
-  synergies,
-  conflicts,
-  components
-}: SynergyDisplayProps) {
+function SynergyDisplayComponent({ synergies, conflicts, components }: SynergyDisplayProps) {
   if (components.length === 0) {
     return null;
   }
@@ -49,12 +45,12 @@ function SynergyDisplayComponent({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Zap className="w-5 h-5" />
+            <Zap className="h-5 w-5" />
             Synergies & Conflicts
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-gray-500 text-center py-4">
+          <p className="py-4 text-center text-sm text-gray-500">
             No synergies or conflicts detected. Add more components to discover interactions.
           </p>
         </CardContent>
@@ -66,7 +62,7 @@ function SynergyDisplayComponent({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Zap className="w-5 h-5" />
+          <Zap className="h-5 w-5" />
           Synergies & Conflicts
         </CardTitle>
       </CardHeader>
@@ -75,10 +71,8 @@ function SynergyDisplayComponent({
         {hasSynergies && (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-emerald-600" />
-              <h4 className="font-semibold text-sm">
-                Synergies ({synergies.length})
-              </h4>
+              <TrendingUp className="h-4 w-4 text-emerald-600" />
+              <h4 className="text-sm font-semibold">Synergies ({synergies.length})</h4>
             </div>
             <div className="space-y-2">
               {synergies.map((synergy, index) => {
@@ -88,25 +82,19 @@ function SynergyDisplayComponent({
                 return (
                   <div
                     key={index}
-                    className="p-3 rounded-lg bg-emerald-50 border border-emerald-200"
+                    className="rounded-lg border border-emerald-200 bg-emerald-50 p-3"
                   >
-                    <div className="flex items-center justify-between mb-1">
+                    <div className="mb-1 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-emerald-900">
-                          {comp1?.name}
-                        </span>
+                        <span className="text-sm font-medium text-emerald-900">{comp1?.name}</span>
                         <span className="text-emerald-600">+</span>
-                        <span className="text-sm font-medium text-emerald-900">
-                          {comp2?.name}
-                        </span>
+                        <span className="text-sm font-medium text-emerald-900">{comp2?.name}</span>
                       </div>
                       <Badge variant="default" className="bg-emerald-600">
                         +{synergy.bonus}
                       </Badge>
                     </div>
-                    <p className="text-xs text-emerald-700">
-                      {synergy.description}
-                    </p>
+                    <p className="text-xs text-emerald-700">{synergy.description}</p>
                   </div>
                 );
               })}
@@ -118,10 +106,8 @@ function SynergyDisplayComponent({
         {hasConflicts && (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <TrendingDown className="w-4 h-4 text-red-600" />
-              <h4 className="font-semibold text-sm">
-                Conflicts ({conflicts.length})
-              </h4>
+              <TrendingDown className="h-4 w-4 text-red-600" />
+              <h4 className="text-sm font-semibold">Conflicts ({conflicts.length})</h4>
             </div>
             <div className="space-y-2">
               {conflicts.map((conflict, index) => {
@@ -129,28 +115,17 @@ function SynergyDisplayComponent({
                 const comp2 = ATOMIC_ECONOMIC_COMPONENTS[conflict.component2];
 
                 return (
-                  <div
-                    key={index}
-                    className="p-3 rounded-lg bg-red-50 border border-red-200"
-                  >
-                    <div className="flex items-center justify-between mb-1">
+                  <div key={index} className="rounded-lg border border-red-200 bg-red-50 p-3">
+                    <div className="mb-1 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4 text-red-600" />
-                        <span className="text-sm font-medium text-red-900">
-                          {comp1?.name}
-                        </span>
+                        <AlertTriangle className="h-4 w-4 text-red-600" />
+                        <span className="text-sm font-medium text-red-900">{comp1?.name}</span>
                         <span className="text-red-600">×</span>
-                        <span className="text-sm font-medium text-red-900">
-                          {comp2?.name}
-                        </span>
+                        <span className="text-sm font-medium text-red-900">{comp2?.name}</span>
                       </div>
-                      <Badge variant="destructive">
-                        -{conflict.penalty}
-                      </Badge>
+                      <Badge variant="destructive">-{conflict.penalty}</Badge>
                     </div>
-                    <p className="text-xs text-red-700">
-                      {conflict.description}
-                    </p>
+                    <p className="text-xs text-red-700">{conflict.description}</p>
                   </div>
                 );
               })}

@@ -1,17 +1,9 @@
 "use client";
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '~/lib/utils';
-import { 
-  ChevronDown, 
-  Crown, 
-  Settings, 
-  TrendingUp, 
-  MapPin, 
-  Users, 
-  Building2 
-} from 'lucide-react';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "~/lib/utils";
+import { ChevronDown, Crown, Settings, TrendingUp, MapPin, Users, Building2 } from "lucide-react";
 
 interface RadialMenuItem {
   id: string;
@@ -29,52 +21,52 @@ interface RadialContextMenuProps {
 
 const defaultItems: RadialMenuItem[] = [
   {
-    id: 'profile',
+    id: "profile",
     icon: <Crown className="h-4 w-4" />,
-    label: 'Country Profile',
-    href: '/mycountry',
-    color: 'text-yellow-400'
+    label: "Country Profile",
+    href: "/mycountry",
+    color: "text-yellow-400",
   },
   {
-    id: 'policies',
+    id: "policies",
     icon: <Settings className="h-4 w-4" />,
-    label: 'Policy Control',
-    onClick: () => console.log('Policy Control'),
-    color: 'text-blue-400'
+    label: "Policy Control",
+    onClick: () => console.log("Policy Control"),
+    color: "text-blue-400",
   },
   {
-    id: 'economics',
+    id: "economics",
     icon: <TrendingUp className="h-4 w-4" />,
-    label: 'Economic Data',
-    href: '/analytics',
-    color: 'text-green-400'
+    label: "Economic Data",
+    href: "/analytics",
+    color: "text-green-400",
   },
   {
-    id: 'geography',
+    id: "geography",
     icon: <MapPin className="h-4 w-4" />,
-    label: 'Geographic Stats',
-    onClick: () => console.log('Geographic Stats'),
-    color: 'text-purple-400'
+    label: "Geographic Stats",
+    onClick: () => console.log("Geographic Stats"),
+    color: "text-purple-400",
   },
   {
-    id: 'demographics',
+    id: "demographics",
     icon: <Users className="h-4 w-4" />,
-    label: 'Demographics',
-    onClick: () => console.log('Demographics'),
-    color: 'text-pink-400'
+    label: "Demographics",
+    onClick: () => console.log("Demographics"),
+    color: "text-pink-400",
   },
   {
-    id: 'infrastructure',
+    id: "infrastructure",
     icon: <Building2 className="h-4 w-4" />,
-    label: 'Infrastructure',
-    onClick: () => console.log('Infrastructure'),
-    color: 'text-orange-400'
-  }
+    label: "Infrastructure",
+    onClick: () => console.log("Infrastructure"),
+    color: "text-orange-400",
+  },
 ];
 
-export const RadialContextMenu: React.FC<RadialContextMenuProps> = ({ 
-  className, 
-  items = defaultItems 
+export const RadialContextMenu: React.FC<RadialContextMenuProps> = ({
+  className,
+  items = defaultItems,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -82,7 +74,7 @@ export const RadialContextMenu: React.FC<RadialContextMenuProps> = ({
     if (item.onClick) {
       item.onClick();
     } else if (item.href) {
-      window.open(item.href, '_blank');
+      window.open(item.href, "_blank");
     }
     setIsOpen(false);
   };
@@ -93,7 +85,7 @@ export const RadialContextMenu: React.FC<RadialContextMenuProps> = ({
 
   const getItemPosition = (index: number, total: number) => {
     // Start from top (-90 degrees) and distribute evenly around the circle
-    const angle = (-Math.PI / 2) + (index * (2 * Math.PI)) / total;
+    const angle = -Math.PI / 2 + (index * (2 * Math.PI)) / total;
     return {
       x: centerX + radius * Math.cos(angle),
       y: centerY + radius * Math.sin(angle),
@@ -104,17 +96,17 @@ export const RadialContextMenu: React.FC<RadialContextMenuProps> = ({
     <div className={cn("relative", className)}>
       {/* Center Button */}
       <motion.button
-        className="p-3 rounded-full glass-hierarchy-interactive glass-refraction transition-all duration-200 relative z-10"
+        className="glass-hierarchy-interactive glass-refraction relative z-10 rounded-full p-3 transition-all duration-200"
         onClick={() => setIsOpen(!isOpen)}
         whileHover={{ scale: 1.05, y: -2 }}
         whileTap={{ scale: 0.95 }}
-        animate={{ 
+        animate={{
           rotate: isOpen ? 45 : 0,
-          scale: isOpen ? 1.1 : 1
+          scale: isOpen ? 1.1 : 1,
         }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
       >
-        <ChevronDown className="h-5 w-5 text-foreground" />
+        <ChevronDown className="text-foreground h-5 w-5" />
       </motion.button>
 
       {/* Radial Menu Items */}
@@ -123,65 +115,65 @@ export const RadialContextMenu: React.FC<RadialContextMenuProps> = ({
           <>
             {/* Backdrop */}
             <motion.div
-              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[5]"
+              className="fixed inset-0 z-[5] bg-black/20 backdrop-blur-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
             />
-            
+
             {/* Menu Items */}
-            <div className="absolute inset-0 pointer-events-none z-[6]">
+            <div className="pointer-events-none absolute inset-0 z-[6]">
               {items.map((item, index) => {
                 const position = getItemPosition(index, items.length);
-                
+
                 return (
                   <motion.button
                     key={item.id}
-                    className="absolute glass-hierarchy-interactive glass-refraction rounded-full p-3 pointer-events-auto group hover:scale-110 transition-all duration-200"
+                    className="glass-hierarchy-interactive glass-refraction group pointer-events-auto absolute rounded-full p-3 transition-all duration-200 hover:scale-110"
                     style={{
                       left: `calc(50% + ${position.x}px)`,
                       top: `calc(50% + ${position.y}px)`,
-                      transform: 'translate(-50%, -50%)',
+                      transform: "translate(-50%, -50%)",
                     }}
-                    initial={{ 
-                      scale: 0, 
+                    initial={{
+                      scale: 0,
                       opacity: 0,
                       x: 0,
-                      y: 0
+                      y: 0,
                     }}
-                    animate={{ 
-                      scale: 1, 
+                    animate={{
+                      scale: 1,
                       opacity: 1,
                       x: position.x,
-                      y: position.y
+                      y: position.y,
                     }}
-                    exit={{ 
-                      scale: 0, 
+                    exit={{
+                      scale: 0,
                       opacity: 0,
                       x: 0,
-                      y: 0
+                      y: 0,
                     }}
                     transition={{
                       type: "spring",
                       stiffness: 300,
                       damping: 25,
-                      delay: index * 0.05
+                      delay: index * 0.05,
                     }}
                     onClick={() => handleItemClick(item)}
-                    whileHover={{ 
+                    whileHover={{
                       scale: 1.2,
-                      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)"
+                      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
                     }}
                     whileTap={{ scale: 0.9 }}
                   >
                     <div className={cn("transition-colors duration-200", item.color)}>
                       {item.icon}
                     </div>
-                    
+
                     {/* Tooltip */}
                     <motion.div
-                      className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-black/80 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+                      className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 transform rounded bg-black/80 px-2 py-1 text-xs whitespace-nowrap text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100"
                       initial={{ opacity: 0, y: 10 }}
                       whileHover={{ opacity: 1, y: 0 }}
                     >

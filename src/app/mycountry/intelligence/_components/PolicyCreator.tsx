@@ -18,8 +18,8 @@
  * - Cost-benefit analysis
  */
 
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2,
   TrendingUp,
@@ -36,35 +36,38 @@ import {
   Info,
   Target,
   Activity,
-  X
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
-import { Textarea } from '~/components/ui/textarea';
-import { Badge } from '~/components/ui/badge';
-import { Progress } from '~/components/ui/progress';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { Slider } from '~/components/ui/slider';
-import { Switch } from '~/components/ui/switch';
-import { LoadingState } from '~/components/shared/feedback';
-import { ATOMIC_COMPONENTS, type ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
-import { usePolicyCreator } from '~/hooks/usePolicyCreator';
+  X,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
+import { Badge } from "~/components/ui/badge";
+import { Progress } from "~/components/ui/progress";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Slider } from "~/components/ui/slider";
+import { Switch } from "~/components/ui/switch";
+import { LoadingState } from "~/components/shared/feedback";
+import {
+  ATOMIC_COMPONENTS,
+  type ComponentType,
+} from "~/components/government/atoms/AtomicGovernmentComponents";
+import { usePolicyCreator } from "~/hooks/usePolicyCreator";
 import {
   POLICY_TEMPLATES,
   POLICY_TYPE_CONFIG,
   type PolicyType,
-  type PolicyPriority
-} from '~/lib/policy-templates';
+  type PolicyPriority,
+} from "~/lib/policy-templates";
 
 // Step definitions
 const STEPS = [
-  { id: 1, title: 'Policy Type', icon: FileText },
-  { id: 2, title: 'Department', icon: Building2 },
-  { id: 3, title: 'Impact Configuration', icon: TrendingUp },
-  { id: 4, title: 'Timeline', icon: Calendar },
-  { id: 5, title: 'Review', icon: CheckCircle }
+  { id: 1, title: "Policy Type", icon: FileText },
+  { id: 2, title: "Department", icon: Building2 },
+  { id: 3, title: "Impact Configuration", icon: TrendingUp },
+  { id: 4, title: "Timeline", icon: Calendar },
+  { id: 5, title: "Review", icon: CheckCircle },
 ] as const;
 
 interface PolicyCreatorProps {
@@ -80,14 +83,14 @@ export function PolicyCreator({
   userId,
   onComplete,
   onCancel,
-  initialDraft
+  initialDraft,
 }: PolicyCreatorProps) {
   // Use policy creator hook for all state and logic
   const policy = usePolicyCreator({
     countryId,
     userId,
     onSuccess: onComplete,
-    initialDraft
+    initialDraft,
   });
 
   // Render step content
@@ -98,12 +101,12 @@ export function PolicyCreator({
           <div className="space-y-6">
             {/* Policy Templates */}
             <div className="space-y-3">
-              <Label className="text-base font-semibold flex items-center gap-2">
+              <Label className="flex items-center gap-2 text-base font-semibold">
                 <Sparkles className="h-4 w-4 text-yellow-600" />
                 Quick Start Templates
               </Label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {POLICY_TEMPLATES.map(template => {
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {POLICY_TEMPLATES.map((template) => {
                   const config = POLICY_TYPE_CONFIG[template.policyType];
                   const Icon = config.icon;
 
@@ -114,17 +117,17 @@ export function PolicyCreator({
                       whileTap={{ scale: 0.98 }}
                     >
                       <Card
-                        className="cursor-pointer hover:shadow-md transition-all border-2 hover:border-primary"
+                        className="hover:border-primary cursor-pointer border-2 transition-all hover:shadow-md"
                         onClick={() => policy.applyTemplate(template)}
                       >
                         <CardContent className="p-4">
                           <div className="flex items-start gap-3">
-                            <div className={`p-2 rounded-lg ${config.bg}`}>
+                            <div className={`rounded-lg p-2 ${config.bg}`}>
                               <Icon className={`h-5 w-5 ${config.color}`} />
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-sm mb-1">{template.name}</h4>
-                              <p className="text-xs text-muted-foreground line-clamp-2">
+                            <div className="min-w-0 flex-1">
+                              <h4 className="mb-1 text-sm font-semibold">{template.name}</h4>
+                              <p className="text-muted-foreground line-clamp-2 text-xs">
                                 {template.description}
                               </p>
                             </div>
@@ -142,27 +145,23 @@ export function PolicyCreator({
               <Label htmlFor="policyType" className="text-base font-semibold">
                 Policy Type *
               </Label>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                {(Object.keys(POLICY_TYPE_CONFIG) as PolicyType[]).map(type => {
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+                {(Object.keys(POLICY_TYPE_CONFIG) as PolicyType[]).map((type) => {
                   const config = POLICY_TYPE_CONFIG[type];
                   const Icon = config.icon;
                   const isSelected = policy.formData.policyType === type;
 
                   return (
-                    <motion.div
-                      key={type}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
+                    <motion.div key={type} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                       <div
-                        className={`p-4 rounded-lg border-2 cursor-pointer transition-all text-center ${
+                        className={`cursor-pointer rounded-lg border-2 p-4 text-center transition-all ${
                           isSelected
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-primary/50'
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/50"
                         }`}
-                        onClick={() => policy.updateField('policyType', type)}
+                        onClick={() => policy.updateField("policyType", type)}
                       >
-                        <Icon className={`h-6 w-6 mx-auto mb-2 ${config.color}`} />
+                        <Icon className={`mx-auto mb-2 h-6 w-6 ${config.color}`} />
                         <p className="text-xs font-medium capitalize">{type}</p>
                       </div>
                     </motion.div>
@@ -179,7 +178,7 @@ export function PolicyCreator({
               <Input
                 id="name"
                 value={policy.formData.name}
-                onChange={(e) => policy.updateField('name', e.target.value)}
+                onChange={(e) => policy.updateField("name", e.target.value)}
                 placeholder="Enter a clear, descriptive policy name"
                 className="text-base"
               />
@@ -193,7 +192,7 @@ export function PolicyCreator({
               <Textarea
                 id="description"
                 value={policy.formData.description}
-                onChange={(e) => policy.updateField('description', e.target.value)}
+                onChange={(e) => policy.updateField("description", e.target.value)}
                 placeholder="Describe the policy's goals, scope, and expected outcomes"
                 rows={4}
                 className="text-base"
@@ -208,7 +207,7 @@ export function PolicyCreator({
               <Input
                 id="category"
                 value={policy.formData.category}
-                onChange={(e) => policy.updateField('category', e.target.value)}
+                onChange={(e) => policy.updateField("category", e.target.value)}
                 placeholder="e.g., healthcare, education, defense"
                 className="text-base"
               />
@@ -222,8 +221,8 @@ export function PolicyCreator({
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>
-                Select a government department and atomic components that will implement this policy.
-                This helps calculate effectiveness and synergy effects.
+                Select a government department and atomic components that will implement this
+                policy. This helps calculate effectiveness and synergy effects.
               </AlertDescription>
             </Alert>
 
@@ -231,28 +230,28 @@ export function PolicyCreator({
             {policy.governmentData?.departments && policy.governmentData.departments.length > 0 && (
               <div className="space-y-3">
                 <Label className="text-base font-semibold">Implementing Department</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   {policy.governmentData.departments.map((dept: any, index: number) => (
                     <Card
                       key={index}
-                      className={`cursor-pointer hover:shadow-md transition-all border-2 ${
+                      className={`cursor-pointer border-2 transition-all hover:shadow-md ${
                         policy.formData.selectedDepartment === index.toString()
-                          ? 'border-primary bg-primary/5'
-                          : 'border-border'
+                          ? "border-primary bg-primary/5"
+                          : "border-border"
                       }`}
-                      onClick={() => policy.updateField('selectedDepartment', index.toString())}
+                      onClick={() => policy.updateField("selectedDepartment", index.toString())}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-primary/10">
-                            <Building2 className="h-5 w-5 text-primary" />
+                          <div className="bg-primary/10 rounded-lg p-2">
+                            <Building2 className="text-primary h-5 w-5" />
                           </div>
                           <div className="flex-1">
                             <h4 className="font-semibold">{dept.name}</h4>
-                            <p className="text-xs text-muted-foreground">{dept.description}</p>
+                            <p className="text-muted-foreground text-xs">{dept.description}</p>
                           </div>
                           {policy.formData.selectedDepartment === index.toString() && (
-                            <CheckCircle className="h-5 w-5 text-primary" />
+                            <CheckCircle className="text-primary h-5 w-5" />
                           )}
                         </div>
                       </CardContent>
@@ -270,49 +269,47 @@ export function PolicyCreator({
                   {policy.formData.selectedComponents.length} selected
                 </Badge>
               </Label>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Select components that influence or are affected by this policy
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto p-1">
+              <div className="grid max-h-96 grid-cols-1 gap-3 overflow-y-auto p-1 md:grid-cols-2">
                 {Object.entries(ATOMIC_COMPONENTS)
                   .slice(0, 20)
                   .map(([key, component]) => {
                     if (!component) return null;
-                    const isSelected = policy.formData.selectedComponents.includes(key as ComponentType);
+                    const isSelected = policy.formData.selectedComponents.includes(
+                      key as ComponentType
+                    );
 
                     return (
                       <Card
                         key={key}
-                        className={`cursor-pointer hover:shadow-sm transition-all border ${
-                          isSelected
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border'
+                        className={`cursor-pointer border transition-all hover:shadow-sm ${
+                          isSelected ? "border-primary bg-primary/5" : "border-border"
                         }`}
                         onClick={() => {
                           policy.updateField(
-                            'selectedComponents',
+                            "selectedComponents",
                             isSelected
-                              ? policy.formData.selectedComponents.filter(c => c !== key)
+                              ? policy.formData.selectedComponents.filter((c) => c !== key)
                               : [...policy.formData.selectedComponents, key as ComponentType]
                           );
                         }}
                       >
                         <CardContent className="p-3">
                           <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <h5 className="font-medium text-sm mb-1">{component.name}</h5>
-                              <p className="text-xs text-muted-foreground line-clamp-2">
+                            <div className="min-w-0 flex-1">
+                              <h5 className="mb-1 text-sm font-medium">{component.name}</h5>
+                              <p className="text-muted-foreground line-clamp-2 text-xs">
                                 {component.description}
                               </p>
                             </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
+                            <div className="flex flex-shrink-0 items-center gap-2">
                               <Badge variant="outline" className="text-xs">
                                 {component.effectiveness}%
                               </Badge>
-                              {isSelected && (
-                                <CheckCircle className="h-4 w-4 text-primary" />
-                              )}
+                              {isSelected && <CheckCircle className="text-primary h-4 w-4" />}
                             </div>
                           </div>
                         </CardContent>
@@ -336,34 +333,36 @@ export function PolicyCreator({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center p-3 rounded-lg bg-background">
-                    <TrendingUp className="h-5 w-5 mx-auto mb-1 text-green-600" />
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                  <div className="bg-background rounded-lg p-3 text-center">
+                    <TrendingUp className="mx-auto mb-1 h-5 w-5 text-green-600" />
                     <p className="text-2xl font-bold text-green-600">
-                      {policy.calculatedImpact.gdpImpact > 0 ? '+' : ''}{policy.calculatedImpact.gdpImpact}%
+                      {policy.calculatedImpact.gdpImpact > 0 ? "+" : ""}
+                      {policy.calculatedImpact.gdpImpact}%
                     </p>
-                    <p className="text-xs text-muted-foreground">GDP Impact</p>
+                    <p className="text-muted-foreground text-xs">GDP Impact</p>
                   </div>
-                  <div className="text-center p-3 rounded-lg bg-background">
-                    <DollarSign className="h-5 w-5 mx-auto mb-1 text-blue-600" />
+                  <div className="bg-background rounded-lg p-3 text-center">
+                    <DollarSign className="mx-auto mb-1 h-5 w-5 text-blue-600" />
                     <p className="text-2xl font-bold text-blue-600">
                       ${(policy.calculatedImpact.revenueImpact / 1000000).toFixed(1)}M
                     </p>
-                    <p className="text-xs text-muted-foreground">Revenue Impact</p>
+                    <p className="text-muted-foreground text-xs">Revenue Impact</p>
                   </div>
-                  <div className="text-center p-3 rounded-lg bg-background">
-                    <Users className="h-5 w-5 mx-auto mb-1 text-purple-600" />
+                  <div className="bg-background rounded-lg p-3 text-center">
+                    <Users className="mx-auto mb-1 h-5 w-5 text-purple-600" />
                     <p className="text-2xl font-bold text-purple-600">
-                      {policy.calculatedImpact.employmentImpact > 0 ? '+' : ''}{policy.calculatedImpact.employmentImpact}%
+                      {policy.calculatedImpact.employmentImpact > 0 ? "+" : ""}
+                      {policy.calculatedImpact.employmentImpact}%
                     </p>
-                    <p className="text-xs text-muted-foreground">Employment</p>
+                    <p className="text-muted-foreground text-xs">Employment</p>
                   </div>
-                  <div className="text-center p-3 rounded-lg bg-background">
-                    <Target className="h-5 w-5 mx-auto mb-1 text-orange-600" />
+                  <div className="bg-background rounded-lg p-3 text-center">
+                    <Target className="mx-auto mb-1 h-5 w-5 text-orange-600" />
                     <p className="text-2xl font-bold text-orange-600">
                       {policy.calculatedImpact.effectiveness}%
                     </p>
-                    <p className="text-xs text-muted-foreground">Effectiveness</p>
+                    <p className="text-muted-foreground text-xs">Effectiveness</p>
                   </div>
                 </div>
               </CardContent>
@@ -382,19 +381,23 @@ export function PolicyCreator({
                     max={50000000}
                     step={100000}
                     value={[policy.formData.implementationCost]}
-                    onValueChange={([value]) => policy.updateField('implementationCost', value || 100000)}
+                    onValueChange={([value]) =>
+                      policy.updateField("implementationCost", value || 100000)
+                    }
                     className="flex-1"
                   />
                   <div className="w-32">
                     <Input
                       type="number"
                       value={policy.formData.implementationCost}
-                      onChange={(e) => policy.updateField('implementationCost', Number(e.target.value))}
+                      onChange={(e) =>
+                        policy.updateField("implementationCost", Number(e.target.value))
+                      }
                       className="text-right"
                     />
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   ${(policy.formData.implementationCost / 1000000).toFixed(2)}M implementation cost
                 </p>
               </div>
@@ -410,19 +413,21 @@ export function PolicyCreator({
                     max={10000000}
                     step={50000}
                     value={[policy.formData.maintenanceCost]}
-                    onValueChange={([value]) => policy.updateField('maintenanceCost', value || 0)}
+                    onValueChange={([value]) => policy.updateField("maintenanceCost", value || 0)}
                     className="flex-1"
                   />
                   <div className="w-32">
                     <Input
                       type="number"
                       value={policy.formData.maintenanceCost}
-                      onChange={(e) => policy.updateField('maintenanceCost', Number(e.target.value))}
+                      onChange={(e) =>
+                        policy.updateField("maintenanceCost", Number(e.target.value))
+                      }
                       className="text-right"
                     />
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   ${(policy.formData.maintenanceCost / 1000000).toFixed(2)}M annual maintenance
                 </p>
               </div>
@@ -432,11 +437,11 @@ export function PolicyCreator({
             <div className="space-y-3">
               <Label className="text-base font-semibold">Priority Level *</Label>
               <div className="grid grid-cols-4 gap-3">
-                {(['critical', 'high', 'medium', 'low'] as PolicyPriority[]).map(level => (
+                {(["critical", "high", "medium", "low"] as PolicyPriority[]).map((level) => (
                   <Button
                     key={level}
-                    variant={policy.formData.priority === level ? 'default' : 'outline'}
-                    onClick={() => policy.updateField('priority', level)}
+                    variant={policy.formData.priority === level ? "default" : "outline"}
+                    onClick={() => policy.updateField("priority", level)}
                     className="capitalize"
                   >
                     {level}
@@ -450,10 +455,10 @@ export function PolicyCreator({
               <Alert className="border-red-200 dark:border-red-800">
                 <AlertCircle className="h-4 w-4 text-red-600" />
                 <AlertDescription>
-                  <span className="font-semibold text-red-600">Budget Deficit Warning:</span>
-                  {' '}This policy will create a budget deficit of $
-                  {Math.abs(policy.calculatedImpact.budgetBalance / 1000000).toFixed(2)}M.
-                  Consider reducing costs or adjusting your budget.
+                  <span className="font-semibold text-red-600">Budget Deficit Warning:</span> This
+                  policy will create a budget deficit of $
+                  {Math.abs(policy.calculatedImpact.budgetBalance / 1000000).toFixed(2)}M. Consider
+                  reducing costs or adjusting your budget.
                 </AlertDescription>
               </Alert>
             )}
@@ -472,10 +477,15 @@ export function PolicyCreator({
                 <Input
                   id="effectiveDate"
                   type="date"
-                  value={policy.formData.effectiveDate?.toISOString().split('T')[0] || ''}
-                  onChange={(e) => policy.updateField('effectiveDate', e.target.value ? new Date(e.target.value) : null)}
+                  value={policy.formData.effectiveDate?.toISOString().split("T")[0] || ""}
+                  onChange={(e) =>
+                    policy.updateField(
+                      "effectiveDate",
+                      e.target.value ? new Date(e.target.value) : null
+                    )
+                  }
                 />
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   When should this policy take effect? (Leave blank for immediate)
                 </p>
               </div>
@@ -487,11 +497,16 @@ export function PolicyCreator({
                 <Input
                   id="expiryDate"
                   type="date"
-                  value={policy.formData.expiryDate?.toISOString().split('T')[0] || ''}
-                  onChange={(e) => policy.updateField('expiryDate', e.target.value ? new Date(e.target.value) : null)}
-                  min={policy.formData.effectiveDate?.toISOString().split('T')[0] || ''}
+                  value={policy.formData.expiryDate?.toISOString().split("T")[0] || ""}
+                  onChange={(e) =>
+                    policy.updateField(
+                      "expiryDate",
+                      e.target.value ? new Date(e.target.value) : null
+                    )
+                  }
+                  min={policy.formData.effectiveDate?.toISOString().split("T")[0] || ""}
                 />
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   When should this policy expire? (Leave blank for permanent)
                 </p>
               </div>
@@ -505,14 +520,14 @@ export function PolicyCreator({
                     <Label htmlFor="autoActivate" className="text-base font-semibold">
                       Auto-Activate Policy
                     </Label>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Activate this policy immediately after creation
                     </p>
                   </div>
                   <Switch
                     id="autoActivate"
                     checked={policy.formData.autoActivate}
-                    onCheckedChange={(checked) => policy.updateField('autoActivate', checked)}
+                    onCheckedChange={(checked) => policy.updateField("autoActivate", checked)}
                   />
                 </div>
               </CardContent>
@@ -558,62 +573,79 @@ export function PolicyCreator({
                   <CheckCircle className="h-5 w-5 text-green-600" />
                   Policy Review
                 </CardTitle>
-                <CardDescription>
-                  Review your policy before creation
-                </CardDescription>
+                <CardDescription>Review your policy before creation</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Basic Info */}
                 <div>
-                  <h4 className="font-semibold text-lg mb-2">{policy.formData.name}</h4>
-                  <p className="text-sm text-muted-foreground mb-2">{policy.formData.description}</p>
+                  <h4 className="mb-2 text-lg font-semibold">{policy.formData.name}</h4>
+                  <p className="text-muted-foreground mb-2 text-sm">
+                    {policy.formData.description}
+                  </p>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="capitalize">{policy.formData.policyType}</Badge>
-                    <Badge variant="outline" className="capitalize">{policy.formData.priority} Priority</Badge>
-                    {policy.formData.category && <Badge variant="outline">{policy.formData.category}</Badge>}
+                    <Badge variant="outline" className="capitalize">
+                      {policy.formData.policyType}
+                    </Badge>
+                    <Badge variant="outline" className="capitalize">
+                      {policy.formData.priority} Priority
+                    </Badge>
+                    {policy.formData.category && (
+                      <Badge variant="outline">{policy.formData.category}</Badge>
+                    )}
                   </div>
                 </div>
 
                 {/* Financial Summary */}
-                <div className="p-4 rounded-lg bg-muted space-y-2">
-                  <h5 className="font-semibold mb-2">Financial Summary</h5>
+                <div className="bg-muted space-y-2 rounded-lg p-4">
+                  <h5 className="mb-2 font-semibold">Financial Summary</h5>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground">Implementation Cost</p>
-                      <p className="font-semibold">${(policy.formData.implementationCost / 1000000).toFixed(2)}M</p>
+                      <p className="font-semibold">
+                        ${(policy.formData.implementationCost / 1000000).toFixed(2)}M
+                      </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Annual Maintenance</p>
-                      <p className="font-semibold">${(policy.formData.maintenanceCost / 1000000).toFixed(2)}M</p>
+                      <p className="font-semibold">
+                        ${(policy.formData.maintenanceCost / 1000000).toFixed(2)}M
+                      </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Projected GDP Impact</p>
                       <p className="font-semibold text-green-600">
-                        {policy.calculatedImpact.gdpImpact > 0 ? '+' : ''}{policy.calculatedImpact.gdpImpact}%
+                        {policy.calculatedImpact.gdpImpact > 0 ? "+" : ""}
+                        {policy.calculatedImpact.gdpImpact}%
                       </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Effectiveness Score</p>
-                      <p className="font-semibold text-blue-600">{policy.calculatedImpact.effectiveness}%</p>
+                      <p className="font-semibold text-blue-600">
+                        {policy.calculatedImpact.effectiveness}%
+                      </p>
                     </div>
                   </div>
                 </div>
 
                 {/* Timeline */}
                 {(policy.formData.effectiveDate || policy.formData.expiryDate) && (
-                  <div className="p-4 rounded-lg bg-muted space-y-2">
-                    <h5 className="font-semibold mb-2">Timeline</h5>
+                  <div className="bg-muted space-y-2 rounded-lg p-4">
+                    <h5 className="mb-2 font-semibold">Timeline</h5>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       {policy.formData.effectiveDate && (
                         <div>
                           <p className="text-muted-foreground">Effective Date</p>
-                          <p className="font-semibold">{policy.formData.effectiveDate.toLocaleDateString()}</p>
+                          <p className="font-semibold">
+                            {policy.formData.effectiveDate.toLocaleDateString()}
+                          </p>
                         </div>
                       )}
                       {policy.formData.expiryDate && (
                         <div>
                           <p className="text-muted-foreground">Expiry Date</p>
-                          <p className="font-semibold">{policy.formData.expiryDate.toLocaleDateString()}</p>
+                          <p className="font-semibold">
+                            {policy.formData.expiryDate.toLocaleDateString()}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -623,9 +655,9 @@ export function PolicyCreator({
                 {/* Components */}
                 {policy.formData.selectedComponents.length > 0 && (
                   <div>
-                    <h5 className="font-semibold mb-2">Related Components</h5>
+                    <h5 className="mb-2 font-semibold">Related Components</h5>
                     <div className="flex flex-wrap gap-2">
-                      {policy.formData.selectedComponents.map(comp => (
+                      {policy.formData.selectedComponents.map((comp) => (
                         <Badge key={comp} variant="secondary">
                           {ATOMIC_COMPONENTS[comp]?.name}
                         </Badge>
@@ -639,7 +671,8 @@ export function PolicyCreator({
                   <Alert className="border-yellow-200 dark:border-yellow-800">
                     <AlertCircle className="h-4 w-4 text-yellow-600" />
                     <AlertDescription>
-                      This policy will create a budget deficit. Ensure adequate funding is available.
+                      This policy will create a budget deficit. Ensure adequate funding is
+                      available.
                     </AlertDescription>
                   </Alert>
                 )}
@@ -658,7 +691,7 @@ export function PolicyCreator({
       {/* Progress Header */}
       <Card className="glass-surface glass-refraction">
         <CardHeader>
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4 flex items-center justify-between">
             <CardTitle className="text-2xl">Create New Policy</CardTitle>
             {onCancel && (
               <Button variant="ghost" size="sm" onClick={onCancel}>
@@ -676,14 +709,14 @@ export function PolicyCreator({
 
               return (
                 <React.Fragment key={step.id}>
-                  <div className="flex flex-col items-center gap-2 flex-1">
+                  <div className="flex flex-1 flex-col items-center gap-2">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                      className={`flex h-10 w-10 items-center justify-center rounded-full transition-all ${
                         isComplete
-                          ? 'bg-green-600 text-white'
+                          ? "bg-green-600 text-white"
                           : isActive
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-muted-foreground'
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {isComplete ? (
@@ -692,17 +725,17 @@ export function PolicyCreator({
                         <StepIcon className="h-5 w-5" />
                       )}
                     </div>
-                    <p className={`text-xs text-center ${isActive ? 'font-semibold' : ''}`}>
+                    <p className={`text-center text-xs ${isActive ? "font-semibold" : ""}`}>
                       {step.title}
                     </p>
                   </div>
                   {index < STEPS.length - 1 && (
-                    <div className="flex-1 h-0.5 bg-muted mx-2 mt-5">
+                    <div className="bg-muted mx-2 mt-5 h-0.5 flex-1">
                       <div
                         className={`h-full transition-all ${
-                          isComplete ? 'bg-green-600' : 'bg-transparent'
+                          isComplete ? "bg-green-600" : "bg-transparent"
                         }`}
-                        style={{ width: isComplete ? '100%' : '0%' }}
+                        style={{ width: isComplete ? "100%" : "0%" }}
                       />
                     </div>
                   )}
@@ -712,7 +745,7 @@ export function PolicyCreator({
           </div>
 
           {/* Progress Bar */}
-          <Progress value={(policy.currentStep / 5) * 100} className="h-2 mt-4" />
+          <Progress value={(policy.currentStep / 5) * 100} className="mt-4 h-2" />
         </CardHeader>
       </Card>
 
@@ -742,7 +775,7 @@ export function PolicyCreator({
               onClick={policy.prevStep}
               disabled={policy.currentStep === 1 || policy.isProcessing}
             >
-              <ChevronLeft className="h-4 w-4 mr-2" />
+              <ChevronLeft className="mr-2 h-4 w-4" />
               Previous
             </Button>
 
@@ -756,7 +789,7 @@ export function PolicyCreator({
               {policy.currentStep < 5 ? (
                 <Button onClick={policy.nextStep} disabled={!policy.canProceed}>
                   Next
-                  <ChevronRight className="h-4 w-4 ml-2" />
+                  <ChevronRight className="ml-2 h-4 w-4" />
                 </Button>
               ) : (
                 <Button
@@ -771,7 +804,7 @@ export function PolicyCreator({
                     </>
                   ) : (
                     <>
-                      <Save className="h-4 w-4 mr-2" />
+                      <Save className="mr-2 h-4 w-4" />
                       Create Policy
                     </>
                   )}

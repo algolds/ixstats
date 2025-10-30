@@ -1,12 +1,23 @@
 "use client";
 
-import React, { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, LabelList } from 'recharts';
-import { motion } from 'framer-motion';
-import { cn } from '~/lib/utils';
-import { useSectionTheme, generateSectionChartColors, getGlassClasses } from './theme-utils';
-import { MOTION_VARIANTS } from './animation-utils';
-import type { EnhancedChartProps } from './types';
+import React, { useMemo } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  Cell,
+  LabelList,
+} from "recharts";
+import { motion } from "framer-motion";
+import { cn } from "~/lib/utils";
+import { useSectionTheme, generateSectionChartColors, getGlassClasses } from "./theme-utils";
+import { MOTION_VARIANTS } from "./animation-utils";
+import type { EnhancedChartProps } from "./types";
 
 interface EnhancedBarChartProps extends EnhancedChartProps {
   xKey: string;
@@ -40,15 +51,24 @@ interface ChartLabelEntry {
 // Custom label renderer for bar values
 function renderCustomLabel(entry: ChartLabelEntry, formatValue?: (value: number) => string) {
   if (!entry || entry.value === undefined || entry.value === null) return null;
-  
+
   // Safely handle NaN values in entry properties with additional validation
-  const safeX = typeof entry.x === 'number' && !isNaN(entry.x) && isFinite(entry.x) ? entry.x : 0;
-  const safeWidth = typeof entry.width === 'number' && !isNaN(entry.width) && isFinite(entry.width) && entry.width > 0 ? entry.width : 1;
-  const safeY = typeof entry.y === 'number' && !isNaN(entry.y) && isFinite(entry.y) ? entry.y : 0;
-  
+  const safeX = typeof entry.x === "number" && !isNaN(entry.x) && isFinite(entry.x) ? entry.x : 0;
+  const safeWidth =
+    typeof entry.width === "number" &&
+    !isNaN(entry.width) &&
+    isFinite(entry.width) &&
+    entry.width > 0
+      ? entry.width
+      : 1;
+  const safeY = typeof entry.y === "number" && !isNaN(entry.y) && isFinite(entry.y) ? entry.y : 0;
+
   // Ensure the value is also valid
-  const safeValue = typeof entry.value === 'number' && !isNaN(entry.value) && isFinite(entry.value) ? entry.value : 0;
-  
+  const safeValue =
+    typeof entry.value === "number" && !isNaN(entry.value) && isFinite(entry.value)
+      ? entry.value
+      : 0;
+
   return (
     <text
       x={String(safeX + safeWidth / 2)}
@@ -73,28 +93,22 @@ function ChartTooltip({ active, payload, label, formatValue, colors }: ChartTool
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       className={cn(
-        'bg-white/95 dark:bg-gray-800/95',
-        'border border-gray-200/50 dark:border-gray-600/50',
-        'rounded-lg p-3 shadow-xl dark:shadow-gray-900/50'
+        "bg-white/95 dark:bg-gray-800/95",
+        "border border-gray-200/50 dark:border-gray-600/50",
+        "rounded-lg p-3 shadow-xl dark:shadow-gray-900/50"
       )}
     >
-      {label && (
-        <p className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-2">
-          {label}
-        </p>
-      )}
+      {label && <p className="mb-2 text-sm font-bold text-gray-900 dark:text-gray-100">{label}</p>}
       <div className="space-y-1">
         {payload.map((entry, index) => (
           <div key={index} className="flex items-center gap-2 text-sm">
             <div
-              className="w-3 h-3 rounded-sm"
+              className="h-3 w-3 rounded-sm"
               style={{ backgroundColor: (entry.fill || entry.color || colors[index]) as string }}
             />
             <span className="text-gray-900 dark:text-gray-100">
               {entry.name}:
-              <span className="ml-1">
-                {formatValue ? formatValue(entry.value) : entry.value}
-              </span>
+              <span className="ml-1">{formatValue ? formatValue(entry.value) : entry.value}</span>
             </span>
           </div>
         ))}
@@ -126,46 +140,50 @@ export function EnhancedBarChart({
   showValues = false,
   formatValue,
   formatLabel,
-  maxBars = 20
+  maxBars = 20,
 }: EnhancedBarChartProps) {
   const { theme: resolvedTheme, colors: themeColors, cssVars } = useSectionTheme(sectionId, theme);
-  
+
   // Generate section-appropriate colors
   const chartColors = useMemo(() => {
     if (colors) return colors;
-    
+
     // Check if data has color field and map to theme colors
-    const hasDataColors = data.some(item => 'color' in item);
+    const hasDataColors = data.some((item) => "color" in item);
     if (hasDataColors) {
       const colorMap = {
-        'emerald': 'hsl(160, 84%, 60%)', // Green for positive
-        'red': 'hsl(0, 84%, 60%)', // Red for negative
-        'gold': 'hsl(45, 93%, 58%)', // Gold for neutral
-        'blue': 'hsl(217, 91%, 60%)', // Blue for info
-        'purple': 'hsl(262, 83%, 58%)', // Purple for special
-        'yellow': 'hsl(45, 93%, 58%)', // Yellow for projection years 4-7
-        'orange': 'hsl(25, 95%, 53%)' // Orange for projection years 8-10
+        emerald: "hsl(160, 84%, 60%)", // Green for positive
+        red: "hsl(0, 84%, 60%)", // Red for negative
+        gold: "hsl(45, 93%, 58%)", // Gold for neutral
+        blue: "hsl(217, 91%, 60%)", // Blue for info
+        purple: "hsl(262, 83%, 58%)", // Purple for special
+        yellow: "hsl(45, 93%, 58%)", // Yellow for projection years 4-7
+        orange: "hsl(25, 95%, 53%)", // Orange for projection years 8-10
       };
-      
-      return data.map(item => {
+
+      return data.map((item) => {
         const colorKey = (item as any).color;
-        return colorMap[colorKey as keyof typeof colorMap] || 'hsl(217, 91%, 60%)';
+        return colorMap[colorKey as keyof typeof colorMap] || "hsl(217, 91%, 60%)";
       });
     }
-    
+
     const yKeys = Array.isArray(yKey) ? yKey : [yKey];
-    const generatedColors = generateSectionChartColors(sectionId, resolvedTheme, Math.max(yKeys.length, data.length));
-    
+    const generatedColors = generateSectionChartColors(
+      sectionId,
+      resolvedTheme,
+      Math.max(yKeys.length, data.length)
+    );
+
     // FINAL SAFETY CHECK: Replace any dark/black colors with bright alternatives
     return generatedColors.map((color, index) => {
       // If somehow a dark color gets through, replace with bright fallbacks
-      if (color.includes('rgb(0') || color.includes('hsl(0, 0%') || color.includes('#000')) {
+      if (color.includes("rgb(0") || color.includes("hsl(0, 0%") || color.includes("#000")) {
         const fallbackColors = [
-          'hsl(217, 91%, 60%)', // Blue
-          'hsl(160, 84%, 60%)', // Emerald
-          'hsl(45, 93%, 58%)',  // Gold
-          'hsl(262, 83%, 58%)', // Purple
-          'hsl(0, 84%, 60%)'    // Red
+          "hsl(217, 91%, 60%)", // Blue
+          "hsl(160, 84%, 60%)", // Emerald
+          "hsl(45, 93%, 58%)", // Gold
+          "hsl(262, 83%, 58%)", // Purple
+          "hsl(0, 84%, 60%)", // Red
         ];
         return fallbackColors[index % fallbackColors.length];
       }
@@ -182,23 +200,29 @@ export function EnhancedBarChart({
       // Ensure xKey is valid
       if (xKey in sanitized) {
         const xValue = sanitized[xKey];
-        if (xValue === null || xValue === undefined || (typeof xValue === 'number' && isNaN(xValue))) {
+        if (
+          xValue === null ||
+          xValue === undefined ||
+          (typeof xValue === "number" && isNaN(xValue))
+        ) {
           sanitized[xKey] = `Item ${index + 1}`;
         }
       }
 
       // Ensure yKey values are valid numbers
       if (Array.isArray(yKey)) {
-        yKey.forEach(key => {
+        yKey.forEach((key) => {
           if (key in sanitized) {
             const value = sanitized[key];
-            sanitized[key] = (typeof value === 'number' && !isNaN(value) && isFinite(value)) ? value : 0;
+            sanitized[key] =
+              typeof value === "number" && !isNaN(value) && isFinite(value) ? value : 0;
           }
         });
       } else {
         if (yKey in sanitized) {
           const value = sanitized[yKey];
-          sanitized[yKey] = (typeof value === 'number' && !isNaN(value) && isFinite(value)) ? value : 0;
+          sanitized[yKey] =
+            typeof value === "number" && !isNaN(value) && isFinite(value) ? value : 0;
         }
       }
       return sanitized;
@@ -207,26 +231,30 @@ export function EnhancedBarChart({
     // Filter out any items that might still have invalid data
     const validData = sanitizedData.filter((item, index) => {
       if (Array.isArray(yKey)) {
-        const isValid = yKey.every(key => {
+        const isValid = yKey.every((key) => {
           const value = item[key];
-          const valid = typeof value === 'number' && !isNaN(value) && isFinite(value);
+          const valid = typeof value === "number" && !isNaN(value) && isFinite(value);
           return valid;
         });
         return isValid;
       } else {
         const value = item[yKey];
-        return typeof value === 'number' && !isNaN(value) && isFinite(value);
+        return typeof value === "number" && !isNaN(value) && isFinite(value);
       }
     });
 
     if (validData.length <= maxBars) {
       return validData;
     }
-    
+
     // If too many bars, take top N by value
     const sorted = [...validData].sort((a, b) => {
-      const aValue = Array.isArray(yKey) ? yKey.reduce((sum, key) => sum + (a[key] || 0), 0) : (a[yKey] || 0);
-      const bValue = Array.isArray(yKey) ? yKey.reduce((sum, key) => sum + (b[key] || 0), 0) : (b[yKey] || 0);
+      const aValue = Array.isArray(yKey)
+        ? yKey.reduce((sum, key) => sum + (a[key] || 0), 0)
+        : a[yKey] || 0;
+      const bValue = Array.isArray(yKey)
+        ? yKey.reduce((sum, key) => sum + (b[key] || 0), 0)
+        : b[yKey] || 0;
       return bValue - aValue;
     });
 
@@ -236,23 +264,18 @@ export function EnhancedBarChart({
   // Check if we have valid data to render
   if (!processedData || processedData.length === 0) {
     return (
-      <div 
-        className={cn('space-y-4', className)}
-        style={cssVars as React.CSSProperties}
-      >
-        {title && (
-          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{title}</h3>
-        )}
-        
-        <div 
+      <div className={cn("space-y-4", className)} style={cssVars as React.CSSProperties}>
+        {title && <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{title}</h3>}
+
+        <div
           className={cn(
-            'flex items-center justify-center rounded-lg p-6 text-center',
-            getGlassClasses('base', resolvedTheme, sectionId)
+            "flex items-center justify-center rounded-lg p-6 text-center",
+            getGlassClasses("base", resolvedTheme, sectionId)
           )}
           style={{ height: `${height}px` }}
         >
           <div className="space-y-2">
-            <div className="text-gray-400 dark:text-gray-500 text-lg">📊</div>
+            <div className="text-lg text-gray-400 dark:text-gray-500">📊</div>
             <p className="text-sm text-gray-600 dark:text-gray-400">No data available to display</p>
           </div>
         </div>
@@ -263,10 +286,7 @@ export function EnhancedBarChart({
   // Render loading state
   if (loading) {
     return (
-      <div 
-        className={cn('space-y-4', className)}
-        style={cssVars as React.CSSProperties}
-      >
+      <div className={cn("space-y-4", className)} style={cssVars as React.CSSProperties}>
         {title && (
           <div className="space-y-1">
             <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{title}</h3>
@@ -275,18 +295,18 @@ export function EnhancedBarChart({
             )}
           </div>
         )}
-        
-        <div 
+
+        <div
           className={cn(
-            'flex items-center justify-center rounded-lg',
-            getGlassClasses('base', resolvedTheme, sectionId)
+            "flex items-center justify-center rounded-lg",
+            getGlassClasses("base", resolvedTheme, sectionId)
           )}
           style={{ height: `${height}px` }}
         >
           <motion.div
             animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-            className="w-8 h-8 border-3 border-blue-500 dark:border-blue-400 border-t-transparent rounded-full"
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="h-8 w-8 rounded-full border-3 border-blue-500 border-t-transparent dark:border-blue-400"
           />
         </div>
       </div>
@@ -296,23 +316,18 @@ export function EnhancedBarChart({
   // Render error state
   if (error) {
     return (
-      <div 
-        className={cn('space-y-4', className)}
-        style={cssVars as React.CSSProperties}
-      >
-        {title && (
-          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{title}</h3>
-        )}
-        
-        <div 
+      <div className={cn("space-y-4", className)} style={cssVars as React.CSSProperties}>
+        {title && <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{title}</h3>}
+
+        <div
           className={cn(
-            'flex items-center justify-center rounded-lg p-6 text-center',
-            getGlassClasses('base', resolvedTheme, sectionId)
+            "flex items-center justify-center rounded-lg p-6 text-center",
+            getGlassClasses("base", resolvedTheme, sectionId)
           )}
           style={{ height: `${height}px` }}
         >
           <div className="space-y-2">
-            <div className="text-red-500 dark:text-red-400 text-lg">⚠</div>
+            <div className="text-lg text-red-500 dark:text-red-400">⚠</div>
             <p className="text-sm text-gray-600 dark:text-gray-400">{error}</p>
           </div>
         </div>
@@ -324,68 +339,59 @@ export function EnhancedBarChart({
     <motion.div
       {...MOTION_VARIANTS.fadeIn}
       transition={{ duration: animationDuration / 1000 }}
-      className={cn('space-y-4', className)}
+      className={cn("space-y-4", className)}
       style={cssVars as React.CSSProperties}
     >
       {/* Header */}
       {(title || description) && (
         <div className="space-y-1">
-          {title && (
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-              {title}
-            </h3>
-          )}
-          {description && (
-            <p className="text-sm text-gray-600 dark:text-gray-400">{description}</p>
-          )}
+          {title && <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{title}</h3>}
+          {description && <p className="text-sm text-gray-600 dark:text-gray-400">{description}</p>}
         </div>
       )}
 
       {/* Chart Container */}
-      <div 
-        className={cn(
-          'p-4 rounded-lg',
-          getGlassClasses('base', resolvedTheme, sectionId)
-        )}
-        style={{ 
-          height: `${!isNaN(height) && isFinite(height) && height > 0 ? height + 32 : 300}px`, 
-          width: (width && !isNaN(width) && isFinite(width) && width > 0) ? `${width}px` : undefined 
+      <div
+        className={cn("rounded-lg p-4", getGlassClasses("base", resolvedTheme, sectionId))}
+        style={{
+          height: `${!isNaN(height) && isFinite(height) && height > 0 ? height + 32 : 300}px`,
+          width: width && !isNaN(width) && isFinite(width) && width > 0 ? `${width}px` : undefined,
         }}
       >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={processedData}
-            layout={horizontal ? 'horizontal' : 'vertical'}
+            layout={horizontal ? "horizontal" : "vertical"}
             margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
           >
             {showGrid && (
-              <CartesianGrid 
-                strokeDasharray="3 3" 
+              <CartesianGrid
+                strokeDasharray="3 3"
                 stroke="currentColor"
                 className="stroke-gray-300 dark:stroke-gray-600"
                 opacity={0.3}
               />
             )}
-            
+
             <XAxis
               dataKey={horizontal ? undefined : xKey}
-              type={horizontal ? 'number' : 'category'}
-              tick={{ fill: 'currentColor', fontSize: 12 }}
+              type={horizontal ? "number" : "category"}
+              tick={{ fill: "currentColor", fontSize: 12 }}
               className="fill-gray-700 dark:fill-gray-300"
-              axisLine={{ stroke: 'currentColor' }}
-              tickLine={{ stroke: 'currentColor' }}
+              axisLine={{ stroke: "currentColor" }}
+              tickLine={{ stroke: "currentColor" }}
               tickFormatter={horizontal ? formatValue : formatLabel}
             />
-            
+
             <YAxis
               dataKey={horizontal ? xKey : undefined}
-              type={horizontal ? 'category' : 'number'}
-              tick={{ fill: 'currentColor', fontSize: 12 }}
+              type={horizontal ? "category" : "number"}
+              tick={{ fill: "currentColor", fontSize: 12 }}
               className="fill-gray-700 dark:fill-gray-300"
-              axisLine={{ stroke: 'currentColor' }}
-              tickLine={{ stroke: 'currentColor' }}
+              axisLine={{ stroke: "currentColor" }}
+              tickLine={{ stroke: "currentColor" }}
               tickFormatter={horizontal ? formatLabel : formatValue}
-              domain={horizontal ? undefined : [0, 'auto']}
+              domain={horizontal ? undefined : [0, "auto"]}
               allowDataOverflow={false}
             />
 
@@ -404,11 +410,11 @@ export function EnhancedBarChart({
             {/* Legend for multi-key charts */}
             {Array.isArray(yKey) && yKey.length > 1 && showLegend && (
               <Legend
-                wrapperStyle={{ paddingTop: '10px' }}
+                wrapperStyle={{ paddingTop: "10px" }}
                 iconType="rect"
                 formatter={(value: string) => (
                   <span className="text-sm text-gray-700 dark:text-gray-300">
-                    {value.charAt(0).toUpperCase() + value.slice(1).replace(/([A-Z])/g, ' $1')}
+                    {value.charAt(0).toUpperCase() + value.slice(1).replace(/([A-Z])/g, " $1")}
                   </span>
                 )}
               />
@@ -421,18 +427,19 @@ export function EnhancedBarChart({
                   key={key}
                   dataKey={key}
                   fill={chartColors[index % chartColors.length]}
-                  stackId={stacked ? 'stack' : undefined}
+                  stackId={stacked ? "stack" : undefined}
                   animationDuration={animationDuration}
                   radius={[4, 4, 0, 0]}
                   name={key}
                 >
                   {/* Individual cell colors for non-stacked multi-key charts */}
-                  {!stacked && processedData.map((entry, cellIndex) => (
-                    <Cell
-                      key={`cell-${key}-${cellIndex}`}
-                      fill={chartColors[index % chartColors.length]}
-                    />
-                  ))}
+                  {!stacked &&
+                    processedData.map((entry, cellIndex) => (
+                      <Cell
+                        key={`cell-${key}-${cellIndex}`}
+                        fill={chartColors[index % chartColors.length]}
+                      />
+                    ))}
 
                   {/* Add data labels if showValues is true */}
                   {showValues && (
@@ -442,10 +449,16 @@ export function EnhancedBarChart({
                       fontSize={11}
                       fontWeight="500"
                       className="fill-gray-700 dark:fill-gray-300"
-                      formatter={formatValue ? (value: unknown) => {
-                        const numValue = Number(value);
-                        return !isNaN(numValue) && isFinite(numValue) ? formatValue(numValue) : '';
-                      } : undefined}
+                      formatter={
+                        formatValue
+                          ? (value: unknown) => {
+                              const numValue = Number(value);
+                              return !isNaN(numValue) && isFinite(numValue)
+                                ? formatValue(numValue)
+                                : "";
+                            }
+                          : undefined
+                      }
                     />
                   )}
                 </Bar>
@@ -462,10 +475,7 @@ export function EnhancedBarChart({
               >
                 {/* Individual cell colors */}
                 {processedData.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={chartColors[index % chartColors.length]} 
-                  />
+                  <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
                 ))}
                 {/* Add data labels if showValues is true */}
                 {showValues && (
@@ -475,10 +485,16 @@ export function EnhancedBarChart({
                     fontSize={11}
                     fontWeight="500"
                     className="fill-gray-700 dark:fill-gray-300"
-                    formatter={formatValue ? (value: unknown) => {
-                      const numValue = Number(value);
-                      return !isNaN(numValue) && isFinite(numValue) ? formatValue(numValue) : '';
-                    } : undefined}
+                    formatter={
+                      formatValue
+                        ? (value: unknown) => {
+                            const numValue = Number(value);
+                            return !isNaN(numValue) && isFinite(numValue)
+                              ? formatValue(numValue)
+                              : "";
+                          }
+                        : undefined
+                    }
                   />
                 )}
               </Bar>
@@ -489,7 +505,7 @@ export function EnhancedBarChart({
 
       {/* Data truncation notice */}
       {data.length > maxBars && (
-        <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
+        <p className="text-center text-xs text-gray-600 dark:text-gray-400">
           Showing top {maxBars} of {data.length} items
         </p>
       )}

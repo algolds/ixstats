@@ -18,14 +18,68 @@
 
 import { useState, useEffect, useMemo } from "react";
 import {
-  Wand2, Globe, Database, Zap, AlertTriangle, TrendingUp, TrendingDown,
-  Users, DollarSign, Factory, Shield, Sword, Building, Cpu, Wheat, Hospital,
-  Settings, Eye, Play, Pause, Save, Trash2, Edit3, Plus, Search, Filter,
-  BarChart3, Activity, Clock, Target, Layers, GitBranch, Calculator,
-  FileText, Download, Upload, RefreshCw, XCircle, Check, Info, ArrowRight,
-  Gamepad2, Crown, Sparkles, Flame, Snowflake, Wind, Droplets, Zap as Lightning,
-  Microscope, Telescope, Scale, BookOpen, MessageSquare, Send, X,
-  ChevronDown, ChevronUp, Copy, ExternalLink, History, RotateCcw
+  Wand2,
+  Globe,
+  Database,
+  Zap,
+  AlertTriangle,
+  TrendingUp,
+  TrendingDown,
+  Users,
+  DollarSign,
+  Factory,
+  Shield,
+  Sword,
+  Building,
+  Cpu,
+  Wheat,
+  Hospital,
+  Settings,
+  Eye,
+  Play,
+  Pause,
+  Save,
+  Trash2,
+  Edit3,
+  Plus,
+  Search,
+  Filter,
+  BarChart3,
+  Activity,
+  Clock,
+  Target,
+  Layers,
+  GitBranch,
+  Calculator,
+  FileText,
+  Download,
+  Upload,
+  RefreshCw,
+  XCircle,
+  Check,
+  Info,
+  ArrowRight,
+  Gamepad2,
+  Crown,
+  Sparkles,
+  Flame,
+  Snowflake,
+  Wind,
+  Droplets,
+  Zap as Lightning,
+  Microscope,
+  Telescope,
+  Scale,
+  BookOpen,
+  MessageSquare,
+  Send,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  ExternalLink,
+  History,
+  RotateCcw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -34,13 +88,27 @@ import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Slider } from "~/components/ui/slider";
 import { Switch } from "~/components/ui/switch";
 import { Separator } from "~/components/ui/separator";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "~/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+  DialogFooter,
+} from "~/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
@@ -53,7 +121,13 @@ import { cn } from "~/lib/utils";
 
 type ControlMode = "interventions" | "god-mode" | "scenarios" | "analytics" | "history";
 type InterventionScale = "macro" | "micro" | "sectoral" | "crisis" | "custom";
-type InterventionCategory = "economic" | "political" | "social" | "military" | "environmental" | "technological";
+type InterventionCategory =
+  | "economic"
+  | "political"
+  | "social"
+  | "military"
+  | "environmental"
+  | "technological";
 
 interface CountrySnapshot {
   id: string;
@@ -121,10 +195,20 @@ const SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     icon: TrendingDown,
     color: "red",
     interventions: [
-      { name: "Global GDP Shock", type: "global_recession", scale: "macro", category: "economic", value: -0.15, duration: 2, cascadeEffects: true, delayedStart: 0, confidence: 95 }
+      {
+        name: "Global GDP Shock",
+        type: "global_recession",
+        scale: "macro",
+        category: "economic",
+        value: -0.15,
+        duration: 2,
+        cascadeEffects: true,
+        delayedStart: 0,
+        confidence: 95,
+      },
     ],
     affectedCountries: ["all"],
-    estimatedImpact: "-10% to -20% GDP globally over 18-24 months"
+    estimatedImpact: "-10% to -20% GDP globally over 18-24 months",
   },
   {
     id: "tech-revolution",
@@ -133,10 +217,20 @@ const SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     icon: Cpu,
     color: "blue",
     interventions: [
-      { name: "Tech Sector Boom", type: "tech_revolution", scale: "sectoral", category: "technological", value: 0.30, duration: 5, cascadeEffects: true, delayedStart: 1, confidence: 75 }
+      {
+        name: "Tech Sector Boom",
+        type: "tech_revolution",
+        scale: "sectoral",
+        category: "technological",
+        value: 0.3,
+        duration: 5,
+        cascadeEffects: true,
+        delayedStart: 1,
+        confidence: 75,
+      },
     ],
     affectedCountries: ["selected"],
-    estimatedImpact: "+15% to +35% productivity in tech-focused economies"
+    estimatedImpact: "+15% to +35% productivity in tech-focused economies",
   },
   {
     id: "climate-crisis",
@@ -145,11 +239,31 @@ const SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     icon: Flame,
     color: "orange",
     interventions: [
-      { name: "Environmental Disaster", type: "climate_disaster", scale: "crisis", category: "environmental", value: -0.12, duration: 3, cascadeEffects: true, delayedStart: 0, confidence: 90 },
-      { name: "Agricultural Collapse", type: "agricultural_crisis", scale: "sectoral", category: "environmental", value: -0.25, duration: 2, cascadeEffects: true, delayedStart: 0.5, confidence: 85 }
+      {
+        name: "Environmental Disaster",
+        type: "climate_disaster",
+        scale: "crisis",
+        category: "environmental",
+        value: -0.12,
+        duration: 3,
+        cascadeEffects: true,
+        delayedStart: 0,
+        confidence: 90,
+      },
+      {
+        name: "Agricultural Collapse",
+        type: "agricultural_crisis",
+        scale: "sectoral",
+        category: "environmental",
+        value: -0.25,
+        duration: 2,
+        cascadeEffects: true,
+        delayedStart: 0.5,
+        confidence: 85,
+      },
     ],
     affectedCountries: ["selected"],
-    estimatedImpact: "-8% to -15% GDP, significant agricultural and infrastructure damage"
+    estimatedImpact: "-8% to -15% GDP, significant agricultural and infrastructure damage",
   },
   {
     id: "pandemic",
@@ -158,11 +272,31 @@ const SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     icon: Hospital,
     color: "purple",
     interventions: [
-      { name: "Healthcare Crisis", type: "pandemic", scale: "crisis", category: "social", value: -0.18, duration: 1.5, cascadeEffects: true, delayedStart: 0, confidence: 92 },
-      { name: "Supply Chain Disruption", type: "logistics_crisis", scale: "sectoral", category: "economic", value: -0.10, duration: 2, cascadeEffects: true, delayedStart: 0.25, confidence: 88 }
+      {
+        name: "Healthcare Crisis",
+        type: "pandemic",
+        scale: "crisis",
+        category: "social",
+        value: -0.18,
+        duration: 1.5,
+        cascadeEffects: true,
+        delayedStart: 0,
+        confidence: 92,
+      },
+      {
+        name: "Supply Chain Disruption",
+        type: "logistics_crisis",
+        scale: "sectoral",
+        category: "economic",
+        value: -0.1,
+        duration: 2,
+        cascadeEffects: true,
+        delayedStart: 0.25,
+        confidence: 88,
+      },
     ],
     affectedCountries: ["all"],
-    estimatedImpact: "-12% to -22% GDP during peak, 3-5 year recovery"
+    estimatedImpact: "-12% to -22% GDP during peak, 3-5 year recovery",
   },
   {
     id: "trade-war",
@@ -171,11 +305,31 @@ const SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     icon: Sword,
     color: "red",
     interventions: [
-      { name: "Trade Restrictions", type: "trade_war", scale: "macro", category: "political", value: -0.08, duration: 3, cascadeEffects: true, delayedStart: 0, confidence: 80 },
-      { name: "Manufacturing Impact", type: "manufacturing_decline", scale: "sectoral", category: "economic", value: -0.15, duration: 2, cascadeEffects: true, delayedStart: 0.5, confidence: 85 }
+      {
+        name: "Trade Restrictions",
+        type: "trade_war",
+        scale: "macro",
+        category: "political",
+        value: -0.08,
+        duration: 3,
+        cascadeEffects: true,
+        delayedStart: 0,
+        confidence: 80,
+      },
+      {
+        name: "Manufacturing Impact",
+        type: "manufacturing_decline",
+        scale: "sectoral",
+        category: "economic",
+        value: -0.15,
+        duration: 2,
+        cascadeEffects: true,
+        delayedStart: 0.5,
+        confidence: 85,
+      },
     ],
     affectedCountries: ["selected"],
-    estimatedImpact: "-5% to -12% GDP in affected trading nations"
+    estimatedImpact: "-5% to -12% GDP in affected trading nations",
   },
   {
     id: "peace-dividend",
@@ -184,12 +338,32 @@ const SCENARIO_TEMPLATES: ScenarioTemplate[] = [
     icon: Sparkles,
     color: "green",
     interventions: [
-      { name: "Global Trade Boom", type: "trade_expansion", scale: "macro", category: "political", value: 0.12, duration: 5, cascadeEffects: true, delayedStart: 0.5, confidence: 78 },
-      { name: "Investment Surge", type: "capital_inflow", scale: "sectoral", category: "economic", value: 0.18, duration: 3, cascadeEffects: true, delayedStart: 1, confidence: 82 }
+      {
+        name: "Global Trade Boom",
+        type: "trade_expansion",
+        scale: "macro",
+        category: "political",
+        value: 0.12,
+        duration: 5,
+        cascadeEffects: true,
+        delayedStart: 0.5,
+        confidence: 78,
+      },
+      {
+        name: "Investment Surge",
+        type: "capital_inflow",
+        scale: "sectoral",
+        category: "economic",
+        value: 0.18,
+        duration: 3,
+        cascadeEffects: true,
+        delayedStart: 1,
+        confidence: 82,
+      },
     ],
     affectedCountries: ["all"],
-    estimatedImpact: "+8% to +15% GDP growth over 3-5 years"
-  }
+    estimatedImpact: "+8% to +15% GDP growth over 3-5 years",
+  },
 ];
 
 // ============================================================================
@@ -207,7 +381,12 @@ const INTERVENTION_TYPES = {
   ],
   micro: [
     { value: "local_business_boom", label: "Local Business Boom", icon: Building, color: "green" },
-    { value: "infrastructure_project", label: "Infrastructure Project", icon: Factory, color: "blue" },
+    {
+      value: "infrastructure_project",
+      label: "Infrastructure Project",
+      icon: Factory,
+      color: "blue",
+    },
     { value: "education_reform", label: "Education Reform", icon: BookOpen, color: "purple" },
     { value: "healthcare_expansion", label: "Healthcare Expansion", icon: Hospital, color: "teal" },
     { value: "housing_development", label: "Housing Development", icon: Building, color: "orange" },
@@ -215,9 +394,19 @@ const INTERVENTION_TYPES = {
   sectoral: [
     { value: "manufacturing_boost", label: "Manufacturing Boost", icon: Factory, color: "gray" },
     { value: "service_expansion", label: "Service Sector Expansion", icon: Users, color: "blue" },
-    { value: "agricultural_innovation", label: "Agricultural Innovation", icon: Wheat, color: "green" },
+    {
+      value: "agricultural_innovation",
+      label: "Agricultural Innovation",
+      icon: Wheat,
+      color: "green",
+    },
     { value: "tech_revolution", label: "Tech Revolution", icon: Cpu, color: "purple" },
-    { value: "financial_reform", label: "Financial Sector Reform", icon: DollarSign, color: "yellow" },
+    {
+      value: "financial_reform",
+      label: "Financial Sector Reform",
+      icon: DollarSign,
+      color: "yellow",
+    },
   ],
   crisis: [
     { value: "natural_disaster", label: "Natural Disaster", icon: Wind, color: "red" },
@@ -229,7 +418,7 @@ const INTERVENTION_TYPES = {
   ],
   custom: [
     { value: "custom_intervention", label: "Custom Intervention", icon: Wand2, color: "purple" },
-  ]
+  ],
 };
 
 // ============================================================================
@@ -260,7 +449,7 @@ export function StorytellerControlPanel() {
     description: "",
     cascadeEffects: true,
     delayedStart: 0,
-    confidence: 85
+    confidence: 85,
   });
 
   // ========== QUERIES ==========
@@ -268,13 +457,13 @@ export function StorytellerControlPanel() {
   const {
     data: interventionsData,
     isLoading: interventionsLoading,
-    refetch: refetchInterventions
+    refetch: refetchInterventions,
   } = api.countries.getDmInputs.useQuery({
-    countryId: selectedCountry || undefined
+    countryId: selectedCountry || undefined,
   });
   const { data: auditLogData, isLoading: auditLogLoading } = api.admin.getAdminAuditLog.useQuery({
     limit: 50,
-    offset: 0
+    offset: 0,
   });
 
   // ========== MUTATIONS ==========
@@ -283,18 +472,18 @@ export function StorytellerControlPanel() {
       refetchInterventions();
       setShowInterventionDialog(false);
       resetInterventionForm();
-    }
+    },
   });
 
   const updateCountryMutation = api.admin.updateCountryData.useMutation({
     onSuccess: () => {
       setShowGodModeDialog(false);
       setEditingCountry(null);
-    }
+    },
   });
 
   const deleteInterventionMutation = api.countries.deleteDmInput.useMutation({
-    onSuccess: () => refetchInterventions()
+    onSuccess: () => refetchInterventions(),
   });
 
   // ========== COMPUTED ==========
@@ -303,7 +492,7 @@ export function StorytellerControlPanel() {
   const activeInterventions = interventions.filter((i: any) => i.isActive);
 
   const selectedCountryData = useMemo(() => {
-    return countries.find(c => c.id === selectedCountry);
+    return countries.find((c) => c.id === selectedCountry);
   }, [countries, selectedCountry]);
 
   // ========== HANDLERS ==========
@@ -319,7 +508,7 @@ export function StorytellerControlPanel() {
       description: "",
       cascadeEffects: true,
       delayedStart: 0,
-      confidence: 85
+      confidence: 85,
     });
   };
 
@@ -334,20 +523,22 @@ export function StorytellerControlPanel() {
       inputType: interventionForm.type,
       value: interventionForm.value,
       description: interventionForm.description || interventionForm.name,
-      duration: interventionForm.duration
+      duration: interventionForm.duration,
     });
   };
 
   const handleApplyScenario = (scenario: ScenarioTemplate) => {
     // Apply all interventions from the scenario
-    scenario.interventions.forEach(intervention => {
+    scenario.interventions.forEach((intervention) => {
       if (intervention.type) {
         createInterventionMutation.mutate({
-          countryId: scenario.affectedCountries.includes("all") ? undefined : selectedCountry || undefined,
+          countryId: scenario.affectedCountries.includes("all")
+            ? undefined
+            : selectedCountry || undefined,
           inputType: intervention.type,
           value: intervention.value || 0,
           description: intervention.description || scenario.description,
-          duration: intervention.duration
+          duration: intervention.duration,
         });
       }
     });
@@ -396,7 +587,7 @@ export function StorytellerControlPanel() {
         projected2040Population: editingCountry.projected2040Population,
         projected2040Gdp: editingCountry.projected2040Gdp,
         projected2040GdpPerCapita: editingCountry.projected2040GdpPerCapita,
-      }
+      },
     });
   };
 
@@ -408,14 +599,14 @@ export function StorytellerControlPanel() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30">
+              <div className="rounded-xl border border-purple-500/30 bg-gradient-to-br from-purple-500/20 to-pink-500/20 p-3">
                 <Wand2 className="h-8 w-8 text-purple-400" />
               </div>
               <div>
-                <CardTitle className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">
+                <CardTitle className="bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-3xl font-bold text-transparent">
                   Storyteller Control Panel
                 </CardTitle>
-                <CardDescription className="text-lg mt-1">
+                <CardDescription className="mt-1 text-lg">
                   Complete narrative and economic god-mode control
                 </CardDescription>
               </div>
@@ -437,13 +628,13 @@ export function StorytellerControlPanel() {
           </div>
 
           {/* Mode Selector */}
-          <div className="flex items-center gap-2 mt-6">
+          <div className="mt-6 flex items-center gap-2">
             {[
               { value: "interventions", label: "Interventions", icon: Zap },
               { value: "god-mode", label: "God Mode", icon: Crown },
               { value: "scenarios", label: "Scenarios", icon: Gamepad2 },
               { value: "analytics", label: "Analytics", icon: BarChart3 },
-              { value: "history", label: "History", icon: History }
+              { value: "history", label: "History", icon: History },
             ].map((m) => (
               <Button
                 key={m.value}
@@ -483,29 +674,20 @@ export function StorytellerControlPanel() {
       )}
 
       {mode === "scenarios" && (
-        <ScenariosPanel
-          scenarios={SCENARIO_TEMPLATES}
-          onApply={handleApplyScenario}
-        />
+        <ScenariosPanel scenarios={SCENARIO_TEMPLATES} onApply={handleApplyScenario} />
       )}
 
       {mode === "analytics" && (
-        <AnalyticsPanel
-          interventions={interventions}
-          countries={countries}
-        />
+        <AnalyticsPanel interventions={interventions} countries={countries} />
       )}
 
       {mode === "history" && (
-        <HistoryPanel
-          auditLog={auditLogData?.logs || []}
-          isLoading={auditLogLoading}
-        />
+        <HistoryPanel auditLog={auditLogData?.logs || []} isLoading={auditLogLoading} />
       )}
 
       {/* Create Intervention Dialog */}
       <Dialog open={showInterventionDialog} onOpenChange={setShowInterventionDialog}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-purple-500" />
@@ -534,7 +716,9 @@ export function StorytellerControlPanel() {
                 <Label>Scale</Label>
                 <Select
                   value={interventionForm.scale}
-                  onValueChange={(v) => setInterventionForm({ ...interventionForm, scale: v as InterventionScale })}
+                  onValueChange={(v) =>
+                    setInterventionForm({ ...interventionForm, scale: v as InterventionScale })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -553,7 +737,12 @@ export function StorytellerControlPanel() {
                 <Label>Category</Label>
                 <Select
                   value={interventionForm.category}
-                  onValueChange={(v) => setInterventionForm({ ...interventionForm, category: v as InterventionCategory })}
+                  onValueChange={(v) =>
+                    setInterventionForm({
+                      ...interventionForm,
+                      category: v as InterventionCategory,
+                    })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -598,7 +787,12 @@ export function StorytellerControlPanel() {
               <Label>Target Country (Optional - leave empty for global)</Label>
               <Select
                 value={interventionForm.targetCountryId || "global"}
-                onValueChange={(v) => setInterventionForm({ ...interventionForm, targetCountryId: v === "global" ? undefined : v })}
+                onValueChange={(v) =>
+                  setInterventionForm({
+                    ...interventionForm,
+                    targetCountryId: v === "global" ? undefined : v,
+                  })
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -624,13 +818,18 @@ export function StorytellerControlPanel() {
                     step="0.01"
                     placeholder="0.00"
                     value={interventionForm.value}
-                    onChange={(e) => setInterventionForm({ ...interventionForm, value: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setInterventionForm({
+                        ...interventionForm,
+                        value: parseFloat(e.target.value) || 0,
+                      })
+                    }
                   />
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">
+                  <span className="text-muted-foreground text-sm whitespace-nowrap">
                     = {(interventionForm.value * 100).toFixed(2)}%
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-muted-foreground mt-1 text-xs">
                   Positive for growth, negative for decline
                 </p>
               </div>
@@ -642,7 +841,12 @@ export function StorytellerControlPanel() {
                   step="0.1"
                   placeholder="Permanent"
                   value={interventionForm.duration || ""}
-                  onChange={(e) => setInterventionForm({ ...interventionForm, duration: parseFloat(e.target.value) || undefined })}
+                  onChange={(e) =>
+                    setInterventionForm({
+                      ...interventionForm,
+                      duration: parseFloat(e.target.value) || undefined,
+                    })
+                  }
                 />
               </div>
             </div>
@@ -652,13 +856,15 @@ export function StorytellerControlPanel() {
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>Cascade Effects</Label>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     Apply ripple effects to related sectors
                   </p>
                 </div>
                 <Switch
                   checked={interventionForm.cascadeEffects}
-                  onCheckedChange={(v) => setInterventionForm({ ...interventionForm, cascadeEffects: v })}
+                  onCheckedChange={(v) =>
+                    setInterventionForm({ ...interventionForm, cascadeEffects: v })
+                  }
                 />
               </div>
 
@@ -666,13 +872,17 @@ export function StorytellerControlPanel() {
                 <Label>Delayed Start (Years)</Label>
                 <Slider
                   value={[interventionForm.delayedStart]}
-                  onValueChange={([v]) => setInterventionForm({ ...interventionForm, delayedStart: v })}
+                  onValueChange={([v]) =>
+                    setInterventionForm({ ...interventionForm, delayedStart: v })
+                  }
                   max={5}
                   step={0.25}
                   className="my-2"
                 />
-                <p className="text-xs text-muted-foreground">
-                  {interventionForm.delayedStart === 0 ? "Immediate effect" : `${interventionForm.delayedStart} year delay`}
+                <p className="text-muted-foreground text-xs">
+                  {interventionForm.delayedStart === 0
+                    ? "Immediate effect"
+                    : `${interventionForm.delayedStart} year delay`}
                 </p>
               </div>
 
@@ -680,14 +890,21 @@ export function StorytellerControlPanel() {
                 <Label>Confidence Level (%)</Label>
                 <Slider
                   value={[interventionForm.confidence]}
-                  onValueChange={([v]) => setInterventionForm({ ...interventionForm, confidence: v })}
+                  onValueChange={([v]) =>
+                    setInterventionForm({ ...interventionForm, confidence: v })
+                  }
                   min={50}
                   max={100}
                   step={5}
                   className="my-2"
                 />
-                <p className="text-xs text-muted-foreground">
-                  {interventionForm.confidence}% - {interventionForm.confidence >= 90 ? "Very High" : interventionForm.confidence >= 75 ? "High" : "Medium"}
+                <p className="text-muted-foreground text-xs">
+                  {interventionForm.confidence}% -{" "}
+                  {interventionForm.confidence >= 90
+                    ? "Very High"
+                    : interventionForm.confidence >= 75
+                      ? "High"
+                      : "Medium"}
                 </p>
               </div>
             </div>
@@ -698,7 +915,9 @@ export function StorytellerControlPanel() {
               <Textarea
                 placeholder="Describe the intervention and its expected effects..."
                 value={interventionForm.description}
-                onChange={(e) => setInterventionForm({ ...interventionForm, description: e.target.value })}
+                onChange={(e) =>
+                  setInterventionForm({ ...interventionForm, description: e.target.value })
+                }
                 rows={3}
               />
             </div>
@@ -711,12 +930,16 @@ export function StorytellerControlPanel() {
                   <div className="space-y-1">
                     <p className="font-medium">Estimated Impact:</p>
                     <p className="text-sm">
-                      {interventionForm.value > 0 ? "+" : ""}{(interventionForm.value * 100).toFixed(2)}%
-                      {interventionForm.targetCountryId ? ` to ${countries.find(c => c.id === interventionForm.targetCountryId)?.name}` : " globally"}
+                      {interventionForm.value > 0 ? "+" : ""}
+                      {(interventionForm.value * 100).toFixed(2)}%
+                      {interventionForm.targetCountryId
+                        ? ` to ${countries.find((c) => c.id === interventionForm.targetCountryId)?.name}`
+                        : " globally"}
                     </p>
                     {interventionForm.duration && (
-                      <p className="text-sm text-muted-foreground">
-                        Over {interventionForm.duration} year{interventionForm.duration > 1 ? "s" : ""}
+                      <p className="text-muted-foreground text-sm">
+                        Over {interventionForm.duration} year
+                        {interventionForm.duration > 1 ? "s" : ""}
                       </p>
                     )}
                   </div>
@@ -743,7 +966,7 @@ export function StorytellerControlPanel() {
 
       {/* God Mode Edit Dialog */}
       <Dialog open={showGodModeDialog} onOpenChange={setShowGodModeDialog}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Crown className="h-5 w-5 text-yellow-500" />
@@ -764,14 +987,19 @@ export function StorytellerControlPanel() {
                   <TabsTrigger value="identity">Identity</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="economy" className="space-y-4 mt-4">
+                <TabsContent value="economy" className="mt-4 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Current GDP Per Capita ($)</Label>
                       <Input
                         type="number"
                         value={editingCountry.currentGdpPerCapita}
-                        onChange={(e) => setEditingCountry({ ...editingCountry, currentGdpPerCapita: parseFloat(e.target.value) })}
+                        onChange={(e) =>
+                          setEditingCountry({
+                            ...editingCountry,
+                            currentGdpPerCapita: parseFloat(e.target.value),
+                          })
+                        }
                       />
                     </div>
                     <div>
@@ -779,7 +1007,12 @@ export function StorytellerControlPanel() {
                       <Input
                         type="number"
                         value={editingCountry.currentTotalGdp}
-                        onChange={(e) => setEditingCountry({ ...editingCountry, currentTotalGdp: parseFloat(e.target.value) })}
+                        onChange={(e) =>
+                          setEditingCountry({
+                            ...editingCountry,
+                            currentTotalGdp: parseFloat(e.target.value),
+                          })
+                        }
                       />
                     </div>
                     <div>
@@ -788,14 +1021,21 @@ export function StorytellerControlPanel() {
                         type="number"
                         step="0.01"
                         value={editingCountry.adjustedGdpGrowth}
-                        onChange={(e) => setEditingCountry({ ...editingCountry, adjustedGdpGrowth: parseFloat(e.target.value) })}
+                        onChange={(e) =>
+                          setEditingCountry({
+                            ...editingCountry,
+                            adjustedGdpGrowth: parseFloat(e.target.value),
+                          })
+                        }
                       />
                     </div>
                     <div>
                       <Label>Economic Tier</Label>
                       <Select
                         value={editingCountry.economicTier}
-                        onValueChange={(v) => setEditingCountry({ ...editingCountry, economicTier: v })}
+                        onValueChange={(v) =>
+                          setEditingCountry({ ...editingCountry, economicTier: v })
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -811,14 +1051,19 @@ export function StorytellerControlPanel() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="population" className="space-y-4 mt-4">
+                <TabsContent value="population" className="mt-4 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Current Population</Label>
                       <Input
                         type="number"
                         value={editingCountry.currentPopulation}
-                        onChange={(e) => setEditingCountry({ ...editingCountry, currentPopulation: parseFloat(e.target.value) })}
+                        onChange={(e) =>
+                          setEditingCountry({
+                            ...editingCountry,
+                            currentPopulation: parseFloat(e.target.value),
+                          })
+                        }
                       />
                     </div>
                     <div>
@@ -827,7 +1072,12 @@ export function StorytellerControlPanel() {
                         type="number"
                         step="0.001"
                         value={editingCountry.populationGrowthRate}
-                        onChange={(e) => setEditingCountry({ ...editingCountry, populationGrowthRate: parseFloat(e.target.value) })}
+                        onChange={(e) =>
+                          setEditingCountry({
+                            ...editingCountry,
+                            populationGrowthRate: parseFloat(e.target.value),
+                          })
+                        }
                       />
                     </div>
                     <div>
@@ -835,60 +1085,80 @@ export function StorytellerControlPanel() {
                       <Input
                         type="number"
                         value={editingCountry.populationDensity || 0}
-                        onChange={(e) => setEditingCountry({ ...editingCountry, populationDensity: parseFloat(e.target.value) })}
+                        onChange={(e) =>
+                          setEditingCountry({
+                            ...editingCountry,
+                            populationDensity: parseFloat(e.target.value),
+                          })
+                        }
                       />
                     </div>
                   </div>
                 </TabsContent>
 
-                <TabsContent value="geography" className="space-y-4 mt-4">
+                <TabsContent value="geography" className="mt-4 space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Land Area (km²)</Label>
                       <Input
                         type="number"
                         value={editingCountry.landArea || 0}
-                        onChange={(e) => setEditingCountry({ ...editingCountry, landArea: parseFloat(e.target.value) })}
+                        onChange={(e) =>
+                          setEditingCountry({
+                            ...editingCountry,
+                            landArea: parseFloat(e.target.value),
+                          })
+                        }
                       />
                     </div>
                     <div>
                       <Label>Continent</Label>
                       <Input
                         value={editingCountry.continent || ""}
-                        onChange={(e) => setEditingCountry({ ...editingCountry, continent: e.target.value })}
+                        onChange={(e) =>
+                          setEditingCountry({ ...editingCountry, continent: e.target.value })
+                        }
                       />
                     </div>
                     <div>
                       <Label>Region</Label>
                       <Input
                         value={editingCountry.region || ""}
-                        onChange={(e) => setEditingCountry({ ...editingCountry, region: e.target.value })}
+                        onChange={(e) =>
+                          setEditingCountry({ ...editingCountry, region: e.target.value })
+                        }
                       />
                     </div>
                   </div>
                 </TabsContent>
 
-                <TabsContent value="identity" className="space-y-4 mt-4">
+                <TabsContent value="identity" className="mt-4 space-y-4">
                   <div className="space-y-4">
                     <div>
                       <Label>Country Name</Label>
                       <Input
                         value={editingCountry.name}
-                        onChange={(e) => setEditingCountry({ ...editingCountry, name: e.target.value })}
+                        onChange={(e) =>
+                          setEditingCountry({ ...editingCountry, name: e.target.value })
+                        }
                       />
                     </div>
                     <div>
                       <Label>Government Type</Label>
                       <Input
                         value={editingCountry.governmentType || ""}
-                        onChange={(e) => setEditingCountry({ ...editingCountry, governmentType: e.target.value })}
+                        onChange={(e) =>
+                          setEditingCountry({ ...editingCountry, governmentType: e.target.value })
+                        }
                       />
                     </div>
                     <div>
                       <Label>Leader</Label>
                       <Input
                         value={editingCountry.leader || ""}
-                        onChange={(e) => setEditingCountry({ ...editingCountry, leader: e.target.value })}
+                        onChange={(e) =>
+                          setEditingCountry({ ...editingCountry, leader: e.target.value })
+                        }
                       />
                     </div>
                   </div>
@@ -898,7 +1168,8 @@ export function StorytellerControlPanel() {
               <Alert className="border-red-500/20 bg-red-500/5">
                 <AlertTriangle className="h-4 w-4 text-red-500" />
                 <AlertDescription className="text-sm">
-                  <strong>Warning:</strong> Changes are immediate and irreversible. All modifications are logged for audit purposes.
+                  <strong>Warning:</strong> Changes are immediate and irreversible. All
+                  modifications are logged for audit purposes.
                 </AlertDescription>
               </Alert>
             </div>
@@ -939,11 +1210,17 @@ interface InterventionsPanelProps {
 }
 
 function InterventionsPanel({
-  countries, interventions, selectedCountry, selectedScale,
-  onCountryChange, onScaleChange, onCreateNew, onDelete
+  countries,
+  interventions,
+  selectedCountry,
+  selectedScale,
+  onCountryChange,
+  onScaleChange,
+  onCreateNew,
+  onDelete,
 }: InterventionsPanelProps) {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       {/* Filters */}
       <Card>
         <CardHeader>
@@ -955,14 +1232,19 @@ function InterventionsPanel({
         <CardContent className="space-y-4">
           <div>
             <Label>Target Scope</Label>
-            <Select value={selectedCountry || "global"} onValueChange={v => onCountryChange(v === "global" ? null : v)}>
+            <Select
+              value={selectedCountry || "global"}
+              onValueChange={(v) => onCountryChange(v === "global" ? null : v)}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="global">🌍 Global</SelectItem>
-                {countries.map(c => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                {countries.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -970,8 +1252,8 @@ function InterventionsPanel({
 
           <div>
             <Label>Scale</Label>
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              {(["macro", "micro", "sectoral", "crisis"] as InterventionScale[]).map(scale => (
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {(["macro", "micro", "sectoral", "crisis"] as InterventionScale[]).map((scale) => (
                 <Button
                   key={scale}
                   variant={selectedScale === scale ? "default" : "outline"}
@@ -1004,25 +1286,34 @@ function InterventionsPanel({
           <ScrollArea className="h-[600px]">
             <div className="space-y-3">
               {interventions.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Zap className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <div className="text-muted-foreground py-12 text-center">
+                  <Zap className="mx-auto mb-3 h-12 w-12 opacity-50" />
                   <p>No active interventions</p>
                 </div>
               ) : (
                 interventions.map((intervention: any) => (
-                  <div key={intervention.id} className="flex items-center justify-between p-4 rounded-lg border bg-card/50">
+                  <div
+                    key={intervention.id}
+                    className="bg-card/50 flex items-center justify-between rounded-lg border p-4"
+                  >
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="mb-1 flex items-center gap-2">
                         <Badge variant={intervention.isActive ? "default" : "secondary"}>
                           {intervention.isActive ? "Active" : "Inactive"}
                         </Badge>
                         <span className="font-medium">{intervention.inputType}</span>
                       </div>
-                      <p className="text-sm text-muted-foreground">{intervention.description}</p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
-                        <span>Value: <span className={intervention.value > 0 ? "text-green-600" : "text-red-600"}>
-                          {intervention.value > 0 ? "+" : ""}{(intervention.value * 100).toFixed(2)}%
-                        </span></span>
+                      <p className="text-muted-foreground text-sm">{intervention.description}</p>
+                      <div className="text-muted-foreground mt-2 flex items-center gap-4 text-xs">
+                        <span>
+                          Value:{" "}
+                          <span
+                            className={intervention.value > 0 ? "text-green-600" : "text-red-600"}
+                          >
+                            {intervention.value > 0 ? "+" : ""}
+                            {(intervention.value * 100).toFixed(2)}%
+                          </span>
+                        </span>
                         {intervention.duration && <span>Duration: {intervention.duration}y</span>}
                         <span>{intervention.country?.name || "Global"}</span>
                       </div>
@@ -1051,7 +1342,7 @@ interface GodModePanelProps {
 function GodModePanel({ countries, selectedCountry, onCountryChange, onEdit }: GodModePanelProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredCountries = countries.filter(c =>
+  const filteredCountries = countries.filter((c) =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -1070,7 +1361,7 @@ function GodModePanel({ countries, selectedCountry, onCountryChange, onEdit }: G
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <Search className="h-4 w-4 text-muted-foreground" />
+              <Search className="text-muted-foreground h-4 w-4" />
               <Input
                 placeholder="Search countries..."
                 value={searchTerm}
@@ -1079,9 +1370,12 @@ function GodModePanel({ countries, selectedCountry, onCountryChange, onEdit }: G
             </div>
 
             <ScrollArea className="h-[700px]">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {filteredCountries.map((country) => (
-                  <Card key={country.id} className="cursor-pointer hover:border-primary/50 transition-colors">
+                  <Card
+                    key={country.id}
+                    className="hover:border-primary/50 cursor-pointer transition-colors"
+                  >
                     <CardHeader>
                       <CardTitle className="text-lg">{country.name}</CardTitle>
                       <CardDescription className="flex items-center gap-1">
@@ -1092,22 +1386,28 @@ function GodModePanel({ countries, selectedCountry, onCountryChange, onEdit }: G
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Population:</span>
-                          <span className="font-medium">{(country.currentPopulation / 1e6).toFixed(2)}M</span>
+                          <span className="font-medium">
+                            {(country.currentPopulation / 1e6).toFixed(2)}M
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">GDP/Capita:</span>
-                          <span className="font-medium">${country.currentGdpPerCapita.toLocaleString()}</span>
+                          <span className="font-medium">
+                            ${country.currentGdpPerCapita.toLocaleString()}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Growth:</span>
-                          <span className={`font-medium ${country.adjustedGdpGrowth > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          <span
+                            className={`font-medium ${country.adjustedGdpGrowth > 0 ? "text-green-600" : "text-red-600"}`}
+                          >
                             {(country.adjustedGdpGrowth * 100).toFixed(2)}%
                           </span>
                         </div>
                       </div>
                       <Button
                         onClick={() => onEdit(country)}
-                        className="w-full mt-4 gap-2"
+                        className="mt-4 w-full gap-2"
                         variant="outline"
                       >
                         <Edit3 className="h-4 w-4" />
@@ -1144,14 +1444,19 @@ function ScenariosPanel({ scenarios, onApply }: ScenariosPanelProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {scenarios.map((scenario) => {
               const Icon = scenario.icon;
               return (
-                <Card key={scenario.id} className="border-2 border-dashed hover:border-primary transition-colors cursor-pointer">
+                <Card
+                  key={scenario.id}
+                  className="hover:border-primary cursor-pointer border-2 border-dashed transition-colors"
+                >
                   <CardHeader>
                     <div className="flex items-center gap-3">
-                      <div className={`p-3 rounded-lg bg-${scenario.color}-500/10 border border-${scenario.color}-500/20`}>
+                      <div
+                        className={`rounded-lg p-3 bg-${scenario.color}-500/10 border border-${scenario.color}-500/20`}
+                      >
                         <Icon className={`h-6 w-6 text-${scenario.color}-500`} />
                       </div>
                       <div>
@@ -1209,10 +1514,12 @@ function AnalyticsPanel({ interventions, countries }: AnalyticsPanelProps) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Interventions</CardTitle>
+            <CardTitle className="text-muted-foreground text-sm font-medium">
+              Total Interventions
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{totalInterventions}</div>
@@ -1220,7 +1527,7 @@ function AnalyticsPanel({ interventions, countries }: AnalyticsPanelProps) {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">Active Now</CardTitle>
+            <CardTitle className="text-muted-foreground text-sm font-medium">Active Now</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-green-600">{activeInterventions}</div>
@@ -1228,7 +1535,9 @@ function AnalyticsPanel({ interventions, countries }: AnalyticsPanelProps) {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">Global Effects</CardTitle>
+            <CardTitle className="text-muted-foreground text-sm font-medium">
+              Global Effects
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-blue-600">{globalInterventions}</div>
@@ -1236,7 +1545,9 @@ function AnalyticsPanel({ interventions, countries }: AnalyticsPanelProps) {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">Country-Specific</CardTitle>
+            <CardTitle className="text-muted-foreground text-sm font-medium">
+              Country-Specific
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-purple-600">{countrySpecificInterventions}</div>
@@ -1252,8 +1563,8 @@ function AnalyticsPanel({ interventions, countries }: AnalyticsPanelProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-12 text-muted-foreground">
-            <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-50" />
+          <div className="text-muted-foreground py-12 text-center">
+            <BarChart3 className="mx-auto mb-3 h-12 w-12 opacity-50" />
             <p>Advanced analytics and visualizations coming soon</p>
           </div>
         </CardContent>
@@ -1281,15 +1592,15 @@ function HistoryPanel({ auditLog, isLoading }: HistoryPanelProps) {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <RefreshCw className="h-8 w-8 mx-auto mb-3 animate-spin" />
+          <div className="text-muted-foreground py-12 text-center">
+            <RefreshCw className="mx-auto mb-3 h-8 w-8 animate-spin" />
             <p>Loading audit history...</p>
           </div>
         ) : auditLog.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <History className="h-12 w-12 mx-auto mb-3 opacity-50" />
+          <div className="text-muted-foreground py-12 text-center">
+            <History className="mx-auto mb-3 h-12 w-12 opacity-50" />
             <p>No audit history yet</p>
-            <p className="text-sm mt-2">All god-mode actions will be logged here</p>
+            <p className="mt-2 text-sm">All god-mode actions will be logged here</p>
           </div>
         ) : (
           <ScrollArea className="h-[700px]">
@@ -1299,38 +1610,42 @@ function HistoryPanel({ auditLog, isLoading }: HistoryPanelProps) {
                   <CardContent className="pt-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant={log.action.includes("GOD_MODE") ? "default" : "secondary"}>
+                        <div className="mb-2 flex items-center gap-2">
+                          <Badge
+                            variant={log.action.includes("GOD_MODE") ? "default" : "secondary"}
+                          >
                             {log.action}
                           </Badge>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-muted-foreground text-xs">
                             {formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}
                           </span>
                         </div>
                         <p className="text-sm font-medium">
                           {log.targetType}: <span className="text-primary">{log.targetName}</span>
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-muted-foreground mt-1 text-xs">
                           By {log.adminName} ({log.adminId})
                         </p>
                         {log.changes && Object.keys(log.changes).length > 0 && (
-                          <div className="mt-2 p-2 bg-muted/30 rounded text-xs">
-                            <p className="font-medium mb-1">Changes:</p>
+                          <div className="bg-muted/30 mt-2 rounded p-2 text-xs">
+                            <p className="mb-1 font-medium">Changes:</p>
                             <div className="space-y-1">
-                              {Object.entries(log.changes).slice(0, 5).map(([key, value]) => (
-                                <div key={key} className="flex items-center gap-2">
-                                  <span className="text-muted-foreground">{key}:</span>
-                                  <span className="font-mono">{JSON.stringify(value).slice(0, 50)}</span>
-                                </div>
-                              ))}
+                              {Object.entries(log.changes)
+                                .slice(0, 5)
+                                .map(([key, value]) => (
+                                  <div key={key} className="flex items-center gap-2">
+                                    <span className="text-muted-foreground">{key}:</span>
+                                    <span className="font-mono">
+                                      {JSON.stringify(value).slice(0, 50)}
+                                    </span>
+                                  </div>
+                                ))}
                             </div>
                           </div>
                         )}
                       </div>
                       {log.ipAddress && (
-                        <div className="text-xs text-muted-foreground">
-                          IP: {log.ipAddress}
-                        </div>
+                        <div className="text-muted-foreground text-xs">IP: {log.ipAddress}</div>
                       )}
                     </div>
                   </CardContent>

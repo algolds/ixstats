@@ -1,7 +1,16 @@
 "use client";
 
-import React, { useState, useMemo, type ElementType } from 'react';
-import { Briefcase, Users, Clock, DollarSign, TrendingUp, TrendingDown, Shield, AlertTriangle } from 'lucide-react';
+import React, { useState, useMemo, type ElementType } from "react";
+import {
+  Briefcase,
+  Users,
+  Clock,
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  Shield,
+  AlertTriangle,
+} from "lucide-react";
 import {
   EnhancedSlider,
   EnhancedDial,
@@ -9,26 +18,26 @@ import {
   EnhancedToggle,
   EnhancedPieChart,
   EnhancedBarChart,
-} from '../primitives/enhanced';
-import type { EconomicInputs, LaborEmploymentData } from '../lib/economy-data-service';
-import type { SectionContentProps } from '../types/builder';
-import { 
-  SectionBase, 
-  SectionLayout, 
-  sectionConfigs, 
+} from "../primitives/enhanced";
+import type { EconomicInputs, LaborEmploymentData } from "../lib/economy-data-service";
+import type { SectionContentProps } from "../types/builder";
+import {
+  SectionBase,
+  SectionLayout,
+  sectionConfigs,
   sectionUtils,
-  type ExtendedSectionProps 
-} from '../components/glass/SectionBase';
-import { FormGrid } from '../components/glass/ProgressiveViews';
+  type ExtendedSectionProps,
+} from "../components/glass/SectionBase";
+import { FormGrid } from "../components/glass/ProgressiveViews";
 
 // Help System
-import { EconomicsHelpSystem } from '../components/help/GovernmentHelpSystem';
-import { EconomicsHelpContent } from '../components/help/EconomicsHelpContent';
+import { EconomicsHelpSystem } from "../components/help/GovernmentHelpSystem";
+import { EconomicsHelpContent } from "../components/help/EconomicsHelpContent";
 
 interface LaborEmploymentSectionProps extends ExtendedSectionProps {
   onToggleAdvanced?: () => void;
-  mode?: 'create' | 'edit';
-  fieldLocks?: Record<string, import('../components/enhanced/builderConfig').FieldLockConfig>;
+  mode?: "create" | "edit";
+  fieldLocks?: Record<string, import("../components/enhanced/builderConfig").FieldLockConfig>;
 }
 
 interface Metric {
@@ -36,7 +45,7 @@ interface Metric {
   value: string | number;
   unit?: string;
   icon: ElementType;
-  trend?: 'up' | 'down' | 'neutral';
+  trend?: "up" | "down" | "neutral";
 }
 
 export function LaborEmploymentSection({
@@ -46,24 +55,26 @@ export function LaborEmploymentSection({
   onToggleAdvanced,
   referenceCountry,
   className,
-  mode = 'create',
-  fieldLocks
+  mode = "create",
+  fieldLocks,
 }: LaborEmploymentSectionProps) {
-  const isEditMode = mode === 'edit';
-  const { EDIT_MODE_FIELD_LOCKS } = require('../components/enhanced/builderConfig');
+  const isEditMode = mode === "edit";
+  const { EDIT_MODE_FIELD_LOCKS } = require("../components/enhanced/builderConfig");
   const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
-  const { FieldLockIndicator } = require('../components/FieldLockIndicator');
+  const { FieldLockIndicator } = require("../components/FieldLockIndicator");
 
   const laborEmployment = inputs.laborEmployment;
   const totalPopulation = inputs.coreIndicators.totalPopulation;
-  
+
   // Calculate metrics for overview
   const metrics: Metric[] = useMemo(() => {
     const workingAgePopulation = Math.round(totalPopulation * 0.65);
-    const laborForce = Math.round(workingAgePopulation * (laborEmployment.laborForceParticipationRate / 100));
+    const laborForce = Math.round(
+      workingAgePopulation * (laborEmployment.laborForceParticipationRate / 100)
+    );
     const employed = Math.round(laborForce * ((100 - laborEmployment.unemploymentRate) / 100));
     const unemployed = laborForce - employed;
-    
+
     return [
       {
         label: "Labor Force",
@@ -75,11 +86,16 @@ export function LaborEmploymentSection({
         label: "Unemployment Rate",
         value: `${laborEmployment.unemploymentRate.toFixed(1)}%`,
         icon: laborEmployment.unemploymentRate > 10 ? TrendingDown : TrendingUp,
-        trend: laborEmployment.unemploymentRate > 10 ? 'down' : laborEmployment.unemploymentRate > 7 ? 'neutral' : 'up'
+        trend:
+          laborEmployment.unemploymentRate > 10
+            ? "down"
+            : laborEmployment.unemploymentRate > 7
+              ? "neutral"
+              : "up",
       },
       {
         label: "Average Income",
-        value: sectionUtils.formatCurrency(laborEmployment.averageAnnualIncome, '$', 0),
+        value: sectionUtils.formatCurrency(laborEmployment.averageAnnualIncome, "$", 0),
         unit: "/year",
         icon: DollarSign,
       },
@@ -88,44 +104,60 @@ export function LaborEmploymentSection({
         value: `${laborEmployment.averageWorkweekHours}`,
         unit: "hrs/week",
         icon: Clock,
-      }
+      },
     ];
   }, [laborEmployment, totalPopulation]);
 
   // Handle input changes with proper type safety
   const handleLaborChange = (field: keyof LaborEmploymentData, value: any) => {
     const newLaborEmployment = { ...laborEmployment, [field]: value };
-    
+
     // Auto-calculate derived values
-    if (field === 'laborForceParticipationRate') {
+    if (field === "laborForceParticipationRate") {
       const workingAgePopulation = totalPopulation * 0.65;
       newLaborEmployment.totalWorkforce = Math.round(workingAgePopulation * (value / 100));
-    } else if (field === 'unemploymentRate') {
+    } else if (field === "unemploymentRate") {
       newLaborEmployment.employmentRate = 100 - value;
-    } else if (field === 'employmentRate') {
+    } else if (field === "employmentRate") {
       newLaborEmployment.unemploymentRate = 100 - value;
     }
-    
+
     onInputsChange({ ...inputs, laborEmployment: newLaborEmployment });
   };
 
   // Prepare chart data
   const laborData = [
-    { category: 'Employed', value: 100 - laborEmployment.unemploymentRate, color: 'emerald' },
-    { category: 'Unemployed', value: laborEmployment.unemploymentRate, color: 'red' }
+    { category: "Employed", value: 100 - laborEmployment.unemploymentRate, color: "emerald" },
+    { category: "Unemployed", value: laborEmployment.unemploymentRate, color: "red" },
   ];
 
   const wageData = [
-    { name: 'Minimum Wage', value: laborEmployment.minimumWage, color: 'red' },
-    { name: 'Average Income', value: laborEmployment.averageAnnualIncome / 12, color: 'blue' }, // Monthly
-    { name: 'Median Income', value: (laborEmployment.averageAnnualIncome * 0.85) / 12, color: 'emerald' } // Estimated monthly
+    { name: "Minimum Wage", value: laborEmployment.minimumWage, color: "red" },
+    { name: "Average Income", value: laborEmployment.averageAnnualIncome / 12, color: "blue" }, // Monthly
+    {
+      name: "Median Income",
+      value: (laborEmployment.averageAnnualIncome * 0.85) / 12,
+      color: "emerald",
+    }, // Estimated monthly
   ];
 
   const workforceData = [
-    { name: 'Labor Force Participation', value: laborEmployment.laborForceParticipationRate, color: 'blue' },
-    { name: 'Employment Rate', value: 100 - laborEmployment.unemploymentRate, color: 'emerald' },
-    { name: 'Youth Employment', value: Math.max(0, 100 - laborEmployment.unemploymentRate * 1.5), color: 'gold' },
-    { name: 'Senior Employment', value: Math.max(0, 100 - laborEmployment.unemploymentRate * 0.8), color: 'purple' }
+    {
+      name: "Labor Force Participation",
+      value: laborEmployment.laborForceParticipationRate,
+      color: "blue",
+    },
+    { name: "Employment Rate", value: 100 - laborEmployment.unemploymentRate, color: "emerald" },
+    {
+      name: "Youth Employment",
+      value: Math.max(0, 100 - laborEmployment.unemploymentRate * 1.5),
+      color: "gold",
+    },
+    {
+      name: "Senior Employment",
+      value: Math.max(0, 100 - laborEmployment.unemploymentRate * 0.8),
+      color: "purple",
+    },
   ];
 
   // Basic view content - Essential labor metrics
@@ -135,9 +167,13 @@ export function LaborEmploymentSection({
         <div className="flex items-center gap-2">
           <EnhancedSlider
             label="Unemployment Rate"
-            description={locks.unemploymentRate?.isLocked ? `🔒 ${locks.unemploymentRate.reason}` : "Percentage of labor force without employment"}
+            description={
+              locks.unemploymentRate?.isLocked
+                ? `🔒 ${locks.unemploymentRate.reason}`
+                : "Percentage of labor force without employment"
+            }
             value={Number(laborEmployment.unemploymentRate) || 0}
-            onChange={(value) => handleLaborChange('unemploymentRate', Number(value))}
+            onChange={(value) => handleLaborChange("unemploymentRate", Number(value))}
             min={0}
             max={25}
             step={0.1}
@@ -162,9 +198,13 @@ export function LaborEmploymentSection({
         <div className="flex items-center gap-2">
           <EnhancedSlider
             label="Labor Force Participation"
-            description={locks.laborForceParticipationRate?.isLocked ? `🔒 ${locks.laborForceParticipationRate.reason}` : "Percentage of working-age population in labor force"}
+            description={
+              locks.laborForceParticipationRate?.isLocked
+                ? `🔒 ${locks.laborForceParticipationRate.reason}`
+                : "Percentage of working-age population in labor force"
+            }
             value={Number(laborEmployment.laborForceParticipationRate) || 0}
-            onChange={(value) => handleLaborChange('laborForceParticipationRate', Number(value))}
+            onChange={(value) => handleLaborChange("laborForceParticipationRate", Number(value))}
             min={30}
             max={90}
             step={0.5}
@@ -186,9 +226,13 @@ export function LaborEmploymentSection({
         <div className="flex items-center gap-2">
           <EnhancedNumberInput
             label="Average Annual Income"
-            description={locks.averageAnnualIncome?.isLocked ? `🔒 ${locks.averageAnnualIncome.reason}` : "Mean yearly earnings across all employed workers"}
+            description={
+              locks.averageAnnualIncome?.isLocked
+                ? `🔒 ${locks.averageAnnualIncome.reason}`
+                : "Mean yearly earnings across all employed workers"
+            }
             value={Number(laborEmployment.averageAnnualIncome) || 0}
-            onChange={(value) => handleLaborChange('averageAnnualIncome', Number(value))}
+            onChange={(value) => handleLaborChange("averageAnnualIncome", Number(value))}
             min={5000}
             max={120000}
             step={1000}
@@ -230,7 +274,7 @@ export function LaborEmploymentSection({
         label="Minimum Wage"
         description="Legally mandated minimum hourly wage"
         value={Number(laborEmployment.minimumWage) || 0}
-        onChange={(value) => handleLaborChange('minimumWage', Number(value))}
+        onChange={(value) => handleLaborChange("minimumWage", Number(value))}
         min={500}
         max={4000}
         step={50}
@@ -245,7 +289,7 @@ export function LaborEmploymentSection({
         label="Average Work Week"
         description="Standard hours worked per week across all sectors"
         value={Number(laborEmployment.averageWorkweekHours) || 0}
-        onChange={(value) => handleLaborChange('averageWorkweekHours', Number(value))}
+        onChange={(value) => handleLaborChange("averageWorkweekHours", Number(value))}
         min={20}
         max={60}
         step={1}
@@ -262,9 +306,13 @@ export function LaborEmploymentSection({
         <div className="flex items-center gap-2">
           <EnhancedNumberInput
             label="Total Workforce"
-            description={locks.totalWorkforce?.isLocked ? `🔒 ${locks.totalWorkforce.reason}` : "Total number of people employed or seeking employment"}
+            description={
+              locks.totalWorkforce?.isLocked
+                ? `🔒 ${locks.totalWorkforce.reason}`
+                : "Total number of people employed or seeking employment"
+            }
             value={Number(laborEmployment.totalWorkforce) || 0}
-            onChange={(value) => handleLaborChange('totalWorkforce', Number(value))}
+            onChange={(value) => handleLaborChange("totalWorkforce", Number(value))}
             min={Number(totalPopulation) * 0.3}
             max={Number(totalPopulation) * 0.8}
             step={1000}
@@ -288,9 +336,13 @@ export function LaborEmploymentSection({
         <div className="flex items-center gap-2">
           <EnhancedSlider
             label="Employment Rate"
-            description={locks.employmentRate?.isLocked ? `🔒 ${locks.employmentRate.reason}` : "Percentage of labor force that is employed"}
+            description={
+              locks.employmentRate?.isLocked
+                ? `🔒 ${locks.employmentRate.reason}`
+                : "Percentage of labor force that is employed"
+            }
             value={Number(laborEmployment.employmentRate) || 0}
-            onChange={(value) => handleLaborChange('employmentRate', Number(value))}
+            onChange={(value) => handleLaborChange("employmentRate", Number(value))}
             min={50}
             max={100}
             step={0.1}
@@ -309,8 +361,8 @@ export function LaborEmploymentSection({
       </div>
 
       {/* Labor Policy Toggles */}
-      <div className="md:col-span-2 space-y-4">
-        <h5 className="text-sm font-bold text-foreground flex items-center gap-2">
+      <div className="space-y-4 md:col-span-2">
+        <h5 className="text-foreground flex items-center gap-2 text-sm font-bold">
           <Shield className="h-4 w-4" />
           Labor Policies
         </h5>
@@ -319,7 +371,7 @@ export function LaborEmploymentSection({
             label="Strong Labor Protections"
             description="Enhanced worker rights and job security"
             checked={laborEmployment.laborProtections}
-            onChange={(checked) => handleLaborChange('laborProtections', checked)}
+            onChange={(checked) => handleLaborChange("laborProtections", checked)}
             sectionId="labor"
             variant="switch"
             showIcons={true}
@@ -369,13 +421,15 @@ export function LaborEmploymentSection({
 
   // Calculate labor market health metrics
   const workingAgePopulation = Math.round(totalPopulation * 0.65);
-  const laborForce = Math.round(workingAgePopulation * (laborEmployment.laborForceParticipationRate / 100));
+  const laborForce = Math.round(
+    workingAgePopulation * (laborEmployment.laborForceParticipationRate / 100)
+  );
   const employed = Math.round(laborForce * ((100 - laborEmployment.unemploymentRate) / 100));
 
   // Generate labor market insights
   const generateInsights = () => {
     const insights = [];
-    
+
     if (laborEmployment.unemploymentRate > 15) {
       insights.push("Very high unemployment indicates severe labor market distress");
     } else if (laborEmployment.unemploymentRate > 10) {
@@ -383,26 +437,26 @@ export function LaborEmploymentSection({
     } else if (laborEmployment.unemploymentRate < 3) {
       insights.push("Very low unemployment may indicate labor shortages and wage pressures");
     }
-    
+
     if (laborEmployment.laborForceParticipationRate < 50) {
       insights.push("Low labor force participation limits economic potential");
     } else if (laborEmployment.laborForceParticipationRate > 80) {
       insights.push("High labor force participation supports strong economic growth");
     }
-    
+
     const minToAvgRatio = (laborEmployment.minimumWage * 12) / laborEmployment.averageAnnualIncome;
     if (minToAvgRatio > 0.6) {
       insights.push("Minimum wage is high relative to average income");
     } else if (minToAvgRatio < 0.3) {
       insights.push("Significant income inequality - consider minimum wage adjustments");
     }
-    
+
     if (laborEmployment.averageWorkweekHours > 50) {
       insights.push("Long work hours may impact productivity and worker wellbeing");
     } else if (laborEmployment.averageWorkweekHours < 30) {
       insights.push("Short work week may indicate part-time economy or work-life balance focus");
     }
-    
+
     return insights;
   };
 
@@ -425,8 +479,8 @@ export function LaborEmploymentSection({
         info: [
           `Working Age Population: ${sectionUtils.formatNumber(workingAgePopulation)} (65% of total)`,
           `Employed Population: ${sectionUtils.formatNumber(employed)}`,
-          `Average Monthly Income: ${sectionUtils.formatCurrency(laborEmployment.averageAnnualIncome / 12, '$', 0)}`
-        ]
+          `Average Monthly Income: ${sectionUtils.formatCurrency(laborEmployment.averageAnnualIncome / 12, "$", 0)}`,
+        ],
       }}
       className={className}
       hideViewToggle={true}

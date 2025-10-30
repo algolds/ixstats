@@ -41,8 +41,8 @@ export function InteractiveGridPattern({
   useEffect(() => {
     const update = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
     update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, []);
 
   const { horizontal, vertical } = useMemo(() => {
@@ -56,10 +56,7 @@ export function InteractiveGridPattern({
     <svg
       width={width * horizontal}
       height={height * vertical}
-      className={cn(
-        "absolute inset-0 h-full w-full",
-        className,
-      )}
+      className={cn("absolute inset-0 h-full w-full", className)}
       {...props}
     >
       {Array.from({ length: horizontal * vertical }).map((_, index) => {
@@ -75,7 +72,7 @@ export function InteractiveGridPattern({
             className={cn(
               "stroke-gray-400/30 transition-all duration-100 ease-in-out [&:not(:hover)]:duration-1000",
               hoveredSquare === index ? "fill-gray-300/30" : "fill-transparent",
-              squaresClassName,
+              squaresClassName
             )}
             onMouseEnter={() => setHoveredSquare(index)}
             onMouseLeave={() => setHoveredSquare(null)}

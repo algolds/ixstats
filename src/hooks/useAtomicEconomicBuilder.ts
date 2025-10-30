@@ -14,16 +14,16 @@
  * - Performance optimization with useMemo/useCallback
  */
 
-'use client';
+"use client";
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from "react";
 import {
   type EconomicComponentType,
   type EconomicCategory,
   type EconomicTemplate,
   ECONOMIC_TEMPLATES,
-  COMPONENT_CATEGORIES
-} from '~/lib/atomic-economic-data';
+  COMPONENT_CATEGORIES,
+} from "~/lib/atomic-economic-data";
 import {
   filterAndSearchComponents,
   detectEconomicSynergies,
@@ -32,9 +32,9 @@ import {
   validateEconomicSelection,
   getAllComponents,
   type EconomicMetrics,
-  type ValidationResult
-} from '~/lib/atomic-economic-utils';
-import { useEconomicComponentsData } from './useEconomicComponentsData';
+  type ValidationResult,
+} from "~/lib/atomic-economic-utils";
+import { useEconomicComponentsData } from "./useEconomicComponentsData";
 
 /**
  * Hook Props
@@ -101,22 +101,27 @@ export function useAtomicEconomicBuilder({
   countryId,
   initialSelection = [],
   maxComponents = 12,
-  onSelectionChange
+  onSelectionChange,
 }: UseAtomicEconomicBuilderProps = {}): UseAtomicEconomicBuilderReturn {
   // ============================================================================
   // Database Integration
   // ============================================================================
 
   // Use database hook for component data
-  const { components: dbComponents, isLoading: dbLoading, isUsingFallback } = useEconomicComponentsData();
+  const {
+    components: dbComponents,
+    isLoading: dbLoading,
+    isUsingFallback,
+  } = useEconomicComponentsData();
 
   // ============================================================================
   // State
   // ============================================================================
 
-  const [selectedComponents, setSelectedComponents] = useState<EconomicComponentType[]>(initialSelection);
+  const [selectedComponents, setSelectedComponents] =
+    useState<EconomicComponentType[]>(initialSelection);
   const [categoryFilter, setCategoryFilter] = useState<EconomicCategory | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   // ============================================================================
   // Computed Values (Memoized)
@@ -128,7 +133,7 @@ export function useAtomicEconomicBuilder({
    */
   const allComponents = useMemo(() => {
     if (dbComponents.length > 0) {
-      return dbComponents.map(comp => comp.type);
+      return dbComponents.map((comp) => comp.type);
     }
     return getAllComponents();
   }, [dbComponents]);
@@ -144,7 +149,7 @@ export function useAtomicEconomicBuilder({
    * Set of selected component IDs for quick lookup
    */
   const selectedIds = useMemo(() => {
-    return new Set(selectedComponents.map(c => c.toString()));
+    return new Set(selectedComponents.map((c) => c.toString()));
   }, [selectedComponents]);
 
   /**
@@ -193,47 +198,56 @@ export function useAtomicEconomicBuilder({
   /**
    * Handle component selection
    */
-  const handleSelect = useCallback((component: EconomicComponentType) => {
-    setSelectedComponents(prev => {
-      // Don't add if already selected
-      if (prev.includes(component)) return prev;
+  const handleSelect = useCallback(
+    (component: EconomicComponentType) => {
+      setSelectedComponents((prev) => {
+        // Don't add if already selected
+        if (prev.includes(component)) return prev;
 
-      // Don't add if max reached
-      if (prev.length >= maxComponents) return prev;
+        // Don't add if max reached
+        if (prev.length >= maxComponents) return prev;
 
-      const newSelection = [...prev, component];
+        const newSelection = [...prev, component];
 
-      // Notify parent if callback provided
-      onSelectionChange?.(newSelection);
+        // Notify parent if callback provided
+        onSelectionChange?.(newSelection);
 
-      return newSelection;
-    });
-  }, [maxComponents, onSelectionChange]);
+        return newSelection;
+      });
+    },
+    [maxComponents, onSelectionChange]
+  );
 
   /**
    * Handle component deselection
    */
-  const handleDeselect = useCallback((component: EconomicComponentType) => {
-    setSelectedComponents(prev => {
-      const newSelection = prev.filter(c => c !== component);
+  const handleDeselect = useCallback(
+    (component: EconomicComponentType) => {
+      setSelectedComponents((prev) => {
+        const newSelection = prev.filter((c) => c !== component);
 
-      // Notify parent if callback provided
-      onSelectionChange?.(newSelection);
+        // Notify parent if callback provided
+        onSelectionChange?.(newSelection);
 
-      return newSelection;
-    });
-  }, [onSelectionChange]);
+        return newSelection;
+      });
+    },
+    [onSelectionChange]
+  );
 
   /**
    * Handle component toggle (select/deselect)
    */
-  const handleToggle = useCallback((component: EconomicComponentType) => {
-    if (selectedIds.has(component.toString())) {
-      handleDeselect(component);
-    } else {
-      handleSelect(component);
-    }
-  }, [selectedIds, handleSelect, handleDeselect]);
+  const handleToggle = useCallback(
+    (component: EconomicComponentType) => {
+      if (selectedIds.has(component.toString())) {
+        handleDeselect(component);
+      } else {
+        handleSelect(component);
+      }
+    },
+    [selectedIds, handleSelect, handleDeselect]
+  );
 
   /**
    * Clear all selected components
@@ -246,13 +260,16 @@ export function useAtomicEconomicBuilder({
   /**
    * Load economic template
    */
-  const loadTemplate = useCallback((templateId: string) => {
-    const template = ECONOMIC_TEMPLATES.find(t => t.id === templateId);
-    if (!template) return;
+  const loadTemplate = useCallback(
+    (templateId: string) => {
+      const template = ECONOMIC_TEMPLATES.find((t) => t.id === templateId);
+      if (!template) return;
 
-    setSelectedComponents(template.components);
-    onSelectionChange?.(template.components);
-  }, [onSelectionChange]);
+      setSelectedComponents(template.components);
+      onSelectionChange?.(template.components);
+    },
+    [onSelectionChange]
+  );
 
   /**
    * Set category filter
@@ -282,19 +299,19 @@ export function useAtomicEconomicBuilder({
     categoryFilter: {
       category: categoryFilter,
       setCategory,
-      categories: COMPONENT_CATEGORIES
+      categories: COMPONENT_CATEGORIES,
     },
 
     // Search State
     search: {
       query: searchQuery,
-      setQuery
+      setQuery,
     },
 
     // Templates
     templates: {
       available: ECONOMIC_TEMPLATES,
-      load: loadTemplate
+      load: loadTemplate,
     },
 
     // Computed Data
@@ -311,6 +328,6 @@ export function useAtomicEconomicBuilder({
 
     // Utility
     canSelect,
-    maxComponents
+    maxComponents,
   };
 }

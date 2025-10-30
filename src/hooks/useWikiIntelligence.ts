@@ -9,11 +9,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { api } from "~/trpc/react";
-import type {
-  WikiIntelligenceData,
-  WikiSettings,
-  DataConflict
-} from "~/types/wiki-intelligence";
+import type { WikiIntelligenceData, WikiSettings, DataConflict } from "~/types/wiki-intelligence";
 
 /**
  * Props for the useWikiIntelligence hook
@@ -72,13 +68,13 @@ interface UseWikiIntelligenceReturn {
   isRefreshing: boolean;
 
   /** Check if viewer has access to a given classification level */
-  hasAccess: (classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL') => boolean;
+  hasAccess: (classification: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL") => boolean;
 
   /** Viewer's clearance level */
-  viewerClearanceLevel: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
+  viewerClearanceLevel: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
 
   /** Set viewer's clearance level */
-  setViewerClearanceLevel: (level: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL') => void;
+  setViewerClearanceLevel: (level: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL") => void;
 }
 
 /**
@@ -92,22 +88,22 @@ const DEFAULT_WIKI_SETTINGS: WikiSettings = {
   maxSections: 10,
   customPages: [],
   wikiBaseUrls: {
-    ixwiki: 'https://ixwiki.com',
-    iiwiki: 'https://iiwiki.com',
-    custom: ''
+    ixwiki: "https://ixwiki.com",
+    iiwiki: "https://iiwiki.com",
+    custom: "",
   },
   contentFilters: {
     removeTemplates: true,
     preserveLinks: true,
     removeCategories: true,
     removeInfoboxes: false,
-    aggressiveCleaning: true
+    aggressiveCleaning: true,
   },
   pageVariants: {
     useCountryVariants: true,
     useTopicPages: true,
-    useCustomSearch: false
-  }
+    useCustomSearch: false,
+  },
 };
 
 /**
@@ -143,22 +139,29 @@ const DEFAULT_WIKI_SETTINGS: WikiSettings = {
 export function useWikiIntelligence({
   countryName,
   countryData,
-  initialSettings = {}
+  initialSettings = {},
 }: UseWikiIntelligenceProps): UseWikiIntelligenceReturn {
   // Initialize wiki settings with defaults and any initial overrides
   const [wikiSettings, setWikiSettings] = useState<WikiSettings>({
     ...DEFAULT_WIKI_SETTINGS,
-    ...initialSettings
+    ...initialSettings,
   });
 
   // Track which sections are currently expanded
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
   // Track viewer's clearance level (could be passed in props or derived from auth)
-  const [viewerClearanceLevel, setViewerClearanceLevel] = useState<'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL'>('PUBLIC');
+  const [viewerClearanceLevel, setViewerClearanceLevel] = useState<
+    "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL"
+  >("PUBLIC");
 
   // tRPC query for fetching cached wiki profile data
-  const { data: profileData, isLoading, error, refetch } = api.wikiCache.getCountryProfile.useQuery({
+  const {
+    data: profileData,
+    isLoading,
+    error,
+    refetch,
+  } = api.wikiCache.getCountryProfile.useQuery({
     countryName,
     includePageVariants: wikiSettings.autoDiscovery,
     maxSections: wikiSettings.maxSections,
@@ -181,7 +184,7 @@ export function useWikiIntelligence({
         lastUpdated: 0,
         confidence: 0,
         isLoading: true,
-        error: undefined
+        error: undefined,
       };
     }
 
@@ -189,13 +192,13 @@ export function useWikiIntelligence({
       // Fallback sections when no data is available
       const fallbackSections = [
         {
-          id: 'overview',
-          title: 'Overview',
+          id: "overview",
+          title: "Overview",
           content: `Live wiki intelligence for [[${countryName}]] is still loading. Core demographics from IxStats are available until fresh data arrives.`,
-          classification: 'PUBLIC' as const,
-          importance: 'critical' as const,
+          classification: "PUBLIC" as const,
+          importance: "critical" as const,
           lastModified: new Date().toISOString(),
-          wordCount: 35
+          wordCount: 35,
         },
       ];
 
@@ -207,7 +210,7 @@ export function useWikiIntelligence({
         lastUpdated: Date.now(),
         confidence: 0,
         isLoading: false,
-        error: error?.message || 'Failed to load wiki data'
+        error: error?.message || "Failed to load wiki data",
       };
     }
 
@@ -219,7 +222,7 @@ export function useWikiIntelligence({
       lastUpdated: profileData.lastUpdated || Date.now(),
       confidence: profileData.confidence || 0,
       isLoading: false,
-      error: undefined
+      error: undefined,
     };
   }, [profileData, isLoading, error, countryName]);
 
@@ -229,7 +232,7 @@ export function useWikiIntelligence({
   useEffect(() => {
     if (wikiData.sections.length > 0 && Object.keys(openSections).length === 0) {
       const initialState: Record<string, boolean> = {};
-      wikiData.sections.forEach(section => {
+      wikiData.sections.forEach((section) => {
         initialState[section.id] = true;
       });
       setOpenSections(initialState);
@@ -240,9 +243,9 @@ export function useWikiIntelligence({
    * Toggle a section's open/closed state
    */
   const toggleSection = useCallback((sectionId: string) => {
-    setOpenSections(prev => ({
+    setOpenSections((prev) => ({
       ...prev,
-      [sectionId]: !prev[sectionId]
+      [sectionId]: !prev[sectionId],
     }));
   }, []);
 
@@ -256,15 +259,16 @@ export function useWikiIntelligence({
 
     // Check population conflicts
     if (wikiData.infobox.population_estimate) {
-      const wikiPop = parseInt(wikiData.infobox.population_estimate.replace(/[^0-9]/g, ''));
+      const wikiPop = parseInt(wikiData.infobox.population_estimate.replace(/[^0-9]/g, ""));
       const ixStatsPop = countryData.currentPopulation;
-      if (Math.abs(wikiPop - ixStatsPop) / ixStatsPop > 0.1) { // 10% difference
+      if (Math.abs(wikiPop - ixStatsPop) / ixStatsPop > 0.1) {
+        // 10% difference
         conflicts.push({
-          field: 'Population',
+          field: "Population",
           wikiValue: wikiData.infobox.population_estimate,
           ixStatsValue: ixStatsPop.toLocaleString(),
-          type: 'value_mismatch',
-          severity: 'high'
+          type: "value_mismatch",
+          severity: "high",
         });
       }
     }
@@ -273,24 +277,28 @@ export function useWikiIntelligence({
     if (wikiData.infobox.capital && countryData.capital) {
       if (wikiData.infobox.capital.toLowerCase() !== countryData.capital.toLowerCase()) {
         conflicts.push({
-          field: 'Capital',
+          field: "Capital",
           wikiValue: wikiData.infobox.capital,
           ixStatsValue: countryData.capital,
-          type: 'value_mismatch',
-          severity: 'medium'
+          type: "value_mismatch",
+          severity: "medium",
         });
       }
     }
 
     // Check government type conflicts
     if (wikiData.infobox.government_type && countryData.governmentType) {
-      if (!wikiData.infobox.government_type.toLowerCase().includes(countryData.governmentType.toLowerCase())) {
+      if (
+        !wikiData.infobox.government_type
+          .toLowerCase()
+          .includes(countryData.governmentType.toLowerCase())
+      ) {
         conflicts.push({
-          field: 'Government Type',
+          field: "Government Type",
           wikiValue: wikiData.infobox.government_type,
           ixStatsValue: countryData.governmentType,
-          type: 'value_mismatch',
-          severity: 'low'
+          type: "value_mismatch",
+          severity: "low",
         });
       }
     }
@@ -303,7 +311,7 @@ export function useWikiIntelligence({
    */
   const handleRefresh = useCallback(async () => {
     try {
-      console.log('[useWikiIntelligence] Manual refresh triggered - clearing cache');
+      console.log("[useWikiIntelligence] Manual refresh triggered - clearing cache");
 
       // Clear cache and refetch
       await refreshMutation.mutateAsync({ countryName });
@@ -313,7 +321,7 @@ export function useWikiIntelligence({
 
       console.log(`[useWikiIntelligence] Refresh complete for ${countryName}`);
     } catch (error) {
-      console.error('[useWikiIntelligence] Refresh error:', error);
+      console.error("[useWikiIntelligence] Refresh error:", error);
       throw error; // Re-throw so caller can handle it
     }
   }, [refreshMutation, refetch, countryName]);
@@ -321,10 +329,13 @@ export function useWikiIntelligence({
   /**
    * Check if viewer has access to a given classification level
    */
-  const hasAccess = useCallback((classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL') => {
-    const levels = { 'PUBLIC': 1, 'RESTRICTED': 2, 'CONFIDENTIAL': 3 };
-    return levels[viewerClearanceLevel] >= levels[classification];
-  }, [viewerClearanceLevel]);
+  const hasAccess = useCallback(
+    (classification: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL") => {
+      const levels = { PUBLIC: 1, RESTRICTED: 2, CONFIDENTIAL: 3 };
+      return levels[viewerClearanceLevel] >= levels[classification];
+    },
+    [viewerClearanceLevel]
+  );
 
   return {
     wikiData,
@@ -338,6 +349,6 @@ export function useWikiIntelligence({
     isRefreshing: refreshMutation.isPending,
     hasAccess,
     viewerClearanceLevel,
-    setViewerClearanceLevel
+    setViewerClearanceLevel,
   };
 }

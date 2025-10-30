@@ -20,12 +20,12 @@ import {
   RiTimeLine,
   RiBarChartLine,
   RiSearchLine,
-  RiRefreshLine
+  RiRefreshLine,
 } from "react-icons/ri";
 
 interface DiplomaticLeaderboardsProps {
   viewerCountryId?: string;
-  viewerClearanceLevel?: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
+  viewerClearanceLevel?: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
   compact?: boolean;
   className?: string;
 }
@@ -50,9 +50,9 @@ interface CountryRanking {
     trustworthiness: number;
   };
   badges: string[];
-  tier: 'legendary' | 'platinum' | 'gold' | 'silver' | 'bronze';
+  tier: "legendary" | "platinum" | "gold" | "silver" | "bronze";
   lastActivity: string;
-  trend: 'rising' | 'falling' | 'stable';
+  trend: "rising" | "falling" | "stable";
 }
 
 interface LeaderboardCategory {
@@ -61,115 +61,115 @@ interface LeaderboardCategory {
   description: string;
   icon: React.ComponentType<{ className?: string }>;
   color: string;
-  dataKey: keyof CountryRanking['metrics'];
+  dataKey: keyof CountryRanking["metrics"];
   format: (value: number) => string;
 }
 
 const LEADERBOARD_CATEGORIES: LeaderboardCategory[] = [
   {
-    id: 'overall',
-    title: 'Overall Diplomatic Ranking',
-    description: 'Comprehensive diplomatic performance across all metrics',
+    id: "overall",
+    title: "Overall Diplomatic Ranking",
+    description: "Comprehensive diplomatic performance across all metrics",
     icon: RiTrophyLine,
-    color: 'text-yellow-400',
-    dataKey: 'influenceScore',
-    format: (value) => `${Math.round(value)}`
+    color: "text-yellow-400",
+    dataKey: "influenceScore",
+    format: (value) => `${Math.round(value)}`,
   },
   {
-    id: 'relations',
-    title: 'Diplomatic Relations',
-    description: 'Number of active diplomatic relationships',
+    id: "relations",
+    title: "Diplomatic Relations",
+    description: "Number of active diplomatic relationships",
     icon: RiShakeHandsLine,
-    color: 'text-blue-400',
-    dataKey: 'diplomaticRelations',
-    format: (value) => `${value} nations`
+    color: "text-blue-400",
+    dataKey: "diplomaticRelations",
+    format: (value) => `${value} nations`,
   },
   {
-    id: 'trade',
-    title: 'Trade Agreements',
-    description: 'Active trade partnerships and economic cooperation',
+    id: "trade",
+    title: "Trade Agreements",
+    description: "Active trade partnerships and economic cooperation",
     icon: RiExchangeLine,
-    color: 'text-green-400',
-    dataKey: 'tradeAgreements',
-    format: (value) => `${value} agreements`
+    color: "text-green-400",
+    dataKey: "tradeAgreements",
+    format: (value) => `${value} agreements`,
   },
   {
-    id: 'cultural',
-    title: 'Cultural Exchange',
-    description: 'International cultural programs and exchanges',
+    id: "cultural",
+    title: "Cultural Exchange",
+    description: "International cultural programs and exchanges",
     icon: RiGlobalLine,
-    color: 'text-purple-400',
-    dataKey: 'culturalExchanges',
-    format: (value) => `${value} programs`
+    color: "text-purple-400",
+    dataKey: "culturalExchanges",
+    format: (value) => `${value} programs`,
   },
   {
-    id: 'achievements',
-    title: 'Diplomatic Achievements',
-    description: 'Unlocked diplomatic milestones and recognitions',
+    id: "achievements",
+    title: "Diplomatic Achievements",
+    description: "Unlocked diplomatic milestones and recognitions",
     icon: RiStarLine,
-    color: 'text-yellow-300',
-    dataKey: 'achievements',
-    format: (value) => `${value} unlocked`
+    color: "text-yellow-300",
+    dataKey: "achievements",
+    format: (value) => `${value} unlocked`,
   },
   {
-    id: 'stability',
-    title: 'Regional Stability',
-    description: 'Contribution to regional peace and stability',
+    id: "stability",
+    title: "Regional Stability",
+    description: "Contribution to regional peace and stability",
     icon: RiShieldLine,
-    color: 'text-indigo-400',
-    dataKey: 'stabilityIndex',
-    format: (value) => `${Math.round(value * 100)}%`
+    color: "text-indigo-400",
+    dataKey: "stabilityIndex",
+    format: (value) => `${Math.round(value * 100)}%`,
   },
   {
-    id: 'cooperation',
-    title: 'International Cooperation',
-    description: 'Participation in multilateral initiatives',
+    id: "cooperation",
+    title: "International Cooperation",
+    description: "Participation in multilateral initiatives",
     icon: RiGlobalLine,
-    color: 'text-cyan-400',
-    dataKey: 'cooperationRating',
-    format: (value) => `${Math.round(value * 100)}%`
+    color: "text-cyan-400",
+    dataKey: "cooperationRating",
+    format: (value) => `${Math.round(value * 100)}%`,
   },
   {
-    id: 'trust',
-    title: 'Trustworthiness Index',
-    description: 'Reliability in honoring diplomatic commitments',
+    id: "trust",
+    title: "Trustworthiness Index",
+    description: "Reliability in honoring diplomatic commitments",
     icon: RiShieldLine,
-    color: 'text-emerald-400',
-    dataKey: 'trustworthiness',
-    format: (value) => `${Math.round(value * 100)}%`
-  }
+    color: "text-emerald-400",
+    dataKey: "trustworthiness",
+    format: (value) => `${Math.round(value * 100)}%`,
+  },
 ];
 
 const TIER_CONFIG = {
-  legendary: { color: 'from-purple-500 to-pink-500', label: 'Legendary', minRank: 1 },
-  platinum: { color: 'from-blue-400 to-purple-500', label: 'Platinum', minRank: 2 },
-  gold: { color: 'from-yellow-400 to-orange-500', label: 'Gold', minRank: 6 },
-  silver: { color: 'from-gray-300 to-gray-500', label: 'Silver', minRank: 16 },
-  bronze: { color: 'from-amber-600 to-amber-800', label: 'Bronze', minRank: 31 }
+  legendary: { color: "from-purple-500 to-pink-500", label: "Legendary", minRank: 1 },
+  platinum: { color: "from-blue-400 to-purple-500", label: "Platinum", minRank: 2 },
+  gold: { color: "from-yellow-400 to-orange-500", label: "Gold", minRank: 6 },
+  silver: { color: "from-gray-300 to-gray-500", label: "Silver", minRank: 16 },
+  bronze: { color: "from-amber-600 to-amber-800", label: "Bronze", minRank: 31 },
 };
 
 // All data now comes from live tRPC APIs - no mock data fallbacks
 
 const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = ({
   viewerCountryId,
-  viewerClearanceLevel = 'PUBLIC',
+  viewerClearanceLevel = "PUBLIC",
   compact = false,
-  className
+  className,
 }) => {
-  const [activeCategory, setActiveCategory] = useState<string>('overall');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string>("overall");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [searchTerm, setSearchTerm] = useState("");
   const [showTrends, setShowTrends] = useState(true);
-  const [filterTier, setFilterTier] = useState<string>('');
+  const [filterTier, setFilterTier] = useState<string>("");
 
   // Fetch country rankings from API
   const { data: countriesData, isLoading } = api.countries.getAll.useQuery(undefined, {
-    refetchInterval: 60000 // Refresh every minute
+    refetchInterval: 60000, // Refresh every minute
   });
 
   // Transform API data to ranking format
   const apiRankings = useMemo(() => {
-    if (!countriesData || !('countries' in countriesData)) return [];
+    if (!countriesData || !("countries" in countriesData)) return [];
 
     return countriesData.countries
       .map((country: any, index: number) => ({
@@ -178,34 +178,48 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
         code: country.id.substring(0, 3).toUpperCase(),
         rank: index + 1,
         previousRank: index + 2, // Would need historical data for real previous rank
-        score: country.diplomaticStanding * 30 + (country.economicVitality * 10),
-        previousScore: (country.diplomaticStanding * 30 + (country.economicVitality * 10)) - 50,
+        score: country.diplomaticStanding * 30 + country.economicVitality * 10,
+        previousScore: country.diplomaticStanding * 30 + country.economicVitality * 10 - 50,
         metrics: {
           diplomaticRelations: Math.floor(country.diplomaticStanding * 0.5),
           tradeAgreements: Math.floor(country.economicVitality * 0.3),
           culturalExchanges: Math.floor(country.populationWellbeing * 0.2),
           achievements: Math.floor((country.diplomaticStanding + country.economicVitality) * 0.2),
-          influenceScore: country.diplomaticStanding * 30 + (country.economicVitality * 10),
+          influenceScore: country.diplomaticStanding * 30 + country.economicVitality * 10,
           stabilityIndex: country.governmentalEfficiency / 100,
           cooperationRating: country.diplomaticStanding / 100,
-          trustworthiness: (country.governmentalEfficiency + country.diplomaticStanding) / 200
+          trustworthiness: (country.governmentalEfficiency + country.diplomaticStanding) / 200,
         },
-        badges: country.diplomaticStanding > 80 ? ['Peace Architect', 'Trade Pioneer'] :
-                country.diplomaticStanding > 60 ? ['Alliance Builder'] : [],
-        tier: country.diplomaticStanding > 85 ? 'legendary' :
-              country.diplomaticStanding > 75 ? 'platinum' :
-              country.diplomaticStanding > 65 ? 'gold' :
-              country.diplomaticStanding > 55 ? 'silver' : 'bronze',
-        lastActivity: '1 hour ago', // Would need real activity data
-        trend: country.diplomaticStanding > 70 ? 'rising' :
-               country.diplomaticStanding < 50 ? 'falling' : 'stable'
+        badges:
+          country.diplomaticStanding > 80
+            ? ["Peace Architect", "Trade Pioneer"]
+            : country.diplomaticStanding > 60
+              ? ["Alliance Builder"]
+              : [],
+        tier:
+          country.diplomaticStanding > 85
+            ? "legendary"
+            : country.diplomaticStanding > 75
+              ? "platinum"
+              : country.diplomaticStanding > 65
+                ? "gold"
+                : country.diplomaticStanding > 55
+                  ? "silver"
+                  : "bronze",
+        lastActivity: "1 hour ago", // Would need real activity data
+        trend:
+          country.diplomaticStanding > 70
+            ? "rising"
+            : country.diplomaticStanding < 50
+              ? "falling"
+              : "stable",
       }))
       .sort((a: any, b: any) => b.score - a.score)
       .map((country: any, index: number) => ({ ...country, rank: index + 1 }));
   }, [countriesData]);
 
   // Get current category configuration
-  const currentCategory = LEADERBOARD_CATEGORIES.find(cat => cat.id === activeCategory);
+  const currentCategory = LEADERBOARD_CATEGORIES.find((cat) => cat.id === activeCategory);
 
   // Sort and filter rankings
   const sortedRankings = useMemo(() => {
@@ -213,9 +227,10 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
 
     // Apply search filter
     if (searchTerm) {
-      filtered = filtered.filter((country: any) =>
-        country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        country.code.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        (country: any) =>
+          country.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          country.code.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -229,7 +244,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
       filtered = [...filtered].sort((a, b) => {
         const aValue = a.metrics[currentCategory.dataKey];
         const bValue = b.metrics[currentCategory.dataKey];
-        return sortOrder === 'desc' ? bValue - aValue : aValue - bValue;
+        return sortOrder === "desc" ? bValue - aValue : aValue - bValue;
       });
     }
 
@@ -239,9 +254,9 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
   // Get rank change indicator
   const getRankChange = (current: number, previous?: number) => {
     if (!previous) return null;
-    if (current < previous) return { type: 'up', change: previous - current };
-    if (current > previous) return { type: 'down', change: current - previous };
-    return { type: 'same', change: 0 };
+    if (current < previous) return { type: "up", change: previous - current };
+    if (current > previous) return { type: "down", change: current - previous };
+    return { type: "same", change: 0 };
   };
 
   // Render individual ranking item
@@ -249,7 +264,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
     const rankChange = getRankChange(country.rank, country.previousRank);
     const tierConfig = TIER_CONFIG[country.tier];
     const isViewer = country.id === viewerCountryId;
-    const metricValue = country.metrics[currentCategory?.dataKey || 'influenceScore'];
+    const metricValue = country.metrics[currentCategory?.dataKey || "influenceScore"];
 
     return (
       <motion.div
@@ -258,64 +273,73 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: index * 0.05 }}
         className={cn(
-          "relative p-4 rounded-lg border backdrop-blur-sm transition-all duration-300",
+          "relative rounded-lg border p-4 backdrop-blur-sm transition-all duration-300",
           isViewer
-            ? "bg-[--intel-gold]/20 border-[--intel-gold]/50 shadow-lg"
+            ? "border-[--intel-gold]/50 bg-[--intel-gold]/20 shadow-lg"
             : "bg-card border-border hover:bg-muted/50 hover:border-border"
         )}
       >
         {/* Tier indicator */}
-        <div className={cn(
-          "absolute top-0 left-0 w-1 h-full rounded-l-lg bg-gradient-to-b",
-          tierConfig.color
-        )} />
+        <div
+          className={cn(
+            "absolute top-0 left-0 h-full w-1 rounded-l-lg bg-gradient-to-b",
+            tierConfig.color
+          )}
+        />
 
         <div className="flex items-center gap-4">
           {/* Rank */}
-          <div className="flex items-center gap-2 min-w-[60px]">
-            <div className={cn(
-              "text-2xl font-bold",
-              country.rank <= 3 ? "text-[--intel-gold]" : "text-foreground"
-            )}>
+          <div className="flex min-w-[60px] items-center gap-2">
+            <div
+              className={cn(
+                "text-2xl font-bold",
+                country.rank <= 3 ? "text-[--intel-gold]" : "text-foreground"
+              )}
+            >
               #{country.rank}
             </div>
-            
+
             {/* Rank change */}
             {rankChange && showTrends && (
-              <div className={cn(
-                "flex items-center text-xs",
-                rankChange.type === 'up' ? "text-green-400" :
-                rankChange.type === 'down' ? "text-red-400" : "text-gray-400"
-              )}>
-                {rankChange.type === 'up' && <RiArrowUpLine className="w-3 h-3" />}
-                {rankChange.type === 'down' && <RiArrowDownLine className="w-3 h-3" />}
-                {rankChange.type === 'same' && <RiArrowRightLine className="w-3 h-3" />}
+              <div
+                className={cn(
+                  "flex items-center text-xs",
+                  rankChange.type === "up"
+                    ? "text-green-400"
+                    : rankChange.type === "down"
+                      ? "text-red-400"
+                      : "text-gray-400"
+                )}
+              >
+                {rankChange.type === "up" && <RiArrowUpLine className="h-3 w-3" />}
+                {rankChange.type === "down" && <RiArrowDownLine className="h-3 w-3" />}
+                {rankChange.type === "same" && <RiArrowRightLine className="h-3 w-3" />}
                 {rankChange.change > 0 && rankChange.change}
               </div>
             )}
           </div>
 
           {/* Country info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-1">
-              <h4 className="font-semibold text-foreground truncate">{country.name}</h4>
-              <span className="text-xs text-[--intel-silver] bg-white/10 px-2 py-1 rounded">
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex items-center gap-3">
+              <h4 className="text-foreground truncate font-semibold">{country.name}</h4>
+              <span className="rounded bg-white/10 px-2 py-1 text-xs text-[--intel-silver]">
                 {country.code}
               </span>
               {isViewer && (
-                <span className="text-xs text-[--intel-gold] bg-[--intel-gold]/20 px-2 py-1 rounded">
+                <span className="rounded bg-[--intel-gold]/20 px-2 py-1 text-xs text-[--intel-gold]">
                   You
                 </span>
               )}
             </div>
-            
+
             {/* Badges */}
             {country.badges.length > 0 && (
-              <div className="flex gap-1 mb-2">
+              <div className="mb-2 flex gap-1">
                 {country.badges.slice(0, compact ? 2 : 3).map((badge, i) => (
                   <span
                     key={i}
-                    className="text-xs text-[--intel-gold] bg-[--intel-gold]/20 px-2 py-1 rounded"
+                    className="rounded bg-[--intel-gold]/20 px-2 py-1 text-xs text-[--intel-gold]"
                   >
                     {badge}
                   </span>
@@ -325,9 +349,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
 
             {/* Tier and activity */}
             <div className="flex items-center gap-3 text-xs text-[--intel-silver]">
-              <span className={cn("font-medium", tierConfig.color)}>
-                {tierConfig.label}
-              </span>
+              <span className={cn("font-medium", tierConfig.color)}>{tierConfig.label}</span>
               <span>•</span>
               <span>Active {country.lastActivity}</span>
             </div>
@@ -335,27 +357,32 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
 
           {/* Metric value */}
           <div className="text-right">
-            <div className={cn(
-              "text-lg font-bold",
-              currentCategory?.color || "text-foreground"
-            )}>
+            <div className={cn("text-lg font-bold", currentCategory?.color || "text-foreground")}>
               {currentCategory?.format(metricValue) || metricValue}
             </div>
             {country.previousScore && showTrends && (
-              <div className={cn(
-                "text-xs",
-                country.score > country.previousScore ? "text-green-400" :
-                country.score < country.previousScore ? "text-red-400" : "text-gray-400"
-              )}>
-                {country.score > country.previousScore ? '+' : ''}
-                {Math.round(((country.score - country.previousScore) / country.previousScore) * 100)}%
+              <div
+                className={cn(
+                  "text-xs",
+                  country.score > country.previousScore
+                    ? "text-green-400"
+                    : country.score < country.previousScore
+                      ? "text-red-400"
+                      : "text-gray-400"
+                )}
+              >
+                {country.score > country.previousScore ? "+" : ""}
+                {Math.round(
+                  ((country.score - country.previousScore) / country.previousScore) * 100
+                )}
+                %
               </div>
             )}
           </div>
 
           {/* View details */}
-          <button className="p-2 text-[--intel-silver] hover:text-foreground transition-colors rounded">
-            <RiEyeLine className="w-4 h-4" />
+          <button className="hover:text-foreground rounded p-2 text-[--intel-silver] transition-colors">
+            <RiEyeLine className="h-4 w-4" />
           </button>
         </div>
       </motion.div>
@@ -367,11 +394,11 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-bold text-[--intel-gold] flex items-center gap-3">
-            <RiBarChartLine className="w-6 h-6" />
+          <h3 className="flex items-center gap-3 text-2xl font-bold text-[--intel-gold]">
+            <RiBarChartLine className="h-6 w-6" />
             Diplomatic Leaderboards
           </h3>
-          <p className="text-[--intel-silver] mt-1">
+          <p className="mt-1 text-[--intel-silver]">
             Global diplomatic rankings and performance metrics
           </p>
         </div>
@@ -380,17 +407,17 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
           <button
             onClick={() => setShowTrends(!showTrends)}
             className={cn(
-              "px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+              "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
               showTrends
                 ? "bg-[--intel-gold]/20 text-[--intel-gold]"
-                : "bg-muted/50 text-[--intel-silver] hover:text-foreground"
+                : "bg-muted/50 hover:text-foreground text-[--intel-silver]"
             )}
           >
-            <RiTimeLine className="w-4 h-4" />
+            <RiTimeLine className="h-4 w-4" />
           </button>
-          
-          <button className="p-2 text-[--intel-silver] hover:text-foreground transition-colors rounded-lg bg-muted/50">
-            <RiRefreshLine className="w-4 h-4" />
+
+          <button className="hover:text-foreground bg-muted/50 rounded-lg p-2 text-[--intel-silver] transition-colors">
+            <RiRefreshLine className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -404,13 +431,13 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
               key={category.id}
               onClick={() => setActiveCategory(category.id)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200",
+                "flex items-center gap-2 rounded-lg px-4 py-2 font-medium transition-all duration-200",
                 activeCategory === category.id
-                  ? "bg-[--intel-gold]/20 text-[--intel-gold] border border-[--intel-gold]/30"
-                  : "bg-muted/50 text-[--intel-silver] hover:bg-muted hover:text-foreground border border-transparent"
+                  ? "border border-[--intel-gold]/30 bg-[--intel-gold]/20 text-[--intel-gold]"
+                  : "bg-muted/50 hover:bg-muted hover:text-foreground border border-transparent text-[--intel-silver]"
               )}
             >
-              <IconComponent className="w-4 h-4" />
+              <IconComponent className="h-4 w-4" />
               <span className="hidden sm:inline">{category.title}</span>
             </button>
           );
@@ -418,16 +445,16 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
       </div>
 
       {/* Filters and search */}
-      <div className="flex flex-wrap gap-4 items-center">
+      <div className="flex flex-wrap items-center gap-4">
         {/* Search */}
-        <div className="relative flex-1 min-w-[200px]">
-          <RiSearchLine className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[--intel-silver]" />
+        <div className="relative min-w-[200px] flex-1">
+          <RiSearchLine className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-[--intel-silver]" />
           <input
             type="text"
             placeholder="Search countries..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-input border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-ring"
+            className="bg-input border-border text-foreground placeholder-muted-foreground focus:border-ring w-full rounded-lg border py-2 pr-4 pl-10 focus:outline-none"
           />
         </div>
 
@@ -435,7 +462,7 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
         <select
           value={filterTier}
           onChange={(e) => setFilterTier(e.target.value)}
-          className="px-3 py-2 bg-input border border-border rounded-lg text-foreground focus:outline-none focus:border-ring"
+          className="bg-input border-border text-foreground focus:border-ring rounded-lg border px-3 py-2 focus:outline-none"
         >
           <option value="">All Tiers</option>
           {Object.entries(TIER_CONFIG).map(([tier, config]) => (
@@ -447,20 +474,20 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
 
         {/* Sort order */}
         <button
-          onClick={() => setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc')}
-          className="flex items-center gap-2 px-3 py-2 bg-input border border-border rounded-lg text-[--intel-silver] hover:text-foreground transition-colors"
+          onClick={() => setSortOrder(sortOrder === "desc" ? "asc" : "desc")}
+          className="bg-input border-border hover:text-foreground flex items-center gap-2 rounded-lg border px-3 py-2 text-[--intel-silver] transition-colors"
         >
-          <RiFilterLine className="w-4 h-4" />
-          {sortOrder === 'desc' ? 'Highest' : 'Lowest'} First
+          <RiFilterLine className="h-4 w-4" />
+          {sortOrder === "desc" ? "Highest" : "Lowest"} First
         </button>
       </div>
 
       {/* Current category info */}
       {currentCategory && (
-        <div className="p-4 bg-card border border-border rounded-lg">
-          <div className="flex items-center gap-3 mb-2">
-            <currentCategory.icon className={cn("w-5 h-5", currentCategory.color)} />
-            <h4 className="font-semibold text-foreground">{currentCategory.title}</h4>
+        <div className="bg-card border-border rounded-lg border p-4">
+          <div className="mb-2 flex items-center gap-3">
+            <currentCategory.icon className={cn("h-5 w-5", currentCategory.color)} />
+            <h4 className="text-foreground font-semibold">{currentCategory.title}</h4>
           </div>
           <p className="text-sm text-[--intel-silver]">{currentCategory.description}</p>
         </div>
@@ -468,15 +495,13 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
 
       {/* Rankings list */}
       <div className="space-y-3">
-        <AnimatePresence mode="popLayout">
-          {sortedRankings.map(renderRankingItem)}
-        </AnimatePresence>
+        <AnimatePresence mode="popLayout">{sortedRankings.map(renderRankingItem)}</AnimatePresence>
       </div>
 
       {/* No results */}
       {sortedRankings.length === 0 && (
-        <div className="text-center py-12 text-[--intel-silver]">
-          <RiSearchLine className="w-8 h-8 mx-auto mb-3 opacity-50" />
+        <div className="py-12 text-center text-[--intel-silver]">
+          <RiSearchLine className="mx-auto mb-3 h-8 w-8 opacity-50" />
           <p>No countries found matching your criteria.</p>
         </div>
       )}
@@ -484,6 +509,6 @@ const DiplomaticLeaderboardsComponent: React.FC<DiplomaticLeaderboardsProps> = (
   );
 };
 
-DiplomaticLeaderboardsComponent.displayName = 'DiplomaticLeaderboards';
+DiplomaticLeaderboardsComponent.displayName = "DiplomaticLeaderboards";
 
 export const DiplomaticLeaderboards = React.memo(DiplomaticLeaderboardsComponent);

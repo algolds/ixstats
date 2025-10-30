@@ -9,14 +9,14 @@
  * Admin endpoints: CRUD operations for equipment and manufacturers
  */
 
-import { z } from 'zod';
-import { TRPCError } from '@trpc/server';
+import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
   publicProcedure,
   protectedProcedure,
   adminProcedure,
-} from '@/server/api/trpc';
+} from "@/server/api/trpc";
 
 export const smallArmsEquipmentRouter = createTRPCRouter({
   // ===========================
@@ -53,11 +53,7 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
           manufacturer: input.includeManufacturer,
           era: input.includeEra,
         },
-        orderBy: [
-          { equipmentType: 'asc' },
-          { category: 'asc' },
-          { name: 'asc' },
-        ],
+        orderBy: [{ equipmentType: "asc" }, { category: "asc" }, { name: "asc" }],
       });
 
       return equipment;
@@ -66,69 +62,62 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
   /**
    * Get equipment by key
    */
-  getByKey: publicProcedure
-    .input(z.object({ key: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const equipment = await ctx.db.smallArmsEquipment.findUnique({
-        where: { key: input.key },
-        include: {
-          manufacturer: true,
-          era: true,
-        },
+  getByKey: publicProcedure.input(z.object({ key: z.string() })).query(async ({ ctx, input }) => {
+    const equipment = await ctx.db.smallArmsEquipment.findUnique({
+      where: { key: input.key },
+      include: {
+        manufacturer: true,
+        era: true,
+      },
+    });
+
+    if (!equipment) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: `Equipment with key ${input.key} not found`,
       });
+    }
 
-      if (!equipment) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: `Equipment with key ${input.key} not found`,
-        });
-      }
-
-      return equipment;
-    }),
+    return equipment;
+  }),
 
   /**
    * Get equipment statistics and counts
    */
   getStatistics: publicProcedure.query(async ({ ctx }) => {
-    const [
-      totalEquipment,
-      equipmentByType,
-      equipmentByEra,
-      manufacturers,
-      topUsed,
-    ] = await Promise.all([
-      // Total count
-      ctx.db.smallArmsEquipment.count(),
+    const [totalEquipment, equipmentByType, equipmentByEra, manufacturers, topUsed] =
+      await Promise.all([
+        // Total count
+        ctx.db.smallArmsEquipment.count(),
 
-      // By equipment type
-      ctx.db.smallArmsEquipment.groupBy({
-        by: ['equipmentType'],
-        _count: true,
-        where: { isActive: true },
-      }),
+        // By equipment type
+        ctx.db.smallArmsEquipment.groupBy({
+          by: ["equipmentType"],
+          _count: true,
+          where: { isActive: true },
+        }),
 
-      // By era
-      ctx.db.smallArmsEquipment.groupBy({
-        by: ['eraKey'],
-        _count: true,
-        where: { isActive: true },
-      }),
+        // By era
+        ctx.db.smallArmsEquipment.groupBy({
+          by: ["eraKey"],
+          _count: true,
+          where: { isActive: true },
+        }),
 
-      // Manufacturer count
-      ctx.db.smallArmsManufacturer.count({ where: { isActive: true } }),
+        // Manufacturer count
+        ctx.db.smallArmsManufacturer.count({ where: { isActive: true } }),
 
-      // Most used equipment
-      ctx.db.smallArmsEquipment.findMany({
-        where: { isActive: true },
-        orderBy: { usageCount: 'desc' },
-        take: 10,
-        include: {
-          manufacturer: true,
-          era: true,
-        },
-      }),
-    ]);
+        // Most used equipment
+        ctx.db.smallArmsEquipment.findMany({
+          where: { isActive: true },
+          orderBy: { usageCount: "desc" },
+          take: 10,
+          include: {
+            manufacturer: true,
+            era: true,
+          },
+        }),
+      ]);
 
     return {
       totalEquipment,
@@ -156,7 +145,7 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
           select: { equipment: true },
         },
       },
-      orderBy: { name: 'asc' },
+      orderBy: { name: "asc" },
     });
 
     return manufacturers;
@@ -173,7 +162,7 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
           select: { equipment: true },
         },
       },
-      orderBy: { reliability: 'asc' },
+      orderBy: { reliability: "asc" },
     });
 
     return eras;
@@ -193,9 +182,9 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
       const equipment = await ctx.db.smallArmsEquipment.findMany({
         where: {
           OR: [
-            { name: { contains: input.query, mode: 'insensitive' } },
-            { category: { contains: input.query, mode: 'insensitive' } },
-            { caliber: { contains: input.query, mode: 'insensitive' } },
+            { name: { contains: input.query, mode: "insensitive" } },
+            { category: { contains: input.query, mode: "insensitive" } },
+            { caliber: { contains: input.query, mode: "insensitive" } },
           ],
           isActive: true,
         },
@@ -217,7 +206,7 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
       z.object({
         minCost: z.number().min(0).optional(),
         maxCost: z.number().min(0).optional(),
-        sortBy: z.enum(['unitCost', 'maintenanceCost']).default('unitCost'),
+        sortBy: z.enum(["unitCost", "maintenanceCost"]).default("unitCost"),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -237,7 +226,7 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
           manufacturer: true,
           era: true,
         },
-        orderBy: { [input.sortBy]: 'asc' },
+        orderBy: { [input.sortBy]: "asc" },
       });
 
       return equipment;
@@ -307,7 +296,7 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
         await ctx.db.auditLog.create({
           data: {
             userId: ctx.session.userId,
-            action: 'CREATE_EQUIPMENT',
+            action: "CREATE_EQUIPMENT",
             details: {
               equipmentKey: equipment.key,
               name: equipment.name,
@@ -319,8 +308,8 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
         return equipment;
       } catch (error) {
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create equipment',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create equipment",
           cause: error,
         });
       }
@@ -366,7 +355,7 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
         await ctx.db.auditLog.create({
           data: {
             userId: ctx.session.userId,
-            action: 'UPDATE_EQUIPMENT',
+            action: "UPDATE_EQUIPMENT",
             details: {
               equipmentKey: equipment.key,
               changes: input.data,
@@ -378,8 +367,8 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
         return equipment;
       } catch (error) {
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to update equipment',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update equipment",
           cause: error,
         });
       }
@@ -401,7 +390,7 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
         await ctx.db.auditLog.create({
           data: {
             userId: ctx.session.userId,
-            action: 'DELETE_EQUIPMENT',
+            action: "DELETE_EQUIPMENT",
             details: {
               equipmentKey: equipment.key,
               name: equipment.name,
@@ -413,8 +402,8 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
         return equipment;
       } catch (error) {
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to delete equipment',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete equipment",
           cause: error,
         });
       }
@@ -448,7 +437,7 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
         await ctx.db.auditLog.create({
           data: {
             userId: ctx.session.userId,
-            action: 'CREATE_MANUFACTURER',
+            action: "CREATE_MANUFACTURER",
             details: {
               manufacturerKey: manufacturer.key,
               name: manufacturer.name,
@@ -460,8 +449,8 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
         return manufacturer;
       } catch (error) {
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create manufacturer',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create manufacturer",
           cause: error,
         });
       }
@@ -498,7 +487,7 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
         await ctx.db.auditLog.create({
           data: {
             userId: ctx.session.userId,
-            action: 'UPDATE_MANUFACTURER',
+            action: "UPDATE_MANUFACTURER",
             details: {
               manufacturerKey: manufacturer.key,
               changes: input.data,
@@ -510,8 +499,8 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
         return manufacturer;
       } catch (error) {
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to update manufacturer',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update manufacturer",
           cause: error,
         });
       }
@@ -551,7 +540,7 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
         await ctx.db.auditLog.create({
           data: {
             userId: ctx.session.userId,
-            action: 'UPSERT_ERA',
+            action: "UPSERT_ERA",
             details: {
               eraKey: era.key,
               label: era.label,
@@ -563,8 +552,8 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
         return era;
       } catch (error) {
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to upsert era',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to upsert era",
           cause: error,
         });
       }
@@ -620,7 +609,7 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
         await ctx.db.auditLog.create({
           data: {
             userId: ctx.session.userId,
-            action: 'BULK_IMPORT_EQUIPMENT',
+            action: "BULK_IMPORT_EQUIPMENT",
             details: {
               count: results.length,
               keys: results.map((r) => r.key),
@@ -635,8 +624,8 @@ export const smallArmsEquipmentRouter = createTRPCRouter({
         };
       } catch (error) {
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to bulk import equipment',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to bulk import equipment",
           cause: error,
         });
       }

@@ -74,13 +74,13 @@ interface EmbassyCardProps {
 export const EmbassyCard = React.memo(function EmbassyCard({
   embassy,
   isOwner,
-  onClick
+  onClick,
 }: EmbassyCardProps) {
   return (
     <Card
       className={cn(
-        "transition-all overflow-hidden",
-        isOwner && "cursor-pointer hover:shadow-lg hover:ring-2 hover:ring-primary/50"
+        "overflow-hidden transition-all",
+        isOwner && "hover:ring-primary/50 cursor-pointer hover:shadow-lg hover:ring-2"
       )}
       onClick={onClick}
     >
@@ -89,13 +89,13 @@ export const EmbassyCard = React.memo(function EmbassyCard({
         {/* Flag blend effect */}
         <div className="absolute inset-0 flex">
           {/* Host country flag (left half) */}
-          <div className="w-1/2 relative overflow-hidden">
+          <div className="relative w-1/2 overflow-hidden">
             <div className="absolute inset-0 flex items-center justify-center opacity-70">
               <UnifiedCountryFlag
                 countryName={embassy.hostCountry}
                 flagUrl={embassy.hostCountryFlag}
                 size="xl"
-                className="w-full h-full object-cover"
+                className="h-full w-full object-cover"
                 showPlaceholder={true}
                 rounded={false}
               />
@@ -104,13 +104,13 @@ export const EmbassyCard = React.memo(function EmbassyCard({
           </div>
 
           {/* Guest country flag (right half) */}
-          <div className="w-1/2 relative overflow-hidden">
+          <div className="relative w-1/2 overflow-hidden">
             <div className="absolute inset-0 flex items-center justify-center opacity-70">
               <UnifiedCountryFlag
                 countryName={embassy.guestCountry}
                 flagUrl={embassy.guestCountryFlag}
                 size="xl"
-                className="w-full h-full object-cover"
+                className="h-full w-full object-cover"
                 showPlaceholder={true}
                 rounded={false}
               />
@@ -121,23 +121,21 @@ export const EmbassyCard = React.memo(function EmbassyCard({
 
         {/* Center divider with icon */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="bg-background/90 backdrop-blur-sm border-2 border-primary/50 rounded-full p-2 shadow-lg">
-            <Building2 className="h-5 w-5 text-primary" />
+          <div className="bg-background/90 border-primary/50 rounded-full border-2 p-2 shadow-lg backdrop-blur-sm">
+            <Building2 className="text-primary h-5 w-5" />
           </div>
         </div>
 
         {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/80" />
+        <div className="to-background/80 absolute inset-0 bg-gradient-to-b from-transparent via-transparent" />
       </div>
 
       {/* Embassy Details */}
-      <CardHeader className="pb-3 pt-2">
+      <CardHeader className="pt-2 pb-3">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="text-base flex items-center gap-2">
-              {embassy.name}
-            </CardTitle>
-            <CardDescription className="text-xs mt-1 flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base">{embassy.name}</CardTitle>
+            <CardDescription className="mt-1 flex items-center gap-2 text-xs">
               <span className="text-muted-foreground/60">
                 {embassy.guestCountry} ⟷ {embassy.hostCountry}
               </span>
@@ -148,7 +146,7 @@ export const EmbassyCard = React.memo(function EmbassyCard({
             </CardDescription>
           </div>
           <Badge variant={embassy.totalSynergyScore > 50 ? "default" : "secondary"}>
-            <Sparkles className="h-3 w-3 mr-1" />
+            <Sparkles className="mr-1 h-3 w-3" />
             {embassy.totalSynergyScore.toFixed(0)}% Synergy
           </Badge>
         </div>
@@ -166,20 +164,20 @@ export const EmbassyCard = React.memo(function EmbassyCard({
 
         {/* Benefits Grid */}
         <div className="grid grid-cols-3 gap-2 text-xs">
-          <div className="bg-green-500/10 rounded-lg p-2 text-center">
-            <div className="text-green-600 dark:text-green-400 font-bold">
+          <div className="rounded-lg bg-green-500/10 p-2 text-center">
+            <div className="font-bold text-green-600 dark:text-green-400">
               +{embassy.economicBonus.toFixed(1)}%
             </div>
             <div className="text-muted-foreground">Economic</div>
           </div>
-          <div className="bg-blue-500/10 rounded-lg p-2 text-center">
-            <div className="text-blue-600 dark:text-blue-400 font-bold">
+          <div className="rounded-lg bg-blue-500/10 p-2 text-center">
+            <div className="font-bold text-blue-600 dark:text-blue-400">
               +{embassy.diplomaticBonus.toFixed(1)}%
             </div>
             <div className="text-muted-foreground">Diplomatic</div>
           </div>
-          <div className="bg-purple-500/10 rounded-lg p-2 text-center">
-            <div className="text-purple-600 dark:text-purple-400 font-bold">
+          <div className="rounded-lg bg-purple-500/10 p-2 text-center">
+            <div className="font-bold text-purple-600 dark:text-purple-400">
               +{embassy.culturalBonus.toFixed(1)}%
             </div>
             <div className="text-muted-foreground">Cultural</div>
@@ -188,7 +186,7 @@ export const EmbassyCard = React.memo(function EmbassyCard({
 
         {/* Click to view hint (owners only) */}
         {isOwner && (
-          <div className="text-xs text-center text-muted-foreground py-2 border-t">
+          <div className="text-muted-foreground border-t py-2 text-center text-xs">
             <span className="flex items-center justify-center gap-1">
               Click to view embassy details
               <ChevronRight className="h-3 w-3" />

@@ -10,7 +10,6 @@ import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pa
 // Types managed locally for component interface
 
 export function CommandCenter() {
-
   // Fetch all necessary data first
   const {
     data: allData,
@@ -35,14 +34,13 @@ export function CommandCenter() {
     currentGdpPerCapita: country.currentGdpPerCapita ?? 0,
     currentTotalGdp: country.currentTotalGdp ?? 0,
     economicTier: country.economicTier ?? "Unknown",
-    populationTier: country.populationTier ?? "Unknown", 
+    populationTier: country.populationTier ?? "Unknown",
     landArea: country.landArea ?? null,
     populationDensity: country.populationDensity ?? null,
     gdpDensity: country.gdpDensity ?? null,
     adjustedGdpGrowth: country.adjustedGdpGrowth ?? 0,
     populationGrowthRate: country.populationGrowthRate ?? 0,
   }));
-
 
   const handleRefresh = () => {
     void refetchCountries();
@@ -66,14 +64,14 @@ export function CommandCenter() {
   // Type guard to check if data matches expected structure
   const isValidGlobalStatsData = (data: unknown): data is GlobalStatsApiResponse => {
     return (
-      typeof data === 'object' &&
+      typeof data === "object" &&
       data !== null &&
-      'ixTimeTimestamp' in data &&
-      'totalPopulation' in data &&
-      'totalGdp' in data &&
-      'averageGdpPerCapita' in data &&
-      'totalCountries' in data &&
-      'globalGrowthRate' in data
+      "ixTimeTimestamp" in data &&
+      "totalPopulation" in data &&
+      "totalGdp" in data &&
+      "averageGdpPerCapita" in data &&
+      "totalCountries" in data &&
+      "globalGrowthRate" in data
     );
   };
 
@@ -95,7 +93,7 @@ export function CommandCenter() {
     : undefined;
 
   return (
-    <div className="relative min-h-screen bg-background">
+    <div className="bg-background relative min-h-screen">
       <InteractiveGridPattern
         width={40}
         height={40}
@@ -103,36 +101,27 @@ export function CommandCenter() {
         className="opacity-30 dark:opacity-20"
         squaresClassName="fill-slate-200/20 dark:fill-slate-700/20 stroke-slate-300/30 dark:stroke-slate-600/30 [&:nth-child(4n+1):hover]:fill-yellow-600/40 [&:nth-child(4n+1):hover]:stroke-yellow-600/60 [&:nth-child(4n+2):hover]:fill-blue-600/40 [&:nth-child(4n+2):hover]:stroke-blue-600/60 [&:nth-child(4n+3):hover]:fill-indigo-600/40 [&:nth-child(4n+3):hover]:stroke-indigo-600/60 [&:nth-child(4n+4):hover]:fill-red-600/40 [&:nth-child(4n+4):hover]:stroke-red-600/60 transition-all duration-200"
       />
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 mt-16">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="container mx-auto mt-16 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Main Content Area */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6 lg:col-span-2">
             {/* Leaderboards Section */}
-            <LeaderboardsSection
-              countries={processedCountries}
-              isLoading={countriesLoading}
-            />
+            <LeaderboardsSection countries={processedCountries} isLoading={countriesLoading} />
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Featured Article */}
             <FeaturedArticle />
-            
+
             {/* Tier Visualization */}
-            <TierVisualization
-              countries={processedCountries}
-              isLoading={countriesLoading}
-            />
+            <TierVisualization countries={processedCountries} isLoading={countriesLoading} />
 
             {/* Activity Feed */}
-            <ActivityFeed
-              countries={processedCountries}
-              isLoading={countriesLoading}
-            />
+            <ActivityFeed countries={processedCountries} isLoading={countriesLoading} />
           </div>
         </div>
       </div>
     </div>
   );
-} 
+}

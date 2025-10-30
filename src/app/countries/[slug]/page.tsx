@@ -49,7 +49,11 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
   const { user, userProfile } = useUserCountry();
 
   // Data fetching - pass slug directly
-  const { data: country, isLoading, error } = api.countries.getByIdWithEconomicData.useQuery({
+  const {
+    data: country,
+    isLoading,
+    error,
+  } = api.countries.getByIdWithEconomicData.useQuery({
     id: slug,
   });
   const { data: governmentStructure } = api.government.getByCountryId.useQuery(
@@ -58,8 +62,8 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
   );
 
   // Set page title based on country name
-  usePageTitle({ 
-    title: country ? `${country.name.replace(/_/g, ' ')}` : "Country Profile" 
+  usePageTitle({
+    title: country ? `${country.name.replace(/_/g, " ")}` : "Country Profile",
   });
 
   // Flag loading
@@ -106,12 +110,12 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Skeleton className="h-8 w-1/2 mb-4" />
-        <Skeleton className="h-4 w-1/4 mb-8" />
+        <Skeleton className="mb-4 h-8 w-1/2" />
+        <Skeleton className="mb-8 h-4 w-1/4" />
         <div className="space-y-6">
           <Skeleton className="h-64 w-full rounded-xl" />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Skeleton className="h-96 lg:col-span-2 rounded-xl" />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <Skeleton className="h-96 rounded-xl lg:col-span-2" />
             <Skeleton className="h-96 rounded-xl" />
           </div>
         </div>
@@ -123,12 +127,12 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Card className="p-8 border-destructive/50">
-          <div className="flex items-center gap-3 text-destructive">
+        <Card className="border-destructive/50 p-8">
+          <div className="text-destructive flex items-center gap-3">
             <AlertTriangle className="h-6 w-6" />
             <div>
               <h3 className="font-semibold">Error Loading Country Data</h3>
-              <p className="text-sm text-muted-foreground">{error.message}</p>
+              <p className="text-muted-foreground text-sm">{error.message}</p>
             </div>
           </div>
         </Card>
@@ -141,8 +145,8 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Card className="p-8 text-center">
-          <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-xl font-semibold mb-2">Country Not Found</h3>
+          <AlertTriangle className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+          <h3 className="mb-2 text-xl font-semibold">Country Not Found</h3>
           <p className="text-muted-foreground">The requested country could not be found.</p>
         </Card>
       </div>
@@ -150,7 +154,7 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="from-background via-background to-muted/20 min-h-screen bg-gradient-to-br">
       {/* Hero Section with Country Header */}
       <CountryHeader
         country={{
@@ -173,7 +177,7 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
         onCountryActionsClick={() => setShowCountryActions(true)}
       />
 
-      <div className="container mx-auto px-4 py-8 space-y-6">
+      <div className="container mx-auto space-y-6 px-4 py-8">
         {/* Breadcrumb */}
         <Breadcrumb>
           <BreadcrumbList>

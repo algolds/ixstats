@@ -13,7 +13,7 @@ import type {
   DepartmentInput,
   BudgetAllocationInput,
   RevenueSourceInput,
-} from '~/types/government';
+} from "~/types/government";
 
 // ==================== TYPES ====================
 
@@ -59,13 +59,13 @@ export interface GovernmentSummary {
  */
 export function validateGovernmentName(name: string | undefined): string | null {
   if (!name || !name.trim()) {
-    return 'Government name is required';
+    return "Government name is required";
   }
   if (name.length < 2) {
-    return 'Government name must be at least 2 characters';
+    return "Government name must be at least 2 characters";
   }
   if (name.length > 200) {
-    return 'Government name must be less than 200 characters';
+    return "Government name must be less than 200 characters";
   }
   return null;
 }
@@ -75,13 +75,13 @@ export function validateGovernmentName(name: string | undefined): string | null 
  */
 export function validateTotalBudget(budget: number | undefined): string | null {
   if (budget === undefined || budget === null) {
-    return 'Total budget is required';
+    return "Total budget is required";
   }
   if (budget <= 0) {
-    return 'Total budget must be greater than 0';
+    return "Total budget must be greater than 0";
   }
   if (budget > Number.MAX_SAFE_INTEGER) {
-    return 'Total budget exceeds maximum safe value';
+    return "Total budget exceeds maximum safe value";
   }
   return null;
 }
@@ -91,10 +91,10 @@ export function validateTotalBudget(budget: number | undefined): string | null {
  */
 export function validateCurrency(currency: string | undefined): string | null {
   if (!currency || !currency.trim()) {
-    return 'Currency is required';
+    return "Currency is required";
   }
   if (currency.length !== 3) {
-    return 'Currency must be a 3-letter code (e.g., USD, EUR)';
+    return "Currency must be a 3-letter code (e.g., USD, EUR)";
   }
   return null;
 }
@@ -104,7 +104,7 @@ export function validateCurrency(currency: string | undefined): string | null {
  */
 export function validateFiscalYear(fiscalYear: string | undefined): string | null {
   if (!fiscalYear || !fiscalYear.trim()) {
-    return 'Fiscal year is required';
+    return "Fiscal year is required";
   }
   return null;
 }
@@ -137,13 +137,13 @@ export function validateGovernmentStructure(structure: GovernmentStructureInput)
  */
 export function validateDepartmentName(name: string | undefined): string | null {
   if (!name || !name.trim()) {
-    return 'Department name is required';
+    return "Department name is required";
   }
   if (name.length < 2) {
-    return 'Department name must be at least 2 characters';
+    return "Department name must be at least 2 characters";
   }
   if (name.length > 200) {
-    return 'Department name must be less than 200 characters';
+    return "Department name must be less than 200 characters";
   }
   return null;
 }
@@ -153,7 +153,7 @@ export function validateDepartmentName(name: string | undefined): string | null 
  */
 export function validateDepartmentCategory(category: string | undefined): string | null {
   if (!category || !category.trim()) {
-    return 'Department category is required';
+    return "Department category is required";
   }
   return null;
 }
@@ -163,7 +163,7 @@ export function validateDepartmentCategory(category: string | undefined): string
  */
 export function validateOrganizationalLevel(level: string | undefined): string | null {
   if (!level || !level.trim()) {
-    return 'Organizational level is required';
+    return "Organizational level is required";
   }
   return null;
 }
@@ -175,7 +175,7 @@ export function validateColor(color: string | undefined): string | null {
   if (!color) return null; // Color is optional
 
   if (!/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(color)) {
-    return 'Color must be a valid hex code (e.g., #FF5733)';
+    return "Color must be a valid hex code (e.g., #FF5733)";
   }
   return null;
 }
@@ -187,7 +187,7 @@ export function validatePriority(priority: number | undefined): string | null {
   if (priority === undefined) return null; // Priority is optional
 
   if (priority < 1 || priority > 100) {
-    return 'Priority must be between 1 and 100';
+    return "Priority must be between 1 and 100";
   }
   return null;
 }
@@ -203,11 +203,11 @@ export function validateParentDepartment(
 
   const parsedId = parseInt(parentId);
   if (isNaN(parsedId)) {
-    return 'Invalid parent department ID';
+    return "Invalid parent department ID";
   }
 
   if (parsedId === currentIndex) {
-    return 'Department cannot be its own parent';
+    return "Department cannot be its own parent";
   }
 
   return null;
@@ -216,10 +216,7 @@ export function validateParentDepartment(
 /**
  * Validates a single department
  */
-export function validateDepartment(
-  department: DepartmentInput,
-  index: number
-): string[] {
+export function validateDepartment(department: DepartmentInput, index: number): string[] {
   const errors: string[] = [];
 
   const nameError = validateDepartmentName(department.name);
@@ -246,7 +243,9 @@ export function validateDepartment(
 /**
  * Checks for duplicate department names
  */
-export function checkDuplicateDepartmentNames(departments: DepartmentInput[]): Map<number, string[]> {
+export function checkDuplicateDepartmentNames(
+  departments: DepartmentInput[]
+): Map<number, string[]> {
   const errors = new Map<number, string[]>();
   const nameCount = new Map<string, number[]>();
 
@@ -262,11 +261,11 @@ export function checkDuplicateDepartmentNames(departments: DepartmentInput[]): M
 
   nameCount.forEach((indices, name) => {
     if (indices.length > 1) {
-      indices.forEach(index => {
+      indices.forEach((index) => {
         if (!errors.has(index)) {
           errors.set(index, []);
         }
-        errors.get(index)!.push('Duplicate department name detected');
+        errors.get(index)!.push("Duplicate department name detected");
       });
     }
   });
@@ -279,10 +278,10 @@ export function checkDuplicateDepartmentNames(departments: DepartmentInput[]): M
  */
 export function validateDepartmentCount(count: number): string | null {
   if (count < 1) {
-    return 'At least one department is required';
+    return "At least one department is required";
   }
   if (count > 100) {
-    return 'Maximum 100 departments allowed';
+    return "Maximum 100 departments allowed";
   }
   return null;
 }
@@ -297,13 +296,13 @@ export function validateBudgetAmount(
   totalBudget: number
 ): string | null {
   if (amount === undefined || amount === null) {
-    return 'Budget amount is required';
+    return "Budget amount is required";
   }
   if (amount < 0) {
-    return 'Budget amount cannot be negative';
+    return "Budget amount cannot be negative";
   }
   if (amount > totalBudget) {
-    return 'Budget amount exceeds total budget';
+    return "Budget amount exceeds total budget";
   }
   return null;
 }
@@ -313,13 +312,13 @@ export function validateBudgetAmount(
  */
 export function validateBudgetPercentage(percent: number | undefined): string | null {
   if (percent === undefined || percent === null) {
-    return 'Budget percentage is required';
+    return "Budget percentage is required";
   }
   if (percent < 0) {
-    return 'Budget percentage cannot be negative';
+    return "Budget percentage cannot be negative";
   }
   if (percent > 100) {
-    return 'Budget percentage cannot exceed 100%';
+    return "Budget percentage cannot exceed 100%";
   }
   return null;
 }
@@ -336,7 +335,7 @@ export function validateBudgetCoherence(
   const tolerance = Math.max(1, totalBudget * 0.0001);
 
   if (Math.abs(amount - expectedAmount) > tolerance) {
-    return 'Budget amount does not match percentage';
+    return "Budget amount does not match percentage";
   }
   return null;
 }
@@ -415,13 +414,13 @@ export function generateBudgetSummary(
  */
 export function validateRevenueName(name: string | undefined): string | null {
   if (!name || !name.trim()) {
-    return 'Revenue name is required';
+    return "Revenue name is required";
   }
   if (name.length < 2) {
-    return 'Revenue name must be at least 2 characters';
+    return "Revenue name must be at least 2 characters";
   }
   if (name.length > 200) {
-    return 'Revenue name must be less than 200 characters';
+    return "Revenue name must be less than 200 characters";
   }
   return null;
 }
@@ -431,7 +430,7 @@ export function validateRevenueName(name: string | undefined): string | null {
  */
 export function validateRevenueCategory(category: string | undefined): string | null {
   if (!category || !category.trim()) {
-    return 'Revenue category is required';
+    return "Revenue category is required";
   }
   return null;
 }
@@ -441,13 +440,13 @@ export function validateRevenueCategory(category: string | undefined): string | 
  */
 export function validateRevenueAmount(amount: number | undefined): string | null {
   if (amount === undefined || amount === null) {
-    return 'Revenue amount is required';
+    return "Revenue amount is required";
   }
   if (amount < 0) {
-    return 'Revenue amount cannot be negative';
+    return "Revenue amount cannot be negative";
   }
   if (amount > Number.MAX_SAFE_INTEGER) {
-    return 'Revenue amount exceeds maximum safe value';
+    return "Revenue amount exceeds maximum safe value";
   }
   return null;
 }
@@ -459,7 +458,7 @@ export function validateTaxRate(rate: number | undefined): string | null {
   if (rate === undefined) return null; // Rate is optional
 
   if (rate < 0 || rate > 100) {
-    return 'Tax rate must be between 0 and 100';
+    return "Tax rate must be between 0 and 100";
   }
   return null;
 }
@@ -618,20 +617,18 @@ export function generateGovernmentSummary(state: GovernmentBuilderState): Govern
   const totalRevenue = calculateTotalRevenue(state.revenueSources);
   const totalAllocated = calculateTotalBudget(state.budgetAllocations);
   const budgetUtilization =
-    state.structure.totalBudget > 0
-      ? (totalAllocated / state.structure.totalBudget) * 100
-      : 0;
+    state.structure.totalBudget > 0 ? (totalAllocated / state.structure.totalBudget) * 100 : 0;
 
   const isBalanced =
     Math.abs(totalRevenue - state.structure.totalBudget) <
     Math.max(1000, state.structure.totalBudget * 0.01);
 
   return {
-    name: state.structure.governmentName || 'Unnamed Government',
-    type: state.structure.governmentType || 'Unknown',
-    fiscalYear: state.structure.fiscalYear || 'Unknown',
+    name: state.structure.governmentName || "Unnamed Government",
+    type: state.structure.governmentType || "Unknown",
+    fiscalYear: state.structure.fiscalYear || "Unknown",
     totalBudget: state.structure.totalBudget,
-    currency: state.structure.budgetCurrency || 'USD',
+    currency: state.structure.budgetCurrency || "USD",
     departmentCount: state.departments.length,
     allocationCount: state.budgetAllocations.length,
     revenueSourceCount: state.revenueSources.length,

@@ -40,7 +40,7 @@ function deriveDiplomaticMetrics(relations: any[] | undefined): DiplomaticMetric
     return {
       treatyCount: 0,
       tradePartnerCount: 0,
-      relationshipsCount: 0
+      relationshipsCount: 0,
     };
   }
 
@@ -57,7 +57,7 @@ function deriveDiplomaticMetrics(relations: any[] | undefined): DiplomaticMetric
   return {
     treatyCount,
     tradePartnerCount,
-    relationshipsCount: relations.length
+    relationshipsCount: relations.length,
   };
 }
 
@@ -76,7 +76,7 @@ function buildExecutiveIntelligencePayload(
       change: {
         value: 0,
         period: "week" as const,
-        reason: "No significant changes detected"
+        reason: "No significant changes detected",
       },
       status: "good" as const,
       keyMetrics: [
@@ -89,7 +89,7 @@ function buildExecutiveIntelligencePayload(
           changeValue: 0,
           changePercent: 0,
           changePeriod: "week",
-          status: "good" as const
+          status: "good" as const,
         },
         {
           id: "economic-tier",
@@ -100,8 +100,8 @@ function buildExecutiveIntelligencePayload(
           changeValue: 0,
           changePercent: 0,
           changePeriod: "week",
-          status: "good" as const
-        }
+          status: "good" as const,
+        },
       ],
       criticalAlerts: [],
       recommendations: [],
@@ -109,21 +109,21 @@ function buildExecutiveIntelligencePayload(
         shortTerm: {
           projected: (overview as any)?.vitality?.economic || 0,
           confidence: 70,
-          factors: ["Current economic indicators", "Historical trends"]
+          factors: ["Current economic indicators", "Historical trends"],
         },
         longTerm: {
           projected: (overview as any)?.vitality?.economic || 0,
           confidence: 50,
-          factors: ["Long-term growth patterns", "Global economic outlook"]
-        }
+          factors: ["Long-term growth patterns", "Global economic outlook"],
+        },
       },
       comparisons: {
         peerAverage: 75,
         regionalAverage: 70,
         historicalBest: 85,
         rank: 0,
-        totalCountries: 0
-      }
+        totalCountries: 0,
+      },
     },
     {
       area: "population" as const,
@@ -132,7 +132,7 @@ function buildExecutiveIntelligencePayload(
       change: {
         value: 0,
         period: "week" as const,
-        reason: "No significant changes detected"
+        reason: "No significant changes detected",
       },
       status: "good" as const,
       keyMetrics: [
@@ -145,7 +145,7 @@ function buildExecutiveIntelligencePayload(
           changeValue: 0,
           changePercent: 0,
           changePeriod: "week",
-          status: "good" as const
+          status: "good" as const,
         },
         {
           id: "wellbeing",
@@ -156,8 +156,8 @@ function buildExecutiveIntelligencePayload(
           changeValue: 0,
           changePercent: 0,
           changePeriod: "week",
-          status: "good" as const
-        }
+          status: "good" as const,
+        },
       ],
       criticalAlerts: [],
       recommendations: [],
@@ -165,21 +165,21 @@ function buildExecutiveIntelligencePayload(
         shortTerm: {
           projected: (overview as any)?.vitality?.social || 0,
           confidence: 70,
-          factors: ["Social indicators", "Population trends"]
+          factors: ["Social indicators", "Population trends"],
         },
         longTerm: {
           projected: (overview as any)?.vitality?.social || 0,
           confidence: 50,
-          factors: ["Demographic projections", "Social policy impact"]
-        }
+          factors: ["Demographic projections", "Social policy impact"],
+        },
       },
       comparisons: {
         peerAverage: 75,
         regionalAverage: 70,
         historicalBest: 85,
         rank: 0,
-        totalCountries: 0
-      }
+        totalCountries: 0,
+      },
     },
     {
       area: "diplomatic" as const,
@@ -188,7 +188,7 @@ function buildExecutiveIntelligencePayload(
       change: {
         value: 0,
         period: "week" as const,
-        reason: "No significant changes detected"
+        reason: "No significant changes detected",
       },
       status: "good" as const,
       keyMetrics: [
@@ -201,8 +201,8 @@ function buildExecutiveIntelligencePayload(
             diplomaticMetrics.treatyCount > 5
               ? ("up" as const)
               : diplomaticMetrics.treatyCount < 3
-              ? ("down" as const)
-              : ("stable" as const),
+                ? ("down" as const)
+                : ("stable" as const),
           changeValue: 0,
           changePercent: 0,
           changePeriod: "week",
@@ -210,10 +210,10 @@ function buildExecutiveIntelligencePayload(
             diplomaticMetrics.treatyCount >= 8
               ? ("excellent" as const)
               : diplomaticMetrics.treatyCount >= 5
-              ? ("good" as const)
-              : diplomaticMetrics.treatyCount >= 2
-              ? ("concerning" as const)
-              : ("critical" as const)
+                ? ("good" as const)
+                : diplomaticMetrics.treatyCount >= 2
+                  ? ("concerning" as const)
+                  : ("critical" as const),
         },
         {
           id: "trade-partners",
@@ -224,8 +224,8 @@ function buildExecutiveIntelligencePayload(
             diplomaticMetrics.tradePartnerCount > 15
               ? ("up" as const)
               : diplomaticMetrics.tradePartnerCount < 8
-              ? ("down" as const)
-              : ("stable" as const),
+                ? ("down" as const)
+                : ("stable" as const),
           changeValue: 0,
           changePercent: 0,
           changePeriod: "week",
@@ -233,11 +233,11 @@ function buildExecutiveIntelligencePayload(
             diplomaticMetrics.tradePartnerCount >= 20
               ? ("excellent" as const)
               : diplomaticMetrics.tradePartnerCount >= 10
-              ? ("good" as const)
-              : diplomaticMetrics.tradePartnerCount >= 5
-              ? ("concerning" as const)
-              : ("critical" as const)
-        }
+                ? ("good" as const)
+                : diplomaticMetrics.tradePartnerCount >= 5
+                  ? ("concerning" as const)
+                  : ("critical" as const),
+        },
       ],
       criticalAlerts: [],
       recommendations: [],
@@ -245,21 +245,21 @@ function buildExecutiveIntelligencePayload(
         shortTerm: {
           projected: (overview as any)?.vitality?.diplomatic || 0,
           confidence: 70,
-          factors: ["Current diplomatic relations", "International standing"]
+          factors: ["Current diplomatic relations", "International standing"],
         },
         longTerm: {
           projected: (overview as any)?.vitality?.diplomatic || 0,
           confidence: 50,
-          factors: ["Geopolitical trends", "Alliance developments"]
-        }
+          factors: ["Geopolitical trends", "Alliance developments"],
+        },
       },
       comparisons: {
         peerAverage: 75,
         regionalAverage: 70,
         historicalBest: 85,
         rank: 0,
-        totalCountries: 0
-      }
+        totalCountries: 0,
+      },
     },
     {
       area: "governance" as const,
@@ -268,7 +268,7 @@ function buildExecutiveIntelligencePayload(
       change: {
         value: 0,
         period: "week" as const,
-        reason: "No significant changes detected"
+        reason: "No significant changes detected",
       },
       status: "good" as const,
       keyMetrics: [
@@ -281,7 +281,7 @@ function buildExecutiveIntelligencePayload(
           changeValue: 0,
           changePercent: 0,
           changePeriod: "week",
-          status: "good" as const
+          status: "good" as const,
         },
         {
           id: "pending-decisions",
@@ -292,8 +292,8 @@ function buildExecutiveIntelligencePayload(
           changeValue: 0,
           changePercent: 0,
           changePeriod: "week",
-          status: "good" as const
-        }
+          status: "good" as const,
+        },
       ],
       criticalAlerts: [],
       recommendations: [],
@@ -301,22 +301,22 @@ function buildExecutiveIntelligencePayload(
         shortTerm: {
           projected: (overview as any)?.vitality?.governance || 0,
           confidence: 70,
-          factors: ["Policy throughput", "Decision velocity"]
+          factors: ["Policy throughput", "Decision velocity"],
         },
         longTerm: {
           projected: (overview as any)?.vitality?.governance || 0,
           confidence: 50,
-          factors: ["Institutional reforms", "Administrative capacity"]
-        }
+          factors: ["Institutional reforms", "Administrative capacity"],
+        },
       },
       comparisons: {
         peerAverage: 75,
         regionalAverage: 70,
         historicalBest: 85,
         rank: 0,
-        totalCountries: 0
-      }
-    }
+        totalCountries: 0,
+      },
+    },
   ];
 
   const criticalAlerts = (overview as any)?.alerts?.items
@@ -333,7 +333,7 @@ function buildExecutiveIntelligencePayload(
           relatedEntities: [],
           isRead: !alert.isActive,
           isActive: alert.isActive,
-          isResolved: alert.isResolved
+          isResolved: alert.isResolved,
         }))
     : [];
 
@@ -356,9 +356,9 @@ function buildExecutiveIntelligencePayload(
         forecast: {
           nextWeek: 0,
           nextMonth: 0,
-          nextQuarter: 0
+          nextQuarter: 0,
         },
-        context: briefing.description ?? ""
+        context: briefing.description ?? "",
       }))
     : [];
 
@@ -377,11 +377,7 @@ function buildExecutiveIntelligencePayload(
       | "governance",
     priority: (action.priority ?? "high") as "critical" | "high" | "medium" | "low",
     urgency: (action.urgency ?? "important") as "urgent" | "important" | "routine" | "future",
-    difficulty: (action.difficulty ?? "moderate") as
-      | "easy"
-      | "moderate"
-      | "complex"
-      | "major",
+    difficulty: (action.difficulty ?? "moderate") as "easy" | "moderate" | "complex" | "major",
     estimatedDuration: action.estimatedDuration ?? "TBD",
     estimatedCost: String(action.estimatedCost ?? 0),
     estimatedBenefit: action.estimatedBenefit ?? "",
@@ -392,8 +388,8 @@ function buildExecutiveIntelligencePayload(
       economic: action.category === "economic" ? 50 : undefined,
       social: action.category === "population" ? 50 : undefined,
       diplomatic: action.category === "diplomatic" ? 50 : undefined,
-      governance: action.category === "governance" ? 50 : undefined
-    }
+      governance: action.category === "governance" ? 50 : undefined,
+    },
   }));
 
   return {
@@ -404,12 +400,12 @@ function buildExecutiveIntelligencePayload(
       predictions: [],
       opportunities: [],
       risks: [],
-      competitiveIntelligence: []
+      competitiveIntelligence: [],
     },
     lastMajorChange: {
       date: Date.now(),
       description: "Intelligence data processed",
-      impact: "neutral"
+      impact: "neutral",
     },
     viewMode: "executive" as const,
     priorityThreshold: "medium" as const,
@@ -417,22 +413,22 @@ function buildExecutiveIntelligencePayload(
       ? metrics.overallHealth >= 80
         ? ("excellent" as const)
         : metrics.overallHealth >= 60
-        ? ("good" as const)
-        : metrics.overallHealth >= 40
-        ? ("concerning" as const)
-        : ("critical" as const)
+          ? ("good" as const)
+          : metrics.overallHealth >= 40
+            ? ("concerning" as const)
+            : ("critical" as const)
       : ("good" as const),
     confidenceLevel: 85,
     vitalityIntelligence,
     criticalAlerts,
     trendingInsights,
-    urgentActions
+    urgentActions,
   };
 }
 
-export function useMyCountryUnifiedData(
-  { autoRefresh = false }: UseMyCountryUnifiedDataOptions = {}
-): UseMyCountryUnifiedDataReturn {
+export function useMyCountryUnifiedData({
+  autoRefresh = false,
+}: UseMyCountryUnifiedDataOptions = {}): UseMyCountryUnifiedDataReturn {
   const { user } = useUser();
   const countryContext = useCountryData();
   const countryId = countryContext.country?.id ?? "";
@@ -441,7 +437,7 @@ export function useMyCountryUnifiedData(
   const unifiedIntelligence = useUnifiedIntelligence({
     countryId,
     userId,
-    autoRefresh
+    autoRefresh,
   });
 
   const { data: diplomaticRelations } = api.diplomatic.getRelationships.useQuery(
@@ -459,25 +455,19 @@ export function useMyCountryUnifiedData(
     { enabled: !!countryId }
   );
 
-  const {
-    data: quickActionMeetings,
-    refetch: refetchQuickActionMeetings
-  } = api.quickActions.getMeetings.useQuery(
-    { countryId, limit: 25 },
-    { enabled: !!countryId }
-  );
+  const { data: quickActionMeetings, refetch: refetchQuickActionMeetings } =
+    api.quickActions.getMeetings.useQuery({ countryId, limit: 25 }, { enabled: !!countryId });
 
-  const {
-    data: quickActionPolicies,
-    refetch: refetchQuickActionPolicies
-  } = api.quickActions.getPolicies.useQuery(
-    { countryId },
-    { enabled: !!countryId }
-  );
+  const { data: quickActionPolicies, refetch: refetchQuickActionPolicies } =
+    api.quickActions.getPolicies.useQuery({ countryId }, { enabled: !!countryId });
 
-  const normalizedDiplomaticRelations = Array.isArray(diplomaticRelations) ? diplomaticRelations : [];
+  const normalizedDiplomaticRelations = Array.isArray(diplomaticRelations)
+    ? diplomaticRelations
+    : [];
   const normalizedEmbassies = Array.isArray(embassies) ? embassies : [];
-  const normalizedRecentDiplomaticActivity = Array.isArray(recentDiplomaticActivity) ? recentDiplomaticActivity : [];
+  const normalizedRecentDiplomaticActivity = Array.isArray(recentDiplomaticActivity)
+    ? recentDiplomaticActivity
+    : [];
   const normalizedMeetings = Array.isArray(quickActionMeetings) ? quickActionMeetings : [];
   const normalizedPolicies = Array.isArray(quickActionPolicies) ? quickActionPolicies : [];
 
@@ -500,7 +490,7 @@ export function useMyCountryUnifiedData(
       unifiedIntelligence.quickActions,
       unifiedIntelligence.metrics,
       countryContext.country,
-      diplomaticMetrics
+      diplomaticMetrics,
     ]
   );
 
@@ -518,6 +508,6 @@ export function useMyCountryUnifiedData(
     quickActionMeetings: normalizedMeetings,
     quickActionPolicies: normalizedPolicies,
     refetchQuickActionMeetings,
-    refetchQuickActionPolicies
+    refetchQuickActionPolicies,
   };
 }

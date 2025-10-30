@@ -5,51 +5,51 @@
 
 // Base enums and constants
 export const TAX_CATEGORIES = {
-  INCOME: 'Personal Income Tax',
-  CORPORATE: 'Corporate Income Tax',
-  SALES: 'Sales Tax / VAT',
-  PROPERTY: 'Property Tax',
-  CAPITAL_GAINS: 'Capital Gains Tax',
-  ESTATE: 'Estate Tax',
-  GIFT: 'Gift Tax',
-  CUSTOMS: 'Customs Duties',
-  EXCISE: 'Excise Tax',
-  PAYROLL: 'Payroll Tax',
-  OTHER: 'Other Tax'
+  INCOME: "Personal Income Tax",
+  CORPORATE: "Corporate Income Tax",
+  SALES: "Sales Tax / VAT",
+  PROPERTY: "Property Tax",
+  CAPITAL_GAINS: "Capital Gains Tax",
+  ESTATE: "Estate Tax",
+  GIFT: "Gift Tax",
+  CUSTOMS: "Customs Duties",
+  EXCISE: "Excise Tax",
+  PAYROLL: "Payroll Tax",
+  OTHER: "Other Tax",
 } as const;
 
 export const TAX_TYPES = {
-  DIRECT: 'Direct Tax',
-  INDIRECT: 'Indirect Tax'
+  DIRECT: "Direct Tax",
+  INDIRECT: "Indirect Tax",
 } as const;
 
 export const CALCULATION_METHODS = {
-  PERCENTAGE: 'percentage',
-  FIXED: 'fixed',
-  TIERED: 'tiered',
-  PROGRESSIVE: 'progressive'
+  PERCENTAGE: "percentage",
+  FIXED: "fixed",
+  TIERED: "tiered",
+  PROGRESSIVE: "progressive",
 } as const;
 
 export const EXEMPTION_TYPES = {
-  INDIVIDUAL: 'Individual',
-  CORPORATE: 'Corporate',
-  SECTOR: 'Sector',
-  GEOGRAPHIC: 'Geographic',
-  INCOME_BASED: 'Income Based'
+  INDIVIDUAL: "Individual",
+  CORPORATE: "Corporate",
+  SECTOR: "Sector",
+  GEOGRAPHIC: "Geographic",
+  INCOME_BASED: "Income Based",
 } as const;
 
 export const DEDUCTION_TYPES = {
-  STANDARD: 'Standard',
-  ITEMIZED: 'Itemized',
-  ABOVE_THE_LINE: 'Above the Line',
-  BELOW_THE_LINE: 'Below the Line'
+  STANDARD: "Standard",
+  ITEMIZED: "Itemized",
+  ABOVE_THE_LINE: "Above the Line",
+  BELOW_THE_LINE: "Below the Line",
 } as const;
 
 export const FISCAL_YEARS = {
-  CALENDAR: 'calendar',
-  APRIL_MARCH: 'april-march',
-  JULY_JUNE: 'july-june',
-  OCTOBER_SEPTEMBER: 'october-september'
+  CALENDAR: "calendar",
+  APRIL_MARCH: "april-march",
+  JULY_JUNE: "july-june",
+  OCTOBER_SEPTEMBER: "october-september",
 } as const;
 
 // Core tax system types
@@ -71,7 +71,7 @@ export interface TaxSystem {
   lastReform?: Date;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Relations
   taxCategories?: TaxCategory[];
   taxBrackets?: TaxBracket[];
@@ -207,7 +207,7 @@ export interface TaxSystemInput {
   collectionEfficiency?: number;
 }
 
-export type CalculationMethodValue = typeof CALCULATION_METHODS[keyof typeof CALCULATION_METHODS];
+export type CalculationMethodValue = (typeof CALCULATION_METHODS)[keyof typeof CALCULATION_METHODS];
 
 export interface TaxCategoryInput {
   categoryName: string;
@@ -376,7 +376,7 @@ export interface TaxValidationWarning {
   field: string;
   message: string;
   code: string;
-  severity: 'low' | 'medium' | 'high';
+  severity: "low" | "medium" | "high";
 }
 
 // Analytics and reporting types

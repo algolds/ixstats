@@ -34,12 +34,7 @@ import { useIntelligenceWebSocket } from "~/hooks/useIntelligenceWebSocket";
 
 // Templates and types
 import { taxSystemTemplates } from "./TaxSystemTemplates";
-import type {
-  TaxSystem,
-  TaxCategory,
-  TaxBracket,
-  TaxCalculationResult,
-} from "~/types/tax-system";
+import type { TaxSystem, TaxCategory, TaxBracket, TaxCalculationResult } from "~/types/tax-system";
 import type { ComponentType } from "~/types/government";
 
 // API integration
@@ -148,17 +143,21 @@ export function TaxBuilder({
   );
 
   // Data sync hook
-  const { parsedDataApplied, revenueAutoPopulated, syncedCategoryIndices, setSyncedCategoryIndices } =
-    useTaxDataSync({
-      builderState,
-      setBuilderState,
-      countryId,
-      economicData,
-      governmentData,
-      onSuggestionsUpdate: (newSuggestions) => {
-        setSuggestions((prev) => [...prev, ...newSuggestions]);
-      },
-    });
+  const {
+    parsedDataApplied,
+    revenueAutoPopulated,
+    syncedCategoryIndices,
+    setSyncedCategoryIndices,
+  } = useTaxDataSync({
+    builderState,
+    setBuilderState,
+    countryId,
+    economicData,
+    governmentData,
+    onSuggestionsUpdate: (newSuggestions) => {
+      setSuggestions((prev) => [...prev, ...newSuggestions]);
+    },
+  });
 
   // Atomic component integration
   const { data: atomicComponents } = api.government.getComponents.useQuery(

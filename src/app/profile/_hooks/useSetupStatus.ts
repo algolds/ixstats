@@ -1,6 +1,6 @@
 import type { UserResource } from "@clerk/types";
 
-type SetupStatus = 'loading' | 'unauthenticated' | 'needs-setup' | 'complete';
+type SetupStatus = "loading" | "unauthenticated" | "needs-setup" | "complete";
 
 interface UseSetupStatusProps {
   isLoaded: boolean;
@@ -9,9 +9,14 @@ interface UseSetupStatusProps {
   userProfile: any;
 }
 
-export function useSetupStatus({ isLoaded, profileLoading, user, userProfile }: UseSetupStatusProps): SetupStatus {
-  if (!isLoaded || profileLoading) return 'loading';
-  if (!user) return 'unauthenticated';
-  if (!userProfile?.countryId) return 'needs-setup';
-  return 'complete';
+export function useSetupStatus({
+  isLoaded,
+  profileLoading,
+  user,
+  userProfile,
+}: UseSetupStatusProps): SetupStatus {
+  if (!isLoaded || profileLoading) return "loading";
+  if (!user) return "unauthenticated";
+  if (!userProfile?.countryId) return "needs-setup";
+  return "complete";
 }

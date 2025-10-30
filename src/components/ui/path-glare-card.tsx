@@ -7,10 +7,7 @@ interface PathGlareCardProps {
   className?: string;
 }
 
-export const PathGlareCard = ({
-  children,
-  className,
-}: PathGlareCardProps) => {
+export const PathGlareCard = ({ children, className }: PathGlareCardProps) => {
   const isPointerInside = useRef(false);
   const refElement = useRef<HTMLDivElement>(null);
   const animationFrame = useRef<number | undefined>(undefined);
@@ -83,17 +80,21 @@ export const PathGlareCard = ({
       if (state.current.wave.time > 360) {
         state.current.wave.time = 0;
       }
-      
+
       // Add flag-like ripple effect
       const { glare } = state.current;
-      const waveX = glare.x + Math.sin(state.current.wave.time * Math.PI / 180) * state.current.wave.amplitude;
-      const waveY = glare.y + Math.cos(state.current.wave.time * Math.PI / 180) * state.current.wave.amplitude * 0.5;
-      
+      const waveX =
+        glare.x +
+        Math.sin((state.current.wave.time * Math.PI) / 180) * state.current.wave.amplitude;
+      const waveY =
+        glare.y +
+        Math.cos((state.current.wave.time * Math.PI) / 180) * state.current.wave.amplitude * 0.5;
+
       if (refElement.current) {
         refElement.current.style.setProperty("--m-x", `${waveX}%`);
         refElement.current.style.setProperty("--m-y", `${waveY}%`);
       }
-      
+
       updateStyles();
     }
     animationFrame.current = requestAnimationFrame(animateWave);
@@ -111,7 +112,7 @@ export const PathGlareCard = ({
   return (
     <div
       style={containerStyle}
-      className="relative isolate [contain:layout_style] [perspective:600px] transition-transform duration-[var(--duration)] ease-[var(--easing)] delay-[var(--delay)] will-change-transform w-full h-auto cursor-pointer"
+      className="relative isolate h-auto w-full cursor-pointer transition-transform delay-[var(--delay)] duration-[var(--duration)] ease-[var(--easing)] will-change-transform [contain:layout_style] [perspective:600px]"
       ref={refElement}
       onPointerMove={(event) => {
         const rotateFactor = 0.2; // Reduced for subtler effect
@@ -169,16 +170,14 @@ export const PathGlareCard = ({
         }
       }}
     >
-      <div className="h-full grid will-change-transform origin-center transition-transform duration-[var(--duration)] ease-[var(--easing)] delay-[var(--delay)] [transform:rotateY(var(--r-x))_rotateX(var(--r-y))] rounded-[var(--radius)] border border-slate-800 hover:[--opacity:0.4] hover:[--duration:200ms] hover:[--easing:linear] hover:filter-none overflow-hidden">
-        <div className="w-full h-full grid [grid-area:1/1] mix-blend-soft-light [clip-path:inset(0_0_0_0_round_var(--radius))]">
-          <div className={cn("h-full w-full", className)}>
-            {children}
-          </div>
+      <div className="grid h-full origin-center [transform:rotateY(var(--r-x))_rotateX(var(--r-y))] overflow-hidden rounded-[var(--radius)] border border-slate-800 transition-transform delay-[var(--delay)] duration-[var(--duration)] ease-[var(--easing)] will-change-transform hover:filter-none hover:[--duration:200ms] hover:[--easing:linear] hover:[--opacity:0.4]">
+        <div className="grid h-full w-full mix-blend-soft-light [clip-path:inset(0_0_0_0_round_var(--radius))] [grid-area:1/1]">
+          <div className={cn("h-full w-full", className)}>{children}</div>
         </div>
-        <div className="w-full h-full grid [grid-area:1/1] mix-blend-soft-light [clip-path:inset(0_0_1px_0_round_var(--radius))] opacity-[var(--opacity)] transition-opacity transition-background duration-[var(--duration)] ease-[var(--easing)] delay-[var(--delay)] will-change-background [background:radial-gradient(farthest-corner_circle_at_var(--m-x)_var(--m-y),_rgba(255,255,255,0.9)_5%,_rgba(255,255,255,0.7)_15%,_rgba(255,255,255,0.3)_35%,_rgba(255,255,255,0)_70%)]" />
-        <div className="w-full h-full grid [grid-area:1/1] mix-blend-overlay [clip-path:inset(0_0_1px_0_round_var(--radius))] opacity-[calc(var(--opacity)*0.6)] transition-opacity duration-[var(--duration)] will-change-background [background:linear-gradient(calc(var(--wave-offset)*2),_rgba(255,255,255,0.1)_0%,_transparent_25%,_rgba(255,255,255,0.05)_50%,_transparent_75%,_rgba(255,255,255,0.1)_100%)]" />
+        <div className="transition-background will-change-background grid h-full w-full opacity-[var(--opacity)] mix-blend-soft-light transition-opacity delay-[var(--delay)] duration-[var(--duration)] ease-[var(--easing)] [background:radial-gradient(farthest-corner_circle_at_var(--m-x)_var(--m-y),_rgba(255,255,255,0.9)_5%,_rgba(255,255,255,0.7)_15%,_rgba(255,255,255,0.3)_35%,_rgba(255,255,255,0)_70%)] [clip-path:inset(0_0_1px_0_round_var(--radius))] [grid-area:1/1]" />
+        <div className="will-change-background grid h-full w-full opacity-[calc(var(--opacity)*0.6)] mix-blend-overlay transition-opacity duration-[var(--duration)] [background:linear-gradient(calc(var(--wave-offset)*2),_rgba(255,255,255,0.1)_0%,_transparent_25%,_rgba(255,255,255,0.05)_50%,_transparent_75%,_rgba(255,255,255,0.1)_100%)] [clip-path:inset(0_0_1px_0_round_var(--radius))] [grid-area:1/1]" />
         <div
-          className="w-full h-full grid [grid-area:1/1] mix-blend-color-dodge opacity-[var(--opacity)] will-change-background transition-opacity [clip-path:inset(0_0_1px_0_round_var(--radius))] [background-blend-mode:hue_hue_hue_overlay] [background:var(--pattern),_var(--rainbow),_var(--diagonal),_var(--shade)] relative after:content-[''] after:grid-area-[inherit] after:bg-repeat-[inherit] after:bg-attachment-[inherit] after:bg-origin-[inherit] after:bg-clip-[inherit] after:bg-[inherit] after:mix-blend-exclusion after:[background-size:var(--foil-size),_200%_400%,_800%,_200%] after:[background-position:center,_0%_var(--bg-y),_calc(var(--bg-x)*_-1)_calc(var(--bg-y)*_-1),_var(--bg-x)_var(--bg-y)] after:[background-blend-mode:soft-light,_hue,_hard-light]"
+          className="will-change-background after:grid-area-[inherit] after:bg-repeat-[inherit] after:bg-attachment-[inherit] after:bg-origin-[inherit] after:bg-clip-[inherit] relative grid h-full w-full opacity-[var(--opacity)] [background-blend-mode:hue_hue_hue_overlay] mix-blend-color-dodge transition-opacity [background:var(--pattern),_var(--rainbow),_var(--diagonal),_var(--shade)] [clip-path:inset(0_0_1px_0_round_var(--radius))] [grid-area:1/1] after:bg-[inherit] after:[background-size:var(--foil-size),_200%_400%,_800%,_200%] after:[background-position:center,_0%_var(--bg-y),_calc(var(--bg-x)*_-1)_calc(var(--bg-y)*_-1),_var(--bg-x)_var(--bg-y)] after:[background-blend-mode:soft-light,_hue,_hard-light] after:mix-blend-exclusion after:content-['']"
           style={{ ...backgroundStyle }}
         />
       </div>

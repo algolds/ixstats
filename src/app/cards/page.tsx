@@ -7,12 +7,12 @@ import Link from "next/link";
 export default function CardsPlaceholderPage() {
   return (
     <div className="container mx-auto px-4 py-10">
-      <Card className="max-w-2xl mx-auto">
+      <Card className="mx-auto max-w-2xl">
         <CardHeader>
           <CardTitle>Trading Cards (Coming Soon)</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             This section is under construction. In the meantime, return to your dashboard.
           </p>
           <Button asChild>
@@ -23,5 +23,3 @@ export default function CardsPlaceholderPage() {
     </div>
   );
 }
-
-

@@ -1,5 +1,10 @@
 // src/lib/atomic-economic-integration.ts
-import { ComponentType, type Country, type GovernmentComponent, type AtomicEffectiveness } from '@prisma/client';
+import {
+  ComponentType,
+  type Country,
+  type GovernmentComponent,
+  type AtomicEffectiveness,
+} from "@prisma/client";
 
 export interface AtomicEconomicModifiers {
   taxCollectionMultiplier: number;
@@ -19,7 +24,7 @@ export interface AtomicEnhancedCountryData {
   currentTotalGdp: number;
   adjustedGdpGrowth: number;
   taxRevenueGDPPercent: number | null;
-  
+
   // Atomic enhancements
   atomicModifiers: AtomicEconomicModifiers;
   atomicEffectiveness: AtomicEffectiveness;
@@ -27,7 +32,7 @@ export interface AtomicEnhancedCountryData {
   enhancedTaxRevenue: number;
   stabilityIndex: number;
   governmentCapacityIndex: number;
-  
+
   // Impact analysis
   economicImpactFromAtomic: {
     gdpImpactPercent: number;
@@ -54,20 +59,20 @@ export function calculateAtomicEconomicImpact(
     stabilityBonus: 0,
     innovationMultiplier: 1.0,
     internationalTradeBonus: 0,
-    governmentEfficiencyMultiplier: 1.0
+    governmentEfficiencyMultiplier: 1.0,
   };
 
   // Apply component-specific modifiers (client-side calculations)
-  components.forEach(component => {
+  components.forEach((component) => {
     switch (component) {
       case ComponentType.PROFESSIONAL_BUREAUCRACY:
         modifiers.taxCollectionMultiplier *= 1.15;
         modifiers.gdpGrowthModifier *= 1.05;
         modifiers.stabilityBonus += 5;
-        modifiers.governmentEfficiencyMultiplier *= 1.10;
+        modifiers.governmentEfficiencyMultiplier *= 1.1;
         break;
       case ComponentType.RULE_OF_LAW:
-        modifiers.gdpGrowthModifier *= 1.10;
+        modifiers.gdpGrowthModifier *= 1.1;
         modifiers.stabilityBonus += 15;
         modifiers.internationalTradeBonus += 5;
         break;
@@ -90,22 +95,28 @@ export function calculateAtomicEconomicImpact(
   });
 
   // Apply synergy bonuses
-  if (components.includes(ComponentType.TECHNOCRATIC_PROCESS) &&
-      components.includes(ComponentType.PROFESSIONAL_BUREAUCRACY)) {
+  if (
+    components.includes(ComponentType.TECHNOCRATIC_PROCESS) &&
+    components.includes(ComponentType.PROFESSIONAL_BUREAUCRACY)
+  ) {
     modifiers.gdpGrowthModifier *= 1.15; // Additional 15% bonus
-    modifiers.innovationMultiplier *= 1.20;
+    modifiers.innovationMultiplier *= 1.2;
     modifiers.governmentEfficiencyMultiplier *= 1.25;
   }
 
-  if (components.includes(ComponentType.RULE_OF_LAW) &&
-      components.includes(ComponentType.INDEPENDENT_JUDICIARY)) {
+  if (
+    components.includes(ComponentType.RULE_OF_LAW) &&
+    components.includes(ComponentType.INDEPENDENT_JUDICIARY)
+  ) {
     modifiers.internationalTradeBonus += 15;
     modifiers.stabilityBonus += 10;
   }
 
   // Apply conflict penalties
-  if (components.includes(ComponentType.DEMOCRATIC_PROCESS) &&
-      components.includes(ComponentType.SURVEILLANCE_SYSTEM)) {
+  if (
+    components.includes(ComponentType.DEMOCRATIC_PROCESS) &&
+    components.includes(ComponentType.SURVEILLANCE_SYSTEM)
+  ) {
     modifiers.gdpGrowthModifier *= 0.95; // 5% penalty
     modifiers.internationalTradeBonus -= 10;
   }
@@ -153,29 +164,29 @@ export function calculateAtomicEconomicEffectiveness(
   // Apply basic component bonuses
   for (const component of components) {
     switch (component) {
-      case 'PROFESSIONAL_BUREAUCRACY':
+      case "PROFESSIONAL_BUREAUCRACY":
         overallScore += 15;
         taxCollectionMultiplier += 0.15;
         governmentCapacityIndex += 20;
         policyEffectiveness += 15;
         break;
-      case 'RULE_OF_LAW':
+      case "RULE_OF_LAW":
         overallScore += 20;
         gdpGrowthRate += 0.5;
         stabilityIndex += 25;
         economicStability += 20;
         break;
-      case 'INDEPENDENT_JUDICIARY':
+      case "INDEPENDENT_JUDICIARY":
         overallScore += 10;
         stabilityIndex += 15;
         economicStability += 10;
         break;
-      case 'TECHNOCRATIC_AGENCIES':
+      case "TECHNOCRATIC_AGENCIES":
         overallScore += 12;
         governmentCapacityIndex += 15;
         policyEffectiveness += 12;
         break;
-      case 'DEMOCRATIC_PROCESS':
+      case "DEMOCRATIC_PROCESS":
         overallScore += 8;
         stabilityIndex += 10;
         economicStability += 8;
@@ -185,26 +196,26 @@ export function calculateAtomicEconomicEffectiveness(
 
   const recommendedImprovements = [];
   if (!components.includes(ComponentType.PROFESSIONAL_BUREAUCRACY)) {
-    recommendedImprovements.push('Add Professional Bureaucracy for better tax collection');
+    recommendedImprovements.push("Add Professional Bureaucracy for better tax collection");
   }
   if (!components.includes(ComponentType.RULE_OF_LAW)) {
-    recommendedImprovements.push('Implement Rule of Law for economic stability');
+    recommendedImprovements.push("Implement Rule of Law for economic stability");
   }
 
   // Calculate synergies and conflicts
   const synergies: ComponentType[] = [];
   const conflicts: ComponentType[] = [];
-  const modifierBreakdown: Array<{component: ComponentType; effect: string; value: number;}> = [];
+  const modifierBreakdown: Array<{ component: ComponentType; effect: string; value: number }> = [];
 
   for (const component of components) {
     switch (component) {
       case ComponentType.PROFESSIONAL_BUREAUCRACY:
         synergies.push(ComponentType.RULE_OF_LAW);
-        modifierBreakdown.push({ component, effect: 'Tax Collection', value: 15 });
+        modifierBreakdown.push({ component, effect: "Tax Collection", value: 15 });
         break;
       case ComponentType.RULE_OF_LAW:
         synergies.push(ComponentType.INDEPENDENT_JUDICIARY);
-        modifierBreakdown.push({ component, effect: 'Economic Stability', value: 20 });
+        modifierBreakdown.push({ component, effect: "Economic Stability", value: 20 });
         break;
       case ComponentType.AUTOCRATIC_PROCESS:
         conflicts.push(ComponentType.DEMOCRATIC_PROCESS);
@@ -224,7 +235,7 @@ export function calculateAtomicEconomicEffectiveness(
     recommendedImprovements,
     synergies,
     conflicts,
-    modifierBreakdown
+    modifierBreakdown,
   };
 }
 
@@ -238,19 +249,19 @@ export function getAtomicEconomicRecommendations(
   }
 ): {
   recommendedPolicies: Array<{
-    priority: 'high' | 'medium' | 'low';
+    priority: "high" | "medium" | "low";
     title: string;
     description: string;
     impact: string;
   }>;
   warnings: Array<{
-    priority: 'high' | 'medium' | 'low';
+    priority: "high" | "medium" | "low";
     title: string;
     description: string;
     impact: string;
   }>;
   opportunities: Array<{
-    priority: 'high' | 'medium' | 'low';
+    priority: "high" | "medium" | "low";
     title: string;
     description: string;
     impact: string;
@@ -259,48 +270,50 @@ export function getAtomicEconomicRecommendations(
   const recommendedPolicies = [];
   const warnings = [];
   const opportunities = [];
-  
+
   if (!components.includes(ComponentType.PROFESSIONAL_BUREAUCRACY)) {
     recommendedPolicies.push({
-      priority: 'high' as const,
-      title: 'Establish Professional Bureaucracy',
-      description: 'Create a merit-based civil service system',
-      impact: '+15% tax collection efficiency'
+      priority: "high" as const,
+      title: "Establish Professional Bureaucracy",
+      description: "Create a merit-based civil service system",
+      impact: "+15% tax collection efficiency",
     });
   }
-  
+
   if (!components.includes(ComponentType.RULE_OF_LAW)) {
     recommendedPolicies.push({
-      priority: 'high' as const,
-      title: 'Strengthen Rule of Law',
-      description: 'Ensure consistent and fair application of laws',
-      impact: '+10% GDP growth, +25 stability points'
+      priority: "high" as const,
+      title: "Strengthen Rule of Law",
+      description: "Ensure consistent and fair application of laws",
+      impact: "+10% GDP growth, +25 stability points",
     });
   }
-  
+
   if (!components.includes(ComponentType.INDEPENDENT_JUDICIARY)) {
     opportunities.push({
-      priority: 'medium' as const,
-      title: 'Establish Independent Judiciary',
-      description: 'Create separation between judicial and executive branches',
-      impact: '+15 stability points'
+      priority: "medium" as const,
+      title: "Establish Independent Judiciary",
+      description: "Create separation between judicial and executive branches",
+      impact: "+15 stability points",
     });
   }
 
   // Add warnings for conflicting components
-  if (components.includes(ComponentType.AUTOCRATIC_PROCESS) && components.includes(ComponentType.DEMOCRATIC_PROCESS)) {
+  if (
+    components.includes(ComponentType.AUTOCRATIC_PROCESS) &&
+    components.includes(ComponentType.DEMOCRATIC_PROCESS)
+  ) {
     warnings.push({
-      priority: 'high' as const,
-      title: 'Conflicting Governance Systems',
-      description: 'Autocratic and democratic processes may conflict',
-      impact: '-10% policy effectiveness'
+      priority: "high" as const,
+      title: "Conflicting Governance Systems",
+      description: "Autocratic and democratic processes may conflict",
+      impact: "-10% policy effectiveness",
     });
   }
 
   return {
     recommendedPolicies: recommendedPolicies.slice(0, 5),
     warnings: warnings.slice(0, 5),
-    opportunities: opportunities.slice(0, 5)
+    opportunities: opportunities.slice(0, 5),
   };
 }
-

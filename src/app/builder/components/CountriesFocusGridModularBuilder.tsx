@@ -5,7 +5,7 @@ import { CountryFocusCardBuilder, type CountryCardData } from "./CountryFocusCar
 import { RiGlobalLine } from "react-icons/ri";
 import { motion, useAnimation } from "framer-motion";
 import { BlurFade } from "~/components/magicui/blur-fade";
-import { ProgressiveBlur } from '~/components/magicui/progressive-blur';
+import { ProgressiveBlur } from "~/components/magicui/progressive-blur";
 
 interface CountriesFocusGridModularProps {
   countries: CountryCardData[];
@@ -17,7 +17,7 @@ interface CountriesFocusGridModularProps {
   searchInput: string;
   filterBy: string;
   onClearFilters: () => void;
-  cardSize?: 'default' | 'small';
+  cardSize?: "default" | "small";
   onCardHoverChange: (countryId: string | null) => void;
   scrollPosition: number;
   softSelectedCountryId?: string | null;
@@ -30,7 +30,7 @@ const CountryCard: React.FC<{
   index: number;
   onHoverChange: (countryId: string | null) => void;
   onCountryClick: (countryId: string) => void;
-  cardSize?: 'default' | 'small';
+  cardSize?: "default" | "small";
   softSelectedCountryId?: string | null;
   parallaxOffset: number;
 }> = ({
@@ -99,7 +99,7 @@ const CountryCard: React.FC<{
             position="both"
             height="100%"
             blurLevels={[blurIntensity, blurIntensity * 1.5, blurIntensity * 2]}
-            className="opacity-30 pointer-events-none"
+            className="pointer-events-none opacity-30"
           />
         )}
       </div>
@@ -133,7 +133,7 @@ export const CountriesFocusGridModularBuilder: React.FC<CountriesFocusGridModula
         {isAutoScrolling && (
           <div className="absolute top-0 right-0 z-10 p-2">
             <motion.div
-              className="w-2 h-2 rounded-full bg-emerald-400/60"
+              className="h-2 w-2 rounded-full bg-emerald-400/60"
               animate={{
                 scale: [1, 1.5, 1],
                 opacity: [0.6, 1, 0.6],
@@ -146,7 +146,7 @@ export const CountriesFocusGridModularBuilder: React.FC<CountriesFocusGridModula
             />
           </div>
         )}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 glass-surface shadow-xl rounded-lg p-4 backdrop-blur-sm overflow-hidden">
+        <div className="glass-surface grid grid-cols-1 gap-6 overflow-hidden rounded-lg p-4 shadow-xl backdrop-blur-sm md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {visibleCountries.map((country, index) => {
             const columnIndex = index % 4;
             const parallaxOffset = parallaxOffsets[columnIndex] ?? 0;
@@ -168,18 +168,15 @@ export const CountriesFocusGridModularBuilder: React.FC<CountriesFocusGridModula
 
       {(isLoading || (hasMore && visibleCount < countries.length)) && (
         <div className="mt-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-48 animate-pulse glass-floating glass-refraction"
-              >
-                <div className="p-6 space-y-4">
-                  <div className="h-6 bg-white/10 rounded"></div>
-                  <div className="h-4 bg-white/5 rounded w-2/3"></div>
-                  <div className="space-y-2 mt-4">
-                    <div className="h-3 bg-white/5 rounded"></div>
-                    <div className="h-3 bg-white/5 rounded w-3/4"></div>
+              <div key={i} className="glass-floating glass-refraction h-48 animate-pulse">
+                <div className="space-y-4 p-6">
+                  <div className="h-6 rounded bg-white/10"></div>
+                  <div className="h-4 w-2/3 rounded bg-white/5"></div>
+                  <div className="mt-4 space-y-2">
+                    <div className="h-3 rounded bg-white/5"></div>
+                    <div className="h-3 w-3/4 rounded bg-white/5"></div>
                   </div>
                 </div>
               </div>
@@ -189,26 +186,24 @@ export const CountriesFocusGridModularBuilder: React.FC<CountriesFocusGridModula
       )}
 
       {!isLoading && !hasMore && visibleCount >= countries.length && countries.length > 0 && (
-        <div className="text-center mt-12">
-          <div className="inline-block px-6 py-4 glass-floating glass-refraction">
-            <p className="text-muted-foreground">
-              You've viewed all {countries.length} countries
-            </p>
+        <div className="mt-12 text-center">
+          <div className="glass-floating glass-refraction inline-block px-6 py-4">
+            <p className="text-muted-foreground">You've viewed all {countries.length} countries</p>
           </div>
         </div>
       )}
 
       {countries.length === 0 && !isLoading && (
-        <div className="text-center mt-12">
-          <div className="p-12 max-w-md mx-auto glass-floating glass-refraction">
-            <RiGlobalLine className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-            <h3 className="text-xl font-semibold mb-2">No Countries Found</h3>
+        <div className="mt-12 text-center">
+          <div className="glass-floating glass-refraction mx-auto max-w-md p-12">
+            <RiGlobalLine className="text-muted-foreground/50 mx-auto mb-4 h-16 w-16" />
+            <h3 className="mb-2 text-xl font-semibold">No Countries Found</h3>
             <p className="text-muted-foreground mb-4">
               Try adjusting your search or filter criteria
             </p>
             <button
               onClick={onClearFilters}
-              className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-4 py-2 transition-colors"
             >
               Clear Filters
             </button>

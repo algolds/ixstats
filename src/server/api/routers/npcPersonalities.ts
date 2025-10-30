@@ -21,9 +21,9 @@
  * - getPersonalityStats - Usage analytics
  */
 
-import { z } from 'zod';
-import { createTRPCRouter, publicProcedure, adminProcedure } from '~/server/api/trpc';
-import { TRPCError } from '@trpc/server';
+import { z } from "zod";
+import { createTRPCRouter, publicProcedure, adminProcedure } from "~/server/api/trpc";
+import { TRPCError } from "@trpc/server";
 
 // ==================== VALIDATION SCHEMAS ====================
 
@@ -35,16 +35,16 @@ const traitSchema = z.object({
   riskTolerance: z.number().min(0).max(100),
   ideologicalRigidity: z.number().min(0).max(100),
   militarism: z.number().min(0).max(100),
-  isolationism: z.number().min(0).max(100)
+  isolationism: z.number().min(0).max(100),
 });
 
 const archetypeEnum = z.enum([
-  'aggressive_expansionist',
-  'peaceful_merchant',
-  'cautious_isolationist',
-  'cultural_diplomat',
-  'pragmatic_realist',
-  'ideological_hardliner'
+  "aggressive_expansionist",
+  "peaceful_merchant",
+  "cautious_isolationist",
+  "cultural_diplomat",
+  "pragmatic_realist",
+  "ideological_hardliner",
 ]);
 
 // ==================== TRPC ROUTER ====================
@@ -56,20 +56,21 @@ export const npcPersonalitiesRouter = createTRPCRouter({
    * Get all NPC personalities with optional filters
    */
   getAllPersonalities: publicProcedure
-    .input(z.object({
-      archetype: archetypeEnum.optional(),
-      isActive: z.boolean().optional(),
-      orderBy: z.enum(['usageCount', 'name', 'archetype']).default('usageCount')
-    }))
+    .input(
+      z.object({
+        archetype: archetypeEnum.optional(),
+        isActive: z.boolean().optional(),
+        orderBy: z.enum(["usageCount", "name", "archetype"]).default("usageCount"),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const personalities = await ctx.db.nPCPersonality.findMany({
         where: {
           ...(input.archetype && { archetype: input.archetype }),
-          ...(input.isActive !== undefined && { isActive: input.isActive })
+          ...(input.isActive !== undefined && { isActive: input.isActive }),
         },
-        orderBy: input.orderBy === 'usageCount'
-          ? { usageCount: 'desc' }
-          : { [input.orderBy]: 'asc' }
+        orderBy:
+          input.orderBy === "usageCount" ? { usageCount: "desc" } : { [input.orderBy]: "asc" },
       });
 
       // Fallback to hardcoded if database empty
@@ -88,11 +89,11 @@ export const npcPersonalitiesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const personality = await ctx.db.nPCPersonality.findUnique({
         where: { id: input.id },
-        include: { npcAssignments: true }
+        include: { npcAssignments: true },
       });
 
       if (!personality) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Personality not found' });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Personality not found" });
       }
 
       return parsePersonalityJSON(personality);
@@ -105,11 +106,11 @@ export const npcPersonalitiesRouter = createTRPCRouter({
     .input(z.object({ archetype: archetypeEnum }))
     .query(async ({ ctx, input }) => {
       const personality = await ctx.db.nPCPersonality.findFirst({
-        where: { archetype: input.archetype, isActive: true }
+        where: { archetype: input.archetype, isActive: true },
       });
 
       if (!personality) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Personality archetype not found' });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Personality archetype not found" });
       }
 
       return parsePersonalityJSON(personality);
@@ -123,7 +124,7 @@ export const npcPersonalitiesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const assignment = await ctx.db.nPCPersonalityAssignment.findUnique({
         where: { countryId: input.countryId },
-        include: { personality: true }
+        include: { personality: true },
       });
 
       if (!assignment) {
@@ -133,7 +134,7 @@ export const npcPersonalitiesRouter = createTRPCRouter({
       return {
         ...parsePersonalityJSON(assignment.personality),
         assignedAt: assignment.assignedAt,
-        driftHistory: assignment.driftHistory ? JSON.parse(assignment.driftHistory) : []
+        driftHistory: assignment.driftHistory ? JSON.parse(assignment.driftHistory) : [],
       };
     }),
 
@@ -141,22 +142,24 @@ export const npcPersonalitiesRouter = createTRPCRouter({
    * Predict response to diplomatic scenario
    */
   predictScenarioResponse: publicProcedure
-    .input(z.object({
-      personalityId: z.string(),
-      scenario: z.string(),
-      contextFactors: z.object({
-        currentRelationship: z.string(),
-        relationshipStrength: z.number(),
-        recentActions: z.array(z.string()).optional()
+    .input(
+      z.object({
+        personalityId: z.string(),
+        scenario: z.string(),
+        contextFactors: z.object({
+          currentRelationship: z.string(),
+          relationshipStrength: z.number(),
+          recentActions: z.array(z.string()).optional(),
+        }),
       })
-    }))
+    )
     .query(async ({ ctx, input }) => {
       const personality = await ctx.db.nPCPersonality.findUnique({
-        where: { id: input.personalityId }
+        where: { id: input.personalityId },
       });
 
       if (!personality) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Personality not found' });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Personality not found" });
       }
 
       const scenarioResponses = JSON.parse(personality.scenarioResponses);
@@ -174,26 +177,28 @@ export const npcPersonalitiesRouter = createTRPCRouter({
    * Get appropriate tone for diplomatic context
    */
   getToneForContext: publicProcedure
-    .input(z.object({
-      personalityId: z.string(),
-      relationshipLevel: z.string(),
-      formality: z.enum(['formal', 'casual'])
-    }))
+    .input(
+      z.object({
+        personalityId: z.string(),
+        relationshipLevel: z.string(),
+        formality: z.enum(["formal", "casual"]),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const personality = await ctx.db.nPCPersonality.findUnique({
-        where: { id: input.personalityId }
+        where: { id: input.personalityId },
       });
 
       if (!personality) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Personality not found' });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Personality not found" });
       }
 
       const toneMatrix = JSON.parse(personality.toneMatrix);
       const tone = toneMatrix[input.relationshipLevel]?.[input.formality];
 
       return {
-        tone: tone || 'Professional and measured',
-        culturalProfile: JSON.parse(personality.culturalProfile)
+        tone: tone || "Professional and measured",
+        culturalProfile: JSON.parse(personality.culturalProfile),
       };
     }),
 
@@ -205,7 +210,7 @@ export const npcPersonalitiesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       return await ctx.db.nPCPersonality.update({
         where: { id: input.personalityId },
-        data: { usageCount: { increment: 1 } }
+        data: { usageCount: { increment: 1 } },
       });
     }),
 
@@ -215,25 +220,27 @@ export const npcPersonalitiesRouter = createTRPCRouter({
    * Create NPC personality (Admin only)
    */
   createPersonality: adminProcedure
-    .input(z.object({
-      name: z.string(),
-      archetype: archetypeEnum,
-      traits: traitSchema,
-      traitDescriptions: z.record(z.string()),
-      culturalProfile: z.object({
-        formality: z.number(),
-        directness: z.number(),
-        emotionality: z.number(),
-        flexibility: z.number(),
-        negotiationStyle: z.string()
-      }),
-      toneMatrix: z.record(z.record(z.string())),
-      responsePatterns: z.array(z.string()),
-      scenarioResponses: z.record(z.any()),
-      eventModifiers: z.record(z.any()),
-      historicalBasis: z.string().optional(),
-      historicalContext: z.string().optional()
-    }))
+    .input(
+      z.object({
+        name: z.string(),
+        archetype: archetypeEnum,
+        traits: traitSchema,
+        traitDescriptions: z.record(z.string()),
+        culturalProfile: z.object({
+          formality: z.number(),
+          directness: z.number(),
+          emotionality: z.number(),
+          flexibility: z.number(),
+          negotiationStyle: z.string(),
+        }),
+        toneMatrix: z.record(z.record(z.string())),
+        responsePatterns: z.array(z.string()),
+        scenarioResponses: z.record(z.any()),
+        eventModifiers: z.record(z.any()),
+        historicalBasis: z.string().optional(),
+        historicalContext: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { traits, ...otherData } = input;
 
@@ -246,19 +253,19 @@ export const npcPersonalitiesRouter = createTRPCRouter({
           toneMatrix: JSON.stringify(input.toneMatrix),
           responsePatterns: JSON.stringify(input.responsePatterns),
           scenarioResponses: JSON.stringify(input.scenarioResponses),
-          eventModifiers: JSON.stringify(input.eventModifiers)
-        }
+          eventModifiers: JSON.stringify(input.eventModifiers),
+        },
       });
 
       // Audit log
       await logAdminAction(ctx.db, {
-        action: 'NPC_PERSONALITY_CREATED',
-        targetType: 'npc_personality',
+        action: "NPC_PERSONALITY_CREATED",
+        targetType: "npc_personality",
         targetId: personality.id,
         targetName: personality.name,
         adminId: ctx.user?.id,
         adminName: ctx.user?.clerkUserId,
-        changes: JSON.stringify({ archetype: personality.archetype })
+        changes: JSON.stringify({ archetype: personality.archetype }),
       });
 
       return { success: true, personality: parsePersonalityJSON(personality) };
@@ -268,25 +275,29 @@ export const npcPersonalitiesRouter = createTRPCRouter({
    * Update NPC personality (Admin only)
    */
   updatePersonality: adminProcedure
-    .input(z.object({
-      id: z.string(),
-      name: z.string().optional(),
-      traits: traitSchema.partial().optional(),
-      traitDescriptions: z.record(z.string()).optional(),
-      culturalProfile: z.object({
-        formality: z.number(),
-        directness: z.number(),
-        emotionality: z.number(),
-        flexibility: z.number(),
-        negotiationStyle: z.string()
-      }).optional(),
-      toneMatrix: z.record(z.record(z.string())).optional(),
-      responsePatterns: z.array(z.string()).optional(),
-      scenarioResponses: z.record(z.any()).optional(),
-      eventModifiers: z.record(z.any()).optional(),
-      historicalBasis: z.string().optional(),
-      historicalContext: z.string().optional()
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        name: z.string().optional(),
+        traits: traitSchema.partial().optional(),
+        traitDescriptions: z.record(z.string()).optional(),
+        culturalProfile: z
+          .object({
+            formality: z.number(),
+            directness: z.number(),
+            emotionality: z.number(),
+            flexibility: z.number(),
+            negotiationStyle: z.string(),
+          })
+          .optional(),
+        toneMatrix: z.record(z.record(z.string())).optional(),
+        responsePatterns: z.array(z.string()).optional(),
+        scenarioResponses: z.record(z.any()).optional(),
+        eventModifiers: z.record(z.any()).optional(),
+        historicalBasis: z.string().optional(),
+        historicalContext: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { id, traits, ...otherData } = input;
 
@@ -295,23 +306,29 @@ export const npcPersonalitiesRouter = createTRPCRouter({
         data: {
           ...otherData,
           ...(traits && traits),
-          ...(input.traitDescriptions && { traitDescriptions: JSON.stringify(input.traitDescriptions) }),
+          ...(input.traitDescriptions && {
+            traitDescriptions: JSON.stringify(input.traitDescriptions),
+          }),
           ...(input.culturalProfile && { culturalProfile: JSON.stringify(input.culturalProfile) }),
           ...(input.toneMatrix && { toneMatrix: JSON.stringify(input.toneMatrix) }),
-          ...(input.responsePatterns && { responsePatterns: JSON.stringify(input.responsePatterns) }),
-          ...(input.scenarioResponses && { scenarioResponses: JSON.stringify(input.scenarioResponses) }),
+          ...(input.responsePatterns && {
+            responsePatterns: JSON.stringify(input.responsePatterns),
+          }),
+          ...(input.scenarioResponses && {
+            scenarioResponses: JSON.stringify(input.scenarioResponses),
+          }),
           ...(input.eventModifiers && { eventModifiers: JSON.stringify(input.eventModifiers) }),
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       });
 
       await logAdminAction(ctx.db, {
-        action: 'NPC_PERSONALITY_UPDATED',
-        targetType: 'npc_personality',
+        action: "NPC_PERSONALITY_UPDATED",
+        targetType: "npc_personality",
         targetId: updated.id,
         targetName: updated.name,
         adminId: ctx.user?.id,
-        adminName: ctx.user?.clerkUserId
+        adminName: ctx.user?.clerkUserId,
       });
 
       return { success: true, personality: parsePersonalityJSON(updated) };
@@ -325,16 +342,16 @@ export const npcPersonalitiesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const personality = await ctx.db.nPCPersonality.update({
         where: { id: input.id },
-        data: { isActive: false }
+        data: { isActive: false },
       });
 
       await logAdminAction(ctx.db, {
-        action: 'NPC_PERSONALITY_DELETED',
-        targetType: 'npc_personality',
+        action: "NPC_PERSONALITY_DELETED",
+        targetType: "npc_personality",
         targetId: personality.id,
         targetName: personality.name,
         adminId: ctx.user?.id,
-        adminName: ctx.user?.clerkUserId
+        adminName: ctx.user?.clerkUserId,
       });
 
       return { success: true };
@@ -344,15 +361,17 @@ export const npcPersonalitiesRouter = createTRPCRouter({
    * Assign personality to country (Admin only)
    */
   assignPersonalityToCountry: adminProcedure
-    .input(z.object({
-      personalityId: z.string(),
-      countryId: z.string(),
-      reason: z.string().optional()
-    }))
+    .input(
+      z.object({
+        personalityId: z.string(),
+        countryId: z.string(),
+        reason: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Check if country already has personality assigned
       const existing = await ctx.db.nPCPersonalityAssignment.findUnique({
-        where: { countryId: input.countryId }
+        where: { countryId: input.countryId },
       });
 
       if (existing) {
@@ -363,18 +382,18 @@ export const npcPersonalitiesRouter = createTRPCRouter({
             personalityId: input.personalityId,
             assignedAt: new Date(),
             assignedBy: ctx.user?.id,
-            reason: input.reason
-          }
+            reason: input.reason,
+          },
         });
 
         await logAdminAction(ctx.db, {
-          action: 'NPC_PERSONALITY_REASSIGNED',
-          targetType: 'npc_personality_assignment',
+          action: "NPC_PERSONALITY_REASSIGNED",
+          targetType: "npc_personality_assignment",
           targetId: updated.id,
           targetName: input.countryId,
           adminId: ctx.user?.id,
           adminName: ctx.user?.clerkUserId,
-          changes: JSON.stringify({ personalityId: input.personalityId })
+          changes: JSON.stringify({ personalityId: input.personalityId }),
         });
 
         return { success: true, assignment: updated };
@@ -386,24 +405,24 @@ export const npcPersonalitiesRouter = createTRPCRouter({
           personalityId: input.personalityId,
           countryId: input.countryId,
           assignedBy: ctx.user?.id,
-          reason: input.reason
-        }
+          reason: input.reason,
+        },
       });
 
       // Increment personality usage count
       await ctx.db.nPCPersonality.update({
         where: { id: input.personalityId },
-        data: { usageCount: { increment: 1 } }
+        data: { usageCount: { increment: 1 } },
       });
 
       await logAdminAction(ctx.db, {
-        action: 'NPC_PERSONALITY_ASSIGNED',
-        targetType: 'npc_personality_assignment',
+        action: "NPC_PERSONALITY_ASSIGNED",
+        targetType: "npc_personality_assignment",
         targetId: assignment.id,
         targetName: input.countryId,
         adminId: ctx.user?.id,
         adminName: ctx.user?.clerkUserId,
-        changes: JSON.stringify({ personalityId: input.personalityId })
+        changes: JSON.stringify({ personalityId: input.personalityId }),
       });
 
       return { success: true, assignment };
@@ -412,52 +431,70 @@ export const npcPersonalitiesRouter = createTRPCRouter({
   /**
    * Get personality usage statistics (Admin only)
    */
-  getPersonalityStats: adminProcedure
-    .query(async ({ ctx }) => {
-      const personalities = await ctx.db.nPCPersonality.findMany({
-        include: { npcAssignments: true },
-        orderBy: { usageCount: 'desc' }
-      });
+  getPersonalityStats: adminProcedure.query(async ({ ctx }) => {
+    const personalities = await ctx.db.nPCPersonality.findMany({
+      include: { npcAssignments: true },
+      orderBy: { usageCount: "desc" },
+    });
 
-      const totalPersonalities = personalities.length;
-      const activePersonalities = personalities.filter(p => p.isActive).length;
-      const totalUsage = personalities.reduce((sum, p) => sum + p.usageCount, 0);
-      const totalAssignments = await ctx.db.nPCPersonalityAssignment.count();
+    const totalPersonalities = personalities.length;
+    const activePersonalities = personalities.filter((p) => p.isActive).length;
+    const totalUsage = personalities.reduce((sum, p) => sum + p.usageCount, 0);
+    const totalAssignments = await ctx.db.nPCPersonalityAssignment.count();
 
-      const archetypeStats = personalities.reduce((acc, p) => {
+    const archetypeStats = personalities.reduce(
+      (acc, p) => {
         acc[p.archetype] = (acc[p.archetype] || 0) + 1;
         return acc;
-      }, {} as Record<string, number>);
+      },
+      {} as Record<string, number>
+    );
 
-      const topPersonalities = personalities.slice(0, 10).map(parsePersonalityJSON);
-      const leastUsed = personalities.filter(p => p.usageCount === 0).map(parsePersonalityJSON);
+    const topPersonalities = personalities.slice(0, 10).map(parsePersonalityJSON);
+    const leastUsed = personalities.filter((p) => p.usageCount === 0).map(parsePersonalityJSON);
 
-      // Trait averages across all personalities
-      const traitAverages = {
-        assertiveness: Math.round(personalities.reduce((sum, p) => sum + p.assertiveness, 0) / totalPersonalities),
-        cooperativeness: Math.round(personalities.reduce((sum, p) => sum + p.cooperativeness, 0) / totalPersonalities),
-        economicFocus: Math.round(personalities.reduce((sum, p) => sum + p.economicFocus, 0) / totalPersonalities),
-        culturalOpenness: Math.round(personalities.reduce((sum, p) => sum + p.culturalOpenness, 0) / totalPersonalities),
-        riskTolerance: Math.round(personalities.reduce((sum, p) => sum + p.riskTolerance, 0) / totalPersonalities),
-        ideologicalRigidity: Math.round(personalities.reduce((sum, p) => sum + p.ideologicalRigidity, 0) / totalPersonalities),
-        militarism: Math.round(personalities.reduce((sum, p) => sum + p.militarism, 0) / totalPersonalities),
-        isolationism: Math.round(personalities.reduce((sum, p) => sum + p.isolationism, 0) / totalPersonalities)
-      };
+    // Trait averages across all personalities
+    const traitAverages = {
+      assertiveness: Math.round(
+        personalities.reduce((sum, p) => sum + p.assertiveness, 0) / totalPersonalities
+      ),
+      cooperativeness: Math.round(
+        personalities.reduce((sum, p) => sum + p.cooperativeness, 0) / totalPersonalities
+      ),
+      economicFocus: Math.round(
+        personalities.reduce((sum, p) => sum + p.economicFocus, 0) / totalPersonalities
+      ),
+      culturalOpenness: Math.round(
+        personalities.reduce((sum, p) => sum + p.culturalOpenness, 0) / totalPersonalities
+      ),
+      riskTolerance: Math.round(
+        personalities.reduce((sum, p) => sum + p.riskTolerance, 0) / totalPersonalities
+      ),
+      ideologicalRigidity: Math.round(
+        personalities.reduce((sum, p) => sum + p.ideologicalRigidity, 0) / totalPersonalities
+      ),
+      militarism: Math.round(
+        personalities.reduce((sum, p) => sum + p.militarism, 0) / totalPersonalities
+      ),
+      isolationism: Math.round(
+        personalities.reduce((sum, p) => sum + p.isolationism, 0) / totalPersonalities
+      ),
+    };
 
-      return {
-        summary: {
-          totalPersonalities,
-          activePersonalities,
-          totalUsage,
-          totalAssignments,
-          averageUsage: (totalUsage / totalPersonalities).toFixed(2)
-        },
-        archetypeStats,
-        traitAverages,
-        topPersonalities,
-        leastUsed
-      };
-    })
+    return {
+      summary: {
+        totalPersonalities,
+        activePersonalities,
+        totalUsage,
+        totalAssignments,
+        averageUsage: (totalUsage / totalPersonalities).toFixed(2),
+      },
+      archetypeStats,
+      traitAverages,
+      topPersonalities,
+      leastUsed,
+    };
+  }),
 });
 
 // ==================== HELPER FUNCTIONS ====================
@@ -473,7 +510,7 @@ function parsePersonalityJSON(personality: any) {
     toneMatrix: JSON.parse(personality.toneMatrix),
     responsePatterns: JSON.parse(personality.responsePatterns),
     scenarioResponses: JSON.parse(personality.scenarioResponses),
-    eventModifiers: JSON.parse(personality.eventModifiers)
+    eventModifiers: JSON.parse(personality.eventModifiers),
   };
 }
 
@@ -494,24 +531,27 @@ function generateGenericResponse(personality: any, scenario: string, context: an
   const cooperationScore = (personality.cooperativeness + context.relationshipStrength) / 2;
 
   return {
-    action: cooperationScore > 50 ? 'negotiate' : 'defer',
+    action: cooperationScore > 50 ? "negotiate" : "defer",
     confidence: 50,
-    reasoning: ['Generic scenario uses cooperation baseline']
+    reasoning: ["Generic scenario uses cooperation baseline"],
   };
 }
 
 /**
  * Log admin action to database audit log
  */
-async function logAdminAction(db: any, data: {
-  action: string;
-  targetType: string;
-  targetId: string;
-  targetName: string;
-  adminId?: string;
-  adminName?: string;
-  changes?: string;
-}) {
+async function logAdminAction(
+  db: any,
+  data: {
+    action: string;
+    targetType: string;
+    targetId: string;
+    targetName: string;
+    adminId?: string;
+    adminName?: string;
+    changes?: string;
+  }
+) {
   // Check if AdminAuditLog model exists, otherwise skip logging
   try {
     await db.adminAuditLog.create({
@@ -520,14 +560,14 @@ async function logAdminAction(db: any, data: {
         targetType: data.targetType,
         targetId: data.targetId,
         targetName: data.targetName,
-        adminId: data.adminId || 'system',
-        adminName: data.adminName || 'System',
-        changes: data.changes || '',
-        ipAddress: ''
-      }
+        adminId: data.adminId || "system",
+        adminName: data.adminName || "System",
+        changes: data.changes || "",
+        ipAddress: "",
+      },
     });
   } catch (error) {
     // Silently fail if AdminAuditLog doesn't exist
-    console.warn('Admin audit logging skipped (model may not exist)');
+    console.warn("Admin audit logging skipped (model may not exist)");
   }
 }

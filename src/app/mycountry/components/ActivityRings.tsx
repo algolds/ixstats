@@ -1,9 +1,9 @@
 "use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { TrendingUp, Users, Globe, Building2, type LucideIcon } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip';
+import React from "react";
+import { motion } from "framer-motion";
+import { TrendingUp, Users, Globe, Building2, type LucideIcon } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 
 interface ActivityRing {
   id: string;
@@ -16,14 +16,14 @@ interface ActivityRing {
   metrics: {
     primary: string;
     secondary: string;
-    trend: 'up' | 'down' | 'stable';
+    trend: "up" | "down" | "stable";
     change: string;
   };
 }
 
 interface ActivityRingsProps {
   rings: ActivityRing[];
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   interactive?: boolean;
   onRingClick?: (ringId: string) => void;
   onRingHover?: (ringId: string) => void;
@@ -55,10 +55,10 @@ const RING_CONFIGS = {
 };
 
 const RING_COLORS = {
-  economic: '#059669', // Emerald-600 - matches economy tab theme
-  population: '#0891B2', // Cyan-600 - matches demographics tab theme  
-  diplomatic: '#7C3AED', // Violet-600 - matches government tab theme
-  governmental: '#DC2626', // Red-600 - matches labor tab theme
+  economic: "#059669", // Emerald-600 - matches economy tab theme
+  population: "#0891B2", // Cyan-600 - matches demographics tab theme
+  diplomatic: "#7C3AED", // Violet-600 - matches government tab theme
+  governmental: "#DC2626", // Red-600 - matches labor tab theme
 };
 
 function ActivityRingComponent({
@@ -80,14 +80,14 @@ function ActivityRingComponent({
   const circumference = 2 * Math.PI * radius;
   const strokeDasharray = circumference;
   const strokeDashoffset = circumference * (1 - ring.value / 100);
-  
+
   const Icon = ring.icon;
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <motion.div
-          className={`relative cursor-pointer ${interactive ? 'hover:scale-105' : ''}`}
+          className={`relative cursor-pointer ${interactive ? "hover:scale-105" : ""}`}
           style={{
             width: config.diameter,
             height: config.diameter,
@@ -107,7 +107,7 @@ function ActivityRingComponent({
         >
           {/* Background Ring */}
           <svg
-            className="absolute inset-0 transform -rotate-90"
+            className="absolute inset-0 -rotate-90 transform"
             width={config.diameter}
             height={config.diameter}
           >
@@ -124,30 +124,30 @@ function ActivityRingComponent({
 
           {/* Progress Ring */}
           <svg
-            className="absolute inset-0 transform -rotate-90"
+            className="absolute inset-0 -rotate-90 transform"
             width={config.diameter}
             height={config.diameter}
           >
             <defs>
               <filter id={`glow-${ring.id}`} x="-100%" y="-100%" width="300%" height="300%">
-                <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
-                <feGaussianBlur stdDeviation="12" result="coloredBlur2"/>
+                <feGaussianBlur stdDeviation="6" result="coloredBlur" />
+                <feGaussianBlur stdDeviation="12" result="coloredBlur2" />
                 <feMerge>
-                  <feMergeNode in="coloredBlur2"/>
-                  <feMergeNode in="coloredBlur"/>
-                  <feMergeNode in="SourceGraphic"/>
+                  <feMergeNode in="coloredBlur2" />
+                  <feMergeNode in="coloredBlur" />
+                  <feMergeNode in="SourceGraphic" />
                 </feMerge>
               </filter>
               <linearGradient id={`gradient-${ring.id}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor={ring.color} stopOpacity="1"/>
-                <stop offset="40%" stopColor={ring.color} stopOpacity="0.9"/>
-                <stop offset="70%" stopColor={ring.color} stopOpacity="0.7"/>
-                <stop offset="100%" stopColor={ring.color} stopOpacity="0.4"/>
+                <stop offset="0%" stopColor={ring.color} stopOpacity="1" />
+                <stop offset="40%" stopColor={ring.color} stopOpacity="0.9" />
+                <stop offset="70%" stopColor={ring.color} stopOpacity="0.7" />
+                <stop offset="100%" stopColor={ring.color} stopOpacity="0.4" />
               </linearGradient>
               <radialGradient id={`radial-glow-${ring.id}`} cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor={ring.color} stopOpacity="0.8"/>
-                <stop offset="70%" stopColor={ring.color} stopOpacity="0.3"/>
-                <stop offset="100%" stopColor={ring.color} stopOpacity="0"/>
+                <stop offset="0%" stopColor={ring.color} stopOpacity="0.8" />
+                <stop offset="70%" stopColor={ring.color} stopOpacity="0.3" />
+                <stop offset="100%" stopColor={ring.color} stopOpacity="0" />
               </radialGradient>
             </defs>
             <motion.circle
@@ -179,16 +179,12 @@ function ActivityRingComponent({
             style={{
               width: config.centerSize,
               height: config.centerSize,
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
             }}
           >
-            <Icon
-              size={config.iconSize}
-              className="mb-1"
-              style={{ color: ring.color }}
-            />
+            <Icon size={config.iconSize} className="mb-1" style={{ color: ring.color }} />
             <motion.div
               className="text-lg font-bold"
               initial={{ scale: 0 }}
@@ -201,10 +197,10 @@ function ActivityRingComponent({
 
           {/* Animated Glow Background */}
           <motion.div
-            className="absolute inset-0 rounded-full pointer-events-none"
+            className="pointer-events-none absolute inset-0 rounded-full"
             style={{
               background: `url(#radial-glow-${ring.id})`,
-              filter: 'blur(8px)',
+              filter: "blur(8px)",
             }}
             animate={{
               scale: [0.8, 1.2, 0.8],
@@ -221,10 +217,10 @@ function ActivityRingComponent({
           {/* Pulse Effect for Critical Values */}
           {ring.value < 40 && (
             <motion.div
-              className="absolute inset-0 rounded-full pointer-events-none"
+              className="pointer-events-none absolute inset-0 rounded-full"
               style={{
                 background: `radial-gradient(circle, ${ring.color}15 0%, transparent 60%)`,
-                filter: 'blur(4px)',
+                filter: "blur(4px)",
               }}
               animate={{
                 scale: [1, 1.3, 1],
@@ -239,15 +235,15 @@ function ActivityRingComponent({
           )}
         </motion.div>
       </TooltipTrigger>
-      
-      <TooltipContent className="glass-hierarchy-child p-4 max-w-xs">
+
+      <TooltipContent className="glass-hierarchy-child max-w-xs p-4">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Icon size={16} style={{ color: ring.color }} />
             <span className="font-semibold">{ring.title}</span>
           </div>
-          <p className="text-sm text-muted-foreground">{ring.description}</p>
-          
+          <p className="text-muted-foreground text-sm">{ring.description}</p>
+
           <div className="space-y-1">
             <div className="flex justify-between text-sm">
               <span>Score:</span>
@@ -263,24 +259,30 @@ function ActivityRingComponent({
             </div>
             <div className="flex justify-between text-sm">
               <span>Trend:</span>
-              <span className={`font-medium flex items-center gap-1 ${
-                ring.metrics.trend === 'up' ? 'text-green-600' :
-                ring.metrics.trend === 'down' ? 'text-red-600' :
-                'text-yellow-600'
-              }`}>
-                {ring.metrics.trend === 'up' ? '↗' : 
-                 ring.metrics.trend === 'down' ? '↘' : '→'}
+              <span
+                className={`flex items-center gap-1 font-medium ${
+                  ring.metrics.trend === "up"
+                    ? "text-green-600"
+                    : ring.metrics.trend === "down"
+                      ? "text-red-600"
+                      : "text-yellow-600"
+                }`}
+              >
+                {ring.metrics.trend === "up" ? "↗" : ring.metrics.trend === "down" ? "↘" : "→"}
                 {ring.metrics.change}
               </span>
             </div>
           </div>
-          
-          <div className="pt-2 border-t border-border">
-            <p className="text-xs text-muted-foreground">
-              {ring.value >= 80 ? 'Excellent performance' :
-               ring.value >= 60 ? 'Good performance' :
-               ring.value >= 40 ? 'Needs attention' :
-               'Critical - immediate action required'}
+
+          <div className="border-border border-t pt-2">
+            <p className="text-muted-foreground text-xs">
+              {ring.value >= 80
+                ? "Excellent performance"
+                : ring.value >= 60
+                  ? "Good performance"
+                  : ring.value >= 40
+                    ? "Needs attention"
+                    : "Critical - immediate action required"}
             </p>
           </div>
         </div>
@@ -291,16 +293,16 @@ function ActivityRingComponent({
 
 export function ActivityRings({
   rings,
-  size = 'md',
+  size = "md",
   interactive = true,
   onRingClick,
   onRingHover,
-  className = '',
+  className = "",
 }: ActivityRingsProps) {
   const config = RING_CONFIGS[size];
 
   return (
-    <div className={`flex flex-wrap gap-6 justify-center ${className}`}>
+    <div className={`flex flex-wrap justify-center gap-6 ${className}`}>
       {rings.map((ring, index) => (
         <ActivityRingComponent
           key={`ring-${ring.id || `index-${index}`}`}
@@ -345,9 +347,10 @@ export function createDefaultActivityRings(countryData: {
 }): ActivityRing[] {
   return [
     {
-      id: 'economic-vitality',
-      title: 'Economic Vitality',
-      description: 'Overall economic health including GDP growth, trade balance, and economic stability',
+      id: "economic-vitality",
+      title: "Economic Vitality",
+      description:
+        "Overall economic health including GDP growth, trade balance, and economic stability",
       value: countryData.economicVitality,
       max: 100,
       color: RING_COLORS.economic,
@@ -355,14 +358,15 @@ export function createDefaultActivityRings(countryData: {
       metrics: {
         primary: countryData.economicMetrics.gdpPerCapita,
         secondary: `${countryData.economicMetrics.growthRate} growth`,
-        trend: 'up',
+        trend: "up",
         change: countryData.economicMetrics.tier,
       },
     },
     {
-      id: 'population-wellbeing',
-      title: 'Population Wellbeing',
-      description: 'Demographics health, quality of life, education, and social cohesion indicators',
+      id: "population-wellbeing",
+      title: "Population Wellbeing",
+      description:
+        "Demographics health, quality of life, education, and social cohesion indicators",
       value: countryData.populationWellbeing,
       max: 100,
       color: RING_COLORS.population,
@@ -370,14 +374,15 @@ export function createDefaultActivityRings(countryData: {
       metrics: {
         primary: countryData.populationMetrics.population,
         secondary: `${countryData.populationMetrics.growthRate} growth`,
-        trend: 'stable',
+        trend: "stable",
         change: `Tier ${countryData.populationMetrics.tier}`,
       },
     },
     {
-      id: 'diplomatic-standing',
-      title: 'Diplomatic Health',
-      description: 'Embassy network strength, relationship quality, mission success, and cultural exchange participation',
+      id: "diplomatic-standing",
+      title: "Diplomatic Health",
+      description:
+        "Embassy network strength, relationship quality, mission success, and cultural exchange participation",
       value: countryData.diplomaticStanding,
       max: 100,
       color: RING_COLORS.diplomatic,
@@ -385,14 +390,15 @@ export function createDefaultActivityRings(countryData: {
       metrics: {
         primary: `${countryData.diplomaticMetrics.allies} embassies`,
         secondary: countryData.diplomaticMetrics.reputation,
-        trend: 'up',
+        trend: "up",
         change: `${countryData.diplomaticMetrics.treaties} active missions`,
       },
     },
     {
-      id: 'governmental-efficiency',
-      title: 'Government Efficiency',
-      description: 'Policy effectiveness, administrative efficiency, public approval, and governance quality',
+      id: "governmental-efficiency",
+      title: "Government Efficiency",
+      description:
+        "Policy effectiveness, administrative efficiency, public approval, and governance quality",
       value: countryData.governmentalEfficiency,
       max: 100,
       color: RING_COLORS.governmental,
@@ -400,7 +406,7 @@ export function createDefaultActivityRings(countryData: {
       metrics: {
         primary: `${countryData.governmentMetrics.approval} approval`,
         secondary: countryData.governmentMetrics.efficiency,
-        trend: 'stable',
+        trend: "stable",
         change: countryData.governmentMetrics.stability,
       },
     },

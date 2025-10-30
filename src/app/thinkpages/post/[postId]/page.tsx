@@ -1,6 +1,6 @@
 "use client";
 
-import React, { use } from 'react';
+import React, { use } from "react";
 import { useUser } from "~/context/auth-context";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -21,14 +21,11 @@ export default function PostPage({ params }: PostPageProps) {
   const { user } = useUser();
 
   // Get user profile to determine current account
-  const { data: userProfile } = api.users.getProfile.useQuery(
-    undefined,
-    { enabled: !!user?.id }
-  );
+  const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
 
   // Get user's ThinkPages accounts
   const { data: accounts } = api.thinkpages.getAccountsByCountry.useQuery(
-    { countryId: userProfile?.countryId || '' },
+    { countryId: userProfile?.countryId || "" },
     { enabled: !!userProfile?.countryId }
   );
 
@@ -36,17 +33,18 @@ export default function PostPage({ params }: PostPageProps) {
   const currentAccount = accounts?.[0];
 
   // Get the specific post
-  const { data: post, isLoading, error } = api.thinkpages.getPost.useQuery(
-    { postId },
-    { enabled: !!postId }
-  );
+  const {
+    data: post,
+    isLoading,
+    error,
+  } = api.thinkpages.getPost.useQuery({ postId }, { enabled: !!postId });
 
   // Get post replies
   const { data: feed } = api.thinkpages.getFeed.useQuery({ limit: 50 });
 
   const addReactionMutation = api.thinkpages.addReaction.useMutation({
     onSuccess: () => {
-      toast.success('Reaction added!');
+      toast.success("Reaction added!");
     },
   });
 
@@ -58,9 +56,9 @@ export default function PostPage({ params }: PostPageProps) {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 max-w-2xl">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="animate-spin h-8 w-8" />
+      <div className="container mx-auto max-w-2xl py-8">
+        <div className="flex min-h-[400px] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       </div>
     );
@@ -68,16 +66,16 @@ export default function PostPage({ params }: PostPageProps) {
 
   if (error || !post) {
     return (
-      <div className="container mx-auto py-8 max-w-2xl">
+      <div className="container mx-auto max-w-2xl py-8">
         <Card>
           <CardContent className="p-8 text-center">
-            <h2 className="text-xl font-semibold mb-2">Post Not Found</h2>
+            <h2 className="mb-2 text-xl font-semibold">Post Not Found</h2>
             <p className="text-muted-foreground mb-4">
               This post may have been deleted or the link is incorrect.
             </p>
             <Link href="/thinkpages">
               <Button>
-                <ArrowLeft className="h-4 w-4 mr-2" />
+                <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Feed
               </Button>
             </Link>
@@ -88,12 +86,12 @@ export default function PostPage({ params }: PostPageProps) {
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-2xl">
+    <div className="container mx-auto max-w-2xl py-8">
       {/* Back Button */}
       <div className="mb-4">
         <Link href="/thinkpages">
           <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Feed
           </Button>
         </Link>
@@ -103,46 +101,46 @@ export default function PostPage({ params }: PostPageProps) {
       <div className="space-y-4">
         <ThinkpagesPost
           post={post}
-          currentUserAccountId={currentAccount?.id || ''}
+          currentUserAccountId={currentAccount?.id || ""}
           onLike={(postId) => {
             if (currentAccount?.id) {
-              addReactionMutation.mutate({ 
-                postId, 
-                accountId: currentAccount.id, 
-                reactionType: 'like' 
+              addReactionMutation.mutate({
+                postId,
+                accountId: currentAccount.id,
+                reactionType: "like",
               });
             } else {
-              toast.error('Please select an account to interact with posts');
+              toast.error("Please select an account to interact with posts");
             }
           }}
           onRepost={(postId) => {
-            toast.info('Repost functionality coming soon!');
+            toast.info("Repost functionality coming soon!");
           }}
           onReply={(postId) => {
-            toast.info('Reply functionality coming soon!');
+            toast.info("Reply functionality coming soon!");
           }}
           onShare={(postId) => {
             const postUrl = `${window.location.origin}/thinkpages/post/${postId}`;
             if (navigator.share) {
               navigator.share({
-                title: 'ThinkPages Post',
-                text: 'Check out this post on ThinkPages',
-                url: postUrl
+                title: "ThinkPages Post",
+                text: "Check out this post on ThinkPages",
+                url: postUrl,
               });
             } else {
               navigator.clipboard.writeText(postUrl);
-              toast.success('Link copied to clipboard!');
+              toast.success("Link copied to clipboard!");
             }
           }}
           onReaction={(postId, reactionType) => {
             if (currentAccount?.id) {
-              addReactionMutation.mutate({ 
-                postId, 
-                accountId: currentAccount.id, 
-                reactionType: reactionType as any
+              addReactionMutation.mutate({
+                postId,
+                accountId: currentAccount.id,
+                reactionType: reactionType as any,
               });
             } else {
-              toast.error('Please select an account to react to posts');
+              toast.error("Please select an account to react to posts");
             }
           }}
           showThread={false}
@@ -151,52 +149,52 @@ export default function PostPage({ params }: PostPageProps) {
         {/* Replies Section */}
         {replies.length > 0 && (
           <div className="mt-6">
-            <h3 className="text-lg font-semibold mb-4">Replies ({replies.length})</h3>
+            <h3 className="mb-4 text-lg font-semibold">Replies ({replies.length})</h3>
             <div className="space-y-4">
               {replies.map((reply) => (
                 <ThinkpagesPost
                   key={reply.id}
                   post={reply}
-                  currentUserAccountId={currentAccount?.id || ''}
+                  currentUserAccountId={currentAccount?.id || ""}
                   onLike={(postId) => {
                     if (currentAccount?.id) {
-                      addReactionMutation.mutate({ 
-                        postId, 
-                        accountId: currentAccount.id, 
-                        reactionType: 'like' 
+                      addReactionMutation.mutate({
+                        postId,
+                        accountId: currentAccount.id,
+                        reactionType: "like",
                       });
                     } else {
-                      toast.error('Please select an account to interact with posts');
+                      toast.error("Please select an account to interact with posts");
                     }
                   }}
                   onRepost={(postId) => {
-                    toast.info('Repost functionality coming soon!');
+                    toast.info("Repost functionality coming soon!");
                   }}
                   onReply={(postId) => {
-                    toast.info('Reply functionality coming soon!');
+                    toast.info("Reply functionality coming soon!");
                   }}
                   onShare={(postId) => {
                     const postUrl = `${window.location.origin}/thinkpages/post/${postId}`;
                     if (navigator.share) {
                       navigator.share({
-                        title: 'ThinkPages Post',
-                        text: 'Check out this post on ThinkPages',
-                        url: postUrl
+                        title: "ThinkPages Post",
+                        text: "Check out this post on ThinkPages",
+                        url: postUrl,
                       });
                     } else {
                       navigator.clipboard.writeText(postUrl);
-                      toast.success('Link copied to clipboard!');
+                      toast.success("Link copied to clipboard!");
                     }
                   }}
                   onReaction={(postId, reactionType) => {
                     if (currentAccount?.id) {
-                      addReactionMutation.mutate({ 
-                        postId, 
-                        accountId: currentAccount.id, 
-                        reactionType: reactionType as any
+                      addReactionMutation.mutate({
+                        postId,
+                        accountId: currentAccount.id,
+                        reactionType: reactionType as any,
                       });
                     } else {
-                      toast.error('Please select an account to react to posts');
+                      toast.error("Please select an account to react to posts");
                     }
                   }}
                   showThread={false}

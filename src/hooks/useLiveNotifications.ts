@@ -3,11 +3,11 @@
  * Provides real-time notification updates with page title badge
  */
 
-'use client';
+"use client";
 
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { api } from '~/trpc/react';
-import { useUser } from '~/context/auth-context';
+import { useEffect, useState, useCallback, useRef } from "react";
+import { api } from "~/trpc/react";
+import { useUser } from "~/context/auth-context";
 
 export interface LiveNotification {
   id: string;
@@ -67,7 +67,11 @@ export function useLiveNotifications(
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Query for initial notifications
-  const { data: notificationsData, isLoading, refetch } = api.notifications.getUserNotifications.useQuery(
+  const {
+    data: notificationsData,
+    isLoading,
+    refetch,
+  } = api.notifications.getUserNotifications.useQuery(
     {
       limit: 50,
       offset: 0,
@@ -81,13 +85,11 @@ export function useLiveNotifications(
   );
 
   // Query for unread count
-  const { data: unreadData, refetch: refetchUnreadCount } = api.notifications.getUnreadCount.useQuery(
-    undefined,
-    {
+  const { data: unreadData, refetch: refetchUnreadCount } =
+    api.notifications.getUnreadCount.useQuery(undefined, {
       enabled: !!userId,
       refetchInterval: pollingInterval,
-    }
-  );
+    });
 
   // Mutations
   const markAsReadMutation = api.notifications.markAsRead.useMutation({
@@ -123,14 +125,14 @@ export function useLiveNotifications(
     {
       enabled: enableRealtime && !!userId,
       onData: (notification) => {
-        setNotifications(prev => {
+        setNotifications((prev) => {
           const normalized: LiveNotification = {
             ...(notification as LiveNotification),
             createdAt: new Date(notification.createdAt),
             updatedAt: new Date(notification.updatedAt),
           };
 
-          const existingIndex = prev.findIndex(item => item.id === normalized.id);
+          const existingIndex = prev.findIndex((item) => item.id === normalized.id);
           if (existingIndex !== -1) {
             const next = [...prev];
             next[existingIndex] = normalized;
@@ -142,11 +144,11 @@ export function useLiveNotifications(
         });
 
         if (!notification.read && !notification.dismissed) {
-          setUnreadCount(count => count + 1);
+          setUnreadCount((count) => count + 1);
         }
       },
       onError: (error) => {
-        console.error('[useLiveNotifications] Subscription error:', error);
+        console.error("[useLiveNotifications] Subscription error:", error);
       },
     }
   );
@@ -162,7 +164,7 @@ export function useLiveNotifications(
 
   // Update page title with unread count
   useEffect(() => {
-    if (!enableTitleBadge || typeof document === 'undefined') return;
+    if (!enableTitleBadge || typeof document === "undefined") return;
 
     // Store original title on first run
     if (originalTitle === null) {
@@ -177,25 +179,28 @@ export function useLiveNotifications(
 
     // Cleanup on unmount
     return () => {
-      if (originalTitle !== null && typeof document !== 'undefined') {
+      if (originalTitle !== null && typeof document !== "undefined") {
         document.title = originalTitle;
       }
     };
   }, [unreadCount, enableTitleBadge]);
 
   // Handlers
-  const markAsRead = useCallback(async (notificationId: string) => {
-    if (!userId) return;
+  const markAsRead = useCallback(
+    async (notificationId: string) => {
+      if (!userId) return;
 
-    try {
-      await markAsReadMutation.mutateAsync({
-        notificationId,
-        userId,
-      });
-    } catch (error) {
-      console.error('[useLiveNotifications] Failed to mark as read:', error);
-    }
-  }, [userId, markAsReadMutation]);
+      try {
+        await markAsReadMutation.mutateAsync({
+          notificationId,
+          userId,
+        });
+      } catch (error) {
+        console.error("[useLiveNotifications] Failed to mark as read:", error);
+      }
+    },
+    [userId, markAsReadMutation]
+  );
 
   const markAllAsRead = useCallback(async () => {
     if (!userId) return;
@@ -203,37 +208,35 @@ export function useLiveNotifications(
     try {
       await markAllAsReadMutation.mutateAsync({ userId });
     } catch (error) {
-      console.error('[useLiveNotifications] Failed to mark all as read:', error);
+      console.error("[useLiveNotifications] Failed to mark all as read:", error);
     }
   }, [userId, markAllAsReadMutation]);
 
-  const dismiss = useCallback(async (notificationId: string) => {
-    if (!userId) return;
+  const dismiss = useCallback(
+    async (notificationId: string) => {
+      if (!userId) return;
 
-    try {
-      // Update local state optimistically
-      setNotifications(prev =>
-        prev.map(n =>
-          n.id === notificationId ? { ...n, dismissed: true } : n
-        )
-      );
+      try {
+        // Update local state optimistically
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === notificationId ? { ...n, dismissed: true } : n))
+        );
 
-      await dismissMutation.mutateAsync({
-        notificationId,
-        userId,
-      });
-    } catch (error) {
-      console.error('[useLiveNotifications] Failed to dismiss:', error);
-      // Revert optimistic update on error
-      void refetch();
-    }
-  }, [userId, dismissMutation, refetch]);
+        await dismissMutation.mutateAsync({
+          notificationId,
+          userId,
+        });
+      } catch (error) {
+        console.error("[useLiveNotifications] Failed to dismiss:", error);
+        // Revert optimistic update on error
+        void refetch();
+      }
+    },
+    [userId, dismissMutation, refetch]
+  );
 
   const refresh = useCallback(async () => {
-    await Promise.all([
-      refetch(),
-      refetchUnreadCount(),
-    ]);
+    await Promise.all([refetch(), refetchUnreadCount()]);
   }, [refetch, refetchUnreadCount]);
 
   return {
@@ -255,20 +258,17 @@ export function useNotificationBadge(options: { enableTitleBadge?: boolean } = {
   const { user } = useUser();
   const userId = user?.id;
 
-  const { data: unreadData } = api.notifications.getUnreadCount.useQuery(
-    undefined,
-    {
-      enabled: !!userId,
-      refetchInterval: 30000, // 30 seconds
-      refetchOnWindowFocus: true,
-    }
-  );
+  const { data: unreadData } = api.notifications.getUnreadCount.useQuery(undefined, {
+    enabled: !!userId,
+    refetchInterval: 30000, // 30 seconds
+    refetchOnWindowFocus: true,
+  });
 
   const unreadCount = unreadData?.count ?? 0;
 
   // Update page title with unread count
   useEffect(() => {
-    if (!enableTitleBadge || typeof document === 'undefined') return;
+    if (!enableTitleBadge || typeof document === "undefined") return;
 
     if (originalTitle === null) {
       originalTitle = document.title;
@@ -281,7 +281,7 @@ export function useNotificationBadge(options: { enableTitleBadge?: boolean } = {
     }
 
     return () => {
-      if (originalTitle !== null && typeof document !== 'undefined') {
+      if (originalTitle !== null && typeof document !== "undefined") {
         document.title = originalTitle;
       }
     };

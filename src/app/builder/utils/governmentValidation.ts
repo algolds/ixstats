@@ -1,12 +1,12 @@
 /**
  * Government Builder Validation Utilities
- * 
+ *
  * This module provides utilities to validate that government spending
  * data comes from the government builder system and not from independent sources.
  */
 
-import type { EconomicInputs } from '../lib/economy-data-service';
-import type { GovernmentBuilderState, DepartmentInput } from '~/types/government';
+import type { EconomicInputs } from "../lib/economy-data-service";
+import type { GovernmentBuilderState, DepartmentInput } from "~/types/government";
 
 export interface GovernmentValidationResult {
   isValid: boolean;
@@ -30,14 +30,18 @@ export function validateGovernmentSpendingSource(
   const hasBudgetAllocations = hasGovernmentBuilder && governmentData.budgetAllocations.length > 0;
 
   // Check if spending categories match government builder departments
-  const spendingCategoriesFromBuilder = hasDepartments ?
-    governmentData.departments.map((dept: DepartmentInput) => dept.name) : [];
+  const spendingCategoriesFromBuilder = hasDepartments
+    ? governmentData.departments.map((dept: DepartmentInput) => dept.name)
+    : [];
 
-  const currentSpendingCategories = inputs.governmentSpending.spendingCategories.map((cat: { category: string }) => cat.category);
-  
+  const currentSpendingCategories = inputs.governmentSpending.spendingCategories.map(
+    (cat: { category: string }) => cat.category
+  );
+
   // Check if spending categories are sourced from government builder
-  const categoriesMatchBuilder = spendingCategoriesFromBuilder.length > 0 && 
-    spendingCategoriesFromBuilder.some(builderCat => 
+  const categoriesMatchBuilder =
+    spendingCategoriesFromBuilder.length > 0 &&
+    spendingCategoriesFromBuilder.some((builderCat) =>
       currentSpendingCategories.includes(builderCat)
     );
 
@@ -49,7 +53,8 @@ export function validateGovernmentSpendingSource(
       hasDepartments: false,
       hasBudgetAllocations: false,
       errorMessage: "Government Builder Required",
-      warningMessage: "You must configure your government structure using the Government Builder before setting spending priorities. Please use the Government Builder first to define departments and budget allocations."
+      warningMessage:
+        "You must configure your government structure using the Government Builder before setting spending priorities. Please use the Government Builder first to define departments and budget allocations.",
     };
   }
 
@@ -60,7 +65,8 @@ export function validateGovernmentSpendingSource(
       hasDepartments: false,
       hasBudgetAllocations: false,
       errorMessage: "Government Departments Required",
-      warningMessage: "Your government structure has no departments configured. Please add departments in the Government Builder before setting spending priorities."
+      warningMessage:
+        "Your government structure has no departments configured. Please add departments in the Government Builder before setting spending priorities.",
     };
   }
 
@@ -70,8 +76,9 @@ export function validateGovernmentSpendingSource(
       hasGovernmentBuilder: true,
       hasDepartments: true,
       hasBudgetAllocations: false,
-      errorMessage: "Budget Allocations Required", 
-      warningMessage: "Your government structure has departments but no budget allocations. Please configure budget allocations in the Government Builder before setting spending priorities."
+      errorMessage: "Budget Allocations Required",
+      warningMessage:
+        "Your government structure has departments but no budget allocations. Please configure budget allocations in the Government Builder before setting spending priorities.",
     };
   }
 
@@ -82,7 +89,8 @@ export function validateGovernmentSpendingSource(
       hasDepartments: true,
       hasBudgetAllocations: true,
       errorMessage: "Spending Data Out of Sync",
-      warningMessage: "Your spending categories don't match your government departments. Please update your spending data through the Government Builder to ensure consistency."
+      warningMessage:
+        "Your spending categories don't match your government departments. Please update your spending data through the Government Builder to ensure consistency.",
     };
   }
 
@@ -90,7 +98,7 @@ export function validateGovernmentSpendingSource(
     isValid: true,
     hasGovernmentBuilder: true,
     hasDepartments: true,
-    hasBudgetAllocations: true
+    hasBudgetAllocations: true,
   };
 }
 
@@ -104,24 +112,29 @@ export function isUsingDefaultSpendingData(spendingCategories: any[]): boolean {
 
   // Check for common default category names
   const defaultCategories = [
-    'Defense', 'Education', 'Healthcare', 'Infrastructure', 
-    'Social Security', 'Other', 'Environmental'
+    "Defense",
+    "Education",
+    "Healthcare",
+    "Infrastructure",
+    "Social Security",
+    "Other",
+    "Environmental",
   ];
 
-  const hasDefaultCategories = spendingCategories.some(cat => 
+  const hasDefaultCategories = spendingCategories.some((cat) =>
     defaultCategories.includes(cat.category)
   );
 
   // Check if categories have default descriptions or generic content
-  const hasDefaultDescriptions = spendingCategories.some(cat => 
-    cat.description && (
-      cat.description.includes('Military, security') ||
-      cat.description.includes('Schools, universities') ||
-      cat.description.includes('Public health services') ||
-      cat.description.includes('Roads, utilities') ||
-      cat.description.includes('Welfare, pensions') ||
-      cat.description.includes('Administration, debt service')
-    )
+  const hasDefaultDescriptions = spendingCategories.some(
+    (cat) =>
+      cat.description &&
+      (cat.description.includes("Military, security") ||
+        cat.description.includes("Schools, universities") ||
+        cat.description.includes("Public health services") ||
+        cat.description.includes("Roads, utilities") ||
+        cat.description.includes("Welfare, pensions") ||
+        cat.description.includes("Administration, debt service"))
   );
 
   return hasDefaultCategories && hasDefaultDescriptions;
@@ -132,7 +145,7 @@ export function isUsingDefaultSpendingData(spendingCategories: any[]): boolean {
  */
 export function getGovernmentBuilderUrl(): string {
   // This should match your routing structure
-  return '/builder?section=government';
+  return "/builder?section=government";
 }
 
 /**
@@ -156,6 +169,6 @@ export function createGovernmentBuilderErrorComponent(
     onNavigateToBuilder: handleNavigateToBuilder,
     hasGovernmentBuilder: validation.hasGovernmentBuilder,
     hasDepartments: validation.hasDepartments,
-    hasBudgetAllocations: validation.hasBudgetAllocations
+    hasBudgetAllocations: validation.hasBudgetAllocations,
   };
 }

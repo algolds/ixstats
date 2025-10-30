@@ -1,9 +1,9 @@
 "use client";
 
-import React from 'react';
-import { BuilderIntegrationSidebar } from './BuilderIntegrationSidebar';
-import type { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
-import type { EconomicHealthMetrics } from '~/types/economy-builder';
+import React from "react";
+import { BuilderIntegrationSidebar } from "./BuilderIntegrationSidebar";
+import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
+import type { EconomicHealthMetrics } from "~/types/economy-builder";
 
 export interface EconomyBuilderSidebarProps {
   selectedComponents: EconomicComponentType[];
@@ -20,10 +20,10 @@ export interface EconomyBuilderSidebarProps {
 export function EconomyBuilderSidebar({
   selectedComponents,
   economicHealthMetrics,
-  maxComponents = 12
+  maxComponents = 12,
 }: EconomyBuilderSidebarProps) {
   return (
-    <div className="w-80 flex-shrink-0 sticky top-4 self-start">
+    <div className="sticky top-4 w-80 flex-shrink-0 self-start">
       <BuilderIntegrationSidebar
         selectedComponents={selectedComponents}
         maxComponents={maxComponents}

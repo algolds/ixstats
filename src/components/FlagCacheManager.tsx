@@ -7,27 +7,20 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
 import { Badge } from "~/components/ui/badge";
-import { 
-  RefreshCw, 
-  Download, 
-  Trash2, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
+import {
+  RefreshCw,
+  Download,
+  Trash2,
+  Clock,
+  CheckCircle,
+  XCircle,
   AlertCircle,
-  Flag
+  Flag,
 } from "lucide-react";
 
 export function FlagCacheManager() {
-  const {
-    stats,
-    isLoading,
-    error,
-    updateAllFlags,
-    initializeCache,
-    clearCache,
-    refreshStats,
-  } = useFlagCacheManager();
+  const { stats, isLoading, error, updateAllFlags, initializeCache, clearCache, refreshStats } =
+    useFlagCacheManager();
 
   const formatTime = (timestamp: number | null): string => {
     if (!timestamp) return "Never";
@@ -38,13 +31,13 @@ export function FlagCacheManager() {
     if (!timestamp) return "Unknown";
     const now = Date.now();
     const diff = timestamp - now;
-    
+
     if (diff <= 0) return "Now";
-    
+
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    
+
     if (days > 0) return `${days}d ${hours}h`;
     if (hours > 0) return `${hours}h ${minutes}m`;
     return `${minutes}m`;
@@ -71,23 +64,16 @@ export function FlagCacheManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
+          <h2 className="flex items-center gap-2 text-2xl font-bold">
             <Flag className="h-6 w-6" />
             Flag Cache Manager
           </h2>
-          <p className="text-muted-foreground">
-            Manage country flag caching and automatic updates
-          </p>
+          <p className="text-muted-foreground">Manage country flag caching and automatic updates</p>
         </div>
-        
+
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={refreshStats}
-            disabled={isLoading}
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm" onClick={refreshStats} disabled={isLoading}>
+            <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
         </div>
@@ -107,11 +93,11 @@ export function FlagCacheManager() {
       )}
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Total Countries */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-muted-foreground text-sm font-medium">
               Total Countries
             </CardTitle>
           </CardHeader>
@@ -123,19 +109,16 @@ export function FlagCacheManager() {
         {/* Cached Flags */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-muted-foreground text-sm font-medium">
               Cached Flags
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {stats?.cachedFlags || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {(stats?.totalCountries || 0) > 0 
+            <div className="text-2xl font-bold text-green-600">{stats?.cachedFlags || 0}</div>
+            <p className="text-muted-foreground text-xs">
+              {(stats?.totalCountries || 0) > 0
                 ? `${Math.round(((stats?.cachedFlags || 0) / stats.totalCountries) * 100)}% coverage`
-                : "0% coverage"
-              }
+                : "0% coverage"}
             </p>
           </CardContent>
         </Card>
@@ -143,28 +126,22 @@ export function FlagCacheManager() {
         {/* Failed Flags */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
+            <CardTitle className="text-muted-foreground text-sm font-medium">
               Failed Flags
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {stats?.failedFlags || 0}
-            </div>
+            <div className="text-2xl font-bold text-red-600">{stats?.failedFlags || 0}</div>
           </CardContent>
         </Card>
 
         {/* Status */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Status
-            </CardTitle>
+            <CardTitle className="text-muted-foreground text-sm font-medium">Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <Badge className={`${getStatusColor()} text-white`}>
-              {getStatusText()}
-            </Badge>
+            <Badge className={`${getStatusColor()} text-white`}>{getStatusText()}</Badge>
           </CardContent>
         </Card>
       </div>
@@ -175,12 +152,13 @@ export function FlagCacheManager() {
           <CardHeader>
             <CardTitle className="text-sm">Update Progress</CardTitle>
             <CardDescription>
-              {stats?.updateProgress.current || 0} of {stats?.updateProgress.total || 0} countries processed
+              {stats?.updateProgress.current || 0} of {stats?.updateProgress.total || 0} countries
+              processed
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Progress value={stats?.updateProgress.percentage || 0} className="w-full" />
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-muted-foreground mt-2 text-sm">
               {stats?.updateProgress.percentage || 0}% complete
             </p>
           </CardContent>
@@ -188,10 +166,10 @@ export function FlagCacheManager() {
       )}
 
       {/* Timestamps */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
               <Clock className="h-4 w-4" />
               Last Update
             </CardTitle>
@@ -203,14 +181,14 @@ export function FlagCacheManager() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
               <Clock className="h-4 w-4" />
               Next Update
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm">{formatTime(stats?.nextUpdateTime || null)}</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               in {formatTimeUntil(stats?.nextUpdateTime || null)}
             </p>
           </CardContent>
@@ -221,9 +199,7 @@ export function FlagCacheManager() {
       <Card>
         <CardHeader>
           <CardTitle className="text-sm">Actions</CardTitle>
-          <CardDescription>
-            Manage flag cache operations
-          </CardDescription>
+          <CardDescription>Manage flag cache operations</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
@@ -235,7 +211,7 @@ export function FlagCacheManager() {
               <Download className="h-4 w-4" />
               Initialize Cache
             </Button>
-            
+
             <Button
               onClick={updateAllFlags}
               disabled={isLoading || stats?.isUpdating}
@@ -245,7 +221,7 @@ export function FlagCacheManager() {
               <RefreshCw className="h-4 w-4" />
               Update All Flags
             </Button>
-            
+
             <Button
               onClick={clearCache}
               disabled={isLoading}
@@ -263,34 +239,30 @@ export function FlagCacheManager() {
       <Card>
         <CardHeader>
           <CardTitle className="text-sm">Cache Efficiency</CardTitle>
-          <CardDescription>
-            Performance metrics and recommendations
-          </CardDescription>
+          <CardDescription>Performance metrics and recommendations</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm">Cache Hit Rate</span>
               <span className="text-sm font-medium">
-                {(stats?.totalCountries || 0) > 0 
+                {(stats?.totalCountries || 0) > 0
                   ? `${Math.round(((stats?.cachedFlags || 0) / stats.totalCountries) * 100)}%`
-                  : "0%"
-                }
+                  : "0%"}
               </span>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <span className="text-sm">Failed Rate</span>
               <span className="text-sm font-medium text-red-600">
-                {(stats?.totalCountries || 0) > 0 
+                {(stats?.totalCountries || 0) > 0
                   ? `${Math.round(((stats?.failedFlags || 0) / stats.totalCountries) * 100)}%`
-                  : "0%"
-                }
+                  : "0%"}
               </span>
             </div>
 
             {(stats?.failedFlags || 0) > 0 && (
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <div className="rounded-md border border-yellow-200 bg-yellow-50 p-3">
                 <div className="flex items-center gap-2 text-yellow-800">
                   <AlertCircle className="h-4 w-4" />
                   <span className="text-sm font-medium">
@@ -300,19 +272,20 @@ export function FlagCacheManager() {
               </div>
             )}
 
-            {(stats?.cachedFlags || 0) === (stats?.totalCountries || 0) && (stats?.totalCountries || 0) > 0 && (
-              <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                <div className="flex items-center gap-2 text-green-800">
-                  <CheckCircle className="h-4 w-4" />
-                  <span className="text-sm font-medium">
-                    All flags are cached! Cache is fully optimized.
-                  </span>
+            {(stats?.cachedFlags || 0) === (stats?.totalCountries || 0) &&
+              (stats?.totalCountries || 0) > 0 && (
+                <div className="rounded-md border border-green-200 bg-green-50 p-3">
+                  <div className="flex items-center gap-2 text-green-800">
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="text-sm font-medium">
+                      All flags are cached! Cache is fully optimized.
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
         </CardContent>
       </Card>
     </div>
   );
-} 
+}

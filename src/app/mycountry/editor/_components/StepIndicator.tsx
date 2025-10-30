@@ -4,7 +4,7 @@ import { CheckCircle } from "lucide-react";
 import { cn } from "~/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
-export type EditorStep = 'identity' | 'core' | 'government' | 'economics' | 'preview';
+export type EditorStep = "identity" | "core" | "government" | "economics" | "preview";
 
 interface StepConfig {
   title: string;
@@ -23,46 +23,48 @@ export function StepIndicator({ steps, currentStep, onStepChange }: StepIndicato
   const currentStepIndex = steps.findIndex(([step]) => step === currentStep);
 
   return (
-    <div className="flex justify-between items-center mb-8">
+    <div className="mb-8 flex items-center justify-between">
       {steps.map(([step, config], index) => {
         const Icon = config.icon;
         const isCurrent = currentStep === step;
         const isPast = index < currentStepIndex;
 
         return (
-          <div key={step} className="flex items-center flex-1">
+          <div key={step} className="flex flex-1 items-center">
             <button
               onClick={() => onStepChange(step)}
               className={cn(
-                "flex flex-col items-center gap-2 p-3 rounded-lg transition-all",
+                "flex flex-col items-center gap-2 rounded-lg p-3 transition-all",
                 isCurrent && "bg-amber-100 dark:bg-amber-900/20",
                 "hover:bg-muted"
               )}
             >
-              <div className={cn(
-                "w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all",
-                isCurrent && `bg-gradient-to-r ${config.color} text-white border-transparent`,
-                isPast && "bg-green-100 border-green-500 text-green-600",
-                !isCurrent && !isPast && "border-muted-foreground/30 text-muted-foreground"
-              )}>
+              <div
+                className={cn(
+                  "flex h-12 w-12 items-center justify-center rounded-full border-2 transition-all",
+                  isCurrent && `bg-gradient-to-r ${config.color} border-transparent text-white`,
+                  isPast && "border-green-500 bg-green-100 text-green-600",
+                  !isCurrent && !isPast && "border-muted-foreground/30 text-muted-foreground"
+                )}
+              >
                 {isPast ? <CheckCircle className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
               </div>
               <div className="text-center">
-                <div className={cn(
-                  "text-xs font-semibold",
-                  isCurrent && "text-amber-600",
-                  isPast && "text-green-600"
-                )}>
+                <div
+                  className={cn(
+                    "text-xs font-semibold",
+                    isCurrent && "text-amber-600",
+                    isPast && "text-green-600"
+                  )}
+                >
                   {config.title}
                 </div>
-                <div className="text-xs text-muted-foreground hidden sm:block">
+                <div className="text-muted-foreground hidden text-xs sm:block">
                   {config.description}
                 </div>
               </div>
             </button>
-            {index < steps.length - 1 && (
-              <div className="flex-1 h-0.5 bg-muted mx-2" />
-            )}
+            {index < steps.length - 1 && <div className="bg-muted mx-2 h-0.5 flex-1" />}
           </div>
         );
       })}

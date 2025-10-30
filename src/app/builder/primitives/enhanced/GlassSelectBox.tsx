@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Check, Search } from 'lucide-react';
-import { cn } from '~/lib/utils';
-import { useSectionTheme, getGlassClasses } from './theme-utils';
-import type { EnhancedInputProps } from './types';
+import React, { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, Check, Search } from "lucide-react";
+import { cn } from "~/lib/utils";
+import { useSectionTheme, getGlassClasses } from "./theme-utils";
+import type { EnhancedInputProps } from "./types";
 
 interface SelectOption {
   value: string;
@@ -15,7 +15,7 @@ interface SelectOption {
   disabled?: boolean;
 }
 
-interface GlassSelectBoxProps extends Omit<EnhancedInputProps, 'value' | 'onChange'> {
+interface GlassSelectBoxProps extends Omit<EnhancedInputProps, "value" | "onChange"> {
   value: string;
   onChange: (value: string) => void;
   options: SelectOption[];
@@ -34,18 +34,18 @@ export function GlassSelectBox({
   description,
   sectionId,
   theme,
-  size = 'md',
+  size = "md",
   disabled = false,
   required = false,
-  placeholder = 'Select an option...',
+  placeholder = "Select an option...",
   searchable = false,
   multiSelect = false,
   icon: Icon,
   maxHeight = 200,
-  className
+  className,
 }: GlassSelectBoxProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -53,34 +53,35 @@ export function GlassSelectBox({
   const { theme: resolvedTheme, colors, cssVars } = useSectionTheme(sectionId, theme);
 
   const sizeClasses = {
-    sm: 'text-sm px-3 py-2 h-10',
-    md: 'text-base px-4 py-3 h-12',
-    lg: 'text-lg px-5 py-4 h-14'
+    sm: "text-sm px-3 py-2 h-10",
+    md: "text-base px-4 py-3 h-12",
+    lg: "text-lg px-5 py-4 h-14",
   };
 
   // Filter options based on search
-  const filteredOptions = searchable 
-    ? options.filter(option => 
-        option.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        option.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredOptions = searchable
+    ? options.filter(
+        (option) =>
+          option.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          option.description?.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : options;
 
   // Get selected option
-  const selectedOption = options.find(option => option.value === value);
+  const selectedOption = options.find((option) => option.value === value);
 
   // Handle click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
-        setSearchQuery('');
+        setSearchQuery("");
         setHighlightedIndex(-1);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Handle keyboard navigation
@@ -88,41 +89,37 @@ export function GlassSelectBox({
     if (disabled) return;
 
     switch (e.key) {
-      case 'Enter':
+      case "Enter":
         e.preventDefault();
         if (isOpen && highlightedIndex >= 0) {
           const option = filteredOptions[highlightedIndex];
           if (option && !option.disabled) {
             onChange(option.value);
             setIsOpen(false);
-            setSearchQuery('');
+            setSearchQuery("");
             setHighlightedIndex(-1);
           }
         } else {
           setIsOpen(!isOpen);
         }
         break;
-      case 'Escape':
+      case "Escape":
         setIsOpen(false);
-        setSearchQuery('');
+        setSearchQuery("");
         setHighlightedIndex(-1);
         break;
-      case 'ArrowDown':
+      case "ArrowDown":
         e.preventDefault();
         if (!isOpen) {
           setIsOpen(true);
         } else {
-          setHighlightedIndex(prev => 
-            prev < filteredOptions.length - 1 ? prev + 1 : 0
-          );
+          setHighlightedIndex((prev) => (prev < filteredOptions.length - 1 ? prev + 1 : 0));
         }
         break;
-      case 'ArrowUp':
+      case "ArrowUp":
         e.preventDefault();
         if (isOpen) {
-          setHighlightedIndex(prev => 
-            prev > 0 ? prev - 1 : filteredOptions.length - 1
-          );
+          setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : filteredOptions.length - 1));
         }
         break;
     }
@@ -130,39 +127,37 @@ export function GlassSelectBox({
 
   const handleOptionClick = (option: SelectOption) => {
     if (option.disabled) return;
-    
+
     onChange(option.value);
     setIsOpen(false);
-    setSearchQuery('');
+    setSearchQuery("");
     setHighlightedIndex(-1);
   };
 
   const toggleDropdown = () => {
     if (disabled) return;
     setIsOpen(!isOpen);
-    setSearchQuery('');
+    setSearchQuery("");
     setHighlightedIndex(-1);
   };
 
   return (
-    <div 
+    <div
       ref={containerRef}
-      className={cn('relative space-y-2', className)}
+      className={cn("relative space-y-2", className)}
       style={cssVars as React.CSSProperties}
     >
       {/* Label and Description */}
       {(label || description) && (
         <div className="space-y-1">
           {label && (
-            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <label className="text-foreground flex items-center gap-2 text-sm font-medium">
               {Icon && <Icon className="h-4 w-4" />}
               {label}
               {required && <span className="text-red-400">*</span>}
             </label>
           )}
-          {description && (
-            <p className="text-xs text-muted-foreground">{description}</p>
-          )}
+          {description && <p className="text-muted-foreground text-xs">{description}</p>}
         </div>
       )}
 
@@ -175,40 +170,39 @@ export function GlassSelectBox({
         whileHover={{ scale: disabled ? 1 : 1.01 }}
         whileTap={{ scale: disabled ? 1 : 0.99 }}
         className={cn(
-          'relative w-full flex items-center justify-between text-left',
-          getGlassClasses('elevated', resolvedTheme, sectionId),
-          'bg-white/80 dark:bg-gray-800/90 border-2',
-          'border-gray-200/50 dark:border-gray-600/50',
-          'hover:border-gray-300/70 dark:hover:border-gray-500/70',
-          'focus:border-[var(--primitive-primary)] focus:shadow-lg',
-          'focus:shadow-[var(--primitive-primary)]/20',
+          "relative flex w-full items-center justify-between text-left",
+          getGlassClasses("elevated", resolvedTheme, sectionId),
+          "border-2 bg-white/80 dark:bg-gray-800/90",
+          "border-gray-200/50 dark:border-gray-600/50",
+          "hover:border-gray-300/70 dark:hover:border-gray-500/70",
+          "focus:border-[var(--primitive-primary)] focus:shadow-lg",
+          "focus:shadow-[var(--primitive-primary)]/20",
           sizeClasses[size],
-          isOpen && 'border-[var(--primitive-primary)] shadow-lg shadow-[var(--primitive-primary)]/20',
-          disabled && 'opacity-50 cursor-not-allowed'
+          isOpen &&
+            "border-[var(--primitive-primary)] shadow-[var(--primitive-primary)]/20 shadow-lg",
+          disabled && "cursor-not-allowed opacity-50"
         )}
       >
         {/* Background Gradient */}
         <motion.div
           className="absolute inset-0 rounded-lg opacity-0 transition-opacity"
           style={{
-            background: `linear-gradient(135deg, ${colors.background}, transparent)`
+            background: `linear-gradient(135deg, ${colors.background}, transparent)`,
           }}
           animate={{ opacity: isOpen ? 1 : 0 }}
         />
 
-        <div className="relative flex items-center gap-3 flex-1 min-w-0">
+        <div className="relative flex min-w-0 flex-1 items-center gap-3">
           {selectedOption?.icon && (
-            <selectedOption.icon className="h-4 w-4 text-[var(--primitive-primary)] flex-shrink-0" />
+            <selectedOption.icon className="h-4 w-4 flex-shrink-0 text-[var(--primitive-primary)]" />
           )}
-          
-          <div className="flex-1 min-w-0">
+
+          <div className="min-w-0 flex-1">
             {selectedOption ? (
               <div>
-                <span className="text-foreground font-medium">
-                  {selectedOption.label}
-                </span>
+                <span className="text-foreground font-medium">{selectedOption.label}</span>
                 {selectedOption.description && (
-                  <p className="text-xs text-muted-foreground truncate">
+                  <p className="text-muted-foreground truncate text-xs">
                     {selectedOption.description}
                   </p>
                 )}
@@ -224,7 +218,7 @@ export function GlassSelectBox({
           transition={{ duration: 0.2 }}
           className="ml-2 flex-shrink-0"
         >
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          <ChevronDown className="text-muted-foreground h-4 w-4" />
         </motion.div>
       </motion.button>
 
@@ -237,26 +231,26 @@ export function GlassSelectBox({
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
             className={cn(
-              'absolute top-full left-0 right-0 z-50 mt-1',
-              getGlassClasses('modal', resolvedTheme, sectionId),
-              'bg-white/95 dark:bg-gray-800/95',
-              'border border-gray-200/50 dark:border-gray-600/50',
-              'shadow-xl rounded-lg overflow-hidden'
+              "absolute top-full right-0 left-0 z-50 mt-1",
+              getGlassClasses("modal", resolvedTheme, sectionId),
+              "bg-white/95 dark:bg-gray-800/95",
+              "border border-gray-200/50 dark:border-gray-600/50",
+              "overflow-hidden rounded-lg shadow-xl"
             )}
             style={{ maxHeight }}
           >
             {/* Search Input */}
             {searchable && (
-              <div className="p-3 border-b border-gray-200/50 dark:border-gray-600/50">
+              <div className="border-b border-gray-200/50 p-3 dark:border-gray-600/50">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
                   <input
                     ref={inputRef}
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search options..."
-                    className="w-full pl-10 pr-3 py-2 bg-transparent border border-gray-200/50 dark:border-gray-600/50 rounded-md text-sm text-foreground placeholder:text-muted-foreground focus:border-[var(--primitive-primary)] focus:outline-none"
+                    className="text-foreground placeholder:text-muted-foreground w-full rounded-md border border-gray-200/50 bg-transparent py-2 pr-3 pl-10 text-sm focus:border-[var(--primitive-primary)] focus:outline-none dark:border-gray-600/50"
                   />
                 </div>
               </div>
@@ -265,7 +259,7 @@ export function GlassSelectBox({
             {/* Options List */}
             <div className="max-h-48 overflow-y-auto">
               {filteredOptions.length === 0 ? (
-                <div className="px-4 py-3 text-sm text-muted-foreground text-center">
+                <div className="text-muted-foreground px-4 py-3 text-center text-sm">
                   No options found
                 </div>
               ) : (
@@ -277,30 +271,28 @@ export function GlassSelectBox({
                     disabled={option.disabled}
                     whileHover={{ backgroundColor: `${colors.primary}10` }}
                     className={cn(
-                      'w-full px-4 py-3 text-left flex items-center gap-3 transition-colors',
-                      'hover:bg-[var(--primitive-primary)]/10',
-                      index === highlightedIndex && 'bg-[var(--primitive-primary)]/10',
-                      option.disabled && 'opacity-50 cursor-not-allowed',
-                      option.value === value && 'bg-[var(--primitive-primary)]/20'
+                      "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
+                      "hover:bg-[var(--primitive-primary)]/10",
+                      index === highlightedIndex && "bg-[var(--primitive-primary)]/10",
+                      option.disabled && "cursor-not-allowed opacity-50",
+                      option.value === value && "bg-[var(--primitive-primary)]/20"
                     )}
                   >
                     {option.icon && (
-                      <option.icon className="h-4 w-4 text-[var(--primitive-primary)] flex-shrink-0" />
+                      <option.icon className="h-4 w-4 flex-shrink-0 text-[var(--primitive-primary)]" />
                     )}
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-foreground">
-                        {option.label}
-                      </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="text-foreground text-sm font-medium">{option.label}</div>
                       {option.description && (
-                        <div className="text-xs text-muted-foreground truncate">
+                        <div className="text-muted-foreground truncate text-xs">
                           {option.description}
                         </div>
                       )}
                     </div>
 
                     {option.value === value && (
-                      <Check className="h-4 w-4 text-[var(--primitive-primary)] flex-shrink-0" />
+                      <Check className="h-4 w-4 flex-shrink-0 text-[var(--primitive-primary)]" />
                     )}
                   </motion.button>
                 ))

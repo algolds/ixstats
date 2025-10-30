@@ -22,7 +22,7 @@ import { EconomicComponentType } from "@prisma/client";
 import {
   ATOMIC_ECONOMIC_COMPONENTS,
   COMPONENT_CATEGORIES,
-  type AtomicEconomicComponent
+  type AtomicEconomicComponent,
 } from "~/lib/atomic-economic-data";
 
 // ============================================================================
@@ -56,7 +56,7 @@ interface ParsedEconomicComponent {
   category: string;
   color: string;
   metadata: {
-    complexity: 'Low' | 'Medium' | 'High';
+    complexity: "Low" | "Medium" | "High";
     timeToImplement: string;
     staffRequired: number;
     technologyRequired: boolean;
@@ -71,10 +71,12 @@ interface ParsedEconomicComponent {
 
 const economicComponentTypeSchema = z.nativeEnum(EconomicComponentType);
 
-const getAllComponentsSchema = z.object({
-  category: z.string().optional(),
-  isActive: z.boolean().optional(),
-}).optional();
+const getAllComponentsSchema = z
+  .object({
+    category: z.string().optional(),
+    isActive: z.boolean().optional(),
+  })
+  .optional();
 
 const getComponentByTypeSchema = z.object({
   componentType: economicComponentTypeSchema,
@@ -97,7 +99,7 @@ function safeJSONParse<T>(jsonString: string | null, fallback: T): T {
   try {
     return JSON.parse(jsonString) as T;
   } catch (error) {
-    console.warn('[economicComponents] Failed to parse JSON:', error);
+    console.warn("[economicComponents] Failed to parse JSON:", error);
     return fallback;
   }
 }
@@ -111,30 +113,28 @@ function transformDatabaseComponent(dbComp: any): ParsedEconomicComponent {
   const conflicts = safeJSONParse<EconomicComponentType[]>(dbComp.conflicts, []);
   const governmentSynergies = safeJSONParse<string[]>(dbComp.governmentSynergies, []);
   const governmentConflicts = safeJSONParse<string[]>(dbComp.governmentConflicts, []);
-  const taxImpact = safeJSONParse<ParsedEconomicComponent['taxImpact']>(
-    dbComp.taxImpact,
-    { optimalCorporateRate: 20, optimalIncomeRate: 25, revenueEfficiency: 0.75 }
-  );
+  const taxImpact = safeJSONParse<ParsedEconomicComponent["taxImpact"]>(dbComp.taxImpact, {
+    optimalCorporateRate: 20,
+    optimalIncomeRate: 25,
+    revenueEfficiency: 0.75,
+  });
   const sectorImpact = safeJSONParse<Record<string, number>>(dbComp.sectorImpact, {});
-  const employmentImpact = safeJSONParse<ParsedEconomicComponent['employmentImpact']>(
+  const employmentImpact = safeJSONParse<ParsedEconomicComponent["employmentImpact"]>(
     dbComp.employmentImpact,
     { unemploymentModifier: 0, participationModifier: 1, wageGrowthModifier: 1 }
   );
-  const metadata = safeJSONParse<ParsedEconomicComponent['metadata']>(
-    dbComp.metadata,
-    {
-      complexity: 'Medium',
-      timeToImplement: '2-3 years',
-      staffRequired: 150,
-      technologyRequired: true
-    }
-  );
+  const metadata = safeJSONParse<ParsedEconomicComponent["metadata"]>(dbComp.metadata, {
+    complexity: "Medium",
+    timeToImplement: "2-3 years",
+    staffRequired: 150,
+    technologyRequired: true,
+  });
 
   return {
     id: dbComp.id || dbComp.componentType.toLowerCase(),
     type: dbComp.componentType,
     name: dbComp.name,
-    description: dbComp.description || '',
+    description: dbComp.description || "",
     effectiveness: dbComp.effectiveness || dbComp.effectivenessScore || 75,
     synergies,
     conflicts,
@@ -146,8 +146,8 @@ function transformDatabaseComponent(dbComp: any): ParsedEconomicComponent {
     implementationCost: dbComp.implementationCost || 100000,
     maintenanceCost: dbComp.maintenanceCost || 50000,
     requiredCapacity: dbComp.requiredCapacity || 75,
-    category: dbComp.category || 'Economic Model',
-    color: dbComp.color || 'emerald',
+    category: dbComp.category || "Economic Model",
+    color: dbComp.color || "emerald",
     metadata,
     usageCount: dbComp.usageCount || 0,
     isActive: dbComp.isActive ?? true,
@@ -160,7 +160,7 @@ function transformDatabaseComponent(dbComp: any): ParsedEconomicComponent {
 function getFallbackComponents(): ParsedEconomicComponent[] {
   return Object.values(ATOMIC_ECONOMIC_COMPONENTS)
     .filter((comp): comp is NonNullable<typeof comp> => comp !== undefined)
-    .map(comp => ({
+    .map((comp) => ({
       id: comp.id,
       type: comp.type,
       name: comp.name,
@@ -187,7 +187,9 @@ function getFallbackComponents(): ParsedEconomicComponent[] {
 /**
  * Get fallback component by type
  */
-function getFallbackComponentByType(componentType: EconomicComponentType): ParsedEconomicComponent | null {
+function getFallbackComponentByType(
+  componentType: EconomicComponentType
+): ParsedEconomicComponent | null {
   const component = ATOMIC_ECONOMIC_COMPONENTS[componentType];
   if (!component) return null;
 
@@ -231,65 +233,60 @@ export const economicComponentsRouter = createTRPCRouter({
    *   taxImpact, sectorImpact, employmentImpact)
    * - Automatic fallback to hardcoded data
    */
-  getAllComponents: publicProcedure
-    .input(getAllComponentsSchema)
-    .query(async ({ ctx, input }) => {
-      try {
-        // Query database
-        const dbComponents = await ctx.db.economicComponentData.findMany({
-          where: {
-            ...(input?.isActive !== undefined && { isActive: input.isActive }),
-            ...(input?.category && { category: input.category }),
-          },
-          orderBy: [
-            { category: 'asc' },
-            { usageCount: 'desc' },
-          ],
-        });
+  getAllComponents: publicProcedure.input(getAllComponentsSchema).query(async ({ ctx, input }) => {
+    try {
+      // Query database
+      const dbComponents = await ctx.db.economicComponentData.findMany({
+        where: {
+          ...(input?.isActive !== undefined && { isActive: input.isActive }),
+          ...(input?.category && { category: input.category }),
+        },
+        orderBy: [{ category: "asc" }, { usageCount: "desc" }],
+      });
 
-        // If database is empty, use fallback
-        if (dbComponents.length === 0) {
-          let components = getFallbackComponents();
+      // If database is empty, use fallback
+      if (dbComponents.length === 0) {
+        let components = getFallbackComponents();
 
-          // Apply filters
-          if (input?.category) {
-            components = components.filter(comp => comp.category === input.category);
-          }
-
-          if (input?.isActive !== undefined) {
-            components = components.filter(comp => comp.isActive === input.isActive);
-          }
-
-          return {
-            success: true,
-            components,
-            count: components.length,
-            isUsingFallback: true,
-          };
+        // Apply filters
+        if (input?.category) {
+          components = components.filter((comp) => comp.category === input.category);
         }
 
-        // Parse database components
-        const components = dbComponents.map(transformDatabaseComponent);
+        if (input?.isActive !== undefined) {
+          components = components.filter((comp) => comp.isActive === input.isActive);
+        }
 
         return {
           success: true,
           components,
           count: components.length,
-          isUsingFallback: false,
-        };
-      } catch (error) {
-        console.error("[economicComponents] Error fetching components:", error);
-
-        // On error, return fallback data
-        const fallbackComponents = getFallbackComponents();
-        return {
-          success: true,
-          components: fallbackComponents,
-          count: fallbackComponents.length,
           isUsingFallback: true,
         };
       }
-    }),
+
+      // Parse database components
+      const components = dbComponents.map(transformDatabaseComponent);
+
+      return {
+        success: true,
+        components,
+        count: components.length,
+        isUsingFallback: false,
+      };
+    } catch (error) {
+      console.error("[economicComponents] Error fetching components:", error);
+
+      // On error, return fallback data
+      const fallbackComponents = getFallbackComponents();
+      return {
+        success: true,
+        components: fallbackComponents,
+        count: fallbackComponents.length,
+        isUsingFallback: true,
+      };
+    }
+  }),
 
   /**
    * Get a single component by type
@@ -376,41 +373,21 @@ export const economicComponentsRouter = createTRPCRouter({
   /**
    * Get components grouped by category
    */
-  getComponentsByCategory: publicProcedure
-    .query(async ({ ctx }) => {
-      try {
-        // Query database
-        const dbComponents = await ctx.db.economicComponentData.findMany({
-          where: { isActive: true },
-          orderBy: { usageCount: 'desc' },
-        });
+  getComponentsByCategory: publicProcedure.query(async ({ ctx }) => {
+    try {
+      // Query database
+      const dbComponents = await ctx.db.economicComponentData.findMany({
+        where: { isActive: true },
+        orderBy: { usageCount: "desc" },
+      });
 
-        // If database is empty, use fallback
-        if (dbComponents.length === 0) {
-          const fallbackComponents = getFallbackComponents();
-          const grouped: Record<string, ParsedEconomicComponent[]> = {};
-
-          // Group components by category
-          fallbackComponents.forEach(component => {
-            if (!grouped[component.category]) {
-              grouped[component.category] = [];
-            }
-            grouped[component.category].push(component);
-          });
-
-          return {
-            success: true,
-            categories: grouped,
-            categoryCount: Object.keys(grouped).length,
-            isUsingFallback: true,
-          };
-        }
-
-        // Parse and group database components
-        const components = dbComponents.map(transformDatabaseComponent);
+      // If database is empty, use fallback
+      if (dbComponents.length === 0) {
+        const fallbackComponents = getFallbackComponents();
         const grouped: Record<string, ParsedEconomicComponent[]> = {};
 
-        components.forEach(component => {
+        // Group components by category
+        fallbackComponents.forEach((component) => {
           if (!grouped[component.category]) {
             grouped[component.category] = [];
           }
@@ -421,142 +398,155 @@ export const economicComponentsRouter = createTRPCRouter({
           success: true,
           categories: grouped,
           categoryCount: Object.keys(grouped).length,
-          isUsingFallback: false,
+          isUsingFallback: true,
         };
-      } catch (error) {
-        console.error("[economicComponents] Error fetching components by category:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch components by category",
-        });
       }
-    }),
+
+      // Parse and group database components
+      const components = dbComponents.map(transformDatabaseComponent);
+      const grouped: Record<string, ParsedEconomicComponent[]> = {};
+
+      components.forEach((component) => {
+        if (!grouped[component.category]) {
+          grouped[component.category] = [];
+        }
+        grouped[component.category].push(component);
+      });
+
+      return {
+        success: true,
+        categories: grouped,
+        categoryCount: Object.keys(grouped).length,
+        isUsingFallback: false,
+      };
+    } catch (error) {
+      console.error("[economicComponents] Error fetching components by category:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch components by category",
+      });
+    }
+  }),
 
   /**
    * Get synergies for a specific component
    * Returns both positive synergies and conflicts
    */
-  getSynergies: publicProcedure
-    .input(getComponentByTypeSchema)
-    .query(async ({ ctx, input }) => {
-      try {
-        // Query database synergies
-        const dbSynergies = await ctx.db.economicSynergy.findMany({
-          where: {
-            OR: [
-              { component1: input.componentType },
-              { component2: input.componentType },
-            ],
-            isActive: true,
-          },
-        });
-
-        // If database has synergies, return them
-        if (dbSynergies.length > 0) {
-          return {
-            success: true,
-            synergies: dbSynergies,
-            count: dbSynergies.length,
-            isUsingFallback: false,
-          };
-        }
-
-        // Fallback: Build synergies from component data
-        const component = getFallbackComponentByType(input.componentType);
-
-        if (!component) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: `Component type ${input.componentType} not found`,
-          });
-        }
-
-        // Build synergy objects from the component's synergies and conflicts
-        const synergies = component.synergies.map((synergyType, idx) => ({
-          id: `fallback_${input.componentType}_${synergyType}_${idx}`,
-          component1: input.componentType,
-          component2: synergyType,
-          synergyType: 'STRONG' as const,
-          bonusPercent: 15,
-          description: `Strong synergy between ${component.name} and ${ATOMIC_ECONOMIC_COMPONENTS[synergyType]?.name || synergyType}`,
+  getSynergies: publicProcedure.input(getComponentByTypeSchema).query(async ({ ctx, input }) => {
+    try {
+      // Query database synergies
+      const dbSynergies = await ctx.db.economicSynergy.findMany({
+        where: {
+          OR: [{ component1: input.componentType }, { component2: input.componentType }],
           isActive: true,
-        }));
+        },
+      });
 
-        const conflicts = component.conflicts.map((conflictType, idx) => ({
-          id: `fallback_conflict_${input.componentType}_${conflictType}_${idx}`,
-          component1: input.componentType,
-          component2: conflictType,
-          synergyType: 'CONFLICT' as const,
-          bonusPercent: -20,
-          description: `Conflict between ${component.name} and ${ATOMIC_ECONOMIC_COMPONENTS[conflictType]?.name || conflictType}`,
-          isActive: true,
-        }));
-
+      // If database has synergies, return them
+      if (dbSynergies.length > 0) {
         return {
           success: true,
-          synergies: [...synergies, ...conflicts],
-          count: synergies.length + conflicts.length,
-          isUsingFallback: true,
+          synergies: dbSynergies,
+          count: dbSynergies.length,
+          isUsingFallback: false,
         };
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
+      }
 
-        console.error("[economicComponents] Error fetching synergies:", error);
+      // Fallback: Build synergies from component data
+      const component = getFallbackComponentByType(input.componentType);
+
+      if (!component) {
         throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch synergies",
+          code: "NOT_FOUND",
+          message: `Component type ${input.componentType} not found`,
         });
       }
-    }),
+
+      // Build synergy objects from the component's synergies and conflicts
+      const synergies = component.synergies.map((synergyType, idx) => ({
+        id: `fallback_${input.componentType}_${synergyType}_${idx}`,
+        component1: input.componentType,
+        component2: synergyType,
+        synergyType: "STRONG" as const,
+        bonusPercent: 15,
+        description: `Strong synergy between ${component.name} and ${ATOMIC_ECONOMIC_COMPONENTS[synergyType]?.name || synergyType}`,
+        isActive: true,
+      }));
+
+      const conflicts = component.conflicts.map((conflictType, idx) => ({
+        id: `fallback_conflict_${input.componentType}_${conflictType}_${idx}`,
+        component1: input.componentType,
+        component2: conflictType,
+        synergyType: "CONFLICT" as const,
+        bonusPercent: -20,
+        description: `Conflict between ${component.name} and ${ATOMIC_ECONOMIC_COMPONENTS[conflictType]?.name || conflictType}`,
+        isActive: true,
+      }));
+
+      return {
+        success: true,
+        synergies: [...synergies, ...conflicts],
+        count: synergies.length + conflicts.length,
+        isUsingFallback: true,
+      };
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+
+      console.error("[economicComponents] Error fetching synergies:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch synergies",
+      });
+    }
+  }),
 
   /**
    * Get all available templates (admin only for now)
    * Returns pre-configured component sets for common economic models
    */
-  getAllTemplates: publicProcedure
-    .query(async ({ ctx }) => {
-      try {
-        // Query database
-        const dbTemplates = await ctx.db.economicTemplate.findMany({
-          where: { isActive: true },
-          orderBy: { usageCount: 'desc' },
-        });
+  getAllTemplates: publicProcedure.query(async ({ ctx }) => {
+    try {
+      // Query database
+      const dbTemplates = await ctx.db.economicTemplate.findMany({
+        where: { isActive: true },
+        orderBy: { usageCount: "desc" },
+      });
 
-        // If database is empty, use fallback
-        if (dbTemplates.length === 0) {
-          const { ECONOMIC_TEMPLATES } = await import("~/lib/atomic-economic-data");
-          return {
-            success: true,
-            templates: ECONOMIC_TEMPLATES,
-            isUsingFallback: true,
-          };
-        }
-
-        // Parse components JSON
-        const templates = dbTemplates.map(template => ({
-          id: template.id,
-          key: template.key,
-          name: template.name,
-          description: template.description,
-          components: JSON.parse(template.components) as EconomicComponentType[],
-          iconName: template.iconName,
-          isActive: template.isActive,
-          usageCount: template.usageCount,
-        }));
-
+      // If database is empty, use fallback
+      if (dbTemplates.length === 0) {
+        const { ECONOMIC_TEMPLATES } = await import("~/lib/atomic-economic-data");
         return {
           success: true,
-          templates,
-          isUsingFallback: false,
+          templates: ECONOMIC_TEMPLATES,
+          isUsingFallback: true,
         };
-      } catch (error) {
-        console.error("[economicComponents] Error fetching templates:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch economic templates",
-        });
       }
-    }),
+
+      // Parse components JSON
+      const templates = dbTemplates.map((template) => ({
+        id: template.id,
+        key: template.key,
+        name: template.name,
+        description: template.description,
+        components: JSON.parse(template.components) as EconomicComponentType[],
+        iconName: template.iconName,
+        isActive: template.isActive,
+        usageCount: template.usageCount,
+      }));
+
+      return {
+        success: true,
+        templates,
+        isUsingFallback: false,
+      };
+    } catch (error) {
+      console.error("[economicComponents] Error fetching templates:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch economic templates",
+      });
+    }
+  }),
 
   // ============================================================================
   // Admin Endpoints
@@ -565,86 +555,87 @@ export const economicComponentsRouter = createTRPCRouter({
   /**
    * Get component usage statistics (admin only)
    */
-  getComponentUsageStats: adminProcedure
-    .query(async ({ ctx }) => {
-      try {
-        const components = getFallbackComponents();
+  getComponentUsageStats: adminProcedure.query(async ({ ctx }) => {
+    try {
+      const components = getFallbackComponents();
 
-        // Get actual usage from EconomicComponent instances
-        const usageStats = await ctx.db.economicComponent.groupBy({
-          by: ['componentType'],
-          where: { isActive: true },
-          _count: { componentType: true },
-        });
+      // Get actual usage from EconomicComponent instances
+      const usageStats = await ctx.db.economicComponent.groupBy({
+        by: ["componentType"],
+        where: { isActive: true },
+        _count: { componentType: true },
+      });
 
-        const usageMap = new Map(
-          usageStats.map(stat => [stat.componentType, stat._count.componentType])
-        );
+      const usageMap = new Map(
+        usageStats.map((stat) => [stat.componentType, stat._count.componentType])
+      );
 
-        const totalUsage = Array.from(usageMap.values()).reduce((sum, count) => sum + count, 0);
-        const totalSynergies = components.reduce((sum, comp) => sum + comp.synergies.length, 0);
+      const totalUsage = Array.from(usageMap.values()).reduce((sum, count) => sum + count, 0);
+      const totalSynergies = components.reduce((sum, comp) => sum + comp.synergies.length, 0);
 
-        // Get template count
-        const { ECONOMIC_TEMPLATES } = await import("~/lib/atomic-economic-data");
+      // Get template count
+      const { ECONOMIC_TEMPLATES } = await import("~/lib/atomic-economic-data");
 
-        return {
-          totalComponents: components.length,
-          activeComponents: components.filter(c => c.isActive).length,
-          totalUsage,
-          totalSynergies,
-          totalTemplates: ECONOMIC_TEMPLATES.length,
-        };
-      } catch (error) {
-        console.error("[economicComponents] Error fetching stats:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch component usage statistics",
-        });
-      }
-    }),
+      return {
+        totalComponents: components.length,
+        activeComponents: components.filter((c) => c.isActive).length,
+        totalUsage,
+        totalSynergies,
+        totalTemplates: ECONOMIC_TEMPLATES.length,
+      };
+    } catch (error) {
+      console.error("[economicComponents] Error fetching stats:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch component usage statistics",
+      });
+    }
+  }),
 
   /**
    * Create a new component (admin only)
    */
   createComponent: adminProcedure
-    .input(z.object({
-      type: economicComponentTypeSchema,
-      name: z.string().min(1),
-      description: z.string().min(1),
-      category: z.string(),
-      effectiveness: z.number().min(0).max(100),
-      implementationCost: z.number().min(0),
-      maintenanceCost: z.number().min(0),
-      requiredCapacity: z.number().min(0).max(100),
-      synergies: z.array(economicComponentTypeSchema).default([]),
-      conflicts: z.array(economicComponentTypeSchema).default([]),
-      governmentSynergies: z.array(z.string()).default([]),
-      governmentConflicts: z.array(z.string()).default([]),
-      taxImpact: z.object({
-        optimalCorporateRate: z.number().min(0).max(50),
-        optimalIncomeRate: z.number().min(0).max(60),
-        revenueEfficiency: z.number().min(0).max(100),
-      }),
-      sectorImpact: z.object({
-        services: z.number().min(0).max(2),
-        finance: z.number().min(0).max(2),
-        technology: z.number().min(0).max(2),
-        manufacturing: z.number().min(0).max(2),
-        agriculture: z.number().min(0).max(2),
-        government: z.number().min(0).max(2),
-      }),
-      employmentImpact: z.object({
-        unemploymentModifier: z.number().min(-2).max(2),
-        participationModifier: z.number().min(0.5).max(2),
-        wageGrowthModifier: z.number().min(0.5).max(2),
-      }),
-      complexity: z.enum(['Low', 'Medium', 'High']),
-      timeToImplement: z.string(),
-      staffRequired: z.number().min(0),
-      technologyRequired: z.boolean(),
-      color: z.string(),
-      icon: z.string(),
-    }))
+    .input(
+      z.object({
+        type: economicComponentTypeSchema,
+        name: z.string().min(1),
+        description: z.string().min(1),
+        category: z.string(),
+        effectiveness: z.number().min(0).max(100),
+        implementationCost: z.number().min(0),
+        maintenanceCost: z.number().min(0),
+        requiredCapacity: z.number().min(0).max(100),
+        synergies: z.array(economicComponentTypeSchema).default([]),
+        conflicts: z.array(economicComponentTypeSchema).default([]),
+        governmentSynergies: z.array(z.string()).default([]),
+        governmentConflicts: z.array(z.string()).default([]),
+        taxImpact: z.object({
+          optimalCorporateRate: z.number().min(0).max(50),
+          optimalIncomeRate: z.number().min(0).max(60),
+          revenueEfficiency: z.number().min(0).max(100),
+        }),
+        sectorImpact: z.object({
+          services: z.number().min(0).max(2),
+          finance: z.number().min(0).max(2),
+          technology: z.number().min(0).max(2),
+          manufacturing: z.number().min(0).max(2),
+          agriculture: z.number().min(0).max(2),
+          government: z.number().min(0).max(2),
+        }),
+        employmentImpact: z.object({
+          unemploymentModifier: z.number().min(-2).max(2),
+          participationModifier: z.number().min(0.5).max(2),
+          wageGrowthModifier: z.number().min(0.5).max(2),
+        }),
+        complexity: z.enum(["Low", "Medium", "High"]),
+        timeToImplement: z.string(),
+        staffRequired: z.number().min(0),
+        technologyRequired: z.boolean(),
+        color: z.string(),
+        icon: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         // Create component with stringified JSON fields
@@ -687,8 +678,9 @@ export const economicComponentsRouter = createTRPCRouter({
             adminId: ctx.user?.id || "system",
             adminName: ctx.user?.clerkUserId || "System",
             timestamp: new Date(),
-            ipAddress: ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown"
-          }
+            ipAddress:
+              ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown",
+          },
         });
 
         return {
@@ -709,38 +701,44 @@ export const economicComponentsRouter = createTRPCRouter({
    * Update a component (admin only)
    */
   updateComponent: adminProcedure
-    .input(z.object({
-      componentType: economicComponentTypeSchema,
-      name: z.string().min(1).optional(),
-      description: z.string().min(1).optional(),
-      category: z.string().optional(),
-      effectiveness: z.number().min(0).max(100).optional(),
-      implementationCost: z.number().min(0).optional(),
-      maintenanceCost: z.number().min(0).optional(),
-      requiredCapacity: z.number().min(0).max(100).optional(),
-      synergies: z.array(economicComponentTypeSchema).optional(),
-      conflicts: z.array(economicComponentTypeSchema).optional(),
-      governmentSynergies: z.array(z.string()).optional(),
-      governmentConflicts: z.array(z.string()).optional(),
-      taxImpact: z.object({
-        optimalCorporateRate: z.number().min(0).max(50),
-        optimalIncomeRate: z.number().min(0).max(60),
-        revenueEfficiency: z.number().min(0).max(100),
-      }).optional(),
-      sectorImpact: z.record(z.string(), z.number()).optional(),
-      employmentImpact: z.object({
-        unemploymentModifier: z.number().min(-2).max(2),
-        participationModifier: z.number().min(0.5).max(2),
-        wageGrowthModifier: z.number().min(0.5).max(2),
-      }).optional(),
-      complexity: z.enum(['Low', 'Medium', 'High']).optional(),
-      timeToImplement: z.string().optional(),
-      staffRequired: z.number().min(0).optional(),
-      technologyRequired: z.boolean().optional(),
-      color: z.string().optional(),
-      icon: z.string().optional(),
-      isActive: z.boolean().optional(),
-    }))
+    .input(
+      z.object({
+        componentType: economicComponentTypeSchema,
+        name: z.string().min(1).optional(),
+        description: z.string().min(1).optional(),
+        category: z.string().optional(),
+        effectiveness: z.number().min(0).max(100).optional(),
+        implementationCost: z.number().min(0).optional(),
+        maintenanceCost: z.number().min(0).optional(),
+        requiredCapacity: z.number().min(0).max(100).optional(),
+        synergies: z.array(economicComponentTypeSchema).optional(),
+        conflicts: z.array(economicComponentTypeSchema).optional(),
+        governmentSynergies: z.array(z.string()).optional(),
+        governmentConflicts: z.array(z.string()).optional(),
+        taxImpact: z
+          .object({
+            optimalCorporateRate: z.number().min(0).max(50),
+            optimalIncomeRate: z.number().min(0).max(60),
+            revenueEfficiency: z.number().min(0).max(100),
+          })
+          .optional(),
+        sectorImpact: z.record(z.string(), z.number()).optional(),
+        employmentImpact: z
+          .object({
+            unemploymentModifier: z.number().min(-2).max(2),
+            participationModifier: z.number().min(0.5).max(2),
+            wageGrowthModifier: z.number().min(0.5).max(2),
+          })
+          .optional(),
+        complexity: z.enum(["Low", "Medium", "High"]).optional(),
+        timeToImplement: z.string().optional(),
+        staffRequired: z.number().min(0).optional(),
+        technologyRequired: z.boolean().optional(),
+        color: z.string().optional(),
+        icon: z.string().optional(),
+        isActive: z.boolean().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         // Build update data with stringified JSON fields
@@ -753,14 +751,20 @@ export const economicComponentsRouter = createTRPCRouter({
         if (input.effectiveness !== undefined) updateData.effectiveness = input.effectiveness;
         if (input.synergies !== undefined) updateData.synergies = JSON.stringify(input.synergies);
         if (input.conflicts !== undefined) updateData.conflicts = JSON.stringify(input.conflicts);
-        if (input.governmentSynergies !== undefined) updateData.governmentSynergies = JSON.stringify(input.governmentSynergies);
-        if (input.governmentConflicts !== undefined) updateData.governmentConflicts = JSON.stringify(input.governmentConflicts);
+        if (input.governmentSynergies !== undefined)
+          updateData.governmentSynergies = JSON.stringify(input.governmentSynergies);
+        if (input.governmentConflicts !== undefined)
+          updateData.governmentConflicts = JSON.stringify(input.governmentConflicts);
         if (input.taxImpact !== undefined) updateData.taxImpact = JSON.stringify(input.taxImpact);
-        if (input.sectorImpact !== undefined) updateData.sectorImpact = JSON.stringify(input.sectorImpact);
-        if (input.employmentImpact !== undefined) updateData.employmentImpact = JSON.stringify(input.employmentImpact);
-        if (input.implementationCost !== undefined) updateData.implementationCost = input.implementationCost;
+        if (input.sectorImpact !== undefined)
+          updateData.sectorImpact = JSON.stringify(input.sectorImpact);
+        if (input.employmentImpact !== undefined)
+          updateData.employmentImpact = JSON.stringify(input.employmentImpact);
+        if (input.implementationCost !== undefined)
+          updateData.implementationCost = input.implementationCost;
         if (input.maintenanceCost !== undefined) updateData.maintenanceCost = input.maintenanceCost;
-        if (input.requiredCapacity !== undefined) updateData.requiredCapacity = input.requiredCapacity;
+        if (input.requiredCapacity !== undefined)
+          updateData.requiredCapacity = input.requiredCapacity;
         if (input.color !== undefined) updateData.color = input.color;
         if (input.icon !== undefined) updateData.iconName = input.icon;
         if (input.isActive !== undefined) updateData.isActive = input.isActive;
@@ -769,7 +773,8 @@ export const economicComponentsRouter = createTRPCRouter({
         if (input.complexity !== undefined) metadata.complexity = input.complexity;
         if (input.timeToImplement !== undefined) metadata.timeToImplement = input.timeToImplement;
         if (input.staffRequired !== undefined) metadata.staffRequired = input.staffRequired;
-        if (input.technologyRequired !== undefined) metadata.technologyRequired = input.technologyRequired;
+        if (input.technologyRequired !== undefined)
+          metadata.technologyRequired = input.technologyRequired;
 
         if (Object.keys(metadata).length > 0) {
           // Get existing metadata and merge
@@ -799,8 +804,9 @@ export const economicComponentsRouter = createTRPCRouter({
             adminId: ctx.user?.id || "system",
             adminName: ctx.user?.clerkUserId || "System",
             timestamp: new Date(),
-            ipAddress: ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown"
-          }
+            ipAddress:
+              ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown",
+          },
         });
 
         return {
@@ -821,9 +827,11 @@ export const economicComponentsRouter = createTRPCRouter({
    * Delete (deactivate) a component (admin only)
    */
   deleteComponent: adminProcedure
-    .input(z.object({
-      componentType: economicComponentTypeSchema,
-    }))
+    .input(
+      z.object({
+        componentType: economicComponentTypeSchema,
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         // Soft delete by setting isActive to false
@@ -843,8 +851,9 @@ export const economicComponentsRouter = createTRPCRouter({
             adminId: ctx.user?.id || "system",
             adminName: ctx.user?.clerkUserId || "System",
             timestamp: new Date(),
-            ipAddress: ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown"
-          }
+            ipAddress:
+              ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown",
+          },
         });
 
         return {
@@ -864,13 +873,15 @@ export const economicComponentsRouter = createTRPCRouter({
    * Create a synergy relationship (admin only)
    */
   createSynergy: adminProcedure
-    .input(z.object({
-      component1: economicComponentTypeSchema,
-      component2: economicComponentTypeSchema,
-      synergyType: z.enum(['STRONG', 'MODERATE', 'WEAK', 'CONFLICT']),
-      bonusPercent: z.number().min(-100).max(100),
-      description: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        component1: economicComponentTypeSchema,
+        component2: economicComponentTypeSchema,
+        synergyType: z.enum(["STRONG", "MODERATE", "WEAK", "CONFLICT"]),
+        bonusPercent: z.number().min(-100).max(100),
+        description: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         // Create synergy
@@ -895,8 +906,9 @@ export const economicComponentsRouter = createTRPCRouter({
             adminId: ctx.user?.id || "system",
             adminName: ctx.user?.clerkUserId || "System",
             timestamp: new Date(),
-            ipAddress: ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown"
-          }
+            ipAddress:
+              ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown",
+          },
         });
 
         return {
@@ -917,13 +929,15 @@ export const economicComponentsRouter = createTRPCRouter({
    * Create a template (admin only)
    */
   createTemplate: adminProcedure
-    .input(z.object({
-      key: z.string().min(1),
-      name: z.string().min(1),
-      description: z.string().min(1),
-      components: z.array(economicComponentTypeSchema),
-      iconName: z.string(),
-    }))
+    .input(
+      z.object({
+        key: z.string().min(1),
+        name: z.string().min(1),
+        description: z.string().min(1),
+        components: z.array(economicComponentTypeSchema),
+        iconName: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         // Create template with stringified components array
@@ -948,8 +962,9 @@ export const economicComponentsRouter = createTRPCRouter({
             adminId: ctx.user?.id || "system",
             adminName: ctx.user?.clerkUserId || "System",
             timestamp: new Date(),
-            ipAddress: ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown"
-          }
+            ipAddress:
+              ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown",
+          },
         });
 
         return {

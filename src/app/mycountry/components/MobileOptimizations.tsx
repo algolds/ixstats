@@ -1,10 +1,10 @@
 "use client";
 
-import React from 'react';
+import React from "react";
 
 /**
  * Mobile Optimization Styles and Enhancements
- * 
+ *
  * This component provides mobile-specific optimizations including:
  * - Touch-friendly interactions
  * - Performance enhancements
@@ -15,7 +15,7 @@ import React from 'react';
 export function MobileOptimizationStyles() {
   React.useEffect(() => {
     // Inject mobile-specific styles
-    const styleSheet = document.createElement('style');
+    const styleSheet = document.createElement("style");
     styleSheet.textContent = `
       /* Mobile Optimization Styles */
       .mobile-optimized {
@@ -146,9 +146,9 @@ export function MobileOptimizationStyles() {
         }
       }
     `;
-    
+
     document.head.appendChild(styleSheet);
-    
+
     return () => {
       document.head.removeChild(styleSheet);
     };
@@ -161,8 +161,8 @@ export function MobileOptimizationStyles() {
 export function useTouchGestures() {
   const [touchState, setTouchState] = React.useState({
     isTouch: false,
-    swipeDirection: null as 'left' | 'right' | 'up' | 'down' | null,
-    tapCount: 0
+    swipeDirection: null as "left" | "right" | "up" | "down" | null,
+    tapCount: 0,
   });
 
   React.useEffect(() => {
@@ -175,7 +175,7 @@ export function useTouchGestures() {
       if (firstTouch) {
         startX = firstTouch.clientX;
         startY = firstTouch.clientY;
-        setTouchState(prev => ({ ...prev, isTouch: true }));
+        setTouchState((prev) => ({ ...prev, isTouch: true }));
       }
     };
 
@@ -189,38 +189,38 @@ export function useTouchGestures() {
       const minSwipeDistance = 50;
 
       if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > minSwipeDistance) {
-        setTouchState(prev => ({
+        setTouchState((prev) => ({
           ...prev,
-          swipeDirection: deltaX > 0 ? 'right' : 'left'
+          swipeDirection: deltaX > 0 ? "right" : "left",
         }));
       } else if (Math.abs(deltaY) > minSwipeDistance) {
-        setTouchState(prev => ({
+        setTouchState((prev) => ({
           ...prev,
-          swipeDirection: deltaY > 0 ? 'down' : 'up'
+          swipeDirection: deltaY > 0 ? "down" : "up",
         }));
       } else {
         // Single tap
-        setTouchState(prev => ({ ...prev, tapCount: prev.tapCount + 1 }));
+        setTouchState((prev) => ({ ...prev, tapCount: prev.tapCount + 1 }));
         clearTimeout(tapTimeout);
         tapTimeout = setTimeout(() => {
-          setTouchState(prev => ({ ...prev, tapCount: 0 }));
+          setTouchState((prev) => ({ ...prev, tapCount: 0 }));
         }, 300);
       }
 
       // Reset swipe direction after a delay
       setTimeout(() => {
-        setTouchState(prev => ({ ...prev, swipeDirection: null }));
+        setTouchState((prev) => ({ ...prev, swipeDirection: null }));
       }, 100);
     };
 
-    if ('ontouchstart' in window) {
-      document.addEventListener('touchstart', handleTouchStart, { passive: true });
-      document.addEventListener('touchend', handleTouchEnd, { passive: true });
+    if ("ontouchstart" in window) {
+      document.addEventListener("touchstart", handleTouchStart, { passive: true });
+      document.addEventListener("touchend", handleTouchEnd, { passive: true });
     }
 
     return () => {
-      document.removeEventListener('touchstart', handleTouchStart);
-      document.removeEventListener('touchend', handleTouchEnd);
+      document.removeEventListener("touchstart", handleTouchStart);
+      document.removeEventListener("touchend", handleTouchEnd);
       clearTimeout(tapTimeout);
     };
   }, []);
@@ -233,20 +233,20 @@ export function useMobilePerformance() {
   const [performanceState, setPerformanceState] = React.useState({
     reducedMotion: false,
     lowBattery: false,
-    slowConnection: false
+    slowConnection: false,
   });
 
   React.useEffect(() => {
     // Check for reduced motion preference
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     // Check for battery status (if supported)
     const checkBattery = async () => {
-      if ('getBattery' in navigator) {
+      if ("getBattery" in navigator) {
         try {
           const battery = await (navigator as any).getBattery();
           const isLowBattery = battery.level < 0.2 && !battery.charging;
-          setPerformanceState(prev => ({ ...prev, lowBattery: isLowBattery }));
+          setPerformanceState((prev) => ({ ...prev, lowBattery: isLowBattery }));
         } catch (error) {
           // Battery API not supported or failed
         }
@@ -254,13 +254,17 @@ export function useMobilePerformance() {
     };
 
     // Check for slow connection
-    const connection = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
-    const slowConnection = connection && (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g');
+    const connection =
+      (navigator as any).connection ||
+      (navigator as any).mozConnection ||
+      (navigator as any).webkitConnection;
+    const slowConnection =
+      connection && (connection.effectiveType === "slow-2g" || connection.effectiveType === "2g");
 
     setPerformanceState({
       reducedMotion: prefersReducedMotion,
       lowBattery: false,
-      slowConnection: slowConnection || false
+      slowConnection: slowConnection || false,
     });
 
     checkBattery();
@@ -276,10 +280,10 @@ interface MobileOptimizedProps {
   className?: string;
 }
 
-export function MobileOptimized({ 
-  children, 
-  enableTouchGestures = true, 
-  className = '' 
+export function MobileOptimized({
+  children,
+  enableTouchGestures = true,
+  className = "",
 }: MobileOptimizedProps) {
   const touchState = enableTouchGestures ? useTouchGestures() : null;
   const performance = useMobilePerformance();
@@ -287,8 +291,8 @@ export function MobileOptimized({
   return (
     <>
       <MobileOptimizationStyles />
-      <div 
-        className={`mobile-optimized ${className} ${performance.reducedMotion ? 'reduce-motion' : ''}`}
+      <div
+        className={`mobile-optimized ${className} ${performance.reducedMotion ? "reduce-motion" : ""}`}
         data-touch-enabled={touchState?.isTouch}
         data-swipe-direction={touchState?.swipeDirection}
       >

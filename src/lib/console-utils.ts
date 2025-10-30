@@ -3,8 +3,8 @@
  * Prevents console.log statements from appearing in production builds
  */
 
-const isDevelopment = process.env.NODE_ENV === 'development';
-const isProduction = process.env.NODE_ENV === 'production';
+const isDevelopment = process.env.NODE_ENV === "development";
+const isProduction = process.env.NODE_ENV === "production";
 
 /**
  * Development-only console.log
@@ -45,7 +45,7 @@ export const safeLog = (...args: any[]) => {
     console.log(...args);
   } else {
     // In production, use proper logging system
-    console.warn('[PRODUCTION] Console.log detected, use proper logging system');
+    console.warn("[PRODUCTION] Console.log detected, use proper logging system");
   }
 };
 

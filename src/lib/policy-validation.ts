@@ -13,7 +13,7 @@
  * @module policy-validation
  */
 
-import { type PolicyType, type PolicyPriority } from './policy-templates';
+import { type PolicyType, type PolicyPriority } from "./policy-templates";
 
 /**
  * Validation result interface
@@ -109,22 +109,22 @@ export function validatePolicyStep1(
   const errors: string[] = [];
 
   if (!policyType) {
-    errors.push('Policy type is required');
+    errors.push("Policy type is required");
   }
 
   if (!name || name.trim().length === 0) {
-    errors.push('Policy name is required');
+    errors.push("Policy name is required");
   } else if (name.trim().length < 3) {
-    errors.push('Policy name must be at least 3 characters');
+    errors.push("Policy name must be at least 3 characters");
   }
 
   if (!description || description.trim().length === 0) {
-    errors.push('Policy description is required');
+    errors.push("Policy description is required");
   }
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -140,7 +140,7 @@ export function validatePolicyStep1(
 export function validatePolicyStep2(department: string | null | undefined): ValidationResult {
   return {
     valid: true,
-    errors: []
+    errors: [],
   };
 }
 
@@ -158,16 +158,16 @@ export function validatePolicyStep3(
   const errors: string[] = [];
 
   if (implementationCost <= 0) {
-    errors.push('Implementation cost must be greater than 0');
+    errors.push("Implementation cost must be greater than 0");
   }
 
   if (maintenanceCost < 0) {
-    errors.push('Maintenance cost cannot be negative');
+    errors.push("Maintenance cost cannot be negative");
   }
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -187,13 +187,13 @@ export function validatePolicyStep4(
   // If both dates are provided, expiry must be after effective
   if (effectiveDate && expiryDate) {
     if (expiryDate <= effectiveDate) {
-      errors.push('Expiry date must be after effective date');
+      errors.push("Expiry date must be after effective date");
     }
   }
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -224,15 +224,12 @@ export function validatePolicyStep5(policyData: PolicyData): ValidationResult {
   errors.push(...step3Result.errors);
 
   // Validate dates
-  const step4Result = validatePolicyStep4(
-    policyData.effectiveDate,
-    policyData.expiryDate
-  );
+  const step4Result = validatePolicyStep4(policyData.effectiveDate, policyData.expiryDate);
   errors.push(...step4Result.errors);
 
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -244,15 +241,15 @@ export function validatePolicyStep5(policyData: PolicyData): ValidationResult {
  */
 export function validatePolicyName(name: string): { valid: boolean; error?: string } {
   if (!name || name.trim().length === 0) {
-    return { valid: false, error: 'Policy name is required' };
+    return { valid: false, error: "Policy name is required" };
   }
 
   if (name.trim().length < 3) {
-    return { valid: false, error: 'Policy name must be at least 3 characters' };
+    return { valid: false, error: "Policy name must be at least 3 characters" };
   }
 
   if (name.length > 200) {
-    return { valid: false, error: 'Policy name must be less than 200 characters' };
+    return { valid: false, error: "Policy name must be less than 200 characters" };
   }
 
   return { valid: true };
@@ -275,11 +272,11 @@ export function validatePolicyCosts(
   const warnings: string[] = [];
 
   if (implementationCost <= 0) {
-    errors.push('Implementation cost must be greater than 0');
+    errors.push("Implementation cost must be greater than 0");
   }
 
   if (maintenanceCost < 0) {
-    errors.push('Maintenance cost cannot be negative');
+    errors.push("Maintenance cost cannot be negative");
   }
 
   // Budget warnings
@@ -287,22 +284,24 @@ export function validatePolicyCosts(
     const totalCost = implementationCost + maintenanceCost;
 
     if (totalCost > countryBudget) {
-      warnings.push(`Total cost exceeds available budget by $${((totalCost - countryBudget) / 1000000).toFixed(2)}M`);
+      warnings.push(
+        `Total cost exceeds available budget by $${((totalCost - countryBudget) / 1000000).toFixed(2)}M`
+      );
     }
 
     if (implementationCost > countryBudget * 0.5) {
-      warnings.push('Implementation cost exceeds 50% of total budget');
+      warnings.push("Implementation cost exceeds 50% of total budget");
     }
 
     if (maintenanceCost > countryBudget * 0.1) {
-      warnings.push('Maintenance cost exceeds 10% of annual budget');
+      warnings.push("Maintenance cost exceeds 10% of annual budget");
     }
   }
 
   return {
     valid: errors.length === 0,
     errors,
-    warnings
+    warnings,
   };
 }
 
@@ -317,7 +316,7 @@ export function validatePolicyCosts(
  * @returns Projected policy impact
  */
 export function calculatePolicyImpact(
-  policy: Pick<PolicyData, 'policyType' | 'implementationCost' | 'maintenanceCost'>,
+  policy: Pick<PolicyData, "policyType" | "implementationCost" | "maintenanceCost">,
   economicData: EconomicData
 ): PolicyImpact {
   const gdp = economicData.structure.totalGDP;
@@ -329,35 +328,35 @@ export function calculatePolicyImpact(
 
   // Calculate based on policy type
   switch (policyType) {
-    case 'economic':
+    case "economic":
       // Economic policies have high GDP multiplier
       gdpImpact = (implementationCost / gdp) * 100 * 0.5;
       employmentImpact = (implementationCost / 100000) * 0.01;
       revenueImpact = gdpImpact * 0.3;
       break;
 
-    case 'social':
+    case "social":
       // Social policies focus on employment
       employmentImpact = (implementationCost / 150000) * 0.01;
       gdpImpact = employmentImpact * 0.5;
       revenueImpact = -maintenanceCost;
       break;
 
-    case 'infrastructure':
+    case "infrastructure":
       // Infrastructure has highest GDP multiplier
       gdpImpact = (implementationCost / gdp) * 100 * 0.8;
       employmentImpact = (implementationCost / 80000) * 0.01;
       revenueImpact = gdpImpact * 0.2;
       break;
 
-    case 'diplomatic':
+    case "diplomatic":
       // Diplomatic policies affect trade
       gdpImpact = (implementationCost / gdp) * 100 * 0.3;
       employmentImpact = (implementationCost / 200000) * 0.01;
       revenueImpact = gdpImpact * 0.25;
       break;
 
-    case 'governance':
+    case "governance":
       // Governance policies improve efficiency
       gdpImpact = (implementationCost / gdp) * 100 * 0.2;
       employmentImpact = (implementationCost / 250000) * 0.01;
@@ -371,7 +370,7 @@ export function calculatePolicyImpact(
     gdpImpact: Math.round(gdpImpact * 100) / 100,
     employmentImpact: Math.round(employmentImpact * 100) / 100,
     budgetImpact: Math.round(budgetImpact),
-    revenueImpact: Math.round(revenueImpact)
+    revenueImpact: Math.round(revenueImpact),
   };
 }
 
@@ -386,7 +385,7 @@ export function calculatePolicyImpact(
  * @returns Feasibility assessment
  */
 export function assessPolicyFeasibility(
-  policy: Pick<PolicyData, 'implementationCost' | 'maintenanceCost' | 'priority'>,
+  policy: Pick<PolicyData, "implementationCost" | "maintenanceCost" | "priority">,
   countryData: CountryData
 ): FeasibilityAssessment {
   const factors: string[] = [];
@@ -401,12 +400,12 @@ export function assessPolicyFeasibility(
 
     if (budgetRatio > 1.0) {
       score -= 40;
-      factors.push('Insufficient budget available');
+      factors.push("Insufficient budget available");
     } else if (budgetRatio > 0.5) {
       score -= 20;
-      factors.push('High budget commitment required');
+      factors.push("High budget commitment required");
     } else {
-      factors.push('Budget constraints manageable');
+      factors.push("Budget constraints manageable");
     }
   }
 
@@ -416,27 +415,27 @@ export function assessPolicyFeasibility(
 
     if (gdpRatio > 0.1) {
       score -= 15;
-      factors.push('Large economic impact relative to GDP');
+      factors.push("Large economic impact relative to GDP");
     } else {
-      factors.push('Economically sustainable');
+      factors.push("Economically sustainable");
     }
   }
 
   // Stability assessment
   if (countryData.stability !== undefined) {
-    if (countryData.stability < 50 && priority === 'critical') {
+    if (countryData.stability < 50 && priority === "critical") {
       score -= 10;
-      factors.push('Low stability may hinder critical policy implementation');
+      factors.push("Low stability may hinder critical policy implementation");
     } else if (countryData.stability > 70) {
       score += 10;
-      factors.push('High stability supports implementation');
+      factors.push("High stability supports implementation");
     }
   }
 
   // Priority adjustment
-  if (priority === 'critical') {
+  if (priority === "critical") {
     score += 5;
-    factors.push('Critical priority increases commitment');
+    factors.push("Critical priority increases commitment");
   }
 
   const feasible = score >= 50;
@@ -444,6 +443,6 @@ export function assessPolicyFeasibility(
   return {
     feasible,
     score: Math.max(0, Math.min(100, score)),
-    factors
+    factors,
   };
 }

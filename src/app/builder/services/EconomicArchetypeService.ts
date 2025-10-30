@@ -5,7 +5,11 @@
  * This service acts as a facade for the modular archetype system.
  */
 
-import type { EconomicArchetype, ArchetypeCategory, ArchetypeComparison } from '../data/archetype-types';
+import type {
+  EconomicArchetype,
+  ArchetypeCategory,
+  ArchetypeComparison,
+} from "../data/archetype-types";
 import {
   allArchetypes,
   getArchetypeById,
@@ -13,32 +17,36 @@ import {
   searchArchetypes,
   filterArchetypes,
   getRecommendedArchetypes as getRecommendedArchetypesFromIndex,
-  compareArchetypes as compareArchetypesFromIndex
-} from '../data/archetypes';
+  compareArchetypes as compareArchetypesFromIndex,
+} from "../data/archetypes";
 import {
   calculateArchetypeFit,
   findBestArchetype,
   getArchetypeRecommendations,
   compareArchetypes as compareArchetypesFromUtils,
-  generateTransitionPlan
-} from '../utils/archetype-utilities';
+  generateTransitionPlan,
+} from "../utils/archetype-utilities";
 import {
   calculateSynergyScore,
   detectConflicts,
   generateComparisonMetrics,
-  rankArchetypes
-} from '../utils/archetype-comparison';
+  rankArchetypes,
+} from "../utils/archetype-comparison";
 import {
   getRecommendedArchetype,
   generateImplementationSteps,
   calculateTransitionCost,
   calculateTransitionComplexity,
   identifyKeySuccessFactors,
-  generateWarningsAndRisks
-} from '../utils/archetype-recommendations';
+  generateWarningsAndRisks,
+} from "../utils/archetype-recommendations";
 
 // Re-export types for backward compatibility
-export type { EconomicArchetype, ArchetypeCategory, ArchetypeComparison } from '../data/archetype-types';
+export type {
+  EconomicArchetype,
+  ArchetypeCategory,
+  ArchetypeComparison,
+} from "../data/archetype-types";
 
 /**
  * Economic Archetype Service
@@ -92,7 +100,7 @@ export class EconomicArchetypeService {
    */
   public filterArchetypes(filters: {
     region?: string;
-    complexity?: 'low' | 'medium' | 'high';
+    complexity?: "low" | "medium" | "high";
     minGdpGrowth?: number;
     minInnovation?: number;
     requiredComponents?: string[];
@@ -103,10 +111,7 @@ export class EconomicArchetypeService {
   /**
    * Calculate how well an archetype fits current economic state
    */
-  public calculateArchetypeFit(
-    archetype: EconomicArchetype,
-    currentState: any
-  ): number {
+  public calculateArchetypeFit(archetype: EconomicArchetype, currentState: any): number {
     return calculateArchetypeFit(archetype, currentState);
   }
 
@@ -117,7 +122,9 @@ export class EconomicArchetypeService {
     currentState: any,
     archetypes?: Map<string, EconomicArchetype>
   ): { archetype: EconomicArchetype; fitScore: number } | null {
-    const archetypeArray = archetypes ? Array.from(archetypes.values()) : Array.from(allArchetypes.values());
+    const archetypeArray = archetypes
+      ? Array.from(archetypes.values())
+      : Array.from(allArchetypes.values());
     return findBestArchetype(archetypeArray, currentState);
   }
 
@@ -127,14 +134,14 @@ export class EconomicArchetypeService {
   public getArchetypeRecommendations(
     currentState: any,
     preferences?: {
-      maxComplexity?: 'low' | 'medium' | 'high';
+      maxComplexity?: "low" | "medium" | "high";
       minFitScore?: number;
-      focusAreas?: ('growth' | 'stability' | 'innovation' | 'equity')[];
+      focusAreas?: ("growth" | "stability" | "innovation" | "equity")[];
       growthFocus?: boolean;
       stabilityFocus?: boolean;
       innovationFocus?: boolean;
       equityFocus?: boolean;
-      complexity?: 'low' | 'medium' | 'high';
+      complexity?: "low" | "medium" | "high";
     },
     archetypes?: Map<string, EconomicArchetype>
   ): Array<{
@@ -142,17 +149,19 @@ export class EconomicArchetypeService {
     fitScore: number;
     reasons: string[];
   }> {
-    const archetypeArray = archetypes ? Array.from(archetypes.values()) : Array.from(allArchetypes.values());
+    const archetypeArray = archetypes
+      ? Array.from(archetypes.values())
+      : Array.from(allArchetypes.values());
     return getArchetypeRecommendations(archetypeArray, currentState, preferences);
   }
 
   /**
    * Compare multiple archetypes
    */
-  public compareArchetypes(
-    archetypeIds: string[]
-  ): ArchetypeComparison | null {
-    const archetypes = archetypeIds.map(id => getArchetypeById(id)).filter((a): a is EconomicArchetype => a !== undefined);
+  public compareArchetypes(archetypeIds: string[]): ArchetypeComparison | null {
+    const archetypes = archetypeIds
+      .map((id) => getArchetypeById(id))
+      .filter((a): a is EconomicArchetype => a !== undefined);
     if (archetypes.length === 0) return null;
     return compareArchetypesFromUtils(archetypes);
   }
@@ -160,28 +169,21 @@ export class EconomicArchetypeService {
   /**
    * Generate transition plan from current state to target archetype
    */
-  public generateTransitionPlan(
-    currentState: any,
-    targetArchetype: EconomicArchetype
-  ): any {
+  public generateTransitionPlan(currentState: any, targetArchetype: EconomicArchetype): any {
     return generateTransitionPlan(currentState, targetArchetype);
   }
 
   /**
    * Calculate synergy score for an archetype
    */
-  public calculateSynergyScore(
-    archetype: EconomicArchetype
-  ): number {
+  public calculateSynergyScore(archetype: EconomicArchetype): number {
     return calculateSynergyScore(archetype);
   }
 
   /**
    * Detect conflicts within an archetype
    */
-  public detectConflicts(
-    archetype: EconomicArchetype
-  ): string[] {
+  public detectConflicts(archetype: EconomicArchetype): string[] {
     return detectConflicts(archetype);
   }
 
@@ -198,7 +200,12 @@ export class EconomicArchetypeService {
   public rankArchetypes(
     archetypes: EconomicArchetype[],
     preferences?: any
-  ): Array<{ archetype: EconomicArchetype; score: number; strengths: string[]; weaknesses: string[] }> {
+  ): Array<{
+    archetype: EconomicArchetype;
+    score: number;
+    strengths: string[];
+    weaknesses: string[];
+  }> {
     return rankArchetypes(archetypes, preferences);
   }
 
@@ -208,9 +215,9 @@ export class EconomicArchetypeService {
   public getRecommendedArchetype(
     countryCharacteristics: any,
     preferences?: {
-      focusArea?: 'growth' | 'stability' | 'innovation' | 'equity';
-      riskTolerance?: 'low' | 'medium' | 'high';
-      timeHorizon?: 'short' | 'medium' | 'long';
+      focusArea?: "growth" | "stability" | "innovation" | "equity";
+      riskTolerance?: "low" | "medium" | "high";
+      timeHorizon?: "short" | "medium" | "long";
     }
   ): any {
     return getRecommendedArchetype(countryCharacteristics, preferences);
@@ -219,10 +226,7 @@ export class EconomicArchetypeService {
   /**
    * Generate implementation steps for archetype transition
    */
-  public generateImplementationSteps(
-    targetArchetype: EconomicArchetype,
-    currentState: any
-  ): any {
+  public generateImplementationSteps(targetArchetype: EconomicArchetype, currentState: any): any {
     return generateImplementationSteps(targetArchetype, currentState);
   }
 
@@ -240,10 +244,7 @@ export class EconomicArchetypeService {
   /**
    * Calculate transition complexity
    */
-  public calculateTransitionComplexity(
-    targetArchetype: EconomicArchetype,
-    currentState: any
-  ): any {
+  public calculateTransitionComplexity(targetArchetype: EconomicArchetype, currentState: any): any {
     return calculateTransitionComplexity(targetArchetype, currentState);
   }
 
@@ -275,7 +276,7 @@ export class EconomicArchetypeService {
   /**
    * Get archetypes by implementation complexity
    */
-  public getArchetypesByComplexity(complexity: 'low' | 'medium' | 'high'): EconomicArchetype[] {
+  public getArchetypesByComplexity(complexity: "low" | "medium" | "high"): EconomicArchetype[] {
     return this.filterArchetypes({ complexity });
   }
 
@@ -302,19 +303,19 @@ export class EconomicArchetypeService {
   } {
     const errors: string[] = [];
 
-    if (!archetype.id) errors.push('Archetype ID is required');
-    if (!archetype.name) errors.push('Archetype name is required');
-    if (!archetype.description) errors.push('Archetype description is required');
+    if (!archetype.id) errors.push("Archetype ID is required");
+    if (!archetype.name) errors.push("Archetype name is required");
+    if (!archetype.description) errors.push("Archetype description is required");
     if (!archetype.economicComponents || archetype.economicComponents.length === 0) {
-      errors.push('At least one economic component is required');
+      errors.push("At least one economic component is required");
     }
     if (!archetype.governmentComponents || archetype.governmentComponents.length === 0) {
-      errors.push('At least one government component is required');
+      errors.push("At least one government component is required");
     }
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -330,7 +331,7 @@ export class EconomicArchetypeService {
       metrics: this.generateComparisonMetrics(archetype),
       synergy: this.calculateSynergyScore(archetype),
       conflicts: this.detectConflicts(archetype),
-      successFactors: this.identifyKeySuccessFactors(archetype, {})
+      successFactors: this.identifyKeySuccessFactors(archetype, {}),
     };
   }
 }

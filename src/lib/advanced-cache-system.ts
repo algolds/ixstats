@@ -4,7 +4,7 @@
  */
 
 // import { Redis } from '@upstash/redis'; // Commented out for now - will be enabled when Redis is configured
-import { performance } from 'perf_hooks';
+import { performance } from "perf_hooks";
 
 // In-memory cache for fallback
 class InMemoryCache {
@@ -24,7 +24,7 @@ class InMemoryCache {
     this.cache.set(key, {
       value,
       expires: Date.now() + ttl,
-      hits: 0
+      hits: 0,
     });
   }
 
@@ -53,11 +53,11 @@ class InMemoryCache {
     const items = Array.from(this.cache.values());
     const totalHits = items.reduce((sum, item) => sum + item.hits, 0);
     const totalRequests = items.length + totalHits;
-    
+
     return {
       size: this.cache.size,
       hits: totalHits,
-      hitRate: totalRequests > 0 ? totalHits / totalRequests : 0
+      hitRate: totalRequests > 0 ? totalHits / totalRequests : 0,
     };
   }
 }
@@ -80,12 +80,12 @@ class RedisCache {
         //   token: process.env.UPSTASH_REDIS_REST_TOKEN,
         // });
         this.enabled = false; // Disabled for now
-        console.log('[RedisCache] Redis initialization disabled - using in-memory fallback');
+        console.log("[RedisCache] Redis initialization disabled - using in-memory fallback");
       } else {
-        console.warn('[RedisCache] Redis not configured, using in-memory fallback');
+        console.warn("[RedisCache] Redis not configured, using in-memory fallback");
       }
     } catch (error) {
-      console.error('[RedisCache] Failed to initialize:', error);
+      console.error("[RedisCache] Failed to initialize:", error);
     }
   }
 
@@ -95,7 +95,7 @@ class RedisCache {
     try {
       await this.redis.setex(key, ttlSeconds, JSON.stringify(value));
     } catch (error) {
-      console.error('[RedisCache] Set failed:', error);
+      console.error("[RedisCache] Set failed:", error);
     }
   }
 
@@ -106,7 +106,7 @@ class RedisCache {
       const value = await this.redis.get(key);
       return value ? JSON.parse(value as string) : null;
     } catch (error) {
-      console.error('[RedisCache] Get failed:', error);
+      console.error("[RedisCache] Get failed:", error);
       return null;
     }
   }
@@ -117,7 +117,7 @@ class RedisCache {
     try {
       await this.redis.del(key);
     } catch (error) {
-      console.error('[RedisCache] Delete failed:', error);
+      console.error("[RedisCache] Delete failed:", error);
     }
   }
 
@@ -127,14 +127,14 @@ class RedisCache {
     try {
       await this.redis.flushdb();
     } catch (error) {
-      console.error('[RedisCache] Clear failed:', error);
+      console.error("[RedisCache] Clear failed:", error);
     }
   }
 }
 
 export interface CacheOptions {
   ttl?: number; // Time to live in seconds
-  tier?: 'critical' | 'standard' | 'background'; // Cache tier
+  tier?: "critical" | "standard" | "background"; // Cache tier
   tags?: string[]; // For invalidation
   skipRedis?: boolean; // Skip Redis for this item
 }
@@ -165,36 +165,31 @@ export class AdvancedCacheSystem {
   private performanceMetrics = {
     getTimes: [] as number[],
     setTimes: [] as number[],
-    totalOperations: 0
+    totalOperations: 0,
   };
 
   /**
    * Set value in cache with intelligent tiering
    */
-  async set(
-    key: string, 
-    value: any, 
-    options: CacheOptions = {}
-  ): Promise<void> {
+  async set(key: string, value: any, options: CacheOptions = {}): Promise<void> {
     const startTime = performance.now();
-    
+
     try {
-      const { ttl = 300, tier = 'standard', tags = [], skipRedis = false } = options;
-      
+      const { ttl = 300, tier = "standard", tags = [], skipRedis = false } = options;
+
       // Always set in memory cache
       this.memoryCache.set(key, value, ttl * 1000);
-      
+
       // Set in Redis for critical and standard tiers (unless skipped)
-      if (!skipRedis && (tier === 'critical' || tier === 'standard')) {
+      if (!skipRedis && (tier === "critical" || tier === "standard")) {
         await this.redisCache.set(key, value, ttl);
       }
 
       // Record performance
       const duration = performance.now() - startTime;
       this.recordSetTime(duration);
-      
     } catch (error) {
-      console.error('[AdvancedCacheSystem] Set error:', error);
+      console.error("[AdvancedCacheSystem] Set error:", error);
     }
   }
 
@@ -203,7 +198,7 @@ export class AdvancedCacheSystem {
    */
   async get<T = any>(key: string): Promise<T | null> {
     const startTime = performance.now();
-    
+
     try {
       // Try memory cache first (fastest)
       let value = this.memoryCache.get(key);
@@ -223,9 +218,8 @@ export class AdvancedCacheSystem {
 
       this.recordGetTime(performance.now() - startTime);
       return null;
-      
     } catch (error) {
-      console.error('[AdvancedCacheSystem] Get error:', error);
+      console.error("[AdvancedCacheSystem] Get error:", error);
       return null;
     }
   }
@@ -238,7 +232,7 @@ export class AdvancedCacheSystem {
       this.memoryCache.delete(key);
       await this.redisCache.delete(key);
     } catch (error) {
-      console.error('[AdvancedCacheSystem] Delete error:', error);
+      console.error("[AdvancedCacheSystem] Delete error:", error);
     }
   }
 
@@ -250,7 +244,7 @@ export class AdvancedCacheSystem {
       this.memoryCache.clear();
       await this.redisCache.clear();
     } catch (error) {
-      console.error('[AdvancedCacheSystem] Clear error:', error);
+      console.error("[AdvancedCacheSystem] Clear error:", error);
     }
   }
 
@@ -259,31 +253,35 @@ export class AdvancedCacheSystem {
    */
   getStats(): CacheStats {
     const memoryStats = this.memoryCache.getStats();
-    const avgGetTime = this.performanceMetrics.getTimes.length > 0 
-      ? this.performanceMetrics.getTimes.reduce((a, b) => a + b, 0) / this.performanceMetrics.getTimes.length 
-      : 0;
-    const avgSetTime = this.performanceMetrics.setTimes.length > 0 
-      ? this.performanceMetrics.setTimes.reduce((a, b) => a + b, 0) / this.performanceMetrics.setTimes.length 
-      : 0;
+    const avgGetTime =
+      this.performanceMetrics.getTimes.length > 0
+        ? this.performanceMetrics.getTimes.reduce((a, b) => a + b, 0) /
+          this.performanceMetrics.getTimes.length
+        : 0;
+    const avgSetTime =
+      this.performanceMetrics.setTimes.length > 0
+        ? this.performanceMetrics.setTimes.reduce((a, b) => a + b, 0) /
+          this.performanceMetrics.setTimes.length
+        : 0;
 
     return {
       memory: memoryStats,
       redis: {
         enabled: true,
-        connected: true // Simplified for now
+        connected: true, // Simplified for now
       },
       performance: {
         averageGetTime: avgGetTime,
         averageSetTime: avgSetTime,
-        totalOperations: this.performanceMetrics.totalOperations
-      }
+        totalOperations: this.performanceMetrics.totalOperations,
+      },
     };
   }
 
   private recordGetTime(duration: number): void {
     this.performanceMetrics.getTimes.push(duration);
     this.performanceMetrics.totalOperations++;
-    
+
     // Keep only recent metrics
     if (this.performanceMetrics.getTimes.length > 1000) {
       this.performanceMetrics.getTimes = this.performanceMetrics.getTimes.slice(-500);
@@ -292,7 +290,7 @@ export class AdvancedCacheSystem {
 
   private recordSetTime(duration: number): void {
     this.performanceMetrics.setTimes.push(duration);
-    
+
     // Keep only recent metrics
     if (this.performanceMetrics.setTimes.length > 1000) {
       this.performanceMetrics.setTimes = this.performanceMetrics.setTimes.slice(-500);
@@ -307,12 +305,11 @@ export const globalCache = new AdvancedCacheSystem();
  * Cache utilities for common patterns
  */
 export class CacheUtils {
-  
   /**
    * Generate cache key with consistent formatting
    */
   static generateKey(prefix: string, ...parts: (string | number)[]): string {
-    return `${prefix}:${parts.join(':')}`;
+    return `${prefix}:${parts.join(":")}`;
   }
 
   /**
@@ -324,7 +321,7 @@ export class CacheUtils {
     options: CacheOptions = {}
   ): Promise<T> {
     const key = keyGenerator();
-    
+
     // Try to get from cache first
     const cached = await globalCache.get<T>(key);
     if (cached !== null) {
@@ -333,10 +330,10 @@ export class CacheUtils {
 
     // Fetch fresh data
     const data = await dataFetcher();
-    
+
     // Cache the result
     await globalCache.set(key, data, options);
-    
+
     return data;
   }
 
@@ -364,7 +361,7 @@ export class CacheUtils {
     // Fetch missing data
     if (missingKeys.length > 0) {
       const freshData = await dataFetcher(missingKeys);
-      
+
       // Cache fresh data
       for (const [key, value] of Object.entries(freshData)) {
         results[key] = value;
@@ -389,7 +386,6 @@ export class CacheUtils {
  * Specialized cache decorators for different data types
  */
 export class CacheDecorators {
-  
   /**
    * Cache country data
    */
@@ -399,12 +395,8 @@ export class CacheDecorators {
     fetcher: () => Promise<T>,
     ttl = 600 // 10 minutes
   ): Promise<T> {
-    const key = CacheUtils.generateKey('country', countryId, dataType);
-    return CacheUtils.cache(
-      () => key,
-      fetcher,
-      { ttl, tier: 'standard' }
-    );
+    const key = CacheUtils.generateKey("country", countryId, dataType);
+    return CacheUtils.cache(() => key, fetcher, { ttl, tier: "standard" });
   }
 
   /**
@@ -416,12 +408,8 @@ export class CacheDecorators {
     fetcher: () => Promise<T>,
     ttl = 300 // 5 minutes
   ): Promise<T> {
-    const key = CacheUtils.generateKey('user', userId, dataType);
-    return CacheUtils.cache(
-      () => key,
-      fetcher,
-      { ttl, tier: 'critical' }
-    );
+    const key = CacheUtils.generateKey("user", userId, dataType);
+    return CacheUtils.cache(() => key, fetcher, { ttl, tier: "critical" });
   }
 
   /**
@@ -433,12 +421,8 @@ export class CacheDecorators {
     fetcher: () => Promise<T>,
     ttl = 180 // 3 minutes
   ): Promise<T> {
-    const key = CacheUtils.generateKey('intelligence', countryId, dataType);
-    return CacheUtils.cache(
-      () => key,
-      fetcher,
-      { ttl, tier: 'critical' }
-    );
+    const key = CacheUtils.generateKey("intelligence", countryId, dataType);
+    return CacheUtils.cache(() => key, fetcher, { ttl, tier: "critical" });
   }
 
   /**
@@ -450,11 +434,7 @@ export class CacheDecorators {
     fetcher: () => Promise<T>,
     ttl = 120 // 2 minutes
   ): Promise<T> {
-    const key = CacheUtils.generateKey('thinkpages', dataType, JSON.stringify(params));
-    return CacheUtils.cache(
-      () => key,
-      fetcher,
-      { ttl, tier: 'background' }
-    );
+    const key = CacheUtils.generateKey("thinkpages", dataType, JSON.stringify(params));
+    return CacheUtils.cache(() => key, fetcher, { ttl, tier: "background" });
   }
 }

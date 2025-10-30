@@ -1,15 +1,34 @@
 "use client";
 
-import React, { memo, useCallback, Suspense } from 'react';
-import { motion } from 'framer-motion';
-import { Globe, Flag, BarChart3, Info, Building2, Settings, Crown, Coins, Eye, HelpCircle, Lock, CheckCircle } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { Tabs, TabsContent } from '~/components/ui/tabs';
-import { Button } from '~/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '~/components/ui/dialog';
-import { useBuilderContext } from '../context/BuilderStateContext';
-import { useBuilderActions } from '../../../hooks/useBuilderActions';
+import React, { memo, useCallback, Suspense } from "react";
+import { motion } from "framer-motion";
+import {
+  Globe,
+  Flag,
+  BarChart3,
+  Info,
+  Building2,
+  Settings,
+  Crown,
+  Coins,
+  Eye,
+  HelpCircle,
+  Lock,
+  CheckCircle,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Tabs, TabsContent } from "~/components/ui/tabs";
+import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
+import { useBuilderContext } from "../context/BuilderStateContext";
+import { useBuilderActions } from "../../../hooks/useBuilderActions";
 
 // Help modal component
 function HelpModal({ text, title }: { text: string; title: string }) {
@@ -19,10 +38,10 @@ function HelpModal({ text, title }: { text: string; title: string }) {
       <Dialog>
         <DialogTrigger asChild>
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-            <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+            <HelpCircle className="text-muted-foreground hover:text-foreground h-4 w-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Flag className="h-5 w-5 text-blue-500" />
@@ -30,63 +49,88 @@ function HelpModal({ text, title }: { text: string; title: string }) {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* Overview */}
               <div className="space-y-3">
-                <h3 className="font-semibold text-lg flex items-center gap-2">
+                <h3 className="flex items-center gap-2 text-lg font-semibold">
                   <CheckCircle className="h-4 w-4 text-green-500" />
                   What is Core Foundation?
                 </h3>
-                <p className="text-sm text-muted-foreground">
-                  The Core Foundation step establishes your nation's fundamental identity and economic indicators. 
-                  These values form the baseline for all other calculations and systems.
+                <p className="text-muted-foreground text-sm">
+                  The Core Foundation step establishes your nation's fundamental identity and
+                  economic indicators. These values form the baseline for all other calculations and
+                  systems.
                 </p>
               </div>
 
               {/* Why Core Matters */}
               <div className="space-y-3">
-                <h3 className="font-semibold text-lg flex items-center gap-2">
+                <h3 className="flex items-center gap-2 text-lg font-semibold">
                   <BarChart3 className="h-4 w-4 text-blue-500" />
                   Why Core Foundation Matters
                 </h3>
-                <ul className="text-sm text-muted-foreground space-y-2">
-                  <li>• <strong>National Identity:</strong> Name, flag, culture, and values</li>
-                  <li>• <strong>Economic Base:</strong> GDP, population, currency, and trade</li>
-                  <li>• <strong>System Integration:</strong> Influences all other builder steps</li>
-                  <li>• <strong>Realistic Foundation:</strong> Ensures coherent nation building</li>
+                <ul className="text-muted-foreground space-y-2 text-sm">
+                  <li>
+                    • <strong>National Identity:</strong> Name, flag, culture, and values
+                  </li>
+                  <li>
+                    • <strong>Economic Base:</strong> GDP, population, currency, and trade
+                  </li>
+                  <li>
+                    • <strong>System Integration:</strong> Influences all other builder steps
+                  </li>
+                  <li>
+                    • <strong>Realistic Foundation:</strong> Ensures coherent nation building
+                  </li>
                 </ul>
               </div>
             </div>
 
             {/* Two Main Tabs */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-lg flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-lg font-semibold">
                 <Settings className="h-4 w-4 text-purple-500" />
                 Core Foundation Components
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h4 className="font-medium text-blue-800 flex items-center gap-2 mb-3">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                  <h4 className="mb-3 flex items-center gap-2 font-medium text-blue-800">
                     <Flag className="h-4 w-4" />
                     National Identity
                   </h4>
-                  <ul className="text-sm text-blue-700 space-y-2">
-                    <li>• <strong>Country Name:</strong> Your nation's official name</li>
-                    <li>• <strong>Flag & Symbols:</strong> Visual identity and national symbols</li>
-                    <li>• <strong>Cultural Values:</strong> Core principles and beliefs</li>
-                    <li>• <strong>Geographic Context:</strong> Location and regional characteristics</li>
+                  <ul className="space-y-2 text-sm text-blue-700">
+                    <li>
+                      • <strong>Country Name:</strong> Your nation's official name
+                    </li>
+                    <li>
+                      • <strong>Flag & Symbols:</strong> Visual identity and national symbols
+                    </li>
+                    <li>
+                      • <strong>Cultural Values:</strong> Core principles and beliefs
+                    </li>
+                    <li>
+                      • <strong>Geographic Context:</strong> Location and regional characteristics
+                    </li>
                   </ul>
                 </div>
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h4 className="font-medium text-green-800 flex items-center gap-2 mb-3">
+                <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+                  <h4 className="mb-3 flex items-center gap-2 font-medium text-green-800">
                     <BarChart3 className="h-4 w-4" />
                     Core Indicators
                   </h4>
-                  <ul className="text-sm text-green-700 space-y-2">
-                    <li>• <strong>GDP & Economy:</strong> Total economic output and structure</li>
-                    <li>• <strong>Population:</strong> Total population and demographics</li>
-                    <li>• <strong>Currency:</strong> Monetary system and exchange rates</li>
-                    <li>• <strong>Trade Balance:</strong> Import/export relationships</li>
+                  <ul className="space-y-2 text-sm text-green-700">
+                    <li>
+                      • <strong>GDP & Economy:</strong> Total economic output and structure
+                    </li>
+                    <li>
+                      • <strong>Population:</strong> Total population and demographics
+                    </li>
+                    <li>
+                      • <strong>Currency:</strong> Monetary system and exchange rates
+                    </li>
+                    <li>
+                      • <strong>Trade Balance:</strong> Import/export relationships
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -94,40 +138,56 @@ function HelpModal({ text, title }: { text: string; title: string }) {
 
             {/* Step-by-Step Guide */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-lg flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-lg font-semibold">
                 <Eye className="h-4 w-4 text-amber-500" />
                 How to Configure Core Foundation
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">1</div>
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
+                      1
+                    </div>
                     <div>
                       <h4 className="font-medium">Set National Identity</h4>
-                      <p className="text-sm text-muted-foreground">Define your country's name, flag, and cultural characteristics</p>
+                      <p className="text-muted-foreground text-sm">
+                        Define your country's name, flag, and cultural characteristics
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">2</div>
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
+                      2
+                    </div>
                     <div>
                       <h4 className="font-medium">Configure Core Indicators</h4>
-                      <p className="text-sm text-muted-foreground">Set GDP, population, currency, and economic fundamentals</p>
+                      <p className="text-muted-foreground text-sm">
+                        Set GDP, population, currency, and economic fundamentals
+                      </p>
                     </div>
                   </div>
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">3</div>
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
+                      3
+                    </div>
                     <div>
                       <h4 className="font-medium">Review Impact</h4>
-                      <p className="text-sm text-muted-foreground">See how your choices affect other systems and calculations</p>
+                      <p className="text-muted-foreground text-sm">
+                        See how your choices affect other systems and calculations
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold">4</div>
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600">
+                      4
+                    </div>
                     <div>
                       <h4 className="font-medium">Adjust as Needed</h4>
-                      <p className="text-sm text-muted-foreground">Fine-tune values to achieve your desired outcomes</p>
+                      <p className="text-muted-foreground text-sm">
+                        Fine-tune values to achieve your desired outcomes
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -136,50 +196,50 @@ function HelpModal({ text, title }: { text: string; title: string }) {
 
             {/* Tips & Best Practices */}
             <div className="space-y-4">
-              <h3 className="font-semibold text-lg flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-lg font-semibold">
                 <HelpCircle className="h-4 w-4 text-purple-500" />
                 Tips & Best Practices
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <h4 className="font-medium text-green-800 flex items-center gap-2">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="rounded-lg border border-green-200 bg-green-50 p-3">
+                  <h4 className="flex items-center gap-2 font-medium text-green-800">
                     <CheckCircle className="h-4 w-4" />
                     Identity Tips
                   </h4>
-                  <ul className="text-sm text-green-700 mt-2 space-y-1">
+                  <ul className="mt-2 space-y-1 text-sm text-green-700">
                     <li>• Choose a name that reflects your vision</li>
                     <li>• Consider cultural and historical context</li>
                     <li>• Make it memorable and meaningful</li>
                   </ul>
                 </div>
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h4 className="font-medium text-blue-800 flex items-center gap-2">
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+                  <h4 className="flex items-center gap-2 font-medium text-blue-800">
                     <BarChart3 className="h-4 w-4" />
                     Economic Tips
                   </h4>
-                  <ul className="text-sm text-blue-700 mt-2 space-y-1">
+                  <ul className="mt-2 space-y-1 text-sm text-blue-700">
                     <li>• Start with realistic baseline values</li>
                     <li>• Consider your development goals</li>
                     <li>• Balance different economic factors</li>
                   </ul>
                 </div>
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <h4 className="font-medium text-amber-800 flex items-center gap-2">
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <h4 className="flex items-center gap-2 font-medium text-amber-800">
                     <Globe className="h-4 w-4" />
                     Integration Tips
                   </h4>
-                  <ul className="text-sm text-amber-700 mt-2 space-y-1">
+                  <ul className="mt-2 space-y-1 text-sm text-amber-700">
                     <li>• Values affect all other systems</li>
                     <li>• Changes cascade through the builder</li>
                     <li>• Preview impact before finalizing</li>
                   </ul>
                 </div>
-                <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                  <h4 className="font-medium text-purple-800 flex items-center gap-2">
+                <div className="rounded-lg border border-purple-200 bg-purple-50 p-3">
+                  <h4 className="flex items-center gap-2 font-medium text-purple-800">
                     <Settings className="h-4 w-4" />
                     Advanced Tips
                   </h4>
-                  <ul className="text-sm text-purple-700 mt-2 space-y-1">
+                  <ul className="mt-2 space-y-1 text-sm text-purple-700">
                     <li>• Use foundation data as reference</li>
                     <li>• Experiment with different values</li>
                     <li>• Save configurations you like</li>
@@ -198,10 +258,10 @@ function HelpModal({ text, title }: { text: string; title: string }) {
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-          <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+          <HelpCircle className="text-muted-foreground hover:text-foreground h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5 text-amber-500" />
@@ -209,57 +269,63 @@ function HelpModal({ text, title }: { text: string; title: string }) {
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Overview */}
             <div className="space-y-3">
-              <h3 className="font-semibold text-lg flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-lg font-semibold">
                 <Crown className="h-4 w-4 text-amber-500" />
                 Overview
               </h3>
-              <p className="text-sm text-muted-foreground">
-                {text}
-              </p>
+              <p className="text-muted-foreground text-sm">{text}</p>
             </div>
 
             {/* Key Features */}
             <div className="space-y-3">
-              <h3 className="font-semibold text-lg flex items-center gap-2">
+              <h3 className="flex items-center gap-2 text-lg font-semibold">
                 <Settings className="h-4 w-4 text-blue-500" />
                 Key Features
               </h3>
-              <ul className="text-sm text-muted-foreground space-y-2">
-                <li>• <strong>Real-time Impact:</strong> See effects on your nation instantly</li>
-                <li>• <strong>System Integration:</strong> All components work together</li>
-                <li>• <strong>Validation:</strong> Automatic error checking and suggestions</li>
-                <li>• <strong>Preview:</strong> Test configurations before finalizing</li>
+              <ul className="text-muted-foreground space-y-2 text-sm">
+                <li>
+                  • <strong>Real-time Impact:</strong> See effects on your nation instantly
+                </li>
+                <li>
+                  • <strong>System Integration:</strong> All components work together
+                </li>
+                <li>
+                  • <strong>Validation:</strong> Automatic error checking and suggestions
+                </li>
+                <li>
+                  • <strong>Preview:</strong> Test configurations before finalizing
+                </li>
               </ul>
             </div>
           </div>
 
           {/* Tips & Best Practices */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg flex items-center gap-2">
+            <h3 className="flex items-center gap-2 text-lg font-semibold">
               <Eye className="h-4 w-4 text-purple-500" />
               Tips & Best Practices
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                <h4 className="font-medium text-green-800 flex items-center gap-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="rounded-lg border border-green-200 bg-green-50 p-3">
+                <h4 className="flex items-center gap-2 font-medium text-green-800">
                   <CheckCircle className="h-4 w-4" />
                   General Tips
                 </h4>
-                <ul className="text-sm text-green-700 mt-2 space-y-1">
+                <ul className="mt-2 space-y-1 text-sm text-green-700">
                   <li>• Start with realistic values</li>
                   <li>• Consider your end vision</li>
                   <li>• Use preview to test changes</li>
                 </ul>
               </div>
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 className="font-medium text-blue-800 flex items-center gap-2">
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+                <h4 className="flex items-center gap-2 font-medium text-blue-800">
                   <Settings className="h-4 w-4" />
                   Configuration Tips
                 </h4>
-                <ul className="text-sm text-blue-700 mt-2 space-y-1">
+                <ul className="mt-2 space-y-1 text-sm text-blue-700">
                   <li>• Make incremental changes</li>
                   <li>• Monitor system feedback</li>
                   <li>• Save successful configurations</li>
@@ -272,20 +338,20 @@ function HelpModal({ text, title }: { text: string; title: string }) {
     </Dialog>
   );
 }
-import { FoundationStep } from '../steps/FoundationStep';
-import { NationalIdentitySection } from '../NationalIdentitySection';
-import { CoreIndicatorsSection } from '../../../sections/CoreIndicatorsSection';
-import { AtomicComponentSelector } from '~/components/government/atoms/AtomicGovernmentComponents';
-import { GovernmentBuilder } from '~/components/government/GovernmentBuilder';
-import { GovernmentSpendingSection } from '../../../sections/GovernmentSpendingSection';
-import { GovernmentStructurePreview } from '../GovernmentStructurePreview';
-import { EconomyBuilderPage } from '../index'; // Lazy-loaded from index
-import { BuilderLoadingFallback } from '../../LoadingFallback';
-import { EnhancedTabsList, EnhancedTabsTrigger } from '../BuilderTabs';
-import { stepConfig } from '../builderConfig';
-import { BuilderPreviewStep } from './BuilderPreviewStep';
-import type { RealCountryData, EconomicInputs } from '../../../lib/economy-data-service';
-import type { ComponentType as PrismaComponentType } from '@prisma/client';
+import { FoundationStep } from "../steps/FoundationStep";
+import { NationalIdentitySection } from "../NationalIdentitySection";
+import { CoreIndicatorsSection } from "../../../sections/CoreIndicatorsSection";
+import { AtomicComponentSelector } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { GovernmentBuilder } from "~/components/government/GovernmentBuilder";
+import { GovernmentSpendingSection } from "../../../sections/GovernmentSpendingSection";
+import { GovernmentStructurePreview } from "../GovernmentStructurePreview";
+import { EconomyBuilderPage } from "../index"; // Lazy-loaded from index
+import { BuilderLoadingFallback } from "../../LoadingFallback";
+import { EnhancedTabsList, EnhancedTabsTrigger } from "../BuilderTabs";
+import { stepConfig } from "../builderConfig";
+import { BuilderPreviewStep } from "./BuilderPreviewStep";
+import type { RealCountryData, EconomicInputs } from "../../../lib/economy-data-service";
+import type { ComponentType as PrismaComponentType } from "@prisma/client";
 
 interface StepRendererProps {
   countries: RealCountryData[];
@@ -319,45 +385,45 @@ export const StepRenderer = memo(function StepRenderer({
 
   const handleFoundationComplete = useCallback(
     (country: RealCountryData) => {
-      updateStep('foundation', country);
+      updateStep("foundation", country);
     },
     [updateStep]
   );
 
   const handleCreateFromScratch = useCallback(() => {
     const scratchCountry: RealCountryData = {
-      name: 'Custom Nation',
-      countryCode: 'custom',
+      name: "Custom Nation",
+      countryCode: "custom",
       gdp: 250000000000,
       gdpPerCapita: 25000,
       unemploymentRate: 5,
       population: 10000000,
       foundationCountryName: undefined,
       growthRate: 3,
-      continent: 'Custom',
-      region: 'Custom',
+      continent: "Custom",
+      region: "Custom",
       governmentSpending: 55000000000,
     };
 
-    updateStep('foundation', scratchCountry);
+    updateStep("foundation", scratchCountry);
   }, [updateStep]);
 
   // Foundation Step
-  if (builderState.step === 'foundation') {
+  if (builderState.step === "foundation") {
     if (isLoadingCountries) {
       return (
         <div className="flex items-center justify-center py-24">
-          <div className="text-center space-y-4">
+          <div className="space-y-4 text-center">
             <motion.div
               animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-              className="w-16 h-16 mx-auto"
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              className="mx-auto h-16 w-16"
             >
               <Globe className="h-16 w-16 text-amber-500" />
             </motion.div>
             <div className="space-y-2">
               <p className="text-lg font-medium">Loading nations data...</p>
-              <p className="text-sm text-muted-foreground">Preparing your foundation options</p>
+              <p className="text-muted-foreground text-sm">Preparing your foundation options</p>
             </div>
           </div>
         </div>
@@ -389,12 +455,12 @@ export const StepRenderer = memo(function StepRenderer({
   }
 
   // Core Step
-  if (builderState.step === 'core') {
+  if (builderState.step === "core") {
     if (!builderState.economicInputs) {
       return (
         <div className="flex items-center justify-center p-8">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
             <p className="text-muted-foreground">Initializing core foundation...</p>
           </div>
         </div>
@@ -406,33 +472,40 @@ export const StepRenderer = memo(function StepRenderer({
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center space-y-4"
+          className="space-y-4 text-center"
         >
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-600 shadow-lg mb-4">
+          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-600 shadow-lg">
             <Flag className="h-8 w-8 text-white" />
           </div>
           <div className="flex items-center justify-center gap-2">
             <h2 className="text-3xl font-bold">Core Foundation</h2>
-            <HelpModal 
+            <HelpModal
               title="Core Foundation Help"
               text="Configure your nation's identity and core economic indicators. This step establishes the fundamental characteristics that will influence all other aspects of your country's development."
             />
           </div>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-muted-foreground mx-auto max-w-2xl">
             Configure national identity and economic fundamentals
-            {builderState.selectedCountry ? ` for ${builderState.selectedCountry.name}` : ' from scratch'}
+            {builderState.selectedCountry
+              ? ` for ${builderState.selectedCountry.name}`
+              : " from scratch"}
           </p>
         </motion.div>
 
         <Alert className="border-amber-200/50 bg-amber-50/30 backdrop-blur-sm">
           <Info className="h-4 w-4" />
           <AlertDescription>
-            <strong>Foundation Setup:</strong> Define your nation's identity and core economic indicators.
-            These values will automatically adjust other economic parameters throughout the builder.
+            <strong>Foundation Setup:</strong> Define your nation's identity and core economic
+            indicators. These values will automatically adjust other economic parameters throughout
+            the builder.
           </AlertDescription>
         </Alert>
 
-        <Tabs value={builderState.activeCoreTab} onValueChange={(tab) => handleTabChange('core', tab)} className="space-y-6">
+        <Tabs
+          value={builderState.activeCoreTab}
+          onValueChange={(tab) => handleTabChange("core", tab)}
+          className="space-y-6"
+        >
           <EnhancedTabsList className="grid-cols-2">
             <EnhancedTabsTrigger value="identity" icon={Flag}>
               National Identity
@@ -443,7 +516,11 @@ export const StepRenderer = memo(function StepRenderer({
           </EnhancedTabsList>
 
           <TabsContent value="identity" className="mt-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+            >
               <NationalIdentitySection
                 inputs={builderState.economicInputs}
                 onInputsChange={(economicInputs: EconomicInputs) => {
@@ -456,7 +533,11 @@ export const StepRenderer = memo(function StepRenderer({
           </TabsContent>
 
           <TabsContent value="indicators" className="mt-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+            >
               <CoreIndicatorsSection
                 inputs={builderState.economicInputs}
                 onInputsChange={(economicInputs: EconomicInputs) => {
@@ -473,28 +554,40 @@ export const StepRenderer = memo(function StepRenderer({
   }
 
   // Government Step
-  if (builderState.step === 'government' && builderState.economicInputs) {
+  if (builderState.step === "government" && builderState.economicInputs) {
     return (
       <div className="space-y-6">
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-600 shadow-lg mb-4">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-4 text-center"
+        >
+          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-600 shadow-lg">
             <Building2 className="h-8 w-8 text-white" />
           </div>
           <div className="flex items-center justify-center gap-2">
             <h2 className="text-3xl font-bold">MyGovernment</h2>
-            <HelpModal 
+            <HelpModal
               title="MyGovernment Builder Help"
               text="Design and configure your government structure, departments, and budgets. Use atomic components to build a modern government system with real-time impact analysis. This builder allows you to create a comprehensive government system with multiple departments, budget allocations, and policy configurations."
             />
           </div>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-muted-foreground mx-auto max-w-2xl">
             Design and configure your government structure, departments, and policies
           </p>
         </motion.div>
 
-        <Tabs value={builderState.activeGovernmentTab} onValueChange={(tab) => handleTabChange('government', tab)} className="space-y-6">
+        <Tabs
+          value={builderState.activeGovernmentTab}
+          onValueChange={(tab) => handleTabChange("government", tab)}
+          className="space-y-6"
+        >
           <EnhancedTabsList className="grid-cols-4">
-            <EnhancedTabsTrigger value="components" icon={Settings} badge={builderState.governmentComponents.length}>
+            <EnhancedTabsTrigger
+              value="components"
+              icon={Settings}
+              badge={builderState.governmentComponents.length}
+            >
               Atomic Components
             </EnhancedTabsTrigger>
             <EnhancedTabsTrigger value="structure" icon={Crown}>
@@ -509,12 +602,19 @@ export const StepRenderer = memo(function StepRenderer({
           </EnhancedTabsList>
 
           <TabsContent value="components" className="mt-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+            >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="text-muted-foreground flex items-center gap-2 text-sm">
                     <Info className="h-4 w-4" />
-                    <span>Each component adds unique characteristics to your country and influences some of the calculations</span>
+                    <span>
+                      Each component adds unique characteristics to your country and influences some
+                      of the calculations
+                    </span>
                   </div>
                 </div>
                 <AtomicComponentSelector
@@ -531,7 +631,11 @@ export const StepRenderer = memo(function StepRenderer({
           </TabsContent>
 
           <TabsContent value="structure" className="mt-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+            >
               <GovernmentBuilder
                 initialData={builderState.governmentStructure}
                 onChange={onGovernmentStructureChange}
@@ -545,7 +649,11 @@ export const StepRenderer = memo(function StepRenderer({
           </TabsContent>
 
           <TabsContent value="spending" className="mt-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+            >
               <GovernmentSpendingSection
                 inputs={builderState.economicInputs}
                 onInputsChange={(economicInputs: EconomicInputs) => {
@@ -560,7 +668,11 @@ export const StepRenderer = memo(function StepRenderer({
           </TabsContent>
 
           <TabsContent value="preview" className="mt-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+            >
               <GovernmentStructurePreview
                 governmentStructure={builderState.governmentStructure}
                 governmentComponents={builderState.governmentComponents}
@@ -573,7 +685,7 @@ export const StepRenderer = memo(function StepRenderer({
   }
 
   // Economics Step (lazy-loaded)
-  if (builderState.step === 'economics' && builderState.economicInputs) {
+  if (builderState.step === "economics" && builderState.economicInputs) {
     return (
       <Suspense fallback={<BuilderLoadingFallback />}>
         <EconomyBuilderPage
@@ -599,7 +711,7 @@ export const StepRenderer = memo(function StepRenderer({
   }
 
   // Preview Step - render preview content
-  if (builderState.step === 'preview') {
+  if (builderState.step === "preview") {
     return <BuilderPreviewStep />;
   }
 

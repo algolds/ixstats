@@ -6,12 +6,12 @@
  * @module MeetingForm
  */
 
-import React from 'react';
-import { Calendar } from '~/components/ui/calendar';
-import { Input } from '~/components/ui/input';
-import { Textarea } from '~/components/ui/textarea';
-import { IxTime } from '~/lib/ixtime';
-import type { MeetingForm as MeetingFormData } from '~/hooks/useMeetingScheduler';
+import React from "react";
+import { Calendar } from "~/components/ui/calendar";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
+import { IxTime } from "~/lib/ixtime";
+import type { MeetingForm as MeetingFormData } from "~/hooks/useMeetingScheduler";
 
 interface MeetingFormProps {
   form: MeetingFormData;
@@ -19,11 +19,7 @@ interface MeetingFormProps {
   className?: string;
 }
 
-export const MeetingForm = React.memo<MeetingFormProps>(({
-  form,
-  onChange,
-  className
-}) => {
+export const MeetingForm = React.memo<MeetingFormProps>(({ form, onChange, className }) => {
   return (
     <div className={className}>
       <div className="space-y-4 py-4">
@@ -40,7 +36,7 @@ export const MeetingForm = React.memo<MeetingFormProps>(({
           <label className="text-sm font-medium">Description</label>
           <Textarea
             placeholder="Meeting objectives and context..."
-            value={form.description || ''}
+            value={form.description || ""}
             onChange={(e) => onChange({ ...form, description: e.target.value })}
             rows={3}
           />
@@ -53,7 +49,7 @@ export const MeetingForm = React.memo<MeetingFormProps>(({
               mode="single"
               selected={form.scheduledDate}
               onSelect={(date) => date && onChange({ ...form, scheduledDate: date })}
-              className="rounded-md border glass-hierarchy-child"
+              className="glass-hierarchy-child rounded-md border"
             />
           </div>
 
@@ -65,15 +61,13 @@ export const MeetingForm = React.memo<MeetingFormProps>(({
                 min={15}
                 max={480}
                 value={form.duration}
-                onChange={(e) =>
-                  onChange({ ...form, duration: parseInt(e.target.value) || 60 })
-                }
+                onChange={(e) => onChange({ ...form, duration: parseInt(e.target.value) || 60 })}
               />
             </div>
 
-            <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/20">
               <p className="text-sm text-blue-800 dark:text-blue-200">
-                <strong>IxTime:</strong>{' '}
+                <strong>IxTime:</strong>{" "}
                 {IxTime.formatIxTime(IxTime.convertToIxTime(form.scheduledDate.getTime()))}
               </p>
             </div>
@@ -84,4 +78,4 @@ export const MeetingForm = React.memo<MeetingFormProps>(({
   );
 });
 
-MeetingForm.displayName = 'MeetingForm';
+MeetingForm.displayName = "MeetingForm";

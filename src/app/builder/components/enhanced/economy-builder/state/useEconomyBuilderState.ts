@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { toast } from 'sonner';
-import type { EconomyBuilderState, EconomicHealthMetrics } from '~/types/economy-builder';
-import type { EconomicInputs } from '~/app/builder/lib/economy-data-service';
-import type { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
-import { economyIntegrationService } from '~/app/builder/services/EconomyIntegrationService';
-import { api } from '~/trpc/react';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { toast } from "sonner";
+import type { EconomyBuilderState, EconomicHealthMetrics } from "~/types/economy-builder";
+import type { EconomicInputs } from "~/app/builder/lib/economy-data-service";
+import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
+import { economyIntegrationService } from "~/app/builder/services/EconomyIntegrationService";
+import { api } from "~/trpc/react";
 
 export function useEconomyBuilderState(
   economicInputs: EconomicInputs,
@@ -16,14 +16,14 @@ export function useEconomyBuilderState(
 ) {
   const [economyBuilder, setEconomyBuilder] = useState<EconomyBuilderState>(() => ({
     structure: {
-      economicModel: 'Mixed Economy',
+      economicModel: "Mixed Economy",
       primarySectors: [],
       secondarySectors: [],
       tertiarySectors: [],
       totalGDP: 0,
-      gdpCurrency: economicInputs.nationalIdentity?.currency || 'USD',
-      economicTier: 'Developing' as const,
-      growthStrategy: 'Balanced'
+      gdpCurrency: economicInputs.nationalIdentity?.currency || "USD",
+      economicTier: "Developing" as const,
+      growthStrategy: "Balanced",
     },
     sectors: [],
     laborMarket: {
@@ -52,7 +52,7 @@ export function useEconomyBuilderState(
         healthcare: 10,
         hospitality: 6,
         government: 8,
-        other: 5
+        other: 5,
       },
       employmentType: {
         fullTime: 70,
@@ -61,7 +61,7 @@ export function useEconomyBuilderState(
         seasonal: 3,
         selfEmployed: 10,
         gig: 3,
-        informal: 4
+        informal: 4,
       },
       averageAnnualIncome: 40000,
       averageWorkweekHours: 40,
@@ -80,8 +80,8 @@ export function useEconomyBuilderState(
         wageProtection: 65,
         healthSafety: 70,
         discriminationProtection: 75,
-        collectiveRights: 55
-      }
+        collectiveRights: 55,
+      },
     },
     demographics: {
       totalPopulation: economicInputs.coreIndicators?.totalPopulation || 0,
@@ -89,11 +89,11 @@ export function useEconomyBuilderState(
       ageDistribution: {
         under15: 20,
         age15to64: 65,
-        over65: 15
+        over65: 15,
       },
       urbanRuralSplit: {
         urban: 50,
-        rural: 50
+        rural: 50,
       },
       regions: [],
       lifeExpectancy: 75,
@@ -102,7 +102,7 @@ export function useEconomyBuilderState(
         noEducation: 5,
         primary: 25,
         secondary: 45,
-        tertiary: 25
+        tertiary: 25,
       },
       netMigrationRate: 0,
       immigrationRate: 0,
@@ -112,7 +112,7 @@ export function useEconomyBuilderState(
       healthExpenditureGDP: 5,
       youthDependencyRatio: 30,
       elderlyDependencyRatio: 23,
-      totalDependencyRatio: 53
+      totalDependencyRatio: 53,
     },
     selectedAtomicComponents: [],
     isValid: true,
@@ -122,23 +122,25 @@ export function useEconomyBuilderState(
       labor: [],
       demographics: [],
       atomicComponents: [],
-      validation: []
+      validation: [],
     },
     lastUpdated: new Date(),
-    version: '1.0.0'
+    version: "1.0.0",
   }));
 
-  const [selectedComponents, setSelectedComponents] = useState<EconomicComponentType[]>(propsSelectedComponents);
+  const [selectedComponents, setSelectedComponents] =
+    useState<EconomicComponentType[]>(propsSelectedComponents);
   const [isAutoSaveEnabled, setIsAutoSaveEnabled] = useState(true);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // tRPC queries and mutations
-  const { data: existingConfiguration, isLoading: isLoadingConfig } = api.economics.getEconomyBuilderState.useQuery(
-    { countryId: countryId! },
-    { enabled: !!countryId }
-  );
+  const { data: existingConfiguration, isLoading: isLoadingConfig } =
+    api.economics.getEconomyBuilderState.useQuery(
+      { countryId: countryId! },
+      { enabled: !!countryId }
+    );
 
   const saveEconomyMutation = api.economics.saveEconomyBuilderState.useMutation({
     onSuccess: () => {
@@ -148,7 +150,7 @@ export function useEconomyBuilderState(
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to save economy configuration");
-    }
+    },
   });
 
   const autoSaveMutation = api.economics.autoSaveEconomyBuilder.useMutation({
@@ -157,27 +159,35 @@ export function useEconomyBuilderState(
     },
     onError: (error: any) => {
       console.warn("Auto-save failed:", error.message);
-    }
+    },
   });
 
   // Load existing configuration
   useEffect(() => {
     if (existingConfiguration) {
-      setEconomyBuilder(prev => ({
+      setEconomyBuilder((prev) => ({
         ...prev,
         structure: {
           ...prev.structure,
           ...existingConfiguration.structure,
-          economicTier: (['Developing', 'Emerging', 'Developed', 'Advanced'] as const).includes(
+          economicTier: (["Developing", "Emerging", "Developed", "Advanced"] as const).includes(
             existingConfiguration.structure?.economicTier as any
           )
-            ? (existingConfiguration.structure.economicTier as 'Developing' | 'Emerging' | 'Developed' | 'Advanced')
-            : 'Developing',
-          growthStrategy: (['Export-Led', 'Import-Substitution', 'Balanced', 'Innovation-Driven'] as const).includes(
-            existingConfiguration.structure?.growthStrategy as any
-          )
-            ? (existingConfiguration.structure.growthStrategy as 'Export-Led' | 'Import-Substitution' | 'Balanced' | 'Innovation-Driven')
-            : 'Balanced',
+            ? (existingConfiguration.structure.economicTier as
+                | "Developing"
+                | "Emerging"
+                | "Developed"
+                | "Advanced")
+            : "Developing",
+          growthStrategy: (
+            ["Export-Led", "Import-Substitution", "Balanced", "Innovation-Driven"] as const
+          ).includes(existingConfiguration.structure?.growthStrategy as any)
+            ? (existingConfiguration.structure.growthStrategy as
+                | "Export-Led"
+                | "Import-Substitution"
+                | "Balanced"
+                | "Innovation-Driven")
+            : "Balanced",
         },
         sectors: {
           ...prev.sectors,
@@ -208,7 +218,10 @@ export function useEconomyBuilderState(
         setEconomyBuilder(state.economyBuilder);
       }
       // Only call parent callback if truly different (deep equality check)
-      if (state.economicInputs && JSON.stringify(state.economicInputs) !== JSON.stringify(economicInputs)) {
+      if (
+        state.economicInputs &&
+        JSON.stringify(state.economicInputs) !== JSON.stringify(economicInputs)
+      ) {
         onEconomicInputsChange(state.economicInputs);
       }
     });
@@ -234,10 +247,14 @@ export function useEconomyBuilderState(
     autoSaveTimeoutRef.current = setTimeout(async () => {
       try {
         const changes = {
-          economicComponents: selectedComponents.join(','),
+          economicComponents: selectedComponents.join(","),
           gdpNominal: economyBuilder.structure.totalGDP,
-          gdpPerCapita: economyBuilder.structure.totalGDP / economyBuilder.demographics.totalPopulation,
-          gdpGrowthRate: economyBuilder.sectors.reduce((sum, s) => sum + (s.growthRate * s.gdpContribution / 100), 0),
+          gdpPerCapita:
+            economyBuilder.structure.totalGDP / economyBuilder.demographics.totalPopulation,
+          gdpGrowthRate: economyBuilder.sectors.reduce(
+            (sum, s) => sum + (s.growthRate * s.gdpContribution) / 100,
+            0
+          ),
           population: economyBuilder.demographics.totalPopulation,
           populationGrowthRate: economyBuilder.demographics.populationGrowthRate,
           unemploymentRate: economyBuilder.laborMarket.unemploymentRate,
@@ -246,13 +263,13 @@ export function useEconomyBuilderState(
           lifeExpectancy: economyBuilder.demographics.lifeExpectancy,
           literacyRate: economyBuilder.demographics.literacyRate,
           economicTier: economyBuilder.structure.economicTier,
-          economicModel: economyBuilder.structure.economicModel
+          economicModel: economyBuilder.structure.economicModel,
         };
 
         await autoSaveMutation.mutateAsync({ countryId, changes });
         setHasUnsavedChanges(false);
       } catch (error) {
-        console.warn('Auto-save failed:', error);
+        console.warn("Auto-save failed:", error);
       }
     }, 15000);
 
@@ -261,7 +278,14 @@ export function useEconomyBuilderState(
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, [economyBuilder, selectedComponents, isAutoSaveEnabled, countryId, hasUnsavedChanges, autoSaveMutation]);
+  }, [
+    economyBuilder,
+    selectedComponents,
+    isAutoSaveEnabled,
+    countryId,
+    hasUnsavedChanges,
+    autoSaveMutation,
+  ]);
 
   // Mark unsaved changes
   useEffect(() => {
@@ -287,27 +311,37 @@ export function useEconomyBuilderState(
   const validateEconomyConfiguration = useCallback(() => {
     const errors: string[] = [];
 
-    const sectorSum = economyBuilder.sectors.reduce((sum, sector) => sum + sector.gdpContribution, 0);
+    const sectorSum = economyBuilder.sectors.reduce(
+      (sum, sector) => sum + sector.gdpContribution,
+      0
+    );
     if (Math.abs(sectorSum - 100) > 1) {
       errors.push(`Sector GDP contributions must sum to 100% (currently ${sectorSum.toFixed(1)}%)`);
     }
 
-    const employmentSum = economyBuilder.sectors.reduce((sum, sector) => sum + sector.employmentShare, 0);
+    const employmentSum = economyBuilder.sectors.reduce(
+      (sum, sector) => sum + sector.employmentShare,
+      0
+    );
     if (Math.abs(employmentSum - 100) > 1) {
       errors.push(`Employment shares must sum to 100% (currently ${employmentSum.toFixed(1)}%)`);
     }
 
     if (economyBuilder.laborMarket.laborForceParticipationRate > 90) {
-      errors.push('Labor force participation rate seems too high (>90%)');
+      errors.push("Labor force participation rate seems too high (>90%)");
     }
 
-    if (economyBuilder.laborMarket.unemploymentRate < 0 || economyBuilder.laborMarket.unemploymentRate > 50) {
-      errors.push('Unemployment rate seems unrealistic');
+    if (
+      economyBuilder.laborMarket.unemploymentRate < 0 ||
+      economyBuilder.laborMarket.unemploymentRate > 50
+    ) {
+      errors.push("Unemployment rate seems unrealistic");
     }
 
-    const ageSum = (economyBuilder.demographics.ageDistribution?.under15 || 0) +
-                   (economyBuilder.demographics.ageDistribution?.age15to64 || 0) +
-                   (economyBuilder.demographics.ageDistribution?.over65 || 0);
+    const ageSum =
+      (economyBuilder.demographics.ageDistribution?.under15 || 0) +
+      (economyBuilder.demographics.ageDistribution?.age15to64 || 0) +
+      (economyBuilder.demographics.ageDistribution?.over65 || 0);
     if (Math.abs(ageSum - 100) > 1) {
       errors.push(`Age distribution must sum to 100% (currently ${ageSum}%)`);
     }
@@ -323,7 +357,7 @@ export function useEconomyBuilderState(
 
     const validation = validateEconomyConfiguration();
     if (!validation.isValid) {
-      toast.error(`Validation failed: ${validation.errors.join(', ')}`);
+      toast.error(`Validation failed: ${validation.errors.join(", ")}`);
       return;
     }
 
@@ -337,16 +371,22 @@ export function useEconomyBuilderState(
           demographics: economyBuilder.demographics,
           selectedAtomicComponents: selectedComponents,
           lastUpdated: new Date(),
-          version: economyBuilder.version || '1.0.0'
-        }
+          version: economyBuilder.version || "1.0.0",
+        },
       });
 
       economyIntegrationService.updateEconomyBuilder(economyBuilder);
       economyIntegrationService.updateEconomicComponents(selectedComponents);
     } catch (error) {
-      console.error('Error saving economy configuration:', error);
+      console.error("Error saving economy configuration:", error);
     }
-  }, [countryId, economyBuilder, selectedComponents, saveEconomyMutation, validateEconomyConfiguration]);
+  }, [
+    countryId,
+    economyBuilder,
+    selectedComponents,
+    saveEconomyMutation,
+    validateEconomyConfiguration,
+  ]);
 
   return {
     economyBuilder,
@@ -360,6 +400,6 @@ export function useEconomyBuilderState(
     handleEconomyBuilderChange,
     handleSave,
     validateEconomyConfiguration,
-    setIsAutoSaveEnabled
+    setIsAutoSaveEnabled,
   };
 }

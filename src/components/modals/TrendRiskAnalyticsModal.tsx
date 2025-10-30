@@ -24,17 +24,26 @@ export function TrendRiskAnalyticsModal({ children, countryId }: TrendRiskAnalyt
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
-      <DialogContent style={{ width: '100vw', maxWidth: '100vw', height: '100vh', maxHeight: '100vh', padding: '24px', margin: '0px', overflowY: 'auto' }}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent
+        style={{
+          width: "100vw",
+          maxWidth: "100vw",
+          height: "100vh",
+          maxHeight: "100vh",
+          padding: "24px",
+          margin: "0px",
+          overflowY: "auto",
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-orange-500" />
             Advanced Analytics Dashboard
           </DialogTitle>
           <DialogDescription>
-            Comprehensive trend analysis, risk assessment, and volatility monitoring for informed decision-making.
+            Comprehensive trend analysis, risk assessment, and volatility monitoring for informed
+            decision-making.
           </DialogDescription>
         </DialogHeader>
 

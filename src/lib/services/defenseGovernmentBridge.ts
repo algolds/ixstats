@@ -1,7 +1,11 @@
 // src/lib/services/defenseGovernmentBridge.ts
 // Bidirectional sync between Defense System and Government Builder
 
-import type { GovernmentStructure, GovernmentDepartment, BudgetAllocation } from '~/types/government';
+import type {
+  GovernmentStructure,
+  GovernmentDepartment,
+  BudgetAllocation,
+} from "~/types/government";
 
 interface DefenseBudgetData {
   totalBudget: number;
@@ -32,14 +36,15 @@ export function findDefenseDepartments(
 ): GovernmentDepartment[] {
   if (!governmentStructure?.departments) return [];
 
-  return governmentStructure.departments.filter(dept =>
-    dept.category === 'Defense' ||
-    dept.category === 'Veterans Affairs' ||
-    dept.category === 'Intelligence' ||
-    dept.name.toLowerCase().includes('defense') ||
-    dept.name.toLowerCase().includes('military') ||
-    dept.name.toLowerCase().includes('armed forces') ||
-    dept.name.toLowerCase().includes('national security')
+  return governmentStructure.departments.filter(
+    (dept) =>
+      dept.category === "Defense" ||
+      dept.category === "Veterans Affairs" ||
+      dept.category === "Intelligence" ||
+      dept.name.toLowerCase().includes("defense") ||
+      dept.name.toLowerCase().includes("military") ||
+      dept.name.toLowerCase().includes("armed forces") ||
+      dept.name.toLowerCase().includes("national security")
   );
 }
 
@@ -56,9 +61,10 @@ export function extractDefenseBudget(
   if (defenseDepts.length === 0) return null;
 
   // Get budget allocations for defense departments
-  const defenseBudgetAllocations = governmentStructure.budgetAllocations?.filter(
-    allocation => defenseDepts.some(dept => dept.id === allocation.departmentId)
-  ) || [];
+  const defenseBudgetAllocations =
+    governmentStructure.budgetAllocations?.filter((allocation) =>
+      defenseDepts.some((dept) => dept.id === allocation.departmentId)
+    ) || [];
 
   const totalBudget = defenseBudgetAllocations.reduce(
     (sum, allocation) => sum + allocation.allocatedAmount,
@@ -70,10 +76,10 @@ export function extractDefenseBudget(
   const gdpPercent = countryGDP > 0 ? (totalBudget / countryGDP) * 100 : 0;
 
   // Estimate breakdown based on typical military spending patterns
-  const personnelCosts = totalBudget * 0.40;
-  const operationsMaintenance = totalBudget * 0.30;
+  const personnelCosts = totalBudget * 0.4;
+  const operationsMaintenance = totalBudget * 0.3;
   const procurement = totalBudget * 0.15;
-  const rdteCosts = totalBudget * 0.10;
+  const rdteCosts = totalBudget * 0.1;
   const militaryConstruction = totalBudget * 0.05;
 
   return {
@@ -98,16 +104,14 @@ export function syncDefenseBudgetToGovernment(
   const defenseDepts = findDefenseDepartments(governmentStructure);
 
   if (defenseDepts.length === 0) {
-    console.warn('[DefenseSync] No defense departments found to sync budget');
+    console.warn("[DefenseSync] No defense departments found to sync budget");
     return {};
   }
 
   // Update budget allocations for defense departments
-  const updatedAllocations: BudgetAllocation[] = governmentStructure.budgetAllocations?.map(
-    allocation => {
-      const isDepartmentDefense = defenseDepts.some(
-        dept => dept.id === allocation.departmentId
-      );
+  const updatedAllocations: BudgetAllocation[] =
+    governmentStructure.budgetAllocations?.map((allocation) => {
+      const isDepartmentDefense = defenseDepts.some((dept) => dept.id === allocation.departmentId);
 
       if (!isDepartmentDefense) return allocation;
 
@@ -117,15 +121,13 @@ export function syncDefenseBudgetToGovernment(
       return {
         ...allocation,
         allocatedAmount: share,
-        allocatedPercent: governmentStructure.totalBudget > 0
-          ? (share / governmentStructure.totalBudget) * 100
-          : 0,
+        allocatedPercent:
+          governmentStructure.totalBudget > 0 ? (share / governmentStructure.totalBudget) * 100 : 0,
         availableAmount: share - (allocation.spentAmount || 0),
         lastReviewed: new Date(),
         notes: `Auto-synced from Defense System - ${new Date().toISOString()}`,
       };
-    }
-  ) || [];
+    }) || [];
 
   return {
     budgetAllocations: updatedAllocations,
@@ -140,18 +142,15 @@ export function calculateDefenseBudgetFromBranches(
   militaryBranches: MilitaryBranch[],
   countryGDP: number
 ): DefenseBudgetData {
-  const totalBudget = militaryBranches.reduce(
-    (sum, branch) => sum + branch.annualBudget,
-    0
-  );
+  const totalBudget = militaryBranches.reduce((sum, branch) => sum + branch.annualBudget, 0);
 
   const gdpPercent = countryGDP > 0 ? (totalBudget / countryGDP) * 100 : 0;
 
   // Estimate breakdown based on typical military spending patterns
-  const personnelCosts = totalBudget * 0.40;
-  const operationsMaintenance = totalBudget * 0.30;
+  const personnelCosts = totalBudget * 0.4;
+  const operationsMaintenance = totalBudget * 0.3;
   const procurement = totalBudget * 0.15;
-  const rdteCosts = totalBudget * 0.10;
+  const rdteCosts = totalBudget * 0.1;
   const militaryConstruction = totalBudget * 0.05;
 
   return {
@@ -175,9 +174,9 @@ export function getAuthoritativeBudget(
   countryGDP: number
 ): {
   budget: DefenseBudgetData;
-  source: 'defense_system' | 'government_structure' | 'calculated';
+  source: "defense_system" | "government_structure" | "calculated";
   needsSync: boolean;
-  syncTarget?: 'defense' | 'government';
+  syncTarget?: "defense" | "government";
 } {
   // If we have military branches with budgets, they take precedence
   const calculatedBudget = calculateDefenseBudgetFromBranches(militaryBranches, countryGDP);
@@ -190,9 +189,9 @@ export function getAuthoritativeBudget(
 
     return {
       budget: calculatedBudget,
-      source: 'defense_system',
+      source: "defense_system",
       needsSync: needsGovUpdate,
-      syncTarget: needsGovUpdate ? 'government' : undefined,
+      syncTarget: needsGovUpdate ? "government" : undefined,
     };
   }
 
@@ -200,7 +199,7 @@ export function getAuthoritativeBudget(
   if (governmentBudget && governmentBudget.totalBudget > 0) {
     return {
       budget: governmentBudget,
-      source: 'government_structure',
+      source: "government_structure",
       needsSync: false,
     };
   }
@@ -216,7 +215,7 @@ export function getAuthoritativeBudget(
       rdteCosts: 0,
       militaryConstruction: 0,
     },
-    source: 'calculated',
+    source: "calculated",
     needsSync: false,
   };
 }
@@ -233,9 +232,7 @@ export function getDefenseDepartmentInfo(governmentStructure: GovernmentStructur
   const departments = findDefenseDepartments(governmentStructure);
   const totalBudget =
     governmentStructure?.budgetAllocations
-      ?.filter(allocation =>
-        departments.some(dept => dept.id === allocation.departmentId)
-      )
+      ?.filter((allocation) => departments.some((dept) => dept.id === allocation.departmentId))
       .reduce((sum, allocation) => sum + allocation.allocatedAmount, 0) || 0;
 
   return {

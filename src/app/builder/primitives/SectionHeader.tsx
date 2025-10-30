@@ -1,9 +1,9 @@
 "use client";
 
-import React from 'react';
-import { Button } from '~/components/ui/button';
-import { GlassTooltip, InfoIcon } from '../components/glass/GlassTooltip';
-import type { Section } from '../types/builder';
+import React from "react";
+import { Button } from "~/components/ui/button";
+import { GlassTooltip, InfoIcon } from "../components/glass/GlassTooltip";
+import type { Section } from "../types/builder";
 
 interface SectionHeaderProps {
   section?: Section;
@@ -20,13 +20,13 @@ export function SectionHeader({
   description,
   icon,
   showAdvanced,
-  onToggleAdvanced
+  onToggleAdvanced,
 }: SectionHeaderProps) {
   // Use section props if available, otherwise use individual props
-  const sectionTitle = title || section?.name || 'Section';
-  const sectionDescription = description || section?.description || '';
+  const sectionTitle = title || section?.name || "Section";
+  const sectionDescription = description || section?.description || "";
   const SectionIcon = icon || section?.icon;
-  
+
   // Handle case where no icon is available
   if (!SectionIcon) {
     return (
@@ -34,12 +34,8 @@ export function SectionHeader({
         <div className="flex items-center gap-3">
           <div className="h-6 w-6" />
           <div>
-            <h3 className="font-semibold text-slate-800 dark:text-white">
-              {sectionTitle}
-            </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-300">
-              {sectionDescription}
-            </p>
+            <h3 className="font-semibold text-slate-800 dark:text-white">{sectionTitle}</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300">{sectionDescription}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -47,9 +43,9 @@ export function SectionHeader({
             onClick={onToggleAdvanced}
             variant="outline"
             size="sm"
-            className="bg-white/10 border-white/20 text-slate-800 dark:text-white hover:bg-white/15"
+            className="border-white/20 bg-white/10 text-slate-800 hover:bg-white/15 dark:text-white"
           >
-            {showAdvanced ? 'Basic' : 'Advanced'}
+            {showAdvanced ? "Basic" : "Advanced"}
           </Button>
         </div>
       </div>
@@ -59,7 +55,9 @@ export function SectionHeader({
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <SectionIcon className={`h-6 w-6 ${section?.color || 'text-slate-600 dark:text-slate-400'}`} />
+        <SectionIcon
+          className={`h-6 w-6 ${section?.color || "text-slate-600 dark:text-slate-400"}`}
+        />
         <div>
           <h3 className="font-semibold text-slate-800 dark:text-white">{sectionTitle}</h3>
           <p className="text-sm text-slate-600 dark:text-slate-300">{sectionDescription}</p>
@@ -70,9 +68,9 @@ export function SectionHeader({
           onClick={onToggleAdvanced}
           variant="outline"
           size="sm"
-          className="bg-white/10 border-white/20 text-slate-800 dark:text-white hover:bg-white/15"
+          className="border-white/20 bg-white/10 text-slate-800 hover:bg-white/15 dark:text-white"
         >
-          {showAdvanced ? 'Basic' : 'Advanced'}
+          {showAdvanced ? "Basic" : "Advanced"}
         </Button>
         <GlassTooltip
           content="Get detailed explanations and impact analysis for each parameter"

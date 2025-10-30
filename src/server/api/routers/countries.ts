@@ -3,7 +3,14 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, publicProcedure, protectedProcedure, executiveProcedure, countryOwnerProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  executiveProcedure,
+  countryOwnerProcedure,
+  rateLimitedPublicProcedure,
+} from "~/server/api/trpc";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig, CONFIG_CONSTANTS } from "~/lib/config-service";
@@ -11,7 +18,7 @@ import { parseRosterFile } from "~/lib/data-parser";
 import { IxStatsCalculator } from "~/lib/calculations";
 import {
   calculateCountryDataWithAtomicEnhancement,
-  getAtomicIntelligenceRecommendations
+  getAtomicIntelligenceRecommendations,
 } from "~/lib/atomic-economic-integration.server";
 import { type CountryWithAtomicComponents } from "~/lib/atomic-economic-integration";
 import { getAtomicEffectivenessService } from "~/services/AtomicEffectivenessService";
@@ -27,11 +34,11 @@ import type {
   IncomeWealthData,
   GovernmentSpendingData,
   NationalIdentityData,
-  GeographyData
+  GeographyData,
 } from "~/app/builder/lib/economy-data-service";
-import type { 
-  SystemStatus, 
-  AdminPageBotStatusView, 
+import type {
+  SystemStatus,
+  AdminPageBotStatusView,
   ImportAnalysis,
   EconomicConfig,
   Country,
@@ -51,7 +58,7 @@ import type {
   BaseCountryData,
   CalculationLog,
   EconomicTier,
-  PopulationTier
+  PopulationTier,
 } from "~/types/ixstats";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/types/ixstats";
 import { detectEconomicMilestoneAndTriggerNarrative } from "~/lib/auto-post-service";
@@ -91,12 +98,11 @@ function setCachedData(key: string, data: unknown, ttl = 30000): void {
   cache.set(key, {
     data,
     timestamp: Date.now(),
-    ttl
+    ttl,
   });
 }
 
 // Economic configuration
-
 
 // Validation functions
 const validateGrowthRate = (value: number | null | undefined): number => {
@@ -135,17 +141,17 @@ const prepareBaseCountryData = (country: any): BaseCountryData => ({
 // FIXED: Helper function to safely include relations that may not exist
 const safelyIncludeRelations = async (db: any) => {
   const availableRelations: any = {};
-  
+
   try {
     // Test if each relation exists in the database
     const testQueries = [
-      { name: 'economicProfile', test: () => db.economicProfile.findFirst() },
-      { name: 'laborMarket', test: () => db.laborMarket.findFirst() },
-      { name: 'fiscalSystem', test: () => db.fiscalSystem.findFirst() },
-      { name: 'incomeDistribution', test: () => db.incomeDistribution.findFirst() },
-      { name: 'governmentBudget', test: () => db.governmentBudget.findFirst() },
-      { name: 'demographics', test: () => db.demographics.findFirst() },
-      { name: 'nationalIdentity', test: () => db.nationalIdentity.findFirst() },
+      { name: "economicProfile", test: () => db.economicProfile.findFirst() },
+      { name: "laborMarket", test: () => db.laborMarket.findFirst() },
+      { name: "fiscalSystem", test: () => db.fiscalSystem.findFirst() },
+      { name: "incomeDistribution", test: () => db.incomeDistribution.findFirst() },
+      { name: "governmentBudget", test: () => db.governmentBudget.findFirst() },
+      { name: "demographics", test: () => db.demographics.findFirst() },
+      { name: "nationalIdentity", test: () => db.nationalIdentity.findFirst() },
     ];
 
     for (const { name, test } of testQueries) {
@@ -158,7 +164,7 @@ const safelyIncludeRelations = async (db: any) => {
       }
     }
   } catch (error) {
-    console.warn('[Countries API] Could not test relations, proceeding without optional relations');
+    console.warn("[Countries API] Could not test relations, proceeding without optional relations");
   }
 
   return availableRelations;
@@ -214,10 +220,12 @@ const economicDataSchema = z.object({
 const countriesRouter = createTRPCRouter({
   getSelectList: rateLimitedPublicProcedure
     .input(
-      z.object({
-        search: z.string().optional(),
-        limit: z.number().optional().default(500),
-      }).optional()
+      z
+        .object({
+          search: z.string().optional(),
+          limit: z.number().optional().default(500),
+        })
+        .optional()
     )
     .query(async ({ ctx, input }) => {
       const where = input?.search
@@ -256,13 +264,15 @@ const countriesRouter = createTRPCRouter({
   // Get all countries with basic info + total count
   getAll: rateLimitedPublicProcedure
     .input(
-      z.object({
-        limit: z.number().optional().default(100),
-        offset: z.number().optional().default(0),
-        search: z.string().optional(),
-        continent: z.string().optional(),
-        economicTier: z.string().optional(),
-      }).optional()
+      z
+        .object({
+          limit: z.number().optional().default(100),
+          offset: z.number().optional().default(0),
+          search: z.string().optional(),
+          continent: z.string().optional(),
+          economicTier: z.string().optional(),
+        })
+        .optional()
     )
     .query(async ({ ctx, input }) => {
       const where: Record<string, unknown> = {};
@@ -289,7 +299,7 @@ const countriesRouter = createTRPCRouter({
             },
             nationalIdentity: true,
           },
-          }),
+        }),
         ctx.db.country.count({ where }),
       ]);
 
@@ -299,9 +309,11 @@ const countriesRouter = createTRPCRouter({
         // Ensure critical fields are properly mapped
         currentPopulation: country.currentPopulation ?? country.baselinePopulation ?? 0,
         currentGdpPerCapita: country.currentGdpPerCapita ?? country.baselineGdpPerCapita ?? 0,
-        currentTotalGdp: country.currentTotalGdp ?? ((country.currentPopulation ?? 0) * (country.currentGdpPerCapita ?? 0)),
-        economicTier: country.economicTier ?? 'Developing',
-        populationTier: country.populationTier ?? '1',
+        currentTotalGdp:
+          country.currentTotalGdp ??
+          (country.currentPopulation ?? 0) * (country.currentGdpPerCapita ?? 0),
+        economicTier: country.economicTier ?? "Developing",
+        populationTier: country.populationTier ?? "1",
         nominalGDP: country.nominalGDP ?? 0,
         realGDPGrowthRate: country.realGDPGrowthRate ?? 0,
         inflationRate: country.inflationRate ?? 0,
@@ -347,14 +359,16 @@ const countriesRouter = createTRPCRouter({
         },
         projections: [], // Will be calculated when needed
         historical: [], // Will be calculated when needed
-        dmInputs: country.dmInputs ? country.dmInputs.map((dm: any) => ({
-          id: dm.id,
-          countryId: dm.countryId,
-          inputType: dm.inputType,
-          value: dm.value,
-          description: dm.description,
-          timestamp: dm.ixTimeTimestamp,
-        })) : [],
+        dmInputs: country.dmInputs
+          ? country.dmInputs.map((dm: any) => ({
+              id: dm.id,
+              countryId: dm.countryId,
+              inputType: dm.inputType,
+              value: dm.value,
+              description: dm.description,
+              timestamp: dm.ixTimeTimestamp,
+            }))
+          : [],
         analytics: {
           growthTrends: {
             avgPopGrowth: country.populationGrowthRate || 0,
@@ -374,10 +388,12 @@ const countriesRouter = createTRPCRouter({
     }),
 
   getByIdWithEconomicData: publicProcedure
-    .input(z.object({
-      id: z.string(),
-      timestamp: z.number().optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        timestamp: z.number().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const targetTime = input.timestamp ?? IxTime.getCurrentIxTime();
       const FIVE_YEARS_MS = 5 * 365 * 24 * 60 * 60 * 1000;
@@ -412,24 +428,19 @@ const countriesRouter = createTRPCRouter({
         const slugLower = input.id.toLowerCase();
         country = await ctx.db.country.findFirst({
           where: {
-            OR: [
-              { id: input.id },
-              { slug: slugLower },
-              { name: input.id }
-            ]
+            OR: [{ id: input.id }, { slug: slugLower }, { name: input.id }],
           },
           include: includeObject,
         });
       } catch (dbError) {
-        console.warn('[Countries API] Error with complex query, falling back to basic query:', dbError);
+        console.warn(
+          "[Countries API] Error with complex query, falling back to basic query:",
+          dbError
+        );
         const slugLower = input.id.toLowerCase();
         country = await ctx.db.country.findFirst({
           where: {
-            OR: [
-              { id: input.id },
-              { slug: slugLower },
-              { name: input.id }
-            ]
+            OR: [{ id: input.id }, { slug: slugLower }, { name: input.id }],
           },
           include: {
             dmInputs: {
@@ -457,11 +468,7 @@ const countriesRouter = createTRPCRouter({
         ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
       }));
 
-      const result = calc.calculateTimeProgression(
-        baselineStats,
-        targetTime,
-        dmInputs
-      );
+      const result = calc.calculateTimeProgression(baselineStats, targetTime, dmInputs);
       const projections = [];
       for (let i = 1; i <= 5; i++) {
         const futureTime = targetTime + i * ONE_YEAR_MS;
@@ -488,7 +495,7 @@ const countriesRouter = createTRPCRouter({
           const pastTime = targetTime - i * ONE_YEAR_MS;
           const hist = calc.calculateTimeProgression(baselineStats, pastTime, dmInputs);
           historical.push({
-            id: '',
+            id: "",
             createdAt: new Date(pastTime),
             countryId: input.id,
             ixTimeTimestamp: new Date(pastTime),
@@ -497,9 +504,13 @@ const countriesRouter = createTRPCRouter({
             totalGdp: hist.newStats.currentTotalGdp,
             populationGrowthRate: hist.newStats.populationGrowthRate,
             gdpGrowthRate: hist.newStats.adjustedGdpGrowth,
-            landArea: typeof hist.newStats.landArea === 'number' ? hist.newStats.landArea : null,
-            populationDensity: typeof hist.newStats.populationDensity === 'number' ? hist.newStats.populationDensity : null,
-            gdpDensity: typeof hist.newStats.gdpDensity === 'number' ? hist.newStats.gdpDensity : null,
+            landArea: typeof hist.newStats.landArea === "number" ? hist.newStats.landArea : null,
+            populationDensity:
+              typeof hist.newStats.populationDensity === "number"
+                ? hist.newStats.populationDensity
+                : null,
+            gdpDensity:
+              typeof hist.newStats.gdpDensity === "number" ? hist.newStats.gdpDensity : null,
           });
         }
       }
@@ -519,21 +530,27 @@ const countriesRouter = createTRPCRouter({
         const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
         return Math.sqrt(arr.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / arr.length);
       }
-      const popGrowthRates = getGrowthRates(historical, 'population');
-      const gdpGrowthRates = getGrowthRates(historical, 'gdpPerCapita');
-      const avgPopGrowth = popGrowthRates.length ? popGrowthRates.reduce((a, b) => a + b, 0) / popGrowthRates.length : 0;
-      const avgGdpGrowth = gdpGrowthRates.length ? gdpGrowthRates.reduce((a, b) => a + b, 0) / gdpGrowthRates.length : 0;
+      const popGrowthRates = getGrowthRates(historical, "population");
+      const gdpGrowthRates = getGrowthRates(historical, "gdpPerCapita");
+      const avgPopGrowth = popGrowthRates.length
+        ? popGrowthRates.reduce((a, b) => a + b, 0) / popGrowthRates.length
+        : 0;
+      const avgGdpGrowth = gdpGrowthRates.length
+        ? gdpGrowthRates.reduce((a, b) => a + b, 0) / gdpGrowthRates.length
+        : 0;
       const popVolatility = stddev(popGrowthRates);
       const gdpVolatility = stddev(gdpGrowthRates);
       const riskFlags = [];
-      if (avgPopGrowth < 0) riskFlags.push('negative_population_growth');
-      if (avgGdpGrowth < 0) riskFlags.push('negative_gdp_per_capita_growth');
-      if (popVolatility > 0.05) riskFlags.push('high_population_volatility');
-      if (gdpVolatility > 0.05) riskFlags.push('high_gdp_per_capita_volatility');
+      if (avgPopGrowth < 0) riskFlags.push("negative_population_growth");
+      if (avgGdpGrowth < 0) riskFlags.push("negative_gdp_per_capita_growth");
+      if (popVolatility > 0.05) riskFlags.push("high_population_volatility");
+      if (gdpVolatility > 0.05) riskFlags.push("high_gdp_per_capita_volatility");
       let tierChangeProjection = null;
       const currentGDPPC = result.newStats.currentGdpPerCapita;
-      const projectionsGDPPC = projections.map(p => p.stats.currentGdpPerCapita);
-      const tierThresholds = Object.values(econCfg.economicTierThresholds).filter((v): v is number => typeof v === 'number').sort((a, b) => a - b);
+      const projectionsGDPPC = projections.map((p) => p.stats.currentGdpPerCapita);
+      const tierThresholds = Object.values(econCfg.economicTierThresholds)
+        .filter((v): v is number => typeof v === "number")
+        .sort((a, b) => a - b);
       let nextTier = null;
       for (let i = 0; i < tierThresholds.length; i++) {
         if (tierThresholds[i]! > currentGDPPC) {
@@ -544,33 +561,38 @@ const countriesRouter = createTRPCRouter({
       if (nextTier) {
         for (let i = 0; i < projectionsGDPPC.length; i++) {
           if (projectionsGDPPC[i]! >= nextTier) {
-            tierChangeProjection = { year: new Date().getFullYear() + i + 1, newTier: getEconomicTierFromGdpPerCapita(projectionsGDPPC[i]!) };
+            tierChangeProjection = {
+              year: new Date().getFullYear() + i + 1,
+              newTier: getEconomicTierFromGdpPerCapita(projectionsGDPPC[i]!),
+            };
             break;
           }
         }
       }
       const vulnerabilities = [];
-      if (avgPopGrowth < 0.002) vulnerabilities.push('low_population_growth');
-      if (avgGdpGrowth < 0.01) vulnerabilities.push('low_gdp_per_capita_growth');
-      if (popVolatility > 0.05) vulnerabilities.push('population_volatility');
-      if (gdpVolatility > 0.05) vulnerabilities.push('gdp_per_capita_volatility');
-      if (riskFlags.includes('negative_population_growth')) vulnerabilities.push('population_decline');
-      if (riskFlags.includes('negative_gdp_per_capita_growth')) vulnerabilities.push('gdp_per_capita_decline');
+      if (avgPopGrowth < 0.002) vulnerabilities.push("low_population_growth");
+      if (avgGdpGrowth < 0.01) vulnerabilities.push("low_gdp_per_capita_growth");
+      if (popVolatility > 0.05) vulnerabilities.push("population_volatility");
+      if (gdpVolatility > 0.05) vulnerabilities.push("gdp_per_capita_volatility");
+      if (riskFlags.includes("negative_population_growth"))
+        vulnerabilities.push("population_decline");
+      if (riskFlags.includes("negative_gdp_per_capita_growth"))
+        vulnerabilities.push("gdp_per_capita_decline");
       // CRITICAL FIX: Preserve all database fields, only override calculated population/GDP fields
       // Do NOT spread result.newStats as it wipes out economic indicators!
 
       // DEBUG LOGGING
-      console.log('=== getByIdWithEconomicData DEBUG ===');
-      console.log('Country Name:', country.name);
-      console.log('Database unemploymentRate:', country.unemploymentRate);
-      console.log('Database taxRevenueGDPPercent:', country.taxRevenueGDPPercent);
-      console.log('Database totalDebtGDPRatio:', country.totalDebtGDPRatio);
-      console.log('Database laborForceParticipationRate:', country.laborForceParticipationRate);
-      console.log('Database currentPopulation:', country.currentPopulation);
-      console.log('Calculated currentPopulation:', result.newStats.currentPopulation);
+      console.log("=== getByIdWithEconomicData DEBUG ===");
+      console.log("Country Name:", country.name);
+      console.log("Database unemploymentRate:", country.unemploymentRate);
+      console.log("Database taxRevenueGDPPercent:", country.taxRevenueGDPPercent);
+      console.log("Database totalDebtGDPRatio:", country.totalDebtGDPRatio);
+      console.log("Database laborForceParticipationRate:", country.laborForceParticipationRate);
+      console.log("Database currentPopulation:", country.currentPopulation);
+      console.log("Calculated currentPopulation:", result.newStats.currentPopulation);
 
       const response: CountryWithEconomicData = {
-        ...country,  // All database fields including economic indicators
+        ...country, // All database fields including economic indicators
         flagUrl: country.flag ?? undefined,
 
         // Override ONLY the calculated population and GDP fields from calculation engine
@@ -622,19 +644,19 @@ const countriesRouter = createTRPCRouter({
           populationGrowth: result.newStats.populationGrowthRate || 0,
           inflation: 0.02, // Default inflation rate
         },
-        projections: projections.map(p => ({
+        projections: projections.map((p) => ({
           year: new Date(p.ixTime).getFullYear(),
           gdp: p.stats.currentTotalGdp,
           population: p.stats.currentPopulation,
         })),
         historical: historical.map((h: any) => ({
-          year: new Date(h.ixTimeTimestamp).getFullYear(), 
+          year: new Date(h.ixTimeTimestamp).getFullYear(),
           gdp: h.totalGdp,
           population: h.population,
         })),
         dmInputs: (country.dmInputs as any[]).map((dm: any) => ({
           ...dm,
-          ixTimeTimestamp: dm.ixTimeTimestamp.getTime()
+          ixTimeTimestamp: dm.ixTimeTimestamp.getTime(),
         })),
         analytics: {
           growthTrends: {
@@ -646,17 +668,25 @@ const countriesRouter = createTRPCRouter({
             gdpVolatility,
           },
           riskFlags,
-          tierChangeProjection: tierChangeProjection || { year: new Date().getFullYear(), newTier: country.economicTier as EconomicTier },
+          tierChangeProjection: tierChangeProjection || {
+            year: new Date().getFullYear(),
+            newTier: country.economicTier as EconomicTier,
+          },
           vulnerabilities,
         },
-        lastCalculated: typeof country.lastCalculated === 'number' ? country.lastCalculated : (country.lastCalculated ? new Date(country.lastCalculated).getTime() : Date.now()),
+        lastCalculated:
+          typeof country.lastCalculated === "number"
+            ? country.lastCalculated
+            : country.lastCalculated
+              ? new Date(country.lastCalculated).getTime()
+              : Date.now(),
       };
 
       // DEBUG: Log what we're actually returning
-      console.log('Response unemploymentRate:', response.unemploymentRate);
-      console.log('Response taxRevenueGDPPercent:', response.taxRevenueGDPPercent);
-      console.log('Response laborForceParticipationRate:', response.laborForceParticipationRate);
-      console.log('=== END DEBUG ===');
+      console.log("Response unemploymentRate:", response.unemploymentRate);
+      console.log("Response taxRevenueGDPPercent:", response.taxRevenueGDPPercent);
+      console.log("Response laborForceParticipationRate:", response.laborForceParticipationRate);
+      console.log("=== END DEBUG ===");
 
       // Include owner's clerkUserId for ThinkPages profile integration
       const ownerClerkUserId = country.users?.[0]?.clerkUserId ?? null;
@@ -672,24 +702,29 @@ const countriesRouter = createTRPCRouter({
   // Those fields are calculated and updated by the IxStats calculation engine.
   // The editor should display current* values but only allow editing of indicators.
   updateEconomicData: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-      economicData: economicDataSchema,
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        economicData: economicDataSchema,
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { countryId, economicData } = input;
 
       if (!ctx.auth?.userId) {
-        throw new Error('Not authenticated');
+        throw new Error("Not authenticated");
       }
 
       const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId }
+        where: { clerkUserId: ctx.auth.userId },
       });
 
       // System owners can edit any country
-      if (!isSystemOwner(ctx.auth.userId) && (!userProfile || userProfile.countryId !== countryId)) {
-        throw new Error('You do not have permission to edit this country.');
+      if (
+        !isSystemOwner(ctx.auth.userId) &&
+        (!userProfile || userProfile.countryId !== countryId)
+      ) {
+        throw new Error("You do not have permission to edit this country.");
       }
 
       try {
@@ -742,46 +777,55 @@ const countriesRouter = createTRPCRouter({
         // 🏆 Auto-unlock economic achievements (non-blocking)
         if (ctx.auth?.userId && countryId) {
           achievementService
-            .checkAndUnlockCategory(ctx.auth.userId, countryId, ctx.db, 'Economic')
+            .checkAndUnlockCategory(ctx.auth.userId, countryId, ctx.db, "Economic")
             .then((unlocked) => {
               if (unlocked.length > 0) {
-                console.log(`[Achievements] Unlocked ${unlocked.length} economic achievements:`, unlocked);
+                console.log(
+                  `[Achievements] Unlocked ${unlocked.length} economic achievements:`,
+                  unlocked
+                );
               }
             })
-            .catch((err) => console.error('[Achievements] Auto-unlock failed:', err));
+            .catch((err) => console.error("[Achievements] Auto-unlock failed:", err));
         }
 
         return {
           success: true,
           message: "Economic data updated successfully",
-          country: updatedCountry
+          country: updatedCountry,
         };
       } catch (error) {
-        console.error('[Countries API] Failed to update economic data:', error);
-        throw new Error(`Failed to update economic data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error("[Countries API] Failed to update economic data:", error);
+        throw new Error(
+          `Failed to update economic data: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
       }
     }),
 
   // General update mutation for country fields (used by editor)
   update: protectedProcedure
-    .input(z.object({
-      id: z.string(),
-    }).passthrough()) // Allow any additional fields
+    .input(
+      z
+        .object({
+          id: z.string(),
+        })
+        .passthrough()
+    ) // Allow any additional fields
     .mutation(async ({ ctx, input }) => {
       const { id, ...updates } = input;
 
       if (!ctx.auth?.userId) {
-        throw new Error('Not authenticated');
+        throw new Error("Not authenticated");
       }
 
       // Verify user owns this country
       const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId }
+        where: { clerkUserId: ctx.auth.userId },
       });
 
       // System owners can edit any country
       if (!isSystemOwner(ctx.auth.userId) && (!userProfile || userProfile.countryId !== id)) {
-        throw new Error('You do not have permission to edit this country.');
+        throw new Error("You do not have permission to edit this country.");
       }
 
       try {
@@ -800,39 +844,46 @@ const countriesRouter = createTRPCRouter({
 
         return updatedCountry;
       } catch (error) {
-        console.error('[Countries API] Failed to update country:', error);
-        throw new Error(`Failed to update country: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error("[Countries API] Failed to update country:", error);
+        throw new Error(
+          `Failed to update country: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
       }
     }),
 
   updateNationalIdentity: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-      officialName: z.string().optional(),
-      motto: z.string().optional(),
-      nationalAnthem: z.string().optional(),
-      capitalCity: z.string().optional(),
-      officialLanguages: z.string().optional(),
-      currency: z.string().optional(),
-      currencySymbol: z.string().optional(),
-      demonym: z.string().optional(),
-      governmentType: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        officialName: z.string().optional(),
+        motto: z.string().optional(),
+        nationalAnthem: z.string().optional(),
+        capitalCity: z.string().optional(),
+        officialLanguages: z.string().optional(),
+        currency: z.string().optional(),
+        currencySymbol: z.string().optional(),
+        demonym: z.string().optional(),
+        governmentType: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { countryId, ...updates } = input;
 
       if (!ctx.auth?.userId) {
-        throw new Error('Not authenticated');
+        throw new Error("Not authenticated");
       }
 
       // Verify user owns this country
       const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId }
+        where: { clerkUserId: ctx.auth.userId },
       });
 
       // System owners can edit any country
-      if (!isSystemOwner(ctx.auth.userId) && (!userProfile || userProfile.countryId !== countryId)) {
-        throw new Error('You do not have permission to edit this country.');
+      if (
+        !isSystemOwner(ctx.auth.userId) &&
+        (!userProfile || userProfile.countryId !== countryId)
+      ) {
+        throw new Error("You do not have permission to edit this country.");
       }
 
       try {
@@ -856,23 +907,27 @@ const countriesRouter = createTRPCRouter({
 
         return nationalIdentity;
       } catch (error) {
-        console.error('[Countries API] Failed to update national identity:', error);
-        throw new Error(`Failed to update national identity: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error("[Countries API] Failed to update national identity:", error);
+        throw new Error(
+          `Failed to update national identity: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
       }
     }),
 
   getByIdAtTime: publicProcedure
-    .input(z.object({
-      id: z.string().optional(),
-      timestamp: z.number().optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string().optional(),
+        timestamp: z.number().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       // Validate input - return null for invalid IDs instead of throwing
-      if (!input.id || input.id.trim() === '') {
+      if (!input.id || input.id.trim() === "") {
         console.log(`[countries.getByIdAtTime] Invalid or empty ID provided: "${input.id}"`);
         return null;
       }
-      
+
       const targetTime = input.timestamp ?? IxTime.getCurrentIxTime();
       const countryFromDb = await ctx.db.country.findUnique({
         where: { id: input.id },
@@ -884,14 +939,14 @@ const countriesRouter = createTRPCRouter({
           nationalIdentity: true,
         },
       });
-      
+
       if (!countryFromDb) {
         throw new Error(`Country with ID ${input.id} not found`);
       }
 
       const currentTime = IxTime.getCurrentIxTime();
       const timeDiff = Math.abs(targetTime - currentTime);
-      const isCurrentTime = timeDiff < (5 * 60 * 1000);
+      const isCurrentTime = timeDiff < 5 * 60 * 1000;
 
       let calculatedStats: CountryStats;
 
@@ -905,8 +960,8 @@ const countriesRouter = createTRPCRouter({
           governmentType: countryFromDb.governmentType,
           religion: countryFromDb.religion,
           leader: countryFromDb.leader,
-          population: validateNumber(countryFromDb.currentPopulation, 1e11),  // Use current, not baseline
-          gdpPerCapita: validateNumber(countryFromDb.currentGdpPerCapita, 1e7, 1),  // Use current, not baseline
+          population: validateNumber(countryFromDb.currentPopulation, 1e11), // Use current, not baseline
+          gdpPerCapita: validateNumber(countryFromDb.currentGdpPerCapita, 1e7, 1), // Use current, not baseline
           landArea: countryFromDb.landArea,
           areaSqMi: countryFromDb.areaSqMi,
           maxGdpGrowthRate: validateGrowthRate(countryFromDb.maxGdpGrowthRate),
@@ -943,19 +998,19 @@ const countriesRouter = createTRPCRouter({
           ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
         }));
 
-        const result = calc.calculateTimeProgression(
-          initialStats,
-          targetTime,
-          dmInputs
-        );
-        
+        const result = calc.calculateTimeProgression(initialStats, targetTime, dmInputs);
+
         calculatedStats = {
           ...result.newStats,
           currentPopulation: validateNumber(result.newStats.currentPopulation, 1e11),
           currentGdpPerCapita: validateNumber(result.newStats.currentGdpPerCapita, 1e7, 1),
           currentTotalGdp: validateNumber(result.newStats.currentTotalGdp, 1e18, 1),
-          populationDensity: result.newStats.populationDensity ? validateNumber(result.newStats.populationDensity, 1e7) : null,
-          gdpDensity: result.newStats.gdpDensity ? validateNumber(result.newStats.gdpDensity, 1e12) : null,
+          populationDensity: result.newStats.populationDensity
+            ? validateNumber(result.newStats.populationDensity, 1e7)
+            : null,
+          gdpDensity: result.newStats.gdpDensity
+            ? validateNumber(result.newStats.gdpDensity, 1e12)
+            : null,
           populationGrowthRate: validateGrowthRate(result.newStats.populationGrowthRate),
           adjustedGdpGrowth: validateGrowthRate(result.newStats.adjustedGdpGrowth),
           actualGdpGrowth: validateGrowthRate(result.newStats.actualGdpGrowth),
@@ -1011,20 +1066,22 @@ const countriesRouter = createTRPCRouter({
         calculatedStats,
         dmInputs: (countryFromDb.dmInputs as any[]).map((dm: any) => ({
           ...dm,
-          ixTimeTimestamp: dm.ixTimeTimestamp.getTime()
+          ixTimeTimestamp: dm.ixTimeTimestamp.getTime(),
         })),
         nationalIdentity: countryFromDb.nationalIdentity,
       };
     }),
 
   getHistoricalAtTime: publicProcedure
-    .input(z.object({
-      id: z.string(),
-      startTime: z.number(),
-      endTime: z.number(),
-      limit: z.number().optional().default(500),
-      interval: z.enum(["daily", "weekly", "monthly"]).optional().default("weekly"),
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        startTime: z.number(),
+        endTime: z.number(),
+        limit: z.number().optional().default(500),
+        interval: z.enum(["daily", "weekly", "monthly"]).optional().default("weekly"),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const existing = await ctx.db.historicalDataPoint.findMany({
         where: {
@@ -1037,7 +1094,7 @@ const countriesRouter = createTRPCRouter({
         orderBy: { ixTimeTimestamp: "asc" },
         take: input.limit,
       });
-      
+
       if (existing.length >= Math.min(input.limit, 50) || existing.length > 10) {
         return existing.map((p) => ({
           ...p,
@@ -1062,7 +1119,7 @@ const countriesRouter = createTRPCRouter({
           },
         },
       });
-      
+
       if (!country) {
         throw new Error(`Country with ID ${input.id} not found`);
       }
@@ -1071,8 +1128,8 @@ const countriesRouter = createTRPCRouter({
         input.interval === "daily"
           ? 24 * 60 * 60 * 1000
           : input.interval === "weekly"
-          ? 7 * 24 * 60 * 60 * 1000
-          : 30 * 24 * 60 * 60 * 1000;
+            ? 7 * 24 * 60 * 60 * 1000
+            : 30 * 24 * 60 * 60 * 1000;
 
       const econCfg = getDefaultEconomicConfig();
       const baselineDate = country.baselineDate.getTime();
@@ -1100,20 +1157,26 @@ const countriesRouter = createTRPCRouter({
           populationGrowthRate: validateGrowthRate(res.newStats.populationGrowthRate),
           gdpGrowthRate: validateGrowthRate(res.newStats.adjustedGdpGrowth),
           landArea: res.newStats.landArea,
-          populationDensity: res.newStats.populationDensity ? validateNumber(res.newStats.populationDensity, 1e7) : null,
-          gdpDensity: res.newStats.gdpDensity ? validateNumber(res.newStats.gdpDensity, 1e12) : null,
+          populationDensity: res.newStats.populationDensity
+            ? validateNumber(res.newStats.populationDensity, 1e7)
+            : null,
+          gdpDensity: res.newStats.gdpDensity
+            ? validateNumber(res.newStats.gdpDensity, 1e12)
+            : null,
         });
       }
       return dataPoints;
     }),
 
   getForecast: publicProcedure
-    .input(z.object({
-      id: z.string(),
-      startTime: z.number(),
-      endTime: z.number(),
-      points: z.number().optional().default(40),
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        startTime: z.number(),
+        endTime: z.number(),
+        points: z.number().optional().default(40),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const country = await ctx.db.country.findUnique({
         where: { id: input.id },
@@ -1124,7 +1187,7 @@ const countriesRouter = createTRPCRouter({
           },
         },
       });
-      
+
       if (!country) {
         throw new Error(`Country with ID ${input.id} not found`);
       }
@@ -1139,7 +1202,7 @@ const countriesRouter = createTRPCRouter({
           dataPoints: [],
         };
       }
-      
+
       const intervalMs = totalDuration / input.points;
 
       const econCfg = getDefaultEconomicConfig();
@@ -1155,19 +1218,15 @@ const countriesRouter = createTRPCRouter({
 
       const dataPoints = [];
       for (let i = 0; i <= input.points; i++) {
-        let forecastTime = input.startTime + (i * intervalMs);
-        
+        let forecastTime = input.startTime + i * intervalMs;
+
         if (i === input.points) {
           forecastTime = Math.min(forecastTime, input.endTime);
         }
         if (forecastTime > input.endTime && i < input.points) break;
 
-        const res = calc.calculateTimeProgression(
-          baselineStats,
-          forecastTime,
-          dmInputs
-        );
-        
+        const res = calc.calculateTimeProgression(baselineStats, forecastTime, dmInputs);
+
         dataPoints.push({
           ixTime: forecastTime,
           formattedTime: IxTime.formatIxTime(forecastTime),
@@ -1175,15 +1234,19 @@ const countriesRouter = createTRPCRouter({
           population: validateNumber(res.newStats.currentPopulation, 1e11),
           gdpPerCapita: validateNumber(res.newStats.currentGdpPerCapita, 1e7, 1),
           totalGdp: validateNumber(res.newStats.currentTotalGdp, 1e18, 1),
-          populationDensity: res.newStats.populationDensity ? validateNumber(res.newStats.populationDensity, 1e7) : null,
-          gdpDensity: res.newStats.gdpDensity ? validateNumber(res.newStats.gdpDensity, 1e12) : null,
+          populationDensity: res.newStats.populationDensity
+            ? validateNumber(res.newStats.populationDensity, 1e7)
+            : null,
+          gdpDensity: res.newStats.gdpDensity
+            ? validateNumber(res.newStats.gdpDensity, 1e12)
+            : null,
           economicTier: res.newStats.economicTier,
           populationTier: res.newStats.populationTier,
         });
-        
+
         if (forecastTime >= input.endTime) break;
       }
-      
+
       return {
         countryId: input.id,
         countryName: country.name,
@@ -1194,10 +1257,12 @@ const countriesRouter = createTRPCRouter({
     }),
 
   getMultipleAtTime: publicProcedure
-    .input(z.object({
-      ids: z.array(z.string()),
-      timestamp: z.number().optional(),
-    }))
+    .input(
+      z.object({
+        ids: z.array(z.string()),
+        timestamp: z.number().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const targetTime = input.timestamp ?? IxTime.getCurrentIxTime();
       const countriesFromDb = await ctx.db.country.findMany({
@@ -1209,7 +1274,7 @@ const countriesRouter = createTRPCRouter({
           },
         },
       });
-      
+
       const econCfg = getDefaultEconomicConfig();
       const results = [];
 
@@ -1222,13 +1287,9 @@ const countriesRouter = createTRPCRouter({
           ...i,
           ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
         }));
-        
-        const res = calc.calculateTimeProgression(
-          baselineStats,
-          targetTime,
-          dmInputs
-        );
-        
+
+        const res = calc.calculateTimeProgression(baselineStats, targetTime, dmInputs);
+
         const calculatedCountryStats: CountryStats = {
           ...res.newStats,
           id: country.id,
@@ -1270,7 +1331,7 @@ const countriesRouter = createTRPCRouter({
           calculatedStats: calculatedCountryStats,
           dmInputs: (country.dmInputs as any[]).map((dm: any) => ({
             ...dm,
-            ixTimeTimestamp: dm.ixTimeTimestamp.getTime()
+            ixTimeTimestamp: dm.ixTimeTimestamp.getTime(),
           })),
         });
       }
@@ -1278,13 +1339,17 @@ const countriesRouter = createTRPCRouter({
     }),
 
   getGlobalStats: publicProcedure
-    .input(z.object({
-      timestamp: z.number().optional(),
-    }).optional())
+    .input(
+      z
+        .object({
+          timestamp: z.number().optional(),
+        })
+        .optional()
+    )
     .query(async ({ ctx, input }) => {
       const targetTime = input?.timestamp ?? IxTime.getCurrentIxTime();
-      
-      const cacheKey = getCacheKey('globalStats', { timestamp: targetTime });
+
+      const cacheKey = getCacheKey("globalStats", { timestamp: targetTime });
       const cached = getCachedData(cacheKey);
       if (cached) {
         return cached;
@@ -1310,7 +1375,7 @@ const countriesRouter = createTRPCRouter({
       `;
 
       const stats = (result as any[])[0];
-      
+
       const totalPopulation = validateNumber(Number(stats.totalPopulation) || 0, 1e11);
       const totalGdp = validateNumber(Number(stats.totalGdp) || 0, 1e18);
       const totalLand = Number(stats.totalLand) || 0;
@@ -1321,23 +1386,23 @@ const countriesRouter = createTRPCRouter({
       const avgGdpD = totalLand > 0 ? totalGdp / totalLand : 0;
 
       const economicTierDistribution = {
-        'Advanced': Number(stats.advancedCount) || 0,
-        'Developed': Number(stats.developedCount) || 0,
-        'Emerging': Number(stats.emergingCount) || 0,
-        'Developing': Number(stats.developingCount) || 0,
-        'Impoverished': Number(stats.impoverishedCount) || 0,
+        Advanced: Number(stats.advancedCount) || 0,
+        Developed: Number(stats.developedCount) || 0,
+        Emerging: Number(stats.emergingCount) || 0,
+        Developing: Number(stats.developingCount) || 0,
+        Impoverished: Number(stats.impoverishedCount) || 0,
       };
 
       const populationTierDistribution = {
-        '1': Number(stats.popTier1Count) || 0,
-        '2': Number(stats.popTier2Count) || 0,
-        '3': Number(stats.popTier3Count) || 0,
-        '4': Number(stats.popTier4Count) || 0,
-        '5': Number(stats.popTier5Count) || 0,
+        "1": Number(stats.popTier1Count) || 0,
+        "2": Number(stats.popTier2Count) || 0,
+        "3": Number(stats.popTier3Count) || 0,
+        "4": Number(stats.popTier4Count) || 0,
+        "5": Number(stats.popTier5Count) || 0,
       };
 
       const globalGrowthFactor = getDefaultEconomicConfig().globalGrowthFactor;
-      const globalGrowthRate = (globalGrowthFactor - 1); // Convert multiplier (1.0321) to rate (0.0321)
+      const globalGrowthRate = globalGrowthFactor - 1; // Convert multiplier (1.0321) to rate (0.0321)
 
       const response = {
         totalPopulation,
@@ -1351,7 +1416,7 @@ const countriesRouter = createTRPCRouter({
         averagePopulationDensity: avgPopD || null,
         averageGdpDensity: avgGdpD || null,
         globalGrowthFactor, // Keep original for any other uses
-        globalGrowthRate,   // Add the rate that UI expects
+        globalGrowthRate, // Add the rate that UI expects
         timestamp: targetTime, // Add timestamp field that UI expects
         ixTimeTimestamp: targetTime,
       };
@@ -1373,11 +1438,11 @@ const countriesRouter = createTRPCRouter({
           include: {
             dmInputs: {
               where: { isActive: true },
-              orderBy: { ixTimeTimestamp: "desc" }
-            }
+              orderBy: { ixTimeTimestamp: "desc" },
+            },
           },
         });
-        
+
         if (!c) throw new Error(`Country ${input.countryId} not found`);
 
         const calc = new IxStatsCalculator(econCfg, c.baselineDate.getTime());
@@ -1385,7 +1450,7 @@ const countriesRouter = createTRPCRouter({
         const baselineStats = calc.initializeCountryStats(base);
         const dmInputs = (c.dmInputs as any[]).map((i: any) => ({
           ...i,
-          ixTimeTimestamp: i.ixTimeTimestamp.getTime()
+          ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
         }));
         const res = calc.calculateTimeProgression(baselineStats, now, dmInputs);
 
@@ -1394,7 +1459,7 @@ const countriesRouter = createTRPCRouter({
         const oldPopulationTier = c.populationTier;
         const oldGdp = c.currentTotalGdp || 0;
         const oldPopulation = c.currentPopulation || 0;
-        
+
         // Calculate vitality scores before updating
         const updatedCountryData = {
           ...c,
@@ -1418,8 +1483,12 @@ const countriesRouter = createTRPCRouter({
             currentTotalGdp: updatedCountryData.currentTotalGdp,
             economicTier: updatedCountryData.economicTier,
             populationTier: updatedCountryData.populationTier,
-            populationDensity: res.newStats.populationDensity ? validateNumber(res.newStats.populationDensity, 1e7) : null,
-            gdpDensity: res.newStats.gdpDensity ? validateNumber(res.newStats.gdpDensity, 1e12) : null,
+            populationDensity: res.newStats.populationDensity
+              ? validateNumber(res.newStats.populationDensity, 1e7)
+              : null,
+            gdpDensity: res.newStats.gdpDensity
+              ? validateNumber(res.newStats.gdpDensity, 1e12)
+              : null,
             adjustedGdpGrowth: updatedCountryData.adjustedGdpGrowth,
             actualGdpGrowth: updatedCountryData.actualGdpGrowth,
             populationGrowthRate: updatedCountryData.populationGrowthRate,
@@ -1438,7 +1507,7 @@ const countriesRouter = createTRPCRouter({
           // Get userId if country is claimed by a user
           const user = await ctx.db.user.findFirst({
             where: { countryId: c.id },
-            select: { clerkUserId: true }
+            select: { clerkUserId: true },
           });
           const userId = user?.clerkUserId;
 
@@ -1446,7 +1515,7 @@ const countriesRouter = createTRPCRouter({
           if (oldEconomicTier !== res.newStats.economicTier.toString()) {
             await ActivityGenerator.createTierChange(
               c.id,
-              'economic',
+              "economic",
               oldEconomicTier,
               res.newStats.economicTier.toString(),
               userId
@@ -1454,16 +1523,19 @@ const countriesRouter = createTRPCRouter({
 
             // 🔔 Notify country about economic tier change
             try {
-              const tierDirection = parseInt(res.newStats.economicTier.toString()) > parseInt(oldEconomicTier) ? 'advanced' : 'changed';
+              const tierDirection =
+                parseInt(res.newStats.economicTier.toString()) > parseInt(oldEconomicTier)
+                  ? "advanced"
+                  : "changed";
               await notificationAPI.notifyCountry({
                 countryId: c.id,
-                title: `📈 Economic Tier ${tierDirection === 'advanced' ? 'Advancement!' : 'Change'}`,
+                title: `📈 Economic Tier ${tierDirection === "advanced" ? "Advancement!" : "Change"}`,
                 message: `Your country ${tierDirection} from tier ${oldEconomicTier} to tier ${res.newStats.economicTier}`,
-                category: 'economic',
-                priority: tierDirection === 'advanced' ? 'high' : 'medium',
+                category: "economic",
+                priority: tierDirection === "advanced" ? "high" : "medium",
               });
             } catch (error) {
-              console.error('[Countries] Failed to send tier change notification:', error);
+              console.error("[Countries] Failed to send tier change notification:", error);
             }
           }
 
@@ -1471,7 +1543,7 @@ const countriesRouter = createTRPCRouter({
           if (oldPopulationTier !== res.newStats.populationTier.toString()) {
             await ActivityGenerator.createTierChange(
               c.id,
-              'population',
+              "population",
               oldPopulationTier,
               res.newStats.populationTier.toString(),
               userId
@@ -1479,16 +1551,19 @@ const countriesRouter = createTRPCRouter({
 
             // 🔔 Notify country about population tier change
             try {
-              const tierDirection = parseInt(res.newStats.populationTier.toString()) > parseInt(oldPopulationTier) ? 'advanced' : 'changed';
+              const tierDirection =
+                parseInt(res.newStats.populationTier.toString()) > parseInt(oldPopulationTier)
+                  ? "advanced"
+                  : "changed";
               await notificationAPI.notifyCountry({
                 countryId: c.id,
-                title: `👥 Population Tier ${tierDirection === 'advanced' ? 'Advancement!' : 'Change'}`,
+                title: `👥 Population Tier ${tierDirection === "advanced" ? "Advancement!" : "Change"}`,
                 message: `Your country ${tierDirection} from tier ${oldPopulationTier} to tier ${res.newStats.populationTier}`,
-                category: 'social',
-                priority: tierDirection === 'advanced' ? 'high' : 'medium',
+                category: "social",
+                priority: tierDirection === "advanced" ? "high" : "medium",
               });
             } catch (error) {
-              console.error('[Countries] Failed to send tier change notification:', error);
+              console.error("[Countries] Failed to send tier change notification:", error);
             }
           }
 
@@ -1497,12 +1572,7 @@ const countriesRouter = createTRPCRouter({
           const gdpMilestones = [100e9, 500e9, 1e12, 2e12, 5e12, 10e12, 50e12]; // 100B to 50T
           for (const milestone of gdpMilestones) {
             if (oldGdp < milestone && newGdp >= milestone) {
-              await ActivityGenerator.createEconomicMilestone(
-                c.id,
-                'Total GDP',
-                milestone,
-                userId
-              );
+              await ActivityGenerator.createEconomicMilestone(c.id, "Total GDP", milestone, userId);
 
               // 🔔 Notify country about GDP milestone
               try {
@@ -1516,11 +1586,11 @@ const countriesRouter = createTRPCRouter({
                   countryId: c.id,
                   title: `🎉 GDP Milestone Reached!`,
                   message: `Your country's GDP has reached ${formatGDP(milestone)}! A major economic achievement.`,
-                  category: 'achievement',
-                  priority: 'high',
+                  category: "achievement",
+                  priority: "high",
                 });
               } catch (error) {
-                console.error('[Countries] Failed to send GDP milestone notification:', error);
+                console.error("[Countries] Failed to send GDP milestone notification:", error);
               }
 
               break; // Only trigger one milestone per update
@@ -1532,11 +1602,7 @@ const countriesRouter = createTRPCRouter({
           const populationMilestones = [10e6, 25e6, 50e6, 100e6, 250e6, 500e6, 1e9]; // 10M to 1B
           for (const milestone of populationMilestones) {
             if (oldPopulation < milestone && newPopulation >= milestone) {
-              await ActivityGenerator.createPopulationMilestone(
-                c.id,
-                milestone,
-                userId
-              );
+              await ActivityGenerator.createPopulationMilestone(c.id, milestone, userId);
 
               // 🔔 Notify country about population milestone
               try {
@@ -1550,11 +1616,14 @@ const countriesRouter = createTRPCRouter({
                   countryId: c.id,
                   title: `🎊 Population Milestone Reached!`,
                   message: `Your country's population has reached ${formatPop(milestone)} citizens! A demographic milestone.`,
-                  category: 'achievement',
-                  priority: 'high',
+                  category: "achievement",
+                  priority: "high",
                 });
               } catch (error) {
-                console.error('[Countries] Failed to send population milestone notification:', error);
+                console.error(
+                  "[Countries] Failed to send population milestone notification:",
+                  error
+                );
               }
 
               break; // Only trigger one milestone per update
@@ -1563,15 +1632,12 @@ const countriesRouter = createTRPCRouter({
 
           // Check for high economic growth
           const growthRate = res.newStats.adjustedGdpGrowth || 0;
-          if (growthRate >= 0.04) { // 4%+ growth rate
-            await ActivityGenerator.createHighGrowthActivity(
-              c.id,
-              growthRate,
-              userId
-            );
+          if (growthRate >= 0.04) {
+            // 4%+ growth rate
+            await ActivityGenerator.createHighGrowthActivity(c.id, growthRate, userId);
           }
         } catch (activityError) {
-          console.warn('Failed to generate activities for country', c.id, ':', activityError);
+          console.warn("Failed to generate activities for country", c.id, ":", activityError);
           // Don't throw - continue with the update process
         }
 
@@ -1585,8 +1651,12 @@ const countriesRouter = createTRPCRouter({
             populationGrowthRate: validateGrowthRate(res.newStats.populationGrowthRate),
             gdpGrowthRate: validateGrowthRate(res.newStats.adjustedGdpGrowth),
             landArea: c.landArea,
-            populationDensity: res.newStats.populationDensity ? validateNumber(res.newStats.populationDensity, 1e7) : null,
-            gdpDensity: res.newStats.gdpDensity ? validateNumber(res.newStats.gdpDensity, 1e12) : null,
+            populationDensity: res.newStats.populationDensity
+              ? validateNumber(res.newStats.populationDensity, 1e7)
+              : null,
+            gdpDensity: res.newStats.gdpDensity
+              ? validateNumber(res.newStats.gdpDensity, 1e12)
+              : null,
           },
         });
         return updated;
@@ -1596,11 +1666,11 @@ const countriesRouter = createTRPCRouter({
         include: {
           dmInputs: {
             where: { isActive: true },
-            orderBy: { ixTimeTimestamp: "desc" }
-          }
+            orderBy: { ixTimeTimestamp: "desc" },
+          },
         },
       });
-      
+
       const start = Date.now();
       const results = [];
       const historicalPointsToCreate = [];
@@ -1612,16 +1682,16 @@ const countriesRouter = createTRPCRouter({
         const baselineStats = calc.initializeCountryStats(base);
         const dmInputs = (c.dmInputs as any[]).map((i: any) => ({
           ...i,
-          ixTimeTimestamp: i.ixTimeTimestamp.getTime()
+          ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
         }));
         const res = calc.calculateTimeProgression(baselineStats, now, dmInputs);
-        
+
         // Store old values for comparison
         const oldEconomicTier = c.economicTier;
         const oldPopulationTier = c.populationTier;
         const oldGdp = c.currentTotalGdp || 0;
         const oldPopulation = c.currentPopulation || 0;
-        
+
         // Calculate vitality scores for batch update
         const updatedCountryData = {
           ...c,
@@ -1643,8 +1713,12 @@ const countriesRouter = createTRPCRouter({
           currentTotalGdp: updatedCountryData.currentTotalGdp,
           economicTier: updatedCountryData.economicTier,
           populationTier: updatedCountryData.populationTier,
-          populationDensity: res.newStats.populationDensity ? validateNumber(res.newStats.populationDensity, 1e7) : null,
-          gdpDensity: res.newStats.gdpDensity ? validateNumber(res.newStats.gdpDensity, 1e12) : null,
+          populationDensity: res.newStats.populationDensity
+            ? validateNumber(res.newStats.populationDensity, 1e7)
+            : null,
+          gdpDensity: res.newStats.gdpDensity
+            ? validateNumber(res.newStats.gdpDensity, 1e12)
+            : null,
           adjustedGdpGrowth: updatedCountryData.adjustedGdpGrowth,
           actualGdpGrowth: updatedCountryData.actualGdpGrowth,
           populationGrowthRate: updatedCountryData.populationGrowthRate,
@@ -1659,7 +1733,7 @@ const countriesRouter = createTRPCRouter({
 
         const updated = await ctx.db.country.update({
           where: { id: c.id },
-          data: updateData
+          data: updateData,
         });
         results.push(updated);
 
@@ -1668,7 +1742,7 @@ const countriesRouter = createTRPCRouter({
           // Get userId if country is claimed
           const user = await ctx.db.user.findFirst({
             where: { countryId: c.id },
-            select: { clerkUserId: true }
+            select: { clerkUserId: true },
           });
           const userId = user?.clerkUserId;
 
@@ -1676,7 +1750,7 @@ const countriesRouter = createTRPCRouter({
           if (oldEconomicTier !== res.newStats.economicTier.toString()) {
             await ActivityGenerator.createTierChange(
               c.id,
-              'economic',
+              "economic",
               oldEconomicTier,
               res.newStats.economicTier.toString(),
               userId
@@ -1689,12 +1763,7 @@ const countriesRouter = createTRPCRouter({
           const majorGdpMilestones = [500e9, 1e12, 5e12, 10e12]; // 500B, 1T, 5T, 10T
           for (const milestone of majorGdpMilestones) {
             if (oldGdp < milestone && newGdp >= milestone) {
-              await ActivityGenerator.createEconomicMilestone(
-                c.id,
-                'Total GDP',
-                milestone,
-                userId
-              );
+              await ActivityGenerator.createEconomicMilestone(c.id, "Total GDP", milestone, userId);
               activitiesCreated++;
               break;
             }
@@ -1705,20 +1774,16 @@ const countriesRouter = createTRPCRouter({
           const majorPopulationMilestones = [50e6, 100e6, 500e6]; // 50M, 100M, 500M
           for (const milestone of majorPopulationMilestones) {
             if (oldPopulation < milestone && newPopulation >= milestone) {
-              await ActivityGenerator.createPopulationMilestone(
-                c.id,
-                milestone,
-                userId
-              );
+              await ActivityGenerator.createPopulationMilestone(c.id, milestone, userId);
               activitiesCreated++;
               break;
             }
           }
         } catch (activityError) {
-          console.warn('Failed to generate activity for country', c.id, ':', activityError);
+          console.warn("Failed to generate activity for country", c.id, ":", activityError);
           // Don't interrupt the batch process
         }
-        
+
         historicalPointsToCreate.push({
           countryId: c.id,
           ixTimeTimestamp: new Date(now),
@@ -1728,8 +1793,12 @@ const countriesRouter = createTRPCRouter({
           populationGrowthRate: validateGrowthRate(res.newStats.populationGrowthRate),
           gdpGrowthRate: validateGrowthRate(res.newStats.adjustedGdpGrowth),
           landArea: c.landArea,
-          populationDensity: res.newStats.populationDensity ? validateNumber(res.newStats.populationDensity, 1e7) : null,
-          gdpDensity: res.newStats.gdpDensity ? validateNumber(res.newStats.gdpDensity, 1e12) : null,
+          populationDensity: res.newStats.populationDensity
+            ? validateNumber(res.newStats.populationDensity, 1e7)
+            : null,
+          gdpDensity: res.newStats.gdpDensity
+            ? validateNumber(res.newStats.gdpDensity, 1e12)
+            : null,
         });
       }
 
@@ -1749,7 +1818,7 @@ const countriesRouter = createTRPCRouter({
           console.warn("Failed to create calculation log:", error);
         }
       }
-      
+
       return {
         count: results.length,
         message: `Updated ${results.length} countries`,
@@ -1758,12 +1827,14 @@ const countriesRouter = createTRPCRouter({
     }),
 
   getDmInputs: publicProcedure
-    .input(z.object({
-      countryId: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
-        const whereClause = input.countryId 
+        const whereClause = input.countryId
           ? { countryId: input.countryId, isActive: true }
           : { isActive: true };
 
@@ -1772,9 +1843,9 @@ const countriesRouter = createTRPCRouter({
           orderBy: { ixTimeTimestamp: "desc" },
           include: {
             country: {
-              select: { name: true }
-            }
-          }
+              select: { name: true },
+            },
+          },
         });
 
         return dmInputs;
@@ -1785,13 +1856,15 @@ const countriesRouter = createTRPCRouter({
     }),
 
   addDmInput: executiveProcedure
-    .input(z.object({
-      countryId: z.string().optional(),
-      inputType: z.string(),
-      value: z.number(),
-      description: z.string(),
-      duration: z.number().optional(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string().optional(),
+        inputType: z.string(),
+        value: z.number(),
+        description: z.string(),
+        duration: z.number().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         const dmInput = await ctx.db.dmInputs.create({
@@ -1815,13 +1888,15 @@ const countriesRouter = createTRPCRouter({
     }),
 
   updateDmInput: executiveProcedure
-    .input(z.object({
-      id: z.string(),
-      inputType: z.string(),
-      value: z.number(),
-      description: z.string(),
-      duration: z.number().optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        inputType: z.string(),
+        value: z.number(),
+        description: z.string(),
+        duration: z.number().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         const dmInput = await ctx.db.dmInputs.update({
@@ -1843,9 +1918,11 @@ const countriesRouter = createTRPCRouter({
     }),
 
   deleteDmInput: executiveProcedure
-    .input(z.object({
-      id: z.string(),
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         const dmInput = await ctx.db.dmInputs.update({
@@ -1864,15 +1941,17 @@ const countriesRouter = createTRPCRouter({
     }),
 
   updateCountryName: countryOwnerProcedure
-    .input(z.object({
-      countryId: z.string(),
-      name: z.string().min(1).max(100),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        name: z.string().min(1).max(100),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         // Verify user owns this country
         if (ctx.user?.countryId !== input.countryId) {
-          throw new Error('You do not have permission to update this country.');
+          throw new Error("You do not have permission to update this country.");
         }
 
         const updatedCountry = await ctx.db.country.update({
@@ -1891,16 +1970,18 @@ const countriesRouter = createTRPCRouter({
     }),
 
   updateProfileVisibility: countryOwnerProcedure
-    .input(z.object({
-      countryId: z.string(),
-      hideDiplomaticOps: z.boolean().optional(),
-      hideStratcommIntel: z.boolean().optional(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        hideDiplomaticOps: z.boolean().optional(),
+        hideStratcommIntel: z.boolean().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         // Verify user owns this country
         if (ctx.user?.countryId !== input.countryId) {
-          throw new Error('You do not have permission to update this country.');
+          throw new Error("You do not have permission to update this country.");
         }
 
         const updateData: any = {
@@ -1927,20 +2008,22 @@ const countriesRouter = createTRPCRouter({
     }),
 
   updateCountryFlag: countryOwnerProcedure
-    .input(z.object({
-      countryId: z.string(),
-      flag: z.string().min(1), // Data URL or external URL
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        flag: z.string().min(1), // Data URL or external URL
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         // Verify user owns this country
         if (ctx.user?.countryId !== input.countryId) {
-          throw new Error('You do not have permission to update this country.');
+          throw new Error("You do not have permission to update this country.");
         }
 
         // Validate that it's either a data URL or a valid URL
-        if (!input.flag.startsWith('data:') && !input.flag.startsWith('http')) {
-          throw new Error('Invalid flag URL format');
+        if (!input.flag.startsWith("data:") && !input.flag.startsWith("http")) {
+          throw new Error("Invalid flag URL format");
         }
 
         const updatedCountry = await ctx.db.country.update({
@@ -1951,7 +2034,9 @@ const countriesRouter = createTRPCRouter({
           },
         });
 
-        console.log(`[CountryUpdate] Updated flag for country ${updatedCountry.name} (${updatedCountry.id})`);
+        console.log(
+          `[CountryUpdate] Updated flag for country ${updatedCountry.name} (${updatedCountry.id})`
+        );
 
         return updatedCountry;
       } catch (error) {
@@ -1961,20 +2046,22 @@ const countriesRouter = createTRPCRouter({
     }),
 
   updateCountryCoatOfArms: countryOwnerProcedure
-    .input(z.object({
-      countryId: z.string(),
-      coatOfArms: z.string().min(1), // Data URL or external URL
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        coatOfArms: z.string().min(1), // Data URL or external URL
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         // Verify user owns this country
         if (ctx.user?.countryId !== input.countryId) {
-          throw new Error('You do not have permission to update this country.');
+          throw new Error("You do not have permission to update this country.");
         }
 
         // Validate that it's either a data URL or a valid URL
-        if (!input.coatOfArms.startsWith('data:') && !input.coatOfArms.startsWith('http')) {
-          throw new Error('Invalid coat of arms URL format');
+        if (!input.coatOfArms.startsWith("data:") && !input.coatOfArms.startsWith("http")) {
+          throw new Error("Invalid coat of arms URL format");
         }
 
         const updatedCountry = await ctx.db.country.update({
@@ -1985,7 +2072,9 @@ const countriesRouter = createTRPCRouter({
           },
         });
 
-        console.log(`[CountryUpdate] Updated coat of arms for country ${updatedCountry.name} (${updatedCountry.id})`);
+        console.log(
+          `[CountryUpdate] Updated coat of arms for country ${updatedCountry.name} (${updatedCountry.id})`
+        );
 
         return updatedCountry;
       } catch (error) {
@@ -1995,16 +2084,18 @@ const countriesRouter = createTRPCRouter({
     }),
 
   updateCountrySymbols: countryOwnerProcedure
-    .input(z.object({
-      countryId: z.string(),
-      flag: z.string().optional(),
-      coatOfArms: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        flag: z.string().optional(),
+        coatOfArms: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         // Verify user owns this country
         if (ctx.user?.countryId !== input.countryId) {
-          throw new Error('You do not have permission to update this country.');
+          throw new Error("You do not have permission to update this country.");
         }
 
         const updateData: any = {
@@ -2013,16 +2104,16 @@ const countriesRouter = createTRPCRouter({
 
         // Validate and add flag if provided
         if (input.flag !== undefined) {
-          if (!input.flag.startsWith('data:') && !input.flag.startsWith('http')) {
-            throw new Error('Invalid flag URL format');
+          if (!input.flag.startsWith("data:") && !input.flag.startsWith("http")) {
+            throw new Error("Invalid flag URL format");
           }
           updateData.flag = input.flag;
         }
 
         // Validate and add coat of arms if provided
         if (input.coatOfArms !== undefined) {
-          if (!input.coatOfArms.startsWith('data:') && !input.coatOfArms.startsWith('http')) {
-            throw new Error('Invalid coat of arms URL format');
+          if (!input.coatOfArms.startsWith("data:") && !input.coatOfArms.startsWith("http")) {
+            throw new Error("Invalid coat of arms URL format");
           }
           updateData.coatOfArms = input.coatOfArms;
         }
@@ -2032,7 +2123,9 @@ const countriesRouter = createTRPCRouter({
           data: updateData,
         });
 
-        console.log(`[CountryUpdate] Updated symbols for country ${updatedCountry.name} (${updatedCountry.id})`);
+        console.log(
+          `[CountryUpdate] Updated symbols for country ${updatedCountry.name} (${updatedCountry.id})`
+        );
 
         return updatedCountry;
       } catch (error) {
@@ -2042,15 +2135,17 @@ const countriesRouter = createTRPCRouter({
     }),
 
   getHistoricalData: publicProcedure
-    .input(z.object({
-      countryId: z.string(),
-      limit: z.number().optional().default(30),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        limit: z.number().optional().default(30),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         const now = IxTime.getCurrentIxTime();
         const SIX_MONTHS_MS = 6 * 30 * 24 * 60 * 60 * 1000; // 6 months ago
-        
+
         const existingData = await ctx.db.historicalDataPoint.findMany({
           where: {
             countryId: input.countryId,
@@ -2072,7 +2167,9 @@ const countriesRouter = createTRPCRouter({
             totalGdp: validateNumber(point.totalGdp, 1e18, 1),
             populationGrowthRate: validateGrowthRate(point.populationGrowthRate),
             gdpGrowthRate: validateGrowthRate(point.gdpGrowthRate),
-            populationDensity: point.populationDensity ? validateNumber(point.populationDensity, 1e7) : null,
+            populationDensity: point.populationDensity
+              ? validateNumber(point.populationDensity, 1e7)
+              : null,
             gdpDensity: point.gdpDensity ? validateNumber(point.gdpDensity, 1e12) : null,
           }));
         }
@@ -2106,9 +2203,9 @@ const countriesRouter = createTRPCRouter({
         const intervalMs = SIX_MONTHS_MS / input.limit;
 
         for (let i = 0; i < input.limit; i++) {
-          const timePoint = now - SIX_MONTHS_MS + (i * intervalMs);
+          const timePoint = now - SIX_MONTHS_MS + i * intervalMs;
           const res = calc.calculateTimeProgression(baselineStats, timePoint, dmInputs);
-          
+
           dataPoints.push({
             ixTimeTimestamp: timePoint,
             population: validateNumber(res.newStats.currentPopulation, 1e11),
@@ -2117,8 +2214,12 @@ const countriesRouter = createTRPCRouter({
             populationGrowthRate: validateGrowthRate(res.newStats.populationGrowthRate),
             gdpGrowthRate: validateGrowthRate(res.newStats.adjustedGdpGrowth),
             landArea: res.newStats.landArea,
-            populationDensity: res.newStats.populationDensity ? validateNumber(res.newStats.populationDensity, 1e7) : null,
-            gdpDensity: res.newStats.gdpDensity ? validateNumber(res.newStats.gdpDensity, 1e12) : null,
+            populationDensity: res.newStats.populationDensity
+              ? validateNumber(res.newStats.populationDensity, 1e7)
+              : null,
+            gdpDensity: res.newStats.gdpDensity
+              ? validateNumber(res.newStats.gdpDensity, 1e12)
+              : null,
           });
         }
 
@@ -2130,9 +2231,11 @@ const countriesRouter = createTRPCRouter({
     }),
 
   getTopCountriesByGdpPerCapita: rateLimitedPublicProcedure
-    .input(z.object({
-      limit: z.number().optional().default(10),
-    }))
+    .input(
+      z.object({
+        limit: z.number().optional().default(10),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         const cacheKey = getCacheKey("topCountriesByGdpPerCapita", { limit: input.limit });
@@ -2169,9 +2272,11 @@ const countriesRouter = createTRPCRouter({
     }),
 
   getTopCountriesByPopulation: rateLimitedPublicProcedure
-    .input(z.object({
-      limit: z.number().optional().default(15),
-    }))
+    .input(
+      z.object({
+        limit: z.number().optional().default(15),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         const cacheKey = getCacheKey("topCountriesByPopulation", { limit: input.limit });
@@ -2210,9 +2315,11 @@ const countriesRouter = createTRPCRouter({
     }),
 
   getEconomicData: publicProcedure
-    .input(z.object({
-      countryId: z.string(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         const cacheKey = getCacheKey("economicData", { countryId: input.countryId });
@@ -2239,17 +2346,13 @@ const countriesRouter = createTRPCRouter({
         const base = prepareBaseCountryData(country);
         const baselineStats = calc.initializeCountryStats(base);
         const currentTime = IxTime.getCurrentIxTime();
-        
+
         const dmInputs = (country.dmInputs as any[]).map((i: any) => ({
           ...i,
           ixTimeTimestamp: i.ixTimeTimestamp.getTime(),
         }));
 
-        const result = calc.calculateTimeProgression(
-          baselineStats,
-          currentTime,
-          dmInputs
-        );
+        const result = calc.calculateTimeProgression(baselineStats, currentTime, dmInputs);
 
         const economicData = {
           id: country.id,
@@ -2281,11 +2384,13 @@ const countriesRouter = createTRPCRouter({
     }),
 
   searchWiki: rateLimitedPublicProcedure
-    .input(z.object({
-      query: z.string(),
-      site: z.enum(['ixwiki', 'iiwiki', 'althistory']),
-      categoryFilter: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        query: z.string(),
+        site: z.enum(["ixwiki", "iiwiki", "althistory"]),
+        categoryFilter: z.string().optional(),
+      })
+    )
     .mutation(async ({ input }) => {
       try {
         console.log("[searchWiki] Starting search with input:", input);
@@ -2300,15 +2405,19 @@ const countriesRouter = createTRPCRouter({
           console.error("[searchWiki] Error message:", error.message);
           console.error("[searchWiki] Error stack:", error.stack);
         }
-        throw new Error(`Failed to search wiki: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to search wiki: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
       }
     }),
 
   parseInfobox: publicProcedure
-    .input(z.object({
-      pageName: z.string(),
-      site: z.enum(['ixwiki', 'iiwiki', 'althistory']),
-    }))
+    .input(
+      z.object({
+        pageName: z.string(),
+        site: z.enum(["ixwiki", "iiwiki", "althistory"]),
+      })
+    )
     .mutation(async ({ input }) => {
       try {
         const { parseCountryInfobox } = await import("~/lib/wiki-search-service");
@@ -2320,24 +2429,31 @@ const countriesRouter = createTRPCRouter({
     }),
 
   getWikiInfobox: publicProcedure
-    .input(z.object({
-      name: z.string(),
-      site: z.enum(['ixwiki', 'iiwiki', 'althistory']).optional().default('ixwiki'),
-    }))
+    .input(
+      z.object({
+        name: z.string(),
+        site: z.enum(["ixwiki", "iiwiki", "althistory"]).optional().default("ixwiki"),
+      })
+    )
     .query(async ({ input }) => {
       const { parseCountryInfobox } = await import("~/lib/wiki-search-service");
       const data = await parseCountryInfobox(input.name, input.site);
       if (!data) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: `No wiki infobox found for ${input.name}` });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `No wiki infobox found for ${input.name}`,
+        });
       }
       return data;
     }),
 
   getIntelligenceBriefings: publicProcedure
-    .input(z.object({
-      countryId: z.string(),
-      timeframe: z.enum(['week', 'month', 'quarter']).optional().default('week'),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        timeframe: z.enum(["week", "month", "quarter"]).optional().default("week"),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         const country = await ctx.db.country.findUnique({
@@ -2357,9 +2473,9 @@ const countriesRouter = createTRPCRouter({
 
         const currentTime = IxTime.getCurrentIxTime();
         const timeframeDuration = {
-          'week': 7 * 24 * 60 * 60 * 1000,
-          'month': 30 * 24 * 60 * 60 * 1000,
-          'quarter': 90 * 24 * 60 * 60 * 1000,
+          week: 7 * 24 * 60 * 60 * 1000,
+          month: 30 * 24 * 60 * 60 * 1000,
+          quarter: 90 * 24 * 60 * 60 * 1000,
         }[input.timeframe];
 
         const recentData = await ctx.db.historicalDataPoint.findMany({
@@ -2389,37 +2505,39 @@ const countriesRouter = createTRPCRouter({
 
         let gdpChange = 0;
         if (recentData.length >= 2) {
-          const latestGdp = recentData[0]?.gdpPerCapita || currentStats.newStats.currentGdpPerCapita;
-          const previousGdp = recentData[recentData.length - 1]?.gdpPerCapita || country.baselineGdpPerCapita;
+          const latestGdp =
+            recentData[0]?.gdpPerCapita || currentStats.newStats.currentGdpPerCapita;
+          const previousGdp =
+            recentData[recentData.length - 1]?.gdpPerCapita || country.baselineGdpPerCapita;
           if (previousGdp && previousGdp !== 0) {
             gdpChange = ((latestGdp - previousGdp) / previousGdp) * 100;
           } else {
             gdpChange = 0;
           }
-          
+
           briefings.push({
-            id: 'economic-performance',
-            category: 'Economic Intelligence',
-            title: 'Economic Performance Analysis',
-            priority: gdpChange < -5 ? 'critical' : gdpChange < 0 ? 'high' : 'medium',
+            id: "economic-performance",
+            category: "Economic Intelligence",
+            title: "Economic Performance Analysis",
+            priority: gdpChange < -5 ? "critical" : gdpChange < 0 ? "high" : "medium",
             confidenceScore: 85,
-            summary: `GDP per capita ${gdpChange >= 0 ? 'increased' : 'decreased'} by ${Math.abs(gdpChange).toFixed(1)}% over the ${input.timeframe}`,
+            summary: `GDP per capita ${gdpChange >= 0 ? "increased" : "decreased"} by ${Math.abs(gdpChange).toFixed(1)}% over the ${input.timeframe}`,
             details: [
               `Current GDP per capita: $${latestGdp.toLocaleString()}`,
               `Growth rate: ${(currentStats.newStats.adjustedGdpGrowth * 100).toFixed(2)}%`,
               `Economic tier: ${currentStats.newStats.economicTier}`,
             ],
             timestamp: currentTime,
-            source: 'Economic Analytics Engine',
+            source: "Economic Analytics Engine",
           });
         } else {
           gdpChange = currentStats.newStats.adjustedGdpGrowth * 100;
-          
+
           briefings.push({
-            id: 'economic-performance',
-            category: 'Economic Intelligence',
-            title: 'Economic Performance Analysis',
-            priority: gdpChange < -5 ? 'critical' : gdpChange < 0 ? 'high' : 'medium',
+            id: "economic-performance",
+            category: "Economic Intelligence",
+            title: "Economic Performance Analysis",
+            priority: gdpChange < -5 ? "critical" : gdpChange < 0 ? "high" : "medium",
             confidenceScore: 75,
             summary: `Current GDP growth rate at ${gdpChange.toFixed(1)}% annually`,
             details: [
@@ -2428,43 +2546,43 @@ const countriesRouter = createTRPCRouter({
               `Economic tier: ${currentStats.newStats.economicTier}`,
             ],
             timestamp: currentTime,
-            source: 'Economic Analytics Engine',
+            source: "Economic Analytics Engine",
           });
         }
 
         const popGrowthRate = currentStats.newStats.populationGrowthRate || 0;
         briefings.push({
-          id: 'population-dynamics',
-          category: 'Demographic Intelligence',
-          title: 'Population Dynamics Assessment',
-          priority: popGrowthRate < 0 ? 'high' : 'medium',
+          id: "population-dynamics",
+          category: "Demographic Intelligence",
+          title: "Population Dynamics Assessment",
+          priority: popGrowthRate < 0 ? "high" : "medium",
           confidenceScore: 90,
           summary: `Population growth rate at ${(popGrowthRate * 100).toFixed(2)}% annually`,
           details: [
             `Current population: ${currentStats.newStats.currentPopulation.toLocaleString()}`,
             `Population tier: ${currentStats.newStats.populationTier}`,
-            `Growth trend: ${popGrowthRate >= 0 ? 'Positive' : 'Negative'}`,
+            `Growth trend: ${popGrowthRate >= 0 ? "Positive" : "Negative"}`,
           ],
           timestamp: currentTime,
-          source: 'Demographic Analysis Unit',
+          source: "Demographic Analysis Unit",
         });
 
         const riskFactors = [];
-        if (gdpChange < -3) riskFactors.push('Economic decline detected');
-        if (popGrowthRate < 0.005) riskFactors.push('Low population growth');
-        if (country.dmInputs.length > 5) riskFactors.push('High external influence activity');
+        if (gdpChange < -3) riskFactors.push("Economic decline detected");
+        if (popGrowthRate < 0.005) riskFactors.push("Low population growth");
+        if (country.dmInputs.length > 5) riskFactors.push("High external influence activity");
 
         if (riskFactors.length > 0) {
           briefings.push({
-            id: 'risk-assessment',
-            category: 'Risk Intelligence',
-            title: 'Strategic Risk Assessment',
-            priority: riskFactors.length >= 3 ? 'critical' : 'high',
+            id: "risk-assessment",
+            category: "Risk Intelligence",
+            title: "Strategic Risk Assessment",
+            priority: riskFactors.length >= 3 ? "critical" : "high",
             confidenceScore: 75,
-            summary: `${riskFactors.length} risk factor${riskFactors.length > 1 ? 's' : ''} identified`,
+            summary: `${riskFactors.length} risk factor${riskFactors.length > 1 ? "s" : ""} identified`,
             details: riskFactors,
             timestamp: currentTime,
-            source: 'Risk Assessment Division',
+            source: "Risk Assessment Division",
           });
         }
 
@@ -2482,9 +2600,11 @@ const countriesRouter = createTRPCRouter({
     }),
 
   getFocusCardsData: publicProcedure
-    .input(z.object({
-      countryId: z.string(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         const country = await ctx.db.country.findUnique({
@@ -2513,43 +2633,53 @@ const countriesRouter = createTRPCRouter({
         }));
         const currentStats = calc.calculateTimeProgression(baselineStats, currentTime, dmInputs);
 
-        const economicHealthScore = Math.min(100, Math.max(0, 
-          (currentStats.newStats.currentGdpPerCapita / 50000) * 100
-        ));
+        const economicHealthScore = Math.min(
+          100,
+          Math.max(0, (currentStats.newStats.currentGdpPerCapita / 50000) * 100)
+        );
 
         const popGrowthRate = currentStats.newStats.populationGrowthRate || 0;
-        const populationHealthScore = Math.min(100, Math.max(0,
-          50 + (popGrowthRate * 1000) // Convert to 0-100 scale
-        ));
+        const populationHealthScore = Math.min(
+          100,
+          Math.max(
+            0,
+            50 + popGrowthRate * 1000 // Convert to 0-100 scale
+          )
+        );
 
-        const diplomaticHealthScore = Math.min(100, Math.max(20,
-          ((country as any).globalDiplomaticInfluence || 50) + 
-          ((country as any).tradeRelationshipStrength || 10) + 
-          ((country as any).allianceStrength || 15) - 
-          ((country as any).diplomaticTensions || 5)
-        ));
+        const diplomaticHealthScore = Math.min(
+          100,
+          Math.max(
+            20,
+            ((country as any).globalDiplomaticInfluence || 50) +
+              ((country as any).tradeRelationshipStrength || 10) +
+              ((country as any).allianceStrength || 15) -
+              ((country as any).diplomaticTensions || 5)
+          )
+        );
 
-        const govEfficiency = Math.min(100, Math.max(30,
-          70 + (currentStats.newStats.adjustedGdpGrowth * 500)
-        ));
+        const govEfficiency = Math.min(
+          100,
+          Math.max(30, 70 + currentStats.newStats.adjustedGdpGrowth * 500)
+        );
 
         const alerts = [];
         if (economicHealthScore < 40) {
           alerts.push({
-            id: 'economic-concern',
-            type: 'warning',
-            title: 'Economic Performance Below Target',
-            message: 'GDP per capita growth has slowed significantly',
+            id: "economic-concern",
+            type: "warning",
+            title: "Economic Performance Below Target",
+            message: "GDP per capita growth has slowed significantly",
             urgent: economicHealthScore < 25,
           });
         }
 
         if (popGrowthRate < 0) {
           alerts.push({
-            id: 'population-decline',
-            type: 'error',
-            title: 'Population Decline Detected',
-            message: 'Negative population growth may impact long-term sustainability',
+            id: "population-decline",
+            type: "error",
+            title: "Population Decline Detected",
+            message: "Negative population growth may impact long-term sustainability",
             urgent: true,
           });
         }
@@ -2560,30 +2690,43 @@ const countriesRouter = createTRPCRouter({
             gdpPerCapita: currentStats.newStats.currentGdpPerCapita,
             growthRate: currentStats.newStats.adjustedGdpGrowth * 100,
             economicTier: currentStats.newStats.economicTier,
-            alerts: alerts.filter(a => a.id.includes('economic')),
+            alerts: alerts.filter((a) => a.id.includes("economic")),
           },
           population: {
             healthScore: Math.round(populationHealthScore),
             population: currentStats.newStats.currentPopulation,
             growthRate: popGrowthRate * 100,
             populationTier: currentStats.newStats.populationTier,
-            alerts: alerts.filter(a => a.id.includes('population')),
+            alerts: alerts.filter((a) => a.id.includes("population")),
           },
           diplomatic: {
             healthScore: Math.round(diplomaticHealthScore),
             allies: Math.floor(((country as any).globalDiplomaticInfluence || 50) / 10) + 3,
-            reputation: diplomaticHealthScore > 75 ? 'Strong' : diplomaticHealthScore > 50 ? 'Stable' : 'Improving',
+            reputation:
+              diplomaticHealthScore > 75
+                ? "Strong"
+                : diplomaticHealthScore > 50
+                  ? "Stable"
+                  : "Improving",
             treaties: Math.floor(((country as any).tradeRelationshipStrength || 25) / 2) + 5,
             alerts: [],
           },
           government: {
             healthScore: Math.round(govEfficiency),
-            approval: Math.round(Math.min(95, Math.max(25, 
-              50 + (currentStats.newStats.adjustedGdpGrowth * 1500) + 
-              (economicHealthScore - 50) / 2
-            ))),
-            efficiency: govEfficiency > 80 ? 'Excellent' : govEfficiency > 60 ? 'Good' : 'Improving',
-            stability: diplomaticHealthScore > 70 && govEfficiency > 60 ? 'Stable' : 'Monitored',
+            approval: Math.round(
+              Math.min(
+                95,
+                Math.max(
+                  25,
+                  50 +
+                    currentStats.newStats.adjustedGdpGrowth * 1500 +
+                    (economicHealthScore - 50) / 2
+                )
+              )
+            ),
+            efficiency:
+              govEfficiency > 80 ? "Excellent" : govEfficiency > 60 ? "Good" : "Improving",
+            stability: diplomaticHealthScore > 70 && govEfficiency > 60 ? "Stable" : "Monitored",
             alerts: [],
           },
           generatedAt: currentTime,
@@ -2595,9 +2738,11 @@ const countriesRouter = createTRPCRouter({
     }),
 
   getActivityRingsData: publicProcedure
-    .input(z.object({
-      countryId: z.string(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         const country = await ctx.db.country.findUnique({
@@ -2628,62 +2773,76 @@ const countriesRouter = createTRPCRouter({
 
         // Use stored vitality scores from database, with live calculation fallback
         const popGrowthRate = currentStats.newStats.populationGrowthRate || 0;
-        
+
         // Calculate live vitality scores if database values are not set
         const calculateEconomicVitality = () => {
           const gdpScore = Math.min(100, (currentStats.newStats.currentGdpPerCapita / 50000) * 100);
-          const growthBonus = Math.min(20, Math.max(-20, currentStats.newStats.adjustedGdpGrowth * 400));
+          const growthBonus = Math.min(
+            20,
+            Math.max(-20, currentStats.newStats.adjustedGdpGrowth * 400)
+          );
           return Math.min(100, Math.max(0, gdpScore * 0.7 + growthBonus + 30));
         };
-        
+
         const calculatePopulationWellbeing = () => {
           const growthHealth = popGrowthRate > 0 ? 70 : 40;
           const densityFactor = country.populationDensity
-            ? Math.max(50, 100 - (country.populationDensity / 500))
+            ? Math.max(50, 100 - country.populationDensity / 500)
             : 60;
           return (growthHealth + densityFactor) / 2;
         };
-        
+
         const calculateDiplomaticStanding = () => {
-          return Math.min(100, Math.max(40, 
-            ((country as any).globalDiplomaticInfluence || 50) + 
-            ((country as any).tradeRelationshipStrength || 10) + 
-            ((country as any).allianceStrength || 15) - 
-            ((country as any).diplomaticTensions || 5)
-          ));
+          return Math.min(
+            100,
+            Math.max(
+              40,
+              ((country as any).globalDiplomaticInfluence || 50) +
+                ((country as any).tradeRelationshipStrength || 10) +
+                ((country as any).allianceStrength || 15) -
+                ((country as any).diplomaticTensions || 5)
+            )
+          );
         };
-        
+
         const calculateGovernmentalEfficiency = () => {
-          const economicTierScore = {
-            "Extravagant": 95,
-            "Very Strong": 85,
-            "Strong": 75,
-            "Healthy": 65,
-            "Developed": 50,
-            "Developing": 35,
-            "Impoverished": 25,
-          }[currentStats.newStats.economicTier] || 25;
+          const economicTierScore =
+            {
+              Extravagant: 95,
+              "Very Strong": 85,
+              Strong: 75,
+              Healthy: 65,
+              Developed: 50,
+              Developing: 35,
+              Impoverished: 25,
+            }[currentStats.newStats.economicTier] || 25;
           return economicTierScore * 0.8;
         };
-        
-        // Always calculate live - use database values only if they exist and are reasonable
-        const economicVitality = (country.economicVitality && country.economicVitality > 5)
-          ? country.economicVitality
-          : calculateEconomicVitality();
-          
-        const populationWellbeing = (country.populationWellbeing && country.populationWellbeing > 5)
-          ? country.populationWellbeing
-          : calculatePopulationWellbeing();
-          
-        const diplomaticStanding = (country.diplomaticStanding && country.diplomaticStanding > 5)
-          ? country.diplomaticStanding
-          : calculateDiplomaticStanding();
-          
-        const governmentalEfficiency = (country.governmentalEfficiency && country.governmentalEfficiency > 5)
-          ? country.governmentalEfficiency
-          : calculateGovernmentalEfficiency();
 
-        console.log(`[getFocusCardsData] Country: ${country.name}, GDP: ${currentStats.newStats.currentGdpPerCapita}, Economic: ${Math.round(economicVitality)}, Pop: ${Math.round(populationWellbeing)}, Diplo: ${Math.round(diplomaticStanding)}, Gov: ${Math.round(governmentalEfficiency)}`);
+        // Always calculate live - use database values only if they exist and are reasonable
+        const economicVitality =
+          country.economicVitality && country.economicVitality > 5
+            ? country.economicVitality
+            : calculateEconomicVitality();
+
+        const populationWellbeing =
+          country.populationWellbeing && country.populationWellbeing > 5
+            ? country.populationWellbeing
+            : calculatePopulationWellbeing();
+
+        const diplomaticStanding =
+          country.diplomaticStanding && country.diplomaticStanding > 5
+            ? country.diplomaticStanding
+            : calculateDiplomaticStanding();
+
+        const governmentalEfficiency =
+          country.governmentalEfficiency && country.governmentalEfficiency > 5
+            ? country.governmentalEfficiency
+            : calculateGovernmentalEfficiency();
+
+        console.log(
+          `[getFocusCardsData] Country: ${country.name}, GDP: ${currentStats.newStats.currentGdpPerCapita}, Economic: ${Math.round(economicVitality)}, Pop: ${Math.round(populationWellbeing)}, Diplo: ${Math.round(diplomaticStanding)}, Gov: ${Math.round(governmentalEfficiency)}`
+        );
 
         return {
           economicVitality: Math.round(economicVitality),
@@ -2702,13 +2861,24 @@ const countriesRouter = createTRPCRouter({
           },
           diplomaticMetrics: {
             allies: `${Math.floor(((country as any).globalDiplomaticInfluence || 50) / 10) + 3}`,
-            reputation: diplomaticStanding > 75 ? 'Strong' : diplomaticStanding > 50 ? 'Stable' : 'Developing',
+            reputation:
+              diplomaticStanding > 75
+                ? "Strong"
+                : diplomaticStanding > 50
+                  ? "Stable"
+                  : "Developing",
             treaties: `${Math.floor(((country as any).tradeRelationshipStrength || 25) / 2) + 5}`,
           },
           governmentMetrics: {
-            approval: `${Math.round(Math.min(95, Math.max(25, 50 + (currentStats.newStats.adjustedGdpGrowth * 1500))))}%`,
-            efficiency: governmentalEfficiency > 80 ? 'Excellent' : governmentalEfficiency > 60 ? 'Good' : 'Improving',
-            stability: diplomaticStanding > 70 && governmentalEfficiency > 60 ? 'Stable' : 'Monitored',
+            approval: `${Math.round(Math.min(95, Math.max(25, 50 + currentStats.newStats.adjustedGdpGrowth * 1500)))}%`,
+            efficiency:
+              governmentalEfficiency > 80
+                ? "Excellent"
+                : governmentalEfficiency > 60
+                  ? "Good"
+                  : "Improving",
+            stability:
+              diplomaticStanding > 70 && governmentalEfficiency > 60 ? "Stable" : "Monitored",
           },
           generatedAt: currentTime,
         };
@@ -2719,11 +2889,13 @@ const countriesRouter = createTRPCRouter({
     }),
 
   getNotifications: publicProcedure
-    .input(z.object({
-      countryId: z.string(),
-      limit: z.number().optional().default(20),
-      priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        limit: z.number().optional().default(20),
+        priority: z.enum(["low", "medium", "high", "critical"]).optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         const country = await ctx.db.country.findUnique({
@@ -2761,12 +2933,12 @@ const countriesRouter = createTRPCRouter({
         if (gdpGrowth < 0) {
           notifications.push({
             id: `notif-${notificationId++}`,
-            type: 'economic',
-            priority: gdpGrowth < -3 ? 'critical' : 'high',
-            title: 'Economic Growth Concern',
+            type: "economic",
+            priority: gdpGrowth < -3 ? "critical" : "high",
+            title: "Economic Growth Concern",
             message: `GDP growth has turned negative at ${gdpGrowth.toFixed(1)}%`,
             timestamp: currentTime,
-            category: 'Economic Intelligence',
+            category: "Economic Intelligence",
             actionRequired: true,
             relatedData: {
               currentGdpPerCapita: currentStats.newStats.currentGdpPerCapita,
@@ -2776,12 +2948,12 @@ const countriesRouter = createTRPCRouter({
         } else if (gdpGrowth > 5) {
           notifications.push({
             id: `notif-${notificationId++}`,
-            type: 'economic',
-            priority: 'medium',
-            title: 'Strong Economic Performance',
+            type: "economic",
+            priority: "medium",
+            title: "Strong Economic Performance",
             message: `GDP growth accelerated to ${gdpGrowth.toFixed(1)}%`,
             timestamp: currentTime,
-            category: 'Economic Intelligence',
+            category: "Economic Intelligence",
             actionRequired: false,
             relatedData: {
               currentGdpPerCapita: currentStats.newStats.currentGdpPerCapita,
@@ -2794,12 +2966,12 @@ const countriesRouter = createTRPCRouter({
         if (popGrowth < 0) {
           notifications.push({
             id: `notif-${notificationId++}`,
-            type: 'demographic',
-            priority: 'high',
-            title: 'Population Decline Alert',
+            type: "demographic",
+            priority: "high",
+            title: "Population Decline Alert",
             message: `Population declining at ${Math.abs(popGrowth).toFixed(2)}% annually`,
             timestamp: currentTime,
-            category: 'Demographic Intelligence',
+            category: "Demographic Intelligence",
             actionRequired: true,
             relatedData: {
               currentPopulation: currentStats.newStats.currentPopulation,
@@ -2810,19 +2982,19 @@ const countriesRouter = createTRPCRouter({
 
         if (country.dmInputs.length > 0) {
           const recentInput = country.dmInputs[0];
-          if(recentInput){
+          if (recentInput) {
             const inputAge = currentTime - recentInput.ixTimeTimestamp.getTime();
             const oneWeek = 7 * 24 * 60 * 60 * 1000;
-            
+
             if (inputAge < oneWeek) {
               notifications.push({
                 id: `notif-${notificationId++}`,
-                type: 'external',
-                priority: Math.abs(recentInput.value) > 0.1 ? 'high' : 'medium',
-                title: 'External Influence Detected',
+                type: "external",
+                priority: Math.abs(recentInput.value) > 0.1 ? "high" : "medium",
+                title: "External Influence Detected",
                 message: `${recentInput.inputType}: ${recentInput.description}`,
                 timestamp: recentInput.ixTimeTimestamp.getTime(),
-                category: 'External Intelligence',
+                category: "External Intelligence",
                 actionRequired: Math.abs(recentInput.value) > 0.1,
                 relatedData: {
                   inputType: recentInput.inputType,
@@ -2837,23 +3009,27 @@ const countriesRouter = createTRPCRouter({
         const tierThresholds = econCfg.economicTierThresholds;
         const currentGdpPc = currentStats.newStats.currentGdpPerCapita;
         const currentTier = currentStats.newStats.economicTier;
-        
-        const tierEntries = Object.entries(tierThresholds).sort(([,a], [,b]) => a - b);
-        const currentTierIndex = tierEntries.findIndex(([tier]) => tier.toLowerCase().replace(' ', '') === (currentTier as string).toLowerCase().replace(' ', ''));
-        
+
+        const tierEntries = Object.entries(tierThresholds).sort(([, a], [, b]) => a - b);
+        const currentTierIndex = tierEntries.findIndex(
+          ([tier]) =>
+            tier.toLowerCase().replace(" ", "") ===
+            (currentTier as string).toLowerCase().replace(" ", "")
+        );
+
         if (currentTierIndex !== -1 && currentTierIndex < tierEntries.length - 1) {
           const nextTierThreshold = tierEntries[currentTierIndex + 1]![1];
           const progressToNext = (currentGdpPc / nextTierThreshold) * 100;
-          
+
           if (progressToNext > 90) {
             notifications.push({
               id: `notif-${notificationId++}`,
-              type: 'milestone',
-              priority: 'medium',
-              title: 'Economic Tier Advancement Imminent',
+              type: "milestone",
+              priority: "medium",
+              title: "Economic Tier Advancement Imminent",
               message: `${progressToNext.toFixed(1)}% progress toward ${tierEntries[currentTierIndex + 1]![0]} tier`,
               timestamp: currentTime,
-              category: 'Economic Intelligence',
+              category: "Economic Intelligence",
               actionRequired: false,
               relatedData: {
                 currentTier,
@@ -2866,10 +3042,15 @@ const countriesRouter = createTRPCRouter({
 
         let filteredNotifications = notifications;
         if (input.priority) {
-          filteredNotifications = notifications.filter(n => n.priority === input.priority);
+          filteredNotifications = notifications.filter((n) => n.priority === input.priority);
         }
 
-        const priorityOrder: { [key: string]: number } = { critical: 4, high: 3, medium: 2, low: 1 };
+        const priorityOrder: { [key: string]: number } = {
+          critical: 4,
+          high: 3,
+          medium: 2,
+          low: 1,
+        };
         filteredNotifications.sort((a, b) => {
           const priorityA = priorityOrder[a.priority];
           const priorityB = priorityOrder[b.priority];
@@ -2892,30 +3073,28 @@ const countriesRouter = createTRPCRouter({
       }
     }),
 
-  triggerEconomicNarrative: publicProcedure
-    .mutation(async () => {
-      const { detectEconomicMilestoneAndTriggerNarrative } = await import("~/lib/auto-post-service");
-      await detectEconomicMilestoneAndTriggerNarrative();
-      return { success: true, message: "Economic narrative triggered" };
-    }),
+  triggerEconomicNarrative: publicProcedure.mutation(async () => {
+    const { detectEconomicMilestoneAndTriggerNarrative } = await import("~/lib/auto-post-service");
+    await detectEconomicMilestoneAndTriggerNarrative();
+    return { success: true, message: "Economic narrative triggered" };
+  }),
 
   getDiplomaticRelations: publicProcedure
-    .input(z.object({
-      countryId: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
-      const whereClause = input.countryId 
+      const whereClause = input.countryId
         ? {
-            OR: [
-              { country1: input.countryId },
-              { country2: input.countryId }
-            ]
+            OR: [{ country1: input.countryId }, { country2: input.countryId }],
           }
         : {};
 
       const relations = await ctx.db.diplomaticRelation.findMany({
         where: whereClause,
-        orderBy: { lastContact: 'desc' },
+        orderBy: { lastContact: "desc" },
       });
 
       return relations.map((relation) => ({
@@ -2927,29 +3106,33 @@ const countriesRouter = createTRPCRouter({
         treaties: relation.treaties ? JSON.parse(relation.treaties) : [],
         lastContact: relation.lastContact,
         status: relation.status,
-        diplomaticChannels: relation.diplomaticChannels ? JSON.parse(relation.diplomaticChannels) : [],
+        diplomaticChannels: relation.diplomaticChannels
+          ? JSON.parse(relation.diplomaticChannels)
+          : [],
         tradeVolume: undefined,
-        culturalExchange: undefined
+        culturalExchange: undefined,
       }));
     }),
 
   // Get economic milestones for a country
   getEconomicMilestones: publicProcedure
-    .input(z.object({
-      countryId: z.string(),
-      limit: z.number().optional().default(10)
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        limit: z.number().optional().default(10),
+      })
+    )
     .query(async ({ ctx, input }) => {
       // For now, return mock milestones based on country's economic performance
       const country = await ctx.db.country.findUnique({
-        where: { id: input.countryId }
+        where: { id: input.countryId },
       });
 
       if (!country) return [];
 
       // Generate realistic milestones based on economic data
       const milestones = [];
-      
+
       if (country.adjustedGdpGrowth > 0.03) {
         milestones.push({
           id: `milestone_${country.id}_gdp_growth`,
@@ -2957,7 +3140,9 @@ const countriesRouter = createTRPCRouter({
           description: `GDP growth of ${(country.adjustedGdpGrowth * 100).toFixed(1)}% achieved`,
           value: country.adjustedGdpGrowth,
           category: "economic_growth",
-          achievedAt: new Date(Date.now() - (country.adjustedGdpGrowth > 0.05 ? 3 : 7) * 24 * 60 * 60 * 1000).toISOString()
+          achievedAt: new Date(
+            Date.now() - (country.adjustedGdpGrowth > 0.05 ? 3 : 7) * 24 * 60 * 60 * 1000
+          ).toISOString(),
         });
       }
 
@@ -2966,9 +3151,12 @@ const countriesRouter = createTRPCRouter({
           id: `milestone_${country.id}_population`,
           title: "Population Growth",
           description: "Significant population increase recorded",
-          value: (country.currentPopulation - country.baselinePopulation) / country.baselinePopulation,
+          value:
+            (country.currentPopulation - country.baselinePopulation) / country.baselinePopulation,
           category: "population",
-          achievedAt: new Date(Date.now() - (country.populationGrowthRate > 0.02 ? 15 : 30) * 24 * 60 * 60 * 1000).toISOString()
+          achievedAt: new Date(
+            Date.now() - (country.populationGrowthRate > 0.02 ? 15 : 30) * 24 * 60 * 60 * 1000
+          ).toISOString(),
         });
       }
 
@@ -2977,116 +3165,112 @@ const countriesRouter = createTRPCRouter({
 
   // Get crisis events for a country
   getCrisisEvents: publicProcedure
-    .input(z.object({
-      countryId: z.string(),
-      limit: z.number().optional().default(5)
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        limit: z.number().optional().default(5),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const crises = await ctx.db.crisisEvent.findMany({
         where: {
           affectedCountries: {
-            contains: input.countryId
-          }
+            contains: input.countryId,
+          },
         },
-        orderBy: { createdAt: 'desc' },
-        take: input.limit
+        orderBy: { createdAt: "desc" },
+        take: input.limit,
       });
 
       return crises;
     }),
 
   getLiveEventsFeed: publicProcedure
-    .input(z.object({
-      countryId: z.string(),
-      limit: z.number().optional().default(20),
-      hours: z.number().optional().default(72)
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        limit: z.number().optional().default(20),
+        hours: z.number().optional().default(72),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const now = new Date();
       const sinceWindow = new Date(now.getTime() - input.hours * 60 * 60 * 1000);
 
-      const [country, crisisEvents, diplomaticEvents, embassyMissions, cabinetMeetings, securityThreats] = await Promise.all([
+      const [
+        country,
+        crisisEvents,
+        diplomaticEvents,
+        embassyMissions,
+        cabinetMeetings,
+        securityThreats,
+      ] = await Promise.all([
         ctx.db.country.findUnique({
-          where: { id: input.countryId }
+          where: { id: input.countryId },
         }),
         ctx.db.crisisEvent.findMany({
           where: {
             affectedCountries: {
-              contains: input.countryId
+              contains: input.countryId,
             },
             createdAt: {
-              gte: sinceWindow
-            }
+              gte: sinceWindow,
+            },
           },
-          orderBy: { createdAt: 'desc' },
-          take: input.limit
+          orderBy: { createdAt: "desc" },
+          take: input.limit,
         }),
         ctx.db.diplomaticEvent.findMany({
           where: {
-            OR: [
-              { country1Id: input.countryId },
-              { country2Id: input.countryId }
-            ],
+            OR: [{ country1Id: input.countryId }, { country2Id: input.countryId }],
             createdAt: {
-              gte: sinceWindow
-            }
+              gte: sinceWindow,
+            },
           },
-          orderBy: { createdAt: 'desc' },
-          take: input.limit
+          orderBy: { createdAt: "desc" },
+          take: input.limit,
         }),
         ctx.db.embassyMission.findMany({
           where: {
             embassy: {
-              OR: [
-                { hostCountryId: input.countryId },
-                { guestCountryId: input.countryId }
-              ]
+              OR: [{ hostCountryId: input.countryId }, { guestCountryId: input.countryId }],
             },
-            OR: [
-              { updatedAt: { gte: sinceWindow } },
-              { completesAt: { gte: sinceWindow } }
-            ]
+            OR: [{ updatedAt: { gte: sinceWindow } }, { completesAt: { gte: sinceWindow } }],
           },
           include: {
             embassy: {
               include: {
                 hostCountry: { select: { name: true, id: true } },
-                guestCountry: { select: { name: true, id: true } }
-              }
-            }
+                guestCountry: { select: { name: true, id: true } },
+              },
+            },
           },
-          orderBy: { updatedAt: 'desc' },
-          take: input.limit
+          orderBy: { updatedAt: "desc" },
+          take: input.limit,
         }),
         ctx.db.cabinetMeeting.findMany({
           where: {
             countryId: input.countryId,
             OR: [
-              { status: { in: ['scheduled', 'in_progress'] } },
+              { status: { in: ["scheduled", "in_progress"] } },
               {
-                status: 'completed',
-                completedAt: { gte: sinceWindow }
-              }
-            ]
+                status: "completed",
+                completedAt: { gte: sinceWindow },
+              },
+            ],
           },
-          orderBy: [
-            { scheduledDate: 'asc' },
-            { createdAt: 'desc' }
-          ],
-          take: input.limit
+          orderBy: [{ scheduledDate: "asc" }, { createdAt: "desc" }],
+          take: input.limit,
         }),
         ctx.db.securityThreat.findMany({
           where: {
             countryId: input.countryId,
             isActive: true,
-            OR: [
-              { updatedAt: { gte: sinceWindow } },
-              { createdAt: { gte: sinceWindow } }
-            ]
+            OR: [{ updatedAt: { gte: sinceWindow } }, { createdAt: { gte: sinceWindow } }],
           },
-          orderBy: { updatedAt: 'desc' },
-          take: input.limit
-        })
+          orderBy: { updatedAt: "desc" },
+          take: input.limit,
+        }),
       ]);
 
       type LiveEvent = {
@@ -3106,47 +3290,47 @@ const countriesRouter = createTRPCRouter({
         if (country.adjustedGdpGrowth > 0.03) {
           events.push({
             id: `economic_growth_${country.id}`,
-            type: 'economic_growth',
-            title: 'Strong Economic Growth',
+            type: "economic_growth",
+            title: "Strong Economic Growth",
             description: `GDP growth reached ${(country.adjustedGdpGrowth * 100).toFixed(1)}%`,
             timestamp: country.updatedAt.toISOString(),
-            severity: 'positive',
-            tags: ['Economy', `${(country.adjustedGdpGrowth * 100).toFixed(1)}% growth`],
+            severity: "positive",
+            tags: ["Economy", `${(country.adjustedGdpGrowth * 100).toFixed(1)}% growth`],
             metadata: {
               value: country.adjustedGdpGrowth,
-              economicTier: country.economicTier
-            }
+              economicTier: country.economicTier,
+            },
           });
         }
 
         if (country.adjustedGdpGrowth < -0.01) {
           events.push({
             id: `economic_decline_${country.id}`,
-            type: 'economic_decline',
-            title: 'Economic Contraction Detected',
+            type: "economic_decline",
+            title: "Economic Contraction Detected",
             description: `GDP declined ${(country.adjustedGdpGrowth * 100).toFixed(1)}%`,
             timestamp: country.updatedAt.toISOString(),
-            severity: 'warning',
-            tags: ['Economy', 'Decline'],
+            severity: "warning",
+            tags: ["Economy", "Decline"],
             metadata: {
-              value: country.adjustedGdpGrowth
-            }
+              value: country.adjustedGdpGrowth,
+            },
           });
         }
 
         if (country.populationGrowthRate > 0.02) {
           events.push({
             id: `population_growth_${country.id}`,
-            type: 'economic_growth',
-            title: 'Population Surge',
-            description: 'Population growth exceeded 2% this cycle',
+            type: "economic_growth",
+            title: "Population Surge",
+            description: "Population growth exceeded 2% this cycle",
             timestamp: country.updatedAt.toISOString(),
-            severity: 'info',
-            tags: ['Demographics', `${(country.populationGrowthRate * 100).toFixed(1)}% growth`],
+            severity: "info",
+            tags: ["Demographics", `${(country.populationGrowthRate * 100).toFixed(1)}% growth`],
             metadata: {
               value: country.populationGrowthRate,
-              currentPopulation: country.currentPopulation
-            }
+              currentPopulation: country.currentPopulation,
+            },
           });
         }
       }
@@ -3154,64 +3338,70 @@ const countriesRouter = createTRPCRouter({
       crisisEvents.forEach((crisis) => {
         events.push({
           id: `crisis_${crisis.id}`,
-          type: 'crisis',
+          type: "crisis",
           title: crisis.title,
-          description: crisis.description ?? 'Crisis event detected',
+          description: crisis.description ?? "Crisis event detected",
           timestamp: crisis.createdAt.toISOString(),
           severity: crisis.severity ?? null,
-          tags: ['Crisis', crisis.severity ?? ''],
+          tags: ["Crisis", crisis.severity ?? ""],
           metadata: {
             economicImpact: crisis.economicImpact,
-            affectedCountries: crisis.affectedCountries
-          }
+            affectedCountries: crisis.affectedCountries,
+          },
         });
       });
 
       diplomaticEvents.forEach((event) => {
-        const otherCountryId = event.country1Id === input.countryId ? event.country2Id : event.country1Id;
-        const tags = ['Diplomacy'];
-        if (event.eventType) tags.push(event.eventType.replace(/_/g, ' '));
+        const otherCountryId =
+          event.country1Id === input.countryId ? event.country2Id : event.country1Id;
+        const tags = ["Diplomacy"];
+        if (event.eventType) tags.push(event.eventType.replace(/_/g, " "));
         if (event.severity) tags.push(event.severity);
 
         events.push({
           id: `diplomatic_${event.id}`,
-          type: 'diplomatic',
+          type: "diplomatic",
           title: event.title,
           description: event.description,
           timestamp: event.createdAt.toISOString(),
-          severity: event.severity ?? 'info',
+          severity: event.severity ?? "info",
           tags,
           metadata: {
             tradeValue: event.tradeValue,
             status: event.status,
             relatedCountries: [otherCountryId].filter(Boolean),
             embassyId: event.embassyId,
-            missionId: event.missionId
-          }
+            missionId: event.missionId,
+          },
         });
       });
 
       embassyMissions.forEach((mission) => {
         const embassy = mission.embassy;
         const otherCountryName = embassy
-          ? (embassy.hostCountryId === input.countryId
-              ? embassy.guestCountry?.name
-              : embassy.hostCountry?.name)
+          ? embassy.hostCountryId === input.countryId
+            ? embassy.guestCountry?.name
+            : embassy.hostCountry?.name
           : undefined;
 
         events.push({
           id: `embassy_mission_${mission.id}`,
-          type: 'embassy_mission',
+          type: "embassy_mission",
           title: `${mission.name} (${mission.status})`,
           description: mission.description,
           timestamp: mission.updatedAt.toISOString(),
-          severity: mission.status === 'failed' ? 'critical' : mission.status === 'completed' ? 'positive' : 'info',
-          tags: ['Embassy Mission', mission.type.replace(/_/g, ' '), mission.status],
+          severity:
+            mission.status === "failed"
+              ? "critical"
+              : mission.status === "completed"
+                ? "positive"
+                : "info",
+          tags: ["Embassy Mission", mission.type.replace(/_/g, " "), mission.status],
           metadata: {
             completesAt: mission.completesAt.toISOString(),
             embassyName: embassy?.name,
-            relatedCountry: otherCountryName
-          }
+            relatedCountry: otherCountryName,
+          },
         });
       });
 
@@ -3219,35 +3409,35 @@ const countriesRouter = createTRPCRouter({
         const timestamp = meeting.scheduledDate ?? meeting.createdAt;
         events.push({
           id: `cabinet_meeting_${meeting.id}`,
-          type: 'cabinet_meeting',
+          type: "cabinet_meeting",
           title: meeting.title,
-          description: meeting.description ?? 'Cabinet meeting scheduled',
+          description: meeting.description ?? "Cabinet meeting scheduled",
           timestamp: timestamp.toISOString(),
-          severity: meeting.status === 'cancelled' ? 'warning' : meeting.status,
-          tags: ['Cabinet', meeting.status],
+          severity: meeting.status === "cancelled" ? "warning" : meeting.status,
+          tags: ["Cabinet", meeting.status],
           metadata: {
             scheduledDate: meeting.scheduledDate?.toISOString(),
             durationMinutes: meeting.duration,
-            status: meeting.status
-          }
+            status: meeting.status,
+          },
         });
       });
 
       securityThreats.forEach((threat) => {
         events.push({
           id: `security_${threat.id}`,
-          type: 'security',
+          type: "security",
           title: `Security Alert: ${threat.threatName}`,
-          description: threat.description ?? 'Security threat detected',
+          description: threat.description ?? "Security threat detected",
           timestamp: threat.updatedAt.toISOString(),
           severity: threat.severity,
-          tags: ['Security', threat.threatType, threat.severity],
+          tags: ["Security", threat.threatType, threat.severity],
           metadata: {
             status: threat.status,
             urgency: threat.urgency,
             likelihood: threat.likelihood,
-            impact: threat.impact
-          }
+            impact: threat.impact,
+          },
         });
       });
 
@@ -3258,18 +3448,20 @@ const countriesRouter = createTRPCRouter({
       return {
         countryId: input.countryId,
         generatedAt: now.toISOString(),
-        events: sortedEvents
+        events: sortedEvents,
       };
     }),
 
   // Get trade data for a country
   getTradeData: publicProcedure
-    .input(z.object({
-      countryId: z.string()
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const country = await ctx.db.country.findUnique({
-        where: { id: input.countryId }
+        where: { id: input.countryId },
       });
 
       if (!country) {
@@ -3279,12 +3471,12 @@ const countriesRouter = createTRPCRouter({
       // Calculate trade data based on country economic indicators
       const gdpBase = country.currentTotalGdp || 1000000000;
       const tradeIntensity = ((country as any).tradeRelationshipStrength || 25) / 100;
-      
+
       const totalVolume = gdpBase * 0.6 * tradeIntensity; // Trade typically 60% of GDP * relationship strength
       const exports = totalVolume * 0.52; // Slightly export-oriented
       const imports = totalVolume * 0.48;
       const tradeBalance = exports - imports;
-      
+
       return {
         totalVolume,
         exports,
@@ -3293,8 +3485,8 @@ const countriesRouter = createTRPCRouter({
         topPartners: [
           { country: "Major Trade Partner", volume: totalVolume * 0.25 },
           { country: "Regional Partner", volume: totalVolume * 0.18 },
-          { country: "Economic Ally", volume: totalVolume * 0.12 }
-        ]
+          { country: "Economic Ally", volume: totalVolume * 0.12 },
+        ],
       };
     }),
 
@@ -3304,27 +3496,27 @@ const countriesRouter = createTRPCRouter({
   getByNameWithAtomic: publicProcedure
     .input(z.object({ name: z.string() }))
     .query(async ({ ctx, input }) => {
-      const country = await ctx.db.country.findUnique({
+      const country = (await ctx.db.country.findUnique({
         where: { name: input.name },
         include: {
           governmentComponents: {
-            where: { isActive: true }
+            where: { isActive: true },
           },
           componentSynergies: {
             include: {
               primaryComponent: true,
-              secondaryComponent: true
-            }
+              secondaryComponent: true,
+            },
           },
-          atomicEffectiveness: true
-        }
-      }) as CountryWithAtomicComponents | null;
-      
+          atomicEffectiveness: true,
+        },
+      })) as CountryWithAtomicComponents | null;
+
       if (!country) return null;
-      
+
       // Calculate with atomic enhancements
       const enhancedData = await calculateCountryDataWithAtomicEnhancement(country);
-      
+
       return {
         ...country,
         atomicEnhancements: enhancedData.economicImpactFromAtomic,
@@ -3332,34 +3524,36 @@ const countriesRouter = createTRPCRouter({
         enhancedTaxRevenue: enhancedData.enhancedTaxRevenue,
         stabilityIndex: enhancedData.stabilityIndex,
         governmentCapacityIndex: enhancedData.governmentCapacityIndex,
-        atomicModifiers: enhancedData.atomicModifiers
+        atomicModifiers: enhancedData.atomicModifiers,
       };
     }),
 
   // Get countries filtered by atomic components
   getByAtomicComponents: publicProcedure
-    .input(z.object({
-      componentTypes: z.array(z.nativeEnum(ComponentType)),
-      requireAll: z.boolean().default(false) // true = AND, false = OR
-    }))
+    .input(
+      z.object({
+        componentTypes: z.array(z.nativeEnum(ComponentType)),
+        requireAll: z.boolean().default(false), // true = AND, false = OR
+      })
+    )
     .query(async ({ ctx, input }) => {
       let countries;
-      
+
       if (input.requireAll) {
         // For AND logic, we need to check that all components exist
         countries = await ctx.db.country.findMany({
           include: {
             governmentComponents: {
-              where: { isActive: true }
-            }
-          }
+              where: { isActive: true },
+            },
+          },
         });
-        
+
         // Filter for countries that have ALL required components
-        countries = countries.filter(country => 
-          input.componentTypes.every(componentType =>
-            country.governmentComponents.some(comp => 
-              comp.componentType === componentType && comp.isActive
+        countries = countries.filter((country) =>
+          input.componentTypes.every((componentType) =>
+            country.governmentComponents.some(
+              (comp) => comp.componentType === componentType && comp.isActive
             )
           )
         );
@@ -3370,18 +3564,18 @@ const countriesRouter = createTRPCRouter({
             governmentComponents: {
               some: {
                 componentType: { in: input.componentTypes },
-                isActive: true
-              }
-            }
+                isActive: true,
+              },
+            },
           },
           include: {
             governmentComponents: {
-              where: { isActive: true }
-            }
-          }
+              where: { isActive: true },
+            },
+          },
         });
       }
-      
+
       return countries;
     }),
 
@@ -3407,45 +3601,47 @@ const countriesRouter = createTRPCRouter({
       const country = await ctx.db.country.findUnique({
         where: { id: input.countryId },
         include: {
-          governmentComponents: { where: { isActive: true } }
-        }
+          governmentComponents: { where: { isActive: true } },
+        },
       });
-      
+
       if (!country) return null;
-      
+
       const atomicService = getAtomicEffectivenessService(ctx.db);
-      const componentTypes = country.governmentComponents.map(c => c.componentType);
+      const componentTypes = country.governmentComponents.map((c) => c.componentType);
       const breakdown = atomicService.getComponentBreakdown(componentTypes);
-      
+
       const synergies = atomicService.detectPotentialSynergies(componentTypes);
       const conflicts = atomicService.detectConflicts(componentTypes);
-      
+
       return {
         components: breakdown,
         synergies,
         conflicts,
         totalComponents: componentTypes.length,
         synergyCount: synergies.length,
-        conflictCount: conflicts.length
+        conflictCount: conflicts.length,
       };
     }),
 
   // Toggle atomic government mode for a country
   toggleAtomicGovernment: protectedProcedure
-    .input(z.object({ 
-      countryId: z.string(),
-      useAtomic: z.boolean()
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        useAtomic: z.boolean(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const updated = await ctx.db.country.update({
         where: { id: input.countryId },
-        data: { usesAtomicGovernment: input.useAtomic }
+        data: { usesAtomicGovernment: input.useAtomic },
       });
-      
+
       // Invalidate cache for this country
       const atomicService = getAtomicEffectivenessService(ctx.db);
       atomicService.invalidateCache(input.countryId);
-      
+
       return updated;
     }),
 
@@ -3462,15 +3658,14 @@ const countriesRouter = createTRPCRouter({
     }),
 
   // Get custom geography (continents and regions)
-  getCustomGeography: publicProcedure
-    .query(async ({ ctx }) => {
-      // For now, return empty custom geography
-      // In the future, this could fetch from a CustomGeography table
-      return {
-        continents: [] as string[],
-        regions: {} as Record<string, string[]>
-      };
-    }),
+  getCustomGeography: publicProcedure.query(async ({ ctx }) => {
+    // For now, return empty custom geography
+    // In the future, this could fetch from a CustomGeography table
+    return {
+      continents: [] as string[],
+      regions: {} as Record<string, string[]>,
+    };
+  }),
 
   // Add custom continent
   addContinent: protectedProcedure
@@ -3483,10 +3678,12 @@ const countriesRouter = createTRPCRouter({
 
   // Add custom region to a continent
   addRegion: protectedProcedure
-    .input(z.object({
-      continent: z.string(),
-      region: z.string()
-    }))
+    .input(
+      z.object({
+        continent: z.string(),
+        region: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // For now, just return success
       // In the future, this could store in a CustomGeography table
@@ -3495,370 +3692,468 @@ const countriesRouter = createTRPCRouter({
 
   // Create a new country from builder
   createCountry: protectedProcedure
-    .input(z.object({
-      name: z.string(),
-      foundationCountry: z.string().nullable(),
-      economicInputs: z.object({
-        coreIndicators: z.object({
-          totalPopulation: z.number().min(0),
-          gdpPerCapita: z.number().min(0),
-          nominalGDP: z.number().min(0),
-        }).optional(),
-        laborEmployment: z.object({
-          laborForceParticipationRate: z.number().min(0).max(100),
-          unemploymentRate: z.number().min(0).max(100),
-        }).optional(),
-        fiscalSystem: z.object({
-          taxRevenueGDPPercent: z.number().optional(),
-          governmentSpendingGDPPercent: z.number().optional(),
-        }).optional(),
-        demographics: z.object({
-          urbanPopulationPercent: z.number().min(0).max(100).optional(),
-          lifeExpectancy: z.number().optional(),
-          literacyRate: z.number().min(0).max(100).optional(),
-        }).optional(),
-        incomeWealth: z.object({
-          giniIndex: z.number().min(0).max(100).optional(),
-        }).optional(),
-        governmentSpending: z.record(z.string(), z.number()).optional(),
-        nationalIdentity: z.object({
-          // Basic Identity
-          countryName: z.string().optional(),
-          officialName: z.string().optional(),
-          governmentType: z.string().optional(),
-          motto: z.string().optional(),
-          mottoNative: z.string().optional(),
+    .input(
+      z.object({
+        name: z.string(),
+        foundationCountry: z.string().nullable(),
+        economicInputs: z
+          .object({
+            coreIndicators: z
+              .object({
+                totalPopulation: z.number().min(0),
+                gdpPerCapita: z.number().min(0),
+                nominalGDP: z.number().min(0),
+              })
+              .optional(),
+            laborEmployment: z
+              .object({
+                laborForceParticipationRate: z.number().min(0).max(100),
+                unemploymentRate: z.number().min(0).max(100),
+              })
+              .optional(),
+            fiscalSystem: z
+              .object({
+                taxRevenueGDPPercent: z.number().optional(),
+                governmentSpendingGDPPercent: z.number().optional(),
+              })
+              .optional(),
+            demographics: z
+              .object({
+                urbanPopulationPercent: z.number().min(0).max(100).optional(),
+                lifeExpectancy: z.number().optional(),
+                literacyRate: z.number().min(0).max(100).optional(),
+              })
+              .optional(),
+            incomeWealth: z
+              .object({
+                giniIndex: z.number().min(0).max(100).optional(),
+              })
+              .optional(),
+            governmentSpending: z.record(z.string(), z.number()).optional(),
+            nationalIdentity: z
+              .object({
+                // Basic Identity
+                countryName: z.string().optional(),
+                officialName: z.string().optional(),
+                governmentType: z.string().optional(),
+                motto: z.string().optional(),
+                mottoNative: z.string().optional(),
 
-          // Geography & Administration
-          capitalCity: z.string().optional(),
-          largestCity: z.string().optional(),
-          coordinatesLatitude: z.string().optional(),
-          coordinatesLongitude: z.string().optional(),
+                // Geography & Administration
+                capitalCity: z.string().optional(),
+                largestCity: z.string().optional(),
+                coordinatesLatitude: z.string().optional(),
+                coordinatesLongitude: z.string().optional(),
 
-          // Population & Culture
-          demonym: z.string().optional(),
-          nationalReligion: z.string().optional(),
+                // Population & Culture
+                demonym: z.string().optional(),
+                nationalReligion: z.string().optional(),
 
-          // Currency
-          currency: z.string().optional(),
-          currencySymbol: z.string().optional(),
+                // Currency
+                currency: z.string().optional(),
+                currencySymbol: z.string().optional(),
 
-          // Languages
-          officialLanguages: z.string().optional(),
-          nationalLanguage: z.string().optional(),
+                // Languages
+                officialLanguages: z.string().optional(),
+                nationalLanguage: z.string().optional(),
 
-          // National Symbols & Culture
-          nationalAnthem: z.string().optional(),
-          nationalDay: z.string().optional(),
-          nationalSport: z.string().optional(),
+                // National Symbols & Culture
+                nationalAnthem: z.string().optional(),
+                nationalDay: z.string().optional(),
+                nationalSport: z.string().optional(),
 
-          // Technical & Administrative
-          callingCode: z.string().optional(),
-          internetTLD: z.string().optional(),
-          drivingSide: z.string().optional(),
-          timeZone: z.string().optional(),
-          isoCode: z.string().optional(),
-          emergencyNumber: z.string().optional(),
-          postalCodeFormat: z.string().optional(),
-          weekStartDay: z.string().optional(),
+                // Technical & Administrative
+                callingCode: z.string().optional(),
+                internetTLD: z.string().optional(),
+                drivingSide: z.string().optional(),
+                timeZone: z.string().optional(),
+                isoCode: z.string().optional(),
+                emergencyNumber: z.string().optional(),
+                postalCodeFormat: z.string().optional(),
+                weekStartDay: z.string().optional(),
 
-          // Legacy field (kept for backward compatibility)
-          leader: z.string().optional(),
-        }).optional(),
-        geography: z.object({
-          continent: z.string().optional(),
-          region: z.string().optional(),
-        }).optional(),
-        flagUrl: z.string().optional(),
-        coatOfArmsUrl: z.string().optional(),
-      }).optional(),
-      governmentComponents: z.array(z.object({
-        componentType: z.string(),
-        effectivenessScore: z.number().min(0).max(100).optional(),
-        implementationCost: z.number().optional(),
-        maintenanceCost: z.number().optional(),
-        requiredCapacity: z.number().min(0).max(100).optional(),
-        isActive: z.boolean().optional(),
-        notes: z.string().optional(),
-      })).optional(),
-      taxSystemData: z.object({
-        // Core tax system fields
-        taxSystemName: z.string().optional(),
-        taxAuthority: z.string().optional(),
-        fiscalYear: z.string().optional(),
-        taxCode: z.string().optional(),
-        baseRate: z.number().min(0).max(100).optional(),
-        progressiveTax: z.boolean().optional(),
-        flatTaxRate: z.number().min(0).max(100).optional(),
-        alternativeMinTax: z.boolean().optional(),
-        alternativeMinRate: z.number().min(0).max(100).optional(),
-        taxHolidays: z.string().optional(), // JSON array
-        complianceRate: z.number().min(0).max(100).optional(),
-        collectionEfficiency: z.number().min(0).max(100).optional(),
-        lastReform: z.date().optional(),
+                // Legacy field (kept for backward compatibility)
+                leader: z.string().optional(),
+              })
+              .optional(),
+            geography: z
+              .object({
+                continent: z.string().optional(),
+                region: z.string().optional(),
+              })
+              .optional(),
+            flagUrl: z.string().optional(),
+            coatOfArmsUrl: z.string().optional(),
+          })
+          .optional(),
+        governmentComponents: z
+          .array(
+            z.object({
+              componentType: z.string(),
+              effectivenessScore: z.number().min(0).max(100).optional(),
+              implementationCost: z.number().optional(),
+              maintenanceCost: z.number().optional(),
+              requiredCapacity: z.number().min(0).max(100).optional(),
+              isActive: z.boolean().optional(),
+              notes: z.string().optional(),
+            })
+          )
+          .optional(),
+        taxSystemData: z
+          .object({
+            // Core tax system fields
+            taxSystemName: z.string().optional(),
+            taxAuthority: z.string().optional(),
+            fiscalYear: z.string().optional(),
+            taxCode: z.string().optional(),
+            baseRate: z.number().min(0).max(100).optional(),
+            progressiveTax: z.boolean().optional(),
+            flatTaxRate: z.number().min(0).max(100).optional(),
+            alternativeMinTax: z.boolean().optional(),
+            alternativeMinRate: z.number().min(0).max(100).optional(),
+            taxHolidays: z.string().optional(), // JSON array
+            complianceRate: z.number().min(0).max(100).optional(),
+            collectionEfficiency: z.number().min(0).max(100).optional(),
+            lastReform: z.date().optional(),
 
-        // Tax categories (Income, Corporate, Sales, Property, etc.)
-        categories: z.array(z.object({
-          categoryName: z.string(),
-          categoryType: z.string(), // Direct, Indirect
-          description: z.string().optional(),
-          isActive: z.boolean().optional(),
-          baseRate: z.number().optional(),
-          calculationMethod: z.string().optional(), // percentage, fixed, tiered
-          minimumAmount: z.number().optional(),
-          maximumAmount: z.number().optional(),
-          exemptionAmount: z.number().optional(),
-          deductionAllowed: z.boolean().optional(),
-          standardDeduction: z.number().optional(),
-          priority: z.number().optional(),
-          color: z.string().optional(),
-          icon: z.string().optional(),
+            // Tax categories (Income, Corporate, Sales, Property, etc.)
+            categories: z
+              .array(
+                z.object({
+                  categoryName: z.string(),
+                  categoryType: z.string(), // Direct, Indirect
+                  description: z.string().optional(),
+                  isActive: z.boolean().optional(),
+                  baseRate: z.number().optional(),
+                  calculationMethod: z.string().optional(), // percentage, fixed, tiered
+                  minimumAmount: z.number().optional(),
+                  maximumAmount: z.number().optional(),
+                  exemptionAmount: z.number().optional(),
+                  deductionAllowed: z.boolean().optional(),
+                  standardDeduction: z.number().optional(),
+                  priority: z.number().optional(),
+                  color: z.string().optional(),
+                  icon: z.string().optional(),
 
-          // Brackets for this category (for progressive taxation)
-          brackets: z.array(z.object({
-            bracketName: z.string().optional(),
-            minIncome: z.number(),
-            maxIncome: z.number().optional(), // null for highest bracket
-            rate: z.number(),
-            flatAmount: z.number().optional(),
-            marginalRate: z.boolean().optional(),
-            isActive: z.boolean().optional(),
-            priority: z.number().optional(),
-          })).optional(),
+                  // Brackets for this category (for progressive taxation)
+                  brackets: z
+                    .array(
+                      z.object({
+                        bracketName: z.string().optional(),
+                        minIncome: z.number(),
+                        maxIncome: z.number().optional(), // null for highest bracket
+                        rate: z.number(),
+                        flatAmount: z.number().optional(),
+                        marginalRate: z.boolean().optional(),
+                        isActive: z.boolean().optional(),
+                        priority: z.number().optional(),
+                      })
+                    )
+                    .optional(),
 
-          // Exemptions specific to this category
-          exemptions: z.array(z.object({
-            exemptionName: z.string(),
-            exemptionType: z.string(), // Individual, Corporate, Sector, Geographic
-            description: z.string().optional(),
-            exemptionAmount: z.number().optional(),
-            exemptionRate: z.number().optional(),
-            qualifications: z.string().optional(), // JSON criteria
-            isActive: z.boolean().optional(),
-            startDate: z.date().optional(),
-            endDate: z.date().optional(),
-          })).optional(),
+                  // Exemptions specific to this category
+                  exemptions: z
+                    .array(
+                      z.object({
+                        exemptionName: z.string(),
+                        exemptionType: z.string(), // Individual, Corporate, Sector, Geographic
+                        description: z.string().optional(),
+                        exemptionAmount: z.number().optional(),
+                        exemptionRate: z.number().optional(),
+                        qualifications: z.string().optional(), // JSON criteria
+                        isActive: z.boolean().optional(),
+                        startDate: z.date().optional(),
+                        endDate: z.date().optional(),
+                      })
+                    )
+                    .optional(),
 
-          // Deductions specific to this category
-          deductions: z.array(z.object({
-            deductionName: z.string(),
-            deductionType: z.string(), // Standard, Itemized
-            description: z.string().optional(),
-            maximumAmount: z.number().optional(),
-            percentage: z.number().optional(),
-            qualifications: z.string().optional(), // JSON criteria
-            isActive: z.boolean().optional(),
-            priority: z.number().optional(),
-          })).optional(),
-        })).optional(),
+                  // Deductions specific to this category
+                  deductions: z
+                    .array(
+                      z.object({
+                        deductionName: z.string(),
+                        deductionType: z.string(), // Standard, Itemized
+                        description: z.string().optional(),
+                        maximumAmount: z.number().optional(),
+                        percentage: z.number().optional(),
+                        qualifications: z.string().optional(), // JSON criteria
+                        isActive: z.boolean().optional(),
+                        priority: z.number().optional(),
+                      })
+                    )
+                    .optional(),
+                })
+              )
+              .optional(),
 
-        // System-wide exemptions (not tied to a specific category)
-        systemWideExemptions: z.array(z.object({
-          exemptionName: z.string(),
-          exemptionType: z.string(),
-          description: z.string().optional(),
-          exemptionAmount: z.number().optional(),
-          exemptionRate: z.number().optional(),
-          qualifications: z.string().optional(),
-          isActive: z.boolean().optional(),
-          startDate: z.date().optional(),
-          endDate: z.date().optional(),
-        })).optional(),
+            // System-wide exemptions (not tied to a specific category)
+            systemWideExemptions: z
+              .array(
+                z.object({
+                  exemptionName: z.string(),
+                  exemptionType: z.string(),
+                  description: z.string().optional(),
+                  exemptionAmount: z.number().optional(),
+                  exemptionRate: z.number().optional(),
+                  qualifications: z.string().optional(),
+                  isActive: z.boolean().optional(),
+                  startDate: z.date().optional(),
+                  endDate: z.date().optional(),
+                })
+              )
+              .optional(),
 
-        // Tax policies
-        policies: z.array(z.object({
-          policyName: z.string(),
-          policyType: z.string(), // Rate Change, Exemption, Deduction
-          description: z.string().optional(),
-          targetCategory: z.string().optional(),
-          impactType: z.string(), // Increase, Decrease, Neutral
-          rateChange: z.number().optional(),
-          effectiveDate: z.date(),
-          expiryDate: z.date().optional(),
-          isActive: z.boolean().optional(),
-          estimatedRevenue: z.number().optional(),
-          affectedPopulation: z.number().optional(),
-        })).optional(),
-      }).optional(),
-      governmentStructure: z.object({
-        governmentType: z.string().optional(),
-        governmentName: z.string().optional(),
-        headOfState: z.string().optional(),
-        headOfGovernment: z.string().optional(),
-        legislatureName: z.string().optional(),
-        executiveName: z.string().optional(),
-        judicialName: z.string().optional(),
-        totalBudget: z.number().optional(),
-        fiscalYear: z.string().optional(),
-        budgetCurrency: z.string().optional(),
-        // Additional fields for complete persistence
-        departments: z.array(z.object({
-          id: z.string().optional(), // Temporary ID for hierarchy mapping
-          name: z.string(),
-          shortName: z.string().optional(),
-          category: z.string(),
-          description: z.string().optional(),
-          minister: z.string().optional(),
-          ministerTitle: z.string().default("Minister"),
-          headquarters: z.string().optional(),
-          established: z.string().optional(),
-          employeeCount: z.number().optional(),
-          icon: z.string().optional(),
-          color: z.string().default("#6366f1"),
-          priority: z.number().default(50),
-          isActive: z.boolean().default(true),
-          parentDepartmentId: z.string().optional(), // References temporary ID
-          organizationalLevel: z.string().default("Ministry"),
-          functions: z.array(z.string()).optional(),
-          kpis: z.string().optional(), // JSON string
-        })).optional(),
-        budgetAllocations: z.array(z.object({
-          departmentId: z.string(), // References temporary department ID
-          budgetYear: z.number(),
-          allocatedAmount: z.number(),
-          allocatedPercent: z.number(),
-          spentAmount: z.number().default(0),
-          encumberedAmount: z.number().default(0),
-          availableAmount: z.number().default(0),
-          budgetStatus: z.string().default("Allocated"),
-          notes: z.string().optional(),
-        })).optional(),
-        revenueSources: z.array(z.object({
-          name: z.string(),
-          category: z.string(),
-          description: z.string().optional(),
-          rate: z.number().optional(),
-          revenueAmount: z.number().default(0),
-          revenuePercent: z.number().default(0),
-          isActive: z.boolean().default(true),
-          collectionMethod: z.string().optional(),
-          administeredBy: z.string().optional(),
-        })).optional(),
-      }).optional(),
-      economyBuilderState: z.object({
-        // Economic structure
-        structure: z.object({
-          economicModel: z.string(),
-          primarySectors: z.array(z.string()),
-          secondarySectors: z.array(z.string()),
-          tertiarySectors: z.array(z.string()),
-          totalGDP: z.number(),
-          gdpCurrency: z.string(),
-          economicTier: z.enum(['Developing', 'Emerging', 'Developed', 'Advanced']),
-          growthStrategy: z.enum(['Export-Led', 'Import-Substitution', 'Balanced', 'Innovation-Driven']),
-        }).optional(),
+            // Tax policies
+            policies: z
+              .array(
+                z.object({
+                  policyName: z.string(),
+                  policyType: z.string(), // Rate Change, Exemption, Deduction
+                  description: z.string().optional(),
+                  targetCategory: z.string().optional(),
+                  impactType: z.string(), // Increase, Decrease, Neutral
+                  rateChange: z.number().optional(),
+                  effectiveDate: z.date(),
+                  expiryDate: z.date().optional(),
+                  isActive: z.boolean().optional(),
+                  estimatedRevenue: z.number().optional(),
+                  affectedPopulation: z.number().optional(),
+                })
+              )
+              .optional(),
+          })
+          .optional(),
+        governmentStructure: z
+          .object({
+            governmentType: z.string().optional(),
+            governmentName: z.string().optional(),
+            headOfState: z.string().optional(),
+            headOfGovernment: z.string().optional(),
+            legislatureName: z.string().optional(),
+            executiveName: z.string().optional(),
+            judicialName: z.string().optional(),
+            totalBudget: z.number().optional(),
+            fiscalYear: z.string().optional(),
+            budgetCurrency: z.string().optional(),
+            // Additional fields for complete persistence
+            departments: z
+              .array(
+                z.object({
+                  id: z.string().optional(), // Temporary ID for hierarchy mapping
+                  name: z.string(),
+                  shortName: z.string().optional(),
+                  category: z.string(),
+                  description: z.string().optional(),
+                  minister: z.string().optional(),
+                  ministerTitle: z.string().default("Minister"),
+                  headquarters: z.string().optional(),
+                  established: z.string().optional(),
+                  employeeCount: z.number().optional(),
+                  icon: z.string().optional(),
+                  color: z.string().default("#6366f1"),
+                  priority: z.number().default(50),
+                  isActive: z.boolean().default(true),
+                  parentDepartmentId: z.string().optional(), // References temporary ID
+                  organizationalLevel: z.string().default("Ministry"),
+                  functions: z.array(z.string()).optional(),
+                  kpis: z.string().optional(), // JSON string
+                })
+              )
+              .optional(),
+            budgetAllocations: z
+              .array(
+                z.object({
+                  departmentId: z.string(), // References temporary department ID
+                  budgetYear: z.number(),
+                  allocatedAmount: z.number(),
+                  allocatedPercent: z.number(),
+                  spentAmount: z.number().default(0),
+                  encumberedAmount: z.number().default(0),
+                  availableAmount: z.number().default(0),
+                  budgetStatus: z.string().default("Allocated"),
+                  notes: z.string().optional(),
+                })
+              )
+              .optional(),
+            revenueSources: z
+              .array(
+                z.object({
+                  name: z.string(),
+                  category: z.string(),
+                  description: z.string().optional(),
+                  rate: z.number().optional(),
+                  revenueAmount: z.number().default(0),
+                  revenuePercent: z.number().default(0),
+                  isActive: z.boolean().default(true),
+                  collectionMethod: z.string().optional(),
+                  administeredBy: z.string().optional(),
+                })
+              )
+              .optional(),
+          })
+          .optional(),
+        economyBuilderState: z
+          .object({
+            // Economic structure
+            structure: z
+              .object({
+                economicModel: z.string(),
+                primarySectors: z.array(z.string()),
+                secondarySectors: z.array(z.string()),
+                tertiarySectors: z.array(z.string()),
+                totalGDP: z.number(),
+                gdpCurrency: z.string(),
+                economicTier: z.enum(["Developing", "Emerging", "Developed", "Advanced"]),
+                growthStrategy: z.enum([
+                  "Export-Led",
+                  "Import-Substitution",
+                  "Balanced",
+                  "Innovation-Driven",
+                ]),
+              })
+              .optional(),
 
-        // Sector configurations
-        sectors: z.array(z.object({
-          id: z.string(),
-          name: z.string(),
-          category: z.enum(['Primary', 'Secondary', 'Tertiary']),
-          gdpContribution: z.number(),
-          employmentShare: z.number(),
-          productivity: z.number(),
-          growthRate: z.number(),
-          exports: z.number(),
-          imports: z.number(),
-          technologyLevel: z.enum(['Traditional', 'Modern', 'Advanced', 'Cutting-Edge']),
-          automation: z.number(),
-          regulation: z.enum(['Light', 'Moderate', 'Heavy', 'Comprehensive']),
-          subsidy: z.number(),
-          innovation: z.number(),
-          sustainability: z.number(),
-          competitiveness: z.number(),
-        })).optional(),
+            // Sector configurations
+            sectors: z
+              .array(
+                z.object({
+                  id: z.string(),
+                  name: z.string(),
+                  category: z.enum(["Primary", "Secondary", "Tertiary"]),
+                  gdpContribution: z.number(),
+                  employmentShare: z.number(),
+                  productivity: z.number(),
+                  growthRate: z.number(),
+                  exports: z.number(),
+                  imports: z.number(),
+                  technologyLevel: z.enum(["Traditional", "Modern", "Advanced", "Cutting-Edge"]),
+                  automation: z.number(),
+                  regulation: z.enum(["Light", "Moderate", "Heavy", "Comprehensive"]),
+                  subsidy: z.number(),
+                  innovation: z.number(),
+                  sustainability: z.number(),
+                  competitiveness: z.number(),
+                })
+              )
+              .optional(),
 
-        // Labor market configuration
-        laborMarket: z.object({
-          totalWorkforce: z.number(),
-          laborForceParticipationRate: z.number(),
-          employmentRate: z.number(),
-          unemploymentRate: z.number(),
-          underemploymentRate: z.number(),
-          youthUnemploymentRate: z.number(),
-          seniorEmploymentRate: z.number(),
-          femaleParticipationRate: z.number(),
-          maleParticipationRate: z.number(),
-          sectorDistribution: z.record(z.string(), z.number()).optional(),
-          employmentType: z.object({
-            fullTime: z.number(),
-            partTime: z.number(),
-            temporary: z.number(),
-            seasonal: z.number(),
-            selfEmployed: z.number(),
-            gig: z.number(),
-            informal: z.number(),
-          }).optional(),
-          averageAnnualIncome: z.number(),
-          averageWorkweekHours: z.number(),
-          averageOvertimeHours: z.number().optional(),
-          paidVacationDays: z.number().optional(),
-          paidSickLeaveDays: z.number().optional(),
-          parentalLeaveWeeks: z.number().optional(),
-          unionizationRate: z.number().optional(),
-          collectiveBargainingCoverage: z.number().optional(),
-          minimumWageHourly: z.number(),
-          livingWageHourly: z.number().optional(),
-          workplaceSafetyIndex: z.number().optional(),
-          laborRightsScore: z.number().optional(),
-          workerProtections: z.object({
-            jobSecurity: z.number(),
-            wageProtection: z.number(),
-            healthSafety: z.number(),
-            discriminationProtection: z.number(),
-            collectiveRights: z.number(),
-          }).optional(),
-        }).optional(),
+            // Labor market configuration
+            laborMarket: z
+              .object({
+                totalWorkforce: z.number(),
+                laborForceParticipationRate: z.number(),
+                employmentRate: z.number(),
+                unemploymentRate: z.number(),
+                underemploymentRate: z.number(),
+                youthUnemploymentRate: z.number(),
+                seniorEmploymentRate: z.number(),
+                femaleParticipationRate: z.number(),
+                maleParticipationRate: z.number(),
+                sectorDistribution: z.record(z.string(), z.number()).optional(),
+                employmentType: z
+                  .object({
+                    fullTime: z.number(),
+                    partTime: z.number(),
+                    temporary: z.number(),
+                    seasonal: z.number(),
+                    selfEmployed: z.number(),
+                    gig: z.number(),
+                    informal: z.number(),
+                  })
+                  .optional(),
+                averageAnnualIncome: z.number(),
+                averageWorkweekHours: z.number(),
+                averageOvertimeHours: z.number().optional(),
+                paidVacationDays: z.number().optional(),
+                paidSickLeaveDays: z.number().optional(),
+                parentalLeaveWeeks: z.number().optional(),
+                unionizationRate: z.number().optional(),
+                collectiveBargainingCoverage: z.number().optional(),
+                minimumWageHourly: z.number(),
+                livingWageHourly: z.number().optional(),
+                workplaceSafetyIndex: z.number().optional(),
+                laborRightsScore: z.number().optional(),
+                workerProtections: z
+                  .object({
+                    jobSecurity: z.number(),
+                    wageProtection: z.number(),
+                    healthSafety: z.number(),
+                    discriminationProtection: z.number(),
+                    collectiveRights: z.number(),
+                  })
+                  .optional(),
+              })
+              .optional(),
 
-        // Demographics configuration
-        demographics: z.object({
-          totalPopulation: z.number(),
-          populationGrowthRate: z.number(),
-          ageDistribution: z.object({
-            under15: z.number(),
-            age15to64: z.number(),
-            over65: z.number(),
-          }).optional(),
-          urbanRuralSplit: z.object({
-            urban: z.number(),
-            rural: z.number(),
-          }).optional(),
-          regions: z.array(z.object({
-            name: z.string(),
-            population: z.number(),
-            populationPercent: z.number(),
-            urbanPercent: z.number(),
-            economicActivity: z.number(),
-            developmentLevel: z.enum(['Underdeveloped', 'Developing', 'Developed', 'Advanced']),
-          })).optional(),
-          lifeExpectancy: z.number().optional(),
-          literacyRate: z.number().optional(),
-          educationLevels: z.object({
-            noEducation: z.number(),
-            primary: z.number(),
-            secondary: z.number(),
-            tertiary: z.number(),
-          }).optional(),
-          netMigrationRate: z.number().optional(),
-          immigrationRate: z.number().optional(),
-          emigrationRate: z.number().optional(),
-          infantMortalityRate: z.number().optional(),
-          maternalMortalityRate: z.number().optional(),
-          healthExpenditureGDP: z.number().optional(),
-          youthDependencyRatio: z.number().optional(),
-          elderlyDependencyRatio: z.number().optional(),
-          totalDependencyRatio: z.number().optional(),
-        }).optional(),
+            // Demographics configuration
+            demographics: z
+              .object({
+                totalPopulation: z.number(),
+                populationGrowthRate: z.number(),
+                ageDistribution: z
+                  .object({
+                    under15: z.number(),
+                    age15to64: z.number(),
+                    over65: z.number(),
+                  })
+                  .optional(),
+                urbanRuralSplit: z
+                  .object({
+                    urban: z.number(),
+                    rural: z.number(),
+                  })
+                  .optional(),
+                regions: z
+                  .array(
+                    z.object({
+                      name: z.string(),
+                      population: z.number(),
+                      populationPercent: z.number(),
+                      urbanPercent: z.number(),
+                      economicActivity: z.number(),
+                      developmentLevel: z.enum([
+                        "Underdeveloped",
+                        "Developing",
+                        "Developed",
+                        "Advanced",
+                      ]),
+                    })
+                  )
+                  .optional(),
+                lifeExpectancy: z.number().optional(),
+                literacyRate: z.number().optional(),
+                educationLevels: z
+                  .object({
+                    noEducation: z.number(),
+                    primary: z.number(),
+                    secondary: z.number(),
+                    tertiary: z.number(),
+                  })
+                  .optional(),
+                netMigrationRate: z.number().optional(),
+                immigrationRate: z.number().optional(),
+                emigrationRate: z.number().optional(),
+                infantMortalityRate: z.number().optional(),
+                maternalMortalityRate: z.number().optional(),
+                healthExpenditureGDP: z.number().optional(),
+                youthDependencyRatio: z.number().optional(),
+                elderlyDependencyRatio: z.number().optional(),
+                totalDependencyRatio: z.number().optional(),
+              })
+              .optional(),
 
-        // Selected atomic economic components
-        selectedAtomicComponents: z.array(z.string()),
+            // Selected atomic economic components
+            selectedAtomicComponents: z.array(z.string()),
 
-        // Validation state
-        isValid: z.boolean().optional(),
-        lastUpdated: z.date().optional(),
-        version: z.string().optional(),
-      }).optional(),
-    }))
+            // Validation state
+            isValid: z.boolean().optional(),
+            lastUpdated: z.date().optional(),
+            version: z.string().optional(),
+          })
+          .optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Get user ID from context
       const userId = ctx.user?.id;
@@ -3869,7 +4164,7 @@ const countriesRouter = createTRPCRouter({
       // Check if user already has a country (via User.countryId relation)
       const userWithCountry = await ctx.db.user.findUnique({
         where: { id: userId },
-        include: { country: true }
+        include: { country: true },
       });
 
       if (userWithCountry?.country) {
@@ -3882,11 +4177,8 @@ const countriesRouter = createTRPCRouter({
       if (input.foundationCountry) {
         const foundationCountry = await ctx.db.country.findFirst({
           where: {
-            OR: [
-              { slug: input.foundationCountry },
-              { name: input.foundationCountry }
-            ]
-          }
+            OR: [{ slug: input.foundationCountry }, { name: input.foundationCountry }],
+          },
         });
         if (foundationCountry) {
           foundationData = {
@@ -3912,21 +4204,23 @@ const countriesRouter = createTRPCRouter({
       const governmentSpending = (econ.governmentSpending || {}) as Partial<GovernmentSpendingData>;
       const nationalIdentity = (econ.nationalIdentity || {}) as Partial<NationalIdentityData>;
       const geography = (econ.geography || {}) as Partial<GeographyData>;
-      
+
       // Calculate derived values
-      const population = coreIndicators.totalPopulation || foundationData?.baselinePopulation || 10000000;
-      const gdpPerCapita = coreIndicators.gdpPerCapita || foundationData?.baselineGdpPerCapita || 25000;
-      const nominalGDP = coreIndicators.nominalGDP || (population * gdpPerCapita);
+      const population =
+        coreIndicators.totalPopulation || foundationData?.baselinePopulation || 10000000;
+      const gdpPerCapita =
+        coreIndicators.gdpPerCapita || foundationData?.baselineGdpPerCapita || 25000;
+      const nominalGDP = coreIndicators.nominalGDP || population * gdpPerCapita;
       const totalGdp = population * gdpPerCapita;
 
       // Create unique slug for the country
       const slug = input.name
         .toLowerCase()
         .trim()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
 
       // Use transaction to create country and related records atomically
       const result = await ctx.db.$transaction(async (tx) => {
@@ -3937,41 +4231,44 @@ const countriesRouter = createTRPCRouter({
             slug: slug,
             continent: geography.continent || foundationData?.continent || "Unknown",
             region: geography.region || foundationData?.region || "Unknown",
-            governmentType: nationalIdentity.governmentType || input.governmentStructure?.governmentType || "Republic",
+            governmentType:
+              nationalIdentity.governmentType ||
+              input.governmentStructure?.governmentType ||
+              "Republic",
             religion: nationalIdentity.nationalReligion || "Secular",
             leader: (nationalIdentity as any).leader || "Unknown",
             flag: econ.flagUrl || foundationData?.flag || undefined,
             coatOfArms: econ.coatOfArmsUrl || foundationData?.coatOfArms || undefined,
             landArea: foundationData?.landArea || 100000,
             areaSqMi: foundationData?.areaSqMi || 38610,
-            
+
             // Baseline values (initial snapshot)
             baselinePopulation: population,
             baselineGdpPerCapita: gdpPerCapita,
             baselineDate: new Date(),
-            
+
             // Current values (same as baseline at creation)
             currentPopulation: population,
             currentGdpPerCapita: gdpPerCapita,
             currentTotalGdp: totalGdp,
-            
+
             // Growth rates
             maxGdpGrowthRate: 0.05,
             adjustedGdpGrowth: coreIndicators.realGDPGrowthRate || 0.03,
             populationGrowthRate: demographics.populationGrowthRate || 0.01,
             actualGdpGrowth: coreIndicators.realGDPGrowthRate || 0.03,
             localGrowthFactor: 1.0,
-            
+
             // Tiers
             economicTier: getEconomicTierFromGdpPerCapita(gdpPerCapita),
             populationTier: getPopulationTierFromPopulation(population),
-            
+
             // Core Economic Indicators
             nominalGDP: nominalGDP,
             realGDPGrowthRate: coreIndicators.realGDPGrowthRate || 3.0,
             inflationRate: coreIndicators.inflationRate || 2.0,
             currencyExchangeRate: coreIndicators.currencyExchangeRate || 1.0,
-            
+
             // Labor & Employment
             laborForceParticipationRate: laborEmployment.laborForceParticipationRate || 65,
             employmentRate: laborEmployment.employmentRate || 95,
@@ -3979,43 +4276,49 @@ const countriesRouter = createTRPCRouter({
             totalWorkforce: laborEmployment.totalWorkforce || Math.round(population * 0.65),
             averageWorkweekHours: laborEmployment.averageWorkweekHours || 40,
             minimumWage: laborEmployment.minimumWage || Math.round(gdpPerCapita * 0.02),
-            averageAnnualIncome: laborEmployment.averageAnnualIncome || Math.round(gdpPerCapita * 0.8),
-            
+            averageAnnualIncome:
+              laborEmployment.averageAnnualIncome || Math.round(gdpPerCapita * 0.8),
+
             // Fiscal System
-            taxRevenueGDPPercent: fiscalSystem.taxRevenueGDPPercent || (input.taxSystemData as any)?.totalTaxRate || 20,
-            governmentRevenueTotal: fiscalSystem.governmentRevenueTotal || (nominalGDP * 0.20),
-            taxRevenuePerCapita: fiscalSystem.taxRevenuePerCapita || ((nominalGDP * 0.20) / population),
+            taxRevenueGDPPercent:
+              fiscalSystem.taxRevenueGDPPercent || (input.taxSystemData as any)?.totalTaxRate || 20,
+            governmentRevenueTotal: fiscalSystem.governmentRevenueTotal || nominalGDP * 0.2,
+            taxRevenuePerCapita:
+              fiscalSystem.taxRevenuePerCapita || (nominalGDP * 0.2) / population,
             governmentBudgetGDPPercent: fiscalSystem.governmentBudgetGDPPercent || 22,
             budgetDeficitSurplus: fiscalSystem.budgetDeficitSurplus || 0,
             internalDebtGDPPercent: fiscalSystem.internalDebtGDPPercent || 45,
             externalDebtGDPPercent: fiscalSystem.externalDebtGDPPercent || 25,
             totalDebtGDPRatio: fiscalSystem.totalDebtGDPRatio || 70,
-            debtPerCapita: fiscalSystem.debtPerCapita || ((nominalGDP * 0.70) / population),
+            debtPerCapita: fiscalSystem.debtPerCapita || (nominalGDP * 0.7) / population,
             interestRates: fiscalSystem.interestRates || 3.5,
-            debtServiceCosts: fiscalSystem.debtServiceCosts || (nominalGDP * 0.70 * 0.035),
-            
+            debtServiceCosts: fiscalSystem.debtServiceCosts || nominalGDP * 0.7 * 0.035,
+
             // Income & Wealth
             povertyRate: incomeWealth.povertyRate || 15,
             incomeInequalityGini: incomeWealth.incomeInequalityGini || 0.38,
             socialMobilityIndex: incomeWealth.socialMobilityIndex || 60,
-            
+
             // Government Spending
-            totalGovernmentSpending: governmentSpending.totalSpending || (nominalGDP * 0.22),
+            totalGovernmentSpending: governmentSpending.totalSpending || nominalGDP * 0.22,
             spendingGDPPercent: governmentSpending.spendingGDPPercent || 22,
-            spendingPerCapita: governmentSpending.spendingPerCapita || ((nominalGDP * 0.22) / population),
-            
+            spendingPerCapita:
+              governmentSpending.spendingPerCapita || (nominalGDP * 0.22) / population,
+
             // Demographics
             lifeExpectancy: demographics.lifeExpectancy || 78.5,
             urbanPopulationPercent: demographics.urbanRuralSplit?.urban || 65,
             ruralPopulationPercent: demographics.urbanRuralSplit?.rural || 35,
             literacyRate: demographics.literacyRate || 95,
-            
+
             // Calculate density if we have land area
-            populationDensity: foundationData?.landArea ? population / foundationData.landArea : undefined,
+            populationDensity: foundationData?.landArea
+              ? population / foundationData.landArea
+              : undefined,
             gdpDensity: foundationData?.landArea ? totalGdp / foundationData.landArea : undefined,
-            
+
             lastCalculated: new Date(),
-          }
+          },
         });
 
         // Create National Identity record if provided
@@ -4049,7 +4352,7 @@ const countriesRouter = createTRPCRouter({
               postalCodeFormat: nationalIdentity.postalCodeFormat,
               nationalSport: nationalIdentity.nationalSport,
               weekStartDay: nationalIdentity.weekStartDay,
-            }
+            },
           });
         }
 
@@ -4066,7 +4369,7 @@ const countriesRouter = createTRPCRouter({
               dependencyRatio: (demographics as any).dependencyRatio,
               medianAge: (demographics as any).medianAge,
               populationGrowthProjection: demographics.populationGrowthRate,
-            }
+            },
           });
         }
 
@@ -4086,7 +4389,7 @@ const countriesRouter = createTRPCRouter({
               fiscalBalanceGDPPercent: (fiscalSystem as any).fiscalBalanceGDPPercent,
               primaryBalanceGDPPercent: (fiscalSystem as any).primaryBalanceGDPPercent,
               taxEfficiency: (fiscalSystem as any).taxEfficiency,
-            }
+            },
           });
         }
 
@@ -4098,9 +4401,9 @@ const countriesRouter = createTRPCRouter({
           const taxSystem = await tx.taxSystem.create({
             data: {
               countryId: country.id,
-              taxSystemName: taxSystemData.taxSystemName || 'National Tax System',
+              taxSystemName: taxSystemData.taxSystemName || "National Tax System",
               taxAuthority: taxSystemData.taxAuthority,
-              fiscalYear: taxSystemData.fiscalYear || 'calendar',
+              fiscalYear: taxSystemData.fiscalYear || "calendar",
               taxCode: taxSystemData.taxCode,
               baseRate: taxSystemData.baseRate,
               progressiveTax: taxSystemData.progressiveTax ?? true,
@@ -4111,7 +4414,7 @@ const countriesRouter = createTRPCRouter({
               complianceRate: taxSystemData.complianceRate,
               collectionEfficiency: taxSystemData.collectionEfficiency,
               lastReform: taxSystemData.lastReform,
-            }
+            },
           });
 
           console.log(`✅ Created TaxSystem: ${taxSystem.id} for country ${country.id}`);
@@ -4127,7 +4430,7 @@ const countriesRouter = createTRPCRouter({
                   description: categoryData.description,
                   isActive: categoryData.isActive ?? true,
                   baseRate: categoryData.baseRate,
-                  calculationMethod: categoryData.calculationMethod || 'percentage',
+                  calculationMethod: categoryData.calculationMethod || "percentage",
                   minimumAmount: categoryData.minimumAmount,
                   maximumAmount: categoryData.maximumAmount,
                   exemptionAmount: categoryData.exemptionAmount,
@@ -4136,10 +4439,12 @@ const countriesRouter = createTRPCRouter({
                   priority: categoryData.priority || 50,
                   color: categoryData.color,
                   icon: categoryData.icon,
-                }
+                },
               });
 
-              console.log(`  ✅ Created TaxCategory: ${categoryData.categoryName} (${taxCategory.id})`);
+              console.log(
+                `  ✅ Created TaxCategory: ${categoryData.categoryName} (${taxCategory.id})`
+              );
 
               // Create tax brackets for this category
               if (categoryData.brackets && categoryData.brackets.length > 0) {
@@ -4156,10 +4461,12 @@ const countriesRouter = createTRPCRouter({
                       marginalRate: bracketData.marginalRate ?? true,
                       isActive: bracketData.isActive ?? true,
                       priority: bracketData.priority || 50,
-                    }
+                    },
                   });
                 }
-                console.log(`    ✅ Created ${categoryData.brackets.length} tax brackets for ${categoryData.categoryName}`);
+                console.log(
+                  `    ✅ Created ${categoryData.brackets.length} tax brackets for ${categoryData.categoryName}`
+                );
               }
 
               // Create category-specific exemptions
@@ -4178,10 +4485,12 @@ const countriesRouter = createTRPCRouter({
                       isActive: exemptionData.isActive ?? true,
                       startDate: exemptionData.startDate,
                       endDate: exemptionData.endDate,
-                    }
+                    },
                   });
                 }
-                console.log(`    ✅ Created ${categoryData.exemptions.length} exemptions for ${categoryData.categoryName}`);
+                console.log(
+                  `    ✅ Created ${categoryData.exemptions.length} exemptions for ${categoryData.categoryName}`
+                );
               }
 
               // Create category-specific deductions
@@ -4198,10 +4507,12 @@ const countriesRouter = createTRPCRouter({
                       qualifications: deductionData.qualifications,
                       isActive: deductionData.isActive ?? true,
                       priority: deductionData.priority || 50,
-                    }
+                    },
                   });
                 }
-                console.log(`    ✅ Created ${categoryData.deductions.length} deductions for ${categoryData.categoryName}`);
+                console.log(
+                  `    ✅ Created ${categoryData.deductions.length} deductions for ${categoryData.categoryName}`
+                );
               }
             }
           }
@@ -4222,10 +4533,12 @@ const countriesRouter = createTRPCRouter({
                   isActive: exemptionData.isActive ?? true,
                   startDate: exemptionData.startDate,
                   endDate: exemptionData.endDate,
-                }
+                },
               });
             }
-            console.log(`  ✅ Created ${taxSystemData.systemWideExemptions.length} system-wide exemptions`);
+            console.log(
+              `  ✅ Created ${taxSystemData.systemWideExemptions.length} system-wide exemptions`
+            );
           }
 
           // Create tax policies
@@ -4245,7 +4558,7 @@ const countriesRouter = createTRPCRouter({
                   isActive: policyData.isActive ?? true,
                   estimatedRevenue: policyData.estimatedRevenue,
                   affectedPopulation: policyData.affectedPopulation,
-                }
+                },
               });
             }
             console.log(`  ✅ Created ${taxSystemData.policies.length} tax policies`);
@@ -4266,7 +4579,7 @@ const countriesRouter = createTRPCRouter({
               medianWage: (laborEmployment as any).medianWage,
               wageGrowthRate: (laborEmployment as any).wageGrowthRate,
               wageBySector: (laborEmployment as any).wageBySector,
-            }
+            },
           });
         }
 
@@ -4281,7 +4594,7 @@ const countriesRouter = createTRPCRouter({
               middleClassPercent: (incomeWealth as any).middleClassPercent,
               intergenerationalMobility: (incomeWealth as any).intergenerationalMobility,
               educationMobility: (incomeWealth as any).educationMobility,
-            }
+            },
           });
         }
 
@@ -4294,7 +4607,7 @@ const countriesRouter = createTRPCRouter({
               spendingEfficiency: (governmentSpending as any).spendingEfficiency,
               publicInvestmentRate: (governmentSpending as any).publicInvestmentRate,
               socialSpendingPercent: (governmentSpending as any).socialSpendingPercent,
-            }
+            },
           });
         }
 
@@ -4316,10 +4629,12 @@ const countriesRouter = createTRPCRouter({
               totalBudget: govInput.totalBudget || 0,
               fiscalYear: govInput.fiscalYear || "Calendar Year",
               budgetCurrency: govInput.budgetCurrency || "USD",
-            }
+            },
           });
 
-          console.log(`✅ Created GovernmentStructure: ${govStructure.id} for country ${country.id}`);
+          console.log(
+            `✅ Created GovernmentStructure: ${govStructure.id} for country ${country.id}`
+          );
 
           // Create departments with hierarchy support (two-pass approach)
           if (govInput.departments && govInput.departments.length > 0) {
@@ -4350,7 +4665,7 @@ const countriesRouter = createTRPCRouter({
                   functions: deptInput.functions ? JSON.stringify(deptInput.functions) : null,
                   kpis: deptInput.kpis,
                   // parentDepartmentId will be set in second pass
-                }
+                },
               });
 
               // Store mapping of temporary ID to actual database ID
@@ -4369,7 +4684,7 @@ const countriesRouter = createTRPCRouter({
                 if (actualDeptId && actualParentId) {
                   await tx.governmentDepartment.update({
                     where: { id: actualDeptId },
-                    data: { parentDepartmentId: actualParentId }
+                    data: { parentDepartmentId: actualParentId },
                   });
                 }
               }
@@ -4395,7 +4710,7 @@ const countriesRouter = createTRPCRouter({
                       availableAmount: allocInput.availableAmount || allocInput.allocatedAmount,
                       budgetStatus: allocInput.budgetStatus || "Allocated",
                       notes: allocInput.notes,
-                    }
+                    },
                   });
                 }
               }
@@ -4419,7 +4734,7 @@ const countriesRouter = createTRPCRouter({
                   isActive: revenueInput.isActive ?? true,
                   collectionMethod: revenueInput.collectionMethod,
                   administeredBy: revenueInput.administeredBy,
-                }
+                },
               });
             }
 
@@ -4438,9 +4753,11 @@ const countriesRouter = createTRPCRouter({
             populationGrowthRate: demographics.populationGrowthRate || 0.5,
             gdpGrowthRate: coreIndicators.realGDPGrowthRate || 3.0,
             landArea: foundationData?.landArea || 100000,
-            populationDensity: foundationData?.landArea ? population / foundationData.landArea : undefined,
+            populationDensity: foundationData?.landArea
+              ? population / foundationData.landArea
+              : undefined,
             gdpDensity: foundationData?.landArea ? totalGdp / foundationData.landArea : undefined,
-          }
+          },
         });
 
         // Create Government Components and calculate synergies
@@ -4460,7 +4777,7 @@ const countriesRouter = createTRPCRouter({
                 requiredCapacity: componentInput.requiredCapacity ?? 50,
                 isActive: componentInput.isActive ?? true,
                 notes: componentInput.notes,
-              }
+              },
             });
             componentRecords.push(component);
           }
@@ -4486,7 +4803,7 @@ const countriesRouter = createTRPCRouter({
                     synergyType: synergyData.type,
                     effectMultiplier: synergyData.multiplier,
                     description: synergyData.description,
-                  }
+                  },
                 });
                 synergies.push(synergy);
               }
@@ -4500,36 +4817,43 @@ const countriesRouter = createTRPCRouter({
           let conflictPenalty = 0;
 
           for (const synergy of synergies) {
-            if (synergy.synergyType === 'CONFLICTING') {
+            if (synergy.synergyType === "CONFLICTING") {
               conflictPenalty += 15; // Standard conflict penalty
-            } else if (synergy.synergyType === 'ADDITIVE') {
+            } else if (synergy.synergyType === "ADDITIVE") {
               totalSynergyBonus += 10; // Standard synergy bonus
-            } else if (synergy.synergyType === 'MULTIPLICATIVE') {
+            } else if (synergy.synergyType === "MULTIPLICATIVE") {
               totalSynergyBonus += synergy.effectMultiplier * 10;
             }
           }
 
           // Calculate base effectiveness from components
-          const baseEffectiveness = componentRecords.reduce((sum, comp) => sum + comp.effectivenessScore, 0) / (componentRecords.length || 1);
+          const baseEffectiveness =
+            componentRecords.reduce((sum, comp) => sum + comp.effectivenessScore, 0) /
+            (componentRecords.length || 1);
 
           // Calculate final government effectiveness (0-100 range)
-          const governmentEffectiveness = Math.max(0, Math.min(100, baseEffectiveness + totalSynergyBonus - conflictPenalty));
+          const governmentEffectiveness = Math.max(
+            0,
+            Math.min(100, baseEffectiveness + totalSynergyBonus - conflictPenalty)
+          );
 
           // Update government structure with effectiveness score (if it exists)
           const existingGovStructure = await tx.governmentStructure.findUnique({
-            where: { countryId: country.id }
+            where: { countryId: country.id },
           });
 
           if (existingGovStructure) {
             await tx.governmentStructure.update({
               where: { id: existingGovStructure.id },
               data: {
-                governmentEffectiveness: governmentEffectiveness
-              }
+                governmentEffectiveness: governmentEffectiveness,
+              },
             });
           }
 
-          console.log(`  ✅ Government effectiveness: ${governmentEffectiveness.toFixed(1)}% (base: ${baseEffectiveness.toFixed(1)}%, synergy: +${totalSynergyBonus}, conflicts: -${conflictPenalty})`);
+          console.log(
+            `  ✅ Government effectiveness: ${governmentEffectiveness.toFixed(1)}% (base: ${baseEffectiveness.toFixed(1)}%, synergy: +${totalSynergyBonus}, conflicts: -${conflictPenalty})`
+          );
         }
 
         // Create Economy Builder Configuration
@@ -4537,7 +4861,10 @@ const countriesRouter = createTRPCRouter({
           const economyState = input.economyBuilderState;
 
           // Create Economic Components (atomic economic components)
-          if (economyState.selectedAtomicComponents && economyState.selectedAtomicComponents.length > 0) {
+          if (
+            economyState.selectedAtomicComponents &&
+            economyState.selectedAtomicComponents.length > 0
+          ) {
             const economicComponentRecords = [];
 
             for (const componentType of economyState.selectedAtomicComponents) {
@@ -4552,18 +4879,20 @@ const countriesRouter = createTRPCRouter({
                   requiredCapacity: 50,
                   isActive: true,
                   notes: `Added during country creation via Economy Builder`,
-                }
+                },
               });
               economicComponentRecords.push(economicComponent);
             }
 
-            console.log(`  ✅ Created ${economicComponentRecords.length} economic atomic components`);
+            console.log(
+              `  ✅ Created ${economicComponentRecords.length} economic atomic components`
+            );
           }
 
           // Store economy builder structure as JSON in EconomicProfile
           // This preserves the complete economy builder configuration
           const existingProfile = await tx.economicProfile.findUnique({
-            where: { countryId: country.id }
+            where: { countryId: country.id },
           });
 
           if (existingProfile) {
@@ -4571,32 +4900,36 @@ const countriesRouter = createTRPCRouter({
             await tx.economicProfile.update({
               where: { countryId: country.id },
               data: {
-                sectorBreakdown: economyState.structure ? JSON.stringify({
-                  economicModel: economyState.structure.economicModel,
-                  primarySectors: economyState.structure.primarySectors,
-                  secondarySectors: economyState.structure.secondarySectors,
-                  tertiarySectors: economyState.structure.tertiarySectors,
-                  economicTier: economyState.structure.economicTier,
-                  growthStrategy: economyState.structure.growthStrategy,
-                  sectors: economyState.sectors || []
-                }) : undefined,
-              }
+                sectorBreakdown: economyState.structure
+                  ? JSON.stringify({
+                      economicModel: economyState.structure.economicModel,
+                      primarySectors: economyState.structure.primarySectors,
+                      secondarySectors: economyState.structure.secondarySectors,
+                      tertiarySectors: economyState.structure.tertiarySectors,
+                      economicTier: economyState.structure.economicTier,
+                      growthStrategy: economyState.structure.growthStrategy,
+                      sectors: economyState.sectors || [],
+                    })
+                  : undefined,
+              },
             });
           } else {
             // Create new profile with economy builder data
             await tx.economicProfile.create({
               data: {
                 countryId: country.id,
-                sectorBreakdown: economyState.structure ? JSON.stringify({
-                  economicModel: economyState.structure.economicModel,
-                  primarySectors: economyState.structure.primarySectors,
-                  secondarySectors: economyState.structure.secondarySectors,
-                  tertiarySectors: economyState.structure.tertiarySectors,
-                  economicTier: economyState.structure.economicTier,
-                  growthStrategy: economyState.structure.growthStrategy,
-                  sectors: economyState.sectors || []
-                }) : undefined,
-              }
+                sectorBreakdown: economyState.structure
+                  ? JSON.stringify({
+                      economicModel: economyState.structure.economicModel,
+                      primarySectors: economyState.structure.primarySectors,
+                      secondarySectors: economyState.structure.secondarySectors,
+                      tertiarySectors: economyState.structure.tertiarySectors,
+                      economicTier: economyState.structure.economicTier,
+                      growthStrategy: economyState.structure.growthStrategy,
+                      sectors: economyState.sectors || [],
+                    })
+                  : undefined,
+              },
             });
           }
 
@@ -4607,35 +4940,39 @@ const countriesRouter = createTRPCRouter({
             const laborData = economyState.laborMarket;
 
             const existingLabor = await tx.laborMarket.findUnique({
-              where: { countryId: country.id }
+              where: { countryId: country.id },
             });
 
             const laborMarketData = {
               countryId: country.id,
-              employmentBySector: laborData.sectorDistribution ? JSON.stringify(laborData.sectorDistribution) : undefined,
+              employmentBySector: laborData.sectorDistribution
+                ? JSON.stringify(laborData.sectorDistribution)
+                : undefined,
               youthUnemploymentRate: laborData.youthUnemploymentRate,
               femaleParticipationRate: laborData.femaleParticipationRate,
               informalEmploymentRate: laborData.employmentType?.informal,
               medianWage: laborData.averageAnnualIncome / 2080, // Convert annual to hourly estimate
               wageGrowthRate: 0, // Default
-              wageBySector: laborData.sectorDistribution ? JSON.stringify(
-                Object.fromEntries(
-                  Object.entries(laborData.sectorDistribution).map(([sector, _]) => [
-                    sector,
-                    laborData.averageAnnualIncome
-                  ])
-                )
-              ) : undefined,
+              wageBySector: laborData.sectorDistribution
+                ? JSON.stringify(
+                    Object.fromEntries(
+                      Object.entries(laborData.sectorDistribution).map(([sector, _]) => [
+                        sector,
+                        laborData.averageAnnualIncome,
+                      ])
+                    )
+                  )
+                : undefined,
             };
 
             if (existingLabor) {
               await tx.laborMarket.update({
                 where: { countryId: country.id },
-                data: laborMarketData
+                data: laborMarketData,
               });
             } else {
               await tx.laborMarket.create({
-                data: laborMarketData
+                data: laborMarketData,
               });
             }
 
@@ -4650,7 +4987,7 @@ const countriesRouter = createTRPCRouter({
                 averageWorkweekHours: laborData.averageWorkweekHours,
                 minimumWage: laborData.minimumWageHourly * 2080, // Convert hourly to annual
                 averageAnnualIncome: laborData.averageAnnualIncome,
-              }
+              },
             });
 
             console.log(`  ✅ Created/updated labor market from economy builder`);
@@ -4661,13 +4998,17 @@ const countriesRouter = createTRPCRouter({
             const demoData = economyState.demographics;
 
             const existingDemo = await tx.demographics.findUnique({
-              where: { countryId: country.id }
+              where: { countryId: country.id },
             });
 
             const demographicsData = {
               countryId: country.id,
-              ageDistribution: demoData.ageDistribution ? JSON.stringify(demoData.ageDistribution) : undefined,
-              educationLevels: demoData.educationLevels ? JSON.stringify(demoData.educationLevels) : undefined,
+              ageDistribution: demoData.ageDistribution
+                ? JSON.stringify(demoData.ageDistribution)
+                : undefined,
+              educationLevels: demoData.educationLevels
+                ? JSON.stringify(demoData.educationLevels)
+                : undefined,
               birthRate: undefined, // Not in economy builder
               deathRate: undefined, // Not in economy builder
               migrationRate: demoData.netMigrationRate,
@@ -4679,11 +5020,11 @@ const countriesRouter = createTRPCRouter({
             if (existingDemo) {
               await tx.demographics.update({
                 where: { countryId: country.id },
-                data: demographicsData
+                data: demographicsData,
               });
             } else {
               await tx.demographics.create({
-                data: demographicsData
+                data: demographicsData,
               });
             }
 
@@ -4697,7 +5038,7 @@ const countriesRouter = createTRPCRouter({
                 urbanPopulationPercent: demoData.urbanRuralSplit?.urban,
                 ruralPopulationPercent: demoData.urbanRuralSplit?.rural,
                 literacyRate: demoData.literacyRate,
-              }
+              },
             });
 
             console.log(`  ✅ Created/updated demographics from economy builder`);
@@ -4707,7 +5048,7 @@ const countriesRouter = createTRPCRouter({
           if (economyState.sectors && economyState.sectors.length > 0) {
             // First, ensure we have an EconomicModel to link to
             let economicModel = await tx.economicModel.findUnique({
-              where: { countryId: country.id }
+              where: { countryId: country.id },
             });
 
             if (!economicModel) {
@@ -4726,7 +5067,7 @@ const countriesRouter = createTRPCRouter({
                   investmentRate: 0.25,
                   fiscalBalance: 0,
                   tradeBalance: 0,
-                }
+                },
               });
             }
 
@@ -4734,7 +5075,7 @@ const countriesRouter = createTRPCRouter({
             if (economyState.structure?.totalGDP) {
               const structureTotalGDP = economyState.structure.totalGDP;
               const totalSectorGDP = economyState.sectors.reduce((sum, sector) => {
-                return sum + (structureTotalGDP * sector.gdpContribution / 100);
+                return sum + (structureTotalGDP * sector.gdpContribution) / 100;
               }, 0);
 
               // Create sectoral output for current year
@@ -4742,16 +5083,16 @@ const countriesRouter = createTRPCRouter({
 
               // Group sectors by category
               const agricultureGDP = economyState.sectors
-                .filter(s => s.category === 'Primary')
-                .reduce((sum, s) => sum + (structureTotalGDP * s.gdpContribution / 100), 0);
+                .filter((s) => s.category === "Primary")
+                .reduce((sum, s) => sum + (structureTotalGDP * s.gdpContribution) / 100, 0);
 
               const industryGDP = economyState.sectors
-                .filter(s => s.category === 'Secondary')
-                .reduce((sum, s) => sum + (structureTotalGDP * s.gdpContribution / 100), 0);
+                .filter((s) => s.category === "Secondary")
+                .reduce((sum, s) => sum + (structureTotalGDP * s.gdpContribution) / 100, 0);
 
               const servicesGDP = economyState.sectors
-                .filter(s => s.category === 'Tertiary')
-                .reduce((sum, s) => sum + (structureTotalGDP * s.gdpContribution / 100), 0);
+                .filter((s) => s.category === "Tertiary")
+                .reduce((sum, s) => sum + (structureTotalGDP * s.gdpContribution) / 100, 0);
 
               await tx.sectoralOutput.create({
                 data: {
@@ -4762,11 +5103,13 @@ const countriesRouter = createTRPCRouter({
                   services: servicesGDP,
                   government: structureTotalGDP * 0.15, // Default 15% government
                   totalGDP: structureTotalGDP,
-                }
+                },
               });
             }
 
-            console.log(`  ✅ Created sectoral output records for ${economyState.sectors.length} sectors`);
+            console.log(
+              `  ✅ Created sectoral output records for ${economyState.sectors.length} sectors`
+            );
           }
 
           console.log(`✅ Complete economy builder state persisted for country ${country.id}`);
@@ -4796,8 +5139,8 @@ const countriesRouter = createTRPCRouter({
         currentPopulation: true,
         economicTier: true,
         adjustedGdpGrowth: true,
-        populationGrowthRate: true
-      }
+        populationGrowthRate: true,
+      },
     });
 
     const totalCountries = countries.length;
@@ -4811,8 +5154,8 @@ const countriesRouter = createTRPCRouter({
 
     // Calculate tier distribution
     const tierDistribution: Record<string, number> = {};
-    countries.forEach(c => {
-      const tier = c.economicTier || 'Unknown';
+    countries.forEach((c) => {
+      const tier = c.economicTier || "Unknown";
       tierDistribution[tier] = (tierDistribution[tier] || 0) + 1;
     });
 
@@ -4823,9 +5166,9 @@ const countriesRouter = createTRPCRouter({
       avgGdpPerCapita,
       avgGrowthRate,
       tierDistribution,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
-  })
+  }),
 });
 
 export { countriesRouter };

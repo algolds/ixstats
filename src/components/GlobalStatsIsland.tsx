@@ -5,7 +5,7 @@ import { api } from "~/trpc/react";
 import { IxTime } from "~/lib/ixtime";
 import { useIxTime } from "~/contexts/IxTimeContext";
 import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~/lib/chart-utils";
-import { 
+import {
   DynamicIsland,
   DynamicContainer,
   DynamicTitle,
@@ -13,22 +13,22 @@ import {
   DynamicDiv,
   useDynamicIslandSize,
   SIZE_PRESETS,
-  DynamicIslandProvider
+  DynamicIslandProvider,
 } from "./ui/dynamic-island";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { createUrl, createAbsoluteUrl } from "~/lib/url-utils";
-import { 
-  Clock, 
-  Globe, 
-  TrendingUp, 
-  Users, 
-  DollarSign, 
-  Building2, 
-  MapPin, 
-  Activity, 
+import {
+  Clock,
+  Globe,
+  TrendingUp,
+  Users,
+  DollarSign,
+  Building2,
+  MapPin,
+  Activity,
   Target,
   RefreshCw,
   Search,
@@ -51,7 +51,7 @@ import {
   LineChart,
   TrendingDown,
   Shield,
-  Building
+  Building,
 } from "lucide-react";
 import { useUser } from "~/context/auth-context";
 import CountryFlag from "~/app/_components/CountryFlag";
@@ -75,16 +75,24 @@ interface SearchResult {
 
 function GlobalStatsIslandContent() {
   const { setSize } = useDynamicIslandSize();
-  const [mode, setMode] = useState<"compact" | "stats" | "search" | "notifications" | "mycountry">("compact");
+  const [mode, setMode] = useState<"compact" | "stats" | "search" | "notifications" | "mycountry">(
+    "compact"
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [mounted, setMounted] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Live notifications integration
-  const { notifications, unreadCount, isLoading: notificationsLoading, markAsRead, markAllAsRead } = useLiveNotifications();
+  const {
+    notifications,
+    unreadCount,
+    isLoading: notificationsLoading,
+    markAsRead,
+    markAllAsRead,
+  } = useLiveNotifications();
   const latestNotificationRef = useRef<string | null>(null);
   const hasInitializedNotificationsRef = useRef(false);
-  
+
   // Current time state
   const [currentTime, setCurrentTime] = useState<{
     greeting: string;
@@ -98,7 +106,6 @@ function GlobalStatsIslandContent() {
     multiplier: 2.0,
   });
 
-
   const { user, isLoaded } = useUser();
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
     undefined,
@@ -107,20 +114,14 @@ function GlobalStatsIslandContent() {
   const [showUserPopover, setShowUserPopover] = useState(false);
 
   // API queries
-  const {
-    data: globalStatsData,
-    isLoading: globalStatsLoading,
-  } = api.countries.getGlobalStats.useQuery();
+  const { data: globalStatsData, isLoading: globalStatsLoading } =
+    api.countries.getGlobalStats.useQuery();
 
-  const {
-    data: countriesData,
-  } = api.countries.getAll.useQuery();
+  const { data: countriesData } = api.countries.getAll.useQuery();
 
   // Fetch activity rings data for user's country - use the working endpoint!
-  const {
-    data: activityRingsData,
-  } = api.countries.getActivityRingsData.useQuery(
-    { countryId: userProfile?.countryId ?? '' },
+  const { data: activityRingsData } = api.countries.getActivityRingsData.useQuery(
+    { countryId: userProfile?.countryId ?? "" },
     { enabled: !!userProfile?.countryId }
   );
 
@@ -128,7 +129,7 @@ function GlobalStatsIslandContent() {
   const getGreeting = (ixTime: number): string => {
     const date = new Date(ixTime);
     const hour = date.getUTCHours();
-    
+
     if (hour >= 5 && hour < 12) return "Good morning";
     if (hour >= 12 && hour < 17) return "Good afternoon";
     if (hour >= 17 && hour < 21) return "Good evening";
@@ -138,12 +139,20 @@ function GlobalStatsIslandContent() {
   const getDateDisplay = (ixTime: number): string => {
     const date = new Date(ixTime);
     const months = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ];
-    const weekdays = [
-      "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
-    ];
+    const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
     const day = date.getUTCDate();
     const month = months[date.getUTCMonth()];
@@ -155,24 +164,24 @@ function GlobalStatsIslandContent() {
 
   const getTimeDisplay = (ixTime: number): string => {
     const date = new Date(ixTime);
-    const hours = date.getUTCHours().toString().padStart(2, '0');
-    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
-    const seconds = date.getUTCSeconds().toString().padStart(2, '0');
+    const hours = date.getUTCHours().toString().padStart(2, "0");
+    const minutes = date.getUTCMinutes().toString().padStart(2, "0");
+    const seconds = date.getUTCSeconds().toString().padStart(2, "0");
     return `${hours}:${minutes}:${seconds} ILT`;
   };
 
   const getSetupStatus = () => {
-    if (!isLoaded || profileLoading) return 'loading';
-    if (!user) return 'unauthenticated';
-    if (!userProfile?.countryId) return 'needs-setup';
-    return 'complete';
+    if (!isLoaded || profileLoading) return "loading";
+    if (!user) return "unauthenticated";
+    if (!userProfile?.countryId) return "needs-setup";
+    return "complete";
   };
   const setupStatus = getSetupStatus();
 
   // Process global stats data
   const globalStats = useMemo(() => {
-    if (!globalStatsData || typeof globalStatsData !== 'object') return null;
-    
+    if (!globalStatsData || typeof globalStatsData !== "object") return null;
+
     const data = globalStatsData as any;
     return {
       timestamp: data.ixTimeTimestamp || Date.now(),
@@ -199,9 +208,9 @@ function GlobalStatsIslandContent() {
     // Add countries
     if (countriesData?.countries) {
       countriesData.countries
-        .filter(country => country.name.toLowerCase().includes(query))
+        .filter((country) => country.name.toLowerCase().includes(query))
         .slice(0, 5)
-        .forEach(country => {
+        .forEach((country) => {
           results.push({
             id: country.id,
             type: "country",
@@ -210,7 +219,7 @@ function GlobalStatsIslandContent() {
             icon: Globe,
             action: () => {
               window.location.href = createAbsoluteUrl(getNationUrl(country.name));
-            }
+            },
           });
         });
     }
@@ -227,8 +236,8 @@ function GlobalStatsIslandContent() {
     ];
 
     commands
-      .filter(cmd => cmd.name.toLowerCase().includes(query))
-      .forEach(cmd => {
+      .filter((cmd) => cmd.name.toLowerCase().includes(query))
+      .forEach((cmd) => {
         results.push({
           id: cmd.path,
           type: "command",
@@ -237,7 +246,7 @@ function GlobalStatsIslandContent() {
           icon: cmd.icon,
           action: () => {
             window.location.href = cmd.path;
-          }
+          },
         });
       });
 
@@ -246,7 +255,7 @@ function GlobalStatsIslandContent() {
 
   // Use centralized time context instead of direct IxTime calls
   const { ixTimeTimestamp, multiplier: contextMultiplier } = useIxTime();
-  
+
   // Time updates
   useEffect(() => {
     const updateTime = () => {
@@ -265,36 +274,38 @@ function GlobalStatsIslandContent() {
     updateTime();
   }, [ixTimeTimestamp, contextMultiplier]);
 
-
   // Mode switching with size changes
-  const switchMode = useCallback((newMode: typeof mode) => {
-    setMode(newMode);
+  const switchMode = useCallback(
+    (newMode: typeof mode) => {
+      setMode(newMode);
 
-    switch (newMode) {
-      case "compact":
-        setSize(SIZE_PRESETS.COMPACT);
-        break;
-      case "stats":
-        setSize(SIZE_PRESETS.LARGE);
-        break;
-      case "search":
-        setSize(SIZE_PRESETS.MEDIUM);
-        // Focus the search input after the component re-renders
-        setTimeout(() => {
-          if (searchInputRef.current) {
-            searchInputRef.current.focus();
-            searchInputRef.current.select();
-          }
-        }, 100);
-        break;
-      case "notifications":
-        setSize(SIZE_PRESETS.TALL);
-        break;
-      case "mycountry":
-        setSize(SIZE_PRESETS.MEDIUM);
-        break;
-    }
-  }, [setSize]);
+      switch (newMode) {
+        case "compact":
+          setSize(SIZE_PRESETS.COMPACT);
+          break;
+        case "stats":
+          setSize(SIZE_PRESETS.LARGE);
+          break;
+        case "search":
+          setSize(SIZE_PRESETS.MEDIUM);
+          // Focus the search input after the component re-renders
+          setTimeout(() => {
+            if (searchInputRef.current) {
+              searchInputRef.current.focus();
+              searchInputRef.current.select();
+            }
+          }, 100);
+          break;
+        case "notifications":
+          setSize(SIZE_PRESETS.TALL);
+          break;
+        case "mycountry":
+          setSize(SIZE_PRESETS.MEDIUM);
+          break;
+      }
+    },
+    [setSize]
+  );
 
   useEffect(() => {
     if (!mounted) return;
@@ -319,12 +330,11 @@ function GlobalStatsIslandContent() {
 
     latestNotificationRef.current = newestId;
 
-    const priority = (newest.priority || '').toString().toLowerCase();
-    if (['critical', 'high'].includes(priority) && mode !== 'notifications') {
-      switchMode('notifications');
+    const priority = (newest.priority || "").toString().toLowerCase();
+    if (["critical", "high"].includes(priority) && mode !== "notifications") {
+      switchMode("notifications");
     }
   }, [notifications, mounted, switchMode, mode]);
-
 
   // Removed global keyboard shortcuts to prevent conflicts with universal command palette
   // The DynamicIsland command palette now handles all global keyboard shortcuts
@@ -340,36 +350,37 @@ function GlobalStatsIslandContent() {
     switch (mode) {
       case "compact":
         return (
-          <DynamicContainer className="flex items-center justify-between px-3 py-2 w-fit min-w-0 gap-3">
-            <div className="flex items-center gap-2 min-w-0">
+          <DynamicContainer className="flex w-fit min-w-0 items-center justify-between gap-3 px-3 py-2">
+            <div className="flex min-w-0 items-center gap-2">
               {/* Time and greeting */}
               <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 md:h-5 md:w-5 text-white/80 flex-shrink-0" />
-                <div className="text-xs md:text-sm min-w-0 truncate">
-                  <span className="font-medium truncate">{currentTime.timeDisplay}</span>
-                  <span className="text-white/70 ml-1 truncate">{currentTime.greeting}</span>
+                <Clock className="h-4 w-4 flex-shrink-0 text-white/80 md:h-5 md:w-5" />
+                <div className="min-w-0 truncate text-xs md:text-sm">
+                  <span className="truncate font-medium">{currentTime.timeDisplay}</span>
+                  <span className="ml-1 truncate text-white/70">{currentTime.greeting}</span>
                 </div>
               </div>
-              
+
               {/* Greeting with Executive Dashboard */}
               <Popover>
-                <PopoverTrigger className="text-xs md:text-sm text-white/70 hover:text-white cursor-pointer hover:bg-white/5 px-2 py-1 rounded-md transition-colors truncate">
-                  {currentTime.greeting}{user?.firstName ? `, ${user.firstName}` : ''}
+                <PopoverTrigger className="cursor-pointer truncate rounded-md px-2 py-1 text-xs text-white/70 transition-colors hover:bg-white/5 hover:text-white md:text-sm">
+                  {currentTime.greeting}
+                  {user?.firstName ? `, ${user.firstName}` : ""}
                 </PopoverTrigger>
-                <PopoverContent side="bottom" className="w-96 p-4 z-[10002]">
-                  {setupStatus === 'complete' && userProfile?.country ? (
+                <PopoverContent side="bottom" className="z-[10002] w-96 p-4">
+                  {setupStatus === "complete" && userProfile?.country ? (
                     <div className="space-y-4">
-                      <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                      <div className="flex items-center gap-3 border-b border-white/10 pb-3">
                         <Crown className="h-6 w-6 text-amber-400" />
                         <div>
                           <div className="font-semibold text-white">Executive Dashboard</div>
                           <div className="text-sm text-white/60">{userProfile.country.name}</div>
                         </div>
                       </div>
-                      
+
                       {activityRingsData ? (
                         <div className="grid grid-cols-4 gap-3">
-                          <div className="flex flex-col items-center text-center gap-2">
+                          <div className="flex flex-col items-center gap-2 text-center">
                             <HealthRing
                               value={activityRingsData.economicVitality}
                               size={64}
@@ -386,8 +397,8 @@ function GlobalStatsIslandContent() {
                               </div>
                             </div>
                           </div>
-                          
-                          <div className="flex flex-col items-center text-center gap-2">
+
+                          <div className="flex flex-col items-center gap-2 text-center">
                             <HealthRing
                               value={activityRingsData.populationWellbeing}
                               size={64}
@@ -397,15 +408,17 @@ function GlobalStatsIslandContent() {
                             <div className="space-y-0.5">
                               <div className="flex items-center justify-center gap-1">
                                 <Users className="h-3 w-3 text-blue-400" />
-                                <span className="text-[10px] font-medium text-white">Population</span>
+                                <span className="text-[10px] font-medium text-white">
+                                  Population
+                                </span>
                               </div>
                               <div className="text-[9px] text-white/60">
                                 {Math.round(activityRingsData.populationWellbeing)}% vitality
                               </div>
                             </div>
                           </div>
-                          
-                          <div className="flex flex-col items-center text-center gap-2">
+
+                          <div className="flex flex-col items-center gap-2 text-center">
                             <HealthRing
                               value={activityRingsData.diplomaticStanding}
                               size={64}
@@ -415,15 +428,17 @@ function GlobalStatsIslandContent() {
                             <div className="space-y-0.5">
                               <div className="flex items-center justify-center gap-1">
                                 <Shield className="h-3 w-3 text-purple-400" />
-                                <span className="text-[10px] font-medium text-white">Diplomatic</span>
+                                <span className="text-[10px] font-medium text-white">
+                                  Diplomatic
+                                </span>
                               </div>
                               <div className="text-[9px] text-white/60">
                                 {Math.round(activityRingsData.diplomaticStanding)}% vitality
                               </div>
                             </div>
                           </div>
-                          
-                          <div className="flex flex-col items-center text-center gap-2">
+
+                          <div className="flex flex-col items-center gap-2 text-center">
                             <HealthRing
                               value={activityRingsData.governmentalEfficiency}
                               size={64}
@@ -433,7 +448,9 @@ function GlobalStatsIslandContent() {
                             <div className="space-y-0.5">
                               <div className="flex items-center justify-center gap-1">
                                 <Building className="h-3 w-3 text-orange-400" />
-                                <span className="text-[10px] font-medium text-white">Government</span>
+                                <span className="text-[10px] font-medium text-white">
+                                  Government
+                                </span>
                               </div>
                               <div className="text-[9px] text-white/60">
                                 {Math.round(activityRingsData.governmentalEfficiency)}% vitality
@@ -443,67 +460,74 @@ function GlobalStatsIslandContent() {
                         </div>
                       ) : (
                         <div className="grid grid-cols-3 gap-3">
-                          <div className="text-center p-3 bg-white/5 rounded-lg">
-                            <BarChart3 className="h-6 w-6 text-blue-400 mx-auto mb-2" />
-                            <div className="text-xs text-white/60 mb-1">Economic</div>
-                            <div className="w-8 h-8 mx-auto bg-green-500/20 rounded-full flex items-center justify-center relative">
-                              <div className="w-6 h-6 border-2 border-green-500/30 rounded-full absolute"></div>
-                              <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                          <div className="rounded-lg bg-white/5 p-3 text-center">
+                            <BarChart3 className="mx-auto mb-2 h-6 w-6 text-blue-400" />
+                            <div className="mb-1 text-xs text-white/60">Economic</div>
+                            <div className="relative mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-green-500/20">
+                              <div className="absolute h-6 w-6 rounded-full border-2 border-green-500/30"></div>
+                              <div className="h-4 w-4 rounded-full bg-green-500"></div>
                             </div>
                           </div>
-                          
-                          <div className="text-center p-3 bg-white/5 rounded-lg">
-                            <Users className="h-6 w-6 text-yellow-400 mx-auto mb-2" />
-                            <div className="text-xs text-white/60 mb-1">Social</div>
-                            <div className="w-8 h-8 mx-auto bg-yellow-500/20 rounded-full flex items-center justify-center relative">
-                              <div className="w-6 h-6 border-2 border-yellow-500/30 rounded-full absolute"></div>
-                              <div className="w-5 h-5 bg-yellow-500 rounded-full"></div>
+
+                          <div className="rounded-lg bg-white/5 p-3 text-center">
+                            <Users className="mx-auto mb-2 h-6 w-6 text-yellow-400" />
+                            <div className="mb-1 text-xs text-white/60">Social</div>
+                            <div className="relative mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-yellow-500/20">
+                              <div className="absolute h-6 w-6 rounded-full border-2 border-yellow-500/30"></div>
+                              <div className="h-5 w-5 rounded-full bg-yellow-500"></div>
                             </div>
                           </div>
-                          
-                          <div className="text-center p-3 bg-white/5 rounded-lg">
-                            <Activity className="h-6 w-6 text-purple-400 mx-auto mb-2" />
-                            <div className="text-xs text-white/60 mb-1">Security</div>
-                            <div className="w-8 h-8 mx-auto bg-purple-500/20 rounded-full flex items-center justify-center relative">
-                              <div className="w-6 h-6 border-2 border-purple-500/30 rounded-full absolute"></div>
-                              <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+
+                          <div className="rounded-lg bg-white/5 p-3 text-center">
+                            <Activity className="mx-auto mb-2 h-6 w-6 text-purple-400" />
+                            <div className="mb-1 text-xs text-white/60">Security</div>
+                            <div className="relative mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/20">
+                              <div className="absolute h-6 w-6 rounded-full border-2 border-purple-500/30"></div>
+                              <div className="h-3 w-3 rounded-full bg-purple-500"></div>
                             </div>
                           </div>
                         </div>
                       )}
-                      
+
                       <div className="flex gap-2 pt-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => userProfile?.country && (window.location.href = createAbsoluteUrl(getNationUrl(userProfile.country.name)))}
-                          className="flex-1 text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
+                          onClick={() =>
+                            userProfile?.country &&
+                            (window.location.href = createAbsoluteUrl(
+                              getNationUrl(userProfile.country.name)
+                            ))
+                          }
+                          className="flex-1 border-white/20 text-white/80 hover:border-white/40 hover:bg-white/10 hover:text-white"
                         >
-                          <Crown className="h-4 w-4 mr-2" />
+                          <Crown className="mr-2 h-4 w-4" />
                           My Country
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => window.location.href = createAbsoluteUrl('/eci')}
-                          className="flex-1 text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
+                          onClick={() => (window.location.href = createAbsoluteUrl("/eci"))}
+                          className="flex-1 border-white/20 text-white/80 hover:border-white/40 hover:bg-white/10 hover:text-white"
                         >
-                          <Target className="h-4 w-4 mr-2" />
+                          <Target className="mr-2 h-4 w-4" />
                           ECI
                         </Button>
                       </div>
                     </div>
                   ) : (
-                    <div className="text-center py-6">
-                      <div className="p-4 bg-white/5 rounded-xl">
-                        <User className="h-12 w-12 mx-auto mb-3 text-blue-400" />
-                        <div className="text-white/70 mb-2">Welcome!</div>
-                        <div className="text-white/50 text-sm mb-4">Complete setup to access all features</div>
+                    <div className="py-6 text-center">
+                      <div className="rounded-xl bg-white/5 p-4">
+                        <User className="mx-auto mb-3 h-12 w-12 text-blue-400" />
+                        <div className="mb-2 text-white/70">Welcome!</div>
+                        <div className="mb-4 text-sm text-white/50">
+                          Complete setup to access all features
+                        </div>
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => window.location.href = createAbsoluteUrl('/setup')}
-                          className="text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
+                          onClick={() => (window.location.href = createAbsoluteUrl("/setup"))}
+                          className="border-white/20 text-white/80 hover:border-white/40 hover:bg-white/10 hover:text-white"
                         >
                           Complete Setup
                         </Button>
@@ -518,7 +542,7 @@ function GlobalStatsIslandContent() {
                 size="sm"
                 variant="ghost"
                 onClick={() => switchMode("search")}
-                className="h-6 w-6 p-0 text-white/80 hover:text-white hover:bg-white/10 flex items-center justify-center"
+                className="flex h-6 w-6 items-center justify-center p-0 text-white/80 hover:bg-white/10 hover:text-white"
               >
                 <Search className="h-3 w-3 md:h-4 md:w-4" />
               </Button>
@@ -526,11 +550,11 @@ function GlobalStatsIslandContent() {
                 size="sm"
                 variant="ghost"
                 onClick={() => switchMode("notifications")}
-                className="h-6 w-6 p-0 text-white/80 hover:text-white hover:bg-white/10 relative flex items-center justify-center"
+                className="relative flex h-6 w-6 items-center justify-center p-0 text-white/80 hover:bg-white/10 hover:text-white"
               >
                 <Bell className="h-3 w-3 md:h-4 md:w-4" />
                 {unreadCount > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs bg-red-500 text-white flex items-center justify-center">
+                  <Badge className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center bg-red-500 p-0 text-xs text-white">
                     {unreadCount}
                   </Badge>
                 )}
@@ -539,16 +563,16 @@ function GlobalStatsIslandContent() {
                 size="sm"
                 variant="ghost"
                 onClick={() => switchMode("stats")}
-                className="h-6 w-6 p-0 text-white/80 hover:text-white hover:bg-white/10 flex items-center justify-center"
+                className="flex h-6 w-6 items-center justify-center p-0 text-white/80 hover:bg-white/10 hover:text-white"
               >
                 <ChevronDown className="h-3 w-3 md:h-4 md:w-4" />
               </Button>
-              {setupStatus === 'complete' && userProfile?.country && (
+              {setupStatus === "complete" && userProfile?.country && (
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => switchMode("mycountry")}
-                  className="h-6 w-6 p-0 text-white/80 hover:text-white hover:bg-white/10 flex items-center justify-center"
+                  className="flex h-6 w-6 items-center justify-center p-0 text-white/80 hover:bg-white/10 hover:text-white"
                 >
                   <Crown className="h-3 w-3 md:h-4 md:w-4" />
                 </Button>
@@ -556,30 +580,38 @@ function GlobalStatsIslandContent() {
               {/* User Info Popover */}
               <Popover open={showUserPopover} onOpenChange={setShowUserPopover}>
                 <PopoverTrigger>
-                  <button className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-white/10 transition-colors ml-2">
+                  <button className="ml-2 flex items-center gap-2 rounded-md px-2 py-1 transition-colors hover:bg-white/10">
                     {/* Avatar: Use country flag if available, else initials */}
-                    {setupStatus === 'complete' && userProfile?.country ? (
-                      <CountryFlag countryCode={userProfile.country.name} countryName={userProfile.country.name} className="w-7 h-7 rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 object-cover" />
+                    {setupStatus === "complete" && userProfile?.country ? (
+                      <CountryFlag
+                        countryCode={userProfile.country.name}
+                        countryName={userProfile.country.name}
+                        className="h-7 w-7 rounded-full border border-gray-300 bg-white object-cover dark:border-gray-700 dark:bg-gray-900"
+                      />
                     ) : (
-                      <div className="w-7 h-7 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                        {user?.firstName?.[0] || (user as any)?.username?.[0] || 'U'}
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-sm font-medium text-white">
+                        {user?.firstName?.[0] || (user as any)?.username?.[0] || "U"}
                       </div>
                     )}
-                    <span className="hidden md:block text-xs font-medium text-white truncate max-w-[80px]">
-                      {user?.firstName || (user as any)?.username || 'User'}
+                    <span className="hidden max-w-[80px] truncate text-xs font-medium text-white md:block">
+                      {user?.firstName || (user as any)?.username || "User"}
                     </span>
                   </button>
                 </PopoverTrigger>
-                <PopoverContent align="end" className="w-64 p-4 z-[10002]">
+                <PopoverContent align="end" className="z-[10002] w-64 p-4">
                   <div>
                     {/* User Info */}
-                    <div className="pb-3 border-b border-white/10">
+                    <div className="border-b border-white/10 pb-3">
                       <div className="flex items-center gap-3">
-                        {setupStatus === 'complete' && userProfile?.country ? (
-                          <CountryFlag countryCode={userProfile.country.name} countryName={userProfile.country.name} className="w-10 h-10 rounded-full border border-white/20 object-cover" />
+                        {setupStatus === "complete" && userProfile?.country ? (
+                          <CountryFlag
+                            countryCode={userProfile.country.name}
+                            countryName={userProfile.country.name}
+                            className="h-10 w-10 rounded-full border border-white/20 object-cover"
+                          />
                         ) : (
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium">
-                            {user?.firstName?.[0] || (user as any)?.username?.[0] || 'U'}
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 font-medium text-white">
+                            {user?.firstName?.[0] || (user as any)?.username?.[0] || "U"}
                           </div>
                         )}
                         <div>
@@ -591,19 +623,19 @@ function GlobalStatsIslandContent() {
                     </div>
                     {/* Menu Items */}
                     <div className="pt-3">
-                      {setupStatus === 'complete' && userProfile?.country && (
+                      {setupStatus === "complete" && userProfile?.country && (
                         <a
                           href={createUrl(getNationUrl(userProfile.country.name))}
-                          className="flex items-center gap-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors rounded"
+                          className="flex items-center gap-3 rounded py-2 text-sm text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                         >
                           <Crown className="h-4 w-4" />
                           My Country: {userProfile.country.name}
                         </a>
                       )}
-                      {setupStatus === 'needs-setup' && (
+                      {setupStatus === "needs-setup" && (
                         <a
                           href={createUrl("/setup")}
-                          className="flex items-center gap-3 py-2 text-sm text-amber-300 hover:text-amber-200 hover:bg-amber-500/10 transition-colors rounded"
+                          className="flex items-center gap-3 rounded py-2 text-sm text-amber-300 transition-colors hover:bg-amber-500/10 hover:text-amber-200"
                         >
                           <AlertCircle className="h-4 w-4" />
                           Complete Setup
@@ -611,30 +643,30 @@ function GlobalStatsIslandContent() {
                       )}
                       <a
                         href={createUrl("/dashboard")}
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                       >
                         <Home className="h-4 w-4" />
                         Dashboard
                       </a>
                       <a
                         href={createUrl("/profile")}
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                       >
                         <User className="h-4 w-4" />
                         Profile Settings
                       </a>
                     </div>
                     {/* Divider */}
-                    <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
+                    <div className="my-1 border-t border-gray-200 dark:border-gray-700" />
                     {/* Sign Out */}
                     <div className="px-4 py-2">
                       <button
                         onClick={() => {
-                          if (typeof window !== 'undefined') {
-                            window.location.href = createAbsoluteUrl('/sign-out');
+                          if (typeof window !== "undefined") {
+                            window.location.href = createAbsoluteUrl("/sign-out");
                           }
                         }}
-                        className="w-full flex items-center gap-3 px-0 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                        className="flex w-full items-center gap-3 rounded-md px-0 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
                       >
                         <LogOut className="h-4 w-4" />
                         Sign Out
@@ -649,8 +681,8 @@ function GlobalStatsIslandContent() {
 
       case "stats":
         return (
-          <DynamicContainer className="p-6 w-full">
-            <div className="flex items-center justify-between mb-4">
+          <DynamicContainer className="w-full p-6">
+            <div className="mb-4 flex items-center justify-between">
               <DynamicTitle className="text-lg font-bold text-white">
                 Global Statistics
               </DynamicTitle>
@@ -660,15 +692,15 @@ function GlobalStatsIslandContent() {
                   variant="ghost"
                   onClick={() => window.location.reload()}
                   disabled={globalStatsLoading}
-                  className="text-white/80 hover:text-white hover:bg-white/10"
+                  className="text-white/80 hover:bg-white/10 hover:text-white"
                 >
-                  <RefreshCw className={`h-4 w-4 ${globalStatsLoading ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`h-4 w-4 ${globalStatsLoading ? "animate-spin" : ""}`} />
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => switchMode("compact")}
-                  className="text-white/80 hover:text-white hover:bg-white/10"
+                  className="text-white/80 hover:bg-white/10 hover:text-white"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -677,7 +709,7 @@ function GlobalStatsIslandContent() {
 
             {globalStats ? (
               <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-3 p-3 bg-white/10 rounded-lg">
+                <div className="flex items-center gap-3 rounded-lg bg-white/10 p-3">
                   <Users className="h-5 w-5 text-blue-200" />
                   <div>
                     <div className="text-sm font-medium text-white">Population</div>
@@ -686,8 +718,8 @@ function GlobalStatsIslandContent() {
                     </div>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-3 p-3 bg-white/10 rounded-lg">
+
+                <div className="flex items-center gap-3 rounded-lg bg-white/10 p-3">
                   <DollarSign className="h-5 w-5 text-green-200" />
                   <div>
                     <div className="text-sm font-medium text-white">Global GDP</div>
@@ -696,29 +728,29 @@ function GlobalStatsIslandContent() {
                     </div>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-3 p-3 bg-white/10 rounded-lg">
+
+                <div className="flex items-center gap-3 rounded-lg bg-white/10 p-3">
                   <TrendingUp className="h-5 w-5 text-purple-200" />
                   <div>
                     <div className="text-sm font-medium text-white">Growth Rate</div>
                     <div className="text-xs text-white/80">
-                      {formatGrowthRateFromDecimal(isNaN(globalStats.globalGrowthRate) ? 0 : globalStats.globalGrowthRate)}
+                      {formatGrowthRateFromDecimal(
+                        isNaN(globalStats.globalGrowthRate) ? 0 : globalStats.globalGrowthRate
+                      )}
                     </div>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-3 p-3 bg-white/10 rounded-lg">
+
+                <div className="flex items-center gap-3 rounded-lg bg-white/10 p-3">
                   <Building2 className="h-5 w-5 text-orange-200" />
                   <div>
                     <div className="text-sm font-medium text-white">Countries</div>
-                    <div className="text-xs text-white/80">
-                      {globalStats.countryCount} active
-                    </div>
+                    <div className="text-xs text-white/80">{globalStats.countryCount} active</div>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="text-center py-6">
+              <div className="py-6 text-center">
                 <div className="text-white/60">Loading global statistics...</div>
               </div>
             )}
@@ -727,29 +759,27 @@ function GlobalStatsIslandContent() {
 
       case "search":
         return (
-          <DynamicContainer className="p-4 w-full">
-            <div className="flex items-center justify-between mb-4">
-              <DynamicTitle className="text-lg font-bold text-white">
-                Search
-              </DynamicTitle>
+          <DynamicContainer className="w-full p-4">
+            <div className="mb-4 flex items-center justify-between">
+              <DynamicTitle className="text-lg font-bold text-white">Search</DynamicTitle>
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => switchMode("compact")}
-                className="text-white/80 hover:text-white hover:bg-white/10"
+                className="text-white/80 hover:bg-white/10 hover:text-white"
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
 
             <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/60" />
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-white/60" />
               <Input
                 ref={searchInputRef}
                 placeholder="Search countries, commands..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/60"
+                className="border-white/20 bg-white/10 pl-10 text-white placeholder:text-white/60"
                 autoFocus
               />
             </div>
@@ -762,7 +792,7 @@ function GlobalStatsIslandContent() {
                       key={result.id}
                       variant="ghost"
                       onClick={result.action}
-                      className="w-full justify-start gap-3 text-white/80 hover:text-white hover:bg-white/10 p-3"
+                      className="w-full justify-start gap-3 p-3 text-white/80 hover:bg-white/10 hover:text-white"
                     >
                       {result.icon && <result.icon className="h-4 w-4" />}
                       <div className="text-left">
@@ -775,16 +805,14 @@ function GlobalStatsIslandContent() {
                   ))}
                 </div>
               ) : searchQuery ? (
-                <div className="text-center py-6 text-white/60">
+                <div className="py-6 text-center text-white/60">
                   No results found for "{searchQuery}"
                 </div>
               ) : (
-                <div className="text-center py-6">
-                  <Command className="h-8 w-8 mx-auto mb-2 text-white/40" />
-                  <div className="text-white/60 text-sm">
-                    Type to search countries and commands
-                  </div>
-                  <div className="text-white/40 text-xs mt-1">
+                <div className="py-6 text-center">
+                  <Command className="mx-auto mb-2 h-8 w-8 text-white/40" />
+                  <div className="text-sm text-white/60">Type to search countries and commands</div>
+                  <div className="mt-1 text-xs text-white/40">
                     Tip: Use ⌘K to quickly open search
                   </div>
                 </div>
@@ -795,18 +823,16 @@ function GlobalStatsIslandContent() {
 
       case "notifications":
         return (
-          <DynamicContainer className="p-4 w-full">
-            <div className="flex items-center justify-between mb-4">
-              <DynamicTitle className="text-lg font-bold text-white">
-                Notifications
-              </DynamicTitle>
+          <DynamicContainer className="w-full p-4">
+            <div className="mb-4 flex items-center justify-between">
+              <DynamicTitle className="text-lg font-bold text-white">Notifications</DynamicTitle>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => markAllAsRead()}
-                    className="text-white/80 hover:text-white hover:bg-white/10 text-xs"
+                    className="text-xs text-white/80 hover:bg-white/10 hover:text-white"
                   >
                     Mark all read
                   </Button>
@@ -815,7 +841,7 @@ function GlobalStatsIslandContent() {
                   size="sm"
                   variant="ghost"
                   onClick={() => switchMode("compact")}
-                  className="text-white/80 hover:text-white hover:bg-white/10"
+                  className="text-white/80 hover:bg-white/10 hover:text-white"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -824,26 +850,29 @@ function GlobalStatsIslandContent() {
 
             <ScrollArea className="max-h-64">
               {notificationsLoading ? (
-                <div className="text-center py-6">
-                  <div className="text-white/60 text-sm">Loading notifications...</div>
+                <div className="py-6 text-center">
+                  <div className="text-sm text-white/60">Loading notifications...</div>
                 </div>
               ) : notifications.length > 0 ? (
                 <div className="space-y-3">
                   {notifications.map((notification) => {
-                    const notificationType = notification.type || 'info';
-                    const IconComponent = 
-                      notificationType === "info" ? Info :
-                      notificationType === "warning" ? AlertTriangle :
-                      notificationType === "success" ? CheckCircle : 
-                      AlertTriangle;
+                    const notificationType = notification.type || "info";
+                    const IconComponent =
+                      notificationType === "info"
+                        ? Info
+                        : notificationType === "warning"
+                          ? AlertTriangle
+                          : notificationType === "success"
+                            ? CheckCircle
+                            : AlertTriangle;
 
                     return (
                       <div
                         key={notification.id}
-                        className={`p-3 rounded-lg border cursor-pointer hover:bg-white/5 transition-colors ${
-                          notification.read 
-                            ? 'bg-white/5 border-white/10' 
-                            : 'bg-white/10 border-white/20'
+                        className={`cursor-pointer rounded-lg border p-3 transition-colors hover:bg-white/5 ${
+                          notification.read
+                            ? "border-white/10 bg-white/5"
+                            : "border-white/20 bg-white/10"
                         }`}
                         onClick={() => {
                           if (!notification.read) {
@@ -855,25 +884,30 @@ function GlobalStatsIslandContent() {
                         }}
                       >
                         <div className="flex items-start gap-3">
-                          <IconComponent className={`h-4 w-4 mt-0.5 ${
-                            notificationType === "info" ? "text-blue-300" :
-                            notificationType === "warning" ? "text-yellow-300" :
-                            notificationType === "success" ? "text-green-300" :
-                            "text-red-300"
-                          }`} />
+                          <IconComponent
+                            className={`mt-0.5 h-4 w-4 ${
+                              notificationType === "info"
+                                ? "text-blue-300"
+                                : notificationType === "warning"
+                                  ? "text-yellow-300"
+                                  : notificationType === "success"
+                                    ? "text-green-300"
+                                    : "text-red-300"
+                            }`}
+                          />
                           <div className="flex-1">
                             <div className="text-sm font-medium text-white">
                               {notification.title}
                             </div>
-                            <div className="text-xs text-white/70 mt-1">
-                              {notification.message || notification.description || ''}
+                            <div className="mt-1 text-xs text-white/70">
+                              {notification.message || notification.description || ""}
                             </div>
-                            <div className="text-xs text-white/50 mt-2">
+                            <div className="mt-2 text-xs text-white/50">
                               {new Date(notification.createdAt).toLocaleTimeString()}
                             </div>
                           </div>
                           {!notification.read && (
-                            <div className="w-2 h-2 bg-blue-400 rounded-full mt-2" />
+                            <div className="mt-2 h-2 w-2 rounded-full bg-blue-400" />
                           )}
                         </div>
                       </div>
@@ -881,9 +915,9 @@ function GlobalStatsIslandContent() {
                   })}
                 </div>
               ) : (
-                <div className="text-center py-6">
-                  <Bell className="h-8 w-8 mx-auto mb-2 text-white/40" />
-                  <div className="text-white/60 text-sm">No notifications</div>
+                <div className="py-6 text-center">
+                  <Bell className="mx-auto mb-2 h-8 w-8 text-white/40" />
+                  <div className="text-sm text-white/60">No notifications</div>
                 </div>
               )}
             </ScrollArea>
@@ -892,60 +926,67 @@ function GlobalStatsIslandContent() {
 
       case "mycountry":
         return (
-          <DynamicContainer className="p-4 w-full">
-            <div className="flex items-center justify-between mb-4">
-              <DynamicTitle className="text-lg font-bold text-white">
-                My Country
-              </DynamicTitle>
+          <DynamicContainer className="w-full p-4">
+            <div className="mb-4 flex items-center justify-between">
+              <DynamicTitle className="text-lg font-bold text-white">My Country</DynamicTitle>
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => switchMode("compact")}
-                className="text-white/80 hover:text-white hover:bg-white/10"
+                className="text-white/80 hover:bg-white/10 hover:text-white"
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
 
-{setupStatus === 'complete' && userProfile?.country ? (
+            {setupStatus === "complete" && userProfile?.country ? (
               <div className="space-y-4">
-                <div className="flex items-center gap-3 p-4 bg-white/10 rounded-xl">
-                  <CountryFlag countryCode={userProfile.country.name} countryName={userProfile.country.name} className="w-12 h-12 rounded-lg border border-white/20" />
+                <div className="flex items-center gap-3 rounded-xl bg-white/10 p-4">
+                  <CountryFlag
+                    countryCode={userProfile.country.name}
+                    countryName={userProfile.country.name}
+                    className="h-12 w-12 rounded-lg border border-white/20"
+                  />
                   <div>
                     <div className="font-semibold text-white">{userProfile.country.name}</div>
                     <div className="text-sm text-white/60">Your Nation</div>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-3">
                   <Button
                     variant="outline"
-                    onClick={() => userProfile?.country && (window.location.href = createAbsoluteUrl(getNationUrl(userProfile.country.name)))}
-                    className="flex items-center gap-2 text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
+                    onClick={() =>
+                      userProfile?.country &&
+                      (window.location.href = createAbsoluteUrl(
+                        getNationUrl(userProfile.country.name)
+                      ))
+                    }
+                    className="flex items-center gap-2 border-white/20 text-white/80 hover:border-white/40 hover:bg-white/10 hover:text-white"
                   >
                     <Crown className="h-4 w-4" />
                     Dashboard
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => window.location.href = createAbsoluteUrl('/eci')}
-                    className="flex items-center gap-2 text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
+                    onClick={() => (window.location.href = createAbsoluteUrl("/eci"))}
+                    className="flex items-center gap-2 border-white/20 text-white/80 hover:border-white/40 hover:bg-white/10 hover:text-white"
                   >
                     <Target className="h-4 w-4" />
                     ECI Suite
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => window.location.href = createAbsoluteUrl('/builder')}
-                    className="flex items-center gap-2 text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
+                    onClick={() => (window.location.href = createAbsoluteUrl("/builder"))}
+                    className="flex items-center gap-2 border-white/20 text-white/80 hover:border-white/40 hover:bg-white/10 hover:text-white"
                   >
                     <Plus className="h-4 w-4" />
                     Builder
                   </Button>
                   <Button
                     variant="outline"
-                    onClick={() => window.location.href = createAbsoluteUrl('/profile')}
-                    className="flex items-center gap-2 text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
+                    onClick={() => (window.location.href = createAbsoluteUrl("/profile"))}
+                    className="flex items-center gap-2 border-white/20 text-white/80 hover:border-white/40 hover:bg-white/10 hover:text-white"
                   >
                     <User className="h-4 w-4" />
                     Profile
@@ -953,16 +994,18 @@ function GlobalStatsIslandContent() {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-6">
-                <div className="p-4 bg-white/5 rounded-xl">
-                  <AlertCircle className="h-12 w-12 mx-auto mb-3 text-amber-400" />
-                  <div className="text-white/70 mb-2">No Country Linked</div>
-                  <div className="text-white/50 text-sm mb-4">Complete setup to link your account to a country</div>
+              <div className="py-6 text-center">
+                <div className="rounded-xl bg-white/5 p-4">
+                  <AlertCircle className="mx-auto mb-3 h-12 w-12 text-amber-400" />
+                  <div className="mb-2 text-white/70">No Country Linked</div>
+                  <div className="mb-4 text-sm text-white/50">
+                    Complete setup to link your account to a country
+                  </div>
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => window.location.href = createAbsoluteUrl('/setup')}
-                    className="text-white/80 hover:text-white border-white/20 hover:border-white/40 hover:bg-white/10"
+                    onClick={() => (window.location.href = createAbsoluteUrl("/setup"))}
+                    className="border-white/20 text-white/80 hover:border-white/40 hover:bg-white/10 hover:text-white"
                   >
                     Complete Setup
                   </Button>
@@ -977,16 +1020,12 @@ function GlobalStatsIslandContent() {
     }
   };
 
-  return (
-    <DynamicIsland id="global-stats-island">
-      {renderContent()}
-    </DynamicIsland>
-  );
+  return <DynamicIsland id="global-stats-island">{renderContent()}</DynamicIsland>;
 }
 
 export function GlobalStatsIsland({ className }: GlobalStatsIslandProps) {
   return (
-    <div className={`w-fit flex items-center justify-center z-[10000] ${className || ''}`}>
+    <div className={`z-[10000] flex w-fit items-center justify-center ${className || ""}`}>
       <DynamicIslandProvider initialSize={SIZE_PRESETS.COMPACT}>
         <GlobalStatsIslandContent />
       </DynamicIslandProvider>

@@ -10,14 +10,14 @@
  * Extracted from WikiIntelligenceTab for modularity and maintainability.
  */
 
-import React from 'react';
-import { RiSettings3Line, RiRefreshLine } from 'react-icons/ri';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { cn } from '~/lib/utils';
-import { type WikiSettings } from '~/types/wiki-intelligence';
-import { WikiPageSearch } from '~/components/countries/WikiPageSearch';
+import React from "react";
+import { RiSettings3Line, RiRefreshLine } from "react-icons/ri";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { cn } from "~/lib/utils";
+import { type WikiSettings } from "~/types/wiki-intelligence";
+import { WikiPageSearch } from "~/components/countries/WikiPageSearch";
 
 /**
  * Props for the WikiSettingsView component
@@ -75,9 +75,9 @@ export function WikiSettingsView({
       maxSections: 10,
       customPages: [],
       wikiBaseUrls: {
-        ixwiki: 'https://ixwiki.com',
-        iiwiki: 'https://iiwiki.com',
-        custom: '',
+        ixwiki: "https://ixwiki.com",
+        iiwiki: "https://iiwiki.com",
+        custom: "",
       },
       contentFilters: {
         removeTemplates: true,
@@ -106,10 +106,10 @@ export function WikiSettingsView({
         <CardContent className="space-y-6">
           {/* Wiki Sources */}
           <div>
-            <h4 className="font-medium mb-3">Sources</h4>
+            <h4 className="mb-3 font-medium">Sources</h4>
             <div className="space-y-3">
               {/* IxWiki Source */}
-              <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg">
+              <div className="bg-muted/20 flex items-center justify-between rounded-lg p-3">
                 <div className="flex items-center gap-3">
                   <input
                     type="checkbox"
@@ -120,26 +120,23 @@ export function WikiSettingsView({
                         enableIxWiki: e.target.checked,
                       }))
                     }
-                    className="w-4 h-4 text-blue-600 rounded"
+                    className="h-4 w-4 rounded text-blue-600"
                   />
                   <div>
                     <div className="font-medium">IxWiki</div>
-                    <div className="text-sm text-muted-foreground">
-                      ixwiki.com - The bespoke two-decades old geopolitical
-                      worldbuilding community & fictional encyclopedia
+                    <div className="text-muted-foreground text-sm">
+                      ixwiki.com - The bespoke two-decades old geopolitical worldbuilding community
+                      & fictional encyclopedia
                     </div>
                   </div>
                 </div>
-                <Badge
-                  variant="outline"
-                  className="text-green-400 border-green-400/30"
-                >
+                <Badge variant="outline" className="border-green-400/30 text-green-400">
                   Active
                 </Badge>
               </div>
 
               {/* IIWiki Source */}
-              <div className="flex items-center justify-between p-3 bg-muted/20 rounded-lg">
+              <div className="bg-muted/20 flex items-center justify-between rounded-lg p-3">
                 <div className="flex items-center gap-3">
                   <input
                     type="checkbox"
@@ -150,26 +147,23 @@ export function WikiSettingsView({
                         enableIIWiki: e.target.checked,
                       }))
                     }
-                    className="w-4 h-4 text-blue-600 rounded"
+                    className="h-4 w-4 rounded text-blue-600"
                   />
                   <div>
                     <div className="font-medium">IIWiki</div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-muted-foreground text-sm">
                       iiwiki.com - SimFic and Alt-History Encyclopedia
                     </div>
                   </div>
                 </div>
-                <Badge
-                  variant="outline"
-                  className="text-blue-400 border-blue-400/30"
-                >
+                <Badge variant="outline" className="border-blue-400/30 text-blue-400">
                   Optional
                 </Badge>
               </div>
 
               {/* Custom Wiki URL */}
-              <div className="p-3 bg-muted/20 rounded-lg">
-                <div className="font-medium mb-2">Custom Wiki URL</div>
+              <div className="bg-muted/20 rounded-lg p-3">
+                <div className="mb-2 font-medium">Custom Wiki URL</div>
                 <input
                   type="url"
                   placeholder="https://custom-wiki.com"
@@ -183,9 +177,9 @@ export function WikiSettingsView({
                       },
                     }))
                   }
-                  className="w-full p-2 bg-background/50 rounded border border-border text-sm"
+                  className="bg-background/50 border-border w-full rounded border p-2 text-sm"
                 />
-                <div className="text-xs text-muted-foreground mt-1">
+                <div className="text-muted-foreground mt-1 text-xs">
                   Use a custom wiki for additional content sources
                 </div>
               </div>
@@ -194,11 +188,11 @@ export function WikiSettingsView({
 
           {/* Page Discovery Strategy */}
           <div>
-            <h4 className="font-medium mb-3">Page Discovery Strategy</h4>
+            <h4 className="mb-3 font-medium">Page Discovery Strategy</h4>
             <div className="space-y-3">
               {/* Country Name Variants */}
-              <div className="p-3 bg-muted/20 rounded-lg">
-                <div className="flex items-center gap-3 mb-2">
+              <div className="bg-muted/20 rounded-lg p-3">
+                <div className="mb-2 flex items-center gap-3">
                   <input
                     type="checkbox"
                     checked={wikiSettings.pageVariants.useCountryVariants}
@@ -211,19 +205,19 @@ export function WikiSettingsView({
                         },
                       }))
                     }
-                    className="w-4 h-4 text-blue-600 rounded"
+                    className="h-4 w-4 rounded text-blue-600"
                   />
                   <div className="font-medium">Country Name Variants</div>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  Search: &quot;{countryName}&quot;, &quot;{countryName}{' '}
-                  (country)&quot;, &quot;{countryName} (nation)&quot;
+                <div className="text-muted-foreground text-xs">
+                  Search: &quot;{countryName}&quot;, &quot;{countryName} (country)&quot;, &quot;
+                  {countryName} (nation)&quot;
                 </div>
               </div>
 
               {/* Topic-Specific Pages */}
-              <div className="p-3 bg-muted/20 rounded-lg">
-                <div className="flex items-center gap-3 mb-2">
+              <div className="bg-muted/20 rounded-lg p-3">
+                <div className="mb-2 flex items-center gap-3">
                   <input
                     type="checkbox"
                     checked={wikiSettings.pageVariants.useTopicPages}
@@ -236,13 +230,13 @@ export function WikiSettingsView({
                         },
                       }))
                     }
-                    className="w-4 h-4 text-blue-600 rounded"
+                    className="h-4 w-4 rounded text-blue-600"
                   />
                   <div className="font-medium">Topic-Specific Pages</div>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  Search: &quot;Economy of X&quot;, &quot;Politics of X&quot;,
-                  &quot;History of X&quot;, etc.
+                <div className="text-muted-foreground text-xs">
+                  Search: &quot;Economy of X&quot;, &quot;Politics of X&quot;, &quot;History of
+                  X&quot;, etc.
                 </div>
               </div>
             </div>
@@ -250,11 +244,11 @@ export function WikiSettingsView({
 
           {/* Custom Pages */}
           <div>
-            <h4 className="font-medium mb-3">Custom Wiki Pages</h4>
-            <div className="p-3 bg-muted/20 rounded-lg">
-              <div className="text-sm text-muted-foreground mb-3">
-                Search for specific wiki pages or enter custom page names. These
-                will be processed in addition to automatic discovery.
+            <h4 className="mb-3 font-medium">Custom Wiki Pages</h4>
+            <div className="bg-muted/20 rounded-lg p-3">
+              <div className="text-muted-foreground mb-3 text-sm">
+                Search for specific wiki pages or enter custom page names. These will be processed
+                in addition to automatic discovery.
               </div>
               <WikiPageSearch
                 selectedPages={wikiSettings.customPages}
@@ -267,15 +261,9 @@ export function WikiSettingsView({
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-4 border-t border-border/50">
-            <Button
-              onClick={onApplySettings}
-              className="flex-1"
-              disabled={isApplying}
-            >
-              <RiRefreshLine
-                className={cn('h-4 w-4 mr-2', isApplying && 'animate-spin')}
-              />
+          <div className="border-border/50 flex gap-3 border-t pt-4">
+            <Button onClick={onApplySettings} className="flex-1" disabled={isApplying}>
+              <RiRefreshLine className={cn("mr-2 h-4 w-4", isApplying && "animate-spin")} />
               Apply Settings & Refresh
             </Button>
             <Button variant="outline" onClick={handleResetToDefaults}>

@@ -11,10 +11,10 @@ import type {
   EconomyBuilderState,
   DemographicsConfiguration,
   LaborConfiguration,
-  SectorConfiguration
-} from '~/types/economy-builder';
-import type { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
-import { ATOMIC_ECONOMIC_COMPONENTS } from '~/lib/atomic-economic-data';
+  SectorConfiguration,
+} from "~/types/economy-builder";
+import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
 
 /**
  * Aggregated summary of all economic sectors
@@ -90,7 +90,8 @@ export function calculateComponentEffectiveness(
   if (selectedComponents.length === 0) return 0;
 
   const totalEffectiveness = selectedComponents.reduce(
-    (sum, comp) => sum + (ATOMIC_ECONOMIC_COMPONENTS[comp]?.effectiveness || 0), 0
+    (sum, comp) => sum + (ATOMIC_ECONOMIC_COMPONENTS[comp]?.effectiveness || 0),
+    0
   );
 
   const baseEffectiveness = totalEffectiveness / selectedComponents.length;
@@ -98,8 +99,8 @@ export function calculateComponentEffectiveness(
   let synergyBonus = 0;
   let conflictPenalty = 0;
 
-  selectedComponents.forEach(comp1 => {
-    selectedComponents.forEach(comp2 => {
+  selectedComponents.forEach((comp1) => {
+    selectedComponents.forEach((comp2) => {
       if (comp1 !== comp2) {
         const component1 = ATOMIC_ECONOMIC_COMPONENTS[comp1];
         if (component1?.synergies.includes(comp2)) {
@@ -131,9 +132,9 @@ export function calculateSectorSummary(sectors: SectorConfiguration[]): SectorSu
   return {
     totalGDP: sectors.reduce((sum, sector) => sum + sector.gdpContribution, 0),
     totalEmployment: sectors.reduce((sum, sector) => sum + sector.employmentShare, 0),
-    primarySectors: sectors.filter(s => s.category === 'Primary'),
-    secondarySectors: sectors.filter(s => s.category === 'Secondary'),
-    tertiarySectors: sectors.filter(s => s.category === 'Tertiary')
+    primarySectors: sectors.filter((s) => s.category === "Primary"),
+    secondarySectors: sectors.filter((s) => s.category === "Secondary"),
+    tertiarySectors: sectors.filter((s) => s.category === "Tertiary"),
   };
 }
 
@@ -163,7 +164,7 @@ export function calculateLaborSummary(labor: LaborConfiguration): LaborSummary {
     averageHours: labor.averageWorkweekHours,
     minimumWage: labor.minimumWageHourly,
     livingWage: labor.livingWageHourly,
-    wageGap: labor.livingWageHourly - labor.minimumWageHourly
+    wageGap: labor.livingWageHourly - labor.minimumWageHourly,
   };
 }
 
@@ -179,7 +180,9 @@ export function calculateLaborSummary(labor: LaborConfiguration): LaborSummary {
  * // { totalPopulation: 10000000, workingAgePopulation: 6500000, ... }
  * ```
  */
-export function calculateDemographicsSummary(demographics: DemographicsConfiguration): DemographicsSummary {
+export function calculateDemographicsSummary(
+  demographics: DemographicsConfiguration
+): DemographicsSummary {
   const totalPop = demographics.totalPopulation;
   const workingAge = Math.round(totalPop * (demographics.ageDistribution.age15to64 / 100));
   const urbanPop = Math.round(totalPop * (demographics.urbanRuralSplit.urban / 100));
@@ -193,7 +196,7 @@ export function calculateDemographicsSummary(demographics: DemographicsConfigura
     literacyRate: demographics.literacyRate,
     populationGrowth: demographics.populationGrowthRate,
     dependencyRatio: demographics.totalDependencyRatio,
-    tertiaryEducation: demographics.educationLevels.tertiary
+    tertiaryEducation: demographics.educationLevels.tertiary,
   };
 }
 
@@ -226,33 +229,39 @@ export function validateConfiguration(
 
   // Check sector validation
   if (Math.abs(sectorSummary.totalGDP - 100) > 1) {
-    errors.push(`Sector GDP contributions must sum to 100% (currently ${sectorSummary.totalGDP.toFixed(1)}%)`);
+    errors.push(
+      `Sector GDP contributions must sum to 100% (currently ${sectorSummary.totalGDP.toFixed(1)}%)`
+    );
   }
 
   if (Math.abs(sectorSummary.totalEmployment - 100) > 1) {
-    errors.push(`Employment shares must sum to 100% (currently ${sectorSummary.totalEmployment.toFixed(1)}%)`);
+    errors.push(
+      `Employment shares must sum to 100% (currently ${sectorSummary.totalEmployment.toFixed(1)}%)`
+    );
   }
 
   // Check labor validation
   if (laborSummary.unemploymentRate < 0 || laborSummary.unemploymentRate > 50) {
-    warnings.push('Unemployment rate seems unrealistic');
+    warnings.push("Unemployment rate seems unrealistic");
   }
 
   if (laborSummary.participationRate > 90) {
-    warnings.push('Labor force participation rate seems too high');
+    warnings.push("Labor force participation rate seems too high");
   }
 
   // Check demographics validation
-  const ageSum = economyBuilder.demographics.ageDistribution.under15 +
-                 economyBuilder.demographics.ageDistribution.age15to64 +
-                 economyBuilder.demographics.ageDistribution.over65;
+  const ageSum =
+    economyBuilder.demographics.ageDistribution.under15 +
+    economyBuilder.demographics.ageDistribution.age15to64 +
+    economyBuilder.demographics.ageDistribution.over65;
 
   if (Math.abs(ageSum - 100) > 1) {
     errors.push(`Age distribution must sum to 100% (currently ${ageSum.toFixed(1)}%)`);
   }
 
-  const urbanRuralSum = economyBuilder.demographics.urbanRuralSplit.urban +
-                        economyBuilder.demographics.urbanRuralSplit.rural;
+  const urbanRuralSum =
+    economyBuilder.demographics.urbanRuralSplit.urban +
+    economyBuilder.demographics.urbanRuralSplit.rural;
 
   if (Math.abs(urbanRuralSum - 100) > 1) {
     errors.push(`Urban-rural split must sum to 100% (currently ${urbanRuralSum.toFixed(1)}%)`);
@@ -261,7 +270,7 @@ export function validateConfiguration(
   return {
     isValid: errors.length === 0,
     errors,
-    warnings
+    warnings,
   };
 }
 
@@ -278,14 +287,14 @@ export function validateConfiguration(
  */
 export function getSectorColor(sectorId: string): string {
   const colors: Record<string, string> = {
-    agriculture: 'green',
-    manufacturing: 'blue',
-    services: 'purple',
-    technology: 'cyan',
-    finance: 'yellow',
-    government: 'gray'
+    agriculture: "green",
+    manufacturing: "blue",
+    services: "purple",
+    technology: "cyan",
+    finance: "yellow",
+    government: "gray",
   };
-  return colors[sectorId] || 'gray';
+  return colors[sectorId] || "gray";
 }
 
 /**
@@ -301,13 +310,13 @@ export function getSectorColor(sectorId: string): string {
  */
 export function getEmploymentTypeColor(type: string): string {
   const colors: Record<string, string> = {
-    fullTime: 'blue',
-    partTime: 'green',
-    temporary: 'yellow',
-    seasonal: 'orange',
-    selfEmployed: 'purple',
-    gig: 'pink',
-    informal: 'red'
+    fullTime: "blue",
+    partTime: "green",
+    temporary: "yellow",
+    seasonal: "orange",
+    selfEmployed: "purple",
+    gig: "pink",
+    informal: "red",
   };
-  return colors[type] || 'gray';
+  return colors[type] || "gray";
 }

@@ -11,7 +11,13 @@ import { isSystemOwner } from "~/lib/system-owner-constants";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Slider } from "~/components/ui/slider";
 import { Checkbox } from "~/components/ui/checkbox";
 import { MultiSelect } from "~/components/ui/multi-select";
@@ -45,33 +51,104 @@ import {
   Target,
   Award,
   Palette,
-  Sparkles
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
-import { ComponentType } from '@prisma/client';
+import { ComponentType } from "@prisma/client";
 
 // Component categories mapping
 const COMPONENT_CATEGORIES = {
-  'Power Distribution': ['CENTRALIZED_POWER', 'FEDERAL_SYSTEM', 'CONFEDERATE_SYSTEM', 'UNITARY_SYSTEM'],
-  'Decision Process': ['DEMOCRATIC_PROCESS', 'AUTOCRATIC_PROCESS', 'TECHNOCRATIC_PROCESS', 'CONSENSUS_PROCESS', 'OLIGARCHIC_PROCESS'],
-  'Legitimacy Sources': ['ELECTORAL_LEGITIMACY', 'TRADITIONAL_LEGITIMACY', 'PERFORMANCE_LEGITIMACY', 'CHARISMATIC_LEGITIMACY', 'RELIGIOUS_LEGITIMACY', 'INSTITUTIONAL_LEGITIMACY'],
-  'Institutions': ['PROFESSIONAL_BUREAUCRACY', 'MILITARY_ADMINISTRATION', 'INDEPENDENT_JUDICIARY', 'PARTISAN_INSTITUTIONS', 'TECHNOCRATIC_AGENCIES'],
-  'Control Mechanisms': ['RULE_OF_LAW', 'SURVEILLANCE_SYSTEM', 'ECONOMIC_INCENTIVES', 'SOCIAL_PRESSURE', 'MILITARY_ENFORCEMENT'],
-  'Economic Governance': ['FREE_MARKET_SYSTEM', 'PLANNED_ECONOMY', 'MIXED_ECONOMY', 'CORPORATIST_SYSTEM', 'SOCIAL_MARKET_ECONOMY', 'STATE_CAPITALISM', 'RESOURCE_BASED_ECONOMY', 'KNOWLEDGE_ECONOMY'],
-  'Administrative Efficiency': ['DIGITAL_GOVERNMENT', 'E_GOVERNANCE', 'ADMINISTRATIVE_DECENTRALIZATION', 'MERIT_BASED_SYSTEM', 'PERFORMANCE_MANAGEMENT', 'QUALITY_ASSURANCE', 'STRATEGIC_PLANNING', 'RISK_MANAGEMENT'],
-  'Social Policy': ['WELFARE_STATE', 'UNIVERSAL_HEALTHCARE', 'PUBLIC_EDUCATION', 'SOCIAL_SAFETY_NET', 'WORKER_PROTECTION', 'ENVIRONMENTAL_PROTECTION', 'CULTURAL_PRESERVATION', 'MINORITY_RIGHTS'],
-  'International Relations': ['MULTILATERAL_DIPLOMACY', 'BILATERAL_RELATIONS', 'REGIONAL_INTEGRATION', 'INTERNATIONAL_LAW', 'DEVELOPMENT_AID', 'HUMANITARIAN_INTERVENTION', 'TRADE_AGREEMENTS', 'SECURITY_ALLIANCES'],
-  'Innovation & Development': ['RESEARCH_AND_DEVELOPMENT', 'INNOVATION_ECOSYSTEM', 'TECHNOLOGY_TRANSFER', 'ENTREPRENEURSHIP_SUPPORT']
+  "Power Distribution": [
+    "CENTRALIZED_POWER",
+    "FEDERAL_SYSTEM",
+    "CONFEDERATE_SYSTEM",
+    "UNITARY_SYSTEM",
+  ],
+  "Decision Process": [
+    "DEMOCRATIC_PROCESS",
+    "AUTOCRATIC_PROCESS",
+    "TECHNOCRATIC_PROCESS",
+    "CONSENSUS_PROCESS",
+    "OLIGARCHIC_PROCESS",
+  ],
+  "Legitimacy Sources": [
+    "ELECTORAL_LEGITIMACY",
+    "TRADITIONAL_LEGITIMACY",
+    "PERFORMANCE_LEGITIMACY",
+    "CHARISMATIC_LEGITIMACY",
+    "RELIGIOUS_LEGITIMACY",
+    "INSTITUTIONAL_LEGITIMACY",
+  ],
+  Institutions: [
+    "PROFESSIONAL_BUREAUCRACY",
+    "MILITARY_ADMINISTRATION",
+    "INDEPENDENT_JUDICIARY",
+    "PARTISAN_INSTITUTIONS",
+    "TECHNOCRATIC_AGENCIES",
+  ],
+  "Control Mechanisms": [
+    "RULE_OF_LAW",
+    "SURVEILLANCE_SYSTEM",
+    "ECONOMIC_INCENTIVES",
+    "SOCIAL_PRESSURE",
+    "MILITARY_ENFORCEMENT",
+  ],
+  "Economic Governance": [
+    "FREE_MARKET_SYSTEM",
+    "PLANNED_ECONOMY",
+    "MIXED_ECONOMY",
+    "CORPORATIST_SYSTEM",
+    "SOCIAL_MARKET_ECONOMY",
+    "STATE_CAPITALISM",
+    "RESOURCE_BASED_ECONOMY",
+    "KNOWLEDGE_ECONOMY",
+  ],
+  "Administrative Efficiency": [
+    "DIGITAL_GOVERNMENT",
+    "E_GOVERNANCE",
+    "ADMINISTRATIVE_DECENTRALIZATION",
+    "MERIT_BASED_SYSTEM",
+    "PERFORMANCE_MANAGEMENT",
+    "QUALITY_ASSURANCE",
+    "STRATEGIC_PLANNING",
+    "RISK_MANAGEMENT",
+  ],
+  "Social Policy": [
+    "WELFARE_STATE",
+    "UNIVERSAL_HEALTHCARE",
+    "PUBLIC_EDUCATION",
+    "SOCIAL_SAFETY_NET",
+    "WORKER_PROTECTION",
+    "ENVIRONMENTAL_PROTECTION",
+    "CULTURAL_PRESERVATION",
+    "MINORITY_RIGHTS",
+  ],
+  "International Relations": [
+    "MULTILATERAL_DIPLOMACY",
+    "BILATERAL_RELATIONS",
+    "REGIONAL_INTEGRATION",
+    "INTERNATIONAL_LAW",
+    "DEVELOPMENT_AID",
+    "HUMANITARIAN_INTERVENTION",
+    "TRADE_AGREEMENTS",
+    "SECURITY_ALLIANCES",
+  ],
+  "Innovation & Development": [
+    "RESEARCH_AND_DEVELOPMENT",
+    "INNOVATION_ECOSYSTEM",
+    "TECHNOLOGY_TRANSFER",
+    "ENTREPRENEURSHIP_SUPPORT",
+  ],
 };
 
-const COMPLEXITY_LEVELS = ['Low', 'Medium', 'High'] as const;
+const COMPLEXITY_LEVELS = ["Low", "Medium", "High"] as const;
 const COMPLEXITY_COLORS: Record<string, string> = {
-  'Low': 'text-green-400',
-  'Medium': 'text-yellow-400',
-  'High': 'text-red-400'
+  Low: "text-green-400",
+  Medium: "text-yellow-400",
+  High: "text-red-400",
 };
 
-const COLOR_OPTIONS = ['blue', 'green', 'red', 'purple', 'amber', 'orange', 'pink', 'indigo'];
+const COLOR_OPTIONS = ["blue", "green", "red", "purple", "amber", "orange", "pink", "indigo"];
 
 interface ComponentFormData {
   type: ComponentType;
@@ -84,7 +161,7 @@ interface ComponentFormData {
   requiredCapacity: number;
   synergies: ComponentType[];
   conflicts: ComponentType[];
-  complexity: 'Low' | 'Medium' | 'High';
+  complexity: "Low" | "Medium" | "High";
   timeToImplement: string;
   staffRequired: number;
   technologyRequired: boolean;
@@ -99,19 +176,23 @@ export default function GovernmentComponentsPage() {
   const { toast } = useToast();
 
   // State
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
-  const [complexityFilter, setComplexityFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [complexityFilter, setComplexityFilter] = useState("all");
   const [showActiveOnly, setShowActiveOnly] = useState(true);
   const [editingComponent, setEditingComponent] = useState<any | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isSynergyMatrixOpen, setIsSynergyMatrixOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState("general");
 
   // Queries
-  const { data: components, isLoading, refetch } = api.governmentComponents.getAllComponents.useQuery(
+  const {
+    data: components,
+    isLoading,
+    refetch,
+  } = api.governmentComponents.getAllComponents.useQuery(
     {
-      isActive: showActiveOnly ? true : undefined
+      isActive: showActiveOnly ? true : undefined,
     },
     {
       refetchOnWindowFocus: false,
@@ -128,7 +209,7 @@ export default function GovernmentComponentsPage() {
       toast({
         title: "Success",
         description: "Component created successfully",
-        type: "success"
+        type: "success",
       });
       refetch();
       setIsAddDialogOpen(false);
@@ -138,9 +219,9 @@ export default function GovernmentComponentsPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to create component",
-        type: "error"
+        type: "error",
       });
-    }
+    },
   });
 
   const updateMutation = api.governmentComponents.updateComponent.useMutation({
@@ -148,7 +229,7 @@ export default function GovernmentComponentsPage() {
       toast({
         title: "Success",
         description: "Component updated successfully",
-        type: "success"
+        type: "success",
       });
       refetch();
       setEditingComponent(null);
@@ -157,9 +238,9 @@ export default function GovernmentComponentsPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to update component",
-        type: "error"
+        type: "error",
       });
-    }
+    },
   });
 
   const deleteMutation = api.governmentComponents.deleteComponent.useMutation({
@@ -167,7 +248,7 @@ export default function GovernmentComponentsPage() {
       toast({
         title: "Success",
         description: "Component deactivated successfully",
-        type: "success"
+        type: "success",
       });
       refetch();
     },
@@ -175,9 +256,9 @@ export default function GovernmentComponentsPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to deactivate component",
-        type: "error"
+        type: "error",
       });
-    }
+    },
   });
 
   const createSynergyMutation = api.governmentComponents.createSynergy.useMutation({
@@ -185,7 +266,7 @@ export default function GovernmentComponentsPage() {
       toast({
         title: "Success",
         description: "Synergy relationship created",
-        type: "success"
+        type: "success",
       });
       refetch();
     },
@@ -193,27 +274,28 @@ export default function GovernmentComponentsPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to create synergy",
-        type: "error"
+        type: "error",
       });
-    }
+    },
   });
 
   // Filtered components
   const filteredComponents = useMemo(() => {
     if (!components) return [];
 
-    return components.filter(component => {
+    return components.filter((component) => {
       const matchesSearch =
         component.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         component.description.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesCategory =
-        categoryFilter === 'all' ||
-        COMPONENT_CATEGORIES[categoryFilter as keyof typeof COMPONENT_CATEGORIES]?.includes(component.type);
+        categoryFilter === "all" ||
+        COMPONENT_CATEGORIES[categoryFilter as keyof typeof COMPONENT_CATEGORIES]?.includes(
+          component.type
+        );
 
       const matchesComplexity =
-        complexityFilter === 'all' ||
-        component.metadata?.complexity === complexityFilter;
+        complexityFilter === "all" || component.metadata?.complexity === complexityFilter;
 
       return matchesSearch && matchesCategory && matchesComplexity;
     });
@@ -222,43 +304,43 @@ export default function GovernmentComponentsPage() {
   // Form data
   const [formData, setFormData] = useState<ComponentFormData>({
     type: ComponentType.CENTRALIZED_POWER,
-    name: '',
-    description: '',
-    category: 'governance',
+    name: "",
+    description: "",
+    category: "governance",
     effectiveness: 75,
     implementationCost: 100000,
     maintenanceCost: 50000,
     requiredCapacity: 75,
     synergies: [],
     conflicts: [],
-    complexity: 'Medium',
-    timeToImplement: '12 months',
+    complexity: "Medium",
+    timeToImplement: "12 months",
     staffRequired: 20,
     technologyRequired: false,
-    color: 'blue',
-    icon: 'Settings'
+    color: "blue",
+    icon: "Settings",
   });
 
   const resetForm = () => {
     setFormData({
       type: ComponentType.CENTRALIZED_POWER,
-      name: '',
-      description: '',
-      category: 'governance',
+      name: "",
+      description: "",
+      category: "governance",
       effectiveness: 75,
       implementationCost: 100000,
       maintenanceCost: 50000,
       requiredCapacity: 75,
       synergies: [],
       conflicts: [],
-      complexity: 'Medium',
-      timeToImplement: '12 months',
+      complexity: "Medium",
+      timeToImplement: "12 months",
       staffRequired: 20,
       technologyRequired: false,
-      color: 'blue',
-      icon: 'Settings'
+      color: "blue",
+      icon: "Settings",
     });
-    setActiveTab('general');
+    setActiveTab("general");
   };
 
   const handleCreate = () => {
@@ -269,7 +351,7 @@ export default function GovernmentComponentsPage() {
     if (editingComponent?.id) {
       updateMutation.mutate({
         id: editingComponent.id,
-        ...formData
+        ...formData,
       } as any);
     }
   };
@@ -292,23 +374,23 @@ export default function GovernmentComponentsPage() {
       requiredCapacity: component.requiredCapacity,
       synergies: component.synergies || [],
       conflicts: component.conflicts || [],
-      complexity: component.metadata?.complexity || 'Medium',
-      timeToImplement: component.metadata?.timeToImplement || '12 months',
+      complexity: component.metadata?.complexity || "Medium",
+      timeToImplement: component.metadata?.timeToImplement || "12 months",
       staffRequired: component.metadata?.staffRequired || 20,
       technologyRequired: component.metadata?.technologyRequired || false,
-      color: component.color || 'blue',
-      icon: component.icon || 'Settings'
+      color: component.color || "blue",
+      icon: component.icon || "Settings",
     });
     setEditingComponent(component);
-    setActiveTab('general');
+    setActiveTab("general");
   };
 
   // Auth checks
   if (!isLoaded) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-indigo-600"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
@@ -317,7 +399,7 @@ export default function GovernmentComponentsPage() {
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
+      <div className="flex min-h-screen flex-col items-center justify-center">
         <SignInButton mode="modal" />
       </div>
     );
@@ -325,41 +407,44 @@ export default function GovernmentComponentsPage() {
 
   const allowedRoles = new Set(["admin", "owner", "staff"]);
   const isSystemOwnerUser = !!user && isSystemOwner(user.id);
-  const hasAdminRole = typeof user?.publicMetadata?.role === "string" && allowedRoles.has(user.publicMetadata.role);
+  const hasAdminRole =
+    typeof user?.publicMetadata?.role === "string" && allowedRoles.has(user.publicMetadata.role);
 
   if (!isSystemOwnerUser && !hasAdminRole) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center border border-gray-200 dark:border-gray-700">
-          <h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Access Denied</h1>
-          <p className="text-gray-700 dark:text-gray-300 mb-6">You do not have permission to view this page.</p>
+      <div className="flex min-h-screen flex-col items-center justify-center">
+        <div className="rounded-lg border border-gray-200 bg-white p-8 text-center shadow-lg dark:border-gray-700 dark:bg-gray-800">
+          <h1 className="mb-4 text-2xl font-bold text-red-600 dark:text-red-400">Access Denied</h1>
+          <p className="mb-6 text-gray-700 dark:text-gray-300">
+            You do not have permission to view this page.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="bg-background text-foreground min-h-screen p-4 md:p-8">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="glass-card-parent p-6 rounded-xl border-2 border-[--intel-gold]/20 bg-gradient-to-br from-[--intel-gold]/5 via-transparent to-[--intel-gold]/10 mb-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="glass-card-parent mb-6 rounded-xl border-2 border-[--intel-gold]/20 bg-gradient-to-br from-[--intel-gold]/5 via-transparent to-[--intel-gold]/10 p-6">
+          <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/admin">
                 <Button variant="ghost" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to Admin
                 </Button>
               </Link>
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-xl bg-[--intel-gold]/10 border border-[--intel-gold]/20">
+                <div className="rounded-xl border border-[--intel-gold]/20 bg-[--intel-gold]/10 p-3">
                   <Building2 className="h-6 w-6 text-[--intel-gold]" />
                 </div>
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                  <h1 className="text-foreground text-2xl font-bold md:text-3xl">
                     Government Components
                   </h1>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Manage atomic government components and synergy relationships
                   </p>
                 </div>
@@ -368,20 +453,17 @@ export default function GovernmentComponentsPage() {
             <div className="flex gap-2">
               <Button
                 onClick={() => setIsAddDialogOpen(true)}
-                className="bg-[--intel-gold]/20 hover:bg-[--intel-gold]/30 text-[--intel-gold]"
+                className="bg-[--intel-gold]/20 text-[--intel-gold] hover:bg-[--intel-gold]/30"
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Add Component
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => setIsSynergyMatrixOpen(true)}
-              >
-                <Network className="h-4 w-4 mr-2" />
+              <Button variant="outline" onClick={() => setIsSynergyMatrixOpen(true)}>
+                <Network className="mr-2 h-4 w-4" />
                 Synergy Matrix
               </Button>
               <Button variant="outline">
-                <BarChart3 className="h-4 w-4 mr-2" />
+                <BarChart3 className="mr-2 h-4 w-4" />
                 Analytics
               </Button>
             </div>
@@ -391,7 +473,7 @@ export default function GovernmentComponentsPage() {
           <Tabs value={categoryFilter} onValueChange={setCategoryFilter} className="mb-4">
             <TabsList className="flex gap-2 overflow-x-auto border-b border-white/10 pb-2">
               <TabsTrigger value="all">All</TabsTrigger>
-              {Object.keys(COMPONENT_CATEGORIES).map(category => (
+              {Object.keys(COMPONENT_CATEGORIES).map((category) => (
                 <TabsTrigger key={category} value={category}>
                   {category}
                 </TabsTrigger>
@@ -400,9 +482,9 @@ export default function GovernmentComponentsPage() {
           </Tabs>
 
           {/* Filter Bar */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="md:col-span-2 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            <div className="relative md:col-span-2">
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
               <Input
                 placeholder="Search components..."
                 value={searchTerm}
@@ -417,8 +499,10 @@ export default function GovernmentComponentsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Complexity</SelectItem>
-                {COMPLEXITY_LEVELS.map(complexity => (
-                  <SelectItem key={complexity} value={complexity}>{complexity}</SelectItem>
+                {COMPLEXITY_LEVELS.map((complexity) => (
+                  <SelectItem key={complexity} value={complexity}>
+                    {complexity}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -429,7 +513,7 @@ export default function GovernmentComponentsPage() {
                 checked={showActiveOnly}
                 onCheckedChange={(checked) => setShowActiveOnly(checked as boolean)}
               />
-              <label htmlFor="activeOnly" className="text-sm text-foreground cursor-pointer">
+              <label htmlFor="activeOnly" className="text-foreground cursor-pointer text-sm">
                 Show active only
               </label>
             </div>
@@ -438,30 +522,32 @@ export default function GovernmentComponentsPage() {
 
         {/* Statistics */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
             <Card className="glass-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Total Components</p>
-              <p className="text-3xl font-bold text-foreground mt-2">{stats.totalComponents}</p>
+              <p className="text-foreground mt-2 text-3xl font-bold">{stats.totalComponents}</p>
             </Card>
             <Card className="glass-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Active Components</p>
-              <p className="text-3xl font-bold text-[--intel-gold] mt-2">{stats.activeComponents}</p>
+              <p className="mt-2 text-3xl font-bold text-[--intel-gold]">
+                {stats.activeComponents}
+              </p>
             </Card>
             <Card className="glass-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Total Usage</p>
-              <p className="text-3xl font-bold text-blue-400 mt-2">{stats.totalUsage}</p>
+              <p className="mt-2 text-3xl font-bold text-blue-400">{stats.totalUsage}</p>
             </Card>
             <Card className="glass-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Total Synergies</p>
-              <p className="text-3xl font-bold text-green-400 mt-2">{stats.totalSynergies || 0}</p>
+              <p className="mt-2 text-3xl font-bold text-green-400">{stats.totalSynergies || 0}</p>
             </Card>
           </div>
         )}
 
         {/* Components Grid */}
         {isLoading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[--intel-gold] mx-auto mb-4"></div>
+          <div className="py-12 text-center">
+            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-[--intel-gold]"></div>
             <p className="text-muted-foreground">Loading components...</p>
           </div>
         ) : filteredComponents.length === 0 ? (
@@ -469,8 +555,8 @@ export default function GovernmentComponentsPage() {
             <p className="text-[--intel-silver]">No components found matching your filters</p>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredComponents.map(component => (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredComponents.map((component) => (
               <ComponentCard
                 key={component.id}
                 component={component}
@@ -523,42 +609,40 @@ interface ComponentCardProps {
 
 function ComponentCard({ component, onEdit, onDelete }: ComponentCardProps) {
   return (
-    <Card className="glass-card-child p-4 hover:border-[--intel-gold]/50 transition-all">
+    <Card className="glass-card-child p-4 transition-all hover:border-[--intel-gold]/50">
       {/* Header */}
-      <div className="flex items-start justify-between mb-3">
+      <div className="mb-3 flex items-start justify-between">
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="mb-1 flex items-center gap-2">
             <Settings className="h-4 w-4 text-[--intel-gold]" />
-            <h3 className="font-semibold text-foreground line-clamp-1">{component.name}</h3>
+            <h3 className="text-foreground line-clamp-1 font-semibold">{component.name}</h3>
           </div>
-          <span className={`text-xs px-2 py-0.5 rounded bg-${component.color}-500/20 text-${component.color}-400`}>
+          <span
+            className={`rounded px-2 py-0.5 text-xs bg-${component.color}-500/20 text-${component.color}-400`}
+          >
             {component.category}
           </span>
         </div>
-        {!component.isActive && (
-          <EyeOff className="h-4 w-4 text-red-400" title="Inactive" />
-        )}
+        {!component.isActive && <EyeOff className="h-4 w-4 text-red-400" title="Inactive" />}
       </div>
 
       {/* Description */}
-      <p className="text-xs text-[--intel-silver] line-clamp-2 mb-3">
-        {component.description}
-      </p>
+      <p className="mb-3 line-clamp-2 text-xs text-[--intel-silver]">{component.description}</p>
 
       {/* Effectiveness Bar */}
       <div className="mb-3">
-        <div className="flex items-center justify-between text-xs mb-1">
+        <div className="mb-1 flex items-center justify-between text-xs">
           <span className="text-[--intel-silver]">Effectiveness</span>
-          <span className="font-medium text-foreground">{component.effectiveness}%</span>
+          <span className="text-foreground font-medium">{component.effectiveness}%</span>
         </div>
-        <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
           <div
             className={`h-full ${
               component.effectiveness >= 75
-                ? 'bg-green-400'
+                ? "bg-green-400"
                 : component.effectiveness >= 50
-                ? 'bg-yellow-400'
-                : 'bg-red-400'
+                  ? "bg-yellow-400"
+                  : "bg-red-400"
             }`}
             style={{ width: `${component.effectiveness}%` }}
           />
@@ -566,43 +650,36 @@ function ComponentCard({ component, onEdit, onDelete }: ComponentCardProps) {
       </div>
 
       {/* Metrics */}
-      <div className="space-y-2 mb-4">
+      <div className="mb-4 space-y-2">
         <div className="flex items-center justify-between text-xs">
           <span className="text-[--intel-silver]">Complexity:</span>
-          <span className={`font-medium ${COMPLEXITY_COLORS[component.metadata?.complexity || 'Medium']}`}>
-            {component.metadata?.complexity || 'Medium'}
+          <span
+            className={`font-medium ${COMPLEXITY_COLORS[component.metadata?.complexity || "Medium"]}`}
+          >
+            {component.metadata?.complexity || "Medium"}
           </span>
         </div>
         <div className="flex items-center justify-between text-xs">
           <span className="text-[--intel-silver]">Usage:</span>
-          <span className="font-medium text-foreground">{component.usageCount || 0}×</span>
+          <span className="text-foreground font-medium">{component.usageCount || 0}×</span>
         </div>
         <div className="flex items-center justify-between text-xs">
           <span className="text-[--intel-silver]">Cost:</span>
-          <span className="font-medium text-foreground">
-            ${(component.implementationCost / 1000).toFixed(0)}k / ${(component.maintenanceCost / 1000).toFixed(0)}k
+          <span className="text-foreground font-medium">
+            ${(component.implementationCost / 1000).toFixed(0)}k / $
+            {(component.maintenanceCost / 1000).toFixed(0)}k
           </span>
         </div>
       </div>
 
       {/* Actions */}
       <div className="flex items-center gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={onEdit}
-          className="flex-1 text-xs"
-        >
-          <Pencil className="h-3 w-3 mr-1" />
+        <Button size="sm" variant="outline" onClick={onEdit} className="flex-1 text-xs">
+          <Pencil className="mr-1 h-3 w-3" />
           Edit
         </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={onEdit}
-          className="text-xs"
-        >
-          <Network className="h-3 w-3 mr-1" />
+        <Button size="sm" variant="ghost" onClick={onEdit} className="text-xs">
+          <Network className="mr-1 h-3 w-3" />
           Synergies
         </Button>
         <Button
@@ -640,14 +717,14 @@ function ComponentEditorDialog({
   setActiveTab,
   onClose,
   onSave,
-  isPending
+  isPending,
 }: ComponentEditorDialogProps) {
   const tabs = [
-    { id: 'general', label: 'General', icon: Settings },
-    { id: 'costs', label: 'Costs', icon: DollarSign },
-    { id: 'relationships', label: 'Relationships', icon: Network },
-    { id: 'metadata', label: 'Metadata', icon: Award },
-    { id: 'appearance', label: 'Appearance', icon: Palette }
+    { id: "general", label: "General", icon: Settings },
+    { id: "costs", label: "Costs", icon: DollarSign },
+    { id: "relationships", label: "Relationships", icon: Network },
+    { id: "metadata", label: "Metadata", icon: Award },
+    { id: "appearance", label: "Appearance", icon: Palette },
   ];
 
   // Get all component types for relationships
@@ -655,32 +732,34 @@ function ComponentEditorDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col overflow-hidden">
         <DialogHeader>
-          <DialogTitle>
-            {isEditing ? 'Edit Component' : 'Add Component'}
-          </DialogTitle>
+          <DialogTitle>{isEditing ? "Edit Component" : "Add Component"}</DialogTitle>
           <DialogDescription>
             Configure the government component and its relationships
           </DialogDescription>
         </DialogHeader>
 
         {/* Tab Navigation */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="flex gap-2 overflow-x-auto border-b border-white/10 pb-2 shrink-0">
-            {tabs.map(tab => {
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex flex-1 flex-col overflow-hidden"
+        >
+          <TabsList className="flex shrink-0 gap-2 overflow-x-auto border-b border-white/10 pb-2">
+            {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className={`px-3 py-2 rounded text-sm whitespace-nowrap transition-colors ${
+                  className={`rounded px-3 py-2 text-sm whitespace-nowrap transition-colors ${
                     activeTab === tab.id
-                      ? 'bg-[--intel-gold]/20 text-[--intel-gold]'
-                      : 'text-[--intel-silver] hover:text-foreground'
+                      ? "bg-[--intel-gold]/20 text-[--intel-gold]"
+                      : "hover:text-foreground text-[--intel-silver]"
                   }`}
                 >
-                  <Icon className="inline h-4 w-4 mr-1" />
+                  <Icon className="mr-1 inline h-4 w-4" />
                   {tab.label}
                 </TabsTrigger>
               );
@@ -688,7 +767,7 @@ function ComponentEditorDialog({
           </TabsList>
 
           {/* Tab Content */}
-          <div className="flex-1 overflow-y-auto mt-4">
+          <div className="mt-4 flex-1 overflow-y-auto">
             <TabsContent value="general">
               <GeneralTab formData={formData} setFormData={setFormData} />
             </TabsContent>
@@ -712,14 +791,14 @@ function ComponentEditorDialog({
         </Tabs>
 
         {/* Footer Actions */}
-        <DialogFooter className="border-t border-white/10 pt-4 shrink-0">
+        <DialogFooter className="shrink-0 border-t border-white/10 pt-4">
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
           <Button
             onClick={onSave}
             disabled={!formData.name || isPending}
-            className="bg-[--intel-gold]/20 hover:bg-[--intel-gold]/30 text-[--intel-gold]"
+            className="bg-[--intel-gold]/20 text-[--intel-gold] hover:bg-[--intel-gold]/30"
           >
             {isPending ? "Saving..." : isEditing ? "Update Component" : "Create Component"}
           </Button>
@@ -730,11 +809,17 @@ function ComponentEditorDialog({
 }
 
 // Tab Components
-function GeneralTab({ formData, setFormData }: { formData: ComponentFormData; setFormData: (data: ComponentFormData) => void }) {
+function GeneralTab({
+  formData,
+  setFormData,
+}: {
+  formData: ComponentFormData;
+  setFormData: (data: ComponentFormData) => void;
+}) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Component Type *</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Component Type *</label>
         <Select
           value={formData.type}
           onValueChange={(value) => setFormData({ ...formData, type: value as ComponentType })}
@@ -743,15 +828,17 @@ function GeneralTab({ formData, setFormData }: { formData: ComponentFormData; se
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {Object.values(ComponentType).map(type => (
-              <SelectItem key={type} value={type}>{type}</SelectItem>
+            {Object.values(ComponentType).map((type) => (
+              <SelectItem key={type} value={type}>
+                {type}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Name *</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Name *</label>
         <Input
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -760,7 +847,7 @@ function GeneralTab({ formData, setFormData }: { formData: ComponentFormData; se
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Description *</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Description *</label>
         <Textarea
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -770,7 +857,7 @@ function GeneralTab({ formData, setFormData }: { formData: ComponentFormData; se
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Category</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Category</label>
         <Input
           value={formData.category}
           onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -779,7 +866,7 @@ function GeneralTab({ formData, setFormData }: { formData: ComponentFormData; se
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">
+        <label className="text-foreground mb-2 block text-sm font-medium">
           Effectiveness Score: {formData.effectiveness}%
         </label>
         <Slider
@@ -793,29 +880,43 @@ function GeneralTab({ formData, setFormData }: { formData: ComponentFormData; se
   );
 }
 
-function CostsTab({ formData, setFormData }: { formData: ComponentFormData; setFormData: (data: ComponentFormData) => void }) {
+function CostsTab({
+  formData,
+  setFormData,
+}: {
+  formData: ComponentFormData;
+  setFormData: (data: ComponentFormData) => void;
+}) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Implementation Cost ($)</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">
+          Implementation Cost ($)
+        </label>
         <Input
           type="number"
           value={formData.implementationCost}
-          onChange={(e) => setFormData({ ...formData, implementationCost: parseFloat(e.target.value) || 0 })}
+          onChange={(e) =>
+            setFormData({ ...formData, implementationCost: parseFloat(e.target.value) || 0 })
+          }
         />
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Maintenance Cost ($ / year)</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">
+          Maintenance Cost ($ / year)
+        </label>
         <Input
           type="number"
           value={formData.maintenanceCost}
-          onChange={(e) => setFormData({ ...formData, maintenanceCost: parseFloat(e.target.value) || 0 })}
+          onChange={(e) =>
+            setFormData({ ...formData, maintenanceCost: parseFloat(e.target.value) || 0 })
+          }
         />
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">
+        <label className="text-foreground mb-2 block text-sm font-medium">
           Required Capacity: {formData.requiredCapacity}%
         </label>
         <Slider
@@ -832,7 +933,7 @@ function CostsTab({ formData, setFormData }: { formData: ComponentFormData; setF
 function RelationshipsTab({
   formData,
   setFormData,
-  allComponentTypes
+  allComponentTypes,
 }: {
   formData: ComponentFormData;
   setFormData: (data: ComponentFormData) => void;
@@ -841,27 +942,27 @@ function RelationshipsTab({
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Synergies</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Synergies</label>
         <MultiSelect
           options={allComponentTypes as readonly string[]}
           value={formData.synergies}
           onChange={(value) => setFormData({ ...formData, synergies: value as ComponentType[] })}
           placeholder="Select components that synergize..."
         />
-        <p className="text-xs text-[--intel-silver] mt-1">
+        <p className="mt-1 text-xs text-[--intel-silver]">
           Components that work well together for multiplied effectiveness
         </p>
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Conflicts</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Conflicts</label>
         <MultiSelect
           options={allComponentTypes as readonly string[]}
           value={formData.conflicts}
           onChange={(value) => setFormData({ ...formData, conflicts: value as ComponentType[] })}
           placeholder="Select conflicting components..."
         />
-        <p className="text-xs text-[--intel-silver] mt-1">
+        <p className="mt-1 text-xs text-[--intel-silver]">
           Components that conflict or reduce effectiveness when combined
         </p>
       </div>
@@ -869,28 +970,38 @@ function RelationshipsTab({
   );
 }
 
-function MetadataTab({ formData, setFormData }: { formData: ComponentFormData; setFormData: (data: ComponentFormData) => void }) {
+function MetadataTab({
+  formData,
+  setFormData,
+}: {
+  formData: ComponentFormData;
+  setFormData: (data: ComponentFormData) => void;
+}) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Complexity</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Complexity</label>
         <Select
           value={formData.complexity}
-          onValueChange={(value) => setFormData({ ...formData, complexity: value as 'Low' | 'Medium' | 'High' })}
+          onValueChange={(value) =>
+            setFormData({ ...formData, complexity: value as "Low" | "Medium" | "High" })
+          }
         >
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {COMPLEXITY_LEVELS.map(level => (
-              <SelectItem key={level} value={level}>{level}</SelectItem>
+            {COMPLEXITY_LEVELS.map((level) => (
+              <SelectItem key={level} value={level}>
+                {level}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Time to Implement</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Time to Implement</label>
         <Input
           value={formData.timeToImplement}
           onChange={(e) => setFormData({ ...formData, timeToImplement: e.target.value })}
@@ -899,11 +1010,13 @@ function MetadataTab({ formData, setFormData }: { formData: ComponentFormData; s
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Staff Required</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Staff Required</label>
         <Input
           type="number"
           value={formData.staffRequired}
-          onChange={(e) => setFormData({ ...formData, staffRequired: parseInt(e.target.value) || 0 })}
+          onChange={(e) =>
+            setFormData({ ...formData, staffRequired: parseInt(e.target.value) || 0 })
+          }
         />
       </div>
 
@@ -911,9 +1024,11 @@ function MetadataTab({ formData, setFormData }: { formData: ComponentFormData; s
         <Checkbox
           id="technologyRequired"
           checked={formData.technologyRequired}
-          onCheckedChange={(checked) => setFormData({ ...formData, technologyRequired: checked as boolean })}
+          onCheckedChange={(checked) =>
+            setFormData({ ...formData, technologyRequired: checked as boolean })
+          }
         />
-        <label htmlFor="technologyRequired" className="text-sm text-foreground cursor-pointer">
+        <label htmlFor="technologyRequired" className="text-foreground cursor-pointer text-sm">
           Requires advanced technology
         </label>
       </div>
@@ -921,39 +1036,43 @@ function MetadataTab({ formData, setFormData }: { formData: ComponentFormData; s
   );
 }
 
-function AppearanceTab({ formData, setFormData }: { formData: ComponentFormData; setFormData: (data: ComponentFormData) => void }) {
+function AppearanceTab({
+  formData,
+  setFormData,
+}: {
+  formData: ComponentFormData;
+  setFormData: (data: ComponentFormData) => void;
+}) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Color Theme</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Color Theme</label>
         <div className="grid grid-cols-4 gap-2">
-          {COLOR_OPTIONS.map(color => (
+          {COLOR_OPTIONS.map((color) => (
             <button
               key={color}
               onClick={() => setFormData({ ...formData, color })}
-              className={`p-3 rounded-lg border-2 transition-all ${
+              className={`rounded-lg border-2 p-3 transition-all ${
                 formData.color === color
                   ? `border-${color}-400 bg-${color}-500/20`
-                  : 'border-white/10 hover:border-white/20'
+                  : "border-white/10 hover:border-white/20"
               }`}
             >
-              <div className={`w-full h-8 rounded bg-${color}-500`} />
-              <p className="text-xs mt-1 text-center capitalize">{color}</p>
+              <div className={`h-8 w-full rounded bg-${color}-500`} />
+              <p className="mt-1 text-center text-xs capitalize">{color}</p>
             </button>
           ))}
         </div>
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Icon Name</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Icon Name</label>
         <Input
           value={formData.icon}
           onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
           placeholder="e.g., Settings, Building2, Users"
         />
-        <p className="text-xs text-[--intel-silver] mt-1">
-          Icon name from lucide-react library
-        </p>
+        <p className="mt-1 text-xs text-[--intel-silver]">Icon name from lucide-react library</p>
       </div>
     </div>
   );
@@ -967,29 +1086,39 @@ interface SynergyMatrixModalProps {
   onCreateSynergy: (data: any) => void;
 }
 
-function SynergyMatrixModal({ isOpen, components, onClose, onCreateSynergy }: SynergyMatrixModalProps) {
+function SynergyMatrixModal({
+  isOpen,
+  components,
+  onClose,
+  onCreateSynergy,
+}: SynergyMatrixModalProps) {
   const [selectedPrimary, setSelectedPrimary] = useState<string | null>(null);
   const [selectedSecondary, setSelectedSecondary] = useState<string | null>(null);
 
   const getSynergyType = (primary: any, secondary: any) => {
-    if (primary.synergies?.includes(secondary.type)) return 'strong';
-    if (secondary.synergies?.includes(primary.type)) return 'moderate';
-    if (primary.conflicts?.includes(secondary.type) || secondary.conflicts?.includes(primary.type)) return 'conflict';
-    return 'none';
+    if (primary.synergies?.includes(secondary.type)) return "strong";
+    if (secondary.synergies?.includes(primary.type)) return "moderate";
+    if (primary.conflicts?.includes(secondary.type) || secondary.conflicts?.includes(primary.type))
+      return "conflict";
+    return "none";
   };
 
   const getSynergyColor = (type: string) => {
     switch (type) {
-      case 'strong': return 'bg-green-500/30 hover:bg-green-500/50';
-      case 'moderate': return 'bg-yellow-500/30 hover:bg-yellow-500/50';
-      case 'conflict': return 'bg-red-500/30 hover:bg-red-500/50';
-      default: return 'bg-white/5 hover:bg-white/10';
+      case "strong":
+        return "bg-green-500/30 hover:bg-green-500/50";
+      case "moderate":
+        return "bg-yellow-500/30 hover:bg-yellow-500/50";
+      case "conflict":
+        return "bg-red-500/30 hover:bg-red-500/50";
+      default:
+        return "bg-white/5 hover:bg-white/10";
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="flex max-h-[90vh] max-w-6xl flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Synergy Matrix</DialogTitle>
           <DialogDescription>
@@ -998,29 +1127,33 @@ function SynergyMatrixModal({ isOpen, components, onClose, onCreateSynergy }: Sy
         </DialogHeader>
 
         <div className="flex-1 overflow-auto p-4">
-          <div className="grid gap-1" style={{ gridTemplateColumns: `auto repeat(${components.length}, 1fr)` }}>
+          <div
+            className="grid gap-1"
+            style={{ gridTemplateColumns: `auto repeat(${components.length}, 1fr)` }}
+          >
             {/* Header Row */}
-            <div className="sticky top-0 left-0 z-20 bg-background" />
-            {components.map(comp => (
+            <div className="bg-background sticky top-0 left-0 z-20" />
+            {components.map((comp) => (
               <div
                 key={comp.id}
-                className="sticky top-0 z-10 bg-background text-xs font-medium text-center p-2 border border-white/10"
+                className="bg-background sticky top-0 z-10 border border-white/10 p-2 text-center text-xs font-medium"
               >
-                <div className="transform -rotate-45 origin-center whitespace-nowrap">
+                <div className="origin-center -rotate-45 transform whitespace-nowrap">
                   {comp.name.substring(0, 20)}
                 </div>
               </div>
             ))}
 
             {/* Matrix Rows */}
-            {components.map(primary => (
+            {components.map((primary) => (
               <>
-                <div className="sticky left-0 z-10 bg-background text-xs font-medium p-2 border border-white/10">
+                <div className="bg-background sticky left-0 z-10 border border-white/10 p-2 text-xs font-medium">
                   {primary.name}
                 </div>
-                {components.map(secondary => {
+                {components.map((secondary) => {
                   const synergyType = getSynergyType(primary, secondary);
-                  const isSelected = selectedPrimary === primary.id && selectedSecondary === secondary.id;
+                  const isSelected =
+                    selectedPrimary === primary.id && selectedSecondary === secondary.id;
 
                   return (
                     <button
@@ -1032,14 +1165,18 @@ function SynergyMatrixModal({ isOpen, components, onClose, onCreateSynergy }: Sy
                         }
                       }}
                       disabled={primary.id === secondary.id}
-                      className={`p-2 border border-white/10 transition-all ${
+                      className={`border border-white/10 p-2 transition-all ${
                         primary.id === secondary.id
-                          ? 'bg-white/5 cursor-not-allowed'
+                          ? "cursor-not-allowed bg-white/5"
                           : `${getSynergyColor(synergyType)} cursor-pointer ${
-                              isSelected ? 'ring-2 ring-[--intel-gold]' : ''
+                              isSelected ? "ring-2 ring-[--intel-gold]" : ""
                             }`
                       }`}
-                      title={primary.id === secondary.id ? 'Same component' : `${primary.name} ↔ ${secondary.name}`}
+                      title={
+                        primary.id === secondary.id
+                          ? "Same component"
+                          : `${primary.name} ↔ ${secondary.name}`
+                      }
                     />
                   );
                 })}
@@ -1048,32 +1185,32 @@ function SynergyMatrixModal({ isOpen, components, onClose, onCreateSynergy }: Sy
           </div>
 
           {/* Legend */}
-          <div className="mt-6 flex items-center gap-4 p-4 rounded-lg bg-white/5 border border-white/10">
+          <div className="mt-6 flex items-center gap-4 rounded-lg border border-white/10 bg-white/5 p-4">
             <span className="text-sm font-medium">Legend:</span>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-green-500/50" />
+              <div className="h-4 w-4 rounded bg-green-500/50" />
               <span className="text-xs">Strong Synergy</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-yellow-500/50" />
+              <div className="h-4 w-4 rounded bg-yellow-500/50" />
               <span className="text-xs">Moderate Synergy</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-red-500/50" />
+              <div className="h-4 w-4 rounded bg-red-500/50" />
               <span className="text-xs">Conflict</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-white/10" />
+              <div className="h-4 w-4 rounded bg-white/10" />
               <span className="text-xs">No Relationship</span>
             </div>
           </div>
 
           {selectedPrimary && selectedSecondary && (
-            <div className="mt-4 p-4 rounded-lg bg-[--intel-gold]/10 border border-[--intel-gold]/20">
-              <p className="text-sm font-medium mb-2">Selected Relationship:</p>
+            <div className="mt-4 rounded-lg border border-[--intel-gold]/20 bg-[--intel-gold]/10 p-4">
+              <p className="mb-2 text-sm font-medium">Selected Relationship:</p>
               <p className="text-xs text-[--intel-silver]">
-                {components.find(c => c.id === selectedPrimary)?.name} ↔{' '}
-                {components.find(c => c.id === selectedSecondary)?.name}
+                {components.find((c) => c.id === selectedPrimary)?.name} ↔{" "}
+                {components.find((c) => c.id === selectedSecondary)?.name}
               </p>
               <Button
                 size="sm"
@@ -1083,8 +1220,8 @@ function SynergyMatrixModal({ isOpen, components, onClose, onCreateSynergy }: Sy
                   onCreateSynergy({
                     primaryComponentId: selectedPrimary,
                     secondaryComponentId: selectedSecondary,
-                    synergyType: 'MULTIPLICATIVE',
-                    effectMultiplier: 1.2
+                    synergyType: "MULTIPLICATIVE",
+                    effectMultiplier: 1.2,
                   });
                 }}
               >

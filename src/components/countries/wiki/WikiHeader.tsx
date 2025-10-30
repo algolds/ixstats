@@ -21,9 +21,9 @@ interface WikiHeaderProps {
   /** Whether country has infobox data (determines CONNECTED/LIMITED status) */
   hasInfobox: boolean;
   /** Currently active view tab */
-  activeView: 'sections' | 'conflicts' | 'settings';
+  activeView: "sections" | "conflicts" | "settings";
   /** Callback to change active view */
-  setActiveView: (view: 'sections' | 'conflicts' | 'settings') => void;
+  setActiveView: (view: "sections" | "conflicts" | "settings") => void;
   /** Callback to refresh wiki data */
   onRefresh: () => void;
   /** Whether refresh is currently in progress */
@@ -48,24 +48,26 @@ export const WikiHeader: React.FC<WikiHeaderProps> = ({
   flagImageUrl,
 }) => {
   return (
-    <div className="glass-hierarchy-child rounded-lg relative overflow-hidden">
+    <div className="glass-hierarchy-child relative overflow-hidden rounded-lg">
       {/* Country Flag Background */}
       {flagImageUrl && (
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
+        <div className="pointer-events-none absolute inset-0 opacity-[0.03]">
           <img
             src={flagImageUrl}
             alt="Flag background"
-            className="w-full h-full object-cover object-center scale-150 blur-sm"
-            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            className="h-full w-full scale-150 object-cover object-center blur-sm"
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-background/60 to-background/80"></div>
+          <div className="from-background/80 via-background/60 to-background/80 absolute inset-0 bg-gradient-to-r"></div>
         </div>
       )}
 
       <div className="relative p-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-2 rounded-lg bg-blue-500/20 backdrop-blur-sm">
+            <div className="rounded-lg bg-blue-500/20 p-2 backdrop-blur-sm">
               <RiBookOpenLine className="h-6 w-6 text-blue-400" />
             </div>
             <div>
@@ -75,7 +77,7 @@ export const WikiHeader: React.FC<WikiHeaderProps> = ({
 
           <div className="flex items-center gap-3">
             <Badge variant="outline" className="border-blue-500/30 text-blue-400">
-              {hasInfobox ? 'CONNECTED' : 'LIMITED'}
+              {hasInfobox ? "CONNECTED" : "LIMITED"}
             </Badge>
             <Button
               variant="outline"
@@ -84,27 +86,33 @@ export const WikiHeader: React.FC<WikiHeaderProps> = ({
               disabled={isRefreshing}
               className="border-green-500/30 text-green-400 hover:bg-green-500/10"
             >
-              <RiRefreshLine className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")} />
+              <RiRefreshLine className={cn("mr-2 h-4 w-4", isRefreshing && "animate-spin")} />
               Refresh
             </Button>
           </div>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="mb-6 flex flex-wrap gap-2">
           {[
-            { id: 'sections', label: 'Dossier', icon: RiBookOpenLine },
-            { id: 'conflicts', label: `Data Analysis ${dataConflictsCount > 0 ? `(${dataConflictsCount})` : ''}`, icon: RiShieldLine },
+            { id: "sections", label: "Dossier", icon: RiBookOpenLine },
+            {
+              id: "conflicts",
+              label: `Data Analysis ${dataConflictsCount > 0 ? `(${dataConflictsCount})` : ""}`,
+              icon: RiShieldLine,
+            },
             // Only show settings for authenticated users with higher clearance
-            ...(viewerClearanceLevel !== 'PUBLIC' ? [{ id: 'settings', label: 'Discovery Settings', icon: RiSettings3Line }] : [])
+            ...(viewerClearanceLevel !== "PUBLIC"
+              ? [{ id: "settings", label: "Discovery Settings", icon: RiSettings3Line }]
+              : []),
           ].map((view) => {
             const ViewIcon = view.icon;
             return (
               <Button
                 key={view.id}
-                variant={activeView === view.id ? 'default' : 'ghost'}
+                variant={activeView === view.id ? "default" : "ghost"}
                 size="sm"
-                onClick={() => setActiveView(view.id as 'sections' | 'conflicts' | 'settings')}
+                onClick={() => setActiveView(view.id as "sections" | "conflicts" | "settings")}
                 className="flex items-center gap-2"
               >
                 <ViewIcon className="h-4 w-4" />

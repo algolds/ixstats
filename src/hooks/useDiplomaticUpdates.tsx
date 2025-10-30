@@ -1,12 +1,16 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { DiplomaticWebSocketManager, type LiveIntelligenceUpdate, type DiplomaticEventSubscription } from "~/lib/diplomatic-websocket";
+import {
+  DiplomaticWebSocketManager,
+  type LiveIntelligenceUpdate,
+  type DiplomaticEventSubscription,
+} from "~/lib/diplomatic-websocket";
 import { env } from "~/env";
 
 export interface DiplomaticUpdatesConfig {
   countryId: string;
-  clearanceLevel: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
+  clearanceLevel: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
   autoConnect?: boolean;
   subscriptions?: DiplomaticEventSubscription[];
   enabled?: boolean; // Allow disabling WebSocket connections entirely
@@ -14,7 +18,7 @@ export interface DiplomaticUpdatesConfig {
 
 export interface DiplomaticUpdatesState {
   isConnected: boolean;
-  status: 'connecting' | 'connected' | 'disconnected' | 'error';
+  status: "connecting" | "connected" | "disconnected" | "error";
   recentEvents: LiveIntelligenceUpdate[];
   connectionError: string | null;
   eventCount: number;
@@ -34,10 +38,10 @@ export const useDiplomaticUpdates = (
 ): [DiplomaticUpdatesState, DiplomaticUpdatesActions] => {
   const [state, setState] = useState<DiplomaticUpdatesState>({
     isConnected: false,
-    status: 'disconnected',
+    status: "disconnected",
     recentEvents: [],
     connectionError: null,
-    eventCount: 0
+    eventCount: 0,
   });
 
   const managerRef = useRef<DiplomaticWebSocketManager | null>(null);
@@ -51,46 +55,49 @@ export const useDiplomaticUpdates = (
 
   // Event handler for WebSocket events
   const handleEvent = useCallback((event: LiveIntelligenceUpdate) => {
-    setState(prevState => ({
+    setState((prevState) => ({
       ...prevState,
       recentEvents: [event, ...prevState.recentEvents].slice(0, maxEvents),
-      eventCount: prevState.eventCount + 1
+      eventCount: prevState.eventCount + 1,
     }));
   }, []);
 
   // Status handler for WebSocket connection
-  const handleStatusChange = useCallback((status: 'connecting' | 'connected' | 'disconnected' | 'error') => {
-    setState(prevState => ({
-      ...prevState,
-      status,
-      isConnected: status === 'connected',
-      connectionError: status === 'error' ? 'Connection failed' : null
-    }));
-  }, []);
+  const handleStatusChange = useCallback(
+    (status: "connecting" | "connected" | "disconnected" | "error") => {
+      setState((prevState) => ({
+        ...prevState,
+        status,
+        isConnected: status === "connected",
+        connectionError: status === "error" ? "Connection failed" : null,
+      }));
+    },
+    []
+  );
 
   // Initialize WebSocket manager with graceful degradation
   const initialize = useCallback(async () => {
     try {
       // Check if WebSocket connections are disabled by configuration
       if (configRef.current.enabled === false) {
-        console.info('WebSocket connections disabled by configuration');
-        setState(prevState => ({
+        console.info("WebSocket connections disabled by configuration");
+        setState((prevState) => ({
           ...prevState,
-          status: 'error',
+          status: "error",
           isConnected: false,
-          connectionError: 'Real-time updates disabled by configuration'
+          connectionError: "Real-time updates disabled by configuration",
         }));
         return;
       }
 
       // Check if WebSocket is available in the environment
-      if (typeof WebSocket === 'undefined') {
-        console.warn('WebSocket not available in this environment - diplomatic updates disabled');
-        setState(prevState => ({
+      if (typeof WebSocket === "undefined") {
+        console.warn("WebSocket not available in this environment - diplomatic updates disabled");
+        setState((prevState) => ({
           ...prevState,
-          status: 'error',
+          status: "error",
           isConnected: false,
-          connectionError: 'WebSocket not supported in this environment'
+          connectionError: "WebSocket not supported in this environment",
         }));
         return;
       }
@@ -100,20 +107,19 @@ export const useDiplomaticUpdates = (
       }
 
       // Check if WebSocket server URL is configured, with development fallback
-      const botUrl = typeof window !== 'undefined' 
-        ? env.NEXT_PUBLIC_IXTIME_BOT_URL 
-        : env.IXTIME_BOT_URL;
+      const botUrl =
+        typeof window !== "undefined" ? env.NEXT_PUBLIC_IXTIME_BOT_URL : env.IXTIME_BOT_URL;
 
       // Use development WebSocket configuration as fallback
-      const wsServerUrl = botUrl || 'ws://localhost:3555';
+      const wsServerUrl = botUrl || "ws://localhost:3555";
 
       if (!wsServerUrl) {
-        console.warn('No WebSocket server URL configured - diplomatic updates disabled');
-        setState(prevState => ({
+        console.warn("No WebSocket server URL configured - diplomatic updates disabled");
+        setState((prevState) => ({
           ...prevState,
-          status: 'error',
+          status: "error",
           isConnected: false,
-          connectionError: 'WebSocket server URL not configured'
+          connectionError: "WebSocket server URL not configured",
         }));
         return;
       }
@@ -122,7 +128,7 @@ export const useDiplomaticUpdates = (
         url: wsServerUrl,
         countryId: configRef.current.countryId,
         clearanceLevel: configRef.current.clearanceLevel,
-        subscriptions: configRef.current.subscriptions || []
+        subscriptions: configRef.current.subscriptions || [],
       };
 
       // Add event and status listeners
@@ -131,12 +137,12 @@ export const useDiplomaticUpdates = (
 
       // Initialize connection with timeout
       const initTimeout = setTimeout(() => {
-        console.warn('WebSocket initialization timed out - continuing in offline mode');
-        setState(prevState => ({
+        console.warn("WebSocket initialization timed out - continuing in offline mode");
+        setState((prevState) => ({
           ...prevState,
-          status: 'error',
+          status: "error",
           isConnected: false,
-          connectionError: 'Connection timeout - operating in offline mode'
+          connectionError: "Connection timeout - operating in offline mode",
         }));
       }, 15000); // 15 second timeout
 
@@ -147,17 +153,16 @@ export const useDiplomaticUpdates = (
         clearTimeout(initTimeout);
         throw connectionError; // Re-throw to be handled by outer catch
       }
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.warn('Failed to initialize diplomatic updates:', errorMessage);
-      console.info('Continuing in offline mode - real-time updates disabled');
-      
-      setState(prevState => ({
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      console.warn("Failed to initialize diplomatic updates:", errorMessage);
+      console.info("Continuing in offline mode - real-time updates disabled");
+
+      setState((prevState) => ({
         ...prevState,
-        status: 'error',
+        status: "error",
         isConnected: false,
-        connectionError: `Offline mode: ${errorMessage}`
+        connectionError: `Offline mode: ${errorMessage}`,
       }));
 
       // Don't throw error - allow app to continue in degraded mode
@@ -177,12 +182,12 @@ export const useDiplomaticUpdates = (
       managerRef.current.disconnect();
       managerRef.current = null;
     }
-    
-    setState(prevState => ({
+
+    setState((prevState) => ({
       ...prevState,
-      status: 'disconnected',
+      status: "disconnected",
       isConnected: false,
-      connectionError: null
+      connectionError: null,
     }));
   }, [handleEvent, handleStatusChange]);
 
@@ -198,18 +203,18 @@ export const useDiplomaticUpdates = (
 
   // Clear recent events
   const clearEvents = useCallback(() => {
-    setState(prevState => ({
+    setState((prevState) => ({
       ...prevState,
       recentEvents: [],
-      eventCount: 0
+      eventCount: 0,
     }));
   }, []);
 
   // Mark events as read (for UI purposes)
   const markEventsAsRead = useCallback(() => {
-    setState(prevState => ({
+    setState((prevState) => ({
       ...prevState,
-      eventCount: 0
+      eventCount: 0,
     }));
   }, []);
 
@@ -232,7 +237,7 @@ export const useDiplomaticUpdates = (
     subscribe,
     unsubscribe,
     clearEvents,
-    markEventsAsRead
+    markEventsAsRead,
   };
 
   return [state, actions];
@@ -241,22 +246,22 @@ export const useDiplomaticUpdates = (
 // Hook for specific country monitoring
 export const useCountryDiplomaticUpdates = (
   countryId: string,
-  clearanceLevel: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL' = 'PUBLIC',
+  clearanceLevel: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL" = "PUBLIC",
   enableRealTime: boolean = false // Default to false for better stability
 ) => {
   const subscriptions: DiplomaticEventSubscription[] = [
     {
-      eventTypes: ['embassy_established', 'cultural_exchange_started', 'trade_agreement'],
+      eventTypes: ["embassy_established", "cultural_exchange_started", "trade_agreement"],
       countries: [countryId],
-      classification: 'PUBLIC',
-      priority: 'NORMAL'
+      classification: "PUBLIC",
+      priority: "NORMAL",
     },
     {
-      eventTypes: ['diplomatic_crisis', 'intelligence_briefing'],
+      eventTypes: ["diplomatic_crisis", "intelligence_briefing"],
       countries: [countryId],
-      classification: 'RESTRICTED',
-      priority: 'HIGH'
-    }
+      classification: "RESTRICTED",
+      priority: "HIGH",
+    },
   ];
 
   return useDiplomaticUpdates({
@@ -264,30 +269,30 @@ export const useCountryDiplomaticUpdates = (
     clearanceLevel,
     autoConnect: enableRealTime,
     subscriptions,
-    enabled: enableRealTime
+    enabled: enableRealTime,
   });
 };
 
 // Hook for global diplomatic monitoring
 export const useGlobalDiplomaticUpdates = (
   countryId: string,
-  clearanceLevel: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL' = 'PUBLIC'
+  clearanceLevel: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL" = "PUBLIC"
 ) => {
   const subscriptions: DiplomaticEventSubscription[] = [
     {
-      eventTypes: ['achievement_unlocked', 'cultural_exchange_started'],
+      eventTypes: ["achievement_unlocked", "cultural_exchange_started"],
       countries: [], // All countries
-      classification: 'PUBLIC',
-      priority: 'NORMAL'
-    }
+      classification: "PUBLIC",
+      priority: "NORMAL",
+    },
   ];
 
-  if (clearanceLevel !== 'PUBLIC') {
+  if (clearanceLevel !== "PUBLIC") {
     subscriptions.push({
-      eventTypes: ['diplomatic_crisis', 'intelligence_briefing'],
+      eventTypes: ["diplomatic_crisis", "intelligence_briefing"],
       countries: [], // All countries
-      classification: 'RESTRICTED',
-      priority: 'HIGH'
+      classification: "RESTRICTED",
+      priority: "HIGH",
     });
   }
 
@@ -295,7 +300,7 @@ export const useGlobalDiplomaticUpdates = (
     countryId,
     clearanceLevel,
     autoConnect: true,
-    subscriptions
+    subscriptions,
   });
 };
 
@@ -303,29 +308,29 @@ export const useGlobalDiplomaticUpdates = (
 export const useAchievementUpdates = (countryId: string, enableRealTime: boolean = false) => {
   const subscriptions: DiplomaticEventSubscription[] = [
     {
-      eventTypes: ['achievement_unlocked'],
+      eventTypes: ["achievement_unlocked"],
       countries: [countryId],
-      classification: 'PUBLIC',
-      priority: 'NORMAL'
-    }
+      classification: "PUBLIC",
+      priority: "NORMAL",
+    },
   ];
 
   const [state, actions] = useDiplomaticUpdates({
     countryId,
-    clearanceLevel: 'PUBLIC',
+    clearanceLevel: "PUBLIC",
     autoConnect: enableRealTime,
     subscriptions,
-    enabled: enableRealTime
+    enabled: enableRealTime,
   });
 
   // Filter events to only achievement notifications
   const achievementEvents = state.recentEvents.filter(
-    event => event.type === 'achievement_notification'
+    (event) => event.type === "achievement_notification"
   );
 
   return {
     ...state,
     recentEvents: achievementEvents,
-    actions
+    actions,
   };
 };

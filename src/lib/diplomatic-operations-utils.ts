@@ -10,22 +10,22 @@
 /**
  * Embassy status type definition
  */
-export type EmbassyStatus = 'active' | 'strengthening' | 'neutral' | 'suspended' | 'closed';
+export type EmbassyStatus = "active" | "strengthening" | "neutral" | "suspended" | "closed";
 
 /**
  * Mission status type definition
  */
-export type MissionStatus = 'active' | 'completed' | 'failed' | 'cancelled' | 'available';
+export type MissionStatus = "active" | "completed" | "failed" | "cancelled" | "available";
 
 /**
  * Exchange status type definition
  */
-export type ExchangeStatus = 'planning' | 'active' | 'completed';
+export type ExchangeStatus = "planning" | "active" | "completed";
 
 /**
  * Mission difficulty type definition
  */
-export type MissionDifficulty = 'easy' | 'medium' | 'hard' | 'expert';
+export type MissionDifficulty = "easy" | "medium" | "hard" | "expert";
 
 /**
  * Embassy interface (simplified)
@@ -87,7 +87,7 @@ export function calculateNetworkMetrics(embassies: Embassy[] | undefined): Netwo
 
   const totalEmbassies = embassies.length;
   const avgInfluence = embassies.reduce((sum, e) => sum + (e.strength || 0), 0) / totalEmbassies;
-  const activeCount = embassies.filter(e => e.status === 'active').length;
+  const activeCount = embassies.filter((e) => e.status === "active").length;
   const totalLevel = embassies.reduce((sum, e) => sum + (e.level || 1), 0);
 
   return {
@@ -95,7 +95,7 @@ export function calculateNetworkMetrics(embassies: Embassy[] | undefined): Netwo
     avgInfluence,
     activeCount,
     totalLevel,
-    networkPower: Math.round(totalEmbassies * 10 + avgInfluence + totalLevel * 5)
+    networkPower: Math.round(totalEmbassies * 10 + avgInfluence + totalLevel * 5),
   };
 }
 
@@ -112,7 +112,7 @@ export function filterEmbassiesByStatus(
 ): Embassy[] {
   if (!embassies) return [];
   if (!status) return embassies;
-  return embassies.filter(e => e.status === status);
+  return embassies.filter((e) => e.status === status);
 }
 
 /**
@@ -127,9 +127,7 @@ export function filterEmbassiesByRegion(
   region: string
 ): Embassy[] {
   if (!embassies || !region) return embassies || [];
-  return embassies.filter(e =>
-    e.country.toLowerCase().includes(region.toLowerCase())
-  );
+  return embassies.filter((e) => e.country.toLowerCase().includes(region.toLowerCase()));
 }
 
 /**
@@ -144,7 +142,7 @@ export function filterEmbassiesByStrength(
   minStrength: number
 ): Embassy[] {
   if (!embassies) return [];
-  return embassies.filter(e => (e.strength || 0) >= minStrength);
+  return embassies.filter((e) => (e.strength || 0) >= minStrength);
 }
 
 /**
@@ -176,11 +174,11 @@ export function sortEmbassiesByLevel(embassies: Embassy[]): Embassy[] {
  */
 export function filterMissionsByStatus(
   missions: Mission[] | undefined,
-  status: MissionStatus | 'all'
+  status: MissionStatus | "all"
 ): Mission[] {
   if (!missions) return [];
-  if (status === 'all') return missions;
-  return missions.filter(m => m.status === status);
+  if (status === "all") return missions;
+  return missions.filter((m) => m.status === status);
 }
 
 /**
@@ -210,7 +208,7 @@ export function sortMissionsByStatus(missions: Mission[]): Mission[] {
     available: 3,
     completed: 2,
     failed: 1,
-    cancelled: 0
+    cancelled: 0,
   };
   return [...missions].sort((a, b) => {
     return (statusOrder[b.status] || 0) - (statusOrder[a.status] || 0);
@@ -240,11 +238,11 @@ export function sortMissionsByDate(missions: Mission[]): Mission[] {
  */
 export function filterExchangesByStatus(
   exchanges: CulturalExchange[] | undefined,
-  status: ExchangeStatus | 'all'
+  status: ExchangeStatus | "all"
 ): CulturalExchange[] {
   if (!exchanges) return [];
-  if (status === 'all') return exchanges;
-  return exchanges.filter(e => e.status === status);
+  if (status === "all") return exchanges;
+  return exchanges.filter((e) => e.status === status);
 }
 
 /**
@@ -296,7 +294,7 @@ export function calculateMissionSuccessProbability(
     easy: 80,
     medium: 60,
     hard: 40,
-    expert: 20
+    expert: 20,
   };
 
   const base = baseChance[difficulty] || 50;
@@ -317,11 +315,11 @@ export function validateTreatyRequirements(
   relationshipLevel: number
 ): { valid: boolean; reason?: string } {
   if (embassyStrength < 30) {
-    return { valid: false, reason: 'Embassy strength must be at least 30%' };
+    return { valid: false, reason: "Embassy strength must be at least 30%" };
   }
 
   if (relationshipLevel < 50) {
-    return { valid: false, reason: 'Relationship level must be at least 50%' };
+    return { valid: false, reason: "Relationship level must be at least 50%" };
   }
 
   return { valid: true };
@@ -356,7 +354,7 @@ export function calculateBudgetAllocationImpact(
     newBudget,
     percentageIncrease,
     estimatedStaffIncrease,
-    estimatedStrengthBonus
+    estimatedStrengthBonus,
   };
 }
 
@@ -368,11 +366,11 @@ export function calculateBudgetAllocationImpact(
  */
 export function getEmbassyStatusColor(status: EmbassyStatus): string {
   const colors: Record<EmbassyStatus, string> = {
-    active: 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20',
-    strengthening: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20',
-    neutral: 'bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20',
-    suspended: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20',
-    closed: 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20'
+    active: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
+    strengthening: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
+    neutral: "bg-gray-500/10 text-gray-700 dark:text-gray-400 border-gray-500/20",
+    suspended: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20",
+    closed: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
   };
   return colors[status] || colors.neutral;
 }
@@ -385,11 +383,11 @@ export function getEmbassyStatusColor(status: EmbassyStatus): string {
  */
 export function getMissionStatusColor(status: MissionStatus): string {
   const colors: Record<MissionStatus, string> = {
-    active: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20',
-    completed: 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20',
-    failed: 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20',
-    cancelled: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20',
-    available: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20'
+    active: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
+    completed: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20",
+    failed: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20",
+    cancelled: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20",
+    available: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20",
   };
   return colors[status] || colors.available;
 }
@@ -401,10 +399,10 @@ export function getMissionStatusColor(status: MissionStatus): string {
  * @returns CSS class string
  */
 export function getInfluenceColor(strength: number): string {
-  if (strength >= 75) return 'text-green-600';
-  if (strength >= 50) return 'text-blue-600';
-  if (strength >= 25) return 'text-yellow-600';
-  return 'text-red-600';
+  if (strength >= 75) return "text-green-600";
+  if (strength >= 50) return "text-blue-600";
+  if (strength >= 25) return "text-yellow-600";
+  return "text-red-600";
 }
 
 /**
@@ -415,10 +413,10 @@ export function getInfluenceColor(strength: number): string {
  */
 export function getDifficultyColor(difficulty: MissionDifficulty): string {
   const colors: Record<MissionDifficulty, string> = {
-    easy: 'text-green-600',
-    medium: 'text-yellow-600',
-    hard: 'text-orange-600',
-    expert: 'text-red-600'
+    easy: "text-green-600",
+    medium: "text-yellow-600",
+    hard: "text-orange-600",
+    expert: "text-red-600",
   };
   return colors[difficulty] || colors.medium;
 }

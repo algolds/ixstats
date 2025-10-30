@@ -1,9 +1,9 @@
 "use client";
 
-import React from 'react';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { AlertTriangle, CheckCircle } from 'lucide-react';
-import type { ValidationStatus } from '../utils/previewCalculations';
+import React from "react";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { AlertTriangle, CheckCircle } from "lucide-react";
+import type { ValidationStatus } from "../utils/previewCalculations";
 
 interface ValidationResultsProps {
   validationStatus: ValidationStatus;
@@ -19,7 +19,9 @@ export function ValidationResults({ validationStatus }: ValidationResultsProps) 
             <div className="space-y-1">
               <div className="font-medium">Configuration Errors:</div>
               {validationStatus.errors.map((error, index) => (
-                <div key={index} className="text-sm">• {error}</div>
+                <div key={index} className="text-sm">
+                  • {error}
+                </div>
               ))}
             </div>
           </AlertDescription>
@@ -33,7 +35,9 @@ export function ValidationResults({ validationStatus }: ValidationResultsProps) 
             <div className="space-y-1">
               <div className="font-medium">Configuration Warnings:</div>
               {validationStatus.warnings.map((warning, index) => (
-                <div key={index} className="text-sm">• {warning}</div>
+                <div key={index} className="text-sm">
+                  • {warning}
+                </div>
               ))}
             </div>
           </AlertDescription>

@@ -73,9 +73,7 @@ export function Lens({
 
   const maskImage = useMotionTemplate`radial-gradient(circle ${
     lensSize / 2
-  }px at ${currentPosition.x}px ${
-    currentPosition.y
-  }px, ${lensColor} 100%, transparent 100%)`;
+  }px at ${currentPosition.x}px ${currentPosition.y}px, ${lensColor} 100%, transparent 100%)`;
 
   const LensContent = useMemo(() => {
     const { x, y } = currentPosition;
@@ -123,9 +121,7 @@ export function Lens({
       {isStatic || defaultPosition ? (
         LensContent
       ) : (
-        <AnimatePresence mode="popLayout">
-          {isHovering && LensContent}
-        </AnimatePresence>
+        <AnimatePresence mode="popLayout">{isHovering && LensContent}</AnimatePresence>
       )}
     </div>
   );

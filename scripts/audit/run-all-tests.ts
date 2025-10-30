@@ -147,9 +147,7 @@ async function runAllTests(onlyTests?: string[]) {
   console.log(`Node Version: ${process.version}`);
   console.log(`Working Directory: ${process.cwd()}\n`);
 
-  const suitesToRun = onlyTests
-    ? testSuites.filter((s) => onlyTests.includes(s.name))
-    : testSuites;
+  const suitesToRun = onlyTests ? testSuites.filter((s) => onlyTests.includes(s.name)) : testSuites;
 
   if (onlyTests && suitesToRun.length === 0) {
     console.error(`❌ No matching test suites found for: ${onlyTests.join(", ")}`);
@@ -203,9 +201,7 @@ async function runAllTests(onlyTests?: string[]) {
 
   // Check critical failures
   const criticalFailures = results.filter(
-    (r) =>
-      r.status === "FAIL" &&
-      testSuites.find((s) => s.name === r.suite)?.critical
+    (r) => r.status === "FAIL" && testSuites.find((s) => s.name === r.suite)?.critical
   );
 
   if (criticalFailures.length > 0) {

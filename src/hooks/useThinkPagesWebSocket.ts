@@ -1,15 +1,15 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import type { 
-  ThinkPagesWebSocketEvent, 
-  ThinkPagesClientState, 
+import { useEffect, useRef, useState, useCallback } from "react";
+import type {
+  ThinkPagesWebSocketEvent,
+  ThinkPagesClientState,
   ThinkPagesWebSocketHookOptions,
   PresenceUpdate,
   TypingIndicator,
   MessageUpdate,
-  ReadReceipt
-} from '~/lib/websocket/thinkpages-types';
+  ReadReceipt,
+} from "~/lib/websocket/thinkpages-types";
 
-const isServer = typeof window === 'undefined';
+const isServer = typeof window === "undefined";
 
 // Dummy implementation for SSR
 const useThinkPagesWebSocketSSR = (options: ThinkPagesWebSocketHookOptions) => {
@@ -18,11 +18,11 @@ const useThinkPagesWebSocketSSR = (options: ThinkPagesWebSocketHookOptions) => {
     authenticated: false,
     accountId: options.accountId,
     subscriptions: new Set(),
-    presenceStatus: 'offline',
+    presenceStatus: "offline",
     activeConversations: new Set(),
     activeGroups: new Set(),
     typingIndicators: new Map(),
-    lastHeartbeat: Date.now()
+    lastHeartbeat: Date.now(),
   });
 
   const noOp = useCallback(() => {}, []);
@@ -50,11 +50,11 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     authenticated: false,
     accountId: options.accountId,
     subscriptions: new Set(),
-    presenceStatus: 'offline',
+    presenceStatus: "offline",
     activeConversations: new Set(),
     activeGroups: new Set(),
     typingIndicators: new Map(),
-    lastHeartbeat: Date.now()
+    lastHeartbeat: Date.now(),
   });
 
   const ws = useRef<WebSocket | null>(null);
@@ -71,43 +71,46 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
 
     // Stop retrying after max attempts
     if (retryCount.current >= maxRetries) {
-      console.warn('WebSocket: Max retry attempts reached, disabling real-time features');
+      console.warn("WebSocket: Max retry attempts reached, disabling real-time features");
       return;
     }
 
     // Check if WebSocket server is available before attempting connection
     const wsPort = process.env.NEXT_PUBLIC_WS_PORT || 3001;
-    
+
     try {
-      const wsUrl = process.env.NODE_ENV === 'production' 
-        ? `wss://${window.location.host}/ws/thinkpages`
-        : `ws://localhost:${wsPort}/thinkpages`;
-      
+      const wsUrl =
+        process.env.NODE_ENV === "production"
+          ? `wss://${window.location.host}/ws/thinkpages`
+          : `ws://localhost:${wsPort}/thinkpages`;
+
       ws.current = new WebSocket(wsUrl);
 
       ws.current.onopen = () => {
         retryCount.current = 0; // Reset retry count on successful connection
-        
-        setClientState(prev => ({ ...prev, connected: true }));
-        
+
+        setClientState((prev) => ({ ...prev, connected: true }));
+
         // Authenticate with account ID
         if (options.accountId) {
-          ws.current?.send(JSON.stringify({
-            type: 'auth',
-            accountId: options.accountId
-          }));
+          ws.current?.send(
+            JSON.stringify({
+              type: "auth",
+              accountId: options.accountId,
+            })
+          );
         }
 
         // Set presence to online
-        updatePresence('online');
-        
+        updatePresence("online");
+
         // Start heartbeat
         if (heartbeatInterval.current) {
           clearInterval(heartbeatInterval.current);
         }
         heartbeatInterval.current = setInterval(() => {
-          ws.current?.send(JSON.stringify({ type: 'ping' }));
-          setClientState(prev => ({ ...prev, lastHeartbeat: Date.now() }));
+          ws.current?.send(JSON.stringify({ type: "ping" }));
+          setClientState((prev) => ({ ...prev, lastHeartbeat: Date.now() }));
         }, options.heartbeatInterval || 30000);
 
         options.onConnect?.();
@@ -116,31 +119,31 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       ws.current.onmessage = (event) => {
         try {
           const data: ThinkPagesWebSocketEvent = JSON.parse(event.data);
-          
+
           switch (data.type) {
-            case 'presence:update':
+            case "presence:update":
               const presenceUpdate = data.data as PresenceUpdate;
               options.onPresenceUpdate?.(presenceUpdate);
               break;
-              
-            case 'typing:update':
+
+            case "typing:update":
               const typingUpdate = data.data as TypingIndicator;
-              setClientState(prev => {
+              setClientState((prev) => {
                 const newTyping = new Map(prev.typingIndicators);
                 const key = `${typingUpdate.conversationId || typingUpdate.groupId}_${typingUpdate.accountId}`;
-                
+
                 if (typingUpdate.isTyping) {
                   newTyping.set(key, typingUpdate);
-                  
+
                   // Clear typing after 3 seconds
                   const timeout = setTimeout(() => {
-                    setClientState(current => {
+                    setClientState((current) => {
                       const updatedTyping = new Map(current.typingIndicators);
                       updatedTyping.delete(key);
                       return { ...current, typingIndicators: updatedTyping };
                     });
                   }, 3000);
-                  
+
                   if (typingTimeout.current.has(key)) {
                     clearTimeout(typingTimeout.current.get(key)!);
                   }
@@ -152,51 +155,51 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
                     typingTimeout.current.delete(key);
                   }
                 }
-                
+
                 return { ...prev, typingIndicators: newTyping };
               });
               options.onTypingUpdate?.(typingUpdate);
               break;
-              
-            case 'message:update':
+
+            case "message:update":
               const messageUpdate = data.data as MessageUpdate;
               options.onMessageUpdate?.(messageUpdate);
               break;
-              
-            case 'read:receipt':
+
+            case "read:receipt":
               const readReceipt = data.data as ReadReceipt;
               options.onReadReceipt?.(readReceipt);
               break;
-              
-            case 'group:update':
+
+            case "group:update":
               options.onGroupUpdate?.(data.data as any);
               break;
-              
-            case 'conversation:update':
+
+            case "conversation:update":
               options.onConversationUpdate?.(data.data as any);
               break;
           }
         } catch (error) {
-          console.error('Failed to parse WebSocket message:', error);
+          console.error("Failed to parse WebSocket message:", error);
           options.onError?.(error as Error);
         }
       };
 
       ws.current.onclose = () => {
-        setClientState(prev => ({ ...prev, connected: false, authenticated: false }));
-        
+        setClientState((prev) => ({ ...prev, connected: false, authenticated: false }));
+
         if (heartbeatInterval.current) {
           clearInterval(heartbeatInterval.current);
           heartbeatInterval.current = null;
         }
 
         options.onDisconnect?.();
-        
+
         // Auto-reconnect with exponential backoff
         if (options.autoReconnect !== false && retryCount.current < maxRetries) {
           retryCount.current++;
           const backoffDelay = Math.min(1000 * Math.pow(2, retryCount.current), 30000);
-          
+
           reconnectTimeout.current = setTimeout(() => {
             connect();
           }, backoffDelay);
@@ -204,12 +207,13 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       };
 
       ws.current.onerror = (error) => {
-        console.warn('ThinkPages WebSocket connection failed - continuing without real-time features');
+        console.warn(
+          "ThinkPages WebSocket connection failed - continuing without real-time features"
+        );
         // Don't call onError for connection failures - this is expected when no WebSocket server
       };
-
     } catch (error) {
-      console.warn('WebSocket not available - continuing without real-time features');
+      console.warn("WebSocket not available - continuing without real-time features");
       // Graceful degradation - don't treat as error
     }
   }, [options]);
@@ -219,82 +223,96 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       clearInterval(heartbeatInterval.current);
       heartbeatInterval.current = null;
     }
-    
+
     if (reconnectTimeout.current) {
       clearTimeout(reconnectTimeout.current);
       reconnectTimeout.current = null;
     }
 
     // Clear all typing timeouts
-    typingTimeout.current.forEach(timeout => clearTimeout(timeout));
+    typingTimeout.current.forEach((timeout) => clearTimeout(timeout));
     typingTimeout.current.clear();
 
-    updatePresence('offline');
-    
+    updatePresence("offline");
+
     if (ws.current) {
       ws.current.close();
       ws.current = null;
     }
   }, []);
 
-  const updatePresence = useCallback((status: 'online' | 'away' | 'busy' | 'offline') => {
-    if (ws.current?.readyState === WebSocket.OPEN && options.accountId) {
-      ws.current.send(JSON.stringify({
-        type: 'presence:update',
-        accountId: options.accountId,
-        status,
-        timestamp: Date.now()
-      }));
-      
-      setClientState(prev => ({ ...prev, presenceStatus: status }));
-    }
-  }, [options.accountId]);
+  const updatePresence = useCallback(
+    (status: "online" | "away" | "busy" | "offline") => {
+      if (ws.current?.readyState === WebSocket.OPEN && options.accountId) {
+        ws.current.send(
+          JSON.stringify({
+            type: "presence:update",
+            accountId: options.accountId,
+            status,
+            timestamp: Date.now(),
+          })
+        );
 
-  const sendTypingIndicator = useCallback((conversationId?: string, groupId?: string, isTyping: boolean = true) => {
-    if (ws.current?.readyState === WebSocket.OPEN && options.accountId) {
-      ws.current.send(JSON.stringify({
-        type: 'typing:update',
-        accountId: options.accountId,
-        conversationId,
-        groupId,
-        isTyping,
-        timestamp: Date.now()
-      }));
-    }
-  }, [options.accountId]);
+        setClientState((prev) => ({ ...prev, presenceStatus: status }));
+      }
+    },
+    [options.accountId]
+  );
+
+  const sendTypingIndicator = useCallback(
+    (conversationId?: string, groupId?: string, isTyping: boolean = true) => {
+      if (ws.current?.readyState === WebSocket.OPEN && options.accountId) {
+        ws.current.send(
+          JSON.stringify({
+            type: "typing:update",
+            accountId: options.accountId,
+            conversationId,
+            groupId,
+            isTyping,
+            timestamp: Date.now(),
+          })
+        );
+      }
+    },
+    [options.accountId]
+  );
 
   const subscribeToConversation = useCallback((conversationId: string) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify({
-        type: 'subscribe',
-        channel: `conversation:${conversationId}`
-      }));
-      
-      setClientState(prev => ({
+      ws.current.send(
+        JSON.stringify({
+          type: "subscribe",
+          channel: `conversation:${conversationId}`,
+        })
+      );
+
+      setClientState((prev) => ({
         ...prev,
         activeConversations: new Set([...prev.activeConversations, conversationId]),
-        subscriptions: new Set([...prev.subscriptions, `conversation:${conversationId}`])
+        subscriptions: new Set([...prev.subscriptions, `conversation:${conversationId}`]),
       }));
     }
   }, []);
 
   const unsubscribeFromConversation = useCallback((conversationId: string) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify({
-        type: 'unsubscribe',
-        channel: `conversation:${conversationId}`
-      }));
-      
-      setClientState(prev => {
+      ws.current.send(
+        JSON.stringify({
+          type: "unsubscribe",
+          channel: `conversation:${conversationId}`,
+        })
+      );
+
+      setClientState((prev) => {
         const newConversations = new Set(prev.activeConversations);
         const newSubscriptions = new Set(prev.subscriptions);
         newConversations.delete(conversationId);
         newSubscriptions.delete(`conversation:${conversationId}`);
-        
+
         return {
           ...prev,
           activeConversations: newConversations,
-          subscriptions: newSubscriptions
+          subscriptions: newSubscriptions,
         };
       });
     }
@@ -302,31 +320,38 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
 
   const subscribeToGroup = useCallback((groupId: string) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify({
-        type: 'subscribe',
-        channel: `group:${groupId}`
-      }));
-      
-      setClientState(prev => ({
+      ws.current.send(
+        JSON.stringify({
+          type: "subscribe",
+          channel: `group:${groupId}`,
+        })
+      );
+
+      setClientState((prev) => ({
         ...prev,
         activeGroups: new Set([...prev.activeGroups, groupId]),
-        subscriptions: new Set([...prev.subscriptions, `group:${groupId}`])
+        subscriptions: new Set([...prev.subscriptions, `group:${groupId}`]),
       }));
     }
   }, []);
 
-  const markMessageAsRead = useCallback((messageId: string, conversationId?: string, groupId?: string) => {
-    if (ws.current?.readyState === WebSocket.OPEN && options.accountId) {
-      ws.current.send(JSON.stringify({
-        type: 'read:receipt',
-        messageId,
-        conversationId,
-        groupId,
-        accountId: options.accountId,
-        timestamp: Date.now()
-      }));
-    }
-  }, [options.accountId]);
+  const markMessageAsRead = useCallback(
+    (messageId: string, conversationId?: string, groupId?: string) => {
+      if (ws.current?.readyState === WebSocket.OPEN && options.accountId) {
+        ws.current.send(
+          JSON.stringify({
+            type: "read:receipt",
+            messageId,
+            conversationId,
+            groupId,
+            accountId: options.accountId,
+            timestamp: Date.now(),
+          })
+        );
+      }
+    },
+    [options.accountId]
+  );
 
   // Initialize connection
   useEffect(() => {
@@ -341,19 +366,19 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
 
   // Handle visibility change for presence
   useEffect(() => {
-    if (typeof document === 'undefined') {
-        return;
+    if (typeof document === "undefined") {
+      return;
     }
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        updatePresence('away');
+      if (document.visibilityState === "hidden") {
+        updatePresence("away");
       } else {
-        updatePresence('online');
+        updatePresence("online");
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, [updatePresence]);
 
   return {
@@ -365,6 +390,6 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     subscribeToConversation,
     unsubscribeFromConversation,
     subscribeToGroup,
-    markMessageAsRead
+    markMessageAsRead,
   };
 }

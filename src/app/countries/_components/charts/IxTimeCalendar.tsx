@@ -5,11 +5,7 @@ import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { IxTime } from "~/lib/ixtime";
 import { Button } from "~/components/ui/button";
 import { Calendar } from "~/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "~/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -92,7 +88,7 @@ export function IxTimeCalendar({
     ];
 
     // Filter options based on min/max constraints
-    return options.filter(option => {
+    return options.filter((option) => {
       if (minIxTime && option.value < minIxTime) return false;
       if (maxIxTime && option.value > maxIxTime) return false;
       return true;
@@ -101,7 +97,7 @@ export function IxTimeCalendar({
 
   const handleCalendarSelect = (date: Date | undefined) => {
     if (!date) return;
-    
+
     // Create IxTime from selected date while preserving time components
     const selectedDateTime = new Date(date);
     selectedDateTime.setHours(
@@ -109,14 +105,14 @@ export function IxTimeCalendar({
       new Date(selectedIxTime).getMinutes(),
       new Date(selectedIxTime).getSeconds()
     );
-    
+
     const newIxTime = selectedDateTime.getTime();
-    
+
     // Apply constraints
     let constrainedTime = newIxTime;
     if (minIxTime && constrainedTime < minIxTime) constrainedTime = minIxTime;
     if (maxIxTime && constrainedTime > maxIxTime) constrainedTime = maxIxTime;
-    
+
     onIxTimeChangeAction(constrainedTime);
     setCalendarDate(new Date(constrainedTime));
   };
@@ -128,18 +124,18 @@ export function IxTimeCalendar({
     setIsOpen(false);
   };
 
-  const handleTimeAdjustment = (direction: 'prev' | 'next', unit: 'day' | 'month' | 'year') => {
-    const multiplier = direction === 'next' ? 1 : -1;
+  const handleTimeAdjustment = (direction: "prev" | "next", unit: "day" | "month" | "year") => {
+    const multiplier = direction === "next" ? 1 : -1;
     let newIxTime: number;
 
     switch (unit) {
-      case 'day':
-        newIxTime = selectedIxTime + (multiplier * 24 * 60 * 60 * 1000);
+      case "day":
+        newIxTime = selectedIxTime + multiplier * 24 * 60 * 60 * 1000;
         break;
-      case 'month':
+      case "month":
         newIxTime = IxTime.addMonths(selectedIxTime, multiplier);
         break;
-      case 'year':
+      case "year":
         newIxTime = IxTime.addYears(selectedIxTime, multiplier);
         break;
       default:
@@ -173,7 +169,7 @@ export function IxTimeCalendar({
         <Button
           variant="outline"
           size="icon"
-          onClick={() => handleTimeAdjustment('prev', 'year')}
+          onClick={() => handleTimeAdjustment("prev", "year")}
           disabled={!!(minIxTime && IxTime.addYears(selectedIxTime, -1) < minIxTime)}
           className="h-8 w-8"
         >
@@ -182,7 +178,7 @@ export function IxTimeCalendar({
         <Button
           variant="outline"
           size="icon"
-          onClick={() => handleTimeAdjustment('next', 'year')}
+          onClick={() => handleTimeAdjustment("next", "year")}
           disabled={!!(maxIxTime && IxTime.addYears(selectedIxTime, 1) > maxIxTime)}
           className="h-8 w-8"
         >
@@ -221,9 +217,7 @@ export function IxTimeCalendar({
                     <SelectItem key={option.label} value={option.value.toString()}>
                       <div className="flex flex-col">
                         <span>{option.label}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {option.description}
-                        </span>
+                        <span className="text-muted-foreground text-xs">{option.description}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -249,8 +243,8 @@ export function IxTimeCalendar({
             </div>
 
             {/* Current Selection Info */}
-            <div className="border-t pt-4 space-y-2">
-              <div className="text-sm space-y-1">
+            <div className="space-y-2 border-t pt-4">
+              <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Selected:</span>
                   <span className="font-medium">{timeInfo.formattedShort}</span>
@@ -262,7 +256,8 @@ export function IxTimeCalendar({
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Years Since Epoch:</span>
                   <span className="font-medium">
-                    {timeInfo.yearsSinceEpoch > 0 ? '+' : ''}{timeInfo.yearsSinceEpoch.toFixed(1)}
+                    {timeInfo.yearsSinceEpoch > 0 ? "+" : ""}
+                    {timeInfo.yearsSinceEpoch.toFixed(1)}
                   </span>
                 </div>
               </div>

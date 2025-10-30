@@ -18,7 +18,10 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { applyScheduledChangesJob, getScheduledChangesStats } from "~/server/cron/apply-scheduled-changes";
+import {
+  applyScheduledChangesJob,
+  getScheduledChangesStats,
+} from "~/server/cron/apply-scheduled-changes";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -33,10 +36,7 @@ export async function GET(request: NextRequest) {
     // If CRON_SECRET is set, require it for authentication
     if (cronSecret) {
       if (!authHeader || authHeader !== `Bearer ${cronSecret}`) {
-        return NextResponse.json(
-          { error: "Unauthorized" },
-          { status: 401 }
-        );
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
     }
 

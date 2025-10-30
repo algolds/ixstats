@@ -1,13 +1,13 @@
 "use client";
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Progress } from '~/components/ui/progress';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
-import { Receipt, ChevronDown, ChevronRight } from 'lucide-react';
-import type { RevenueSource } from '~/types/government';
-import { formatCurrency } from '~/lib/format-utils';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Progress } from "~/components/ui/progress";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
+import { Receipt, ChevronDown, ChevronRight } from "lucide-react";
+import type { RevenueSource } from "~/types/government";
+import { formatCurrency } from "~/lib/format-utils";
 
 interface RevenueSourcesListProps {
   sources: RevenueSource[];
@@ -36,7 +36,7 @@ export function RevenueSourcesList({
     <Collapsible open={isOpen} onOpenChange={onOpenChange}>
       <Card>
         <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+          <CardHeader className="hover:bg-muted/50 cursor-pointer transition-colors">
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Receipt className="h-5 w-5" />
@@ -46,9 +46,9 @@ export function RevenueSourcesList({
                 </Badge>
               </div>
               {isOpen ? (
-                <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform" />
+                <ChevronDown className="text-muted-foreground h-5 w-5 transition-transform" />
               ) : (
-                <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform" />
+                <ChevronRight className="text-muted-foreground h-5 w-5 transition-transform" />
               )}
             </CardTitle>
           </CardHeader>
@@ -68,34 +68,40 @@ export function RevenueSourcesList({
                       open={isRevOpen}
                       onOpenChange={() => onToggleRevenue(source.id)}
                     >
-                      <div className="border rounded-lg overflow-hidden">
+                      <div className="overflow-hidden rounded-lg border">
                         <CollapsibleTrigger asChild>
-                          <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 transition-colors">
+                          <div className="hover:bg-muted/50 flex cursor-pointer items-center justify-between p-3 transition-colors">
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{source.name}</span>
                               {isRevOpen ? (
-                                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                                <ChevronDown className="text-muted-foreground h-3 w-3" />
                               ) : (
-                                <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                                <ChevronRight className="text-muted-foreground h-3 w-3" />
                               )}
                             </div>
                             <div className="text-right">
-                              <span className="font-semibold">{formatCurrencyLocal(source.revenueAmount)}</span>
-                              <span className="text-sm text-muted-foreground ml-2">({percentage.toFixed(1)}%)</span>
+                              <span className="font-semibold">
+                                {formatCurrencyLocal(source.revenueAmount)}
+                              </span>
+                              <span className="text-muted-foreground ml-2 text-sm">
+                                ({percentage.toFixed(1)}%)
+                              </span>
                             </div>
                           </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
-                          <div className="px-3 pb-3 border-t bg-muted/20">
-                            <div className="pt-3 space-y-2">
+                          <div className="bg-muted/20 border-t px-3 pb-3">
+                            <div className="space-y-2 pt-3">
                               {source.description && (
-                                <p className="text-sm text-muted-foreground">{source.description}</p>
+                                <p className="text-muted-foreground text-sm">
+                                  {source.description}
+                                </p>
                               )}
                               <Progress value={percentage} className="h-2" />
                               <div className="grid grid-cols-2 gap-3 text-sm">
                                 <div>
                                   <span className="text-muted-foreground">Source ID:</span>
-                                  <p className="font-medium text-xs truncate">{source.id}</p>
+                                  <p className="truncate text-xs font-medium">{source.id}</p>
                                 </div>
                                 <div>
                                   <span className="text-muted-foreground">Percentage:</span>
@@ -103,11 +109,15 @@ export function RevenueSourcesList({
                                 </div>
                                 <div>
                                   <span className="text-muted-foreground">Revenue Amount:</span>
-                                  <p className="font-medium">{formatCurrencyLocal(source.revenueAmount)}</p>
+                                  <p className="font-medium">
+                                    {formatCurrencyLocal(source.revenueAmount)}
+                                  </p>
                                 </div>
                                 <div>
                                   <span className="text-muted-foreground">Source Type:</span>
-                                  <p className="font-medium capitalize">{source.name.split(' ')[0]}</p>
+                                  <p className="font-medium capitalize">
+                                    {source.name.split(" ")[0]}
+                                  </p>
                                 </div>
                               </div>
                             </div>

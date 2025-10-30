@@ -140,10 +140,7 @@ export function useCountryPageState(country: Country | undefined) {
               /\[([^\s\]]+)\s+([^\]]+)\]/g,
               '<a href="$1" class="external-link text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300 underline" target="_blank">$2</a>'
             )
-            .replace(
-              /'''([^']*)'''/g,
-              '<strong class="font-semibold text-foreground">$1</strong>'
-            )
+            .replace(/'''([^']*)'''/g, '<strong class="font-semibold text-foreground">$1</strong>')
             .replace(/''([^']*)''/g, '<em class="italic text-muted-foreground">$1</em>');
 
           // Split into paragraphs

@@ -51,7 +51,7 @@ export function useAdminState() {
   });
 
   const [timeState, setTimeState] = useState<TimeState>({
-    customDate: new Date().toISOString().split('T')[0] || "",
+    customDate: new Date().toISOString().split("T")[0] || "",
     customTime: "12:00",
   });
 
@@ -85,7 +85,7 @@ export function useAdminState() {
   const [collapsedCards, setCollapsedCards] = useState<Record<string, boolean>>({
     temporal: false,
     discord: false,
-    cache: false
+    cache: false,
   });
 
   return {

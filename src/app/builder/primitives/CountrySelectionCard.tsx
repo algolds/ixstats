@@ -1,9 +1,9 @@
 "use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { CountryPreview } from './CountryPreview';
-import type { RealCountryData } from '../lib/economy-data-service';
+import React from "react";
+import { motion } from "framer-motion";
+import { CountryPreview } from "./CountryPreview";
+import type { RealCountryData } from "../lib/economy-data-service";
 
 interface CountrySelectionCardProps {
   country: RealCountryData;
@@ -18,7 +18,7 @@ export function CountrySelectionCard({
   newCountryName,
   onCountryNameChange,
   onConfirm,
-  onCancel
+  onCancel,
 }: CountrySelectionCardProps) {
   return (
     <motion.div
@@ -32,7 +32,10 @@ export function CountrySelectionCard({
 
       {/* Name Input and Buttons */}
       <div className="space-y-4">
-        <label htmlFor="countryName" className="block text-sm font-medium text-[var(--color-text-secondary)]">
+        <label
+          htmlFor="countryName"
+          className="block text-sm font-medium text-[var(--color-text-secondary)]"
+        >
           Choose a name for your country:
         </label>
         <input
@@ -41,14 +44,14 @@ export function CountrySelectionCard({
           placeholder="e.g., Absurrania"
           value={newCountryName}
           onChange={(e) => onCountryNameChange(e.target.value)}
-          className="w-full px-4 py-2 bg-[var(--color-bg-secondary)]/50 border border-[var(--color-border-primary)] rounded-lg text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all"
+          className="w-full rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/50 px-4 py-2 text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] transition-all focus:border-blue-400/50 focus:ring-2 focus:ring-blue-400/50 focus:outline-none"
         />
         <div className="flex gap-2">
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={onConfirm}
-            className="flex-1 px-4 py-3 bg-[var(--color-brand-primary)]/80 hover:bg-[var(--color-brand-primary)] rounded-lg text-white font-semibold transition-all"
+            className="flex-1 rounded-lg bg-[var(--color-brand-primary)]/80 px-4 py-3 font-semibold text-white transition-all hover:bg-[var(--color-brand-primary)]"
           >
             Continue
           </motion.button>
@@ -56,7 +59,7 @@ export function CountrySelectionCard({
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={onCancel}
-            className="flex-1 px-4 py-3 bg-[var(--color-bg-secondary)]/50 border border-[var(--color-border-primary)] rounded-lg text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]/70 transition-all"
+            className="flex-1 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)]/50 px-4 py-3 text-[var(--color-text-secondary)] transition-all hover:bg-[var(--color-bg-secondary)]/70 hover:text-[var(--color-text-primary)]"
           >
             Cancel
           </motion.button>

@@ -1,9 +1,9 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const TaxSystemInputSchema = z.object({
-  taxSystemName: z.string().min(1, 'Tax system name is required'),
+  taxSystemName: z.string().min(1, "Tax system name is required"),
   taxAuthority: z.string().optional(),
-  fiscalYear: z.string().min(1, 'Fiscal year is required'),
+  fiscalYear: z.string().min(1, "Fiscal year is required"),
   taxCode: z.string().optional(),
   baseRate: z.number().min(0).max(100).optional(),
   progressiveTax: z.boolean(),
@@ -15,12 +15,12 @@ export const TaxSystemInputSchema = z.object({
 });
 
 export const TaxCategoryInputSchema = z.object({
-  categoryName: z.string().min(1, 'Category name is required'),
-  categoryType: z.string().min(1, 'Category type is required'),
+  categoryName: z.string().min(1, "Category name is required"),
+  categoryType: z.string().min(1, "Category type is required"),
   description: z.string().optional(),
   isActive: z.boolean(),
   baseRate: z.number().min(0).max(100).optional(),
-  calculationMethod: z.enum(['percentage', 'fixed', 'tiered', 'progressive']),
+  calculationMethod: z.enum(["percentage", "fixed", "tiered", "progressive"]),
   minimumAmount: z.number().nonnegative().optional(),
   maximumAmount: z.number().nonnegative().optional(),
   exemptionAmount: z.number().nonnegative().optional(),
@@ -76,5 +76,3 @@ export const TaxBuilderStateSchema = z.object({
 });
 
 export type TaxBuilderStateZod = z.infer<typeof TaxBuilderStateSchema>;
-
-

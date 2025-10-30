@@ -4,11 +4,19 @@
 
 "use client";
 
-import React from 'react';
-import { Badge } from '~/components/ui/badge';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { cn } from '~/lib/utils';
-import { CheckCircle2, AlertCircle, AlertTriangle, TrendingUp, Settings, Zap, Info } from 'lucide-react';
+import React from "react";
+import { Badge } from "~/components/ui/badge";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { cn } from "~/lib/utils";
+import {
+  CheckCircle2,
+  AlertCircle,
+  AlertTriangle,
+  TrendingUp,
+  Settings,
+  Zap,
+  Info,
+} from "lucide-react";
 
 interface SpendingValidationPanelProps {
   totalBudget: number;
@@ -35,14 +43,14 @@ export function SpendingValidationPanel({
   isSurplus,
   selectedPoliciesCount,
   isUpdating = false,
-  className
+  className,
 }: SpendingValidationPanelProps) {
   return (
     <div className={cn("space-y-4", className)}>
       {/* Integration Status Indicator */}
       {isUpdating && (
         <Alert className="border-blue-200 bg-blue-50">
-          <Zap className="h-4 w-4 text-blue-600 animate-pulse" />
+          <Zap className="h-4 w-4 animate-pulse text-blue-600" />
           <AlertDescription className="text-blue-800">
             Updating government structure from atomic components...
           </AlertDescription>
@@ -50,21 +58,18 @@ export function SpendingValidationPanel({
       )}
 
       {/* Budget Status Badges */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex flex-wrap items-center gap-3">
         {/* Budget Utilization Badge */}
         {totalBudget > 0 && (
-          <Badge
-            variant={isValidBudget ? "default" : "secondary"}
-            className="px-3 py-1"
-          >
+          <Badge variant={isValidBudget ? "default" : "secondary"} className="px-3 py-1">
             {isValidBudget ? (
               <>
-                <CheckCircle2 className="h-3 w-3 mr-1" />
+                <CheckCircle2 className="mr-1 h-3 w-3" />
                 Budget: {budgetUtilization.toFixed(1)}%
               </>
             ) : (
               <>
-                <AlertCircle className="h-3 w-3 mr-1" />
+                <AlertCircle className="mr-1 h-3 w-3" />
                 Budget: {budgetUtilization.toFixed(1)}%
               </>
             )}
@@ -73,18 +78,15 @@ export function SpendingValidationPanel({
 
         {/* Surplus/Deficit Badge */}
         {totalRevenue > 0 && (
-          <Badge
-            variant={isSurplus ? "default" : "destructive"}
-            className="px-3 py-1"
-          >
+          <Badge variant={isSurplus ? "default" : "destructive"} className="px-3 py-1">
             {isSurplus ? (
               <>
-                <TrendingUp className="h-3 w-3 mr-1" />
+                <TrendingUp className="mr-1 h-3 w-3" />
                 Surplus
               </>
             ) : (
               <>
-                <AlertTriangle className="h-3 w-3 mr-1" />
+                <AlertTriangle className="mr-1 h-3 w-3" />
                 Deficit
               </>
             )}
@@ -93,53 +95,60 @@ export function SpendingValidationPanel({
 
         {/* Policy Count Badge */}
         <Badge variant="outline" className="px-3 py-1">
-          <Settings className="h-3 w-3 mr-1" />
+          <Settings className="mr-1 h-3 w-3" />
           {selectedPoliciesCount} Policies
         </Badge>
       </div>
 
       {/* Budget Health Details */}
       {totalBudget > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <BudgetMetric
             label="Total Budget"
             value={totalBudget.toLocaleString()}
             currency={true}
-            status={isValidBudget ? 'success' : 'warning'}
+            status={isValidBudget ? "success" : "warning"}
           />
           <BudgetMetric
             label="Allocated"
             value={totalAllocated.toLocaleString()}
             currency={true}
-            status={budgetUtilization > 105 ? 'error' : budgetUtilization < 95 ? 'warning' : 'success'}
+            status={
+              budgetUtilization > 105 ? "error" : budgetUtilization < 95 ? "warning" : "success"
+            }
           />
           <BudgetMetric
             label="Revenue"
             value={totalRevenue.toLocaleString()}
             currency={true}
-            status={isSurplus ? 'success' : 'warning'}
+            status={isSurplus ? "success" : "warning"}
           />
         </div>
       )}
 
       {/* Validation Messages */}
       {!isValidBudget && totalBudget > 0 && (
-        <Alert className={cn(
-          budgetUtilization > 105
-            ? "border-red-200 bg-red-50"
-            : "border-yellow-200 bg-yellow-50"
-        )}>
-          <AlertTriangle className={cn(
-            "h-4 w-4",
-            budgetUtilization > 105 ? "text-red-600" : "text-yellow-600"
-          )} />
-          <AlertDescription className={cn(
-            budgetUtilization > 105 ? "text-red-800" : "text-yellow-800"
-          )}>
+        <Alert
+          className={cn(
+            budgetUtilization > 105 ? "border-red-200 bg-red-50" : "border-yellow-200 bg-yellow-50"
+          )}
+        >
+          <AlertTriangle
+            className={cn("h-4 w-4", budgetUtilization > 105 ? "text-red-600" : "text-yellow-600")}
+          />
+          <AlertDescription
+            className={cn(budgetUtilization > 105 ? "text-red-800" : "text-yellow-800")}
+          >
             {budgetUtilization > 105 ? (
-              <>Budget is over-allocated by {(budgetUtilization - 100).toFixed(1)}%. Reduce spending to balance the budget.</>
+              <>
+                Budget is over-allocated by {(budgetUtilization - 100).toFixed(1)}%. Reduce spending
+                to balance the budget.
+              </>
             ) : (
-              <>Budget utilization is {budgetUtilization.toFixed(1)}%. Consider allocating remaining {(100 - budgetUtilization).toFixed(1)}% to priority areas.</>
+              <>
+                Budget utilization is {budgetUtilization.toFixed(1)}%. Consider allocating remaining{" "}
+                {(100 - budgetUtilization).toFixed(1)}% to priority areas.
+              </>
             )}
           </AlertDescription>
         </Alert>
@@ -149,8 +158,8 @@ export function SpendingValidationPanel({
         <Alert className="border-yellow-200 bg-yellow-50">
           <Info className="h-4 w-4 text-yellow-600" />
           <AlertDescription className="text-yellow-800">
-            Budget deficit of {Math.abs(totalRevenue - totalAllocated).toLocaleString()}.
-            Consider increasing revenue sources or reducing spending.
+            Budget deficit of {Math.abs(totalRevenue - totalAllocated).toLocaleString()}. Consider
+            increasing revenue sources or reducing spending.
           </AlertDescription>
         </Alert>
       )}
@@ -165,35 +174,33 @@ function BudgetMetric({
   label,
   value,
   currency = false,
-  status = 'default'
+  status = "default",
 }: {
   label: string;
   value: string;
   currency?: boolean;
-  status?: 'default' | 'success' | 'warning' | 'error';
+  status?: "default" | "success" | "warning" | "error";
 }) {
   const statusColors = {
-    default: 'bg-muted border-border',
-    success: 'bg-green-50 border-green-200',
-    warning: 'bg-yellow-50 border-yellow-200',
-    error: 'bg-red-50 border-red-200'
+    default: "bg-muted border-border",
+    success: "bg-green-50 border-green-200",
+    warning: "bg-yellow-50 border-yellow-200",
+    error: "bg-red-50 border-red-200",
   };
 
   const statusTextColors = {
-    default: 'text-foreground',
-    success: 'text-green-700',
-    warning: 'text-yellow-700',
-    error: 'text-red-700'
+    default: "text-foreground",
+    success: "text-green-700",
+    warning: "text-yellow-700",
+    error: "text-red-700",
   };
 
   return (
-    <div className={cn(
-      "p-3 rounded-lg border",
-      statusColors[status]
-    )}>
-      <p className="text-xs text-muted-foreground mb-1">{label}</p>
+    <div className={cn("rounded-lg border p-3", statusColors[status])}>
+      <p className="text-muted-foreground mb-1 text-xs">{label}</p>
       <p className={cn("text-lg font-semibold", statusTextColors[status])}>
-        {currency && '$'}{value}
+        {currency && "$"}
+        {value}
       </p>
     </div>
   );

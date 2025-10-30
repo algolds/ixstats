@@ -54,19 +54,19 @@ async function fetchThinkPagesLinks(): Promise<SummaryRow[]> {
     })
   );
 
-  return rows.filter(
-    (row) => !row.linkedCountryId && !SYSTEM_OWNER_SET.has(row.clerkUserId)
-  );
+  return rows.filter((row) => !row.linkedCountryId && !SYSTEM_OWNER_SET.has(row.clerkUserId));
 }
 
 async function fetchUnlinkedUsers(): Promise<SummaryRow[]> {
-  const users = await prisma.user.findMany({
-    where: { OR: [{ countryId: null }, { countryId: "" }] },
-    select: {
-      clerkUserId: true,
-      countryId: true,
-    },
-  }).filter((row) => !SYSTEM_OWNER_SET.has(row.clerkUserId));
+  const users = await prisma.user
+    .findMany({
+      where: { OR: [{ countryId: null }, { countryId: "" }] },
+      select: {
+        clerkUserId: true,
+        countryId: true,
+      },
+    })
+    .filter((row) => !SYSTEM_OWNER_SET.has(row.clerkUserId));
 
   return users.map((user) => ({
     clerkUserId: user.clerkUserId,

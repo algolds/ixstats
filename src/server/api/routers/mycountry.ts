@@ -1,21 +1,30 @@
 /**
  * MyCountry API Router - Dedicated endpoints for MyCountry system
- * 
+ *
  * This router provides specialized endpoints for the MyCountry interface including:
  * - Intelligence feed aggregation from multiple sources
  * - Achievement system with real-time calculations
- * - Executive dashboard data compilation  
+ * - Executive dashboard data compilation
  * - National vitality metrics computation
  * - Historical timeline and milestone tracking
  * - Real-time notification generation
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure, countryOwnerProcedure, executiveProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  countryOwnerProcedure,
+  executiveProcedure,
+} from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { db } from "~/server/db";
 import { standardize } from "~/lib/interface-standardizer";
-import { unifyIntelligenceItem, adaptExecutiveToQuick } from "~/lib/transformers/interface-adapters";
+import {
+  unifyIntelligenceItem,
+  adaptExecutiveToQuick,
+} from "~/lib/transformers/interface-adapters";
 import { notificationAPI } from "~/lib/notification-api";
 import { notificationHooks } from "~/lib/notification-hooks";
 import type {
@@ -26,7 +35,7 @@ import type {
   Ranking,
   VitalityScores,
   ExecutiveAction,
-  NationalSummary
+  NationalSummary,
 } from "~/types/mycountry";
 
 // Cache for expensive operations
@@ -50,7 +59,7 @@ function setMyCountryCache(key: string, data: any, ttl = 60000): void {
   myCountryCache.set(key, {
     data,
     timestamp: Date.now(),
-    ttl
+    ttl,
   });
 }
 
@@ -59,38 +68,46 @@ function setMyCountryCache(key: string, data: any, ttl = 60000): void {
  */
 function calculateVitalityScores(country: CountryWithEconomicData): VitalityScores {
   // Economic Vitality (0-100 scale)
-  const economicVitality = Math.min(100, Math.max(0, 
-    (country.adjustedGdpGrowth * 100 * 10) + 
-    (country.currentGdpPerCapita / 2000) + 
-    30
-  ));
-  
-  // Population Wellbeing (0-100 scale)  
-  const populationWellbeing = Math.min(100, Math.max(0,
-    (country.populationGrowthRate * 100 * 20) + 
-    (getTierScore(country.populationTier) * 10) + 
-    25
-  ));
-  
+  const economicVitality = Math.min(
+    100,
+    Math.max(0, country.adjustedGdpGrowth * 100 * 10 + country.currentGdpPerCapita / 2000 + 30)
+  );
+
+  // Population Wellbeing (0-100 scale)
+  const populationWellbeing = Math.min(
+    100,
+    Math.max(
+      0,
+      country.populationGrowthRate * 100 * 20 + getTierScore(country.populationTier) * 10 + 25
+    )
+  );
+
   // Diplomatic Standing (calculated from relations and treaties)
-  const diplomaticStanding = Math.min(100, Math.max(40, 
-    ((country as any).globalDiplomaticInfluence || 50) + 
-    ((country as any).tradeRelationshipStrength || 10) + 
-    ((country as any).allianceStrength || 15) - 
-    ((country as any).diplomaticTensions || 5)
-  ));
-  
+  const diplomaticStanding = Math.min(
+    100,
+    Math.max(
+      40,
+      ((country as any).globalDiplomaticInfluence || 50) +
+        ((country as any).tradeRelationshipStrength || 10) +
+        ((country as any).allianceStrength || 15) -
+        ((country as any).diplomaticTensions || 5)
+    )
+  );
+
   // Governmental Efficiency (based on economic performance and stability)
-  const governmentalEfficiency = Math.min(100, Math.max(50,
-    60 + (economicVitality * 0.3) + (diplomaticStanding * 0.2)
-  ));
-  
+  const governmentalEfficiency = Math.min(
+    100,
+    Math.max(50, 60 + economicVitality * 0.3 + diplomaticStanding * 0.2)
+  );
+
   return {
     economicVitality: Math.round(economicVitality),
     populationWellbeing: Math.round(populationWellbeing),
     diplomaticStanding: Math.round(diplomaticStanding),
     governmentalEfficiency: Math.round(governmentalEfficiency),
-    overallScore: Math.round((economicVitality + populationWellbeing + diplomaticStanding + governmentalEfficiency) / 4),
+    overallScore: Math.round(
+      (economicVitality + populationWellbeing + diplomaticStanding + governmentalEfficiency) / 4
+    ),
   };
 }
 
@@ -99,12 +116,12 @@ function calculateVitalityScores(country: CountryWithEconomicData): VitalityScor
  */
 function getTierScore(tier: string): number {
   const tierScores: Record<string, number> = {
-    'Impoverished': 1,
-    'Developing': 2,
-    'Emerging': 3,
-    'Developed': 4,
-    'Advanced': 5,
-    'Elite': 6,
+    Impoverished: 1,
+    Developing: 2,
+    Emerging: 3,
+    Developed: 4,
+    Advanced: 5,
+    Elite: 6,
   };
   return tierScores[tier] || 1;
 }
@@ -123,10 +140,10 @@ async function generateIntelligenceFeed(countryId: string): Promise<Intelligence
       where: { id: countryId },
       include: {
         historicalData: {
-          orderBy: { ixTimeTimestamp: 'desc' },
-          take: 5
-        }
-      }
+          orderBy: { ixTimeTimestamp: "desc" },
+          take: 5,
+        },
+      },
     });
 
     if (!country) return [];
@@ -139,20 +156,23 @@ async function generateIntelligenceFeed(countryId: string): Promise<Intelligence
     if (recentHistory && country.historicalData.length > 1) {
       const previousHistory = country.historicalData[1];
       if (previousHistory) {
-        const gdpChange = ((recentHistory.gdpPerCapita - previousHistory.gdpPerCapita) / previousHistory.gdpPerCapita) * 100;
-        
+        const gdpChange =
+          ((recentHistory.gdpPerCapita - previousHistory.gdpPerCapita) /
+            previousHistory.gdpPerCapita) *
+          100;
+
         if (Math.abs(gdpChange) > 2) {
           intelligenceItems.push({
             id: `econ_${Date.now()}`,
             createdAt: currentTime,
-            type: gdpChange > 0 ? 'opportunity' : 'alert',
-            severity: (Math.abs(gdpChange) > 5 ? 'high' : 'medium') as any,
-            title: `Economic ${gdpChange > 0 ? 'Growth' : 'Decline'} Detected`,
-            description: `GDP per capita has ${gdpChange > 0 ? 'increased' : 'decreased'} by ${Math.abs(gdpChange).toFixed(2)}% this period.`,
-            category: 'economic' as any,
+            type: gdpChange > 0 ? "opportunity" : "alert",
+            severity: (Math.abs(gdpChange) > 5 ? "high" : "medium") as any,
+            title: `Economic ${gdpChange > 0 ? "Growth" : "Decline"} Detected`,
+            description: `GDP per capita has ${gdpChange > 0 ? "increased" : "decreased"} by ${Math.abs(gdpChange).toFixed(2)}% this period.`,
+            category: "economic" as any,
             timestamp: currentTime,
             actionable: true,
-            source: 'Economic Intelligence Unit',
+            source: "Economic Intelligence Unit",
             affectedRegions: [country.region].filter(Boolean) as string[],
             confidence: 0.95,
           });
@@ -165,15 +185,15 @@ async function generateIntelligenceFeed(countryId: string): Promise<Intelligence
       intelligenceItems.push({
         id: `pop_${Date.now()}`,
         createdAt: currentTime,
-        type: 'update',
-        severity: 'medium' as any,
-        title: 'High Population Growth Detected',
+        type: "update",
+        severity: "medium" as any,
+        title: "High Population Growth Detected",
         description: `Population growing at ${(country.populationGrowthRate * 100).toFixed(2)}% - infrastructure planning may be needed.`,
-        category: 'population' as any,
+        category: "population" as any,
         timestamp: currentTime,
         actionable: true,
-        source: 'Demographics Bureau',
-        confidence: 0.90,
+        source: "Demographics Bureau",
+        confidence: 0.9,
       });
     }
 
@@ -184,25 +204,29 @@ async function generateIntelligenceFeed(countryId: string): Promise<Intelligence
         OR: [
           { affectedCountries: { contains: country.name } },
           { region: country.region },
-          { affectedCountries: null } // Global items
-        ]
+          { affectedCountries: null }, // Global items
+        ],
       },
-      orderBy: { timestamp: 'desc' },
-      take: 10
+      orderBy: { timestamp: "desc" },
+      take: 10,
     });
 
     // Convert database intelligence items
-    globalIntelligence.forEach(item => {
+    globalIntelligence.forEach((item) => {
       intelligenceItems.push({
         id: item.id,
         createdAt: item.timestamp.getTime(),
-        type: item.category === 'security' ? 'alert' : 'update',
-        severity: item.priority.toLowerCase() as 'low' | 'medium' | 'high' | 'critical',
+        type: item.category === "security" ? "alert" : "update",
+        severity: item.priority.toLowerCase() as "low" | "medium" | "high" | "critical",
         title: item.title,
         description: item.content,
-        category: item.category.toLowerCase() as 'economic' | 'diplomatic' | 'social' | 'governance',
+        category: item.category.toLowerCase() as
+          | "economic"
+          | "diplomatic"
+          | "social"
+          | "governance",
         timestamp: item.timestamp.getTime(),
-        actionable: item.priority !== 'low',
+        actionable: item.priority !== "low",
         source: item.source,
         confidence: 0.85,
       });
@@ -210,7 +234,7 @@ async function generateIntelligenceFeed(countryId: string): Promise<Intelligence
 
     // Sort by priority and timestamp
     intelligenceItems.sort((a, b) => {
-      const priorityOrder = { 'critical': 4, 'high': 3, 'medium': 2, 'low': 1 };
+      const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
       const priorityDiff = priorityOrder[b.severity] - priorityOrder[a.severity];
       if (priorityDiff !== 0) return priorityDiff;
       return b.timestamp - a.timestamp;
@@ -219,9 +243,8 @@ async function generateIntelligenceFeed(countryId: string): Promise<Intelligence
     const result = intelligenceItems.slice(0, 20); // Limit to 20 items
     setMyCountryCache(cacheKey, result, 120000); // Cache for 2 minutes
     return result;
-
   } catch (error) {
-    console.error('[MyCountry Intelligence Feed] Error:', error);
+    console.error("[MyCountry Intelligence Feed] Error:", error);
     return [];
   }
 }
@@ -239,10 +262,10 @@ async function calculateAchievements(countryId: string): Promise<Achievement[]> 
       where: { id: countryId },
       include: {
         historicalData: {
-          orderBy: { ixTimeTimestamp: 'desc' },
-          take: 50
-        }
-      }
+          orderBy: { ixTimeTimestamp: "desc" },
+          take: 50,
+        },
+      },
     });
 
     if (!country) return [];
@@ -252,14 +275,14 @@ async function calculateAchievements(countryId: string): Promise<Achievement[]> 
     // Economic achievements
     if (country.currentGdpPerCapita > 50000) {
       achievements.push({
-        id: 'wealthy_nation',
-        title: 'Wealthy Nation',
-        description: 'Achieved GDP per capita above $50,000',
-        category: 'economic',
-        rarity: 'epic',
-        achievedAt: Date.now() - (30 * 24 * 60 * 60 * 1000), // 30 days ago
+        id: "wealthy_nation",
+        title: "Wealthy Nation",
+        description: "Achieved GDP per capita above $50,000",
+        category: "economic",
+        rarity: "epic",
+        achievedAt: Date.now() - 30 * 24 * 60 * 60 * 1000, // 30 days ago
         points: 500,
-        icon: 'TrendingUp',
+        icon: "TrendingUp",
         progress: 100,
       });
     }
@@ -267,14 +290,14 @@ async function calculateAchievements(countryId: string): Promise<Achievement[]> 
     // Population achievements
     if (country.currentPopulation > 100000000) {
       achievements.push({
-        id: 'population_giant',
-        title: 'Population Giant',
-        description: 'Reached over 100 million citizens', 
-        category: 'social',
-        rarity: 'rare',
-        achievedAt: Date.now() - (60 * 24 * 60 * 60 * 1000), // 60 days ago
+        id: "population_giant",
+        title: "Population Giant",
+        description: "Reached over 100 million citizens",
+        category: "social",
+        rarity: "rare",
+        achievedAt: Date.now() - 60 * 24 * 60 * 60 * 1000, // 60 days ago
         points: 300,
-        icon: 'Users',
+        icon: "Users",
         progress: 100,
       });
     }
@@ -282,14 +305,14 @@ async function calculateAchievements(countryId: string): Promise<Achievement[]> 
     // Growth achievements
     if (country.adjustedGdpGrowth > 0.05) {
       achievements.push({
-        id: 'rapid_growth',
-        title: 'Rapid Economic Growth',
-        description: 'Sustained GDP growth above 5% annually',
-        category: 'economic',
-        rarity: 'rare',
-        achievedAt: Date.now() - (15 * 24 * 60 * 60 * 1000), // 15 days ago  
+        id: "rapid_growth",
+        title: "Rapid Economic Growth",
+        description: "Sustained GDP growth above 5% annually",
+        category: "economic",
+        rarity: "rare",
+        achievedAt: Date.now() - 15 * 24 * 60 * 60 * 1000, // 15 days ago
         points: 250,
-        icon: 'TrendingUp',
+        icon: "TrendingUp",
         progress: 100,
       });
     }
@@ -297,9 +320,8 @@ async function calculateAchievements(countryId: string): Promise<Achievement[]> 
     const result = achievements.slice(0, 10);
     setMyCountryCache(cacheKey, result, 300000); // Cache for 5 minutes
     return result;
-
   } catch (error) {
-    console.error('[MyCountry Achievements] Error:', error);
+    console.error("[MyCountry Achievements] Error:", error);
     return [];
   }
 }
@@ -314,7 +336,7 @@ async function generateRankings(countryId: string): Promise<Ranking[]> {
 
   try {
     const country = await db.country.findUnique({
-      where: { id: countryId }
+      where: { id: countryId },
     });
 
     if (!country) return [];
@@ -330,74 +352,83 @@ async function generateRankings(countryId: string): Promise<Ranking[]> {
         region: true,
         economicTier: true,
         populationTier: true,
-      }
+      },
     });
 
     const rankings: Ranking[] = [];
 
     // Global GDP per capita ranking
-    const gdpRanking = allCountries
-      .sort((a, b) => b.currentGdpPerCapita - a.currentGdpPerCapita)
-      .findIndex(c => c.id === countryId) + 1;
+    const gdpRanking =
+      allCountries
+        .sort((a, b) => b.currentGdpPerCapita - a.currentGdpPerCapita)
+        .findIndex((c) => c.id === countryId) + 1;
 
     rankings.push({
-      category: 'GDP per Capita',
+      category: "GDP per Capita",
       global: { position: gdpRanking, total: allCountries.length },
       regional: {
-        position: allCountries
-          .filter(c => c.region === country.region)
-          .sort((a, b) => b.currentGdpPerCapita - a.currentGdpPerCapita)
-          .findIndex(c => c.id === countryId) + 1,
-        total: allCountries.filter(c => c.region === country.region).length,
-        region: country.region || 'Unknown'
+        position:
+          allCountries
+            .filter((c) => c.region === country.region)
+            .sort((a, b) => b.currentGdpPerCapita - a.currentGdpPerCapita)
+            .findIndex((c) => c.id === countryId) + 1,
+        total: allCountries.filter((c) => c.region === country.region).length,
+        region: country.region || "Unknown",
       },
       tier: {
-        position: allCountries
-          .filter(c => c.economicTier === country.economicTier)
-          .sort((a, b) => b.currentGdpPerCapita - a.currentGdpPerCapita)
-          .findIndex(c => c.id === countryId) + 1,
-        total: allCountries.filter(c => c.economicTier === country.economicTier).length,
-        tier: country.economicTier
+        position:
+          allCountries
+            .filter((c) => c.economicTier === country.economicTier)
+            .sort((a, b) => b.currentGdpPerCapita - a.currentGdpPerCapita)
+            .findIndex((c) => c.id === countryId) + 1,
+        total: allCountries.filter((c) => c.economicTier === country.economicTier).length,
+        tier: country.economicTier,
       },
-      trend: country.adjustedGdpGrowth > 0.03 ? 'improving' : 
-             country.adjustedGdpGrowth < -0.01 ? 'declining' : 'stable',
-      percentile: Math.round((1 - (gdpRanking - 1) / allCountries.length) * 100)
+      trend:
+        country.adjustedGdpGrowth > 0.03
+          ? "improving"
+          : country.adjustedGdpGrowth < -0.01
+            ? "declining"
+            : "stable",
+      percentile: Math.round((1 - (gdpRanking - 1) / allCountries.length) * 100),
     });
 
     // Global population ranking
-    const popRanking = allCountries
-      .sort((a, b) => b.currentPopulation - a.currentPopulation)
-      .findIndex(c => c.id === countryId) + 1;
+    const popRanking =
+      allCountries
+        .sort((a, b) => b.currentPopulation - a.currentPopulation)
+        .findIndex((c) => c.id === countryId) + 1;
 
     rankings.push({
-      category: 'Population',
+      category: "Population",
       global: { position: popRanking, total: allCountries.length },
       regional: {
-        position: allCountries
-          .filter(c => c.region === country.region)
-          .sort((a, b) => b.currentPopulation - a.currentPopulation)
-          .findIndex(c => c.id === countryId) + 1,
-        total: allCountries.filter(c => c.region === country.region).length,
-        region: country.region || 'Unknown'
+        position:
+          allCountries
+            .filter((c) => c.region === country.region)
+            .sort((a, b) => b.currentPopulation - a.currentPopulation)
+            .findIndex((c) => c.id === countryId) + 1,
+        total: allCountries.filter((c) => c.region === country.region).length,
+        region: country.region || "Unknown",
       },
       tier: {
-        position: allCountries
-          .filter(c => c.populationTier === country.populationTier)
-          .sort((a, b) => b.currentPopulation - a.currentPopulation)
-          .findIndex(c => c.id === countryId) + 1,
-        total: allCountries.filter(c => c.populationTier === country.populationTier).length,
-        tier: country.populationTier
+        position:
+          allCountries
+            .filter((c) => c.populationTier === country.populationTier)
+            .sort((a, b) => b.currentPopulation - a.currentPopulation)
+            .findIndex((c) => c.id === countryId) + 1,
+        total: allCountries.filter((c) => c.populationTier === country.populationTier).length,
+        tier: country.populationTier,
       },
-      trend: 'stable',
-      percentile: Math.round((1 - (popRanking - 1) / allCountries.length) * 100)
+      trend: "stable",
+      percentile: Math.round((1 - (popRanking - 1) / allCountries.length) * 100),
     });
 
     const result = rankings;
     setMyCountryCache(cacheKey, result, 600000); // Cache for 10 minutes
     return result;
-
   } catch (error) {
-    console.error('[MyCountry Rankings] Error:', error);
+    console.error("[MyCountry Rankings] Error:", error);
     return [];
   }
 }
@@ -415,9 +446,9 @@ async function generateMilestones(countryId: string): Promise<Milestone[]> {
       where: { id: countryId },
       include: {
         historicalData: {
-          orderBy: { ixTimeTimestamp: 'asc' }
-        }
-      }
+          orderBy: { ixTimeTimestamp: "asc" },
+        },
+      },
     });
 
     if (!country) return [];
@@ -427,34 +458,34 @@ async function generateMilestones(countryId: string): Promise<Milestone[]> {
 
     // Population milestones
     const populationMilestones = [1000000, 5000000, 10000000, 25000000, 50000000, 100000000];
-    populationMilestones.forEach(milestone => {
-      const record = history.find(h => h.population >= milestone);
+    populationMilestones.forEach((milestone) => {
+      const record = history.find((h) => h.population >= milestone);
       if (record && country.currentPopulation >= milestone) {
         milestones.push({
           id: `pop_${milestone}`,
           title: `${(milestone / 1000000).toFixed(0)}M Population Milestone`,
           description: `Successfully reached ${milestone.toLocaleString()} citizens`,
           achievedAt: record.ixTimeTimestamp.getTime(),
-          impact: 'Expanded national capacity and influence',
-          category: 'population',
-          significance: 'major',
+          impact: "Expanded national capacity and influence",
+          category: "population",
+          significance: "major",
         });
       }
     });
 
     // Economic milestones
     const gdpMilestones = [10000, 25000, 50000, 75000, 100000];
-    gdpMilestones.forEach(milestone => {
-      const record = history.find(h => h.gdpPerCapita >= milestone);
+    gdpMilestones.forEach((milestone) => {
+      const record = history.find((h) => h.gdpPerCapita >= milestone);
       if (record && country.currentGdpPerCapita >= milestone) {
         milestones.push({
           id: `gdp_${milestone}`,
           title: `$${milestone.toLocaleString()} GDP per Capita`,
-          description: `Achieved ${milestone >= 50000 ? 'high-income' : 'middle-income'} status`,
+          description: `Achieved ${milestone >= 50000 ? "high-income" : "middle-income"} status`,
           achievedAt: record.ixTimeTimestamp.getTime(),
           impact: `Enhanced living standards and economic development`,
-          category: 'economic',
-          significance: milestone >= 50000 ? 'major' : 'moderate',
+          category: "economic",
+          significance: milestone >= 50000 ? "major" : "moderate",
         });
       }
     });
@@ -465,9 +496,8 @@ async function generateMilestones(countryId: string): Promise<Milestone[]> {
     const result = milestones.slice(0, 15);
     setMyCountryCache(cacheKey, result, 900000); // Cache for 15 minutes
     return result;
-
   } catch (error) {
-    console.error('[MyCountry Milestones] Error:', error);
+    console.error("[MyCountry Milestones] Error:", error);
     return [];
   }
 }
@@ -477,30 +507,34 @@ export const myCountryRouter = createTRPCRouter({
    * Get comprehensive country data with vitality scores for MyCountry dashboard
    */
   getCountryDashboard: publicProcedure
-    .input(z.object({
-      countryId: z.string(),
-      includeHistory: z.boolean().default(false),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        includeHistory: z.boolean().default(false),
+      })
+    )
     .query(async ({ input }) => {
       try {
         const country = await db.country.findUnique({
           where: { id: input.countryId },
           include: {
-            historicalData: input.includeHistory ? {
-              orderBy: { ixTimeTimestamp: 'desc' },
-              take: 30
-            } : false,
+            historicalData: input.includeHistory
+              ? {
+                  orderBy: { ixTimeTimestamp: "desc" },
+                  take: 30,
+                }
+              : false,
             demographics: true,
             economicProfile: true,
             laborMarket: true,
             fiscalSystem: true,
             incomeDistribution: true,
             governmentBudget: true,
-          }
+          },
         });
 
         if (!country) {
-          throw new Error('Country not found');
+          throw new Error("Country not found");
         }
 
         // Calculate vitality scores
@@ -512,10 +546,9 @@ export const myCountryRouter = createTRPCRouter({
           lastCalculated: country.lastCalculated.getTime(),
           baselineDate: country.baselineDate.getTime(),
         };
-
       } catch (error) {
-        console.error('[MyCountry Dashboard] Error:', error);
-        throw new Error('Failed to get country dashboard data');
+        console.error("[MyCountry Dashboard] Error:", error);
+        throw new Error("Failed to get country dashboard data");
       }
     }),
 
@@ -523,57 +556,90 @@ export const myCountryRouter = createTRPCRouter({
    * Update and track vitality scores with notifications
    */
   updateVitalityTracking: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-      vitalityScores: z.object({
-        economicVitality: z.number(),
-        populationWellbeing: z.number(),
-        diplomaticStanding: z.number(),
-        governmentalEfficiency: z.number(),
-        overallScore: z.number(),
-      }),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        vitalityScores: z.object({
+          economicVitality: z.number(),
+          populationWellbeing: z.number(),
+          diplomaticStanding: z.number(),
+          governmentalEfficiency: z.number(),
+          overallScore: z.number(),
+        }),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // SECURITY: Verify user owns this country
       if (ctx.user?.countryId !== input.countryId) {
-        throw new Error('FORBIDDEN: Cannot access other countries\' vitality data');
+        throw new Error("FORBIDDEN: Cannot access other countries' vitality data");
       }
 
       try {
         // Get previous vitality scores from most recent snapshots
         const previousSnapshots = await ctx.db.vitalitySnapshot.findMany({
           where: { countryId: input.countryId },
-          orderBy: { calculatedAt: 'desc' },
+          orderBy: { calculatedAt: "desc" },
           take: 4,
           select: {
             area: true,
             score: true,
-          }
+          },
         });
 
         // Map snapshots to vitality data structure
-        const previousData = previousSnapshots.length > 0 ? {
-          economicVitality: previousSnapshots.find(s => s.area === 'ECONOMIC' || s.area === 'economic')?.score ?? null,
-          populationWellbeing: previousSnapshots.find(s => s.area === 'SOCIAL' || s.area === 'social')?.score ?? null,
-          diplomaticStanding: previousSnapshots.find(s => s.area === 'DIPLOMATIC' || s.area === 'diplomatic')?.score ?? null,
-          governmentalEfficiency: previousSnapshots.find(s => s.area === 'GOVERNANCE' || s.area === 'governance')?.score ?? null,
-        } : null;
+        const previousData =
+          previousSnapshots.length > 0
+            ? {
+                economicVitality:
+                  previousSnapshots.find((s) => s.area === "ECONOMIC" || s.area === "economic")
+                    ?.score ?? null,
+                populationWellbeing:
+                  previousSnapshots.find((s) => s.area === "SOCIAL" || s.area === "social")
+                    ?.score ?? null,
+                diplomaticStanding:
+                  previousSnapshots.find((s) => s.area === "DIPLOMATIC" || s.area === "diplomatic")
+                    ?.score ?? null,
+                governmentalEfficiency:
+                  previousSnapshots.find((s) => s.area === "GOVERNANCE" || s.area === "governance")
+                    ?.score ?? null,
+              }
+            : null;
 
         // Send notifications for significant changes (non-blocking)
         if (previousData) {
-          const overallPrevious = (
-            (previousData.economicVitality ?? 0) +
-            (previousData.populationWellbeing ?? 0) +
-            (previousData.diplomaticStanding ?? 0) +
-            (previousData.governmentalEfficiency ?? 0)
-          ) / 4;
+          const overallPrevious =
+            ((previousData.economicVitality ?? 0) +
+              (previousData.populationWellbeing ?? 0) +
+              (previousData.diplomaticStanding ?? 0) +
+              (previousData.governmentalEfficiency ?? 0)) /
+            4;
 
           const dimensions = [
-            { key: 'economic' as const, current: input.vitalityScores.economicVitality, previous: previousData.economicVitality },
-            { key: 'population' as const, current: input.vitalityScores.populationWellbeing, previous: previousData.populationWellbeing },
-            { key: 'diplomatic' as const, current: input.vitalityScores.diplomaticStanding, previous: previousData.diplomaticStanding },
-            { key: 'governmental' as const, current: input.vitalityScores.governmentalEfficiency, previous: previousData.governmentalEfficiency },
-            { key: 'overall' as const, current: input.vitalityScores.overallScore, previous: overallPrevious },
+            {
+              key: "economic" as const,
+              current: input.vitalityScores.economicVitality,
+              previous: previousData.economicVitality,
+            },
+            {
+              key: "population" as const,
+              current: input.vitalityScores.populationWellbeing,
+              previous: previousData.populationWellbeing,
+            },
+            {
+              key: "diplomatic" as const,
+              current: input.vitalityScores.diplomaticStanding,
+              previous: previousData.diplomaticStanding,
+            },
+            {
+              key: "governmental" as const,
+              current: input.vitalityScores.governmentalEfficiency,
+              previous: previousData.governmentalEfficiency,
+            },
+            {
+              key: "overall" as const,
+              current: input.vitalityScores.overallScore,
+              previous: overallPrevious,
+            },
           ];
 
           for (const dimension of dimensions) {
@@ -588,42 +654,47 @@ export const myCountryRouter = createTRPCRouter({
                   threshold: 10,
                 });
               } catch (error) {
-                console.error(`[MyCountry] Failed to send notification for ${dimension.key}:`, error);
+                console.error(
+                  `[MyCountry] Failed to send notification for ${dimension.key}:`,
+                  error
+                );
               }
             }
           }
 
           // Critical alert if overall score drops below 40
-          if (input.vitalityScores.overallScore < 40 && (previousData.economicVitality ?? 0) >= 40) {
+          if (
+            input.vitalityScores.overallScore < 40 &&
+            (previousData.economicVitality ?? 0) >= 40
+          ) {
             try {
               await notificationAPI.create({
-                title: '🚨 Critical National Health Alert',
+                title: "🚨 Critical National Health Alert",
                 message: `Overall national health has fallen to ${input.vitalityScores.overallScore.toFixed(1)}. Immediate action recommended.`,
                 userId: ctx.user?.id || null,
                 countryId: input.countryId,
-                category: 'crisis',
-                type: 'error',
-                priority: 'critical',
-                severity: 'urgent',
-                href: '/mycountry/new?tab=vitality',
+                category: "crisis",
+                type: "error",
+                priority: "critical",
+                severity: "urgent",
+                href: "/mycountry/new?tab=vitality",
                 actionable: true,
-                deliveryMethod: 'modal',
+                deliveryMethod: "modal",
               });
             } catch (error) {
-              console.error('[MyCountry] Failed to send critical alert:', error);
+              console.error("[MyCountry] Failed to send critical alert:", error);
             }
           }
         }
 
         return {
           success: true,
-          message: 'Vitality tracking updated',
+          message: "Vitality tracking updated",
           notificationsSent: previousData ? true : false,
         };
-
       } catch (error) {
-        console.error('[MyCountry] Vitality tracking error:', error);
-        throw new Error('Failed to update vitality tracking');
+        console.error("[MyCountry] Vitality tracking error:", error);
+        throw new Error("Failed to update vitality tracking");
       }
     }),
 
@@ -631,16 +702,18 @@ export const myCountryRouter = createTRPCRouter({
    * Get intelligence feed for executive dashboard - Requires country ownership
    */
   getIntelligenceFeed: countryOwnerProcedure
-    .input(z.object({
-      countryId: z.string(),
-      limit: z.number().min(1).max(50).default(20),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        limit: z.number().min(1).max(50).default(20),
+      })
+    )
     .query(async ({ input, ctx }) => {
       // Additional security: Verify the requested country matches user's country
       if (input.countryId !== ctx.user.countryId) {
-        throw new Error('FORBIDDEN: Can only access intelligence for owned country');
+        throw new Error("FORBIDDEN: Can only access intelligence for owned country");
       }
-      
+
       return generateIntelligenceFeed(input.countryId);
     }),
 
@@ -648,9 +721,11 @@ export const myCountryRouter = createTRPCRouter({
    * Get achievements and recognition for the country
    */
   getAchievements: publicProcedure
-    .input(z.object({
-      countryId: z.string(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+      })
+    )
     .query(async ({ input }) => {
       return calculateAchievements(input.countryId);
     }),
@@ -659,9 +734,11 @@ export const myCountryRouter = createTRPCRouter({
    * Get international rankings for the country
    */
   getRankings: publicProcedure
-    .input(z.object({
-      countryId: z.string(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+      })
+    )
     .query(async ({ input }) => {
       return generateRankings(input.countryId);
     }),
@@ -670,9 +747,11 @@ export const myCountryRouter = createTRPCRouter({
    * Get historical milestones for the country
    */
   getMilestones: publicProcedure
-    .input(z.object({
-      countryId: z.string(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+      })
+    )
     .query(async ({ input }) => {
       return generateMilestones(input.countryId);
     }),
@@ -681,38 +760,40 @@ export const myCountryRouter = createTRPCRouter({
    * Get executive actions available for the country - Requires country ownership
    */
   getExecutiveActions: countryOwnerProcedure
-    .input(z.object({
-      countryId: z.string(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+      })
+    )
     .query(async ({ input, ctx }) => {
       // Additional security: Verify the requested country matches user's country
       if (input.countryId !== ctx.user.countryId) {
-        throw new Error('FORBIDDEN: Can only access actions for owned country');
+        throw new Error("FORBIDDEN: Can only access actions for owned country");
       }
 
       // Fetch country data since it's not included in UserWithRole type
       const country = await ctx.db.country.findUnique({
-        where: { id: input.countryId }
+        where: { id: input.countryId },
       });
       if (!country) {
-        throw new Error('FORBIDDEN: Country data not available');
+        throw new Error("FORBIDDEN: Country data not available");
       }
-      
+
       const actions: ExecutiveAction[] = [];
 
       // Economic actions based on country state
       if (country.adjustedGdpGrowth < 0.02) {
         actions.push({
-          id: 'stimulus_package',
-          title: 'Economic Stimulus Package',
-          description: 'Deploy fiscal stimulus to boost economic growth',
-          category: 'economic',
-          urgency: 'high',
+          id: "stimulus_package",
+          title: "Economic Stimulus Package",
+          description: "Deploy fiscal stimulus to boost economic growth",
+          category: "economic",
+          urgency: "high",
           estimatedImpact: {
-            economic: '+2-4% GDP growth',
-            timeframe: '6-12 months'
+            economic: "+2-4% GDP growth",
+            timeframe: "6-12 months",
           },
-          requirements: ['Budget approval', 'Parliamentary consent'],
+          requirements: ["Budget approval", "Parliamentary consent"],
           enabled: true,
         });
       }
@@ -720,27 +801,27 @@ export const myCountryRouter = createTRPCRouter({
       // Population actions
       if (country.populationGrowthRate < 0.01) {
         actions.push({
-          id: 'population_incentives',
-          title: 'Population Growth Incentives',
-          description: 'Implement policies to encourage population growth',
-          category: 'social',
-          urgency: 'medium',
+          id: "population_incentives",
+          title: "Population Growth Incentives",
+          description: "Implement policies to encourage population growth",
+          category: "social",
+          urgency: "medium",
           estimatedImpact: {
-            social: 'Increased birth rate',
-            timeframe: '2-5 years'
+            social: "Increased birth rate",
+            timeframe: "2-5 years",
           },
-          requirements: ['Social ministry approval'],
+          requirements: ["Social ministry approval"],
           enabled: true,
         });
       }
 
-      // Transform legacy actions to proper ExecutiveAction interfaces  
-      return actions.map(action => ({
+      // Transform legacy actions to proper ExecutiveAction interfaces
+      return actions.map((action) => ({
         ...action,
-        type: 'executive' as const,
+        type: "executive" as const,
         priority: action.urgency as any,
         createdAt: Date.now(),
-        updatedAt: Date.now()
+        updatedAt: Date.now(),
       }));
     }),
 
@@ -748,65 +829,66 @@ export const myCountryRouter = createTRPCRouter({
    * Execute an executive action - Maximum security with audit logging
    */
   executeAction: executiveProcedure
-    .input(z.object({
-      countryId: z.string().min(1),
-      actionId: z.string().min(1).max(50),
-      parameters: z.record(z.string(), z.union([
-        z.string(),
-        z.number(),
-        z.boolean(),
-        z.null(),
-        z.array(z.string()),
-      ])).optional(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string().min(1),
+        actionId: z.string().min(1).max(50),
+        parameters: z
+          .record(
+            z.string(),
+            z.union([z.string(), z.number(), z.boolean(), z.null(), z.array(z.string())])
+          )
+          .optional(),
+      })
+    )
     .mutation(async ({ input, ctx }) => {
       // Additional security: Verify the requested country matches user's country
       if (input.countryId !== ctx.user.countryId) {
-        throw new Error('FORBIDDEN: Can only execute actions for owned country');
+        throw new Error("FORBIDDEN: Can only execute actions for owned country");
       }
 
       // Validate action exists and is allowed with detailed action definitions
       const allowedActions = {
-        'stimulus_package': { 
-          name: 'Economic Stimulus Package',
-          category: 'economic',
-          requires: ['budget_approval'],
-          impact: 'gdp_boost'
+        stimulus_package: {
+          name: "Economic Stimulus Package",
+          category: "economic",
+          requires: ["budget_approval"],
+          impact: "gdp_boost",
         },
-        'population_incentives': { 
-          name: 'Population Growth Incentives',
-          category: 'social',
-          requires: ['ministry_approval'],
-          impact: 'population_growth'
+        population_incentives: {
+          name: "Population Growth Incentives",
+          category: "social",
+          requires: ["ministry_approval"],
+          impact: "population_growth",
         },
-        'tax_policy': { 
-          name: 'Tax Policy Reform',
-          category: 'economic',
-          requires: ['legislative_approval'],
-          impact: 'economic_efficiency'
+        tax_policy: {
+          name: "Tax Policy Reform",
+          category: "economic",
+          requires: ["legislative_approval"],
+          impact: "economic_efficiency",
         },
-        'diplomatic_mission': { 
-          name: 'Diplomatic Mission',
-          category: 'diplomatic',
-          requires: ['foreign_ministry'],
-          impact: 'international_relations'
+        diplomatic_mission: {
+          name: "Diplomatic Mission",
+          category: "diplomatic",
+          requires: ["foreign_ministry"],
+          impact: "international_relations",
         },
-        'emergency_response': { 
-          name: 'Emergency Response Protocol',
-          category: 'governance',
-          requires: ['executive_authority'],
-          impact: 'crisis_management'
+        emergency_response: {
+          name: "Emergency Response Protocol",
+          category: "governance",
+          requires: ["executive_authority"],
+          impact: "crisis_management",
         },
-        'budget_allocation': { 
-          name: 'Budget Reallocation',
-          category: 'economic',
-          requires: ['treasury_approval'],
-          impact: 'fiscal_optimization'
-        }
+        budget_allocation: {
+          name: "Budget Reallocation",
+          category: "economic",
+          requires: ["treasury_approval"],
+          impact: "fiscal_optimization",
+        },
       };
 
       if (!allowedActions[input.actionId as keyof typeof allowedActions]) {
-        throw new Error('FORBIDDEN: Invalid or unauthorized action');
+        throw new Error("FORBIDDEN: Invalid or unauthorized action");
       }
 
       const action = allowedActions[input.actionId as keyof typeof allowedActions];
@@ -815,13 +897,13 @@ export const myCountryRouter = createTRPCRouter({
       let sanitizedParameters: Record<string, any> = {};
       if (input.parameters) {
         // Only allow specific parameter types and sanitize values
-        const allowedParams = ['amount', 'duration', 'target', 'scope', 'priority'];
+        const allowedParams = ["amount", "duration", "target", "scope", "priority"];
         for (const [key, value] of Object.entries(input.parameters)) {
           if (allowedParams.includes(key) && value !== null && value !== undefined) {
             // Sanitize parameter values
-            if (typeof value === 'string') {
+            if (typeof value === "string") {
               sanitizedParameters[key] = value.slice(0, 100); // Limit string length
-            } else if (typeof value === 'number' && !isNaN(value)) {
+            } else if (typeof value === "number" && !isNaN(value)) {
               sanitizedParameters[key] = Math.max(0, Math.min(1000000, value)); // Clamp numbers
             }
           }
@@ -834,11 +916,11 @@ export const myCountryRouter = createTRPCRouter({
           data: {
             countryId: input.countryId,
             ixTimeTimestamp: new Date(IxTime.getCurrentIxTime() * 1000),
-            inputType: 'executive_action',
+            inputType: "executive_action",
             value: 1.0,
             description: `Executive Action: ${action.name} (${input.actionId}) - Category: ${action.category}`,
-            createdBy: ctx.user?.id || 'system',
-          }
+            createdBy: ctx.user?.id || "system",
+          },
         });
 
         // Clear relevant caches to force fresh data
@@ -848,7 +930,7 @@ export const myCountryRouter = createTRPCRouter({
           `rankings_${input.countryId}`,
           `summary_${input.countryId}`,
         ];
-        cacheKeys.forEach(key => myCountryCache.delete(key));
+        cacheKeys.forEach((key) => myCountryCache.delete(key));
 
         // Return success with action details
         return {
@@ -862,10 +944,9 @@ export const myCountryRouter = createTRPCRouter({
           dmInputId: dmInput.id,
           parameters: sanitizedParameters,
         };
-
       } catch (error) {
-        console.error('[MyCountry Execute Action] Database error:', error);
-        throw new Error('INTERNAL_ERROR: Failed to execute action - please try again');
+        console.error("[MyCountry Execute Action] Database error:", error);
+        throw new Error("INTERNAL_ERROR: Failed to execute action - please try again");
       }
     }),
 
@@ -873,9 +954,11 @@ export const myCountryRouter = createTRPCRouter({
    * Get summary statistics for national overview
    */
   getNationalSummary: publicProcedure
-    .input(z.object({
-      countryId: z.string(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+      })
+    )
     .query(async ({ input }) => {
       const cacheKey = `summary_${input.countryId}`;
       const cached = getMyCountryCache(cacheKey);
@@ -887,7 +970,7 @@ export const myCountryRouter = createTRPCRouter({
         });
 
         if (!country) {
-          throw new Error('Country not found');
+          throw new Error("Country not found");
         }
 
         const vitalityScores = calculateVitalityScores(country as any);
@@ -913,10 +996,9 @@ export const myCountryRouter = createTRPCRouter({
 
         setMyCountryCache(cacheKey, summary, 180000); // Cache for 3 minutes
         return summary;
-
       } catch (error) {
-        console.error('[MyCountry Summary] Error:', error);
-        throw new Error('Failed to get national summary');
+        console.error("[MyCountry Summary] Error:", error);
+        throw new Error("Failed to get national summary");
       }
     }),
 });

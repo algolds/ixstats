@@ -1,6 +1,6 @@
 // src/app/api/ixtime/current/route.ts
-import { NextResponse } from 'next/server';
-import { IxTime } from '~/lib/ixtime';
+import { NextResponse } from "next/server";
+import { IxTime } from "~/lib/ixtime";
 
 export async function GET() {
   try {
@@ -8,7 +8,7 @@ export async function GET() {
     const currentIxTime = IxTime.getCurrentIxTime();
     const multiplier = IxTime.getTimeMultiplier();
     const status = await IxTime.getStatus();
-    
+
     return NextResponse.json({
       ixTimeTimestamp: currentIxTime,
       ixTimeFormatted: IxTime.formatIxTime(currentIxTime, true),
@@ -16,13 +16,10 @@ export async function GET() {
       isPaused: IxTime.isPaused(),
       gameYear: IxTime.getCurrentGameYear(currentIxTime),
       gameTimeDescription: IxTime.getGameTimeDescription(currentIxTime),
-      status: status
+      status: status,
     });
   } catch (error) {
-    console.error('Error getting current IxTime:', error);
-    return NextResponse.json(
-      { error: 'Failed to get current IxTime' },
-      { status: 500 }
-    );
+    console.error("Error getting current IxTime:", error);
+    return NextResponse.json({ error: "Failed to get current IxTime" }, { status: 500 });
   }
 }

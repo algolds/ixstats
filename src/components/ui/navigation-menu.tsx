@@ -7,20 +7,11 @@ import { ChevronDownIcon } from "lucide-react";
 
 import { cn } from "~/lib/utils";
 
-interface NavigationMenuProps
-  extends React.ComponentProps<typeof NavigationMenuPrimitive.Root> {
-  contentProps?: Omit<
-    React.ComponentProps<typeof NavigationMenuPrimitive.Positioner>,
-    "render"
-  >;
+interface NavigationMenuProps extends React.ComponentProps<typeof NavigationMenuPrimitive.Root> {
+  contentProps?: Omit<React.ComponentProps<typeof NavigationMenuPrimitive.Positioner>, "render">;
 }
 
-function NavigationMenu({
-  className,
-  children,
-  contentProps,
-  ...props
-}: NavigationMenuProps) {
+function NavigationMenu({ className, children, contentProps, ...props }: NavigationMenuProps) {
   return (
     <NavigationMenuPrimitive.Root
       data-slot="navigation-menu"
@@ -43,10 +34,7 @@ function NavigationMenuList({
   return (
     <NavigationMenuPrimitive.List
       data-slot="navigation-menu-list"
-      className={cn(
-        "flex flex-1 list-none items-center justify-center gap-1",
-        className
-      )}
+      className={cn("flex flex-1 list-none items-center justify-center gap-1", className)}
       {...props}
     />
   );
@@ -140,31 +128,18 @@ function NavigationMenuLink({
 function NavigationMenuBackdrop({
   ...props
 }: React.ComponentProps<typeof NavigationMenuPrimitive.Backdrop>) {
-  return (
-    <NavigationMenuPrimitive.Backdrop
-      data-slot="navigation-menu-backdrop"
-      {...props}
-    />
-  );
+  return <NavigationMenuPrimitive.Backdrop data-slot="navigation-menu-backdrop" {...props} />;
 }
 
 function NavigationMenuPortal({
   ...props
 }: React.ComponentProps<typeof NavigationMenuPrimitive.Portal>) {
-  return (
-    <NavigationMenuPrimitive.Portal
-      data-slot="navigation-menu-portal"
-      {...props}
-    />
-  );
+  return <NavigationMenuPrimitive.Portal data-slot="navigation-menu-portal" {...props} />;
 }
 
 interface NavigationMenuViewportProps
   extends React.ComponentProps<typeof NavigationMenuPrimitive.Viewport> {
-  contentProps?: Omit<
-    React.ComponentProps<typeof NavigationMenuPrimitive.Positioner>,
-    "render"
-  >;
+  contentProps?: Omit<React.ComponentProps<typeof NavigationMenuPrimitive.Positioner>, "render">;
 }
 
 function NavigationMenuViewport({
@@ -203,10 +178,7 @@ function NavigationMenuViewport({
         >
           <NavigationMenuPrimitive.Viewport
             data-slot="navigation-menu-viewport"
-            className={cn(
-              "relative h-full w-full overflow-hidden",
-              viewportClassName
-            )}
+            className={cn("relative h-full w-full overflow-hidden", viewportClassName)}
             {...props}
           >
             {children}

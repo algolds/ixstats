@@ -2,7 +2,7 @@
 // Internal stability calculation formulas
 // Converts economic, demographic, and policy data into security metrics
 
-import type { Country } from '@prisma/client';
+import type { Country } from "@prisma/client";
 
 // ====================================
 // TYPE DEFINITIONS
@@ -79,7 +79,7 @@ export interface StabilityMetrics {
   fearOfCrime: number; // 0-100 percentage
 
   // Trend
-  stabilityTrend: 'improving' | 'stable' | 'declining' | 'critical';
+  stabilityTrend: "improving" | "stable" | "declining" | "critical";
 }
 
 // ====================================
@@ -115,22 +115,15 @@ export function calculateCrimeRate(
 
   // Calculate base rates per 100k population
   const baseCrimeRate =
-    unemploymentFactor +
-    inequalityFactor +
-    povertyFactor +
-    urbanFactor +
-    policingFactor;
+    unemploymentFactor + inequalityFactor + povertyFactor + urbanFactor + policingFactor;
 
   // Violent crime is more influenced by youth unemployment and poverty
-  const violentCrimeRate = Math.max(
-    1,
-    (baseCrimeRate * 0.3) + youthFactor + (povertyFactor * 0.5)
-  );
+  const violentCrimeRate = Math.max(1, baseCrimeRate * 0.3 + youthFactor + povertyFactor * 0.5);
 
   // Property crime is more influenced by inequality and economic conditions
   const propertyCrimeRate = Math.max(
     5,
-    (baseCrimeRate * 0.7) + inequalityFactor + (economic.inflationRate * 0.3)
+    baseCrimeRate * 0.7 + inequalityFactor + economic.inflationRate * 0.3
   );
 
   return {
@@ -161,10 +154,7 @@ export function calculateOrganizedCrime(
   const desperationFactor = (economic.unemploymentRate + economic.povertyRate) * 0.2;
 
   const organizedCrimeLevel =
-    corruptionFactor +
-    stabilityFactor +
-    institutionsFactor +
-    desperationFactor;
+    corruptionFactor + stabilityFactor + institutionsFactor + desperationFactor;
 
   return Math.max(0, Math.min(100, organizedCrimeLevel));
 }
@@ -243,11 +233,7 @@ export function calculateEthnicTension(
   // Political manipulation can inflame tensions
   const polarizationFactor = political.politicalPolarization * 0.2;
 
-  const tension =
-    diversityFactor +
-    scarcityFactor +
-    inequalityFactor +
-    polarizationFactor;
+  const tension = diversityFactor + scarcityFactor + inequalityFactor + polarizationFactor;
 
   return Math.max(0, Math.min(100, tension));
 }
@@ -269,18 +255,14 @@ export function calculateProtestFrequency(
 
   // Recent unpopular policies trigger protests
   const policyImpact = recentPolicies
-    .filter(p => p.timeSincePassed < 90) // Last 3 months
+    .filter((p) => p.timeSincePassed < 90) // Last 3 months
     .reduce((sum, p) => sum + Math.max(0, -p.popularityImpact) * 0.1, 0);
 
   // Democracy allows for more protests (not necessarily bad)
   const democracyFactor = (political.democracyIndex / 100) * 10;
 
   const frequency =
-    basePoliticalFactor +
-    unemploymentFactor +
-    inequalityFactor +
-    policyImpact +
-    democracyFactor;
+    basePoliticalFactor + unemploymentFactor + inequalityFactor + policyImpact + democracyFactor;
 
   return Math.max(0, Math.round(frequency));
 }
@@ -310,11 +292,7 @@ export function calculateRiotRisk(
   const protestFactor = Math.min(20, political.protestFrequency * 0.5);
 
   const riotRisk =
-    polarizationFactor +
-    desperationFactor +
-    crimeFactor +
-    policingFactor +
-    protestFactor;
+    polarizationFactor + desperationFactor + crimeFactor + policingFactor + protestFactor;
 
   return Math.max(0, Math.min(100, riotRisk));
 }
@@ -398,11 +376,7 @@ export function calculateFearOfCrime(
   // Urban areas have higher fear
   const urbanFactor = (demographic.urbanizationRate / 100) * 10;
 
-  const fear =
-    crimeFactor +
-    violentFactor +
-    policingFactor +
-    urbanFactor;
+  const fear = crimeFactor + violentFactor + policingFactor + urbanFactor;
 
   return Math.max(5, Math.min(85, fear));
 }
@@ -446,7 +420,11 @@ export function calculateStabilityMetrics(
 
   // Calculate trust metrics
   const trustInGovernment = calculateTrustInGovernment(political, government, economic);
-  const trustInPolice = calculateTrustInPolice(policingEffectiveness, government, crimeData.overall);
+  const trustInPolice = calculateTrustInPolice(
+    policingEffectiveness,
+    government,
+    crimeData.overall
+  );
   const fearOfCrime = calculateFearOfCrime(
     crimeData.overall,
     crimeData.violent,
@@ -460,23 +438,23 @@ export function calculateStabilityMetrics(
     Math.min(
       100,
       socialCohesion * 0.25 + // Social cohesion is key
-      trustInGovernment * 0.2 + // Trust in institutions
-      (100 - crimeData.overall) * 0.2 + // Low crime
-      (100 - ethnicTension) * 0.15 + // Low tensions
-      (100 - riotRisk) * 0.1 + // Low riot risk
-      policingEffectiveness * 0.1 // Effective security
+        trustInGovernment * 0.2 + // Trust in institutions
+        (100 - crimeData.overall) * 0.2 + // Low crime
+        (100 - ethnicTension) * 0.15 + // Low tensions
+        (100 - riotRisk) * 0.1 + // Low riot risk
+        policingEffectiveness * 0.1 // Effective security
     )
   );
 
   // Determine stability trend
-  let stabilityTrend: 'improving' | 'stable' | 'declining' | 'critical' = 'stable';
+  let stabilityTrend: "improving" | "stable" | "declining" | "critical" = "stable";
 
   if (stabilityScore >= 70 && economic.gdpGrowth > 2) {
-    stabilityTrend = 'improving';
+    stabilityTrend = "improving";
   } else if (stabilityScore < 40 || riotRisk > 60) {
-    stabilityTrend = 'critical';
+    stabilityTrend = "critical";
   } else if (economic.gdpGrowth < 0 || political.politicalPolarization > 70) {
-    stabilityTrend = 'declining';
+    stabilityTrend = "declining";
   }
 
   return {

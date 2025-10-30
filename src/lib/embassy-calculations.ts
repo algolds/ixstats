@@ -71,11 +71,16 @@ export function calculateEmbassyEfficiency(embassy: EmbassyGameMode): number {
  */
 function getSecurityBonus(securityLevel: string): number {
   switch (securityLevel) {
-    case 'MAXIMUM': return 15;
-    case 'HIGH': return 10;
-    case 'MEDIUM': return 5;
-    case 'LOW': return 0;
-    default: return 0;
+    case "MAXIMUM":
+      return 15;
+    case "HIGH":
+      return 10;
+    case "MEDIUM":
+      return 5;
+    case "LOW":
+      return 0;
+    default:
+      return 0;
   }
 }
 
@@ -84,11 +89,16 @@ function getSecurityBonus(securityLevel: string): number {
  */
 function getStatusPenalty(status: string): number {
   switch (status) {
-    case 'SUSPENDED': return 50;
-    case 'MAINTENANCE': return 25;
-    case 'CLOSED': return 100;
-    case 'ACTIVE': return 0;
-    default: return 0;
+    case "SUSPENDED":
+      return 50;
+    case "MAINTENANCE":
+      return 25;
+    case "CLOSED":
+      return 100;
+    case "ACTIVE":
+      return 0;
+    default:
+      return 0;
   }
 }
 

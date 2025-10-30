@@ -41,7 +41,7 @@ interface EmbassyWithSynergies {
   countrySlug: string | null;
   status: string;
   strength: number;
-  role: 'host' | 'guest';
+  role: "host" | "guest";
   ambassadorName?: string | null;
   location?: string | null;
   staffCount?: number | null;
@@ -84,36 +84,70 @@ function calculateAtomicSynergies(
 
   // Group components by category for synergy calculation
   const componentCategories = {
-    "Power Structure": ["CENTRALIZED_POWER", "FEDERAL_SYSTEM", "CONFEDERATE_SYSTEM", "UNITARY_SYSTEM"],
-    "Decision Making": ["DEMOCRATIC_PROCESS", "AUTOCRATIC_PROCESS", "TECHNOCRATIC_PROCESS", "CONSENSUS_PROCESS", "OLIGARCHIC_PROCESS"],
-    "Legitimacy": ["ELECTORAL_LEGITIMACY", "TRADITIONAL_LEGITIMACY", "PERFORMANCE_LEGITIMACY", "CHARISMATIC_LEGITIMACY", "RELIGIOUS_LEGITIMACY"],
-    "Institutions": ["PROFESSIONAL_BUREAUCRACY", "MILITARY_ADMINISTRATION", "INDEPENDENT_JUDICIARY", "PARTISAN_INSTITUTIONS", "TECHNOCRATIC_AGENCIES"],
-    "Control": ["RULE_OF_LAW", "SURVEILLANCE_SYSTEM", "PROPAGANDA_APPARATUS", "SECURITY_FORCES", "CIVIL_SOCIETY"]
+    "Power Structure": [
+      "CENTRALIZED_POWER",
+      "FEDERAL_SYSTEM",
+      "CONFEDERATE_SYSTEM",
+      "UNITARY_SYSTEM",
+    ],
+    "Decision Making": [
+      "DEMOCRATIC_PROCESS",
+      "AUTOCRATIC_PROCESS",
+      "TECHNOCRATIC_PROCESS",
+      "CONSENSUS_PROCESS",
+      "OLIGARCHIC_PROCESS",
+    ],
+    Legitimacy: [
+      "ELECTORAL_LEGITIMACY",
+      "TRADITIONAL_LEGITIMACY",
+      "PERFORMANCE_LEGITIMACY",
+      "CHARISMATIC_LEGITIMACY",
+      "RELIGIOUS_LEGITIMACY",
+    ],
+    Institutions: [
+      "PROFESSIONAL_BUREAUCRACY",
+      "MILITARY_ADMINISTRATION",
+      "INDEPENDENT_JUDICIARY",
+      "PARTISAN_INSTITUTIONS",
+      "TECHNOCRATIC_AGENCIES",
+    ],
+    Control: [
+      "RULE_OF_LAW",
+      "SURVEILLANCE_SYSTEM",
+      "PROPAGANDA_APPARATUS",
+      "SECURITY_FORCES",
+      "CIVIL_SOCIETY",
+    ],
   };
 
   // Calculate synergies for each category
   Object.entries(componentCategories).forEach(([categoryName, categoryComponents]) => {
-    const myMatchingComponents = myComponents.filter(c =>
+    const myMatchingComponents = myComponents.filter((c) =>
       categoryComponents.includes(c.componentType)
     );
 
     if (myMatchingComponents.length > 0) {
       // Calculate match score based on component effectiveness and embassy strength
-      const avgEffectiveness = myMatchingComponents.reduce((sum, c) => sum + c.effectivenessScore, 0) / myMatchingComponents.length;
+      const avgEffectiveness =
+        myMatchingComponents.reduce((sum, c) => sum + c.effectivenessScore, 0) /
+        myMatchingComponents.length;
       const matchScore = Math.min(100, (avgEffectiveness + embassy.strength) / 2);
 
       if (matchScore > 30) {
         synergies.push({
           category: categoryName,
           matchScore,
-          sharedComponents: myMatchingComponents.map(c =>
-            c.componentType.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
+          sharedComponents: myMatchingComponents.map((c) =>
+            c.componentType
+              .replace(/_/g, " ")
+              .toLowerCase()
+              .replace(/\b\w/g, (l) => l.toUpperCase())
           ),
           benefits: {
             economic: matchScore * 0.04,
             diplomatic: matchScore * 0.06,
-            cultural: matchScore * 0.03
-          }
+            cultural: matchScore * 0.03,
+          },
         });
       }
     }
@@ -128,7 +162,7 @@ export function useEmbassyNetworkData(
 ): UseEmbassyNetworkDataReturn {
   // Fetch embassies
   const { data: embassies, isLoading } = api.diplomatic.getEmbassies.useQuery({
-    countryId
+    countryId,
   });
 
   // Fetch atomic government components for synergy calculation (only if owner)
@@ -151,13 +185,13 @@ export function useEmbassyNetworkData(
         totalSynergyScore: synergies.reduce((sum, s) => sum + s.matchScore, 0),
         economicBonus: synergies.reduce((sum, s) => sum + s.benefits.economic, 0),
         diplomaticBonus: synergies.reduce((sum, s) => sum + s.benefits.diplomatic, 0),
-        culturalBonus: synergies.reduce((sum, s) => sum + s.benefits.cultural, 0)
+        culturalBonus: synergies.reduce((sum, s) => sum + s.benefits.cultural, 0),
       };
     });
   }, [embassies, myComponents]);
 
   return {
     embassiesWithSynergies,
-    isLoading
+    isLoading,
   };
 }

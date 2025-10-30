@@ -6,11 +6,11 @@
  * @module VolatilityMetricsCard
  */
 
-import React from 'react';
-import { Activity } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import type { VolatilityMetric } from '~/lib/analytics-data-transformers';
+import React from "react";
+import { Activity } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import type { VolatilityMetric } from "~/lib/analytics-data-transformers";
 
 interface VolatilityMetricsCardProps {
   metrics: VolatilityMetric[];
@@ -27,13 +27,16 @@ export const VolatilityMetricsCard = React.memo<VolatilityMetricsCardProps>(({ m
         <CardDescription>Standard deviation and variance metrics</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {metrics.map((metric) => (
-            <div key={metric.label} className="p-4 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-900/50">
-              <p className="text-sm text-muted-foreground mb-2">{metric.label}</p>
+            <div
+              key={metric.label}
+              className="rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 p-4 dark:from-gray-800/50 dark:to-gray-900/50"
+            >
+              <p className="text-muted-foreground mb-2 text-sm">{metric.label}</p>
               <div className="flex items-center justify-between">
                 <p className="text-2xl font-bold">{(metric.value * 100).toFixed(2)}%</p>
-                <Badge variant={metric.status === 'low' ? 'default' : 'secondary'}>
+                <Badge variant={metric.status === "low" ? "default" : "secondary"}>
                   {metric.status}
                 </Badge>
               </div>
@@ -45,4 +48,4 @@ export const VolatilityMetricsCard = React.memo<VolatilityMetricsCardProps>(({ m
   );
 });
 
-VolatilityMetricsCard.displayName = 'VolatilityMetricsCard';
+VolatilityMetricsCard.displayName = "VolatilityMetricsCard";

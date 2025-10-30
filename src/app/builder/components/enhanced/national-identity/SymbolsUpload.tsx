@@ -1,7 +1,7 @@
 "use client";
 
-import React from 'react';
-import { CountrySymbolsUploader } from '../../CountrySymbolsUploader';
+import React from "react";
+import { CountrySymbolsUploader } from "../../CountrySymbolsUploader";
 
 interface SymbolsUploadProps {
   flagUrl: string;

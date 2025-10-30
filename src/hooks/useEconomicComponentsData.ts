@@ -15,13 +15,13 @@
  * @module useEconomicComponentsData
  */
 
-import { useMemo } from 'react';
-import { api } from '~/trpc/react';
+import { useMemo } from "react";
+import { api } from "~/trpc/react";
 import {
   ATOMIC_ECONOMIC_COMPONENTS,
   type AtomicEconomicComponent,
-  type EconomicComponentType
-} from '~/lib/atomic-economic-data';
+  type EconomicComponentType,
+} from "~/lib/atomic-economic-data";
 
 /**
  * useEconomicComponentsData - Fetch economic component reference data
@@ -73,11 +73,15 @@ import {
  */
 export function useEconomicComponentsData(category?: string) {
   // ==================== DATABASE QUERY ====================
-  const { data: dbResponse, isLoading, error } = api.economicComponents.getAllComponents.useQuery(
+  const {
+    data: dbResponse,
+    isLoading,
+    error,
+  } = api.economicComponents.getAllComponents.useQuery(
     { category, isActive: true },
     {
       staleTime: 10 * 60 * 1000, // 10-minute cache
-      enabled: true
+      enabled: true,
     }
   );
 
@@ -89,8 +93,8 @@ export function useEconomicComponentsData(category?: string) {
   // Track component selection for analytics
   const { mutate: incrementUsage } = api.economicComponents.incrementComponentUsage.useMutation({
     onError: (err) => {
-      console.warn('[useEconomicComponentsData] Failed to track component usage:', err);
-    }
+      console.warn("[useEconomicComponentsData] Failed to track component usage:", err);
+    },
   });
 
   // ==================== PROCESS COMPONENTS WITH FALLBACK ====================
@@ -103,18 +107,20 @@ export function useEconomicComponentsData(category?: string) {
 
       // Apply category filter if specified (double-check since API filters too)
       const filtered = category
-        ? transformed.filter(comp => comp.category === category)
+        ? transformed.filter((comp) => comp.category === category)
         : transformed;
 
       return {
         components: filtered,
-        isUsingFallback: false
+        isUsingFallback: false,
       };
     }
 
     // Fallback to hardcoded data
     if (!isLoading) {
-      console.warn('[useEconomicComponentsData] Database empty or unavailable, falling back to hardcoded components');
+      console.warn(
+        "[useEconomicComponentsData] Database empty or unavailable, falling back to hardcoded components"
+      );
     }
 
     // Convert ATOMIC_ECONOMIC_COMPONENTS to array
@@ -124,12 +130,12 @@ export function useEconomicComponentsData(category?: string) {
 
     // Apply category filter if specified
     const filtered = category
-      ? fallbackComponents.filter(comp => comp.category === category)
+      ? fallbackComponents.filter((comp) => comp.category === category)
       : fallbackComponents;
 
     return {
       components: filtered,
-      isUsingFallback: true
+      isUsingFallback: true,
     };
   }, [dbComponents, category, isLoading, isUsingFallbackFromAPI]);
 
@@ -141,7 +147,7 @@ export function useEconomicComponentsData(category?: string) {
     isUsingFallback,
     incrementUsage: (componentType: EconomicComponentType) => {
       incrementUsage({ componentType });
-    }
+    },
   };
 }
 
@@ -159,7 +165,7 @@ function transformDatabaseComponent(dbComp: any): AtomicEconomicComponent {
     id: dbComp.id || dbComp.type.toLowerCase(),
     type: dbComp.type,
     name: dbComp.name,
-    description: dbComp.description || '',
+    description: dbComp.description || "",
     effectiveness: dbComp.effectiveness || 75,
     synergies: dbComp.synergies || [],
     conflicts: dbComp.conflicts || [],
@@ -168,26 +174,26 @@ function transformDatabaseComponent(dbComp: any): AtomicEconomicComponent {
     taxImpact: dbComp.taxImpact || {
       optimalCorporateRate: 20,
       optimalIncomeRate: 25,
-      revenueEfficiency: 0.75
+      revenueEfficiency: 0.75,
     },
     sectorImpact: dbComp.sectorImpact || {},
     employmentImpact: dbComp.employmentImpact || {
       unemploymentModifier: 0,
       participationModifier: 1,
-      wageGrowthModifier: 1
+      wageGrowthModifier: 1,
     },
     implementationCost: dbComp.implementationCost || 100000,
     maintenanceCost: dbComp.maintenanceCost || 50000,
     requiredCapacity: dbComp.requiredCapacity || 75,
-    category: dbComp.category || 'Economic Model',
+    category: dbComp.category || "Economic Model",
     icon: () => null, // Placeholder - icons should be mapped from string to component in a future update
-    color: dbComp.color || 'emerald',
+    color: dbComp.color || "emerald",
     metadata: dbComp.metadata || {
-      complexity: 'Medium' as const,
-      timeToImplement: '2-3 years',
+      complexity: "Medium" as const,
+      timeToImplement: "2-3 years",
       staffRequired: 150,
-      technologyRequired: true
-    }
+      technologyRequired: true,
+    },
   };
 }
 
@@ -199,7 +205,7 @@ export function useEconomicComponentCategories() {
 
   const categories = useMemo(() => {
     const categorySet = new Set<string>();
-    components.forEach(comp => {
+    components.forEach((comp) => {
       if (comp.category) {
         categorySet.add(comp.category);
       }
@@ -217,12 +223,12 @@ export function useEconomicComponent(componentType: EconomicComponentType) {
   const { components, isLoading, error } = useEconomicComponentsData();
 
   const component = useMemo(() => {
-    return components.find(comp => comp.type === componentType);
+    return components.find((comp) => comp.type === componentType);
   }, [components, componentType]);
 
   return {
     component,
     isLoading,
-    error
+    error,
   };
 }

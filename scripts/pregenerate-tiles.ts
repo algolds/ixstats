@@ -31,14 +31,15 @@ const LAYERS = (process.env.LAYERS || "political").split(",");
 
 // Parse command line arguments
 const args = process.argv.slice(2);
-const maxZoom = args.find((arg) => arg.startsWith("--zoom-max="))
-  ?.split("=")[1]
+const maxZoom = args.find((arg) => arg.startsWith("--zoom-max="))?.split("=")[1]
   ? parseInt(args.find((arg) => arg.startsWith("--zoom-max="))!.split("=")[1]!)
   : MAX_ZOOM;
 
-const layers = args.find((arg) => arg.startsWith("--layers="))
-  ?.split("=")[1]
-  ?.split(",") || LAYERS;
+const layers =
+  args
+    .find((arg) => arg.startsWith("--layers="))
+    ?.split("=")[1]
+    ?.split(",") || LAYERS;
 
 interface TileCoordinate {
   z: number;
@@ -179,7 +180,12 @@ async function processTileBatch(
 /**
  * Display progress bar
  */
-function displayProgress(current: number, total: number, layer: string, stats: GenerationStats): void {
+function displayProgress(
+  current: number,
+  total: number,
+  layer: string,
+  stats: GenerationStats
+): void {
   const percentage = ((current / total) * 100).toFixed(1);
   const elapsed = Date.now() - stats.startTime;
   const rate = current / (elapsed / 1000);
@@ -190,13 +196,13 @@ function displayProgress(current: number, total: number, layer: string, stats: G
 
   process.stdout.write(
     `\r[${bar}${spaces}] ${percentage}% | ` +
-    `${current}/${total} tiles | ` +
-    `${rate.toFixed(1)} tiles/sec | ` +
-    `ETA: ${Math.floor(remaining / 60)}m ${Math.floor(remaining % 60)}s | ` +
-    `Layer: ${layer} | ` +
-    `Cached: ${stats.cachedTiles} | ` +
-    `Empty: ${stats.emptyTiles} | ` +
-    `Failed: ${stats.failedTiles}   `
+      `${current}/${total} tiles | ` +
+      `${rate.toFixed(1)} tiles/sec | ` +
+      `ETA: ${Math.floor(remaining / 60)}m ${Math.floor(remaining % 60)}s | ` +
+      `Layer: ${layer} | ` +
+      `Cached: ${stats.cachedTiles} | ` +
+      `Empty: ${stats.emptyTiles} | ` +
+      `Failed: ${stats.failedTiles}   `
   );
 }
 

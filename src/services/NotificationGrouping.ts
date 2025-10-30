@@ -13,8 +13,8 @@ import type {
   NotificationGroup,
   NotificationBatch,
   DeliveryContext,
-} from '~/types/unified-notifications';
-import type { NotificationCluster } from './EnhancedNotificationPriority';
+} from "~/types/unified-notifications";
+import type { NotificationCluster } from "./EnhancedNotificationPriority";
 
 // Grouping strategy configuration
 export interface GroupingStrategy {
@@ -28,15 +28,15 @@ export interface GroupingStrategy {
 }
 
 // Dimensions for clustering notifications
-export type ClusteringDimension = 
-  | 'category'     // Group by category
-  | 'priority'     // Group by priority
-  | 'source'       // Group by source system
-  | 'user'         // Group by target user
-  | 'temporal'     // Group by time proximity
-  | 'semantic'     // Group by content similarity
-  | 'context'      // Group by user context
-  | 'impact';      // Group by business impact
+export type ClusteringDimension =
+  | "category" // Group by category
+  | "priority" // Group by priority
+  | "source" // Group by source system
+  | "user" // Group by target user
+  | "temporal" // Group by time proximity
+  | "semantic" // Group by content similarity
+  | "context" // Group by user context
+  | "impact"; // Group by business impact
 
 // Batching rules for different scenarios
 export interface BatchingRule {
@@ -48,20 +48,20 @@ export interface BatchingRule {
 }
 
 export interface BatchingCondition {
-  type: 'load' | 'priority' | 'category' | 'time' | 'user_state';
-  operator: 'gt' | 'lt' | 'eq' | 'in' | 'contains';
+  type: "load" | "priority" | "category" | "time" | "user_state";
+  operator: "gt" | "lt" | "eq" | "in" | "contains";
   value: any;
   description: string;
 }
 
 export interface BatchingAction {
-  type: 'batch' | 'delay' | 'promote' | 'suppress' | 'redirect';
+  type: "batch" | "delay" | "promote" | "suppress" | "redirect";
   parameters: Record<string, any>;
   description: string;
 }
 
 export interface BatchingTiming {
-  strategy: 'immediate' | 'fixed_delay' | 'smart_delay' | 'next_window' | 'user_activity';
+  strategy: "immediate" | "fixed_delay" | "smart_delay" | "next_window" | "user_activity";
   delay?: number;
   window?: { start: number; end: number };
   conditions?: string[];
@@ -110,22 +110,14 @@ export class NotificationGrouping {
     preferences: UserNotificationPreferences,
     strategyName?: string
   ): Promise<NotificationCluster[]> {
-    const strategy = this.strategies.get(strategyName || 'adaptive') 
-                  || this.strategies.get('adaptive')!;
+    const strategy =
+      this.strategies.get(strategyName || "adaptive") || this.strategies.get("adaptive")!;
 
     // Apply multi-dimensional clustering
-    const clusters = await this.applyMultiDimensionalClustering(
-      notifications,
-      strategy,
-      context
-    );
+    const clusters = await this.applyMultiDimensionalClustering(notifications, strategy, context);
 
     // Optimize cluster composition
-    const optimizedClusters = await this.optimizeClusterComposition(
-      clusters,
-      context,
-      preferences
-    );
+    const optimizedClusters = await this.optimizeClusterComposition(clusters, context, preferences);
 
     // Apply batching rules
     const batchedClusters = await this.applyBatchingRules(
@@ -158,7 +150,7 @@ export class NotificationGrouping {
 
     for (const cluster of clusters) {
       const batch = await this.analyzeBatchComposition(cluster, userProfile, context);
-      
+
       // Apply smart timing optimization
       batch.optimalDeliveryTime = await this.calculateSmartDeliveryTime(
         batch,
@@ -168,11 +160,7 @@ export class NotificationGrouping {
       );
 
       // Estimate user engagement
-      batch.estimatedEngagement = await this.predictUserEngagement(
-        batch,
-        userProfile,
-        context
-      );
+      batch.estimatedEngagement = await this.predictUserEngagement(batch, userProfile, context);
 
       batches.push(batch);
     }
@@ -211,7 +199,7 @@ export class NotificationGrouping {
         batch.optimalDeliveryTime,
         preferences
       );
-      batch.reasoning.push('Deferred due to notification load balancing');
+      batch.reasoning.push("Deferred due to notification load balancing");
     }
 
     return [...prioritizedBatches, ...deferredBatches];
@@ -221,50 +209,51 @@ export class NotificationGrouping {
 
   private initializeGroupingStrategies() {
     // Adaptive strategy - automatically adjusts based on context
-    this.strategies.set('adaptive', {
-      name: 'Adaptive Clustering',
-      description: 'Automatically adapts clustering based on user context and notification patterns',
-      clustersBy: ['category', 'priority', 'temporal', 'semantic'],
+    this.strategies.set("adaptive", {
+      name: "Adaptive Clustering",
+      description:
+        "Automatically adapts clustering based on user context and notification patterns",
+      clustersBy: ["category", "priority", "temporal", "semantic"],
       maxClusterSize: 5,
       timeWindow: 15 * 60 * 1000, // 15 minutes
       batchingRules: [
         {
           condition: {
-            type: 'load',
-            operator: 'gt',
+            type: "load",
+            operator: "gt",
             value: 5,
-            description: 'High notification load detected'
+            description: "High notification load detected",
           },
           action: {
-            type: 'batch',
+            type: "batch",
             parameters: { aggressive: true },
-            description: 'Aggressively batch similar notifications'
+            description: "Aggressively batch similar notifications",
           },
           timing: {
-            strategy: 'smart_delay',
-            delay: 5 * 60 * 1000 // 5 minutes
+            strategy: "smart_delay",
+            delay: 5 * 60 * 1000, // 5 minutes
           },
           maxDelay: 30 * 60 * 1000, // 30 minutes
-          priority: 8
+          priority: 8,
         },
         {
           condition: {
-            type: 'priority',
-            operator: 'eq',
-            value: 'critical',
-            description: 'Critical priority notification'
+            type: "priority",
+            operator: "eq",
+            value: "critical",
+            description: "Critical priority notification",
           },
           action: {
-            type: 'promote',
+            type: "promote",
             parameters: { bypass_batching: true },
-            description: 'Deliver immediately without batching'
+            description: "Deliver immediately without batching",
           },
           timing: {
-            strategy: 'immediate'
+            strategy: "immediate",
           },
           maxDelay: 0,
-          priority: 10
-        }
+          priority: 10,
+        },
       ],
       deliveryOptimization: {
         respectQuietHours: true,
@@ -272,36 +261,36 @@ export class NotificationGrouping {
         prioritizeEngagement: true,
         adaptToUserBehavior: true,
         minimizeInterruption: true,
-        maximizeAttention: false
-      }
+        maximizeAttention: false,
+      },
     });
 
     // Executive strategy - optimized for executive/admin users
-    this.strategies.set('executive', {
-      name: 'Executive Focus',
-      description: 'Optimized for executive users with focus on strategic notifications',
-      clustersBy: ['category', 'impact', 'priority'],
+    this.strategies.set("executive", {
+      name: "Executive Focus",
+      description: "Optimized for executive users with focus on strategic notifications",
+      clustersBy: ["category", "impact", "priority"],
       maxClusterSize: 3,
       timeWindow: 10 * 60 * 1000, // 10 minutes
       batchingRules: [
         {
           condition: {
-            type: 'category',
-            operator: 'in',
-            value: ['economic', 'diplomatic', 'governance', 'crisis'],
-            description: 'Strategic category notification'
+            type: "category",
+            operator: "in",
+            value: ["economic", "diplomatic", "governance", "crisis"],
+            description: "Strategic category notification",
           },
           action: {
-            type: 'promote',
+            type: "promote",
             parameters: { executive_priority: true },
-            description: 'Promote strategic notifications'
+            description: "Promote strategic notifications",
           },
           timing: {
-            strategy: 'immediate'
+            strategy: "immediate",
           },
           maxDelay: 2 * 60 * 1000, // 2 minutes
-          priority: 9
-        }
+          priority: 9,
+        },
       ],
       deliveryOptimization: {
         respectQuietHours: false,
@@ -309,36 +298,36 @@ export class NotificationGrouping {
         prioritizeEngagement: true,
         adaptToUserBehavior: true,
         minimizeInterruption: false,
-        maximizeAttention: true
-      }
+        maximizeAttention: true,
+      },
     });
 
     // Casual strategy - optimized for general users
-    this.strategies.set('casual', {
-      name: 'Casual User',
-      description: 'Optimized for casual users with focus on minimal interruption',
-      clustersBy: ['category', 'temporal'],
+    this.strategies.set("casual", {
+      name: "Casual User",
+      description: "Optimized for casual users with focus on minimal interruption",
+      clustersBy: ["category", "temporal"],
       maxClusterSize: 8,
       timeWindow: 30 * 60 * 1000, // 30 minutes
       batchingRules: [
         {
           condition: {
-            type: 'user_state',
-            operator: 'eq',
-            value: 'inactive',
-            description: 'User is inactive'
+            type: "user_state",
+            operator: "eq",
+            value: "inactive",
+            description: "User is inactive",
           },
           action: {
-            type: 'delay',
+            type: "delay",
             parameters: { wait_for_activity: true },
-            description: 'Wait for user activity before delivering'
+            description: "Wait for user activity before delivering",
           },
           timing: {
-            strategy: 'user_activity'
+            strategy: "user_activity",
           },
           maxDelay: 2 * 60 * 60 * 1000, // 2 hours
-          priority: 7
-        }
+          priority: 7,
+        },
       ],
       deliveryOptimization: {
         respectQuietHours: true,
@@ -346,8 +335,8 @@ export class NotificationGrouping {
         prioritizeEngagement: false,
         adaptToUserBehavior: true,
         minimizeInterruption: true,
-        maximizeAttention: false
-      }
+        maximizeAttention: false,
+      },
     });
   }
 
@@ -373,17 +362,17 @@ export class NotificationGrouping {
           notifications: [],
           aggregatedScore: 0,
           representativeNotification: notification,
-          batchingStrategy: 'immediate',
-          deliveryWindow: { start: Date.now(), end: Date.now() + strategy.timeWindow }
+          batchingStrategy: "immediate",
+          deliveryWindow: { start: Date.now(), end: Date.now() + strategy.timeWindow },
         });
       }
 
       const cluster = clusters.get(clusterKey)!;
-      
+
       // Check cluster size limit
       if (cluster.notifications.length < strategy.maxClusterSize) {
         cluster.notifications.push(notification);
-        
+
         // Update representative notification
         if (notification.relevanceScore > cluster.representativeNotification.relevanceScore) {
           cluster.representativeNotification = notification;
@@ -398,11 +387,11 @@ export class NotificationGrouping {
           notifications: [notification],
           aggregatedScore: 0,
           representativeNotification: notification,
-          batchingStrategy: 'delayed',
-          deliveryWindow: { 
-            start: Date.now() + (5 * 60 * 1000), 
-            end: Date.now() + strategy.timeWindow + (5 * 60 * 1000)
-          }
+          batchingStrategy: "delayed",
+          deliveryWindow: {
+            start: Date.now() + 5 * 60 * 1000,
+            end: Date.now() + strategy.timeWindow + 5 * 60 * 1000,
+          },
         });
       }
     }
@@ -419,34 +408,34 @@ export class NotificationGrouping {
 
     for (const dimension of dimensions) {
       switch (dimension) {
-        case 'category':
+        case "category":
           keyParts.push(`cat-${notification.category}`);
           break;
-        case 'priority':
+        case "priority":
           keyParts.push(`pri-${notification.priority}`);
           break;
-        case 'source':
+        case "source":
           keyParts.push(`src-${notification.source}`);
           break;
-        case 'temporal':
+        case "temporal":
           const timeSlot = Math.floor(Date.now() / (15 * 60 * 1000)); // 15-minute slots
           keyParts.push(`time-${timeSlot}`);
           break;
-        case 'semantic':
+        case "semantic":
           const semanticGroup = await this.semanticSimilarity.getSemanticGroup(notification);
           keyParts.push(`sem-${semanticGroup}`);
           break;
-        case 'context':
-          keyParts.push(`ctx-${context.isExecutiveMode ? 'exec' : 'normal'}`);
+        case "context":
+          keyParts.push(`ctx-${context.isExecutiveMode ? "exec" : "normal"}`);
           break;
-        case 'impact':
+        case "impact":
           const impactLevel = this.calculateBusinessImpact(notification);
           keyParts.push(`imp-${impactLevel}`);
           break;
       }
     }
 
-    return keyParts.join('|');
+    return keyParts.join("|");
   }
 
   private async optimizeClusterComposition(
@@ -454,18 +443,18 @@ export class NotificationGrouping {
     context: NotificationContext,
     preferences: UserNotificationPreferences
   ): Promise<NotificationCluster[]> {
-    return clusters.map(cluster => {
+    return clusters.map((cluster) => {
       // Calculate cohesion score
       const cohesion = this.calculateClusterCohesion(cluster);
-      
+
       // If cohesion is low, consider splitting
       if (cohesion < 0.6 && cluster.notifications.length > 2) {
         // Would implement cluster splitting logic here
       }
-      
+
       // Calculate aggregated score
       cluster.aggregatedScore = this.calculateAggregatedScore(cluster);
-      
+
       return cluster;
     });
   }
@@ -477,17 +466,17 @@ export class NotificationGrouping {
     const notifications = cluster.notifications;
 
     // Category cohesion (40% weight)
-    const categories = new Set(notifications.map(n => n.category));
+    const categories = new Set(notifications.map((n) => n.category));
     const categoryScore = 1 - (categories.size - 1) / notifications.length;
     cohesionScore += categoryScore * 0.4;
 
     // Priority cohesion (30% weight)
-    const priorities = new Set(notifications.map(n => n.priority));
+    const priorities = new Set(notifications.map((n) => n.priority));
     const priorityScore = 1 - (priorities.size - 1) / notifications.length;
     cohesionScore += priorityScore * 0.3;
 
     // Temporal cohesion (20% weight)
-    const timestamps = notifications.map(n => n.timestamp);
+    const timestamps = notifications.map((n) => n.timestamp);
     const timeSpread = Math.max(...timestamps) - Math.min(...timestamps);
     const maxTimeSpread = 30 * 60 * 1000; // 30 minutes
     const temporalScore = Math.max(0, 1 - timeSpread / maxTimeSpread);
@@ -502,25 +491,25 @@ export class NotificationGrouping {
 
   private calculateSemanticCohesion(notifications: UnifiedNotification[]): number {
     // Simple semantic similarity based on keyword overlap
-    const allKeywords = notifications.flatMap(n => 
+    const allKeywords = notifications.flatMap((n) =>
       `${n.title} ${n.message}`.toLowerCase().split(/\s+/)
     );
-    
+
     const uniqueKeywords = new Set(allKeywords);
     const overlap = (allKeywords.length - uniqueKeywords.size) / allKeywords.length;
-    
+
     return Math.min(1.0, overlap * 2); // Boost the score
   }
 
   private calculateAggregatedScore(cluster: NotificationCluster): number {
-    const avgRelevance = cluster.notifications.reduce(
-      (sum, n) => sum + n.relevanceScore, 0
-    ) / cluster.notifications.length;
-    
+    const avgRelevance =
+      cluster.notifications.reduce((sum, n) => sum + n.relevanceScore, 0) /
+      cluster.notifications.length;
+
     const priorityBonus = this.getPriorityBonus(cluster.priority);
     const cohesion = this.calculateClusterCohesion(cluster);
     const sizeBonus = Math.min(10, cluster.notifications.length * 2);
-    
+
     return avgRelevance * cohesion + priorityBonus + sizeBonus;
   }
 
@@ -529,17 +518,22 @@ export class NotificationGrouping {
     return bonuses[priority] || 5;
   }
 
-  private calculateBusinessImpact(notification: UnifiedNotification): 'low' | 'medium' | 'high' | 'critical' {
-    if (notification.category === 'crisis' || notification.priority === 'critical') {
-      return 'critical';
+  private calculateBusinessImpact(
+    notification: UnifiedNotification
+  ): "low" | "medium" | "high" | "critical" {
+    if (notification.category === "crisis" || notification.priority === "critical") {
+      return "critical";
     }
-    if (['economic', 'diplomatic'].includes(notification.category) && notification.priority === 'high') {
-      return 'high';
+    if (
+      ["economic", "diplomatic"].includes(notification.category) &&
+      notification.priority === "high"
+    ) {
+      return "high";
     }
-    if (notification.priority === 'medium') {
-      return 'medium';
+    if (notification.priority === "medium") {
+      return "medium";
     }
-    return 'low';
+    return "low";
   }
 
   private async applyBatchingRules(
@@ -550,7 +544,7 @@ export class NotificationGrouping {
     // Sort rules by priority
     const sortedRules = rules.sort((a, b) => b.priority - a.priority);
 
-    return clusters.map(cluster => {
+    return clusters.map((cluster) => {
       for (const rule of sortedRules) {
         if (this.evaluateBatchingCondition(rule.condition, cluster, context)) {
           cluster = this.applyBatchingAction(cluster, rule.action, rule.timing);
@@ -567,12 +561,12 @@ export class NotificationGrouping {
     context: NotificationContext
   ): boolean {
     switch (condition.type) {
-      case 'load':
+      case "load":
         const currentLoad = this.getCurrentNotificationLoad(context.userId);
         return this.compareValues(currentLoad, condition.operator, condition.value);
-      case 'priority':
+      case "priority":
         return this.compareValues(cluster.priority, condition.operator, condition.value);
-      case 'category':
+      case "category":
         return this.compareValues(cluster.category, condition.operator, condition.value);
       default:
         return false;
@@ -581,12 +575,18 @@ export class NotificationGrouping {
 
   private compareValues(actual: any, operator: string, expected: any): boolean {
     switch (operator) {
-      case 'gt': return actual > expected;
-      case 'lt': return actual < expected;
-      case 'eq': return actual === expected;
-      case 'in': return Array.isArray(expected) && expected.includes(actual);
-      case 'contains': return String(actual).includes(String(expected));
-      default: return false;
+      case "gt":
+        return actual > expected;
+      case "lt":
+        return actual < expected;
+      case "eq":
+        return actual === expected;
+      case "in":
+        return Array.isArray(expected) && expected.includes(actual);
+      case "contains":
+        return String(actual).includes(String(expected));
+      default:
+        return false;
     }
   }
 
@@ -596,14 +596,14 @@ export class NotificationGrouping {
     timing: BatchingTiming
   ): NotificationCluster {
     switch (action.type) {
-      case 'batch':
-        cluster.batchingStrategy = 'delayed';
+      case "batch":
+        cluster.batchingStrategy = "delayed";
         break;
-      case 'delay':
+      case "delay":
         cluster.deliveryWindow.start += timing.delay || 5 * 60 * 1000;
         break;
-      case 'promote':
-        cluster.batchingStrategy = 'immediate';
+      case "promote":
+        cluster.batchingStrategy = "immediate";
         cluster.deliveryWindow.start = Date.now();
         break;
     }
@@ -618,7 +618,7 @@ export class NotificationGrouping {
   ): Promise<NotificationCluster[]> {
     const userProfile = await this.getUserBehaviorProfile(context.userId);
 
-    return clusters.map(cluster => {
+    return clusters.map((cluster) => {
       let optimalTime = cluster.deliveryWindow.start;
 
       if (optimization.respectQuietHours && preferences.quietHours) {
@@ -655,20 +655,20 @@ export class NotificationGrouping {
       userRelevance,
       optimalDeliveryTime: cluster.deliveryWindow.start,
       estimatedEngagement: 0, // Will be calculated later
-      deliveryMethod: 'toast', // Will be determined later
+      deliveryMethod: "toast", // Will be determined later
       reasoning: [
         `Cohesion: ${(cohesion * 100).toFixed(0)}%`,
         `Urgency: ${(urgency * 100).toFixed(0)}%`,
-        `User relevance: ${(userRelevance * 100).toFixed(0)}%`
-      ]
+        `User relevance: ${(userRelevance * 100).toFixed(0)}%`,
+      ],
     };
   }
 
   private calculateBatchUrgency(cluster: NotificationCluster): number {
     const priorityScores = { critical: 1.0, high: 0.8, medium: 0.5, low: 0.2 };
-    const avgPriorityScore = cluster.notifications.reduce((sum, n) => 
-      sum + (priorityScores[n.priority] || 0.2), 0
-    ) / cluster.notifications.length;
+    const avgPriorityScore =
+      cluster.notifications.reduce((sum, n) => sum + (priorityScores[n.priority] || 0.2), 0) /
+      cluster.notifications.length;
 
     return avgPriorityScore;
   }
@@ -679,9 +679,9 @@ export class NotificationGrouping {
   ): number {
     // Simplified relevance calculation
     const categoryPreference = userProfile.categoryPreferences.get(cluster.category) || 0.5;
-    const avgRelevanceScore = cluster.notifications.reduce((sum, n) => 
-      sum + n.relevanceScore, 0
-    ) / cluster.notifications.length;
+    const avgRelevanceScore =
+      cluster.notifications.reduce((sum, n) => sum + n.relevanceScore, 0) /
+      cluster.notifications.length;
 
     return (categoryPreference + avgRelevanceScore / 100) / 2;
   }
@@ -696,13 +696,13 @@ export class NotificationGrouping {
     // Stub implementation
     return {
       categoryPreferences: new Map([
-        ['economic', 0.8],
-        ['diplomatic', 0.6],
-        ['governance', 0.7]
+        ["economic", 0.8],
+        ["diplomatic", 0.6],
+        ["governance", 0.7],
       ]),
       optimalDeliveryTimes: [9, 13, 17], // Hours
       engagementPatterns: new Map(),
-      averageResponseTime: 300000 // 5 minutes
+      averageResponseTime: 300000, // 5 minutes
     };
   }
 
@@ -735,7 +735,7 @@ export class NotificationGrouping {
     preferences: UserNotificationPreferences
   ): number {
     // Simplified next slot calculation
-    return preferredTime + (60 * 60 * 1000); // 1 hour later
+    return preferredTime + 60 * 60 * 1000; // 1 hour later
   }
 
   private adjustForQuietHours(time: number, quietHours: { start: string; end: string }): number {
@@ -766,13 +766,13 @@ class SemanticAnalyzer {
   async getSemanticGroup(notification: UnifiedNotification): Promise<string> {
     // Simplified semantic grouping
     const text = `${notification.title} ${notification.message}`.toLowerCase();
-    if (text.includes('economic') || text.includes('gdp') || text.includes('market')) {
-      return 'economic';
+    if (text.includes("economic") || text.includes("gdp") || text.includes("market")) {
+      return "economic";
     }
-    if (text.includes('diplomatic') || text.includes('treaty') || text.includes('relations')) {
-      return 'diplomatic';
+    if (text.includes("diplomatic") || text.includes("treaty") || text.includes("relations")) {
+      return "diplomatic";
     }
-    return 'general';
+    return "general";
   }
 }
 
@@ -786,7 +786,12 @@ export const groupNotifications = async (
   preferences: UserNotificationPreferences,
   strategyName?: string
 ): Promise<NotificationCluster[]> => {
-  return await groupingInstance.groupNotifications(notifications, context, preferences, strategyName);
+  return await groupingInstance.groupNotifications(
+    notifications,
+    context,
+    preferences,
+    strategyName
+  );
 };
 
 export const createSmartBatches = async (

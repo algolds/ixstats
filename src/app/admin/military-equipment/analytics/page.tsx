@@ -1,11 +1,30 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '~/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { api } from '~/trpc/react';
-import { Loader2, Shield, Activity, Factory, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
+import React from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+} from "recharts";
+import { api } from "~/trpc/react";
+import {
+  Loader2,
+  Shield,
+  Activity,
+  Factory,
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+} from "lucide-react";
 
 /**
  * Military Equipment Analytics Dashboard
@@ -19,9 +38,21 @@ import { Loader2, Shield, Activity, Factory, TrendingUp, TrendingDown, AlertTria
  * - Summary statistics (total items, active equipment, manufacturers, avg tech level)
  */
 export default function MilitaryEquipmentAnalyticsPage() {
-  const { data: usageStats, isLoading: loadingUsage, error: usageError } = api.militaryEquipment.getEquipmentUsageStats.useQuery();
-  const { data: manufacturerStats, isLoading: loadingManufacturers, error: manufacturerError } = api.militaryEquipment.getManufacturerStats.useQuery();
-  const { data: allEquipment, isLoading: loadingAll, error: allError } = api.militaryEquipment.getAllCatalogEquipment.useQuery({
+  const {
+    data: usageStats,
+    isLoading: loadingUsage,
+    error: usageError,
+  } = api.militaryEquipment.getEquipmentUsageStats.useQuery();
+  const {
+    data: manufacturerStats,
+    isLoading: loadingManufacturers,
+    error: manufacturerError,
+  } = api.militaryEquipment.getManufacturerStats.useQuery();
+  const {
+    data: allEquipment,
+    isLoading: loadingAll,
+    error: allError,
+  } = api.militaryEquipment.getAllCatalogEquipment.useQuery({
     includeInactive: true,
   });
 
@@ -58,77 +89,95 @@ export default function MilitaryEquipmentAnalyticsPage() {
 
   // Calculate summary statistics
   const totalEquipment = allEquipment.length;
-  const activeEquipment = allEquipment.filter(eq => eq.isActive).length;
+  const activeEquipment = allEquipment.filter((eq) => eq.isActive).length;
   const totalManufacturers = manufacturerStats.totalManufacturers;
-  const avgTechLevel = allEquipment.reduce((sum, eq) => sum + eq.technologyTier, 0) / totalEquipment;
+  const avgTechLevel =
+    allEquipment.reduce((sum, eq) => sum + eq.technologyTier, 0) / totalEquipment;
 
   // Prepare chart data
-  const topEquipmentChartData = usageStats.topEquipment.map(eq => ({
-    name: eq.name.length > 30 ? eq.name.substring(0, 30) + '...' : eq.name,
+  const topEquipmentChartData = usageStats.topEquipment.map((eq) => ({
+    name: eq.name.length > 30 ? eq.name.substring(0, 30) + "..." : eq.name,
     fullName: eq.name,
     count: eq.usageCount,
     category: eq.category,
     manufacturer: eq.manufacturer.name,
   }));
 
-  const categoryChartData = usageStats.byCategory.map(cat => ({
+  const categoryChartData = usageStats.byCategory.map((cat) => ({
     name: cat.category.charAt(0).toUpperCase() + cat.category.slice(1),
     value: cat._count.id,
     usage: cat._sum.usageCount || 0,
   }));
 
-  const eraChartData = usageStats.byEra.map(era => ({
-    name: era.era.toUpperCase().replace('-', ' '),
+  const eraChartData = usageStats.byEra.map((era) => ({
+    name: era.era.toUpperCase().replace("-", " "),
     value: era._count.id,
     usage: era._sum.usageCount || 0,
   }));
 
-  const manufacturerChartData = usageStats.byManufacturer
-    .slice(0, 10)
-    .map(mfr => ({
-      name: mfr.manufacturerName.length > 25 ? mfr.manufacturerName.substring(0, 25) + '...' : mfr.manufacturerName,
-      fullName: mfr.manufacturerName,
-      count: mfr.equipmentCount,
-      usage: mfr.totalUsage,
-      country: mfr.country,
-    }));
+  const manufacturerChartData = usageStats.byManufacturer.slice(0, 10).map((mfr) => ({
+    name:
+      mfr.manufacturerName.length > 25
+        ? mfr.manufacturerName.substring(0, 25) + "..."
+        : mfr.manufacturerName,
+    fullName: mfr.manufacturerName,
+    count: mfr.equipmentCount,
+    usage: mfr.totalUsage,
+    country: mfr.country,
+  }));
 
   // Technology level progression by era
-  const eraOrder = ['wwi', 'wwii', 'cold-war', 'modern', 'future'];
-  const techProgressionData = eraOrder.map(era => {
-    const eraEquipment = allEquipment.filter(eq => eq.era === era);
-    const avgTech = eraEquipment.length > 0
-      ? eraEquipment.reduce((sum, eq) => sum + eq.technologyTier, 0) / eraEquipment.length
-      : 0;
-    return {
-      era: era.toUpperCase().replace('-', ' '),
-      avgTechLevel: Math.round(avgTech * 10) / 10,
-      count: eraEquipment.length,
-    };
-  }).filter(item => item.count > 0);
+  const eraOrder = ["wwi", "wwii", "cold-war", "modern", "future"];
+  const techProgressionData = eraOrder
+    .map((era) => {
+      const eraEquipment = allEquipment.filter((eq) => eq.era === era);
+      const avgTech =
+        eraEquipment.length > 0
+          ? eraEquipment.reduce((sum, eq) => sum + eq.technologyTier, 0) / eraEquipment.length
+          : 0;
+      return {
+        era: era.toUpperCase().replace("-", " "),
+        avgTechLevel: Math.round(avgTech * 10) / 10,
+        count: eraEquipment.length,
+      };
+    })
+    .filter((item) => item.count > 0);
 
   // Deprecation candidates (usageCount < 5)
   const deprecationCandidates = allEquipment
-    .filter(eq => eq.isActive && eq.usageCount < 5)
+    .filter((eq) => eq.isActive && eq.usageCount < 5)
     .sort((a, b) => a.usageCount - b.usageCount)
     .slice(0, 20);
 
   // Colors for charts (red theme)
-  const COLORS = ['#ef4444', '#dc2626', '#f87171', '#fca5a5', '#fee2e2', '#b91c1c', '#991b1b', '#7f1d1d', '#fecaca', '#fb923c'];
+  const COLORS = [
+    "#ef4444",
+    "#dc2626",
+    "#f87171",
+    "#fca5a5",
+    "#fee2e2",
+    "#b91c1c",
+    "#991b1b",
+    "#7f1d1d",
+    "#fecaca",
+    "#fb923c",
+  ];
 
   // Chart configs
   const chartConfig = {
-    count: { label: 'Equipment Count', color: '#ef4444' },
-    value: { label: 'Total Items', color: '#dc2626' },
-    usage: { label: 'Usage Count', color: '#f87171' },
-    avgTechLevel: { label: 'Avg Tech Level', color: '#ef4444' },
+    count: { label: "Equipment Count", color: "#ef4444" },
+    value: { label: "Total Items", color: "#dc2626" },
+    usage: { label: "Usage Count", color: "#f87171" },
+    avgTechLevel: { label: "Avg Tech Level", color: "#ef4444" },
   };
 
   return (
     <div className="container mx-auto space-y-6 py-8">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight text-red-600">Military Equipment Analytics</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-red-600">
+          Military Equipment Analytics
+        </h1>
         <p className="text-muted-foreground">
           Comprehensive usage analytics and statistics for military equipment catalog
         </p>
@@ -143,9 +192,7 @@ export default function MilitaryEquipmentAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{totalEquipment}</div>
-            <p className="text-muted-foreground text-xs">
-              Across all categories and eras
-            </p>
+            <p className="text-muted-foreground text-xs">Across all categories and eras</p>
           </CardContent>
         </Card>
 
@@ -156,9 +203,7 @@ export default function MilitaryEquipmentAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{activeEquipment}</div>
-            <p className="text-muted-foreground text-xs">
-              Currently available for procurement
-            </p>
+            <p className="text-muted-foreground text-xs">Currently available for procurement</p>
           </CardContent>
         </Card>
 
@@ -169,9 +214,7 @@ export default function MilitaryEquipmentAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{totalManufacturers}</div>
-            <p className="text-muted-foreground text-xs">
-              Active equipment producers
-            </p>
+            <p className="text-muted-foreground text-xs">Active equipment producers</p>
           </CardContent>
         </Card>
 
@@ -182,9 +225,7 @@ export default function MilitaryEquipmentAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-600">{avgTechLevel.toFixed(1)}</div>
-            <p className="text-muted-foreground text-xs">
-              Across all equipment (1-10 scale)
-            </p>
+            <p className="text-muted-foreground text-xs">Across all equipment (1-10 scale)</p>
           </CardContent>
         </Card>
       </div>
@@ -272,7 +313,9 @@ export default function MilitaryEquipmentAnalyticsPage() {
         <Card className="col-span-2 border-red-200">
           <CardHeader>
             <CardTitle className="text-red-600">Equipment Count by Manufacturer (Top 10)</CardTitle>
-            <CardDescription>Manufacturers with the most equipment items in catalog</CardDescription>
+            <CardDescription>
+              Manufacturers with the most equipment items in catalog
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[350px] w-full">
@@ -305,7 +348,7 @@ export default function MilitaryEquipmentAnalyticsPage() {
                   dataKey="avgTechLevel"
                   stroke="#ef4444"
                   strokeWidth={3}
-                  dot={{ fill: '#ef4444', r: 6 }}
+                  dot={{ fill: "#ef4444", r: 6 }}
                   activeDot={{ r: 8 }}
                 />
               </LineChart>
@@ -342,28 +385,30 @@ export default function MilitaryEquipmentAnalyticsPage() {
                 </thead>
                 <tbody>
                   {deprecationCandidates.map((equipment, index) => (
-                    <tr key={equipment.id} className={index % 2 === 0 ? 'bg-red-50/50' : ''}>
+                    <tr key={equipment.id} className={index % 2 === 0 ? "bg-red-50/50" : ""}>
                       <td className="px-4 py-3 text-sm font-medium">{equipment.name}</td>
                       <td className="px-4 py-3 text-sm">
                         {equipment.category.charAt(0).toUpperCase() + equipment.category.slice(1)}
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        {equipment.era.toUpperCase().replace('-', ' ')}
+                        {equipment.era.toUpperCase().replace("-", " ")}
                       </td>
-                      <td className="px-4 py-3 text-sm">{equipment.manufacturerId || 'N/A'}</td>
-                      <td className="px-4 py-3 text-center text-sm font-mono">
+                      <td className="px-4 py-3 text-sm">{equipment.manufacturerId || "N/A"}</td>
+                      <td className="px-4 py-3 text-center font-mono text-sm">
                         {equipment.technologyTier}
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-mono font-bold text-orange-600">
+                      <td className="px-4 py-3 text-right font-mono text-sm font-bold text-orange-600">
                         {equipment.usageCount}
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                          equipment.isActive
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {equipment.isActive ? 'Active' : 'Inactive'}
+                        <span
+                          className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                            equipment.isActive
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {equipment.isActive ? "Active" : "Inactive"}
                         </span>
                       </td>
                     </tr>
@@ -375,9 +420,7 @@ export default function MilitaryEquipmentAnalyticsPage() {
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <TrendingUp className="mb-4 h-12 w-12 text-green-500" />
               <p className="text-lg font-semibold text-green-600">All Equipment Well-Utilized</p>
-              <p className="text-muted-foreground text-sm">
-                No equipment with usage count below 5
-              </p>
+              <p className="text-muted-foreground text-sm">No equipment with usage count below 5</p>
             </div>
           )}
         </CardContent>

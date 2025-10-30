@@ -40,7 +40,7 @@ const mockDataPatterns = [
   /\bsampleData\b/i,
   /\bplaceholderData\b/i,
   /\bpreviewMode\b/i,
-  /\busePreviewData\b/, 
+  /\busePreviewData\b/,
   /\bPreviewPayload\b/,
 ];
 
@@ -65,9 +65,7 @@ const componentsToCheck = [
 ];
 
 function stripComments(source: string): string {
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/(^|[^:])\/\/.*$/gm, "$1");
+  return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 }
 
 function analyzeFile(filePath: string): WiringCheck {
@@ -203,7 +201,9 @@ function generateReport() {
     c.details.forEach((d) => console.log(`      ${d}`));
   });
 
-  console.log(`\nℹ️  PASSIVE Components (UI-only or data provided via props): ${passiveComponents.length}`);
+  console.log(
+    `\nℹ️  PASSIVE Components (UI-only or data provided via props): ${passiveComponents.length}`
+  );
   if (passiveComponents.length > 0 && passiveComponents.length <= 10) {
     passiveComponents.forEach((c) => {
       console.log(`   ${c.component} - ${c.path}`);
@@ -216,25 +216,18 @@ function generateReport() {
   }
 
   const totalComponents = results.length;
-  const avgScore =
-    results.reduce((acc, r) => acc + r.score, 0) / totalComponents;
+  const avgScore = results.reduce((acc, r) => acc + r.score, 0) / totalComponents;
   const fullyCovered = liveComponents.length + passiveComponents.length;
 
   console.log("\n" + "=".repeat(80));
   console.log("\n📊 Overall Statistics\n");
   console.log(`Total Components Analyzed: ${totalComponents}`);
-  console.log(
-    `Live Wiring Coverage: ${avgScore.toFixed(1)}%`
-  );
-  console.log(
-    `Fully Live: ${((liveComponents.length / totalComponents) * 100).toFixed(1)}%`
-  );
+  console.log(`Live Wiring Coverage: ${avgScore.toFixed(1)}%`);
+  console.log(`Fully Live: ${((liveComponents.length / totalComponents) * 100).toFixed(1)}%`);
   console.log(
     `Mixed (Needs Attention): ${((mixedComponents.length / totalComponents) * 100).toFixed(1)}%`
   );
-  console.log(
-    `Mock Only: ${((mockComponents.length / totalComponents) * 100).toFixed(1)}%`
-  );
+  console.log(`Mock Only: ${((mockComponents.length / totalComponents) * 100).toFixed(1)}%`);
   console.log(
     `Passive/Prop-Driven: ${((passiveComponents.length / totalComponents) * 100).toFixed(1)}%`
   );

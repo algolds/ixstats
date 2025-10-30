@@ -4,8 +4,8 @@
  * This script scans the public/flags directory and creates metadata.json
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from "fs";
+import * as path from "path";
 
 interface LocalFlagMetadata {
   fileName: string;
@@ -19,18 +19,20 @@ interface LocalFlagMetadata {
   };
 }
 
-const flagsDir = path.join(process.cwd(), 'public', 'flags');
-const metadataPath = path.join(flagsDir, 'metadata.json');
+const flagsDir = path.join(process.cwd(), "public", "flags");
+const metadataPath = path.join(flagsDir, "metadata.json");
 
 async function regenerateMetadata() {
-  console.log('🔍 Scanning flags directory:', flagsDir);
+  console.log("🔍 Scanning flags directory:", flagsDir);
 
   // Read all files in flags directory
   const files = fs.readdirSync(flagsDir);
 
-  const flagFiles = files.filter(file => {
+  const flagFiles = files.filter((file) => {
     const ext = path.extname(file).toLowerCase();
-    return ['.svg', '.png', '.jpg', '.jpeg', '.gif'].includes(ext) && file !== 'placeholder-flag.svg';
+    return (
+      [".svg", ".png", ".jpg", ".jpeg", ".gif"].includes(ext) && file !== "placeholder-flag.svg"
+    );
   });
 
   console.log(`📁 Found ${flagFiles.length} flag files`);
@@ -43,20 +45,21 @@ async function regenerateMetadata() {
     const stats = fs.statSync(filePath);
 
     // Extract country name from filename (remove extension and convert underscores to spaces)
-    const countryName = path.basename(fileName, path.extname(fileName))
-      .replace(/_/g, ' ')
+    const countryName = path
+      .basename(fileName, path.extname(fileName))
+      .replace(/_/g, " ")
       .toLowerCase();
 
     metadata[countryName] = {
       fileName: fileName,
-      originalUrl: '', // Unknown for existing files
+      originalUrl: "", // Unknown for existing files
       downloadedAt: stats.mtimeMs,
       fileSize: stats.size,
       source: {
-        name: 'Local',
-        baseUrl: '',
-        priority: 0
-      }
+        name: "Local",
+        baseUrl: "",
+        priority: 0,
+      },
     };
 
     console.log(`  ✓ ${countryName} -> ${fileName} (${(stats.size / 1024).toFixed(2)} KB)`);
@@ -66,7 +69,7 @@ async function regenerateMetadata() {
   const metadataContent = {
     lastUpdateTime: Date.now(),
     flags: metadata,
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
   };
 
   fs.writeFileSync(metadataPath, JSON.stringify(metadataContent, null, 2));
@@ -83,7 +86,7 @@ async function regenerateMetadata() {
   });
 }
 
-regenerateMetadata().catch(error => {
-  console.error('❌ Error regenerating metadata:', error);
+regenerateMetadata().catch((error) => {
+  console.error("❌ Error regenerating metadata:", error);
   process.exit(1);
 });

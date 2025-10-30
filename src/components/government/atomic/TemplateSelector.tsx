@@ -7,17 +7,17 @@
  * @module TemplateSelector
  */
 
-import React from 'react';
+import React from "react";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '~/components/ui/select';
-import { Badge } from '~/components/ui/badge';
-import { FileText } from 'lucide-react';
-import { ComponentType } from '@prisma/client';
+} from "~/components/ui/select";
+import { Badge } from "~/components/ui/badge";
+import { FileText } from "lucide-react";
+import { ComponentType } from "@prisma/client";
 
 export interface GovernmentTemplate {
   name: string;
@@ -59,9 +59,7 @@ export const TemplateSelector = React.memo<TemplateSelectorProps>(
                       {template.components.length} components
                     </Badge>
                   </div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    {template.description}
-                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">{template.description}</p>
                 </div>
               </SelectItem>
             ))}
@@ -72,4 +70,4 @@ export const TemplateSelector = React.memo<TemplateSelectorProps>(
   }
 );
 
-TemplateSelector.displayName = 'TemplateSelector';
+TemplateSelector.displayName = "TemplateSelector";

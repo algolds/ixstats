@@ -1,18 +1,32 @@
 "use client";
 
-import React, { useState } from 'react';
-import { FileText, Upload, Sparkles, Image as ImageIcon, Link as LinkIcon, AlertCircle, Check } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '~/components/ui/dialog';
-import { Button } from '~/components/ui/button';
-import { Textarea } from '~/components/ui/textarea';
-import { Label } from '~/components/ui/label';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { Badge } from '~/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { ScrollArea } from '~/components/ui/scroll-area';
-import { parseWikiText, extractWikiImages, extractWikiLinks } from '~/lib/wikitext-parser';
-import { toast } from 'sonner';
-import { sanitizeWikiContent } from '~/lib/sanitize-html';
+import React, { useState } from "react";
+import {
+  FileText,
+  Upload,
+  Sparkles,
+  Image as ImageIcon,
+  Link as LinkIcon,
+  AlertCircle,
+  Check,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "~/components/ui/dialog";
+import { Button } from "~/components/ui/button";
+import { Textarea } from "~/components/ui/textarea";
+import { Label } from "~/components/ui/label";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Badge } from "~/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { ScrollArea } from "~/components/ui/scroll-area";
+import { parseWikiText, extractWikiImages, extractWikiLinks } from "~/lib/wikitext-parser";
+import { toast } from "sonner";
+import { sanitizeWikiContent } from "~/lib/sanitize-html";
 
 interface WikiTextImporterProps {
   isOpen: boolean;
@@ -21,24 +35,24 @@ interface WikiTextImporterProps {
 }
 
 export function WikiTextImporter({ isOpen, onClose, onImport }: WikiTextImporterProps) {
-  const [wikitext, setWikitext] = useState('');
-  const [previewHtml, setPreviewHtml] = useState('');
+  const [wikitext, setWikitext] = useState("");
+  const [previewHtml, setPreviewHtml] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [links, setLinks] = useState<Array<{ page: string; display?: string }>>([]);
-  const [activeTab, setActiveTab] = useState<'input' | 'preview' | 'info'>('input');
+  const [activeTab, setActiveTab] = useState<"input" | "preview" | "info">("input");
 
   const handleParse = () => {
     if (!wikitext.trim()) {
-      toast.error('Please enter some wiki-text to import');
+      toast.error("Please enter some wiki-text to import");
       return;
     }
 
     try {
       // Parse wiki-text to HTML
       const html = parseWikiText(wikitext, {
-        imageBaseUrl: 'https://ixwiki.com/wiki/Special:Redirect/file',
-        wikiBaseUrl: 'https://ixwiki.com/wiki',
-        allowHtml: true
+        imageBaseUrl: "https://ixwiki.com/wiki/Special:Redirect/file",
+        wikiBaseUrl: "https://ixwiki.com/wiki",
+        allowHtml: true,
       });
 
       setPreviewHtml(html);
@@ -51,55 +65,64 @@ export function WikiTextImporter({ isOpen, onClose, onImport }: WikiTextImporter
       setLinks(extractedLinks);
 
       // Switch to preview tab
-      setActiveTab('preview');
+      setActiveTab("preview");
 
-      toast.success('Wiki-text parsed successfully!');
+      toast.success("Wiki-text parsed successfully!");
     } catch (error) {
-      console.error('Parse error:', error);
-      toast.error('Failed to parse wiki-text. Please check the syntax.');
+      console.error("Parse error:", error);
+      toast.error("Failed to parse wiki-text. Please check the syntax.");
     }
   };
 
   const handleImport = () => {
     if (!previewHtml) {
-      toast.error('Please parse the wiki-text first');
+      toast.error("Please parse the wiki-text first");
       return;
     }
 
     onImport(previewHtml, wikitext);
     handleClose();
-    toast.success('Wiki-text imported successfully!');
+    toast.success("Wiki-text imported successfully!");
   };
 
   const handleClose = () => {
-    setWikitext('');
-    setPreviewHtml('');
+    setWikitext("");
+    setPreviewHtml("");
     setImages([]);
     setLinks([]);
-    setActiveTab('input');
+    setActiveTab("input");
     onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6 pb-2 flex-shrink-0">
+      <DialogContent className="flex h-[90vh] max-w-5xl flex-col p-0">
+        <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-2">
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-orange-500" />
             Import Wiki-Text
           </DialogTitle>
           <DialogDescription>
-            Paste wiki-text from any MediaWiki site (IxWiki, Wikipedia, etc.) and it will be automatically converted with full syntax support.
+            Paste wiki-text from any MediaWiki site (IxWiki, Wikipedia, etc.) and it will be
+            automatically converted with full syntax support.
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col overflow-hidden px-6 pb-6">
-          <TabsList className="grid w-full grid-cols-3 mb-4 flex-shrink-0">
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as any)}
+          className="flex flex-1 flex-col overflow-hidden px-6 pb-6"
+        >
+          <TabsList className="mb-4 grid w-full flex-shrink-0 grid-cols-3">
             <TabsTrigger value="input" className="flex items-center gap-2">
               <Upload className="h-4 w-4" />
               Input
             </TabsTrigger>
-            <TabsTrigger value="preview" className="flex items-center gap-2" disabled={!previewHtml}>
+            <TabsTrigger
+              value="preview"
+              className="flex items-center gap-2"
+              disabled={!previewHtml}
+            >
               <FileText className="h-4 w-4" />
               Preview
             </TabsTrigger>
@@ -110,19 +133,23 @@ export function WikiTextImporter({ isOpen, onClose, onImport }: WikiTextImporter
           </TabsList>
 
           <div className="flex-1 overflow-hidden">
-            <TabsContent value="input" className="h-full mt-0 flex flex-col">
+            <TabsContent value="input" className="mt-0 flex h-full flex-col">
               <Alert className="mb-4 flex-shrink-0">
                 <Sparkles className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Supported syntax:</strong> Headings, bold, italic, lists, links, images, tables, templates, and more!
+                  <strong>Supported syntax:</strong> Headings, bold, italic, lists, links, images,
+                  tables, templates, and more!
                   <br />
-                  <strong>Image support:</strong> Uses IxWiki Commons image repository automatically.
+                  <strong>Image support:</strong> Uses IxWiki Commons image repository
+                  automatically.
                 </AlertDescription>
               </Alert>
 
-              <div className="flex-1 flex flex-col min-h-0 mb-4">
-                <Label htmlFor="wikitext" className="mb-2 flex-shrink-0">Wiki-Text</Label>
-                <ScrollArea className="flex-1 border rounded-md">
+              <div className="mb-4 flex min-h-0 flex-1 flex-col">
+                <Label htmlFor="wikitext" className="mb-2 flex-shrink-0">
+                  Wiki-Text
+                </Label>
+                <ScrollArea className="flex-1 rounded-md border">
                   <Textarea
                     id="wikitext"
                     value={wikitext}
@@ -146,14 +173,17 @@ This is '''bold''' and ''italic'' text.
 |-
 | Cell 3 || Cell 4
 |}`}
-                    className="min-h-[400px] font-mono text-sm resize-none border-0 focus-visible:ring-0"
+                    className="min-h-[400px] resize-none border-0 font-mono text-sm focus-visible:ring-0"
                   />
                 </ScrollArea>
               </div>
 
-              <div className="flex gap-2 flex-shrink-0">
-                <Button onClick={handleParse} className="bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700">
-                  <Sparkles className="h-4 w-4 mr-2" />
+              <div className="flex flex-shrink-0 gap-2">
+                <Button
+                  onClick={handleParse}
+                  className="bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700"
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
                   Parse Wiki-Text
                 </Button>
                 <Button variant="outline" onClick={handleClose}>
@@ -162,7 +192,7 @@ This is '''bold''' and ''italic'' text.
               </div>
             </TabsContent>
 
-            <TabsContent value="preview" className="h-full mt-0 flex flex-col">
+            <TabsContent value="preview" className="mt-0 flex h-full flex-col">
               <Alert className="mb-4 flex-shrink-0">
                 <Check className="h-4 w-4" />
                 <AlertDescription>
@@ -170,96 +200,107 @@ This is '''bold''' and ''italic'' text.
                 </AlertDescription>
               </Alert>
 
-              <ScrollArea className="flex-1 border border-border rounded-lg p-6 bg-background mb-4">
+              <ScrollArea className="border-border bg-background mb-4 flex-1 rounded-lg border p-6">
                 <div
-                  className="prose prose-sm max-w-none dark:prose-invert"
+                  className="prose prose-sm dark:prose-invert max-w-none"
                   // SECURITY: Sanitize wiki content to prevent XSS from external data
                   dangerouslySetInnerHTML={{ __html: sanitizeWikiContent(previewHtml) }}
                 />
               </ScrollArea>
 
-              <div className="flex gap-2 flex-shrink-0">
-                <Button onClick={handleImport} className="bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700">
-                  <Check className="h-4 w-4 mr-2" />
+              <div className="flex flex-shrink-0 gap-2">
+                <Button
+                  onClick={handleImport}
+                  className="bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700"
+                >
+                  <Check className="mr-2 h-4 w-4" />
                   Import to Document
                 </Button>
-                <Button variant="outline" onClick={() => setActiveTab('input')}>
+                <Button variant="outline" onClick={() => setActiveTab("input")}>
                   Back to Edit
                 </Button>
               </div>
             </TabsContent>
 
-            <TabsContent value="info" className="h-full mt-0 flex flex-col">
-              <ScrollArea className="flex-1 mb-4">
+            <TabsContent value="info" className="mt-0 flex h-full flex-col">
+              <ScrollArea className="mb-4 flex-1">
                 <div className="space-y-6 pr-4">
                   <div>
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="mb-3 flex items-center gap-2">
                       <ImageIcon className="h-5 w-5 text-orange-500" />
                       <h3 className="font-semibold">Images Found ({images.length})</h3>
                     </div>
                     {images.length > 0 ? (
                       <div className="space-y-2">
                         {images.map((img, idx) => (
-                          <div key={idx} className="flex items-center gap-2 p-2 bg-muted rounded">
+                          <div key={idx} className="bg-muted flex items-center gap-2 rounded p-2">
                             <Badge variant="outline" className="text-xs">
                               File:{img}
                             </Badge>
-                            <span className="text-xs text-muted-foreground truncate">
+                            <span className="text-muted-foreground truncate text-xs">
                               → https://ixwiki.com/wiki/Special:Redirect/file/{img}
                             </span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">No images found in the wiki-text</p>
+                      <p className="text-muted-foreground text-sm">
+                        No images found in the wiki-text
+                      </p>
                     )}
                   </div>
 
                   <div>
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="mb-3 flex items-center gap-2">
                       <LinkIcon className="h-5 w-5 text-blue-500" />
                       <h3 className="font-semibold">Internal Links Found ({links.length})</h3>
                     </div>
                     {links.length > 0 ? (
                       <div className="space-y-2">
                         {links.slice(0, 20).map((link, idx) => (
-                          <div key={idx} className="flex items-center gap-2 p-2 bg-muted rounded">
+                          <div key={idx} className="bg-muted flex items-center gap-2 rounded p-2">
                             <Badge variant="outline" className="text-xs">
                               {link.page}
                             </Badge>
                             {link.display && link.display !== link.page && (
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-muted-foreground text-xs">
                                 (displayed as: {link.display})
                               </span>
                             )}
                           </div>
                         ))}
                         {links.length > 20 && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-muted-foreground text-xs">
                             ... and {links.length - 20} more links
                           </p>
                         )}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">No internal links found in the wiki-text</p>
+                      <p className="text-muted-foreground text-sm">
+                        No internal links found in the wiki-text
+                      </p>
                     )}
                   </div>
 
                   <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
-                      <strong>Note:</strong> Images are loaded from the IxWiki Commons repository. Make sure the image files exist on IxWiki for them to display correctly.
+                      <strong>Note:</strong> Images are loaded from the IxWiki Commons repository.
+                      Make sure the image files exist on IxWiki for them to display correctly.
                     </AlertDescription>
                   </Alert>
                 </div>
               </ScrollArea>
 
-              <div className="flex gap-2 flex-shrink-0">
-                <Button onClick={handleImport} className="bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700">
-                  <Check className="h-4 w-4 mr-2" />
+              <div className="flex flex-shrink-0 gap-2">
+                <Button
+                  onClick={handleImport}
+                  className="bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700"
+                >
+                  <Check className="mr-2 h-4 w-4" />
                   Import to Document
                 </Button>
-                <Button variant="outline" onClick={() => setActiveTab('preview')}>
+                <Button variant="outline" onClick={() => setActiveTab("preview")}>
                   Back to Preview
                 </Button>
               </div>

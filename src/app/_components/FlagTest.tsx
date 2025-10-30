@@ -47,19 +47,19 @@ export function FlagTest() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to test flag');
+        throw new Error(data.error || "Failed to test flag");
       }
 
       setResult(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       testFlag();
     }
   };
@@ -81,8 +81,8 @@ export function FlagTest() {
             onKeyPress={handleKeyPress}
             disabled={isLoading}
           />
-          <Button 
-            onClick={testFlag} 
+          <Button
+            onClick={testFlag}
             disabled={isLoading || !country.trim()}
             className="min-w-[100px]"
           >
@@ -96,31 +96,31 @@ export function FlagTest() {
         </div>
 
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-red-700 text-sm">{error}</p>
+          <div className="rounded-md border border-red-200 bg-red-50 p-3">
+            <p className="text-sm text-red-700">{error}</p>
           </div>
         )}
 
         {result && (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <h3 className="font-semibold">Country: {result.country}</h3>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Flag URL:</span>
+                  <span className="text-muted-foreground text-sm">Flag URL:</span>
                   <Badge variant={result.isPlaceholder ? "destructive" : "default"}>
                     {result.isPlaceholder ? "Placeholder" : "Found"}
                   </Badge>
                 </div>
                 {result.flagUrl && (
                   <div className="mt-2">
-                    <img 
-                      src={result.flagUrl} 
+                    <img
+                      src={result.flagUrl}
                       alt={`Flag of ${result.country}`}
-                      className="h-16 w-auto border rounded"
+                      className="h-16 w-auto rounded border"
                       onError={(e) => {
                         const img = e.target as HTMLImageElement;
-                        img.style.display = 'none';
+                        img.style.display = "none";
                       }}
                     />
                   </div>
@@ -129,30 +129,30 @@ export function FlagTest() {
 
               <div className="space-y-2">
                 <h3 className="font-semibold">Cache Statistics</h3>
-                <div className="text-sm space-y-1">
+                <div className="space-y-1 text-sm">
                   <div>Total Countries: {result.stats.totalCountries}</div>
                   <div>Cached Flags: {result.stats.cachedFlags}</div>
                   <div>Failed Flags: {result.stats.failedFlags}</div>
                   <div>Is Updating: {result.stats.isUpdating ? "Yes" : "No"}</div>
                   {result.stats.isUpdating && (
                     <div>
-                      Progress: {result.stats.updateProgress.current}/{result.stats.updateProgress.total} 
-                      ({result.stats.updateProgress.percentage}%)
+                      Progress: {result.stats.updateProgress.current}/
+                      {result.stats.updateProgress.total}({result.stats.updateProgress.percentage}%)
                     </div>
                   )}
                 </div>
               </div>
             </div>
 
-            <div className="text-xs text-muted-foreground">
+            <div className="text-muted-foreground text-xs">
               Tested at: {new Date(result.timestamp).toLocaleString()}
             </div>
           </div>
         )}
 
-        <div className="text-xs text-muted-foreground">
+        <div className="text-muted-foreground text-xs">
           <p>This test verifies the flag cache system by:</p>
-          <ul className="list-disc list-inside mt-1 space-y-1">
+          <ul className="mt-1 list-inside list-disc space-y-1">
             <li>Fetching the "Template:Country_data" for the specified country</li>
             <li>Extracting the "flag alias" parameter from the template</li>
             <li>Getting the actual flag file URL from MediaWiki</li>
@@ -162,4 +162,4 @@ export function FlagTest() {
       </CardContent>
     </Card>
   );
-} 
+}

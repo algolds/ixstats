@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { EnhancedSlider } from '../../../../primitives/enhanced';
-import { Building2, MapPin, Plus, Minus, Settings, Users, Target } from 'lucide-react';
-import type { DemographicsConfiguration, RegionDistribution } from '~/types/economy-builder';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { EnhancedSlider } from "../../../../primitives/enhanced";
+import { Building2, MapPin, Plus, Minus, Settings, Users, Target } from "lucide-react";
+import type { DemographicsConfiguration, RegionDistribution } from "~/types/economy-builder";
 
 interface GeographicSectionProps {
   demographics: DemographicsConfiguration;
@@ -21,7 +21,7 @@ export function GeographicSection({
   onChange,
   onRegionChange,
   onAddRegion,
-  onRemoveRegion
+  onRemoveRegion,
 }: GeographicSectionProps) {
   const [editingRegion, setEditingRegion] = useState<string | null>(null);
 
@@ -31,7 +31,7 @@ export function GeographicSection({
         label="Urban Population"
         description="Percentage living in urban areas"
         value={demographics.urbanRuralSplit.urban}
-        onChange={(value) => onChange('urbanRuralSplit', 'urban', value)}
+        onChange={(value) => onChange("urbanRuralSplit", "urban", value)}
         min={20}
         max={95}
         step={0.1}
@@ -45,7 +45,7 @@ export function GeographicSection({
         label="Rural Population"
         description="Percentage living in rural areas"
         value={demographics.urbanRuralSplit.rural}
-        onChange={(value) => onChange('urbanRuralSplit', 'rural', value)}
+        onChange={(value) => onChange("urbanRuralSplit", "rural", value)}
         min={5}
         max={80}
         step={0.1}
@@ -59,7 +59,7 @@ export function GeographicSection({
         <div className="flex items-center justify-between">
           <h4 className="font-medium">Regional Distribution</h4>
           <Button size="sm" variant="outline" onClick={onAddRegion}>
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             Add Region
           </Button>
         </div>
@@ -69,11 +69,13 @@ export function GeographicSection({
             key={index}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`p-3 rounded-lg border ${
-              editingRegion === index.toString() ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700'
+            className={`rounded-lg border p-3 ${
+              editingRegion === index.toString()
+                ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                : "border-gray-200 dark:border-gray-700"
             }`}
           >
-            <div className="flex items-center justify-between mb-2">
+            <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Badge variant="outline">{region.developmentLevel}</Badge>
                 <span className="font-medium">{region.name}</span>
@@ -82,15 +84,13 @@ export function GeographicSection({
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => setEditingRegion(editingRegion === index.toString() ? null : index.toString())}
+                  onClick={() =>
+                    setEditingRegion(editingRegion === index.toString() ? null : index.toString())
+                  }
                 >
                   <Settings className="h-4 w-4" />
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => onRemoveRegion(index)}
-                >
+                <Button size="sm" variant="ghost" onClick={() => onRemoveRegion(index)}>
                   <Minus className="h-4 w-4" />
                 </Button>
               </div>
@@ -106,20 +106,20 @@ export function GeographicSection({
             {editingRegion === index.toString() && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
+                animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mt-3 pt-3 border-t space-y-2"
+                className="mt-3 space-y-2 border-t pt-3"
               >
                 <div className="space-y-1">
-                  <label className="text-sm font-medium flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-sm font-medium">
                     <MapPin className="h-4 w-4" />
                     Region Name
                   </label>
                   <input
                     type="text"
                     value={region.name}
-                    onChange={(e) => onRegionChange(index, 'name', e.target.value)}
-                    className="w-full px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                    onChange={(e) => onRegionChange(index, "name", e.target.value)}
+                    className="bg-background border-border focus:ring-primary w-full rounded-md border px-3 py-2 focus:ring-2 focus:outline-none"
                     placeholder="Enter region name"
                   />
                 </div>
@@ -127,7 +127,7 @@ export function GeographicSection({
                 <EnhancedSlider
                   label="Population Percent"
                   value={region.populationPercent}
-                  onChange={(value) => onRegionChange(index, 'populationPercent', value)}
+                  onChange={(value) => onRegionChange(index, "populationPercent", value)}
                   min={1}
                   max={80}
                   step={0.1}
@@ -139,7 +139,7 @@ export function GeographicSection({
                 <EnhancedSlider
                   label="Urban Percent"
                   value={region.urbanPercent}
-                  onChange={(value) => onRegionChange(index, 'urbanPercent', value)}
+                  onChange={(value) => onRegionChange(index, "urbanPercent", value)}
                   min={0}
                   max={100}
                   step={1}
@@ -151,7 +151,7 @@ export function GeographicSection({
                 <EnhancedSlider
                   label="Economic Activity"
                   value={region.economicActivity}
-                  onChange={(value) => onRegionChange(index, 'economicActivity', value)}
+                  onChange={(value) => onRegionChange(index, "economicActivity", value)}
                   min={1}
                   max={50}
                   step={0.1}

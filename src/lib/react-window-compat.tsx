@@ -43,13 +43,11 @@ interface BaseListProps<ItemData = any> {
   }) => React.ReactNode;
 }
 
-export interface FixedSizeListProps<ItemData = any>
-  extends BaseListProps<ItemData> {
+export interface FixedSizeListProps<ItemData = any> extends BaseListProps<ItemData> {
   itemSize: number;
 }
 
-export interface VariableSizeListProps<ItemData = any>
-  extends BaseListProps<ItemData> {
+export interface VariableSizeListProps<ItemData = any> extends BaseListProps<ItemData> {
   itemSize: (index: number, data: ItemData) => number;
 }
 
@@ -67,9 +65,7 @@ const alignMap: Record<Align, Align | "auto"> = {
   center: "center",
 };
 
-function createCompatList<ItemData, Mode extends "fixed" | "variable">(
-  mode: Mode,
-) {
+function createCompatList<ItemData, Mode extends "fixed" | "variable">(mode: Mode) {
   type Props = Mode extends "fixed"
     ? FixedSizeListProps<ItemData>
     : VariableSizeListProps<ItemData>;
@@ -99,7 +95,7 @@ function createCompatList<ItemData, Mode extends "fixed" | "variable">(
         height,
         width,
       }),
-      [incomingStyle, height, width],
+      [incomingStyle, height, width]
     );
     const isHorizontal = layout === "horizontal";
     const [resetVersion, setResetVersion] = useState(0);
@@ -128,15 +124,13 @@ function createCompatList<ItemData, Mode extends "fixed" | "variable">(
         resetAfterIndex: () => {
           const element = listRef.current?.element;
           if (element) {
-            scrollOffsetRef.current = isHorizontal
-              ? element.scrollLeft
-              : element.scrollTop;
+            scrollOffsetRef.current = isHorizontal ? element.scrollLeft : element.scrollTop;
           }
           pendingRestoreRef.current = true;
           setResetVersion((version) => version + 1);
         },
       }),
-      [isHorizontal],
+      [isHorizontal]
     );
 
     useEffect(() => {
@@ -145,9 +139,7 @@ function createCompatList<ItemData, Mode extends "fixed" | "variable">(
       if (!element) return;
 
       const handler = () => {
-        const currentOffset = isHorizontal
-          ? element.scrollLeft
-          : element.scrollTop;
+        const currentOffset = isHorizontal ? element.scrollLeft : element.scrollTop;
         const direction: ScrollDirection =
           currentOffset > previousOffsetRef.current ? "forward" : "backward";
         previousOffsetRef.current = currentOffset;
@@ -191,11 +183,10 @@ function createCompatList<ItemData, Mode extends "fixed" | "variable">(
         const rendered = children({
           index,
           style: rowStyle,
-          data: (itemData as ItemData),
+          data: itemData as ItemData,
         });
         if (React.isValidElement(rendered)) {
-          const existingStyle =
-            ((rendered.props as { style?: React.CSSProperties }).style) ?? {};
+          const existingStyle = (rendered.props as { style?: React.CSSProperties }).style ?? {};
           const mergedStyle = {
             ...existingStyle,
             ...rowStyle,
@@ -205,7 +196,7 @@ function createCompatList<ItemData, Mode extends "fixed" | "variable">(
             {
               ...(ariaAttributes as Record<string, unknown>),
               style: mergedStyle,
-            },
+            }
           );
         }
         return (
@@ -214,7 +205,7 @@ function createCompatList<ItemData, Mode extends "fixed" | "variable">(
           </div>
         );
       },
-      [children, itemData],
+      [children, itemData]
     );
 
     const rowHeight =
@@ -223,7 +214,7 @@ function createCompatList<ItemData, Mode extends "fixed" | "variable">(
         : (index: number) =>
             (incomingProps as VariableSizeListProps<ItemData>).itemSize(
               index,
-              itemData as ItemData,
+              itemData as ItemData
             );
 
     const forwardedProps = useMemo(() => {
@@ -247,11 +238,7 @@ function createCompatList<ItemData, Mode extends "fixed" | "variable">(
         key={resetVersion}
         listRef={listRef}
         rowCount={itemCount}
-        rowHeight={
-          typeof rowHeight === "function"
-            ? (index) => rowHeight(index)
-            : rowHeight
-        }
+        rowHeight={typeof rowHeight === "function" ? (index) => rowHeight(index) : rowHeight}
         overscanCount={overscanCount}
         className={className}
         style={listStyle}
@@ -262,8 +249,7 @@ function createCompatList<ItemData, Mode extends "fixed" | "variable">(
     );
   });
 
-  CompatList.displayName =
-    mode === "fixed" ? "FixedSizeListCompat" : "VariableSizeListCompat";
+  CompatList.displayName = mode === "fixed" ? "FixedSizeListCompat" : "VariableSizeListCompat";
 
   return CompatList;
 }

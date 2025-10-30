@@ -2,10 +2,10 @@
 
 /**
  * Force refresh user role script
- * 
+ *
  * This script forces a refresh of the user's role data by triggering
  * a database update and clearing any potential cache issues.
- * 
+ *
  * Run with: npx tsx scripts/force-refresh-user-role.ts
  */
 
@@ -25,11 +25,11 @@ async function forceRefreshUserRole() {
   try {
     for (const clerkUserId of SYSTEM_OWNER_IDS) {
       console.log(`Processing user: ${clerkUserId}`);
-      
+
       // Get the user record
       const user = await db.user.findUnique({
         where: { clerkUserId },
-        include: { role: true }
+        include: { role: true },
       });
 
       if (!user) {
@@ -37,11 +37,13 @@ async function forceRefreshUserRole() {
         continue;
       }
 
-      console.log(`Current role: ${user.role?.name || 'NO_ROLE'} (Level: ${user.role?.level ?? 'N/A'})`);
+      console.log(
+        `Current role: ${user.role?.name || "NO_ROLE"} (Level: ${user.role?.level ?? "N/A"})`
+      );
 
       // Get the owner role
       const ownerRole = await db.role.findUnique({
-        where: { name: 'owner' }
+        where: { name: "owner" },
       });
 
       if (!ownerRole) {
@@ -58,10 +60,12 @@ async function forceRefreshUserRole() {
         },
         include: {
           role: true,
-        }
+        },
       });
 
-      console.log(`✅ Updated user role to: ${updatedUser.role?.name} (Level: ${updatedUser.role?.level})`);
+      console.log(
+        `✅ Updated user role to: ${updatedUser.role?.name} (Level: ${updatedUser.role?.level})`
+      );
       console.log(`   User ID: ${updatedUser.id}`);
       console.log(`   Updated at: ${updatedUser.updatedAt}`);
       console.log();
@@ -72,7 +76,6 @@ async function forceRefreshUserRole() {
     console.log("1. Refresh your browser page");
     console.log("2. Click 'Refresh Role Data' button on debug page");
     console.log("3. Check that role shows as 'owner' with level 0");
-
   } catch (error) {
     console.error("❌ Error during role refresh:", error);
   } finally {

@@ -27,77 +27,77 @@ export interface FieldImpactConfig {
  */
 const FIELD_IMPACT_MAP: Record<string, FieldImpactConfig> = {
   // INSTANT CHANGES (cosmetic, no economic impact)
-  "name": {
+  name: {
     impactLevel: "none",
     reasons: ["Country name is cosmetic only"],
   },
-  "officialName": {
+  officialName: {
     impactLevel: "none",
     reasons: ["Official name is cosmetic only"],
   },
-  "motto": {
+  motto: {
     impactLevel: "none",
     reasons: ["National motto is cosmetic only"],
   },
-  "nationalAnthem": {
+  nationalAnthem: {
     impactLevel: "none",
     reasons: ["National anthem is cosmetic only"],
   },
-  "capitalCity": {
+  capitalCity: {
     impactLevel: "none",
     reasons: ["Capital city name is informational"],
   },
-  "officialLanguages": {
+  officialLanguages: {
     impactLevel: "none",
     reasons: ["Official languages are informational"],
   },
-  "currencyName": {
+  currencyName: {
     impactLevel: "none",
     reasons: ["Currency name is cosmetic only"],
   },
-  "currencySymbol": {
+  currencySymbol: {
     impactLevel: "none",
     reasons: ["Currency symbol is cosmetic only"],
   },
-  "demonym": {
+  demonym: {
     impactLevel: "none",
     reasons: ["Demonym is cosmetic only"],
   },
-  "governmentType": {
+  governmentType: {
     impactLevel: "none",
     reasons: ["Government type is part of national identity - cosmetic only"],
   },
-  "flag": {
+  flag: {
     impactLevel: "none",
     reasons: ["National symbols don't affect calculations"],
   },
-  "coatOfArms": {
+  coatOfArms: {
     impactLevel: "none",
     reasons: ["National symbols don't affect calculations"],
   },
-  "religion": {
+  religion: {
     impactLevel: "none",
     reasons: ["National religion is informational - cosmetic only"],
   },
-  "leader": {
+  leader: {
     impactLevel: "none",
     reasons: ["Leadership names are cosmetic"],
   },
 
   // LOW IMPACT (next day - minor adjustments)
-  "localGrowthFactor": {
+  localGrowthFactor: {
     impactLevel: "low",
     warnings: ["Minor adjustment to local growth multiplier"],
     reasons: ["Affects long-term growth projections"],
   },
-  "currencyExchangeRate": {
+  currencyExchangeRate: {
     impactLevel: "low",
     warnings: ["Exchange rate changes affect international trade"],
     reasons: ["Impacts trade calculations and foreign investment"],
   },
 
   // MEDIUM IMPACT (3-5 days - significant policy changes)
-  "taxRevenueGDPPercent": {
+  taxRevenueGDPPercent: {
     impactLevel: "medium",
     warnings: [
       "Tax changes require legislative approval and implementation time",
@@ -109,31 +109,25 @@ const FIELD_IMPACT_MAP: Record<string, FieldImpactConfig> = {
       "Economic actors need time to adjust",
     ],
   },
-  "unemploymentRate": {
+  unemploymentRate: {
     impactLevel: "medium",
     warnings: [
       "Labor market changes don't happen overnight",
       "Affects household income and consumer spending",
       "May impact social welfare costs",
     ],
-    reasons: [
-      "Labor markets require time to adjust",
-      "Job creation/loss is gradual",
-    ],
+    reasons: ["Labor markets require time to adjust", "Job creation/loss is gradual"],
   },
-  "minimumWage": {
+  minimumWage: {
     impactLevel: "medium",
     warnings: [
       "Wage changes affect business costs and hiring",
       "May lead to short-term unemployment adjustments",
       "Impacts consumer purchasing power",
     ],
-    reasons: [
-      "Businesses need time to adjust payrolls",
-      "Economic ripple effects take time",
-    ],
+    reasons: ["Businesses need time to adjust payrolls", "Economic ripple effects take time"],
   },
-  "governmentBudgetGDPPercent": {
+  governmentBudgetGDPPercent: {
     impactLevel: "medium",
     warnings: [
       "Budget changes require fiscal year planning",
@@ -147,7 +141,7 @@ const FIELD_IMPACT_MAP: Record<string, FieldImpactConfig> = {
   },
 
   // HIGH IMPACT (1 week - major structural changes)
-  "realGDPGrowthRate": {
+  realGDPGrowthRate: {
     impactLevel: "high",
     warnings: [
       "GDP growth rate changes reflect major economic shifts",
@@ -161,7 +155,7 @@ const FIELD_IMPACT_MAP: Record<string, FieldImpactConfig> = {
       "Requires policy coordination across multiple sectors",
     ],
   },
-  "inflationRate": {
+  inflationRate: {
     impactLevel: "high",
     warnings: [
       "Inflation changes affect all prices and wages",
@@ -174,7 +168,7 @@ const FIELD_IMPACT_MAP: Record<string, FieldImpactConfig> = {
       "Monetary policy changes require careful implementation",
     ],
   },
-  "populationGrowthRate": {
+  populationGrowthRate: {
     impactLevel: "high",
     warnings: [
       "Population changes affect labor force and demographics",
@@ -187,7 +181,7 @@ const FIELD_IMPACT_MAP: Record<string, FieldImpactConfig> = {
       "Infrastructure and services need time to scale",
     ],
   },
-  "economicTier": {
+  economicTier: {
     impactLevel: "high",
     warnings: [
       "Economic tier changes represent fundamental development shifts",
@@ -200,7 +194,7 @@ const FIELD_IMPACT_MAP: Record<string, FieldImpactConfig> = {
       "Requires comprehensive policy and institutional reforms",
     ],
   },
-  "totalDebtGDPRatio": {
+  totalDebtGDPRatio: {
     impactLevel: "high",
     warnings: [
       "Major debt changes affect credit ratings and borrowing costs",
@@ -235,11 +229,7 @@ export function calculateChangeImpact(
   const reasons = config.reasons || [];
 
   // Calculate additional warnings based on value change magnitude
-  const additionalWarnings = calculateMagnitudeWarnings(
-    fieldPath,
-    oldValue,
-    newValue
-  );
+  const additionalWarnings = calculateMagnitudeWarnings(fieldPath, oldValue, newValue);
 
   // Determine change type and delay based on impact level
   let changeType: ChangeType;
@@ -288,13 +278,9 @@ function calculateMagnitudeWarnings(
     const percentChange = Math.abs(((newValue - oldValue) / oldValue) * 100);
 
     if (percentChange > 50) {
-      warnings.push(
-        `⚠️ LARGE CHANGE: ${percentChange.toFixed(1)}% change from current value`
-      );
+      warnings.push(`⚠️ LARGE CHANGE: ${percentChange.toFixed(1)}% change from current value`);
     } else if (percentChange > 25) {
-      warnings.push(
-        `⚠️ MODERATE CHANGE: ${percentChange.toFixed(1)}% change from current value`
-      );
+      warnings.push(`⚠️ MODERATE CHANGE: ${percentChange.toFixed(1)}% change from current value`);
     }
 
     // Specific warnings for certain fields

@@ -1,7 +1,7 @@
-import { PrismaClient } from '@prisma/client';
-import { TRPCError } from '@trpc/server';
-import { IxTime } from '~/lib/ixtime';
-import * as crypto from 'crypto';
+import { PrismaClient } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
+import { IxTime } from "~/lib/ixtime";
+import * as crypto from "crypto";
 
 const prisma = new PrismaClient();
 
@@ -12,14 +12,14 @@ export async function generateAndPostCrisisEvent(crisisEventId: string) {
 
   if (!crisisEvent) {
     throw new TRPCError({
-      code: 'NOT_FOUND',
-      message: 'Crisis event not found',
+      code: "NOT_FOUND",
+      message: "Crisis event not found",
     });
   }
 
   // Determine which account type should post based on crisis type or severity
   // For simplicity, let's say media accounts post about all crises for now.
-  const accountTypeToPost = 'media'; 
+  const accountTypeToPost = "media";
 
   const activeUsers = await prisma.user.findMany({
     where: { isActive: true },
@@ -33,21 +33,21 @@ export async function generateAndPostCrisisEvent(crisisEventId: string) {
 
   const postingUser = activeUsers[0];
   if (!postingUser) {
-    console.warn('No posting user available');
+    console.warn("No posting user available");
     return null;
   }
 
   // Generate post content based on crisis event details
   let content = ``;
   switch (crisisEvent.type) {
-    case 'natural_disaster':
-      content = `BREAKING: A major natural disaster (${crisisEvent.title}) has struck, impacting ${crisisEvent.affectedCountries || 'several regions'}. Severity: ${crisisEvent.severity}.`;
+    case "natural_disaster":
+      content = `BREAKING: A major natural disaster (${crisisEvent.title}) has struck, impacting ${crisisEvent.affectedCountries || "several regions"}. Severity: ${crisisEvent.severity}.`;
       break;
-    case 'political_unrest':
-      content = `URGENT: Political unrest escalating in ${crisisEvent.affectedCountries || 'various nations'} following ${crisisEvent.title}. Severity: ${crisisEvent.severity}.`;
+    case "political_unrest":
+      content = `URGENT: Political unrest escalating in ${crisisEvent.affectedCountries || "various nations"} following ${crisisEvent.title}. Severity: ${crisisEvent.severity}.`;
       break;
-    case 'economic_crisis':
-      content = `ECONOMIC ALERT: A new economic crisis (${crisisEvent.title}) is unfolding, with an estimated economic impact of ${crisisEvent.economicImpact?.toLocaleString()} affecting ${crisisEvent.affectedCountries || 'global markets'}.`;
+    case "economic_crisis":
+      content = `ECONOMIC ALERT: A new economic crisis (${crisisEvent.title}) is unfolding, with an estimated economic impact of ${crisisEvent.economicImpact?.toLocaleString()} affecting ${crisisEvent.affectedCountries || "global markets"}.`;
       break;
     default:
       content = `NEWS ALERT: An event of type '${crisisEvent.type}' titled '${crisisEvent.title}' has occurred. Severity: ${crisisEvent.severity}.`;
@@ -61,8 +61,8 @@ export async function generateAndPostCrisisEvent(crisisEventId: string) {
     data: {
       accountId: postingUser.clerkUserId,
       content: content,
-      postType: 'original',
-      visibility: 'public',
+      postType: "original",
+      visibility: "public",
       ixTimeTimestamp: new Date(IxTime.getCurrentIxTime()),
     },
   });
@@ -105,16 +105,16 @@ export async function detectEconomicMilestoneAndTriggerNarrative() {
         console.warn(`Government user not found for country ${country.name}`);
         continue;
       }
-      
-      const content = `EXCELLENT NEWS: Our nation, ${country.name}, has achieved a remarkable ${(country.adjustedGdpGrowth * 100).toFixed(1)}% GDP growth! This reflects our strong economic policies and the hard work of our citizens. #EconomicGrowth #${country.name.replace(/\s/g, '')}`;
+
+      const content = `EXCELLENT NEWS: Our nation, ${country.name}, has achieved a remarkable ${(country.adjustedGdpGrowth * 100).toFixed(1)}% GDP growth! This reflects our strong economic policies and the hard work of our citizens. #EconomicGrowth #${country.name.replace(/\s/g, "")}`;
 
       const newGovernmentPost = await prisma.thinkpagesPost.create({
         data: {
           accountId: governmentUser.clerkUserId,
           content: content.substring(0, 280),
-          postType: 'original',
-          visibility: 'public',
-          hashtags: JSON.stringify(['EconomicGrowth', country.name.replace(/\s/g, '')]),
+          postType: "original",
+          visibility: "public",
+          hashtags: JSON.stringify(["EconomicGrowth", country.name.replace(/\s/g, "")]),
           ixTimeTimestamp: new Date(IxTime.getCurrentIxTime()),
         },
       });
@@ -144,8 +144,8 @@ export async function generateAndPostMediaResponse(parentPostId: string, country
     where: {
       isActive: true,
       role: {
-        name: 'media' // Using role-based filtering instead of accountType
-      }
+        name: "media", // Using role-based filtering instead of accountType
+      },
     },
     take: 1,
   });
@@ -157,20 +157,20 @@ export async function generateAndPostMediaResponse(parentPostId: string, country
 
   const postingAccount = mediaAccounts[0];
   if (!postingAccount) {
-    console.warn('No posting account available for media response');
+    console.warn("No posting account available for media response");
     return null;
   }
 
-  const content = `ANALYSIS: Government's claim of ${countryName} GDP growth is significant. While positive, questions remain about long-term sustainability and equitable distribution. #Economy #${countryName.replace(/\s/g, '')}`;
+  const content = `ANALYSIS: Government's claim of ${countryName} GDP growth is significant. While positive, questions remain about long-term sustainability and equitable distribution. #Economy #${countryName.replace(/\s/g, "")}`;
 
   const newMediaPost = await prisma.thinkpagesPost.create({
     data: {
       accountId: postingAccount.clerkUserId,
       content: content.substring(0, 280),
-      postType: 'reply', // It's a reply to the government post
+      postType: "reply", // It's a reply to the government post
       parentPostId: parentPost.id,
-      visibility: 'public',
-      hashtags: JSON.stringify(['Economy', countryName.replace(/\s/g, '')]),
+      visibility: "public",
+      hashtags: JSON.stringify(["Economy", countryName.replace(/\s/g, "")]),
       ixTimeTimestamp: new Date(IxTime.getCurrentIxTime()),
     },
   });
@@ -202,8 +202,8 @@ export async function generateAndPostCitizenReaction(postId: string) {
     where: {
       isActive: true,
       role: {
-        name: 'citizen' // Using role-based filtering instead of accountType
-      }
+        name: "citizen", // Using role-based filtering instead of accountType
+      },
     },
     take: 5, // Get a few citizen accounts
   });
@@ -213,12 +213,12 @@ export async function generateAndPostCitizenReaction(postId: string) {
     return null;
   }
 
-  const reactionTypes = ['like', 'laugh', 'angry', 'thumbsup', 'thumbsdown'];
+  const reactionTypes = ["like", "laugh", "angry", "thumbsup", "thumbsdown"];
   const randomReactionType = reactionTypes[crypto.randomInt(reactionTypes.length)];
   const randomCitizenAccount = citizenAccounts[crypto.randomInt(citizenAccounts.length)];
-  
+
   if (!randomCitizenAccount || !randomReactionType) {
-    console.warn('No random citizen account or reaction type available');
+    console.warn("No random citizen account or reaction type available");
     return null;
   }
 
@@ -243,7 +243,9 @@ export async function generateAndPostCitizenReaction(postId: string) {
       },
       data: { reactionType: randomReactionType },
     });
-    console.log(`Citizen account ${randomCitizenAccount.id} updated reaction to ${randomReactionType} on post ${postId}`);
+    console.log(
+      `Citizen account ${randomCitizenAccount.id} updated reaction to ${randomReactionType} on post ${postId}`
+    );
   } else {
     // Otherwise, create a new reaction
     await prisma.postReaction.create({
@@ -254,7 +256,9 @@ export async function generateAndPostCitizenReaction(postId: string) {
         timestamp: new Date(IxTime.getCurrentIxTime()),
       },
     });
-    console.log(`Citizen account ${randomCitizenAccount.id} reacted with ${randomReactionType} to post ${postId}`);
+    console.log(
+      `Citizen account ${randomCitizenAccount.id} reacted with ${randomReactionType} to post ${postId}`
+    );
   }
 
   // Update reaction counts on the post
@@ -265,7 +269,7 @@ export async function generateAndPostCitizenReaction(postId: string) {
 
   if (updatedPost) {
     const reactionCounts: Record<string, number> = {};
-    updatedPost.reactions.forEach(reaction => {
+    updatedPost.reactions.forEach((reaction) => {
       reactionCounts[reaction.reactionType] = (reactionCounts[reaction.reactionType] || 0) + 1;
     });
 

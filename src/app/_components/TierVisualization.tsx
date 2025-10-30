@@ -5,20 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Progress } from "~/components/ui/progress";
-import { 
-  BarChart3, 
-  Info, 
-  TrendingUp, 
-  DollarSign,
-  Users,
-  Building2
-} from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
+import { BarChart3, Info, TrendingUp, DollarSign, Users, Building2 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 
 interface Country {
   id: string;
@@ -41,12 +29,13 @@ interface TierVisualizationProps {
 }
 
 const tierConfig = {
-  "Extravagant": {
+  Extravagant: {
     color: "bg-purple-500",
     textColor: "text-purple-700 dark:text-purple-300",
     bgColor: "bg-purple-50 dark:bg-purple-950",
     borderColor: "border-purple-200 dark:border-purple-800",
-    description: "GDP per capita $65,000+ • Max growth: 0.5% • Ultra-wealthy nations (like Monaco, Luxembourg)",
+    description:
+      "GDP per capita $65,000+ • Max growth: 0.5% • Ultra-wealthy nations (like Monaco, Luxembourg)",
     icon: DollarSign,
     threshold: 65000,
   },
@@ -55,59 +44,65 @@ const tierConfig = {
     textColor: "text-blue-700 dark:text-blue-300",
     bgColor: "bg-blue-50 dark:bg-blue-950",
     borderColor: "border-blue-200 dark:border-blue-800",
-    description: "GDP per capita $55,000-$64,999 • Max growth: 1.5% • Highly developed (like Norway, Switzerland)",
+    description:
+      "GDP per capita $55,000-$64,999 • Max growth: 1.5% • Highly developed (like Norway, Switzerland)",
     icon: TrendingUp,
     threshold: 55000,
   },
-  "Strong": {
+  Strong: {
     color: "bg-green-500",
     textColor: "text-green-700 dark:text-green-300",
     bgColor: "bg-green-50 dark:bg-green-950",
     borderColor: "border-green-200 dark:border-green-800",
-    description: "GDP per capita $45,000-$54,999 • Max growth: 2.75% • Advanced economies (like Germany, France)",
+    description:
+      "GDP per capita $45,000-$54,999 • Max growth: 2.75% • Advanced economies (like Germany, France)",
     icon: Building2,
     threshold: 45000,
   },
-  "Healthy": {
+  Healthy: {
     color: "bg-emerald-500",
     textColor: "text-emerald-700 dark:text-emerald-300",
     bgColor: "bg-emerald-50 dark:bg-emerald-950",
     borderColor: "border-emerald-200 dark:border-emerald-800",
-    description: "GDP per capita $35,000-$44,999 • Max growth: 3.5% • Mature economies (like Japan, South Korea)",
+    description:
+      "GDP per capita $35,000-$44,999 • Max growth: 3.5% • Mature economies (like Japan, South Korea)",
     icon: TrendingUp,
     threshold: 35000,
   },
-  "Developed": {
+  Developed: {
     color: "bg-teal-500",
     textColor: "text-teal-700 dark:text-teal-300",
     bgColor: "bg-teal-50 dark:bg-teal-950",
     borderColor: "border-teal-200 dark:border-teal-800",
-    description: "GDP per capita $25,000-$34,999 • Max growth: 5% • Upper middle income (like Portugal, Poland)",
+    description:
+      "GDP per capita $25,000-$34,999 • Max growth: 5% • Upper middle income (like Portugal, Poland)",
     icon: Building2,
     threshold: 25000,
   },
-  "Developing": {
+  Developing: {
     color: "bg-yellow-500",
     textColor: "text-yellow-700 dark:text-yellow-300",
     bgColor: "bg-yellow-50 dark:bg-yellow-950",
     borderColor: "border-yellow-200 dark:border-yellow-800",
-    description: "GDP per capita $10,000-$24,999 • Max growth: 7.5% • Emerging markets (like Brazil, Mexico)",
+    description:
+      "GDP per capita $10,000-$24,999 • Max growth: 7.5% • Emerging markets (like Brazil, Mexico)",
     icon: TrendingUp,
     threshold: 10000,
   },
-  "Impoverished": {
+  Impoverished: {
     color: "bg-red-500",
     textColor: "text-red-700 dark:text-red-300",
     bgColor: "bg-red-50 dark:bg-red-950",
     borderColor: "border-red-200 dark:border-red-800",
-    description: "GDP per capita $0-$9,999 • Max growth: 10% • Developing nations with high potential",
+    description:
+      "GDP per capita $0-$9,999 • Max growth: 10% • Developing nations with high potential",
     icon: Users,
     threshold: 0,
   },
 };
 
 const populationTierConfig = {
-  "X": { label: "500M+", description: "Superpower population (like China, India)" },
+  X: { label: "500M+", description: "Superpower population (like China, India)" },
   "7": { label: "350-499M", description: "Major power population (like United States)" },
   "6": { label: "120-349M", description: "Large nation population (like Brazil, Indonesia)" },
   "5": { label: "80-119M", description: "Medium-large population (like Germany, Turkey)" },
@@ -117,7 +112,10 @@ const populationTierConfig = {
   "1": { label: "0-9M", description: "Small population (like Switzerland, Singapore)" },
 };
 
-export const TierVisualization = memo(function TierVisualization({ countries, isLoading }: TierVisualizationProps) {
+export const TierVisualization = memo(function TierVisualization({
+  countries,
+  isLoading,
+}: TierVisualizationProps) {
   const [activeTab, setActiveTab] = useState<"economic" | "population">("economic");
 
   if (isLoading) {
@@ -145,9 +143,10 @@ export const TierVisualization = memo(function TierVisualization({ countries, is
   }
 
   const economicDistribution = useMemo(() => {
-    const distribution: Record<string, { count: number; percentage: number; countries: string[] }> = {};
-    
-    countries.forEach(country => {
+    const distribution: Record<string, { count: number; percentage: number; countries: string[] }> =
+      {};
+
+    countries.forEach((country) => {
       const tier = country.economicTier;
       if (!distribution[tier]) {
         distribution[tier] = { count: 0, percentage: 0, countries: [] };
@@ -157,7 +156,7 @@ export const TierVisualization = memo(function TierVisualization({ countries, is
     });
 
     // Calculate percentages
-    Object.keys(distribution).forEach(tier => {
+    Object.keys(distribution).forEach((tier) => {
       if (distribution[tier]) {
         distribution[tier].percentage = (distribution[tier].count / countries.length) * 100;
       }
@@ -167,9 +166,10 @@ export const TierVisualization = memo(function TierVisualization({ countries, is
   }, [countries]);
 
   const populationDistribution = useMemo(() => {
-    const distribution: Record<string, { count: number; percentage: number; countries: string[] }> = {};
-    
-    countries.forEach(country => {
+    const distribution: Record<string, { count: number; percentage: number; countries: string[] }> =
+      {};
+
+    countries.forEach((country) => {
       const tier = country.populationTier;
       if (!distribution[tier]) {
         distribution[tier] = { count: 0, percentage: 0, countries: [] };
@@ -179,7 +179,7 @@ export const TierVisualization = memo(function TierVisualization({ countries, is
     });
 
     // Calculate percentages
-    Object.keys(distribution).forEach(tier => {
+    Object.keys(distribution).forEach((tier) => {
       distribution[tier]!.percentage = (distribution[tier]!.count / countries.length) * 100;
     });
 
@@ -187,37 +187,37 @@ export const TierVisualization = memo(function TierVisualization({ countries, is
   }, [countries]);
 
   const renderEconomicTiers = () => {
-    const sortedTiers = Object.keys(tierConfig).filter(tier => economicDistribution[tier]);
-    
+    const sortedTiers = Object.keys(tierConfig).filter((tier) => economicDistribution[tier]);
+
     return (
       <div className="space-y-4">
-        <div className="space-y-2 mb-6">
-          <div className="text-sm text-muted-foreground">
+        <div className="mb-6 space-y-2">
+          <div className="text-muted-foreground text-sm">
             Economic tiers categorize nations by wealth and determine maximum possible growth rates
           </div>
-          <div className="text-xs text-muted-foreground/80 bg-muted/50 p-3 rounded-lg">
-            💡 <strong>How it works:</strong> Wealthier nations (higher GDP per capita) have slower max growth because developed economies naturally grow more slowly than developing ones. This reflects real economic principles.
+          <div className="text-muted-foreground/80 bg-muted/50 rounded-lg p-3 text-xs">
+            💡 <strong>How it works:</strong> Wealthier nations (higher GDP per capita) have slower
+            max growth because developed economies naturally grow more slowly than developing ones.
+            This reflects real economic principles.
           </div>
         </div>
-        {sortedTiers.map(tier => {
+        {sortedTiers.map((tier) => {
           const config = tierConfig[tier as keyof typeof tierConfig];
           const data = economicDistribution[tier];
-          
+
           return (
             <Tooltip key={tier}>
               <TooltipTrigger asChild>
-                <div 
-                  className="space-y-2 cursor-help p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-md"
-                >
+                <div className="cursor-help space-y-2 rounded-lg p-3 transition-all duration-300 hover:scale-[1.02] hover:shadow-md">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${config.color}`} />
-                      <span className="font-medium text-sm">{tier}</span>
+                      <div className={`h-3 w-3 rounded-full ${config.color}`} />
+                      <span className="text-sm font-medium">{tier}</span>
                       <Badge variant="secondary" className="text-xs">
                         {data?.count} countries
                       </Badge>
                     </div>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-muted-foreground text-sm">
                       {data?.percentage.toFixed(1)}%
                     </span>
                   </div>
@@ -228,9 +228,11 @@ export const TierVisualization = memo(function TierVisualization({ countries, is
                 <div className="space-y-2">
                   <div className="font-semibold">{tier}</div>
                   <div className="text-sm">{config.description}</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-muted-foreground text-xs">
                     Countries: {data?.countries?.slice(0, 5).join(", ") ?? ""}
-                    {data?.countries && data.countries.length > 5 && ` +${data.countries.length - 5} more`}
+                    {data?.countries &&
+                      data.countries.length > 5 &&
+                      ` +${data.countries.length - 5} more`}
                   </div>
                 </div>
               </TooltipContent>
@@ -242,38 +244,41 @@ export const TierVisualization = memo(function TierVisualization({ countries, is
   };
 
   const renderPopulationTiers = () => {
-    const sortedTiers = Object.keys(populationTierConfig).filter(tier => populationDistribution[tier]);
-    
+    const sortedTiers = Object.keys(populationTierConfig).filter(
+      (tier) => populationDistribution[tier]
+    );
+
     return (
       <div className="space-y-4">
-        <div className="space-y-2 mb-6">
-          <div className="text-sm text-muted-foreground">
-            Population tiers categorize nations by total population size and influence regional power dynamics
+        <div className="mb-6 space-y-2">
+          <div className="text-muted-foreground text-sm">
+            Population tiers categorize nations by total population size and influence regional
+            power dynamics
           </div>
-          <div className="text-xs text-muted-foreground/80 bg-muted/50 p-3 rounded-lg">
-            🌍 <strong>How it works:</strong> Population size affects economic capacity, military potential, and diplomatic influence. Larger populations provide bigger markets and labor forces but require more resources to manage effectively.
+          <div className="text-muted-foreground/80 bg-muted/50 rounded-lg p-3 text-xs">
+            🌍 <strong>How it works:</strong> Population size affects economic capacity, military
+            potential, and diplomatic influence. Larger populations provide bigger markets and labor
+            forces but require more resources to manage effectively.
           </div>
         </div>
-        {sortedTiers.map(tier => {
+        {sortedTiers.map((tier) => {
           const config = populationTierConfig[tier as keyof typeof populationTierConfig];
           const data = populationDistribution[tier];
-          
+
           return (
             <Tooltip key={tier}>
               <TooltipTrigger asChild>
-                <div 
-                  className="space-y-2 cursor-help p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-md"
-                >
+                <div className="cursor-help space-y-2 rounded-lg p-3 transition-all duration-300 hover:scale-[1.02] hover:shadow-md">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-blue-500" />
-                      <span className="font-medium text-sm">Tier {tier}</span>
-                      <span className="text-xs text-muted-foreground">({config.label})</span>
+                      <div className="h-3 w-3 rounded-full bg-blue-500" />
+                      <span className="text-sm font-medium">Tier {tier}</span>
+                      <span className="text-muted-foreground text-xs">({config.label})</span>
                       <Badge variant="secondary" className="text-xs">
                         {data?.count} countries
                       </Badge>
                     </div>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-muted-foreground text-sm">
                       {data?.percentage.toFixed(1)}%
                     </span>
                   </div>
@@ -284,9 +289,11 @@ export const TierVisualization = memo(function TierVisualization({ countries, is
                 <div className="space-y-2">
                   <div className="font-semibold">Population Tier {tier}</div>
                   <div className="text-sm">{config.description}</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-muted-foreground text-xs">
                     Countries: {data?.countries?.slice(0, 5).join(", ") ?? ""}
-                    {data?.countries && data.countries.length > 5 && ` +${data.countries.length - 5} more`}
+                    {data?.countries &&
+                      data.countries.length > 5 &&
+                      ` +${data.countries.length - 5} more`}
                   </div>
                 </div>
               </TooltipContent>
@@ -300,10 +307,10 @@ export const TierVisualization = memo(function TierVisualization({ countries, is
   return (
     <TooltipProvider>
       <Card
-        className="transition-all duration-300 hover:scale-[1.01] hover:shadow-xl group/card"
+        className="group/card transition-all duration-300 hover:scale-[1.01] hover:shadow-xl"
         style={{
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
           boxShadow: `
             0 4px 16px rgba(0, 0, 0, 0.1),
             0 1px 4px rgba(0, 0, 0, 0.05),
@@ -311,57 +318,61 @@ export const TierVisualization = memo(function TierVisualization({ countries, is
           `,
         }}
       >
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-purple-500 group-hover/card:text-purple-400 transition-colors" />
-          Tier Breakdown
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-            </TooltipTrigger>
-            <TooltipContent>
-              <div className="max-w-xs">
-                <p>Hover over tiers to see detailed information about thresholds, growth rates, and included countries.</p>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => setActiveTab("economic")}
-            className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-300 hover:scale-105 ${
-              activeTab === "economic"
-                ? "bg-primary text-primary-foreground shadow-lg"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            }`}
-          >
-            Economic
-          </button>
-          <button
-            onClick={() => setActiveTab("population")}
-            className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-300 hover:scale-105 ${
-              activeTab === "population"
-                ? "bg-primary text-primary-foreground shadow-lg"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
-            }`}
-            style={{
-              background: activeTab === "population" 
-                ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(96, 165, 250, 0.8))'
-                : 'rgba(255, 255, 255, 0.05)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-            }}
-          >
-            Population
-          </button>
-        </div>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-purple-500 transition-colors group-hover/card:text-purple-400" />
+            Tier Breakdown
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="text-muted-foreground h-4 w-4 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="max-w-xs">
+                  <p>
+                    Hover over tiers to see detailed information about thresholds, growth rates, and
+                    included countries.
+                  </p>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4 flex gap-2">
+            <button
+              onClick={() => setActiveTab("economic")}
+              className={`rounded-md px-3 py-1 text-sm font-medium transition-all duration-300 hover:scale-105 ${
+                activeTab === "economic"
+                  ? "bg-primary text-primary-foreground shadow-lg"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              Economic
+            </button>
+            <button
+              onClick={() => setActiveTab("population")}
+              className={`rounded-md px-3 py-1 text-sm font-medium transition-all duration-300 hover:scale-105 ${
+                activeTab === "population"
+                  ? "bg-primary text-primary-foreground shadow-lg"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+              style={{
+                background:
+                  activeTab === "population"
+                    ? "linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(96, 165, 250, 0.8))"
+                    : "rgba(255, 255, 255, 0.05)",
+                backdropFilter: "blur(8px)",
+                WebkitBackdropFilter: "blur(8px)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+              }}
+            >
+              Population
+            </button>
+          </div>
 
-        {activeTab === "economic" ? renderEconomicTiers() : renderPopulationTiers()}
-      </CardContent>
-    </Card>
+          {activeTab === "economic" ? renderEconomicTiers() : renderPopulationTiers()}
+        </CardContent>
+      </Card>
     </TooltipProvider>
   );
-}); 
+});

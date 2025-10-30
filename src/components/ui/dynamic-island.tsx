@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import React, {
   type ReactNode,
@@ -9,18 +9,18 @@ import React, {
   useReducer,
   useRef,
   useState,
-} from "react"
-import { AnimatePresence, motion, useWillChange } from "framer-motion"
+} from "react";
+import { AnimatePresence, motion, useWillChange } from "framer-motion";
 
 // Optimized animation constants for instant responsiveness
-const stiffness = 400  // Increased for snappier response
-const damping = 30     // Balanced for quick settling
-const MAX_HEIGHT_MOBILE_ULTRA = 400
-const MAX_HEIGHT_MOBILE_MASSIVE = 700
+const stiffness = 400; // Increased for snappier response
+const damping = 30; // Balanced for quick settling
+const MAX_HEIGHT_MOBILE_ULTRA = 400;
+const MAX_HEIGHT_MOBILE_MASSIVE = 700;
 
 // Performance optimization constants
-const RESIZE_DEBOUNCE_MS = 100  // Reduced for faster response
-const ANIMATION_DURATION_MS = 300  // Shorter for instant feel
+const RESIZE_DEBOUNCE_MS = 100; // Reduced for faster response
+const ANIMATION_DURATION_MS = 300; // Shorter for instant feel
 
 export type SizePresets =
   | "reset"
@@ -39,7 +39,7 @@ export type SizePresets =
   | "massive"
   | "extraWide"
   | "fullWidth"
-  | "compactTall"
+  | "compactTall";
 
 const SIZE_PRESETS = {
   RESET: "reset",
@@ -59,14 +59,14 @@ const SIZE_PRESETS = {
   EXTRA_WIDE: "extraWide",
   FULL_WIDTH: "fullWidth",
   COMPACT_TALL: "compactTall",
-} as const
+} as const;
 
 type Preset = {
-  width: number
-  height?: number
-  aspectRatio: number
-  borderRadius: number
-}
+  width: number;
+  height?: number;
+  aspectRatio: number;
+  borderRadius: number;
+};
 
 const DynamicIslandSizePresets: Record<SizePresets, Preset> = {
   [SIZE_PRESETS.RESET]: {
@@ -155,40 +155,35 @@ const DynamicIslandSizePresets: Record<SizePresets, Preset> = {
     aspectRatio: 80 / 350,
     borderRadius: 46,
   },
-}
+};
 
 type BlobStateType = {
-  size: SizePresets
-  previousSize: SizePresets | undefined
-  animationQueue: Array<{ size: SizePresets; delay: number }>
-  isAnimating: boolean
-}
+  size: SizePresets;
+  previousSize: SizePresets | undefined;
+  animationQueue: Array<{ size: SizePresets; delay: number }>;
+  isAnimating: boolean;
+};
 
 type BlobAction =
   | { type: "SET_SIZE"; newSize: SizePresets }
   | { type: "INITIALIZE"; firstState: SizePresets }
   | {
-      type: "SCHEDULE_ANIMATION"
-      animationSteps: Array<{ size: SizePresets; delay: number }>
+      type: "SCHEDULE_ANIMATION";
+      animationSteps: Array<{ size: SizePresets; delay: number }>;
     }
-  | { type: "ANIMATION_END" }
+  | { type: "ANIMATION_END" };
 
 type BlobContextType = {
-  state: BlobStateType
-  dispatch: React.Dispatch<BlobAction>
-  setSize: (size: SizePresets) => void
-  scheduleAnimation: (
-    animationSteps: Array<{ size: SizePresets; delay: number }>
-  ) => void
-  presets: Record<SizePresets, Preset>
-}
+  state: BlobStateType;
+  dispatch: React.Dispatch<BlobAction>;
+  setSize: (size: SizePresets) => void;
+  scheduleAnimation: (animationSteps: Array<{ size: SizePresets; delay: number }>) => void;
+  presets: Record<SizePresets, Preset>;
+};
 
-const BlobContext = createContext<BlobContextType | undefined>(undefined)
+const BlobContext = createContext<BlobContextType | undefined>(undefined);
 
-const blobReducer = (
-  state: BlobStateType,
-  action: BlobAction
-): BlobStateType => {
+const blobReducer = (state: BlobStateType, action: BlobAction): BlobStateType => {
   switch (action.type) {
     case "SET_SIZE":
       return {
@@ -196,34 +191,34 @@ const blobReducer = (
         size: action.newSize,
         previousSize: state.size,
         isAnimating: false, // Only set isAnimating to true if there are more steps
-      }
+      };
     case "SCHEDULE_ANIMATION":
       return {
         ...state,
         animationQueue: action.animationSteps,
         isAnimating: action.animationSteps.length > 0,
-      }
+      };
     case "INITIALIZE":
       return {
         ...state,
         size: action.firstState,
         previousSize: SIZE_PRESETS.EMPTY,
         isAnimating: false,
-      }
+      };
     case "ANIMATION_END":
       return {
         ...state,
         isAnimating: false,
-      }
+      };
     default:
-      return state
+      return state;
   }
-}
+};
 
 interface DynamicIslandProviderProps {
-  children: React.ReactNode
-  initialSize?: SizePresets
-  initialAnimation?: Array<{ size: SizePresets; delay: number }>
+  children: React.ReactNode;
+  initialSize?: SizePresets;
+  initialAnimation?: Array<{ size: SizePresets; delay: number }>;
 }
 
 const DynamicIslandProvider: React.FC<DynamicIslandProviderProps> = ({
@@ -236,39 +231,39 @@ const DynamicIslandProvider: React.FC<DynamicIslandProviderProps> = ({
     previousSize: SIZE_PRESETS.EMPTY,
     animationQueue: initialAnimation,
     isAnimating: initialAnimation.length > 0,
-  }
+  };
 
-  const [state, dispatch] = useReducer(blobReducer, initialState)
+  const [state, dispatch] = useReducer(blobReducer, initialState);
 
   useEffect(() => {
     const processQueue = async () => {
       for (const step of state.animationQueue) {
-        await new Promise((resolve) => setTimeout(resolve, step.delay))
-        dispatch({ type: "SET_SIZE", newSize: step.size })
+        await new Promise((resolve) => setTimeout(resolve, step.delay));
+        dispatch({ type: "SET_SIZE", newSize: step.size });
       }
-      dispatch({ type: "ANIMATION_END" })
-    }
+      dispatch({ type: "ANIMATION_END" });
+    };
 
     if (state.animationQueue.length > 0) {
-      processQueue()
+      processQueue();
     }
-  }, [state.animationQueue])
+  }, [state.animationQueue]);
 
   const setSize = useCallback(
     (newSize: SizePresets) => {
       if (state.previousSize !== newSize && newSize !== state.size) {
-        dispatch({ type: "SET_SIZE", newSize })
+        dispatch({ type: "SET_SIZE", newSize });
       }
     },
     [state.previousSize, state.size, dispatch]
-  )
+  );
 
   const scheduleAnimation = useCallback(
     (animationSteps: Array<{ size: SizePresets; delay: number }>) => {
-      dispatch({ type: "SCHEDULE_ANIMATION", animationSteps })
+      dispatch({ type: "SCHEDULE_ANIMATION", animationSteps });
     },
     [dispatch]
-  )
+  );
 
   const contextValue = {
     state,
@@ -276,170 +271,157 @@ const DynamicIslandProvider: React.FC<DynamicIslandProviderProps> = ({
     setSize,
     scheduleAnimation,
     presets: DynamicIslandSizePresets,
-  }
+  };
 
-  return (
-    <BlobContext.Provider value={contextValue}>{children}</BlobContext.Provider>
-  )
-}
+  return <BlobContext.Provider value={contextValue}>{children}</BlobContext.Provider>;
+};
 
 const useDynamicIslandSize = () => {
-  const context = useContext(BlobContext)
+  const context = useContext(BlobContext);
   if (!context) {
-    throw new Error(
-      "useDynamicIslandSize must be used within a DynamicIslandProvider"
-    )
+    throw new Error("useDynamicIslandSize must be used within a DynamicIslandProvider");
   }
-  return context
-}
+  return context;
+};
 
-const useScheduledAnimations = (
-  animations: Array<{ size: SizePresets; delay: number }>
-) => {
-  const { scheduleAnimation } = useDynamicIslandSize()
-  const animationsRef = useRef(animations)
+const useScheduledAnimations = (animations: Array<{ size: SizePresets; delay: number }>) => {
+  const { scheduleAnimation } = useDynamicIslandSize();
+  const animationsRef = useRef(animations);
 
   useEffect(() => {
-    scheduleAnimation(animationsRef.current)
-  }, [scheduleAnimation])
-}
+    scheduleAnimation(animationsRef.current);
+  }, [scheduleAnimation]);
+};
 
 const DynamicIslandContainer = ({ children }: { children: ReactNode }) => {
   return (
     <div className="z-[10000] flex h-full w-full items-center justify-center bg-transparent">
       {children}
     </div>
-  )
-}
+  );
+};
 
-const DynamicIsland = ({
-  children,
-  id,
-  ...props
-}: {
-  children: ReactNode
-  id: string
-}) => {
-  const willChange = useWillChange()
-  const [screenSize, setScreenSize] = useState("desktop")
-  const [mounted, setMounted] = useState(false)
+const DynamicIsland = ({ children, id, ...props }: { children: ReactNode; id: string }) => {
+  const willChange = useWillChange();
+  const [screenSize, setScreenSize] = useState("desktop");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true)
-    
+    setMounted(true);
+
     // Ultra-fast resize handler with RAF optimization
-    let resizeTimeout: NodeJS.Timeout
-    let rafId: number | undefined
-    let isResizing = false
-    
+    let resizeTimeout: NodeJS.Timeout;
+    let rafId: number | undefined;
+    let isResizing = false;
+
     const handleResize = () => {
-      clearTimeout(resizeTimeout)
-      
+      clearTimeout(resizeTimeout);
+
       if (!isResizing) {
-        isResizing = true
+        isResizing = true;
         rafId = requestAnimationFrame(() => {
-          const width = window.innerWidth
-          const newSize = width <= 640 ? "mobile" : width <= 1024 ? "tablet" : "desktop"
+          const width = window.innerWidth;
+          const newSize = width <= 640 ? "mobile" : width <= 1024 ? "tablet" : "desktop";
           if (screenSize !== newSize) {
-            setScreenSize(newSize)
+            setScreenSize(newSize);
           }
-          isResizing = false
-        })
+          isResizing = false;
+        });
       }
-      
+
       // Fallback timeout for edge cases
       resizeTimeout = setTimeout(() => {
         if (isResizing) {
-          const width = window.innerWidth
-          const newSize = width <= 640 ? "mobile" : width <= 1024 ? "tablet" : "desktop"
+          const width = window.innerWidth;
+          const newSize = width <= 640 ? "mobile" : width <= 1024 ? "tablet" : "desktop";
           if (screenSize !== newSize) {
-            setScreenSize(newSize)
+            setScreenSize(newSize);
           }
-          isResizing = false
+          isResizing = false;
         }
-      }, RESIZE_DEBOUNCE_MS)
-    }
+      }, RESIZE_DEBOUNCE_MS);
+    };
 
-    handleResize()
-    window.addEventListener("resize", handleResize, { passive: true })
+    handleResize();
+    window.addEventListener("resize", handleResize, { passive: true });
     return () => {
-      clearTimeout(resizeTimeout)
+      clearTimeout(resizeTimeout);
       if (rafId) {
-        cancelAnimationFrame(rafId)
+        cancelAnimationFrame(rafId);
       }
-      window.removeEventListener("resize", handleResize)
-    }
-  }, [])
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   if (!mounted) {
     return (
       <DynamicIslandContainer>
-        <div className="relative mx-auto items-center justify-center bg-card/95 backdrop-blur-xl border-border text-center rounded-full h-11 px-4 will-change-transform">
+        <div className="bg-card/95 border-border relative mx-auto h-11 items-center justify-center rounded-full px-4 text-center backdrop-blur-xl will-change-transform">
           {children}
         </div>
       </DynamicIslandContainer>
-    )
+    );
   }
 
   return (
     <DynamicIslandContainer>
-      <DynamicIslandContent
-        id={id}
-        willChange={willChange}
-        screenSize={screenSize}
-        {...props}
-      >
+      <DynamicIslandContent id={id} willChange={willChange} screenSize={screenSize} {...props}>
         {children}
       </DynamicIslandContent>
     </DynamicIslandContainer>
-  )
-}
+  );
+};
 
 const calculateDimensions = (
   size: SizePresets,
   screenSize: string,
   currentSize: Preset
 ): { width: string; height: number | string } => {
-  const isMassiveOnMobile = size === "massive" && screenSize === "mobile"
-  const isUltraOnMobile = size === "ultra" && screenSize === "mobile"
-  const isWideOnMobile = (size === "extraWide" || size === "fullWidth") && screenSize === "mobile"
-  const isWideOnTablet = (size === "extraWide" || size === "fullWidth") && screenSize === "tablet"
+  const isMassiveOnMobile = size === "massive" && screenSize === "mobile";
+  const isUltraOnMobile = size === "ultra" && screenSize === "mobile";
+  const isWideOnMobile = (size === "extraWide" || size === "fullWidth") && screenSize === "mobile";
+  const isWideOnTablet = (size === "extraWide" || size === "fullWidth") && screenSize === "tablet";
 
   if (isMassiveOnMobile) {
-    return { width: "350px", height: MAX_HEIGHT_MOBILE_MASSIVE }
+    return { width: "350px", height: MAX_HEIGHT_MOBILE_MASSIVE };
   }
 
   if (isUltraOnMobile) {
-    return { width: "350px", height: MAX_HEIGHT_MOBILE_ULTRA }
+    return { width: "350px", height: MAX_HEIGHT_MOBILE_ULTRA };
   }
-  
+
   if (isWideOnMobile) {
     // On mobile, use smaller width for wide layouts
-    return { width: "95vw", height: 64 }
+    return { width: "95vw", height: 64 };
   }
-  
+
   if (isWideOnTablet) {
     // On tablet, use most of the available width
-    return { width: "90vw", height: 72 }
+    return { width: "90vw", height: 72 };
   }
-  
+
   // For extra wide and full width on desktop, use responsive width
   if (size === "extraWide") {
-    return { width: "min(1200px, 80vw)", height: 64 }
+    return { width: "min(1200px, 80vw)", height: 64 };
   }
-  
+
   if (size === "fullWidth") {
-    return { width: "min(1400px, 85vw)", height: 80 }
+    return { width: "min(1400px, 85vw)", height: 80 };
   }
 
   // For compact and other modes, use auto width and fit-content height
-  if (size === "compact" || size === "compactLong" || size === "compactMedium" || size === "compactTall") {
-    return { width: "auto", height: "auto" }
+  if (
+    size === "compact" ||
+    size === "compactLong" ||
+    size === "compactMedium" ||
+    size === "compactTall"
+  ) {
+    return { width: "auto", height: "auto" };
   }
 
   // For other preset sizes, use the preset width directly without MIN_WIDTH restriction
-  return { width: `${currentSize.width}px`, height: currentSize.aspectRatio * currentSize.width }
-}
+  return { width: `${currentSize.width}px`, height: currentSize.aspectRatio * currentSize.width };
+};
 
 const DynamicIslandContent = ({
   children,
@@ -448,16 +430,16 @@ const DynamicIslandContent = ({
   screenSize,
   ...props
 }: {
-  children: React.ReactNode
-  id: string
-  willChange: any
-  screenSize: string
-  [key: string]: any
+  children: React.ReactNode;
+  id: string;
+  willChange: any;
+  screenSize: string;
+  [key: string]: any;
 }) => {
-  const { state, presets } = useDynamicIslandSize()
-  const currentSize = presets[state.size]
+  const { state, presets } = useDynamicIslandSize();
+  const currentSize = presets[state.size];
 
-  const dimensions = calculateDimensions(state.size, screenSize, currentSize)
+  const dimensions = calculateDimensions(state.size, screenSize, currentSize);
 
   return (
     <div className="relative">
@@ -482,30 +464,30 @@ const DynamicIslandContent = ({
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 via-indigo-500/20 to-purple-400/20 blur-lg" />
         <div className="absolute inset-0 bg-gradient-to-r from-blue-300/15 via-purple-300/15 to-blue-300/15 blur-md" />
       </motion.div>
-      
+
       {/* Extended glow for wide modes */}
       {(state.size === "extraWide" || state.size === "fullWidth") && (
         <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/10 to-transparent blur-xl opacity-40"
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/10 to-transparent opacity-40 blur-xl"
           initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ 
-            opacity: 0.4, 
+          animate={{
+            opacity: 0.4,
             scale: 1.1,
             transition: {
               type: "spring",
               stiffness: 200,
               damping: 25,
               duration: 0.8,
-            }
+            },
           }}
           exit={{ opacity: 0, scale: 0.8 }}
         />
       )}
-      
+
       {/* Main dynamic island */}
       <motion.div
         id={id}
-        className="relative mx-auto items-center justify-center border border-white/20 dark:border-white/10 text-center transition-colors duration-200 will-change-auto focus-within:bg-accent/80 hover:shadow-2xl hover:shadow-primary/20 overflow-hidden"
+        className="focus-within:bg-accent/80 hover:shadow-primary/20 relative mx-auto items-center justify-center overflow-hidden border border-white/20 text-center transition-colors duration-200 will-change-auto hover:shadow-2xl dark:border-white/10"
         initial={{
           width: dimensions.width,
           height: dimensions.height === "auto" ? "auto" : dimensions.height,
@@ -522,56 +504,60 @@ const DynamicIslandContent = ({
             duration: ANIMATION_DURATION_MS / 1000,
           },
         }}
-        style={{ 
-          willChange: willChange || 'transform',
+        style={{
+          willChange: willChange || "transform",
           minWidth: dimensions.width === "auto" ? "fit-content" : undefined,
-          background: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
+          background:
+            "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%)",
           backdropFilter: "blur(20px) saturate(180%)",
           WebkitBackdropFilter: "blur(20px) saturate(180%)",
           // Performance optimization
-          transform: 'translateZ(0)',
-          isolation: 'isolate',
+          transform: "translateZ(0)",
+          isolation: "isolate",
         }}
         {...props}
       >
         {/* Inner glass effects with refraction */}
-        <div className="absolute inset-0 pointer-events-none">
+        <div className="pointer-events-none absolute inset-0">
           {/* Refraction edges */}
-          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-          <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-          <div className="absolute top-0 left-0 w-px h-full bg-gradient-to-b from-transparent via-white/30 to-transparent" />
-          <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-white/20 to-transparent" />
-          
+          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+          <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/30 to-transparent" />
+          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+
           {/* Inner shimmer - optimized animation */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent rounded-full animate-pulse will-change-transform" style={{ animationDuration: '3s', animationTimingFunction: 'ease-in-out' }} />
+          <div
+            className="absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-transparent via-white/10 to-transparent will-change-transform"
+            style={{ animationDuration: "3s", animationTimingFunction: "ease-in-out" }}
+          />
         </div>
-        
+
         {/* Content container */}
         <div className="relative z-[10001] h-full w-full">
           <AnimatePresence>{children}</AnimatePresence>
         </div>
       </motion.div>
     </div>
-  )
-}
+  );
+};
 
 type DynamicContainerProps = {
-  className?: string
-  children?: React.ReactNode
-}
+  className?: string;
+  children?: React.ReactNode;
+};
 
 const DynamicContainer = ({ className, children }: DynamicContainerProps) => {
-  const willChange = useWillChange()
-  const { state } = useDynamicIslandSize()
-  const { size, previousSize } = state
+  const willChange = useWillChange();
+  const { state } = useDynamicIslandSize();
+  const { size, previousSize } = state;
 
-  const isSizeChanged = size !== previousSize
+  const isSizeChanged = size !== previousSize;
 
   const initialState = {
     opacity: size === previousSize ? 1 : 0,
     scale: size === previousSize ? 1 : 0.9,
     y: size === previousSize ? 0 : 5,
-  }
+  };
 
   const animateState = {
     opacity: 1,
@@ -583,7 +569,7 @@ const DynamicContainer = ({ className, children }: DynamicContainerProps) => {
       damping,
       duration: isSizeChanged ? ANIMATION_DURATION_MS / 1000 : (ANIMATION_DURATION_MS * 1.2) / 1000,
     },
-  }
+  };
 
   return (
     <motion.div
@@ -595,18 +581,18 @@ const DynamicContainer = ({ className, children }: DynamicContainerProps) => {
     >
       {children}
     </motion.div>
-  )
-}
+  );
+};
 
 type DynamicChildrenProps = {
-  className?: string
-  children?: React.ReactNode
-}
+  className?: string;
+  children?: React.ReactNode;
+};
 
 const DynamicDiv = ({ className, children }: DynamicChildrenProps) => {
-  const { state } = useDynamicIslandSize()
-  const { size, previousSize } = state
-  const willChange = useWillChange()
+  const { state } = useDynamicIslandSize();
+  const { size, previousSize } = state;
+  const willChange = useWillChange();
 
   return (
     <motion.div
@@ -629,18 +615,18 @@ const DynamicDiv = ({ className, children }: DynamicChildrenProps) => {
     >
       {children}
     </motion.div>
-  )
-}
+  );
+};
 
 type MotionProps = {
-  className: string
-  children: React.ReactNode
-}
+  className: string;
+  children: React.ReactNode;
+};
 
 const DynamicTitle = ({ className, children }: MotionProps) => {
-  const { state } = useDynamicIslandSize()
-  const { size, previousSize } = state
-  const willChange = useWillChange()
+  const { state } = useDynamicIslandSize();
+  const { size, previousSize } = state;
+  const willChange = useWillChange();
 
   return (
     <motion.h3
@@ -655,13 +641,13 @@ const DynamicTitle = ({ className, children }: MotionProps) => {
     >
       {children}
     </motion.h3>
-  )
-}
+  );
+};
 
 const DynamicDescription = ({ className, children }: MotionProps) => {
-  const { state } = useDynamicIslandSize()
-  const { size, previousSize } = state
-  const willChange = useWillChange()
+  const { state } = useDynamicIslandSize();
+  const { size, previousSize } = state;
+  const willChange = useWillChange();
 
   return (
     <motion.p
@@ -676,8 +662,8 @@ const DynamicDescription = ({ className, children }: MotionProps) => {
     >
       {children}
     </motion.p>
-  )
-}
+  );
+};
 
 export {
   DynamicContainer,
@@ -693,6 +679,6 @@ export {
   useDynamicIslandSize,
   useScheduledAnimations,
   DynamicIslandProvider,
-}
+};
 
-export default DynamicIsland
+export default DynamicIsland;

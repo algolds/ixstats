@@ -2,13 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -163,8 +157,7 @@ export function CountryEconomicPanel({
   >("overview");
   const [isPopulationModalOpen, setIsPopulationModalOpen] = useState(false);
   const [isGdpModalOpen, setIsGdpModalOpen] = useState(false);
-  const [isGdpPerCapitaModalOpen, setIsGdpPerCapitaModalOpen] =
-    useState(false);
+  const [isGdpPerCapitaModalOpen, setIsGdpPerCapitaModalOpen] = useState(false);
   const [isGrowthModalOpen, setIsGrowthModalOpen] = useState(false);
 
   const highlightMetrics = useMemo(
@@ -227,8 +220,7 @@ export function CountryEconomicPanel({
       {
         label: "Population Density",
         value:
-          country.populationDensity !== null &&
-          country.populationDensity !== undefined
+          country.populationDensity !== null && country.populationDensity !== undefined
             ? `${country.populationDensity.toFixed(1)} / km²`
             : "N/A",
       },
@@ -294,13 +286,8 @@ export function CountryEconomicPanel({
         detail: "Annual public revenue",
       },
       {
-        label:
-          economicsData.fiscal.budgetDeficitSurplus >= 0
-            ? "Budget Surplus"
-            : "Budget Deficit",
-        value: formatCompactCurrency(
-          economicsData.fiscal.budgetDeficitSurplus
-        ),
+        label: economicsData.fiscal.budgetDeficitSurplus >= 0 ? "Budget Surplus" : "Budget Deficit",
+        value: formatCompactCurrency(economicsData.fiscal.budgetDeficitSurplus),
         detail: "Revenue minus expenditures",
       },
       {
@@ -332,10 +319,7 @@ export function CountryEconomicPanel({
       },
       {
         label: "Government Type",
-        value:
-          governmentStructure?.governmentType ??
-          country.governmentType ??
-          "Not Published",
+        value: governmentStructure?.governmentType ?? country.governmentType ?? "Not Published",
       },
       {
         label: "Head of State",
@@ -359,9 +343,7 @@ export function CountryEconomicPanel({
       },
     ];
 
-    return details.filter(
-      (detail, index) => index < 3 || detail.value !== "Not Published"
-    );
+    return details.filter((detail, index) => index < 3 || detail.value !== "Not Published");
   }, [
     governmentStructure?.governmentName,
     governmentStructure?.governmentType,
@@ -374,9 +356,9 @@ export function CountryEconomicPanel({
   ]);
 
   const featuredPolicies = useMemo(() => {
-    const policies = PUBLIC_POLICY_FLAGS.filter(
-      (policy) => economicsData.spending[policy.key]
-    ).map(({ label, description }) => ({ label, description }));
+    const policies = PUBLIC_POLICY_FLAGS.filter((policy) => economicsData.spending[policy.key]).map(
+      ({ label, description }) => ({ label, description })
+    );
     return policies.slice(0, 4);
   }, [economicsData.spending]);
 
@@ -441,9 +423,7 @@ export function CountryEconomicPanel({
       },
       {
         label: "Self Employed",
-        value: formatPercent(
-          economicsData.labor.employmentByType.selfEmployed
-        ),
+        value: formatPercent(economicsData.labor.employmentByType.selfEmployed),
       },
       {
         label: "Informal Economy",
@@ -517,10 +497,7 @@ export function CountryEconomicPanel({
   );
 
   const educationHighlights = useMemo(() => {
-    const topLevels = (economicsData.demographics.educationLevels ?? []).slice(
-      0,
-      3
-    );
+    const topLevels = (economicsData.demographics.educationLevels ?? []).slice(0, 3);
     return topLevels.map((level) => ({
       label: level.level,
       value: formatPercent(level.percent),
@@ -528,10 +505,7 @@ export function CountryEconomicPanel({
   }, [economicsData.demographics.educationLevels]);
 
   const citizenshipBreakdown = useMemo(() => {
-    const statuses = (economicsData.demographics.citizenshipStatuses ?? []).slice(
-      0,
-      3
-    );
+    const statuses = (economicsData.demographics.citizenshipStatuses ?? []).slice(0, 3);
     return statuses.map((status) => ({
       label: status.status,
       value: formatPercent(status.percent),
@@ -578,12 +552,14 @@ export function CountryEconomicPanel({
                 <h2 className="text-2xl font-bold md:text-3xl">
                   {country.name.replace(/_/g, " ")}
                 </h2>
-              
               </div>
             </div>
             {isOwnCountry && (
               <Link href={createUrl("/mycountry")}>
-                <Button className="gap-2 bg-amber-500 text-white shadow-md hover:bg-amber-600" size="sm">
+                <Button
+                  className="gap-2 bg-amber-500 text-white shadow-md hover:bg-amber-600"
+                  size="sm"
+                >
                   <Activity className="h-4 w-4" />
                   Manage in MyCountry
                 </Button>
@@ -597,14 +573,14 @@ export function CountryEconomicPanel({
                 key={metric.label}
                 type="button"
                 onClick={metric.onClick}
-                className="rounded-2xl border border-white/60 bg-white/70 p-4 text-left shadow-sm backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-amber-400/80 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 dark:border-white/10 dark:bg-slate-950/40"
+                className="rounded-2xl border border-white/60 bg-white/70 p-4 text-left shadow-sm backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-amber-400/80 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:outline-none dark:border-white/10 dark:bg-slate-950/40"
               >
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                   {metric.label}
                 </p>
                 <p className="mt-2 text-2xl font-semibold">{metric.value}</p>
                 {metric.detail && (
-                  <p className="mt-1 text-xs text-muted-foreground">{metric.detail}</p>
+                  <p className="text-muted-foreground mt-1 text-xs">{metric.detail}</p>
                 )}
               </button>
             ))}
@@ -612,16 +588,14 @@ export function CountryEconomicPanel({
         </CardContent>
       </Card>
 
-     
-
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
         <div className="overflow-x-auto">
-          <TabsList className="flex w-full min-w-fit justify-start gap-2 rounded-full bg-muted/40 p-1">
+          <TabsList className="bg-muted/40 flex w-full min-w-fit justify-start gap-2 rounded-full p-1">
             {tabConfig.map((tab) => (
               <TabsTrigger
                 key={tab.value}
                 value={tab.value}
-                className="flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition data-[state=active]:bg-background data-[state=active]:shadow-sm sm:text-sm"
+                className="data-[state=active]:bg-background flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition data-[state=active]:shadow-sm sm:text-sm"
               >
                 <tab.icon className="h-4 w-4" />
                 <span className="hidden sm:inline">{tab.label}</span>
@@ -632,24 +606,28 @@ export function CountryEconomicPanel({
         </div>
 
         <TabsContent value="overview" className="mt-6 space-y-6">
-          <Card className="border border-border/50 shadow-sm">
+          <Card className="border-border/50 border shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                 <TrendingUp className="h-5 w-5 text-amber-500" />
                 Nation At A Glance
               </CardTitle>
               <CardDescription>
-                National identity signals and macro posture pulled from the MyCountry® public profile.
+                National identity signals and macro posture pulled from the MyCountry® public
+                profile.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {overviewHighlights.map((item) => (
-                  <div key={item.label} className="rounded-xl border border-dashed border-muted/40 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <div
+                    key={item.label}
+                    className="border-muted/40 rounded-xl border border-dashed p-4"
+                  >
+                    <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                       {item.label}
                     </p>
-                    <p className="mt-2 text-sm font-semibold text-foreground">{item.value}</p>
+                    <p className="text-foreground mt-2 text-sm font-semibold">{item.value}</p>
                   </div>
                 ))}
               </div>
@@ -664,11 +642,10 @@ export function CountryEconomicPanel({
               )}
             </CardContent>
           </Card>
-
         </TabsContent>
 
         <TabsContent value="economy" className="mt-6 space-y-6">
-          <Card className="border border-border/50 shadow-sm">
+          <Card className="border-border/50 border shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                 <BarChart3 className="h-5 w-5 text-emerald-500" />
@@ -681,51 +658,47 @@ export function CountryEconomicPanel({
             <CardContent>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {economyHighlights.map((metric) => (
-                  <div key={metric.label} className="rounded-xl border border-muted/40 bg-muted/15 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <div
+                    key={metric.label}
+                    className="border-muted/40 bg-muted/15 rounded-xl border p-4"
+                  >
+                    <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                       {metric.label}
                     </p>
-                    <p className="mt-2 text-lg font-semibold text-foreground">
-                      {metric.value}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">{metric.detail}</p>
+                    <p className="text-foreground mt-2 text-lg font-semibold">{metric.value}</p>
+                    <p className="text-muted-foreground mt-1 text-xs">{metric.detail}</p>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border border-border/50 shadow-sm">
+          <Card className="border-border/50 border shadow-sm">
             <CardContent className="grid gap-6 lg:grid-cols-2">
               <div>
-                <h3 className="text-base font-semibold text-foreground">
-                  Fiscal Outlook
-                </h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="text-foreground text-base font-semibold">Fiscal Outlook</h3>
+                <p className="text-muted-foreground text-sm">
                   Revenue posture and macro-fiscal balance as declared publicly.
                 </p>
                 <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {fiscalHighlights.map((metric) => (
-                    <div key={metric.label} className="rounded-xl border border-dashed border-muted/50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <div
+                      key={metric.label}
+                      className="border-muted/50 rounded-xl border border-dashed p-4"
+                    >
+                      <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                         {metric.label}
                       </p>
-                      <p className="mt-2 text-lg font-semibold text-foreground">
-                        {metric.value}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {metric.detail}
-                      </p>
+                      <p className="text-foreground mt-2 text-lg font-semibold">{metric.value}</p>
+                      <p className="text-muted-foreground mt-1 text-xs">{metric.detail}</p>
                     </div>
                   ))}
                 </div>
               </div>
 
               <div>
-                <h3 className="text-base font-semibold text-foreground">
-                  Top Public Investments
-                </h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="text-foreground text-base font-semibold">Top Public Investments</h3>
+                <p className="text-muted-foreground text-sm">
                   Primary budget categories advertised through national communications.
                 </p>
                 <div className="mt-4 space-y-3">
@@ -733,11 +706,11 @@ export function CountryEconomicPanel({
                     topSpendingCategories.map((category) => (
                       <div
                         key={category.category}
-                        className="flex items-start justify-between rounded-xl border border-muted/40 bg-background/90 p-4 shadow-sm"
+                        className="border-muted/40 bg-background/90 flex items-start justify-between rounded-xl border p-4 shadow-sm"
                       >
                         <div>
                           <p className="text-sm font-semibold">{category.category}</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-muted-foreground text-xs">
                             {formatPercent(category.percent)} of public budget
                           </p>
                         </div>
@@ -747,7 +720,7 @@ export function CountryEconomicPanel({
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       No category-level spending disclosures published.
                     </p>
                   )}
@@ -758,7 +731,7 @@ export function CountryEconomicPanel({
         </TabsContent>
 
         <TabsContent value="government" className="mt-6 space-y-6">
-          <Card className="border border-border/50 shadow-sm">
+          <Card className="border-border/50 border shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                 <Building className="h-5 w-5 text-indigo-500" />
@@ -771,20 +744,21 @@ export function CountryEconomicPanel({
             <CardContent>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {leadershipDetails.map((detail) => (
-                  <div key={detail.label} className="rounded-xl border border-muted/40 bg-muted/15 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <div
+                    key={detail.label}
+                    className="border-muted/40 bg-muted/15 rounded-xl border p-4"
+                  >
+                    <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                       {detail.label}
                     </p>
-                    <p className="mt-2 text-sm font-semibold text-foreground">
-                      {detail.value}
-                    </p>
+                    <p className="text-foreground mt-2 text-sm font-semibold">{detail.value}</p>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border border-border/50 shadow-sm">
+          <Card className="border-border/50 border shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                 <Users className="h-5 w-5 text-indigo-500" />
@@ -808,7 +782,7 @@ export function CountryEconomicPanel({
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   This country has not published any flagship programs in MyCountry®.
                 </p>
               )}
@@ -817,7 +791,7 @@ export function CountryEconomicPanel({
         </TabsContent>
 
         <TabsContent value="labor" className="mt-6 space-y-6">
-          <Card className="border border-border/50 shadow-sm">
+          <Card className="border-border/50 border shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                 <Briefcase className="h-5 w-5 text-emerald-500" />
@@ -830,78 +804,71 @@ export function CountryEconomicPanel({
             <CardContent>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {laborHighlights.map((item) => (
-                  <div key={item.label} className="rounded-xl border border-muted/40 bg-muted/15 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <div
+                    key={item.label}
+                    className="border-muted/40 bg-muted/15 rounded-xl border p-4"
+                  >
+                    <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                       {item.label}
                     </p>
-                    <p className="mt-2 text-lg font-semibold text-foreground">
-                      {item.value}
-                    </p>
+                    <p className="text-foreground mt-2 text-lg font-semibold">{item.value}</p>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border border-border/50 shadow-sm">
+          <Card className="border-border/50 border shadow-sm">
             <CardContent className="grid gap-6 lg:grid-cols-3">
               <div>
-                <h3 className="text-base font-semibold text-foreground">
-                  Employment By Sector
-                </h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="text-foreground text-base font-semibold">Employment By Sector</h3>
+                <p className="text-muted-foreground text-sm">
                   Public workforce distribution across primary sectors.
                 </p>
                 <div className="mt-4 space-y-3">
                   {laborSectorBreakdown.map((sector) => (
                     <div
                       key={sector.label}
-                      className="flex items-center justify-between rounded-xl border border-dashed border-muted/40 bg-background/90 p-3"
+                      className="border-muted/40 bg-background/90 flex items-center justify-between rounded-xl border border-dashed p-3"
                     >
                       <span className="text-sm font-semibold">{sector.label}</span>
-                      <span className="text-sm text-muted-foreground">
-                        {sector.value}
-                      </span>
+                      <span className="text-muted-foreground text-sm">{sector.value}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               <div>
-                <h3 className="text-base font-semibold text-foreground">
-                  Employment Types
-                </h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="text-foreground text-base font-semibold">Employment Types</h3>
+                <p className="text-muted-foreground text-sm">
                   Additional segmentation of the labor force mix.
                 </p>
                 <div className="mt-4 space-y-3">
                   {laborTypeBreakdown.map((type) => (
                     <div
                       key={type.label}
-                      className="flex items-center justify-between rounded-xl border border-dashed border-muted/40 bg-background/90 p-3"
+                      className="border-muted/40 bg-background/90 flex items-center justify-between rounded-xl border border-dashed p-3"
                     >
                       <span className="text-sm font-semibold">{type.label}</span>
-                      <span className="text-sm text-muted-foreground">{type.value}</span>
+                      <span className="text-muted-foreground text-sm">{type.value}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               <div>
-                <h3 className="text-base font-semibold text-foreground">
-                  Workforce Support
-                </h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="text-foreground text-base font-semibold">Workforce Support</h3>
+                <p className="text-muted-foreground text-sm">
                   Public benefits and protections communicated by the nation.
                 </p>
                 <div className="mt-4 space-y-3">
                   {laborSupportHighlights.map((support) => (
                     <div
                       key={support.label}
-                      className="flex items-center justify-between rounded-xl border border-dashed border-muted/40 bg-background/90 p-3"
+                      className="border-muted/40 bg-background/90 flex items-center justify-between rounded-xl border border-dashed p-3"
                     >
                       <span className="text-sm font-semibold">{support.label}</span>
-                      <span className="text-sm text-muted-foreground">{support.value}</span>
+                      <span className="text-muted-foreground text-sm">{support.value}</span>
                     </div>
                   ))}
                 </div>
@@ -911,7 +878,7 @@ export function CountryEconomicPanel({
         </TabsContent>
 
         <TabsContent value="demographics" className="mt-6 space-y-6">
-          <Card className="border border-border/50 shadow-sm">
+          <Card className="border-border/50 border shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                 <PieChart className="h-5 w-5 text-rose-500" />
@@ -924,26 +891,25 @@ export function CountryEconomicPanel({
             <CardContent>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {demographicsHighlights.map((item) => (
-                  <div key={item.label} className="rounded-xl border border-muted/40 bg-muted/15 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <div
+                    key={item.label}
+                    className="border-muted/40 bg-muted/15 rounded-xl border p-4"
+                  >
+                    <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                       {item.label}
                     </p>
-                    <p className="mt-2 text-lg font-semibold text-foreground">
-                      {item.value}
-                    </p>
+                    <p className="text-foreground mt-2 text-lg font-semibold">{item.value}</p>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border border-border/50 shadow-sm">
+          <Card className="border-border/50 border shadow-sm">
             <CardContent className="grid gap-6 lg:grid-cols-3">
               <div>
-                <h3 className="text-base font-semibold text-foreground">
-                  Age Distribution
-                </h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="text-foreground text-base font-semibold">Age Distribution</h3>
+                <p className="text-muted-foreground text-sm">
                   Share of population by primary age brackets.
                 </p>
                 <div className="mt-4 space-y-3">
@@ -951,14 +917,14 @@ export function CountryEconomicPanel({
                     ageDistributionHighlights.map((group) => (
                       <div
                         key={group.label}
-                        className="flex items-center justify-between rounded-xl border border-dashed border-muted/40 bg-background/90 p-3"
+                        className="border-muted/40 bg-background/90 flex items-center justify-between rounded-xl border border-dashed p-3"
                       >
                         <span className="text-sm font-semibold">{group.label}</span>
-                        <span className="text-sm text-muted-foreground">{group.value}</span>
+                        <span className="text-muted-foreground text-sm">{group.value}</span>
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Age distribution data is not currently published.
                     </p>
                   )}
@@ -966,10 +932,8 @@ export function CountryEconomicPanel({
               </div>
 
               <div>
-                <h3 className="text-base font-semibold text-foreground">
-                  Education Attainment
-                </h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="text-foreground text-base font-semibold">Education Attainment</h3>
+                <p className="text-muted-foreground text-sm">
                   Reported share of citizens by highest completed education level.
                 </p>
                 <div className="mt-4 space-y-3">
@@ -977,14 +941,14 @@ export function CountryEconomicPanel({
                     educationHighlights.map((level) => (
                       <div
                         key={level.label}
-                        className="flex items-center justify-between rounded-xl border border-dashed border-muted/40 bg-background/90 p-3"
+                        className="border-muted/40 bg-background/90 flex items-center justify-between rounded-xl border border-dashed p-3"
                       >
                         <span className="text-sm font-semibold">{level.label}</span>
-                        <span className="text-sm text-muted-foreground">{level.value}</span>
+                        <span className="text-muted-foreground text-sm">{level.value}</span>
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Education-level reporting has not been published.
                     </p>
                   )}
@@ -992,10 +956,8 @@ export function CountryEconomicPanel({
               </div>
 
               <div>
-                <h3 className="text-base font-semibold text-foreground">
-                  Citizenship Status
-                </h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="text-foreground text-base font-semibold">Citizenship Status</h3>
+                <p className="text-muted-foreground text-sm">
                   Public distribution of residents by legal status categories.
                 </p>
                 <div className="mt-4 space-y-3">
@@ -1003,14 +965,14 @@ export function CountryEconomicPanel({
                     citizenshipBreakdown.map((status) => (
                       <div
                         key={status.label}
-                        className="flex items-center justify-between rounded-xl border border-dashed border-muted/40 bg-background/90 p-3"
+                        className="border-muted/40 bg-background/90 flex items-center justify-between rounded-xl border border-dashed p-3"
                       >
                         <span className="text-sm font-semibold">{status.label}</span>
-                        <span className="text-sm text-muted-foreground">{status.value}</span>
+                        <span className="text-muted-foreground text-sm">{status.value}</span>
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       No citizenship breakdown data is currently available.
                     </p>
                   )}
@@ -1048,33 +1010,33 @@ export function CountryEconomicPanel({
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-lg border border-muted/40 bg-muted/10 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="border-muted/40 bg-muted/10 rounded-lg border p-4">
+              <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                 Adjusted GDP Growth
               </p>
-              <p className="mt-2 text-xl font-semibold text-foreground">
+              <p className="text-foreground mt-2 text-xl font-semibold">
                 {formatPercent(country.adjustedGdpGrowth, "N/A", 2)}
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="text-muted-foreground mt-1 text-xs">
                 Platform-adjusted growth rate accounting for external modifiers.
               </p>
             </div>
-            <div className="rounded-lg border border-muted/40 bg-muted/10 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="border-muted/40 bg-muted/10 rounded-lg border p-4">
+              <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                 Real GDP Growth
               </p>
-              <p className="mt-2 text-xl font-semibold text-foreground">
+              <p className="text-foreground mt-2 text-xl font-semibold">
                 {formatPercent(economicsData.core.realGDPGrowthRate, "N/A", 2)}
               </p>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="text-muted-foreground mt-1 text-xs">
                 Inflation-adjusted growth as reported for public audiences.
               </p>
             </div>
-            <div className="rounded-lg border border-muted/40 bg-muted/10 p-4 sm:col-span-2">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="border-muted/40 bg-muted/10 rounded-lg border p-4 sm:col-span-2">
+              <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                 Supporting Signals
               </p>
-              <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
+              <ul className="text-muted-foreground mt-2 space-y-2 text-sm">
                 <li>
                   • Nominal GDP:{" "}
                   <span className="font-semibold">
@@ -1087,15 +1049,13 @@ export function CountryEconomicPanel({
                     {formatPercent(economicsData.core.inflationRate, "N/A", 2)}
                   </span>
                 </li>
-                <li>
-                  • Growth messaging is limited to high-level signals in this public view.
-                </li>
+                <li>• Growth messaging is limited to high-level signals in this public view.</li>
               </ul>
             </div>
           </div>
-          <div className="text-xs text-muted-foreground">
-            For deeper forecasting, premium scenario planning, and executive toolsets, access the full MyCountry®
-            dashboard.
+          <div className="text-muted-foreground text-xs">
+            For deeper forecasting, premium scenario planning, and executive toolsets, access the
+            full MyCountry® dashboard.
           </div>
         </DialogContent>
       </Dialog>

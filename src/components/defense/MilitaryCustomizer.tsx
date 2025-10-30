@@ -1,9 +1,9 @@
 // src/components/defense/MilitaryCustomizer.tsx
 "use client";
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { api } from '~/trpc/react';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { api } from "~/trpc/react";
 import {
   Plus,
   Edit,
@@ -26,24 +26,38 @@ import {
   CheckCircle2,
   HelpCircle,
   Image,
-} from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { Progress } from '~/components/ui/progress';
-import { Separator } from '~/components/ui/separator';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '~/components/ui/dialog';
-import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
-import { Textarea } from '~/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
-import { Slider } from '~/components/ui/slider';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { NumberFlowDisplay } from '~/components/ui/number-flow';
-import { toast } from 'sonner';
-import { cn } from '~/lib/utils';
-import { UnitManager } from './UnitManager';
-import { AssetManager } from './AssetManager';
+} from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Progress } from "~/components/ui/progress";
+import { Separator } from "~/components/ui/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Slider } from "~/components/ui/slider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
+import { toast } from "sonner";
+import { cn } from "~/lib/utils";
+import { UnitManager } from "./UnitManager";
+import { AssetManager } from "./AssetManager";
 
 interface MilitaryCustomizerProps {
   countryId: string;
@@ -52,84 +66,84 @@ interface MilitaryCustomizerProps {
 // Branch type configurations inspired by Caphiria structure
 const BRANCH_CONFIGS = {
   army: {
-    label: 'Army',
+    label: "Army",
     icon: Shield,
-    color: 'text-green-600',
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-200',
-    unitTypes: ['division', 'brigade', 'regiment', 'battalion'],
-    assetTypes: ['vehicle', 'weapon_system', 'installation'],
-    defaultName: 'National Army',
+    color: "text-green-600",
+    bgColor: "bg-green-50",
+    borderColor: "border-green-200",
+    unitTypes: ["division", "brigade", "regiment", "battalion"],
+    assetTypes: ["vehicle", "weapon_system", "installation"],
+    defaultName: "National Army",
   },
   navy: {
-    label: 'Navy',
+    label: "Navy",
     icon: Ship,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-    unitTypes: ['fleet', 'squadron', 'division'],
-    assetTypes: ['ship', 'installation'],
-    defaultName: 'Naval Forces',
+    color: "text-blue-600",
+    bgColor: "bg-blue-50",
+    borderColor: "border-blue-200",
+    unitTypes: ["fleet", "squadron", "division"],
+    assetTypes: ["ship", "installation"],
+    defaultName: "Naval Forces",
   },
   air_force: {
-    label: 'Air Force',
+    label: "Air Force",
     icon: Plane,
-    color: 'text-sky-600',
-    bgColor: 'bg-sky-50',
-    borderColor: 'border-sky-200',
-    unitTypes: ['wing', 'squadron', 'group'],
-    assetTypes: ['aircraft', 'installation'],
-    defaultName: 'Air Force',
+    color: "text-sky-600",
+    bgColor: "bg-sky-50",
+    borderColor: "border-sky-200",
+    unitTypes: ["wing", "squadron", "group"],
+    assetTypes: ["aircraft", "installation"],
+    defaultName: "Air Force",
   },
   space_force: {
-    label: 'Space Force',
+    label: "Space Force",
     icon: Zap,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-200',
-    unitTypes: ['squadron', 'delta', 'garrison'],
-    assetTypes: ['installation', 'weapon_system'],
-    defaultName: 'Space Command',
+    color: "text-purple-600",
+    bgColor: "bg-purple-50",
+    borderColor: "border-purple-200",
+    unitTypes: ["squadron", "delta", "garrison"],
+    assetTypes: ["installation", "weapon_system"],
+    defaultName: "Space Command",
   },
   marines: {
-    label: 'Marine Corps',
+    label: "Marine Corps",
     icon: Target,
-    color: 'text-red-600',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200',
-    unitTypes: ['division', 'regiment', 'battalion'],
-    assetTypes: ['vehicle', 'aircraft', 'ship'],
-    defaultName: 'Marine Corps',
+    color: "text-red-600",
+    bgColor: "bg-red-50",
+    borderColor: "border-red-200",
+    unitTypes: ["division", "regiment", "battalion"],
+    assetTypes: ["vehicle", "aircraft", "ship"],
+    defaultName: "Marine Corps",
   },
   cyber_command: {
-    label: 'Cyber Command',
+    label: "Cyber Command",
     icon: Radio,
-    color: 'text-indigo-600',
-    bgColor: 'bg-indigo-50',
-    borderColor: 'border-indigo-200',
-    unitTypes: ['group', 'squadron', 'team'],
-    assetTypes: ['installation', 'weapon_system'],
-    defaultName: 'Cyber Command',
+    color: "text-indigo-600",
+    bgColor: "bg-indigo-50",
+    borderColor: "border-indigo-200",
+    unitTypes: ["group", "squadron", "team"],
+    assetTypes: ["installation", "weapon_system"],
+    defaultName: "Cyber Command",
   },
   special_forces: {
-    label: 'Special Operations',
+    label: "Special Operations",
     icon: Star,
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-50',
-    borderColor: 'border-orange-200',
-    unitTypes: ['regiment', 'battalion', 'squadron'],
-    assetTypes: ['weapon_system', 'vehicle', 'aircraft'],
-    defaultName: 'Special Operations Command',
+    color: "text-orange-600",
+    bgColor: "bg-orange-50",
+    borderColor: "border-orange-200",
+    unitTypes: ["regiment", "battalion", "squadron"],
+    assetTypes: ["weapon_system", "vehicle", "aircraft"],
+    defaultName: "Special Operations Command",
   },
   coast_guard: {
-    label: 'Coast Guard',
+    label: "Coast Guard",
     icon: Ship,
-    color: 'text-cyan-600',
-    bgColor: 'bg-cyan-50',
-    borderColor: 'border-cyan-200',
-    unitTypes: ['district', 'sector', 'station'],
-    assetTypes: ['ship', 'aircraft', 'installation'],
-    defaultName: 'Coast Guard',
+    color: "text-cyan-600",
+    bgColor: "bg-cyan-50",
+    borderColor: "border-cyan-200",
+    unitTypes: ["district", "sector", "station"],
+    assetTypes: ["ship", "aircraft", "installation"],
+    defaultName: "Coast Guard",
   },
 } as const;
 
@@ -150,7 +164,7 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
   // Create branch mutation
   const createBranch = api.security.createMilitaryBranch.useMutation({
     onSuccess: () => {
-      toast.success('Military branch created successfully');
+      toast.success("Military branch created successfully");
       setShowBranchDialog(false);
       setEditingBranch(null);
       refetchBranches();
@@ -163,7 +177,7 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
   // Update branch mutation
   const updateBranch = api.security.updateMilitaryBranch.useMutation({
     onSuccess: () => {
-      toast.success('Branch updated successfully');
+      toast.success("Branch updated successfully");
       setShowBranchDialog(false);
       setEditingBranch(null);
       refetchBranches();
@@ -176,7 +190,7 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
   // Delete branch mutation
   const deleteBranch = api.security.deleteMilitaryBranch.useMutation({
     onSuccess: () => {
-      toast.success('Branch deleted successfully');
+      toast.success("Branch deleted successfully");
       refetchBranches();
     },
     onError: (error) => {
@@ -205,7 +219,7 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
   };
 
   const handleDeleteBranch = (branchId: string) => {
-    if (confirm('Are you sure you want to delete this military branch?')) {
+    if (confirm("Are you sure you want to delete this military branch?")) {
       deleteBranch.mutate({ id: branchId });
     }
   };
@@ -223,7 +237,7 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                      <HelpCircle className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                      <HelpCircle className="text-muted-foreground hover:text-primary h-4 w-4" />
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl">
@@ -235,33 +249,56 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
                     </DialogHeader>
                     <div className="space-y-4 text-sm">
                       <div>
-                        <h4 className="font-semibold mb-2">Creating Military Branches</h4>
+                        <h4 className="mb-2 font-semibold">Creating Military Branches</h4>
                         <p className="text-muted-foreground">
-                          Build your armed forces by creating branches (Army, Navy, Air Force, etc.). Each branch can have custom names, mottos, and organizational structures inspired by real-world militaries.
+                          Build your armed forces by creating branches (Army, Navy, Air Force,
+                          etc.). Each branch can have custom names, mottos, and organizational
+                          structures inspired by real-world militaries.
                         </p>
                       </div>
                       <div>
-                        <h4 className="font-semibold mb-2">Branch Configuration</h4>
-                        <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                          <li><strong>Personnel:</strong> Set active duty, reserve, and civilian staff numbers</li>
-                          <li><strong>Budget:</strong> Allocate annual budget and percentage of total defense spending</li>
-                          <li><strong>Readiness:</strong> Configure combat readiness, technology level, training, and morale</li>
-                          <li><strong>Image/Emblem:</strong> Add custom branch insignia or emblems via image URL</li>
+                        <h4 className="mb-2 font-semibold">Branch Configuration</h4>
+                        <ul className="text-muted-foreground list-inside list-disc space-y-1">
+                          <li>
+                            <strong>Personnel:</strong> Set active duty, reserve, and civilian staff
+                            numbers
+                          </li>
+                          <li>
+                            <strong>Budget:</strong> Allocate annual budget and percentage of total
+                            defense spending
+                          </li>
+                          <li>
+                            <strong>Readiness:</strong> Configure combat readiness, technology
+                            level, training, and morale
+                          </li>
+                          <li>
+                            <strong>Image/Emblem:</strong> Add custom branch insignia or emblems via
+                            image URL
+                          </li>
                         </ul>
                       </div>
                       <div>
-                        <h4 className="font-semibold mb-2">Units & Assets</h4>
+                        <h4 className="mb-2 font-semibold">Units & Assets</h4>
                         <p className="text-muted-foreground">
-                          Each branch can contain multiple units (divisions, regiments, squadrons) and assets (vehicles, aircraft, ships, weapon systems). Browse the equipment database to add assets from real-world systems.
+                          Each branch can contain multiple units (divisions, regiments, squadrons)
+                          and assets (vehicles, aircraft, ships, weapon systems). Browse the
+                          equipment database to add assets from real-world systems.
                         </p>
                       </div>
                       <div>
-                        <h4 className="font-semibold mb-2">Best Practices</h4>
-                        <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                          <li>Keep budget allocations realistic (total should equal 100% of branch budget)</li>
-                          <li>Balance readiness metrics - overly high values may not be sustainable</li>
+                        <h4 className="mb-2 font-semibold">Best Practices</h4>
+                        <ul className="text-muted-foreground list-inside list-disc space-y-1">
+                          <li>
+                            Keep budget allocations realistic (total should equal 100% of branch
+                            budget)
+                          </li>
+                          <li>
+                            Balance readiness metrics - overly high values may not be sustainable
+                          </li>
                           <li>Use established dates to track branch history and traditions</li>
-                          <li>Organize units hierarchically (e.g., Division → Brigade → Battalion)</li>
+                          <li>
+                            Organize units hierarchically (e.g., Division → Brigade → Battalion)
+                          </li>
                         </ul>
                       </div>
                     </div>
@@ -273,7 +310,7 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
               </CardDescription>
             </div>
             <Button onClick={handleCreateBranch}>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Add Branch
             </Button>
           </div>
@@ -289,26 +326,29 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
             const isExpanded = expandedBranches.has(branch.id);
 
             return (
-              <Card key={branch.id} className="glass-hierarchy-child border-2 border-border">
-                <CardHeader className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => toggleBranch(branch.id)}>
+              <Card key={branch.id} className="glass-hierarchy-child border-border border-2">
+                <CardHeader
+                  className="hover:bg-accent/50 cursor-pointer transition-colors"
+                  onClick={() => toggleBranch(branch.id)}
+                >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 flex-1">
-                      <div className="p-2 rounded-lg bg-muted border border-border relative overflow-hidden">
+                    <div className="flex flex-1 items-center gap-3">
+                      <div className="bg-muted border-border relative overflow-hidden rounded-lg border p-2">
                         {branch.imageUrl && (
                           <div
                             className="absolute inset-0 bg-cover bg-center opacity-30"
                             style={{ backgroundImage: `url(${branch.imageUrl})` }}
                           />
                         )}
-                        <Icon className={cn('h-6 w-6 relative z-10', config?.color)} />
+                        <Icon className={cn("relative z-10 h-6 w-6", config?.color)} />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-lg">{branch.name}</h3>
+                          <h3 className="text-lg font-semibold">{branch.name}</h3>
                           <Badge variant="outline">{config?.label ?? branch.branchType}</Badge>
                         </div>
                         {branch.motto && (
-                          <p className="text-sm text-muted-foreground italic">"{branch.motto}"</p>
+                          <p className="text-muted-foreground text-sm italic">"{branch.motto}"</p>
                         )}
                       </div>
                     </div>
@@ -334,9 +374,9 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
                         <Trash2 className="h-4 w-4" />
                       </Button>
                       {isExpanded ? (
-                        <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                        <ChevronDown className="text-muted-foreground h-5 w-5" />
                       ) : (
-                        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                        <ChevronRight className="text-muted-foreground h-5 w-5" />
                       )}
                     </div>
                   </div>
@@ -346,33 +386,33 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
                   {isExpanded && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
+                      animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <CardContent className="pt-6 space-y-6">
+                      <CardContent className="space-y-6 pt-6">
                         {/* Personnel Stats */}
                         <div className="grid grid-cols-3 gap-4">
-                          <div className="text-center p-4 rounded-lg bg-muted/50">
-                            <Users className="h-5 w-5 mx-auto mb-2 text-blue-600" />
+                          <div className="bg-muted/50 rounded-lg p-4 text-center">
+                            <Users className="mx-auto mb-2 h-5 w-5 text-blue-600" />
                             <div className="text-2xl font-bold">
                               <NumberFlowDisplay value={branch.activeDuty} />
                             </div>
-                            <div className="text-xs text-muted-foreground">Active Duty</div>
+                            <div className="text-muted-foreground text-xs">Active Duty</div>
                           </div>
-                          <div className="text-center p-4 rounded-lg bg-muted/50">
-                            <Users className="h-5 w-5 mx-auto mb-2 text-green-600" />
+                          <div className="bg-muted/50 rounded-lg p-4 text-center">
+                            <Users className="mx-auto mb-2 h-5 w-5 text-green-600" />
                             <div className="text-2xl font-bold">
                               <NumberFlowDisplay value={branch.reserves} />
                             </div>
-                            <div className="text-xs text-muted-foreground">Reserves</div>
+                            <div className="text-muted-foreground text-xs">Reserves</div>
                           </div>
-                          <div className="text-center p-4 rounded-lg bg-muted/50">
-                            <Users className="h-5 w-5 mx-auto mb-2 text-purple-600" />
+                          <div className="bg-muted/50 rounded-lg p-4 text-center">
+                            <Users className="mx-auto mb-2 h-5 w-5 text-purple-600" />
                             <div className="text-2xl font-bold">
                               <NumberFlowDisplay value={branch.civilianStaff} />
                             </div>
-                            <div className="text-xs text-muted-foreground">Civilian Staff</div>
+                            <div className="text-muted-foreground text-xs">Civilian Staff</div>
                           </div>
                         </div>
 
@@ -380,7 +420,7 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
 
                         {/* Readiness Metrics */}
                         <div className="space-y-4">
-                          <h4 className="font-semibold flex items-center gap-2">
+                          <h4 className="flex items-center gap-2 font-semibold">
                             <Target className="h-4 w-4" />
                             Readiness & Capability
                           </h4>
@@ -389,7 +429,11 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
                               <div className="flex items-center justify-between text-sm">
                                 <span className="text-muted-foreground">Readiness Level</span>
                                 <span className="font-medium">
-                                  <NumberFlowDisplay value={branch.readinessLevel} format="percentage" decimalPlaces={0} />
+                                  <NumberFlowDisplay
+                                    value={branch.readinessLevel}
+                                    format="percentage"
+                                    decimalPlaces={0}
+                                  />
                                 </span>
                               </div>
                               <Progress value={branch.readinessLevel} className="h-2" />
@@ -398,7 +442,11 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
                               <div className="flex items-center justify-between text-sm">
                                 <span className="text-muted-foreground">Technology</span>
                                 <span className="font-medium">
-                                  <NumberFlowDisplay value={branch.technologyLevel} format="percentage" decimalPlaces={0} />
+                                  <NumberFlowDisplay
+                                    value={branch.technologyLevel}
+                                    format="percentage"
+                                    decimalPlaces={0}
+                                  />
                                 </span>
                               </div>
                               <Progress value={branch.technologyLevel} className="h-2" />
@@ -407,7 +455,11 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
                               <div className="flex items-center justify-between text-sm">
                                 <span className="text-muted-foreground">Training</span>
                                 <span className="font-medium">
-                                  <NumberFlowDisplay value={branch.trainingLevel} format="percentage" decimalPlaces={0} />
+                                  <NumberFlowDisplay
+                                    value={branch.trainingLevel}
+                                    format="percentage"
+                                    decimalPlaces={0}
+                                  />
                                 </span>
                               </div>
                               <Progress value={branch.trainingLevel} className="h-2" />
@@ -416,7 +468,11 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
                               <div className="flex items-center justify-between text-sm">
                                 <span className="text-muted-foreground">Morale</span>
                                 <span className="font-medium">
-                                  <NumberFlowDisplay value={branch.morale} format="percentage" decimalPlaces={0} />
+                                  <NumberFlowDisplay
+                                    value={branch.morale}
+                                    format="percentage"
+                                    decimalPlaces={0}
+                                  />
                                 </span>
                               </div>
                               <Progress value={branch.morale} className="h-2" />
@@ -427,7 +483,7 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
                         <Separator />
 
                         {/* Budget */}
-                        <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                        <div className="bg-muted/50 flex items-center justify-between rounded-lg p-4">
                           <div className="flex items-center gap-2">
                             <DollarSign className="h-5 w-5 text-green-600" />
                             <span className="font-medium">Annual Budget</span>
@@ -436,15 +492,20 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
                             <div className="text-lg font-bold">
                               $<NumberFlowDisplay value={branch.annualBudget} format="compact" />
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              <NumberFlowDisplay value={branch.budgetPercent} format="percentage" decimalPlaces={1} /> of defense budget
+                            <div className="text-muted-foreground text-xs">
+                              <NumberFlowDisplay
+                                value={branch.budgetPercent}
+                                format="percentage"
+                                decimalPlaces={1}
+                              />{" "}
+                              of defense budget
                             </div>
                           </div>
                         </div>
 
                         {/* Units & Assets Managers */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="p-4 rounded-lg border bg-card">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                          <div className="bg-card rounded-lg border p-4">
                             <UnitManager
                               branchId={branch.id}
                               branchType={branch.branchType}
@@ -452,7 +513,7 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
                               onRefetch={refetchBranches}
                             />
                           </div>
-                          <div className="p-4 rounded-lg border bg-card">
+                          <div className="bg-card rounded-lg border p-4">
                             <AssetManager
                               branchId={branch.id}
                               branchType={branch.branchType}
@@ -472,13 +533,13 @@ export function MilitaryCustomizer({ countryId }: MilitaryCustomizerProps) {
       ) : (
         <Card className="glass-hierarchy-child">
           <CardContent className="py-12 text-center">
-            <Shield className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-            <h3 className="text-lg font-semibold mb-2">No Military Branches</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+            <Shield className="text-muted-foreground/50 mx-auto mb-4 h-16 w-16" />
+            <h3 className="mb-2 text-lg font-semibold">No Military Branches</h3>
+            <p className="text-muted-foreground mb-4 text-sm">
               Create your first military branch to start building your armed forces
             </p>
             <Button onClick={handleCreateBranch}>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Create First Branch
             </Button>
           </CardContent>
@@ -508,14 +569,21 @@ interface BranchDialogProps {
   onUpdate: (id: string, data: any) => void;
 }
 
-function BranchDialog({ open, onOpenChange, branch, countryId, onCreate, onUpdate }: BranchDialogProps) {
+function BranchDialog({
+  open,
+  onOpenChange,
+  branch,
+  countryId,
+  onCreate,
+  onUpdate,
+}: BranchDialogProps) {
   const [formData, setFormData] = useState({
-    branchType: branch?.branchType ?? 'army',
-    name: branch?.name ?? '',
-    description: branch?.description ?? '',
-    motto: branch?.motto ?? '',
-    established: branch?.established ?? '',
-    imageUrl: branch?.imageUrl ?? '',
+    branchType: branch?.branchType ?? "army",
+    name: branch?.name ?? "",
+    description: branch?.description ?? "",
+    motto: branch?.motto ?? "",
+    established: branch?.established ?? "",
+    imageUrl: branch?.imageUrl ?? "",
     activeDuty: branch?.activeDuty ?? 0,
     reserves: branch?.reserves ?? 0,
     civilianStaff: branch?.civilianStaff ?? 0,
@@ -534,10 +602,10 @@ function BranchDialog({ open, onOpenChange, branch, countryId, onCreate, onUpdat
       setFormData({
         branchType: branch.branchType,
         name: branch.name,
-        description: branch.description ?? '',
-        motto: branch.motto ?? '',
-        established: branch.established ?? '',
-        imageUrl: branch.imageUrl ?? '',
+        description: branch.description ?? "",
+        motto: branch.motto ?? "",
+        established: branch.established ?? "",
+        imageUrl: branch.imageUrl ?? "",
         activeDuty: branch.activeDuty,
         reserves: branch.reserves,
         civilianStaff: branch.civilianStaff,
@@ -552,7 +620,7 @@ function BranchDialog({ open, onOpenChange, branch, countryId, onCreate, onUpdat
       });
     } else {
       const config = BRANCH_CONFIGS[formData.branchType as keyof typeof BRANCH_CONFIGS];
-      setFormData((prev) => ({ ...prev, name: config?.defaultName ?? '' }));
+      setFormData((prev) => ({ ...prev, name: config?.defaultName ?? "" }));
     }
   }, [branch, open]);
 
@@ -569,11 +637,11 @@ function BranchDialog({ open, onOpenChange, branch, countryId, onCreate, onUpdat
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Icon className={cn('h-5 w-5', config?.color)} />
-            {branch ? 'Edit Military Branch' : 'Create Military Branch'}
+            <Icon className={cn("h-5 w-5", config?.color)} />
+            {branch ? "Edit Military Branch" : "Create Military Branch"}
           </DialogTitle>
           <DialogDescription>
             Configure your military branch with personnel, budget, and readiness metrics
@@ -594,7 +662,7 @@ function BranchDialog({ open, onOpenChange, branch, countryId, onCreate, onUpdat
                 value={formData.branchType}
                 onValueChange={(value) => {
                   const config = BRANCH_CONFIGS[value as keyof typeof BRANCH_CONFIGS];
-                  setFormData({ ...formData, branchType: value, name: config?.defaultName ?? '' });
+                  setFormData({ ...formData, branchType: value, name: config?.defaultName ?? "" });
                 }}
               >
                 <SelectTrigger>
@@ -604,7 +672,7 @@ function BranchDialog({ open, onOpenChange, branch, countryId, onCreate, onUpdat
                   {Object.entries(BRANCH_CONFIGS).map(([key, config]) => (
                     <SelectItem key={key} value={key}>
                       <div className="flex items-center gap-2">
-                        <config.icon className={cn('h-4 w-4', config.color)} />
+                        <config.icon className={cn("h-4 w-4", config.color)} />
                         {config.label}
                       </div>
                     </SelectItem>
@@ -661,16 +729,17 @@ function BranchDialog({ open, onOpenChange, branch, countryId, onCreate, onUpdat
                 placeholder="https://example.com/branch-emblem.png"
               />
               {formData.imageUrl && (
-                <div className="mt-2 p-2 border rounded-lg">
-                  <p className="text-xs text-muted-foreground mb-2">Preview:</p>
-                  <div className="w-16 h-16 rounded-lg overflow-hidden border">
+                <div className="mt-2 rounded-lg border p-2">
+                  <p className="text-muted-foreground mb-2 text-xs">Preview:</p>
+                  <div className="h-16 w-16 overflow-hidden rounded-lg border">
                     <img
                       src={formData.imageUrl}
                       alt="Branch emblem preview"
-                      className="w-full h-full object-cover"
+                      className="h-full w-full object-cover"
                       onError={(e) => {
-                        e.currentTarget.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>';
-                        e.currentTarget.alt = 'Invalid image URL';
+                        e.currentTarget.src =
+                          'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>';
+                        e.currentTarget.alt = "Invalid image URL";
                       }}
                     />
                   </div>
@@ -686,7 +755,9 @@ function BranchDialog({ open, onOpenChange, branch, countryId, onCreate, onUpdat
                 <Input
                   type="number"
                   value={formData.activeDuty}
-                  onChange={(e) => setFormData({ ...formData, activeDuty: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, activeDuty: parseInt(e.target.value) || 0 })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -694,7 +765,9 @@ function BranchDialog({ open, onOpenChange, branch, countryId, onCreate, onUpdat
                 <Input
                   type="number"
                   value={formData.reserves}
-                  onChange={(e) => setFormData({ ...formData, reserves: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, reserves: parseInt(e.target.value) || 0 })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -702,7 +775,9 @@ function BranchDialog({ open, onOpenChange, branch, countryId, onCreate, onUpdat
                 <Input
                   type="number"
                   value={formData.civilianStaff}
-                  onChange={(e) => setFormData({ ...formData, civilianStaff: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, civilianStaff: parseInt(e.target.value) || 0 })
+                  }
                 />
               </div>
             </div>
@@ -715,7 +790,9 @@ function BranchDialog({ open, onOpenChange, branch, countryId, onCreate, onUpdat
                 <Input
                   type="number"
                   value={formData.annualBudget}
-                  onChange={(e) => setFormData({ ...formData, annualBudget: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, annualBudget: parseFloat(e.target.value) || 0 })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -723,7 +800,9 @@ function BranchDialog({ open, onOpenChange, branch, countryId, onCreate, onUpdat
                 <Input
                   type="number"
                   value={formData.budgetPercent}
-                  onChange={(e) => setFormData({ ...formData, budgetPercent: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, budgetPercent: parseFloat(e.target.value) || 0 })
+                  }
                   max={100}
                   min={0}
                   step={0.1}
@@ -795,7 +874,9 @@ function BranchDialog({ open, onOpenChange, branch, countryId, onCreate, onUpdat
                 </div>
                 <Slider
                   value={[formData.deploymentCapacity]}
-                  onValueChange={([value]) => setFormData({ ...formData, deploymentCapacity: value })}
+                  onValueChange={([value]) =>
+                    setFormData({ ...formData, deploymentCapacity: value })
+                  }
                   max={100}
                   step={1}
                 />
@@ -808,7 +889,9 @@ function BranchDialog({ open, onOpenChange, branch, countryId, onCreate, onUpdat
                 </div>
                 <Slider
                   value={[formData.sustainmentCapacity]}
-                  onValueChange={([value]) => setFormData({ ...formData, sustainmentCapacity: value })}
+                  onValueChange={([value]) =>
+                    setFormData({ ...formData, sustainmentCapacity: value })
+                  }
                   max={100}
                   step={1}
                 />
@@ -822,8 +905,8 @@ function BranchDialog({ open, onOpenChange, branch, countryId, onCreate, onUpdat
             Cancel
           </Button>
           <Button onClick={handleSubmit}>
-            <CheckCircle2 className="h-4 w-4 mr-2" />
-            {branch ? 'Update Branch' : 'Create Branch'}
+            <CheckCircle2 className="mr-2 h-4 w-4" />
+            {branch ? "Update Branch" : "Create Branch"}
           </Button>
         </DialogFooter>
       </DialogContent>

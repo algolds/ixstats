@@ -3,10 +3,10 @@
  * 3D grid system with independent flag rotations and proper X/Y/Z depth
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { SimpleFlag } from '~/components/SimpleFlag';
-import { cn } from '~/lib/utils';
+import React, { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { SimpleFlag } from "~/components/SimpleFlag";
+import { cn } from "~/lib/utils";
 
 interface CountryData {
   id: string;
@@ -35,7 +35,7 @@ export const EnhancedRubiksCube: React.FC<EnhancedRubiksCubeProps> = ({
   countries,
   className,
   gridSize = 3,
-  animationSpeed = 3500
+  animationSpeed = 3500,
 }) => {
   const [cubes, setCubes] = useState<FlagCube[]>([]);
   const [globalRotation, setGlobalRotation] = useState({ x: 0, y: 0, z: 0 });
@@ -47,26 +47,26 @@ export const EnhancedRubiksCube: React.FC<EnhancedRubiksCubeProps> = ({
 
     const totalCubes = gridSize * gridSize * gridSize;
     const shuffledCountries = [...countries].sort(() => Math.random() - 0.5);
-    
+
     const newCubes: FlagCube[] = [];
-    
+
     for (let i = 0; i < totalCubes; i++) {
       const x = (i % gridSize) - Math.floor(gridSize / 2);
-      const y = Math.floor(i / gridSize) % gridSize - Math.floor(gridSize / 2);
+      const y = (Math.floor(i / gridSize) % gridSize) - Math.floor(gridSize / 2);
       const z = Math.floor(i / (gridSize * gridSize)) - Math.floor(gridSize / 2);
-      
+
       newCubes.push({
         id: `cube-${i}`,
         country: shuffledCountries[i % shuffledCountries.length],
         position: { x: x * 120, y: y * 120, z: z * 120 },
-        rotation: { 
-          x: Math.random() * 360, 
-          y: Math.random() * 360, 
-          z: Math.random() * 360 
-        }
+        rotation: {
+          x: Math.random() * 360,
+          y: Math.random() * 360,
+          z: Math.random() * 360,
+        },
       });
     }
-    
+
     setCubes(newCubes);
   }, [countries, gridSize]);
 
@@ -78,28 +78,30 @@ export const EnhancedRubiksCube: React.FC<EnhancedRubiksCubeProps> = ({
       setIsAnimating(true);
 
       // Global cube rotation
-      setGlobalRotation(prev => ({
+      setGlobalRotation((prev) => ({
         x: prev.x + (Math.random() * 60 - 30),
         y: prev.y + (Math.random() * 90 - 45),
-        z: prev.z + (Math.random() * 30 - 15)
+        z: prev.z + (Math.random() * 30 - 15),
       }));
 
       // Individual cube animations and country swaps
-      setCubes(prevCubes => 
-        prevCubes.map(cube => {
+      setCubes((prevCubes) =>
+        prevCubes.map((cube) => {
           const shouldSwap = Math.random() < 0.3; // 30% chance to swap country
           const shouldRotate = Math.random() < 0.7; // 70% chance to rotate
-          
+
           return {
             ...cube,
-            country: shouldSwap ? 
-              countries[Math.floor(Math.random() * countries.length)] : 
-              cube.country,
-            rotation: shouldRotate ? {
-              x: cube.rotation.x + (Math.random() * 180 - 90),
-              y: cube.rotation.y + (Math.random() * 180 - 90),
-              z: cube.rotation.z + (Math.random() * 90 - 45)
-            } : cube.rotation
+            country: shouldSwap
+              ? countries[Math.floor(Math.random() * countries.length)]
+              : cube.country,
+            rotation: shouldRotate
+              ? {
+                  x: cube.rotation.x + (Math.random() * 180 - 90),
+                  y: cube.rotation.y + (Math.random() * 180 - 90),
+                  z: cube.rotation.z + (Math.random() * 90 - 45),
+                }
+              : cube.rotation,
           };
         })
       );
@@ -121,7 +123,7 @@ export const EnhancedRubiksCube: React.FC<EnhancedRubiksCubeProps> = ({
       rotateY: globalRotation.y,
       rotateZ: globalRotation.z,
       scale: 1.05,
-    }
+    },
   };
 
   const cubeVariants = {
@@ -148,23 +150,23 @@ export const EnhancedRubiksCube: React.FC<EnhancedRubiksCubeProps> = ({
       rotateY: 180,
       transition: {
         duration: 0.6,
-        ease: "easeOut"
-      }
-    }
+        ease: "easeOut",
+      },
+    },
   };
 
   if (cubes.length === 0) {
     return (
-      <div className={cn("w-full h-full flex items-center justify-center", className)}>
+      <div className={cn("flex h-full w-full items-center justify-center", className)}>
         <div className="text-muted-foreground text-sm">Initializing cube...</div>
       </div>
     );
   }
 
   return (
-    <div 
-      className={cn("w-full h-full relative overflow-hidden", className)}
-      style={{ perspective: '1200px' }}
+    <div
+      className={cn("relative h-full w-full overflow-hidden", className)}
+      style={{ perspective: "1200px" }}
     >
       <motion.div
         className="absolute inset-0 flex items-center justify-center"
@@ -172,18 +174,18 @@ export const EnhancedRubiksCube: React.FC<EnhancedRubiksCubeProps> = ({
         animate={isAnimating ? "animating" : "idle"}
         transition={{
           duration: 1.2,
-          ease: "easeInOut"
+          ease: "easeInOut",
         }}
         style={{
-          transformStyle: "preserve-3d"
+          transformStyle: "preserve-3d",
         }}
       >
-        <div 
+        <div
           className="relative"
           style={{
             transformStyle: "preserve-3d",
             width: `${gridSize * 120}px`,
-            height: `${gridSize * 120}px`
+            height: `${gridSize * 120}px`,
           }}
         >
           <AnimatePresence mode="wait">
@@ -198,106 +200,106 @@ export const EnhancedRubiksCube: React.FC<EnhancedRubiksCubeProps> = ({
                 transition={{
                   duration: 1,
                   ease: "easeInOut",
-                  delay: Math.random() * 0.3
+                  delay: Math.random() * 0.3,
                 }}
                 style={{
                   transformStyle: "preserve-3d",
-                  width: '80px',
-                  height: '80px',
-                  left: '50%',
-                  top: '50%',
-                  marginLeft: '-40px',
-                  marginTop: '-40px'
+                  width: "80px",
+                  height: "80px",
+                  left: "50%",
+                  top: "50%",
+                  marginLeft: "-40px",
+                  marginTop: "-40px",
                 }}
               >
                 {/* Cube faces */}
-                <div className="absolute inset-0 preserve-3d">
+                <div className="preserve-3d absolute inset-0">
                   {/* Front face */}
-                  <div 
-                    className="absolute inset-0 border border-white/20 rounded overflow-hidden backdrop-blur-sm"
+                  <div
+                    className="absolute inset-0 overflow-hidden rounded border border-white/20 backdrop-blur-sm"
                     style={{
-                      transform: 'translateZ(40px)',
-                      background: 'rgba(255, 255, 255, 0.1)'
+                      transform: "translateZ(40px)",
+                      background: "rgba(255, 255, 255, 0.1)",
                     }}
                   >
                     <SimpleFlag
                       countryName={cube.country.name}
-                      className="w-full h-full object-cover opacity-80"
+                      className="h-full w-full object-cover opacity-80"
                       showPlaceholder={true}
                     />
                   </div>
-                  
+
                   {/* Back face */}
-                  <div 
-                    className="absolute inset-0 border border-white/20 rounded overflow-hidden backdrop-blur-sm"
+                  <div
+                    className="absolute inset-0 overflow-hidden rounded border border-white/20 backdrop-blur-sm"
                     style={{
-                      transform: 'translateZ(-40px) rotateY(180deg)',
-                      background: 'rgba(255, 255, 255, 0.05)'
+                      transform: "translateZ(-40px) rotateY(180deg)",
+                      background: "rgba(255, 255, 255, 0.05)",
                     }}
                   >
                     <SimpleFlag
                       countryName={cube.country.name}
-                      className="w-full h-full object-cover opacity-60"
+                      className="h-full w-full object-cover opacity-60"
                       showPlaceholder={true}
                     />
                   </div>
-                  
+
                   {/* Right face */}
-                  <div 
-                    className="absolute inset-0 border border-white/20 rounded overflow-hidden backdrop-blur-sm"
+                  <div
+                    className="absolute inset-0 overflow-hidden rounded border border-white/20 backdrop-blur-sm"
                     style={{
-                      transform: 'rotateY(90deg) translateZ(40px)',
-                      background: 'rgba(255, 255, 255, 0.08)'
+                      transform: "rotateY(90deg) translateZ(40px)",
+                      background: "rgba(255, 255, 255, 0.08)",
                     }}
                   >
                     <SimpleFlag
                       countryName={cube.country.name}
-                      className="w-full h-full object-cover opacity-70"
+                      className="h-full w-full object-cover opacity-70"
                       showPlaceholder={true}
                     />
                   </div>
-                  
+
                   {/* Left face */}
-                  <div 
-                    className="absolute inset-0 border border-white/20 rounded overflow-hidden backdrop-blur-sm"
+                  <div
+                    className="absolute inset-0 overflow-hidden rounded border border-white/20 backdrop-blur-sm"
                     style={{
-                      transform: 'rotateY(-90deg) translateZ(40px)',
-                      background: 'rgba(255, 255, 255, 0.08)'
+                      transform: "rotateY(-90deg) translateZ(40px)",
+                      background: "rgba(255, 255, 255, 0.08)",
                     }}
                   >
                     <SimpleFlag
                       countryName={cube.country.name}
-                      className="w-full h-full object-cover opacity-70"
+                      className="h-full w-full object-cover opacity-70"
                       showPlaceholder={true}
                     />
                   </div>
-                  
+
                   {/* Top face */}
-                  <div 
-                    className="absolute inset-0 border border-white/20 rounded overflow-hidden backdrop-blur-sm"
+                  <div
+                    className="absolute inset-0 overflow-hidden rounded border border-white/20 backdrop-blur-sm"
                     style={{
-                      transform: 'rotateX(90deg) translateZ(40px)',
-                      background: 'rgba(255, 255, 255, 0.06)'
+                      transform: "rotateX(90deg) translateZ(40px)",
+                      background: "rgba(255, 255, 255, 0.06)",
                     }}
                   >
                     <SimpleFlag
                       countryName={cube.country.name}
-                      className="w-full h-full object-cover opacity-50"
+                      className="h-full w-full object-cover opacity-50"
                       showPlaceholder={true}
                     />
                   </div>
-                  
+
                   {/* Bottom face */}
-                  <div 
-                    className="absolute inset-0 border border-white/20 rounded overflow-hidden backdrop-blur-sm"
+                  <div
+                    className="absolute inset-0 overflow-hidden rounded border border-white/20 backdrop-blur-sm"
                     style={{
-                      transform: 'rotateX(-90deg) translateZ(40px)',
-                      background: 'rgba(255, 255, 255, 0.06)'
+                      transform: "rotateX(-90deg) translateZ(40px)",
+                      background: "rgba(255, 255, 255, 0.06)",
                     }}
                   >
                     <SimpleFlag
                       countryName={cube.country.name}
-                      className="w-full h-full object-cover opacity-50"
+                      className="h-full w-full object-cover opacity-50"
                       showPlaceholder={true}
                     />
                   </div>
@@ -305,14 +307,14 @@ export const EnhancedRubiksCube: React.FC<EnhancedRubiksCubeProps> = ({
 
                 {/* Hover overlay with country info */}
                 <motion.div
-                  className="absolute inset-0 bg-black/70 flex flex-col justify-center items-center opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 rounded"
+                  className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center rounded bg-black/70 opacity-0 transition-opacity duration-300 hover:opacity-100"
                   initial={{ opacity: 0 }}
                   whileHover={{ opacity: 1 }}
                 >
-                  <div className="text-white text-xs font-medium text-center px-1">
+                  <div className="px-1 text-center text-xs font-medium text-white">
                     {cube.country.name}
                   </div>
-                  <div className="text-white/80 text-xs text-center">
+                  <div className="text-center text-xs text-white/80">
                     {cube.country.economicTier}
                   </div>
                 </motion.div>
@@ -325,13 +327,13 @@ export const EnhancedRubiksCube: React.FC<EnhancedRubiksCubeProps> = ({
       {/* Animation indicator */}
       {isAnimating && (
         <motion.div
-          className="absolute top-3 right-3 flex items-center gap-2 text-white/60 text-xs"
+          className="absolute top-3 right-3 flex items-center gap-2 text-xs text-white/60"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="w-2 h-2 bg-blue-400 rounded-full"
+            className="h-2 w-2 rounded-full bg-blue-400"
             animate={{
               scale: [1, 1.5, 1],
               opacity: [0.5, 1, 0.5],
@@ -339,7 +341,7 @@ export const EnhancedRubiksCube: React.FC<EnhancedRubiksCubeProps> = ({
             transition={{
               duration: 1,
               repeat: Infinity,
-              ease: "easeInOut"
+              ease: "easeInOut",
             }}
           />
           <span>Cube rotating</span>
@@ -348,7 +350,7 @@ export const EnhancedRubiksCube: React.FC<EnhancedRubiksCubeProps> = ({
 
       {/* Performance stats */}
       <motion.div
-        className="absolute bottom-3 left-3 text-white/50 text-xs font-mono"
+        className="absolute bottom-3 left-3 font-mono text-xs text-white/50"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}

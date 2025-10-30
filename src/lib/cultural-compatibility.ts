@@ -28,7 +28,7 @@ export interface EmbassyConnection {
 
 export interface CompatibilityResult {
   score: number; // 0-100
-  level: 'Excellent' | 'Good' | 'Fair' | 'Low';
+  level: "Excellent" | "Good" | "Fair" | "Low";
   breakdown: {
     economicTierSimilarity: number;
     diplomaticRelationship: number;
@@ -40,17 +40,17 @@ export interface CompatibilityResult {
 
 export interface RecommendedPartner extends CountryBasicInfo {
   compatibilityScore: number;
-  compatibilityLevel: 'Excellent' | 'Good' | 'Fair' | 'Low';
+  compatibilityLevel: "Excellent" | "Good" | "Fair" | "Low";
   diplomaticStatus?: string;
   hasEmbassy: boolean;
   hasExchangeHistory: boolean;
 }
 
 const ECONOMIC_TIERS: Record<string, number> = {
-  'Advanced': 4,
-  'Emerging': 3,
-  'Developing': 2,
-  'Frontier': 1
+  Advanced: 4,
+  Emerging: 3,
+  Developing: 2,
+  Frontier: 1,
 };
 
 /**
@@ -88,11 +88,11 @@ export function calculateCulturalCompatibility(
   if (diplomaticRelation) {
     const baseScore = (() => {
       const rel = diplomaticRelation.relationship.toLowerCase();
-      if (rel.includes('allied') || rel.includes('ally')) return 40;
-      if (rel.includes('friendly') || rel.includes('friend')) return 30;
-      if (rel.includes('neutral')) return 15;
-      if (rel.includes('tense') || rel.includes('strained')) return 5;
-      if (rel.includes('hostile') || rel.includes('enemy')) return 0;
+      if (rel.includes("allied") || rel.includes("ally")) return 40;
+      if (rel.includes("friendly") || rel.includes("friend")) return 30;
+      if (rel.includes("neutral")) return 15;
+      if (rel.includes("tense") || rel.includes("strained")) return 5;
+      if (rel.includes("hostile") || rel.includes("enemy")) return 0;
       return 15; // Default to neutral
     })();
 
@@ -103,7 +103,7 @@ export function calculateCulturalCompatibility(
   }
 
   // 3. Embassy Connection Bonus (+20 points)
-  if (embassyConnection && embassyConnection.status === 'active') {
+  if (embassyConnection && embassyConnection.status === "active") {
     embassyBonus = 20;
   }
 
@@ -125,10 +125,10 @@ export function calculateCulturalCompatibility(
 
   const score = Math.min(
     economicTierSimilarity +
-    diplomaticRelationship +
-    embassyBonus +
-    geographicProximity +
-    exchangeHistoryScore,
+      diplomaticRelationship +
+      embassyBonus +
+      geographicProximity +
+      exchangeHistoryScore,
     100
   );
 
@@ -140,16 +140,18 @@ export function calculateCulturalCompatibility(
       diplomaticRelationship,
       embassyBonus,
       geographicProximity,
-      exchangeHistory: exchangeHistoryScore
-    }
+      exchangeHistory: exchangeHistoryScore,
+    },
   };
 }
 
-export function getCulturalCompatibilityLevel(score: number): 'Excellent' | 'Good' | 'Fair' | 'Low' {
-  if (score >= 80) return 'Excellent';
-  if (score >= 60) return 'Good';
-  if (score >= 40) return 'Fair';
-  return 'Low';
+export function getCulturalCompatibilityLevel(
+  score: number
+): "Excellent" | "Good" | "Fair" | "Low" {
+  if (score >= 80) return "Excellent";
+  if (score >= 60) return "Good";
+  if (score >= 40) return "Fair";
+  return "Low";
 }
 
 export function generateRecommendedPartners(
@@ -181,12 +183,10 @@ export function generateRecommendedPartners(
       compatibilityScore: compatibility.score,
       compatibilityLevel: compatibility.level,
       diplomaticStatus: relation?.relationship,
-      hasEmbassy: !!embassy && embassy.status === 'active',
-      hasExchangeHistory: history > 0
+      hasEmbassy: !!embassy && embassy.status === "active",
+      hasExchangeHistory: history > 0,
     });
   }
 
-  return recommendations
-    .sort((a, b) => b.compatibilityScore - a.compatibilityScore)
-    .slice(0, 5);
+  return recommendations.sort((a, b) => b.compatibilityScore - a.compatibilityScore).slice(0, 5);
 }

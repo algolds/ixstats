@@ -25,7 +25,7 @@ export function FileUpload({ onFileSelect, isUploading, isAnalyzing }: FileUploa
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    
+
     if (event.dataTransfer.files?.length > 0) {
       const file = event.dataTransfer.files[0];
       if (file) {
@@ -35,14 +35,14 @@ export function FileUpload({ onFileSelect, isUploading, isAnalyzing }: FileUploa
   };
 
   return (
-    <div 
-      className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+    <div
+      className="rounded-lg border-2 border-dashed border-gray-300 p-6 transition-colors hover:border-gray-400 dark:border-gray-600 dark:hover:border-gray-500"
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
       <div className="text-center">
         {isAnalyzing || isUploading ? (
-          <Loader2 className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 animate-spin" />
+          <Loader2 className="mx-auto h-12 w-12 animate-spin text-gray-400 dark:text-gray-500" />
         ) : (
           <Upload className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
         )}
@@ -61,7 +61,11 @@ export function FileUpload({ onFileSelect, isUploading, isAnalyzing }: FileUploa
               disabled={isUploading || isAnalyzing}
             />
             <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              {isAnalyzing ? "Analyzing changes..." : isUploading ? "Importing..." : "Click to select file or drag and drop"}
+              {isAnalyzing
+                ? "Analyzing changes..."
+                : isUploading
+                  ? "Importing..."
+                  : "Click to select file or drag and drop"}
             </div>
           </label>
         </div>

@@ -34,7 +34,7 @@ export const dynamic = "force-dynamic";
  */
 export default function MyCountryEditor() {
   usePageTitle({ title: "Country Editor" });
-  
+
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const { country, profileLoading, countryLoading, userProfile } = useUserCountry();
@@ -45,13 +45,13 @@ export default function MyCountryEditor() {
   }
 
   if (!user) {
-    router.push(createUrl('/sign-in'));
+    router.push(createUrl("/sign-in"));
     return <LoadingState message="Redirecting to sign in..." />;
   }
 
   // Country ownership guard
   if (!userProfile?.countryId) {
-    router.push(createUrl('/builder'));
+    router.push(createUrl("/builder"));
     return <LoadingState message="No country found. Redirecting to builder..." />;
   }
 
@@ -65,7 +65,7 @@ export default function MyCountryEditor() {
       <AtomicBuilderPage
         mode="edit"
         countryId={country.id}
-        onBackToIntro={() => router.push(createUrl('/mycountry'))}
+        onBackToIntro={() => router.push(createUrl("/mycountry"))}
       />
     </div>
   );

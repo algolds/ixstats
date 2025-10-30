@@ -1,13 +1,13 @@
 "use client";
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
-import { Target, Crown, ChevronDown, ChevronRight } from 'lucide-react';
-import { motion } from 'framer-motion';
-import type { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
-import { ATOMIC_COMPONENTS } from '~/components/government/atoms/AtomicGovernmentComponents';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
+import { Target, Crown, ChevronDown, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
+import type { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { ATOMIC_COMPONENTS } from "~/components/government/atoms/AtomicGovernmentComponents";
 
 interface ComponentsListProps {
   components: ComponentType[];
@@ -22,7 +22,7 @@ export function ComponentsList({ components, isOpen, onOpenChange }: ComponentsL
     <Collapsible open={isOpen} onOpenChange={onOpenChange}>
       <Card>
         <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+          <CardHeader className="hover:bg-muted/50 cursor-pointer transition-colors">
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Target className="h-5 w-5" />
@@ -32,9 +32,9 @@ export function ComponentsList({ components, isOpen, onOpenChange }: ComponentsL
                 </Badge>
               </div>
               {isOpen ? (
-                <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform" />
+                <ChevronDown className="text-muted-foreground h-5 w-5 transition-transform" />
               ) : (
-                <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform" />
+                <ChevronRight className="text-muted-foreground h-5 w-5 transition-transform" />
               )}
             </CardTitle>
           </CardHeader>
@@ -42,7 +42,7 @@ export function ComponentsList({ components, isOpen, onOpenChange }: ComponentsL
         <CollapsibleContent>
           <CardContent>
             <div className="grid grid-cols-1 gap-3">
-              {components.map(componentType => {
+              {components.map((componentType) => {
                 const metadata = ATOMIC_COMPONENTS[componentType];
                 if (!metadata) return null;
 
@@ -51,20 +51,20 @@ export function ComponentsList({ components, isOpen, onOpenChange }: ComponentsL
                     key={componentType}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg border border-muted hover:border-primary/30 transition-colors"
+                    className="bg-muted/50 border-muted hover:border-primary/30 flex items-start gap-3 rounded-lg border p-4 transition-colors"
                   >
-                    <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
-                      <Crown className="h-5 w-5 text-primary" />
+                    <div className="bg-primary/10 flex-shrink-0 rounded-lg p-2">
+                      <Crown className="text-primary h-5 w-5" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="font-semibold text-sm">{metadata.name}</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-center gap-2">
+                        <p className="text-sm font-semibold">{metadata.name}</p>
                         <Badge variant="outline" className="text-xs">
-                          <Target className="h-3 w-3 mr-1" />
+                          <Target className="mr-1 h-3 w-3" />
                           Component
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
+                      <p className="text-muted-foreground text-xs leading-relaxed">
                         {metadata.description}
                       </p>
                     </div>

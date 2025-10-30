@@ -26,5 +26,3 @@ export function usePendingLocks() {
 
   return { isLocked, lockedFields, pendingCount: lockedFields.size };
 }
-
-

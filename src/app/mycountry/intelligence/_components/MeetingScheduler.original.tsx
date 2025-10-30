@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useUser } from '~/context/auth-context';
-import { api } from '~/trpc/react';
-import { IxTime } from '~/lib/ixtime';
-import { toast } from 'sonner';
-import { cn } from '~/lib/utils';
+import React, { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useUser } from "~/context/auth-context";
+import { api } from "~/trpc/react";
+import { IxTime } from "~/lib/ixtime";
+import { toast } from "sonner";
+import { cn } from "~/lib/utils";
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -32,19 +32,33 @@ import {
   AlertTriangle,
   Info,
   TrendingUp,
-  Activity
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { Calendar } from '~/components/ui/calendar';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '~/components/ui/dialog';
-import { Input } from '~/components/ui/input';
-import { Textarea } from '~/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { Progress } from '~/components/ui/progress';
-import { Separator } from '~/components/ui/separator';
+  Activity,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Calendar } from "~/components/ui/calendar";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "~/components/ui/dialog";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Progress } from "~/components/ui/progress";
+import { Separator } from "~/components/ui/separator";
 
 interface MeetingSchedulerProps {
   countryId: string;
@@ -58,14 +72,14 @@ interface AgendaItemForm {
   description: string;
   order: number;
   estimatedDuration: number;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
 }
 
 interface DecisionForm {
   title: string;
   description: string;
-  decisionType: 'policy' | 'budget' | 'personnel' | 'strategic' | 'other';
-  outcome: 'approved' | 'rejected' | 'deferred' | 'requires_review';
+  decisionType: "policy" | "budget" | "personnel" | "strategic" | "other";
+  outcome: "approved" | "rejected" | "deferred" | "requires_review";
   votesFor?: number;
   votesAgainst?: number;
   votesAbstain?: number;
@@ -76,58 +90,61 @@ interface ActionItemForm {
   description: string;
   assignedToId: string;
   dueDate: Date;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
 }
 
 export function MeetingScheduler({
   countryId,
   userId,
   governmentStructureId,
-  className
+  className,
 }: MeetingSchedulerProps) {
   const { user } = useUser();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [createMeetingOpen, setCreateMeetingOpen] = useState(false);
   const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'calendar' | 'agenda' | 'minutes' | 'actions'>('calendar');
+  const [activeTab, setActiveTab] = useState<"calendar" | "agenda" | "minutes" | "actions">(
+    "calendar"
+  );
   const [expandedMeetings, setExpandedMeetings] = useState<Set<string>>(new Set());
 
   // Form states
   const [meetingForm, setMeetingForm] = useState({
-    title: '',
-    description: '',
+    title: "",
+    description: "",
     scheduledDate: new Date(),
     duration: 60,
   });
 
   const [agendaForm, setAgendaForm] = useState<AgendaItemForm>({
-    title: '',
-    description: '',
+    title: "",
+    description: "",
     order: 0,
     estimatedDuration: 15,
-    priority: 'medium',
+    priority: "medium",
   });
 
   const [decisionForm, setDecisionForm] = useState<DecisionForm>({
-    title: '',
-    description: '',
-    decisionType: 'policy',
-    outcome: 'approved',
+    title: "",
+    description: "",
+    decisionType: "policy",
+    outcome: "approved",
   });
 
   const [actionForm, setActionForm] = useState<ActionItemForm>({
-    title: '',
-    description: '',
-    assignedToId: '',
+    title: "",
+    description: "",
+    assignedToId: "",
     dueDate: new Date(),
-    priority: 'medium',
+    priority: "medium",
   });
 
   // Queries
-  const { data: meetings, refetch: refetchMeetings, isLoading: meetingsLoading } = api.meetings.getMeetings.useQuery(
-    { countryId },
-    { enabled: !!countryId }
-  );
+  const {
+    data: meetings,
+    refetch: refetchMeetings,
+    isLoading: meetingsLoading,
+  } = api.meetings.getMeetings.useQuery({ countryId }, { enabled: !!countryId });
 
   const { data: selectedMeeting } = api.meetings.getMeeting.useQuery(
     { id: selectedMeetingId! },
@@ -147,7 +164,7 @@ export function MeetingScheduler({
   // Mutations
   const createMeeting = api.meetings.createMeeting.useMutation({
     onSuccess: () => {
-      toast.success('Meeting created successfully');
+      toast.success("Meeting created successfully");
       void refetchMeetings();
       setCreateMeetingOpen(false);
       resetMeetingForm();
@@ -159,7 +176,7 @@ export function MeetingScheduler({
 
   const updateMeeting = api.meetings.updateMeeting.useMutation({
     onSuccess: () => {
-      toast.success('Meeting updated successfully');
+      toast.success("Meeting updated successfully");
       void refetchMeetings();
     },
     onError: (error) => {
@@ -169,7 +186,7 @@ export function MeetingScheduler({
 
   const deleteMeeting = api.meetings.deleteMeeting.useMutation({
     onSuccess: () => {
-      toast.success('Meeting deleted successfully');
+      toast.success("Meeting deleted successfully");
       void refetchMeetings();
       setSelectedMeetingId(null);
     },
@@ -180,7 +197,7 @@ export function MeetingScheduler({
 
   const addAgendaItem = api.meetings.addAgendaItem.useMutation({
     onSuccess: () => {
-      toast.success('Agenda item added');
+      toast.success("Agenda item added");
       void refetchMeetings();
       resetAgendaForm();
     },
@@ -191,7 +208,7 @@ export function MeetingScheduler({
 
   const recordAttendance = api.meetings.recordAttendance.useMutation({
     onSuccess: () => {
-      toast.success('Attendance recorded');
+      toast.success("Attendance recorded");
       void refetchMeetings();
     },
     onError: (error) => {
@@ -201,7 +218,7 @@ export function MeetingScheduler({
 
   const recordDecision = api.meetings.recordDecision.useMutation({
     onSuccess: () => {
-      toast.success('Decision recorded');
+      toast.success("Decision recorded");
       void refetchMeetings();
       resetDecisionForm();
     },
@@ -212,7 +229,7 @@ export function MeetingScheduler({
 
   const createActionItem = api.meetings.createActionItem.useMutation({
     onSuccess: () => {
-      toast.success('Action item created');
+      toast.success("Action item created");
       void refetchMeetings();
       resetActionForm();
     },
@@ -224,8 +241,8 @@ export function MeetingScheduler({
   // Reset functions
   const resetMeetingForm = () => {
     setMeetingForm({
-      title: '',
-      description: '',
+      title: "",
+      description: "",
       scheduledDate: new Date(),
       duration: 60,
     });
@@ -233,37 +250,37 @@ export function MeetingScheduler({
 
   const resetAgendaForm = () => {
     setAgendaForm({
-      title: '',
-      description: '',
+      title: "",
+      description: "",
       order: 0,
       estimatedDuration: 15,
-      priority: 'medium',
+      priority: "medium",
     });
   };
 
   const resetDecisionForm = () => {
     setDecisionForm({
-      title: '',
-      description: '',
-      decisionType: 'policy',
-      outcome: 'approved',
+      title: "",
+      description: "",
+      decisionType: "policy",
+      outcome: "approved",
     });
   };
 
   const resetActionForm = () => {
     setActionForm({
-      title: '',
-      description: '',
-      assignedToId: '',
+      title: "",
+      description: "",
+      assignedToId: "",
       dueDate: new Date(),
-      priority: 'medium',
+      priority: "medium",
     });
   };
 
   // Handle meeting creation
   const handleCreateMeeting = () => {
     if (!meetingForm.title.trim()) {
-      toast.error('Please enter a meeting title');
+      toast.error("Please enter a meeting title");
       return;
     }
 
@@ -283,12 +300,12 @@ export function MeetingScheduler({
   // Handle agenda item creation
   const handleAddAgendaItem = () => {
     if (!selectedMeetingId) {
-      toast.error('Please select a meeting first');
+      toast.error("Please select a meeting first");
       return;
     }
 
     if (!agendaForm.title.trim()) {
-      toast.error('Please enter an agenda item title');
+      toast.error("Please enter an agenda item title");
       return;
     }
 
@@ -305,12 +322,12 @@ export function MeetingScheduler({
   // Handle decision recording
   const handleRecordDecision = () => {
     if (!selectedMeetingId) {
-      toast.error('Please select a meeting first');
+      toast.error("Please select a meeting first");
       return;
     }
 
     if (!decisionForm.title.trim()) {
-      toast.error('Please enter a decision title');
+      toast.error("Please enter a decision title");
       return;
     }
 
@@ -329,17 +346,17 @@ export function MeetingScheduler({
   // Handle action item creation
   const handleCreateActionItem = () => {
     if (!selectedMeetingId) {
-      toast.error('Please select a meeting first');
+      toast.error("Please select a meeting first");
       return;
     }
 
     if (!actionForm.title.trim()) {
-      toast.error('Please enter an action item title');
+      toast.error("Please enter an action item title");
       return;
     }
 
     if (!actionForm.assignedToId) {
-      toast.error('Please assign the action item to someone');
+      toast.error("Please assign the action item to someone");
       return;
     }
 
@@ -355,7 +372,7 @@ export function MeetingScheduler({
 
   // Toggle meeting expansion
   const toggleMeetingExpanded = (meetingId: string) => {
-    setExpandedMeetings(prev => {
+    setExpandedMeetings((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(meetingId)) {
         newSet.delete(meetingId);
@@ -370,7 +387,7 @@ export function MeetingScheduler({
   const filteredMeetings = useMemo(() => {
     if (!meetings || !selectedDate) return [];
 
-    return meetings.filter(meeting => {
+    return meetings.filter((meeting) => {
       const meetingDate = new Date(meeting.scheduledDate);
       return (
         meetingDate.getDate() === selectedDate.getDate() &&
@@ -383,57 +400,57 @@ export function MeetingScheduler({
   // Get meeting status color
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'scheduled':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'in_progress':
-        return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'completed':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800 border-red-200';
+      case "scheduled":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      case "in_progress":
+        return "bg-amber-100 text-amber-800 border-amber-200";
+      case "completed":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "cancelled":
+        return "bg-red-100 text-red-800 border-red-200";
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
   // Get priority color
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low':
-        return 'bg-green-100 text-green-800 border-green-200';
+      case "high":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "low":
+        return "bg-green-100 text-green-800 border-green-200";
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
   // Get outcome color
   const getOutcomeColor = (outcome: string) => {
     switch (outcome) {
-      case 'approved':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'rejected':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'deferred':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'requires_review':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case "approved":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "rejected":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "deferred":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "requires_review":
+        return "bg-blue-100 text-blue-800 border-blue-200";
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
   if (meetingsLoading) {
     return (
-      <Card className={cn('glass-hierarchy-parent', className)}>
+      <Card className={cn("glass-hierarchy-parent", className)}>
         <CardContent className="p-8">
           <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-muted rounded w-1/3"></div>
-            <div className="h-48 bg-muted rounded"></div>
-            <div className="h-24 bg-muted rounded"></div>
+            <div className="bg-muted h-8 w-1/3 rounded"></div>
+            <div className="bg-muted h-48 rounded"></div>
+            <div className="bg-muted h-24 rounded"></div>
           </div>
         </CardContent>
       </Card>
@@ -462,11 +479,11 @@ export function MeetingScheduler({
             <Dialog open={createMeetingOpen} onOpenChange={setCreateMeetingOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-amber-600 to-amber-700 text-white">
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Schedule Meeting
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl glass-hierarchy-modal">
+              <DialogContent className="glass-hierarchy-modal max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>Schedule New Meeting</DialogTitle>
                   <DialogDescription>
@@ -486,8 +503,10 @@ export function MeetingScheduler({
                     <label className="text-sm font-medium">Description</label>
                     <Textarea
                       placeholder="Meeting objectives and context..."
-                      value={meetingForm.description || ''}
-                      onChange={(e) => setMeetingForm({ ...meetingForm, description: e.target.value })}
+                      value={meetingForm.description || ""}
+                      onChange={(e) =>
+                        setMeetingForm({ ...meetingForm, description: e.target.value })
+                      }
                       rows={3}
                     />
                   </div>
@@ -497,8 +516,10 @@ export function MeetingScheduler({
                       <Calendar
                         mode="single"
                         selected={meetingForm.scheduledDate}
-                        onSelect={(date) => date && setMeetingForm({ ...meetingForm, scheduledDate: date })}
-                        className="rounded-md border glass-hierarchy-child"
+                        onSelect={(date) =>
+                          date && setMeetingForm({ ...meetingForm, scheduledDate: date })
+                        }
+                        className="glass-hierarchy-child rounded-md border"
                       />
                     </div>
                     <div className="space-y-4">
@@ -509,12 +530,20 @@ export function MeetingScheduler({
                           min={15}
                           max={480}
                           value={meetingForm.duration}
-                          onChange={(e) => setMeetingForm({ ...meetingForm, duration: parseInt(e.target.value) || 60 })}
+                          onChange={(e) =>
+                            setMeetingForm({
+                              ...meetingForm,
+                              duration: parseInt(e.target.value) || 60,
+                            })
+                          }
                         />
                       </div>
-                      <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+                      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/20">
                         <p className="text-sm text-blue-800 dark:text-blue-200">
-                          <strong>IxTime:</strong> {IxTime.formatIxTime(IxTime.convertToIxTime(meetingForm.scheduledDate.getTime()))}
+                          <strong>IxTime:</strong>{" "}
+                          {IxTime.formatIxTime(
+                            IxTime.convertToIxTime(meetingForm.scheduledDate.getTime())
+                          )}
                         </p>
                       </div>
                     </div>
@@ -529,7 +558,7 @@ export function MeetingScheduler({
                     disabled={createMeeting.isPending}
                     className="bg-gradient-to-r from-amber-600 to-amber-700 text-white"
                   >
-                    {createMeeting.isPending ? 'Creating...' : 'Create Meeting'}
+                    {createMeeting.isPending ? "Creating..." : "Create Meeting"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -538,7 +567,11 @@ export function MeetingScheduler({
         </CardHeader>
 
         <CardContent>
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-4">
+          <Tabs
+            value={activeTab}
+            onValueChange={(v) => setActiveTab(v as any)}
+            className="space-y-4"
+          >
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="calendar" className="flex items-center gap-2">
                 <CalendarIcon className="h-4 w-4" />
@@ -559,7 +592,7 @@ export function MeetingScheduler({
             </TabsList>
 
             <TabsContent value="calendar" className="space-y-4">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 <div className="lg:col-span-1">
                   <Card className="glass-hierarchy-child">
                     <CardContent className="p-4">
@@ -573,18 +606,17 @@ export function MeetingScheduler({
                   </Card>
 
                   {selectedDate && (
-                    <div className="mt-4 p-4 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+                    <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/20">
                       <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                        {filteredMeetings.length} meeting{filteredMeetings.length !== 1 ? 's' : ''} on {selectedDate.toLocaleDateString()}
+                        {filteredMeetings.length} meeting{filteredMeetings.length !== 1 ? "s" : ""}{" "}
+                        on {selectedDate.toLocaleDateString()}
                       </p>
                     </div>
                   )}
                 </div>
 
-                <div className="lg:col-span-2 space-y-4">
-                  <h3 className="text-lg font-semibold">
-                    Scheduled Meetings
-                  </h3>
+                <div className="space-y-4 lg:col-span-2">
+                  <h3 className="text-lg font-semibold">Scheduled Meetings</h3>
 
                   <AnimatePresence>
                     {filteredMeetings.length === 0 ? (
@@ -592,9 +624,9 @@ export function MeetingScheduler({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="text-center py-12"
+                        className="py-12 text-center"
                       >
-                        <CalendarIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                        <CalendarIcon className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
                         <p className="text-muted-foreground">No meetings scheduled for this date</p>
                       </motion.div>
                     ) : (
@@ -608,8 +640,8 @@ export function MeetingScheduler({
                         >
                           <Card
                             className={cn(
-                              'glass-hierarchy-child hover:shadow-md transition-all cursor-pointer',
-                              selectedMeetingId === meeting.id && 'ring-2 ring-amber-500'
+                              "glass-hierarchy-child cursor-pointer transition-all hover:shadow-md",
+                              selectedMeetingId === meeting.id && "ring-2 ring-amber-500"
                             )}
                             onClick={() => {
                               setSelectedMeetingId(meeting.id);
@@ -619,21 +651,21 @@ export function MeetingScheduler({
                             <CardContent className="p-4">
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
+                                  <div className="mb-2 flex items-center gap-2">
                                     <h4 className="font-semibold">{meeting.title}</h4>
-                                    <Badge className={getStatusColor(meeting.status || 'scheduled')}>
-                                      {meeting.status || 'scheduled'}
+                                    <Badge
+                                      className={getStatusColor(meeting.status || "scheduled")}
+                                    >
+                                      {meeting.status || "scheduled"}
                                     </Badge>
                                   </div>
 
-                                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
+                                  <div className="text-muted-foreground mb-2 flex items-center gap-4 text-sm">
                                     <span className="flex items-center gap-1">
                                       <Clock className="h-3 w-3" />
                                       {new Date(meeting.scheduledDate).toLocaleTimeString()}
                                     </span>
-                                    {meeting.duration && (
-                                      <span>{meeting.duration} min</span>
-                                    )}
+                                    {meeting.duration && <span>{meeting.duration} min</span>}
                                     <span className="flex items-center gap-1">
                                       <Users className="h-3 w-3" />
                                       {meeting.attendances?.length || 0} attendees
@@ -641,7 +673,7 @@ export function MeetingScheduler({
                                   </div>
 
                                   {meeting.description && (
-                                    <p className="text-sm text-muted-foreground line-clamp-2">
+                                    <p className="text-muted-foreground line-clamp-2 text-sm">
                                       {meeting.description}
                                     </p>
                                   )}
@@ -649,25 +681,31 @@ export function MeetingScheduler({
                                   {expandedMeetings.has(meeting.id) && (
                                     <motion.div
                                       initial={{ opacity: 0, height: 0 }}
-                                      animate={{ opacity: 1, height: 'auto' }}
+                                      animate={{ opacity: 1, height: "auto" }}
                                       exit={{ opacity: 0, height: 0 }}
-                                      className="mt-4 pt-4 border-t space-y-3"
+                                      className="mt-4 space-y-3 border-t pt-4"
                                     >
                                       <div className="grid grid-cols-3 gap-4 text-sm">
-                                        <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20">
-                                          <p className="text-xs text-muted-foreground mb-1">Agenda Items</p>
+                                        <div className="rounded-lg bg-blue-50 p-3 dark:bg-blue-950/20">
+                                          <p className="text-muted-foreground mb-1 text-xs">
+                                            Agenda Items
+                                          </p>
                                           <p className="text-lg font-bold text-blue-600">
                                             {meeting.agendaItems?.length || 0}
                                           </p>
                                         </div>
-                                        <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/20">
-                                          <p className="text-xs text-muted-foreground mb-1">Decisions</p>
+                                        <div className="rounded-lg bg-green-50 p-3 dark:bg-green-950/20">
+                                          <p className="text-muted-foreground mb-1 text-xs">
+                                            Decisions
+                                          </p>
                                           <p className="text-lg font-bold text-green-600">
                                             {meeting.decisions?.length || 0}
                                           </p>
                                         </div>
-                                        <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20">
-                                          <p className="text-xs text-muted-foreground mb-1">Actions</p>
+                                        <div className="rounded-lg bg-purple-50 p-3 dark:bg-purple-950/20">
+                                          <p className="text-muted-foreground mb-1 text-xs">
+                                            Actions
+                                          </p>
                                           <p className="text-lg font-bold text-purple-600">
                                             {meeting.actionItems?.length || 0}
                                           </p>
@@ -680,10 +718,10 @@ export function MeetingScheduler({
                                           variant="outline"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            setActiveTab('agenda');
+                                            setActiveTab("agenda");
                                           }}
                                         >
-                                          <ListChecks className="h-4 w-4 mr-1" />
+                                          <ListChecks className="mr-1 h-4 w-4" />
                                           Manage Agenda
                                         </Button>
                                         <Button
@@ -691,10 +729,10 @@ export function MeetingScheduler({
                                           variant="outline"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            setActiveTab('minutes');
+                                            setActiveTab("minutes");
                                           }}
                                         >
-                                          <FileText className="h-4 w-4 mr-1" />
+                                          <FileText className="mr-1 h-4 w-4" />
                                           View Minutes
                                         </Button>
                                         <Button
@@ -702,7 +740,7 @@ export function MeetingScheduler({
                                           variant="destructive"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            if (confirm('Delete this meeting?')) {
+                                            if (confirm("Delete this meeting?")) {
                                               deleteMeeting.mutate({ id: meeting.id });
                                             }
                                           }}
@@ -715,8 +753,8 @@ export function MeetingScheduler({
                                 </div>
                                 <ChevronRight
                                   className={cn(
-                                    'h-5 w-5 text-muted-foreground transition-transform',
-                                    expandedMeetings.has(meeting.id) && 'rotate-90'
+                                    "text-muted-foreground h-5 w-5 transition-transform",
+                                    expandedMeetings.has(meeting.id) && "rotate-90"
                                   )}
                                 />
                               </div>
@@ -732,12 +770,12 @@ export function MeetingScheduler({
 
             <TabsContent value="agenda" className="space-y-4">
               {!selectedMeetingId ? (
-                <div className="text-center py-12">
-                  <ListChecks className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <div className="py-12 text-center">
+                  <ListChecks className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
                   <p className="text-muted-foreground">Select a meeting to manage its agenda</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                   <Card className="glass-hierarchy-child">
                     <CardHeader>
                       <CardTitle className="text-lg">Add Agenda Item</CardTitle>
@@ -756,7 +794,9 @@ export function MeetingScheduler({
                         <Textarea
                           placeholder="Details and context..."
                           value={agendaForm.description}
-                          onChange={(e) => setAgendaForm({ ...agendaForm, description: e.target.value })}
+                          onChange={(e) =>
+                            setAgendaForm({ ...agendaForm, description: e.target.value })
+                          }
                           rows={3}
                         />
                       </div>
@@ -768,14 +808,21 @@ export function MeetingScheduler({
                             min={5}
                             max={120}
                             value={agendaForm.estimatedDuration}
-                            onChange={(e) => setAgendaForm({ ...agendaForm, estimatedDuration: parseInt(e.target.value) || 15 })}
+                            onChange={(e) =>
+                              setAgendaForm({
+                                ...agendaForm,
+                                estimatedDuration: parseInt(e.target.value) || 15,
+                              })
+                            }
                           />
                         </div>
                         <div className="space-y-2">
                           <label className="text-sm font-medium">Priority</label>
                           <Select
                             value={agendaForm.priority}
-                            onValueChange={(v) => setAgendaForm({ ...agendaForm, priority: v as any })}
+                            onValueChange={(v) =>
+                              setAgendaForm({ ...agendaForm, priority: v as any })
+                            }
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -793,7 +840,7 @@ export function MeetingScheduler({
                         disabled={addAgendaItem.isPending}
                         className="w-full bg-gradient-to-r from-amber-600 to-amber-700 text-white"
                       >
-                        <Plus className="h-4 w-4 mr-2" />
+                        <Plus className="mr-2 h-4 w-4" />
                         Add Item
                       </Button>
                     </CardContent>
@@ -813,28 +860,32 @@ export function MeetingScheduler({
                               initial={{ opacity: 0, x: -20 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: index * 0.1 }}
-                              className="p-3 rounded-lg border border-border bg-card hover:shadow-sm transition-all"
+                              className="border-border bg-card rounded-lg border p-3 transition-all hover:shadow-sm"
                             >
                               <div className="flex items-start gap-3">
                                 <div className="flex items-center gap-2">
-                                  <GripVertical className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm font-bold text-muted-foreground">
+                                  <GripVertical className="text-muted-foreground h-4 w-4" />
+                                  <span className="text-muted-foreground text-sm font-bold">
                                     {index + 1}
                                   </span>
                                 </div>
                                 <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <h4 className="font-medium text-sm">{item.title}</h4>
-                                    <Badge className={getPriorityColor((item as any).priority || 'medium')}>
-                                      {(item as any).priority || 'medium'}
+                                  <div className="mb-1 flex items-center gap-2">
+                                    <h4 className="text-sm font-medium">{item.title}</h4>
+                                    <Badge
+                                      className={getPriorityColor(
+                                        (item as any).priority || "medium"
+                                      )}
+                                    >
+                                      {(item as any).priority || "medium"}
                                     </Badge>
                                   </div>
                                   {item.description && (
-                                    <p className="text-xs text-muted-foreground mb-2">
+                                    <p className="text-muted-foreground mb-2 text-xs">
                                       {item.description}
                                     </p>
                                   )}
-                                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                  <div className="text-muted-foreground flex items-center gap-3 text-xs">
                                     <span className="flex items-center gap-1">
                                       <Clock className="h-3 w-3" />
                                       {(item as any).estimatedDuration || item.duration || 30} min
@@ -850,8 +901,8 @@ export function MeetingScheduler({
                             </motion.div>
                           ))
                       ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <ListChecks className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <div className="text-muted-foreground py-8 text-center">
+                          <ListChecks className="mx-auto mb-2 h-8 w-8 opacity-50" />
                           <p className="text-sm">No agenda items yet</p>
                         </div>
                       )}
@@ -863,12 +914,14 @@ export function MeetingScheduler({
 
             <TabsContent value="minutes" className="space-y-4">
               {!selectedMeetingId ? (
-                <div className="text-center py-12">
-                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">Select a meeting to view or record minutes</p>
+                <div className="py-12 text-center">
+                  <FileText className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+                  <p className="text-muted-foreground">
+                    Select a meeting to view or record minutes
+                  </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                   <Card className="glass-hierarchy-child">
                     <CardHeader>
                       <CardTitle className="text-lg">Record Decision</CardTitle>
@@ -879,7 +932,9 @@ export function MeetingScheduler({
                         <Input
                           placeholder="e.g., Approve education budget increase"
                           value={decisionForm.title}
-                          onChange={(e) => setDecisionForm({ ...decisionForm, title: e.target.value })}
+                          onChange={(e) =>
+                            setDecisionForm({ ...decisionForm, title: e.target.value })
+                          }
                         />
                       </div>
                       <div className="space-y-2">
@@ -887,7 +942,9 @@ export function MeetingScheduler({
                         <Textarea
                           placeholder="Decision details and rationale..."
                           value={decisionForm.description}
-                          onChange={(e) => setDecisionForm({ ...decisionForm, description: e.target.value })}
+                          onChange={(e) =>
+                            setDecisionForm({ ...decisionForm, description: e.target.value })
+                          }
                           rows={3}
                         />
                       </div>
@@ -896,7 +953,9 @@ export function MeetingScheduler({
                           <label className="text-sm font-medium">Type</label>
                           <Select
                             value={decisionForm.decisionType}
-                            onValueChange={(v) => setDecisionForm({ ...decisionForm, decisionType: v as any })}
+                            onValueChange={(v) =>
+                              setDecisionForm({ ...decisionForm, decisionType: v as any })
+                            }
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -914,7 +973,9 @@ export function MeetingScheduler({
                           <label className="text-sm font-medium">Outcome</label>
                           <Select
                             value={decisionForm.outcome}
-                            onValueChange={(v) => setDecisionForm({ ...decisionForm, outcome: v as any })}
+                            onValueChange={(v) =>
+                              setDecisionForm({ ...decisionForm, outcome: v as any })
+                            }
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -934,8 +995,13 @@ export function MeetingScheduler({
                           <Input
                             type="number"
                             min={0}
-                            value={decisionForm.votesFor || ''}
-                            onChange={(e) => setDecisionForm({ ...decisionForm, votesFor: parseInt(e.target.value) || undefined })}
+                            value={decisionForm.votesFor || ""}
+                            onChange={(e) =>
+                              setDecisionForm({
+                                ...decisionForm,
+                                votesFor: parseInt(e.target.value) || undefined,
+                              })
+                            }
                           />
                         </div>
                         <div className="space-y-2">
@@ -943,8 +1009,13 @@ export function MeetingScheduler({
                           <Input
                             type="number"
                             min={0}
-                            value={decisionForm.votesAgainst || ''}
-                            onChange={(e) => setDecisionForm({ ...decisionForm, votesAgainst: parseInt(e.target.value) || undefined })}
+                            value={decisionForm.votesAgainst || ""}
+                            onChange={(e) =>
+                              setDecisionForm({
+                                ...decisionForm,
+                                votesAgainst: parseInt(e.target.value) || undefined,
+                              })
+                            }
                           />
                         </div>
                         <div className="space-y-2">
@@ -952,8 +1023,13 @@ export function MeetingScheduler({
                           <Input
                             type="number"
                             min={0}
-                            value={decisionForm.votesAbstain || ''}
-                            onChange={(e) => setDecisionForm({ ...decisionForm, votesAbstain: parseInt(e.target.value) || undefined })}
+                            value={decisionForm.votesAbstain || ""}
+                            onChange={(e) =>
+                              setDecisionForm({
+                                ...decisionForm,
+                                votesAbstain: parseInt(e.target.value) || undefined,
+                              })
+                            }
                           />
                         </div>
                       </div>
@@ -962,7 +1038,7 @@ export function MeetingScheduler({
                         disabled={recordDecision.isPending}
                         className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white"
                       >
-                        <Vote className="h-4 w-4 mr-2" />
+                        <Vote className="mr-2 h-4 w-4" />
                         Record Decision
                       </Button>
                     </CardContent>
@@ -980,25 +1056,33 @@ export function MeetingScheduler({
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: index * 0.1 }}
-                            className="p-3 rounded-lg border border-border bg-card"
+                            className="border-border bg-card rounded-lg border p-3"
                           >
                             <div className="flex items-start gap-3">
                               <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="font-medium text-sm">{decision.title}</h4>
-                                  <Badge className={getOutcomeColor((decision as any).outcome || 'pending')}>
-                                    {(decision as any).outcome || 'pending'}
+                                <div className="mb-1 flex items-center gap-2">
+                                  <h4 className="text-sm font-medium">{decision.title}</h4>
+                                  <Badge
+                                    className={getOutcomeColor(
+                                      (decision as any).outcome || "pending"
+                                    )}
+                                  >
+                                    {(decision as any).outcome || "pending"}
                                   </Badge>
                                 </div>
-                                <p className="text-xs text-muted-foreground mb-2">
+                                <p className="text-muted-foreground mb-2 text-xs">
                                   {decision.description}
                                 </p>
                                 <div className="flex items-center gap-3 text-xs">
                                   <Badge variant="outline">{decision.decisionType}</Badge>
-                                  {((decision as any).votesFor !== null || (decision as any).votesAgainst !== null) && (
+                                  {((decision as any).votesFor !== null ||
+                                    (decision as any).votesAgainst !== null) && (
                                     <span className="text-muted-foreground">
-                                      {(decision as any).votesFor || 0} for, {(decision as any).votesAgainst || 0} against
-                                      {(decision as any).votesAbstain ? `, ${(decision as any).votesAbstain} abstain` : ''}
+                                      {(decision as any).votesFor || 0} for,{" "}
+                                      {(decision as any).votesAgainst || 0} against
+                                      {(decision as any).votesAbstain
+                                        ? `, ${(decision as any).votesAbstain} abstain`
+                                        : ""}
                                     </span>
                                   )}
                                 </div>
@@ -1007,8 +1091,8 @@ export function MeetingScheduler({
                           </motion.div>
                         ))
                       ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <Vote className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <div className="text-muted-foreground py-8 text-center">
+                          <Vote className="mx-auto mb-2 h-8 w-8 opacity-50" />
                           <p className="text-sm">No decisions recorded yet</p>
                         </div>
                       )}
@@ -1020,12 +1104,12 @@ export function MeetingScheduler({
 
             <TabsContent value="actions" className="space-y-4">
               {!selectedMeetingId ? (
-                <div className="text-center py-12">
-                  <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <div className="py-12 text-center">
+                  <Target className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
                   <p className="text-muted-foreground">Select a meeting to create action items</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                   <Card className="glass-hierarchy-child">
                     <CardHeader>
                       <CardTitle className="text-lg">Create Action Item</CardTitle>
@@ -1044,7 +1128,9 @@ export function MeetingScheduler({
                         <Textarea
                           placeholder="Action details and requirements..."
                           value={actionForm.description}
-                          onChange={(e) => setActionForm({ ...actionForm, description: e.target.value })}
+                          onChange={(e) =>
+                            setActionForm({ ...actionForm, description: e.target.value })
+                          }
                           rows={3}
                         />
                       </div>
@@ -1078,7 +1164,9 @@ export function MeetingScheduler({
                           <Calendar
                             mode="single"
                             selected={actionForm.dueDate}
-                            onSelect={(date) => date && setActionForm({ ...actionForm, dueDate: date })}
+                            onSelect={(date) =>
+                              date && setActionForm({ ...actionForm, dueDate: date })
+                            }
                             className="rounded-md border"
                           />
                         </div>
@@ -1086,7 +1174,9 @@ export function MeetingScheduler({
                           <label className="text-sm font-medium">Priority</label>
                           <Select
                             value={actionForm.priority}
-                            onValueChange={(v) => setActionForm({ ...actionForm, priority: v as any })}
+                            onValueChange={(v) =>
+                              setActionForm({ ...actionForm, priority: v as any })
+                            }
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -1104,7 +1194,7 @@ export function MeetingScheduler({
                         disabled={createActionItem.isPending}
                         className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white"
                       >
-                        <Plus className="h-4 w-4 mr-2" />
+                        <Plus className="mr-2 h-4 w-4" />
                         Create Action
                       </Button>
                     </CardContent>
@@ -1122,13 +1212,13 @@ export function MeetingScheduler({
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: index * 0.1 }}
-                            className="p-3 rounded-lg border border-border bg-card"
+                            className="border-border bg-card rounded-lg border p-3"
                           >
                             <div className="flex items-start gap-3">
                               <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="font-medium text-sm">{item.title}</h4>
-                                  <Badge className={getPriorityColor(item.priority || 'medium')}>
+                                <div className="mb-1 flex items-center gap-2">
+                                  <h4 className="text-sm font-medium">{item.title}</h4>
+                                  <Badge className={getPriorityColor(item.priority || "medium")}>
                                     {item.priority}
                                   </Badge>
                                   {item.status && (
@@ -1137,10 +1227,10 @@ export function MeetingScheduler({
                                     </Badge>
                                   )}
                                 </div>
-                                <p className="text-xs text-muted-foreground mb-2">
+                                <p className="text-muted-foreground mb-2 text-xs">
                                   {item.description}
                                 </p>
-                                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                <div className="text-muted-foreground flex items-center gap-3 text-xs">
                                   <span className="flex items-center gap-1">
                                     <User className="h-3 w-3" />
                                     Assigned
@@ -1157,8 +1247,8 @@ export function MeetingScheduler({
                           </motion.div>
                         ))
                       ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <Target className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <div className="text-muted-foreground py-8 text-center">
+                          <Target className="mx-auto mb-2 h-8 w-8 opacity-50" />
                           <p className="text-sm">No action items yet</p>
                         </div>
                       )}

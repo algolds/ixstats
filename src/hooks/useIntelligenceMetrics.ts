@@ -5,8 +5,15 @@
  */
 
 import { useMemo } from "react";
-import { calculateVitalityMetrics, calculateCountryMetrics } from "~/lib/intelligence-metrics-calculator";
-import type { VitalityMetric, CountryMetric, ClassificationLevel } from "~/types/intelligence-briefing";
+import {
+  calculateVitalityMetrics,
+  calculateCountryMetrics,
+} from "~/lib/intelligence-metrics-calculator";
+import type {
+  VitalityMetric,
+  CountryMetric,
+  ClassificationLevel,
+} from "~/types/intelligence-briefing";
 
 interface UseIntelligenceMetricsProps {
   country: {

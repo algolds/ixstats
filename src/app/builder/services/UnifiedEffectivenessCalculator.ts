@@ -1,19 +1,22 @@
 /**
  * Unified Effectiveness Calculator
- * 
+ *
  * This service provides comprehensive cross-builder effectiveness scoring that combines
  * economy, government, and tax systems into a unified effectiveness metric. It analyzes
  * synergies, conflicts, and optimization opportunities across all builders.
  */
 
-import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from '~/lib/atomic-economic-data';
-import { ComponentType, ATOMIC_COMPONENTS } from '~/components/government/atoms/AtomicGovernmentComponents';
-import type { EconomyBuilderState } from '~/types/economy-builder';
-import type { GovernmentBuilderState } from '~/types/government';
-import type { TaxSystem } from '~/types/tax-system';
-import { crossBuilderSynergyService } from './CrossBuilderSynergyService';
-import { bidirectionalTaxSyncService } from './BidirectionalTaxSyncService';
-import { bidirectionalGovernmentSyncService } from './BidirectionalGovernmentSyncService';
+import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
+import {
+  ComponentType,
+  ATOMIC_COMPONENTS,
+} from "~/components/government/atoms/AtomicGovernmentComponents";
+import type { EconomyBuilderState } from "~/types/economy-builder";
+import type { GovernmentBuilderState } from "~/types/government";
+import type { TaxSystem } from "~/types/tax-system";
+import { crossBuilderSynergyService } from "./CrossBuilderSynergyService";
+import { bidirectionalTaxSyncService } from "./BidirectionalTaxSyncService";
+import { bidirectionalGovernmentSyncService } from "./BidirectionalGovernmentSyncService";
 
 export interface UnifiedEffectivenessMetrics {
   overallScore: number; // 0-100
@@ -41,13 +44,13 @@ export interface EffectivenessBreakdown {
 
 export interface OptimizationRecommendation {
   id: string;
-  type: 'economy' | 'government' | 'tax' | 'cross_builder';
-  priority: 'critical' | 'high' | 'medium' | 'low';
+  type: "economy" | "government" | "tax" | "cross_builder";
+  priority: "critical" | "high" | "medium" | "low";
   title: string;
   description: string;
   expectedImprovement: number; // percentage points
   implementationCost: number;
-  timeToImplement: 'immediate' | 'short_term' | 'medium_term' | 'long_term';
+  timeToImplement: "immediate" | "short_term" | "medium_term" | "long_term";
   affectedSystems: string[];
   requirements: string[];
 }
@@ -92,7 +95,10 @@ export class UnifiedEffectivenessCalculator {
     try {
       // Calculate individual system scores
       const economyScore = this.calculateEconomyEffectiveness(economyBuilder);
-      const governmentScore = this.calculateGovernmentEffectiveness(governmentBuilder, governmentComponents);
+      const governmentScore = this.calculateGovernmentEffectiveness(
+        governmentBuilder,
+        governmentComponents
+      );
       const taxScore = this.calculateTaxEffectiveness(taxSystem);
 
       // Calculate cross-builder synergies and conflicts
@@ -131,11 +137,26 @@ export class UnifiedEffectivenessCalculator {
 
       // Identify risk factors and strengths/weaknesses
       const riskFactors = this.identifyRiskFactors(crossBuilderAnalysis);
-      const strengths = this.identifyStrengths(economyBuilder, governmentBuilder, taxSystem, governmentComponents);
-      const weaknesses = this.identifyWeaknesses(economyBuilder, governmentBuilder, taxSystem, governmentComponents);
+      const strengths = this.identifyStrengths(
+        economyBuilder,
+        governmentBuilder,
+        taxSystem,
+        governmentComponents
+      );
+      const weaknesses = this.identifyWeaknesses(
+        economyBuilder,
+        governmentBuilder,
+        taxSystem,
+        governmentComponents
+      );
 
       // Calculate confidence level
-      const confidence = this.calculateConfidence(economyBuilder, governmentBuilder, taxSystem, governmentComponents);
+      const confidence = this.calculateConfidence(
+        economyBuilder,
+        governmentBuilder,
+        taxSystem,
+        governmentComponents
+      );
 
       const analysis: UnifiedEffectivenessAnalysis = {
         metrics,
@@ -151,13 +172,13 @@ export class UnifiedEffectivenessCalculator {
         governmentEffectiveness: governmentScore,
         taxEffectiveness: taxScore,
         crossBuilderSynergyScore: crossBuilderAnalysis.synergyBonus,
-        optimizationRecommendations: recommendations
+        optimizationRecommendations: recommendations,
       };
 
       this.lastAnalysis = analysis;
       return analysis;
     } catch (error) {
-      console.error('Failed to calculate unified effectiveness:', error);
+      console.error("Failed to calculate unified effectiveness:", error);
       throw error;
     }
   }
@@ -177,14 +198,15 @@ export class UnifiedEffectivenessCalculator {
     if (components.length === 0) return 0;
 
     // Base effectiveness from components
-    const baseEffectiveness = components.reduce((sum, comp) => {
-      return sum + (ATOMIC_ECONOMIC_COMPONENTS[comp]?.effectiveness || 0);
-    }, 0) / components.length;
+    const baseEffectiveness =
+      components.reduce((sum, comp) => {
+        return sum + (ATOMIC_ECONOMIC_COMPONENTS[comp]?.effectiveness || 0);
+      }, 0) / components.length;
 
     // Synergy bonuses
     let synergyBonus = 0;
-    components.forEach(comp1 => {
-      components.forEach(comp2 => {
+    components.forEach((comp1) => {
+      components.forEach((comp2) => {
         if (comp1 !== comp2) {
           const component1 = ATOMIC_ECONOMIC_COMPONENTS[comp1];
           if (component1?.synergies.includes(comp2)) {
@@ -196,8 +218,8 @@ export class UnifiedEffectivenessCalculator {
 
     // Conflict penalties
     let conflictPenalty = 0;
-    components.forEach(comp1 => {
-      components.forEach(comp2 => {
+    components.forEach((comp1) => {
+      components.forEach((comp2) => {
         if (comp1 !== comp2) {
           const component1 = ATOMIC_ECONOMIC_COMPONENTS[comp1];
           if (component1?.conflicts.includes(comp2)) {
@@ -213,21 +235,25 @@ export class UnifiedEffectivenessCalculator {
   /**
    * Calculate government system effectiveness
    */
-  private calculateGovernmentEffectiveness(governmentBuilder: GovernmentBuilderState | null, governmentComponents: ComponentType[] = []): number {
+  private calculateGovernmentEffectiveness(
+    governmentBuilder: GovernmentBuilderState | null,
+    governmentComponents: ComponentType[] = []
+  ): number {
     if (governmentComponents.length === 0) return 0;
 
     const components = governmentComponents;
     if (components.length === 0) return 0;
 
     // Base effectiveness from components
-    const baseEffectiveness = components.reduce((sum, comp) => {
-      return sum + (ATOMIC_COMPONENTS[comp]?.effectiveness || 0);
-    }, 0) / components.length;
+    const baseEffectiveness =
+      components.reduce((sum, comp) => {
+        return sum + (ATOMIC_COMPONENTS[comp]?.effectiveness || 0);
+      }, 0) / components.length;
 
     // Synergy bonuses
     let synergyBonus = 0;
-    components.forEach(comp1 => {
-      components.forEach(comp2 => {
+    components.forEach((comp1) => {
+      components.forEach((comp2) => {
         if (comp1 !== comp2) {
           const component1 = ATOMIC_COMPONENTS[comp1];
           if (component1?.synergies.includes(comp2)) {
@@ -239,8 +265,8 @@ export class UnifiedEffectivenessCalculator {
 
     // Conflict penalties
     let conflictPenalty = 0;
-    components.forEach(comp1 => {
-      components.forEach(comp2 => {
+    components.forEach((comp1) => {
+      components.forEach((comp2) => {
         if (comp1 !== comp2) {
           const component1 = ATOMIC_COMPONENTS[comp1];
           if (component1?.conflicts.includes(comp2)) {
@@ -305,7 +331,7 @@ export class UnifiedEffectivenessCalculator {
       synergyBonus: 0,
       conflictPenalty: 0,
       optimizationPotential: 0,
-      crossBuilderScore: 50
+      crossBuilderScore: 50,
     };
 
     // Economy-Government factors
@@ -315,8 +341,10 @@ export class UnifiedEffectivenessCalculator {
         governmentBuilder
       );
 
-      factors.synergyBonus += crossBuilderAnalysis.synergies.reduce((sum, s) => sum + s.strength, 0) / 10;
-      factors.conflictPenalty += crossBuilderAnalysis.conflicts.reduce((sum, c) => sum + c.strength, 0) / 10;
+      factors.synergyBonus +=
+        crossBuilderAnalysis.synergies.reduce((sum, s) => sum + s.strength, 0) / 10;
+      factors.conflictPenalty +=
+        crossBuilderAnalysis.conflicts.reduce((sum, c) => sum + c.strength, 0) / 10;
       factors.optimizationPotential = crossBuilderAnalysis.overallScore;
     }
 
@@ -324,10 +352,12 @@ export class UnifiedEffectivenessCalculator {
     if (taxSystem) {
       const taxSyncState = bidirectionalTaxSyncService.getState();
       if (taxSyncState.taxRecommendations.length > 0) {
-        const avgRecommendationStrength = taxSyncState.taxRecommendations.reduce(
-          (sum, rec) => sum + Math.abs(rec.recommendedRate - rec.currentRate), 0
-        ) / taxSyncState.taxRecommendations.length;
-        
+        const avgRecommendationStrength =
+          taxSyncState.taxRecommendations.reduce(
+            (sum, rec) => sum + Math.abs(rec.recommendedRate - rec.currentRate),
+            0
+          ) / taxSyncState.taxRecommendations.length;
+
         factors.optimizationPotential += Math.min(20, avgRecommendationStrength);
       }
     }
@@ -352,7 +382,7 @@ export class UnifiedEffectivenessCalculator {
     crossBuilderFactors: any
   ): UnifiedEffectivenessMetrics {
     // Weighted average of individual scores
-    const overallScore = (economyScore * 0.4 + governmentScore * 0.35 + taxScore * 0.25);
+    const overallScore = economyScore * 0.4 + governmentScore * 0.35 + taxScore * 0.25;
 
     // Apply cross-builder adjustments
     const synergyBonus = Math.min(20, crossBuilderFactors.synergyBonus);
@@ -362,7 +392,11 @@ export class UnifiedEffectivenessCalculator {
     // Calculate derived metrics
     const stabilityIndex = this.calculateStabilityIndex(economyScore, governmentScore, taxScore);
     const growthPotential = this.calculateGrowthPotential(economyScore, governmentScore, taxScore);
-    const competitivenessIndex = this.calculateCompetitivenessIndex(economyScore, governmentScore, taxScore);
+    const competitivenessIndex = this.calculateCompetitivenessIndex(
+      economyScore,
+      governmentScore,
+      taxScore
+    );
 
     return {
       overallScore: Math.max(0, Math.min(100, overallScore + synergyBonus - conflictPenalty)),
@@ -374,46 +408,59 @@ export class UnifiedEffectivenessCalculator {
       optimizationPotential,
       stabilityIndex,
       growthPotential,
-      competitivenessIndex
+      competitivenessIndex,
     };
   }
 
   /**
    * Calculate stability index
    */
-  private calculateStabilityIndex(economyScore: number, governmentScore: number, taxScore: number): number {
+  private calculateStabilityIndex(
+    economyScore: number,
+    governmentScore: number,
+    taxScore: number
+  ): number {
     // Stability is heavily influenced by government effectiveness and tax system stability
-    const baseStability = (governmentScore * 0.5 + taxScore * 0.3 + economyScore * 0.2);
-    
+    const baseStability = governmentScore * 0.5 + taxScore * 0.3 + economyScore * 0.2;
+
     // Bonus for balanced systems
-    const balanceBonus = 100 - Math.abs(economyScore - governmentScore) - Math.abs(governmentScore - taxScore);
-    
+    const balanceBonus =
+      100 - Math.abs(economyScore - governmentScore) - Math.abs(governmentScore - taxScore);
+
     return Math.max(0, Math.min(100, (baseStability + balanceBonus * 0.1) / 2));
   }
 
   /**
    * Calculate growth potential
    */
-  private calculateGrowthPotential(economyScore: number, governmentScore: number, taxScore: number): number {
+  private calculateGrowthPotential(
+    economyScore: number,
+    governmentScore: number,
+    taxScore: number
+  ): number {
     // Growth potential is primarily driven by economy and government effectiveness
-    const baseGrowth = (economyScore * 0.6 + governmentScore * 0.3 + taxScore * 0.1);
-    
+    const baseGrowth = economyScore * 0.6 + governmentScore * 0.3 + taxScore * 0.1;
+
     // Penalty for low tax effectiveness (reduces growth potential)
     const taxPenalty = taxScore < 30 ? (30 - taxScore) * 0.5 : 0;
-    
+
     return Math.max(0, Math.min(100, baseGrowth - taxPenalty));
   }
 
   /**
    * Calculate competitiveness index
    */
-  private calculateCompetitivenessIndex(economyScore: number, governmentScore: number, taxScore: number): number {
+  private calculateCompetitivenessIndex(
+    economyScore: number,
+    governmentScore: number,
+    taxScore: number
+  ): number {
     // Competitiveness requires all systems to be effective
     const minScore = Math.min(economyScore, governmentScore, taxScore);
     const avgScore = (economyScore + governmentScore + taxScore) / 3;
-    
+
     // Competitiveness is limited by the weakest system
-    return Math.max(0, Math.min(100, (avgScore * 0.7 + minScore * 0.3)));
+    return Math.max(0, Math.min(100, avgScore * 0.7 + minScore * 0.3));
   }
 
   /**
@@ -427,17 +474,39 @@ export class UnifiedEffectivenessCalculator {
     governmentComponents: ComponentType[] = []
   ): EffectivenessBreakdown {
     const economyScore = this.calculateEconomyEffectiveness(economyBuilder);
-    const governmentScore = this.calculateGovernmentEffectiveness(governmentBuilder, governmentComponents);
+    const governmentScore = this.calculateGovernmentEffectiveness(
+      governmentBuilder,
+      governmentComponents
+    );
     const taxScore = this.calculateTaxEffectiveness(taxSystem);
 
     const baseEffectiveness = (economyScore + governmentScore + taxScore) / 3;
-    const componentSynergies = this.calculateComponentSynergies(economyBuilder, governmentBuilder, governmentComponents);
+    const componentSynergies = this.calculateComponentSynergies(
+      economyBuilder,
+      governmentBuilder,
+      governmentComponents
+    );
     const crossBuilderSynergies = crossBuilderFactors.synergyBonus;
     const conflictPenalties = crossBuilderFactors.conflictPenalty;
     const optimizationBonuses = crossBuilderFactors.optimizationPotential;
-    const stabilityFactors = this.calculateStabilityFactors(economyBuilder, governmentBuilder, taxSystem, governmentComponents);
-    const growthFactors = this.calculateGrowthFactors(economyBuilder, governmentBuilder, taxSystem, governmentComponents);
-    const competitivenessFactors = this.calculateCompetitivenessFactors(economyBuilder, governmentBuilder, taxSystem, governmentComponents);
+    const stabilityFactors = this.calculateStabilityFactors(
+      economyBuilder,
+      governmentBuilder,
+      taxSystem,
+      governmentComponents
+    );
+    const growthFactors = this.calculateGrowthFactors(
+      economyBuilder,
+      governmentBuilder,
+      taxSystem,
+      governmentComponents
+    );
+    const competitivenessFactors = this.calculateCompetitivenessFactors(
+      economyBuilder,
+      governmentBuilder,
+      taxSystem,
+      governmentComponents
+    );
 
     return {
       baseEffectiveness,
@@ -447,7 +516,7 @@ export class UnifiedEffectivenessCalculator {
       optimizationBonuses,
       stabilityFactors,
       growthFactors,
-      competitivenessFactors
+      competitivenessFactors,
     };
   }
 
@@ -462,8 +531,8 @@ export class UnifiedEffectivenessCalculator {
     let synergies = 0;
 
     // Economy component synergies
-    economyBuilder.selectedAtomicComponents.forEach(comp1 => {
-      economyBuilder.selectedAtomicComponents.forEach(comp2 => {
+    economyBuilder.selectedAtomicComponents.forEach((comp1) => {
+      economyBuilder.selectedAtomicComponents.forEach((comp2) => {
         if (comp1 !== comp2) {
           const component1 = ATOMIC_ECONOMIC_COMPONENTS[comp1];
           if (component1?.synergies.includes(comp2)) {
@@ -475,8 +544,8 @@ export class UnifiedEffectivenessCalculator {
 
     // Government component synergies
     if (governmentComponents.length > 0) {
-      governmentComponents.forEach(comp1 => {
-        governmentComponents.forEach(comp2 => {
+      governmentComponents.forEach((comp1) => {
+        governmentComponents.forEach((comp2) => {
           if (comp1 !== comp2) {
             const component1 = ATOMIC_COMPONENTS[comp1];
             if (component1?.synergies.includes(comp2)) {
@@ -504,18 +573,26 @@ export class UnifiedEffectivenessCalculator {
     // Government stability
     if (governmentComponents.length > 0) {
       const hasRuleOfLaw = governmentComponents.includes(ComponentType.RULE_OF_LAW);
-      const hasIndependentJudiciary = governmentComponents.includes(ComponentType.INDEPENDENT_JUDICIARY);
-      const hasProfessionalBureaucracy = governmentComponents.includes(ComponentType.PROFESSIONAL_BUREAUCRACY);
-      
+      const hasIndependentJudiciary = governmentComponents.includes(
+        ComponentType.INDEPENDENT_JUDICIARY
+      );
+      const hasProfessionalBureaucracy = governmentComponents.includes(
+        ComponentType.PROFESSIONAL_BUREAUCRACY
+      );
+
       if (hasRuleOfLaw) stability += 15;
       if (hasIndependentJudiciary) stability += 10;
       if (hasProfessionalBureaucracy) stability += 10;
     }
 
     // Economic stability
-    const hasMixedEconomy = economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.MIXED_ECONOMY);
-    const hasSocialMarket = economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.SOCIAL_MARKET_ECONOMY);
-    
+    const hasMixedEconomy = economyBuilder.selectedAtomicComponents.includes(
+      EconomicComponentType.MIXED_ECONOMY
+    );
+    const hasSocialMarket = economyBuilder.selectedAtomicComponents.includes(
+      EconomicComponentType.SOCIAL_MARKET_ECONOMY
+    );
+
     if (hasMixedEconomy) stability += 10;
     if (hasSocialMarket) stability += 15;
 
@@ -538,10 +615,16 @@ export class UnifiedEffectivenessCalculator {
     let growth = 50;
 
     // Economic growth factors
-    const hasInnovation = economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.INNOVATION_ECONOMY);
-    const hasKnowledge = economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.KNOWLEDGE_ECONOMY);
-    const hasRnd = economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.RD_INVESTMENT);
-    
+    const hasInnovation = economyBuilder.selectedAtomicComponents.includes(
+      EconomicComponentType.INNOVATION_ECONOMY
+    );
+    const hasKnowledge = economyBuilder.selectedAtomicComponents.includes(
+      EconomicComponentType.KNOWLEDGE_ECONOMY
+    );
+    const hasRnd = economyBuilder.selectedAtomicComponents.includes(
+      EconomicComponentType.RD_INVESTMENT
+    );
+
     if (hasInnovation) growth += 20;
     if (hasKnowledge) growth += 15;
     if (hasRnd) growth += 10;
@@ -550,7 +633,7 @@ export class UnifiedEffectivenessCalculator {
     if (governmentComponents.length > 0) {
       const hasTechnocratic = governmentComponents.includes(ComponentType.TECHNOCRATIC_PROCESS);
       const hasDigitalGov = governmentComponents.includes(ComponentType.DIGITAL_GOVERNMENT);
-      
+
       if (hasTechnocratic) growth += 15;
       if (hasDigitalGov) growth += 10;
     }
@@ -573,26 +656,36 @@ export class UnifiedEffectivenessCalculator {
     let competitiveness = 50;
 
     // Economic competitiveness
-    const hasFreeMarket = economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.FREE_MARKET_SYSTEM);
-    const hasExportOriented = economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.EXPORT_ORIENTED);
-    const hasFlexibleLabor = economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.FLEXIBLE_LABOR);
-    
+    const hasFreeMarket = economyBuilder.selectedAtomicComponents.includes(
+      EconomicComponentType.FREE_MARKET_SYSTEM
+    );
+    const hasExportOriented = economyBuilder.selectedAtomicComponents.includes(
+      EconomicComponentType.EXPORT_ORIENTED
+    );
+    const hasFlexibleLabor = economyBuilder.selectedAtomicComponents.includes(
+      EconomicComponentType.FLEXIBLE_LABOR
+    );
+
     if (hasFreeMarket) competitiveness += 15;
     if (hasExportOriented) competitiveness += 20;
     if (hasFlexibleLabor) competitiveness += 10;
 
     // Government competitiveness
     if (governmentComponents.length > 0) {
-      const hasProfessionalBureaucracy = governmentComponents.includes(ComponentType.PROFESSIONAL_BUREAUCRACY);
+      const hasProfessionalBureaucracy = governmentComponents.includes(
+        ComponentType.PROFESSIONAL_BUREAUCRACY
+      );
       const hasRuleOfLaw = governmentComponents.includes(ComponentType.RULE_OF_LAW);
-      
+
       if (hasProfessionalBureaucracy) competitiveness += 15;
       if (hasRuleOfLaw) competitiveness += 20;
     }
 
     // Tax competitiveness
     if (taxSystem?.taxCategories) {
-      const corporateTax = taxSystem.taxCategories.find(cat => cat.categoryName === 'Corporate Income Tax');
+      const corporateTax = taxSystem.taxCategories.find(
+        (cat) => cat.categoryName === "Corporate Income Tax"
+      );
       if (corporateTax && corporateTax.baseRate && corporateTax.baseRate < 25) {
         competitiveness += 10;
       }
@@ -616,64 +709,67 @@ export class UnifiedEffectivenessCalculator {
     // Economy optimization recommendations
     if (crossBuilderFactors.optimizationPotential > 30) {
       recommendations.push({
-        id: 'economy-optimization',
-        type: 'economy',
-        priority: 'high',
-        title: 'Optimize Economic Component Synergies',
-        description: 'Add synergistic economic components to improve overall effectiveness',
+        id: "economy-optimization",
+        type: "economy",
+        priority: "high",
+        title: "Optimize Economic Component Synergies",
+        description: "Add synergistic economic components to improve overall effectiveness",
         expectedImprovement: 15,
         implementationCost: 100000,
-        timeToImplement: 'medium_term',
-        affectedSystems: ['economy'],
-        requirements: ['Economic component analysis', 'Synergy mapping']
+        timeToImplement: "medium_term",
+        affectedSystems: ["economy"],
+        requirements: ["Economic component analysis", "Synergy mapping"],
       });
     }
 
     // Government optimization recommendations
-    if (governmentBuilder && this.calculateGovernmentEffectiveness(governmentBuilder, governmentComponents) < 70) {
+    if (
+      governmentBuilder &&
+      this.calculateGovernmentEffectiveness(governmentBuilder, governmentComponents) < 70
+    ) {
       recommendations.push({
-        id: 'government-optimization',
-        type: 'government',
-        priority: 'high',
-        title: 'Improve Government System Effectiveness',
-        description: 'Add or modify government components to enhance governance effectiveness',
+        id: "government-optimization",
+        type: "government",
+        priority: "high",
+        title: "Improve Government System Effectiveness",
+        description: "Add or modify government components to enhance governance effectiveness",
         expectedImprovement: 20,
         implementationCost: 200000,
-        timeToImplement: 'long_term',
-        affectedSystems: ['government'],
-        requirements: ['Government component analysis', 'Capacity assessment']
+        timeToImplement: "long_term",
+        affectedSystems: ["government"],
+        requirements: ["Government component analysis", "Capacity assessment"],
       });
     }
 
     // Tax optimization recommendations
     if (taxSystem && this.calculateTaxEffectiveness(taxSystem) < 60) {
       recommendations.push({
-        id: 'tax-optimization',
-        type: 'tax',
-        priority: 'medium',
-        title: 'Optimize Tax System Structure',
-        description: 'Improve tax system efficiency and compliance',
+        id: "tax-optimization",
+        type: "tax",
+        priority: "medium",
+        title: "Optimize Tax System Structure",
+        description: "Improve tax system efficiency and compliance",
         expectedImprovement: 12,
         implementationCost: 50000,
-        timeToImplement: 'short_term',
-        affectedSystems: ['tax'],
-        requirements: ['Tax system analysis', 'Compliance assessment']
+        timeToImplement: "short_term",
+        affectedSystems: ["tax"],
+        requirements: ["Tax system analysis", "Compliance assessment"],
       });
     }
 
     // Cross-builder optimization recommendations
     if (crossBuilderFactors.conflictPenalty > 10) {
       recommendations.push({
-        id: 'cross-builder-conflict-resolution',
-        type: 'cross_builder',
-        priority: 'critical',
-        title: 'Resolve Cross-Builder Conflicts',
-        description: 'Address conflicts between economy, government, and tax systems',
+        id: "cross-builder-conflict-resolution",
+        type: "cross_builder",
+        priority: "critical",
+        title: "Resolve Cross-Builder Conflicts",
+        description: "Address conflicts between economy, government, and tax systems",
         expectedImprovement: 25,
         implementationCost: 150000,
-        timeToImplement: 'medium_term',
-        affectedSystems: ['economy', 'government', 'tax'],
-        requirements: ['Cross-builder analysis', 'Conflict resolution planning']
+        timeToImplement: "medium_term",
+        affectedSystems: ["economy", "government", "tax"],
+        requirements: ["Cross-builder analysis", "Conflict resolution planning"],
       });
     }
 
@@ -687,15 +783,15 @@ export class UnifiedEffectivenessCalculator {
     const risks: string[] = [];
 
     if (crossBuilderFactors.conflictPenalty > 15) {
-      risks.push('High cross-builder conflicts may reduce overall system stability');
+      risks.push("High cross-builder conflicts may reduce overall system stability");
     }
 
     if (crossBuilderFactors.optimizationPotential < 20) {
-      risks.push('Limited optimization potential may constrain future growth');
+      risks.push("Limited optimization potential may constrain future growth");
     }
 
     if (crossBuilderFactors.synergyBonus < 5) {
-      risks.push('Low synergy levels may indicate suboptimal system integration');
+      risks.push("Low synergy levels may indicate suboptimal system integration");
     }
 
     return risks;
@@ -714,30 +810,35 @@ export class UnifiedEffectivenessCalculator {
 
     const economyScore = this.calculateEconomyEffectiveness(economyBuilder);
     if (economyScore > 80) {
-      strengths.push('Strong economic system with high effectiveness');
+      strengths.push("Strong economic system with high effectiveness");
     }
 
     if (governmentBuilder) {
-      const governmentScore = this.calculateGovernmentEffectiveness(governmentBuilder, governmentComponents);
+      const governmentScore = this.calculateGovernmentEffectiveness(
+        governmentBuilder,
+        governmentComponents
+      );
       if (governmentScore > 80) {
-        strengths.push('Robust government system with excellent governance');
+        strengths.push("Robust government system with excellent governance");
       }
     }
 
     if (taxSystem) {
       const taxScore = this.calculateTaxEffectiveness(taxSystem);
       if (taxScore > 75) {
-        strengths.push('Efficient tax system with good collection and compliance');
+        strengths.push("Efficient tax system with good collection and compliance");
       }
     }
 
     // Check for specific strong components
-    if (economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.INNOVATION_ECONOMY)) {
-      strengths.push('Innovation-focused economy with high growth potential');
+    if (
+      economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.INNOVATION_ECONOMY)
+    ) {
+      strengths.push("Innovation-focused economy with high growth potential");
     }
 
     if (governmentComponents.includes(ComponentType.RULE_OF_LAW)) {
-      strengths.push('Strong rule of law providing stability and predictability');
+      strengths.push("Strong rule of law providing stability and predictability");
     }
 
     return strengths;
@@ -756,31 +857,33 @@ export class UnifiedEffectivenessCalculator {
 
     const economyScore = this.calculateEconomyEffectiveness(economyBuilder);
     if (economyScore < 60) {
-      weaknesses.push('Economic system effectiveness below optimal levels');
+      weaknesses.push("Economic system effectiveness below optimal levels");
     }
 
     if (governmentBuilder) {
       const governmentScore = this.calculateGovernmentEffectiveness(governmentBuilder);
       if (governmentScore < 60) {
-        weaknesses.push('Government system requires improvement for better governance');
+        weaknesses.push("Government system requires improvement for better governance");
       }
     }
 
     if (taxSystem) {
       const taxScore = this.calculateTaxEffectiveness(taxSystem);
       if (taxScore < 50) {
-        weaknesses.push('Tax system efficiency needs significant improvement');
+        weaknesses.push("Tax system efficiency needs significant improvement");
       }
     }
 
     // Check for missing critical components
-    if (!economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.MIXED_ECONOMY) &&
-        !economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.SOCIAL_MARKET_ECONOMY)) {
-      weaknesses.push('Lack of balanced economic model may reduce stability');
+    if (
+      !economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.MIXED_ECONOMY) &&
+      !economyBuilder.selectedAtomicComponents.includes(EconomicComponentType.SOCIAL_MARKET_ECONOMY)
+    ) {
+      weaknesses.push("Lack of balanced economic model may reduce stability");
     }
 
     if (governmentBuilder && !governmentComponents.includes(ComponentType.RULE_OF_LAW)) {
-      weaknesses.push('Absence of rule of law may undermine system stability');
+      weaknesses.push("Absence of rule of law may undermine system stability");
     }
 
     return weaknesses;

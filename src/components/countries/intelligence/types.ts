@@ -7,9 +7,9 @@ export interface VitalityMetric {
   value: number;
   color: string;
   icon: React.ElementType;
-  trend: 'up' | 'down' | 'stable';
-  status: 'excellent' | 'good' | 'fair' | 'poor';
-  classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
+  trend: "up" | "down" | "stable";
+  status: "excellent" | "good" | "fair" | "poor";
+  classification: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
 }
 
 export interface CountryMetric {
@@ -19,20 +19,20 @@ export interface CountryMetric {
   unit?: string;
   icon: React.ElementType;
   trend?: {
-    direction: 'up' | 'down' | 'stable';
+    direction: "up" | "down" | "stable";
     value: number;
     period: string;
   };
-  classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
-  importance: 'critical' | 'high' | 'medium' | 'low';
+  classification: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
+  importance: "critical" | "high" | "medium" | "low";
 }
 
 export interface IntelligenceAlert {
   id: string;
-  type: 'critical' | 'warning' | 'info' | 'success';
+  type: "critical" | "warning" | "info" | "success";
   title: string;
   description: string;
-  classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
+  classification: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
   timestamp: number;
   action?: {
     label: string;
@@ -46,7 +46,7 @@ export interface CountryInformation {
   items: {
     label: string;
     value: string;
-    classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
+    classification: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
   }[];
   icon: React.ElementType;
 }
@@ -55,8 +55,8 @@ export interface WikiSection {
   id: string;
   title: string;
   content: string;
-  classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
-  importance: 'critical' | 'high' | 'medium' | 'low';
+  classification: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
+  importance: "critical" | "high" | "medium" | "low";
   images?: string[];
 }
 
@@ -96,7 +96,7 @@ export interface CountryData {
   baselineDate: number;
 }
 
-export type ClearanceLevel = 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
-export type TrendDirection = 'up' | 'down' | 'stable';
-export type StatusLevel = 'excellent' | 'good' | 'fair' | 'poor';
-export type ImportanceLevel = 'critical' | 'high' | 'medium' | 'low';
+export type ClearanceLevel = "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
+export type TrendDirection = "up" | "down" | "stable";
+export type StatusLevel = "excellent" | "good" | "fair" | "poor";
+export type ImportanceLevel = "critical" | "high" | "medium" | "low";

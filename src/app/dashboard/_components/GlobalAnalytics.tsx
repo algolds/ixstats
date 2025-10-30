@@ -2,14 +2,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import {
-  BarChart3,
-  Target,
-  Users,
-  TrendingUp,
-  Globe,
-  Activity,
-} from "lucide-react";
+import { BarChart3, Target, Users, TrendingUp, Globe, Activity } from "lucide-react";
 import {
   PieChart,
   Pie,
@@ -84,32 +77,43 @@ function TierDetailsPopover({ open, anchorEl, onClose, tier, countries }: TierDe
   const tierCountries = countries.filter((c) => c.economicTier === tier);
   return (
     <Popover open={open} onOpenChange={onClose}>
-      <PopoverContent className="sm:max-w-[625px] max-h-[80vh] flex flex-col">
+      <PopoverContent className="flex max-h-[80vh] flex-col sm:max-w-[625px]">
         <div className="mb-4">
-          <div className="text-lg font-bold">{tier} Countries ({tierCountries.length})</div>
-          <div className="text-muted-foreground text-sm">Countries in the {tier} economic tier.</div>
+          <div className="text-lg font-bold">
+            {tier} Countries ({tierCountries.length})
+          </div>
+          <div className="text-muted-foreground text-sm">
+            Countries in the {tier} economic tier.
+          </div>
         </div>
-        <div className="overflow-y-auto flex-grow pr-2 scrollbar-thin">
+        <div className="scrollbar-thin flex-grow overflow-y-auto pr-2">
           <div className="grid gap-3">
             {tierCountries.map((c, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
+                className="bg-muted/50 hover:bg-muted flex items-center justify-between rounded-lg p-3 transition-colors"
               >
                 <div>
-                  <h3 className="font-medium text-card-foreground">{c.name}</h3>
-                  <p className="text-sm text-muted-foreground">Pop: {formatPopulation(c.currentPopulation)} • GDP p.c.: {formatCurrency(c.currentGdpPerCapita)}</p>
+                  <h3 className="text-card-foreground font-medium">{c.name}</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Pop: {formatPopulation(c.currentPopulation)} • GDP p.c.:{" "}
+                    {formatCurrency(c.currentGdpPerCapita)}
+                  </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-semibold text-card-foreground">{formatCurrency(c.currentTotalGdp)}</p>
-                  <p className="text-xs text-muted-foreground">Total GDP</p>
+                  <p className="text-card-foreground text-lg font-semibold">
+                    {formatCurrency(c.currentTotalGdp)}
+                  </p>
+                  <p className="text-muted-foreground text-xs">Total GDP</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
-        <div className="flex justify-end mt-4">
-          <Button variant="outline" onClick={onClose}>Close</Button>
+        <div className="mt-4 flex justify-end">
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
         </div>
       </PopoverContent>
     </Popover>
@@ -121,15 +125,24 @@ interface GlobalAnalyticsProps {
   isLoading?: boolean;
 }
 
-class AnalyticsErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
+class AnalyticsErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
   constructor(props: any) {
     super(props);
     this.state = { hasError: false };
   }
-  static getDerivedStateFromError() { return { hasError: true }; }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
   render() {
     if (this.state.hasError) {
-      return <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 text-center">An error occurred in Analytics.</div>;
+      return (
+        <div className="bg-card text-card-foreground rounded-lg border p-6 text-center shadow-sm">
+          An error occurred in Analytics.
+        </div>
+      );
     }
     return this.props.children;
   }
@@ -139,8 +152,7 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [showTierPopover, setShowTierPopover] = useState(false);
   const [tierPopoverAnchor, setTierPopoverAnchor] = useState<HTMLElement | null>(null);
-  const [selectedMetric, setSelectedMetric] =
-    useState<MetricFilter>("populationDensity");
+  const [selectedMetric, setSelectedMetric] = useState<MetricFilter>("populationDensity");
 
   const theme = useChartTheme();
 
@@ -148,20 +160,20 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
   const validCountries = useMemo(
     () =>
       countries.filter(
-        (c) =>
-          c.currentPopulation > 0 &&
-          c.currentGdpPerCapita > 0 &&
-          c.currentTotalGdp > 0
+        (c) => c.currentPopulation > 0 && c.currentGdpPerCapita > 0 && c.currentTotalGdp > 0
       ),
     [countries]
   );
 
   // 2) Count per economic tier
   const economicTierCounts = useMemo(() => {
-    return validCountries.reduce((acc, c) => {
-      acc[c.economicTier] = (acc[c.economicTier] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    return validCountries.reduce(
+      (acc, c) => {
+        acc[c.economicTier] = (acc[c.economicTier] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
   }, [validCountries]);
 
   // 3) Build pie data
@@ -187,9 +199,7 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
     for (const tier of Object.keys(economicTierCounts)) {
       cfg[tier] = {
         label: tier,
-        color:
-          tierColors[tier] ??
-          theme.colors[fallback++ % theme.colors.length],
+        color: tierColors[tier] ?? theme.colors[fallback++ % theme.colors.length],
       };
     }
     return cfg;
@@ -223,8 +233,7 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
             disp = raw / 1_000_000_000; // plot in billions
             break;
         }
-        const name =
-          c.name.length > 12 ? c.name.slice(0, 10) + "…" : c.name;
+        const name = c.name.length > 12 ? c.name.slice(0, 10) + "…" : c.name;
         return { name, fullName: c.name, value: disp, rawValue: raw };
       })
       .sort((a, b) => b.value - a.value)
@@ -266,20 +275,16 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
   if (validCountries.length === 0) {
     return (
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-foreground mb-6">
-          Global Analytics
-        </h2>
-        <Card className="text-center py-12">
+        <h2 className="text-foreground mb-6 text-2xl font-semibold">Global Analytics</h2>
+        <Card className="py-12 text-center">
           <CardHeader>
-            <CardTitle className="flex justify-center items-center text-muted-foreground">
-              <BarChart3 className="h-12 w-12 opacity-50 mr-2" />
+            <CardTitle className="text-muted-foreground flex items-center justify-center">
+              <BarChart3 className="mr-2 h-12 w-12 opacity-50" />
               No Data
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Load some countries first.
-            </p>
+            <p className="text-muted-foreground mt-2 text-sm">Load some countries first.</p>
           </CardContent>
         </Card>
       </div>
@@ -289,12 +294,12 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
   if (isLoading) {
     return (
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-foreground mb-6">Global Analytics</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <h2 className="text-foreground mb-6 text-2xl font-semibold">Global Analytics</h2>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {Array.from({ length: 2 }).map((_, i) => (
             <Card key={i} className="flex flex-col">
               <CardHeader>
-                <Skeleton className="h-6 w-24 mb-2" />
+                <Skeleton className="mb-2 h-6 w-24" />
                 <Skeleton className="h-4 w-32" />
               </CardHeader>
               <CardContent>
@@ -317,21 +322,17 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
         countries={countries}
       />
 
-      <h2 className="text-2xl font-semibold text-foreground mb-6">
-        Global Analytics
-      </h2>
+      <h2 className="text-foreground mb-6 text-2xl font-semibold">Global Analytics</h2>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Pie */}
         <Card className="flex flex-col">
           <CardHeader className="pb-0">
             <CardTitle className="flex items-center">
-              <Activity className="h-5 w-5 mr-2" />
+              <Activity className="mr-2 h-5 w-5" />
               Economic Tier Distribution
             </CardTitle>
-            <CardDescription>
-              Click a slice to view countries
-            </CardDescription>
+            <CardDescription>Click a slice to view countries</CardDescription>
           </CardHeader>
           <CardContent className="flex-1 pb-0">
             <ChartContainer
@@ -339,9 +340,7 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
               className="mx-auto aspect-square max-h-[300px]"
             >
               <PieChart>
-                <ChartTooltip
-                  content={<ChartTooltipContent hideLabel />}
-                />
+                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
                 <Pie
                   data={pieChartData}
                   dataKey="value"
@@ -354,10 +353,7 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
                   {pieChartData.map((entry) => (
                     <Cell
                       key={entry.tierName}
-                      fill={
-                        economicTierChartConfig[entry.tierName]?.color ||
-                        theme.colors[0]
-                      }
+                      fill={economicTierChartConfig[entry.tierName]?.color || theme.colors[0]}
                     />
                   ))}
                   <LabelList
@@ -370,7 +366,7 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
               </PieChart>
             </ChartContainer>
           </CardContent>
-          <CardFooter className="text-xs text-muted-foreground pt-4">
+          <CardFooter className="text-muted-foreground pt-4 text-xs">
             Tap a slice to drill in
           </CardFooter>
         </Card>
@@ -379,18 +375,12 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
         <Card>
           <CardHeader className="flex items-center justify-between">
             <CardTitle className="flex items-center">
-              <Target className="h-5 w-5 mr-2" />
-              Top 10 by{" "}
-              {
-                metricOptions.find((o) => o.key === selectedMetric)
-                  ?.label
-              }
+              <Target className="mr-2 h-5 w-5" />
+              Top 10 by {metricOptions.find((o) => o.key === selectedMetric)?.label}
             </CardTitle>
             <Select
               value={selectedMetric}
-              onValueChange={(v) =>
-                setSelectedMetric(v as MetricFilter)
-              }
+              onValueChange={(v) => setSelectedMetric(v as MetricFilter)}
             >
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="Choose metric" />
@@ -398,7 +388,7 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
               <SelectContent>
                 {metricOptions.map((o) => (
                   <SelectItem key={o.key} value={o.key}>
-                    <o.icon className="h-4 w-4 mr-2" />
+                    <o.icon className="mr-2 h-4 w-4" />
                     {o.label}
                   </SelectItem>
                 ))}
@@ -412,16 +402,8 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
                 layout="vertical"
                 margin={{ top: 8, right: 8, bottom: 48, left: 64 }}
               >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke={theme.gridColor}
-                  opacity={0.3}
-                />
-                <XAxis
-                  type="number"
-                  tick={{ fill: theme.textColor }}
-                  stroke={theme.axisColor}
-                />
+                <CartesianGrid strokeDasharray="3 3" stroke={theme.gridColor} opacity={0.3} />
+                <XAxis type="number" tick={{ fill: theme.textColor }} stroke={theme.axisColor} />
                 <YAxis
                   dataKey="name"
                   type="category"
@@ -433,7 +415,7 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
                 <RechartsTooltip
                   cursor={{ fill: `${theme.gridColor}33` }}
                   formatter={(val, name, props) => {
-                    const raw = (props.payload).rawValue;
+                    const raw = props.payload.rawValue;
                     switch (selectedMetric) {
                       case "populationDensity":
                         return [formatDensity(raw, "/km²"), "Pop Density"];
@@ -450,8 +432,7 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
                     }
                   }}
                   labelFormatter={(label) =>
-                    topCountriesData.find((d) => d.name === label)
-                      ?.fullName || label
+                    topCountriesData.find((d) => d.name === label)?.fullName || label
                   }
                   contentStyle={{
                     backgroundColor: theme.tooltipBg,
@@ -461,10 +442,7 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
                 />
                 <Bar
                   dataKey="value"
-                  name={
-                    metricOptions.find((o) => o.key === selectedMetric)
-                      ?.label
-                  }
+                  name={metricOptions.find((o) => o.key === selectedMetric)?.label}
                   fill={theme.colors[1]}
                   radius={[0, 4, 4, 0]}
                   barSize={14}
@@ -480,5 +458,9 @@ export function GlobalAnalytics({ countries, isLoading = false }: GlobalAnalytic
 
 // Wrap export in error boundary
 export default function GlobalAnalyticsWithBoundary(props: GlobalAnalyticsProps) {
-  return <AnalyticsErrorBoundary><GlobalAnalytics {...props} /></AnalyticsErrorBoundary>;
+  return (
+    <AnalyticsErrorBoundary>
+      <GlobalAnalytics {...props} />
+    </AnalyticsErrorBoundary>
+  );
 }

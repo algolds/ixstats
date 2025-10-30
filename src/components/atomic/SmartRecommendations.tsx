@@ -1,26 +1,26 @@
 "use client";
 
-import React, { useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Lightbulb, 
-  Zap, 
-  Shield, 
+import React, { useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Lightbulb,
+  Zap,
+  Shield,
   AlertTriangle,
   Target,
   Plus,
   Info,
   TrendingUp,
-  CheckCircle
-} from 'lucide-react';
-import { ComponentType } from '@prisma/client';
-import { cn } from '~/lib/utils';
-import { 
+  CheckCircle,
+} from "lucide-react";
+import { ComponentType } from "@prisma/client";
+import { cn } from "~/lib/utils";
+import {
   AtomicRecommendationEngine,
   type SmartRecommendation,
-  type CountryProfile 
-} from '~/lib/atomic-recommendations';
-import { ATOMIC_COMPONENTS } from '~/components/government/atoms/AtomicGovernmentComponents';
+  type CountryProfile,
+} from "~/lib/atomic-recommendations";
+import { ATOMIC_COMPONENTS } from "~/components/government/atoms/AtomicGovernmentComponents";
 
 interface SmartRecommendationsProps {
   selectedComponents: ComponentType[];
@@ -37,54 +37,54 @@ interface RecommendationCardProps {
   onToggleExpand: () => void;
 }
 
-function RecommendationCard({ 
-  recommendation, 
-  onAdd, 
-  isExpanded, 
-  onToggleExpand 
+function RecommendationCard({
+  recommendation,
+  onAdd,
+  isExpanded,
+  onToggleExpand,
 }: RecommendationCardProps) {
   const componentInfo = ATOMIC_COMPONENTS[recommendation.component];
-  
+
   const typeConfig = {
     synergy_complete: {
-      icon: <Zap className="w-4 h-4" />,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50 border-purple-200',
-      label: 'Complete Synergy'
+      icon: <Zap className="h-4 w-4" />,
+      color: "text-purple-600",
+      bgColor: "bg-purple-50 border-purple-200",
+      label: "Complete Synergy",
     },
     effectiveness_boost: {
-      icon: <TrendingUp className="w-4 h-4" />,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50 border-green-200',
-      label: 'Effectiveness Boost'
+      icon: <TrendingUp className="h-4 w-4" />,
+      color: "text-green-600",
+      bgColor: "bg-green-50 border-green-200",
+      label: "Effectiveness Boost",
     },
     conflict_avoid: {
-      icon: <Shield className="w-4 h-4" />,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-50 border-orange-200',
-      label: 'Avoid Conflict'
+      icon: <Shield className="h-4 w-4" />,
+      color: "text-orange-600",
+      bgColor: "bg-orange-50 border-orange-200",
+      label: "Avoid Conflict",
     },
     country_fit: {
-      icon: <Target className="w-4 h-4" />,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50 border-blue-200',
-      label: 'Perfect Fit'
-    }
+      icon: <Target className="h-4 w-4" />,
+      color: "text-blue-600",
+      bgColor: "bg-blue-50 border-blue-200",
+      label: "Perfect Fit",
+    },
   };
 
   const config = typeConfig[recommendation.type];
-  
+
   const priorityColors = {
-    high: 'bg-red-100 text-red-800',
-    medium: 'bg-yellow-100 text-yellow-800',
-    low: 'bg-gray-100 text-gray-800'
+    high: "bg-red-100 text-red-800",
+    medium: "bg-yellow-100 text-yellow-800",
+    low: "bg-gray-100 text-gray-800",
   };
 
   return (
     <motion.div
       layout
       className={cn(
-        "p-4 rounded-lg border transition-all cursor-pointer",
+        "cursor-pointer rounded-lg border p-4 transition-all",
         config.bgColor,
         isExpanded ? "ring-2 ring-offset-1" : ""
       )}
@@ -92,72 +92,64 @@ function RecommendationCard({
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.02 }}
     >
-      <div className="flex items-start justify-between mb-3">
+      <div className="mb-3 flex items-start justify-between">
         <div className="flex-1">
-          <div className="flex items-center space-x-2 mb-2">
-            <div className={cn("p-1.5 rounded-full bg-white/50", config.color)}>
-              {config.icon}
-            </div>
+          <div className="mb-2 flex items-center space-x-2">
+            <div className={cn("rounded-full bg-white/50 p-1.5", config.color)}>{config.icon}</div>
             <div className="flex items-center space-x-2">
-              <h4 className="font-semibold text-sm text-foreground">
-                {componentInfo?.name}
-              </h4>
-              <span className={cn(
-                "px-2 py-0.5 text-xs font-medium rounded-full",
-                priorityColors[recommendation.priority]
-              )}>
+              <h4 className="text-foreground text-sm font-semibold">{componentInfo?.name}</h4>
+              <span
+                className={cn(
+                  "rounded-full px-2 py-0.5 text-xs font-medium",
+                  priorityColors[recommendation.priority]
+                )}
+              >
                 {recommendation.priority}
               </span>
             </div>
           </div>
-          
-          <p className="text-xs text-muted-foreground mb-2">
-            {recommendation.reason}
-          </p>
-          
+
+          <p className="text-muted-foreground mb-2 text-xs">{recommendation.reason}</p>
+
           <div className="flex items-center space-x-3 text-xs">
             <div className="flex items-center space-x-1">
               <span className="text-muted-foreground">Confidence:</span>
-              <span className="font-medium">
-                {Math.round(recommendation.confidence * 100)}%
-              </span>
+              <span className="font-medium">{Math.round(recommendation.confidence * 100)}%</span>
             </div>
-            
+
             <div className="flex items-center space-x-1">
               <span className="text-muted-foreground">Effectiveness:</span>
-              <span className="font-medium">
-                {componentInfo?.effectiveness}%
-              </span>
+              <span className="font-medium">{componentInfo?.effectiveness}%</span>
             </div>
-            
+
             {recommendation.impactPreview.synergiesAdded > 0 && (
               <div className="flex items-center space-x-1 text-green-600">
-                <CheckCircle className="w-3 h-3" />
+                <CheckCircle className="h-3 w-3" />
                 <span>+{recommendation.impactPreview.synergiesAdded} synergy</span>
               </div>
             )}
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-2">
           <button
             onClick={onToggleExpand}
-            className="p-1 hover:bg-white/50 rounded transition-colors"
+            className="rounded p-1 transition-colors hover:bg-white/50"
             title="Show details"
           >
-            <Info className="w-3 h-3 text-muted-foreground" />
+            <Info className="text-muted-foreground h-3 w-3" />
           </button>
-          
+
           <button
             onClick={onAdd}
             className={cn(
-              "p-1.5 rounded-full transition-colors",
+              "rounded-full p-1.5 transition-colors",
               "bg-white/70 hover:bg-white",
               config.color
             )}
             title="Add component"
           >
-            <Plus className="w-3 h-3" />
+            <Plus className="h-3 w-3" />
           </button>
         </div>
       </div>
@@ -166,9 +158,9 @@ function RecommendationCard({
         {isExpanded && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
+            animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="border-t border-white/50 pt-3 mt-3 space-y-3"
+            className="mt-3 space-y-3 border-t border-white/50 pt-3"
           >
             {/* Impact Preview */}
             <div className="grid grid-cols-2 gap-3 text-xs">
@@ -189,19 +181,19 @@ function RecommendationCard({
                   </div>
                 </div>
               </div>
-              
+
               <div className="space-y-1">
                 <div className="text-muted-foreground">Changes:</div>
                 <div className="space-y-0.5">
                   {recommendation.impactPreview.synergiesAdded > 0 && (
                     <div className="flex items-center space-x-1 text-green-600">
-                      <Plus className="w-2 h-2" />
+                      <Plus className="h-2 w-2" />
                       <span>{recommendation.impactPreview.synergiesAdded} synergies</span>
                     </div>
                   )}
                   {recommendation.impactPreview.conflictsAdded > 0 && (
                     <div className="flex items-center space-x-1 text-red-600">
-                      <AlertTriangle className="w-2 h-2" />
+                      <AlertTriangle className="h-2 w-2" />
                       <span>{recommendation.impactPreview.conflictsAdded} conflicts</span>
                     </div>
                   )}
@@ -212,16 +204,14 @@ function RecommendationCard({
             {/* Component Description */}
             <div className="text-xs">
               <div className="text-muted-foreground mb-1">About this component:</div>
-              <p className="text-foreground/80">
-                {componentInfo?.description}
-              </p>
+              <p className="text-foreground/80">{componentInfo?.description}</p>
             </div>
 
             {/* Pros and Cons */}
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
-                <div className="text-green-600 font-medium mb-1">Advantages:</div>
-                <ul className="space-y-0.5 text-muted-foreground">
+                <div className="mb-1 font-medium text-green-600">Advantages:</div>
+                <ul className="text-muted-foreground space-y-0.5">
                   {componentInfo && (
                     <>
                       <li className="flex items-start space-x-1">
@@ -231,17 +221,19 @@ function RecommendationCard({
                       {componentInfo.synergies.length > 0 && (
                         <li className="flex items-start space-x-1">
                           <span>•</span>
-                          <span>Works well with {componentInfo.synergies.length} other components</span>
+                          <span>
+                            Works well with {componentInfo.synergies.length} other components
+                          </span>
                         </li>
                       )}
                     </>
                   )}
                 </ul>
               </div>
-              
+
               <div>
-                <div className="text-red-600 font-medium mb-1">Considerations:</div>
-                <ul className="space-y-0.5 text-muted-foreground">
+                <div className="mb-1 font-medium text-red-600">Considerations:</div>
+                <ul className="text-muted-foreground space-y-0.5">
                   {componentInfo && (
                     <>
                       {componentInfo.conflicts.length > 0 && (
@@ -252,7 +244,9 @@ function RecommendationCard({
                       )}
                       <li className="flex items-start space-x-1">
                         <span>•</span>
-                        <span>Implementation cost: ${componentInfo.implementationCost.toLocaleString()}</span>
+                        <span>
+                          Implementation cost: ${componentInfo.implementationCost.toLocaleString()}
+                        </span>
                       </li>
                     </>
                   )}
@@ -271,7 +265,7 @@ export function SmartRecommendations({
   countryProfile,
   onComponentAdd,
   maxRecommendations = 5,
-  className
+  className,
 }: SmartRecommendationsProps) {
   const [expandedCard, setExpandedCard] = React.useState<string | null>(null);
 
@@ -296,9 +290,9 @@ export function SmartRecommendations({
   if (recommendations.length === 0) {
     return (
       <div className={cn("smart-recommendations", className)}>
-        <div className="text-center py-8 text-muted-foreground">
-          <div className="w-16 h-16 mx-auto mb-4 bg-muted/30 rounded-full flex items-center justify-center">
-            <Lightbulb className="w-8 h-8" />
+        <div className="text-muted-foreground py-8 text-center">
+          <div className="bg-muted/30 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+            <Lightbulb className="h-8 w-8" />
           </div>
           <p className="text-sm">
             No recommendations available yet. Select some components to get AI-powered suggestions.
@@ -312,12 +306,12 @@ export function SmartRecommendations({
     <div className={cn("smart-recommendations space-y-4", className)}>
       {/* Header */}
       <div className="flex items-center space-x-2">
-        <div className="p-2 bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg">
-          <Lightbulb className="w-4 h-4 text-purple-600" />
+        <div className="rounded-lg bg-gradient-to-r from-purple-100 to-blue-100 p-2">
+          <Lightbulb className="h-4 w-4 text-purple-600" />
         </div>
         <div>
-          <h3 className="font-semibold text-foreground">Smart Recommendations</h3>
-          <p className="text-xs text-muted-foreground">
+          <h3 className="text-foreground font-semibold">Smart Recommendations</h3>
+          <p className="text-muted-foreground text-xs">
             AI-powered suggestions based on your country profile
           </p>
         </div>
@@ -339,15 +333,15 @@ export function SmartRecommendations({
       </div>
 
       {/* Summary Stats */}
-      <div className="p-3 bg-muted/20 rounded-lg">
-        <div className="text-xs text-center space-y-1">
-          <div className="font-medium text-foreground">
+      <div className="bg-muted/20 rounded-lg p-3">
+        <div className="space-y-1 text-center text-xs">
+          <div className="text-foreground font-medium">
             {recommendations.length} recommendations available
           </div>
           <div className="text-muted-foreground">
-            {recommendations.filter(r => r.priority === 'high').length} high priority • 
-            {recommendations.filter(r => r.priority === 'medium').length} medium priority • 
-            {recommendations.filter(r => r.priority === 'low').length} low priority
+            {recommendations.filter((r) => r.priority === "high").length} high priority •
+            {recommendations.filter((r) => r.priority === "medium").length} medium priority •
+            {recommendations.filter((r) => r.priority === "low").length} low priority
           </div>
         </div>
       </div>

@@ -1,13 +1,18 @@
 // src/lib/atomic-economic-integration.server.ts
 // Server-side functions that require database access
-import { ComponentType, type Country, type GovernmentComponent, type AtomicEffectiveness } from '@prisma/client';
-import { getAtomicEffectivenessService } from '~/services/AtomicEffectivenessService';
-import { db } from '~/server/db';
+import {
+  ComponentType,
+  type Country,
+  type GovernmentComponent,
+  type AtomicEffectiveness,
+} from "@prisma/client";
+import { getAtomicEffectivenessService } from "~/services/AtomicEffectivenessService";
+import { db } from "~/server/db";
 import type {
   AtomicEconomicModifiers,
   AtomicEnhancedCountryData,
-  CountryWithAtomicComponents
-} from './atomic-economic-integration';
+  CountryWithAtomicComponents,
+} from "./atomic-economic-integration";
 
 export async function calculateAtomicEconomicImpactServer(
   components: ComponentType[],
@@ -23,11 +28,11 @@ export async function calculateAtomicEconomicImpactServer(
     stabilityBonus: 0,
     innovationMultiplier: 1.0,
     internationalTradeBonus: 0,
-    governmentEfficiencyMultiplier: 1.0
+    governmentEfficiencyMultiplier: 1.0,
   };
 
   // Apply component-specific modifiers
-  componentBreakdown.forEach(component => {
+  componentBreakdown.forEach((component) => {
     // Tax collection improvements
     modifiers.taxCollectionMultiplier *= component.taxImpact;
 
@@ -38,32 +43,44 @@ export async function calculateAtomicEconomicImpactServer(
     modifiers.stabilityBonus += component.stabilityImpact;
 
     // Innovation effects (primarily from technocratic components)
-    if ([ComponentType.TECHNOCRATIC_PROCESS, ComponentType.TECHNOCRATIC_AGENCIES].includes(component.type as any)) {
+    if (
+      [ComponentType.TECHNOCRATIC_PROCESS, ComponentType.TECHNOCRATIC_AGENCIES].includes(
+        component.type as any
+      )
+    ) {
       modifiers.innovationMultiplier *= 1.15;
     }
 
     // International trade bonuses (from rule of law, stability)
-    if ([ComponentType.RULE_OF_LAW, ComponentType.INDEPENDENT_JUDICIARY].includes(component.type as any)) {
+    if (
+      [ComponentType.RULE_OF_LAW, ComponentType.INDEPENDENT_JUDICIARY].includes(
+        component.type as any
+      )
+    ) {
       modifiers.internationalTradeBonus += 5;
     }
 
     // Government efficiency
-    modifiers.governmentEfficiencyMultiplier *= (component.baseEffectiveness / 70); // Normalize around 70 as neutral
+    modifiers.governmentEfficiencyMultiplier *= component.baseEffectiveness / 70; // Normalize around 70 as neutral
   });
 
   // Apply synergy bonuses
   const synergies = atomicService.detectPotentialSynergies(components);
-  synergies.forEach(synergy => {
+  synergies.forEach((synergy) => {
     // Major synergy effects based on the integration guide
-    if (synergy.components.includes(ComponentType.TECHNOCRATIC_PROCESS) &&
-        synergy.components.includes(ComponentType.PROFESSIONAL_BUREAUCRACY)) {
+    if (
+      synergy.components.includes(ComponentType.TECHNOCRATIC_PROCESS) &&
+      synergy.components.includes(ComponentType.PROFESSIONAL_BUREAUCRACY)
+    ) {
       modifiers.gdpGrowthModifier *= 1.15; // Additional 15% bonus
-      modifiers.innovationMultiplier *= 1.20;
+      modifiers.innovationMultiplier *= 1.2;
       modifiers.governmentEfficiencyMultiplier *= 1.25;
     }
 
-    if (synergy.components.includes(ComponentType.RULE_OF_LAW) &&
-        synergy.components.includes(ComponentType.INDEPENDENT_JUDICIARY)) {
+    if (
+      synergy.components.includes(ComponentType.RULE_OF_LAW) &&
+      synergy.components.includes(ComponentType.INDEPENDENT_JUDICIARY)
+    ) {
       modifiers.internationalTradeBonus += 15;
       modifiers.stabilityBonus += 10;
     }
@@ -71,10 +88,12 @@ export async function calculateAtomicEconomicImpactServer(
 
   // Apply conflict penalties
   const conflicts = atomicService.detectConflicts(components);
-  conflicts.forEach(conflict => {
+  conflicts.forEach((conflict) => {
     // Democratic-Surveillance conflict reduces legitimacy and economic confidence
-    if (conflict.components.includes(ComponentType.DEMOCRATIC_PROCESS) &&
-        conflict.components.includes(ComponentType.SURVEILLANCE_SYSTEM)) {
+    if (
+      conflict.components.includes(ComponentType.DEMOCRATIC_PROCESS) &&
+      conflict.components.includes(ComponentType.SURVEILLANCE_SYSTEM)
+    ) {
       modifiers.gdpGrowthModifier *= 0.95; // 5% penalty
       modifiers.internationalTradeBonus -= 10;
     }
@@ -95,7 +114,7 @@ export async function calculateCountryDataWithAtomicEnhancement(
   } else {
     // Default effectiveness for non-atomic countries
     atomicEffectiveness = {
-      id: '',
+      id: "",
       countryId: country.id,
       overallScore: 50,
       taxEffectiveness: 50,
@@ -107,14 +126,14 @@ export async function calculateCountryDataWithAtomicEnhancement(
       conflictPenalty: 0,
       lastCalculated: new Date(),
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
   }
 
   // Calculate atomic modifiers
   const activeComponents = country.governmentComponents
-    .filter(c => c.isActive)
-    .map(c => c.componentType);
+    .filter((c) => c.isActive)
+    .map((c) => c.componentType);
 
   const atomicModifiers = await calculateAtomicEconomicImpactServer(
     activeComponents,
@@ -131,32 +150,30 @@ export async function calculateCountryDataWithAtomicEnhancement(
 
   // Calculate stability index (0-100 scale)
   const baseStability = 50; // Default stability
-  const stabilityIndex = Math.max(0, Math.min(100,
-    baseStability + atomicModifiers.stabilityBonus
-  ));
+  const stabilityIndex = Math.max(0, Math.min(100, baseStability + atomicModifiers.stabilityBonus));
 
   // Government capacity index based on atomic effectiveness
   const governmentCapacityIndex = atomicEffectiveness.overallScore;
 
   // Calculate impact analysis
-  const gdpImpactPercent = baseGdpGrowth > 0 ?
-    ((enhancedGdpGrowth - baseGdpGrowth) / baseGdpGrowth) * 100 : 0;
-  const taxImpactPercent = baseTaxRevenue > 0 ?
-    ((enhancedTaxRevenue - baseTaxRevenue) / baseTaxRevenue) * 100 : 0;
+  const gdpImpactPercent =
+    baseGdpGrowth > 0 ? ((enhancedGdpGrowth - baseGdpGrowth) / baseGdpGrowth) * 100 : 0;
+  const taxImpactPercent =
+    baseTaxRevenue > 0 ? ((enhancedTaxRevenue - baseTaxRevenue) / baseTaxRevenue) * 100 : 0;
   const stabilityImpactPoints = atomicModifiers.stabilityBonus;
 
   // Grade overall effectiveness
-  let effectivenessGrade = 'F';
-  if (atomicEffectiveness.overallScore >= 90) effectivenessGrade = 'A+';
-  else if (atomicEffectiveness.overallScore >= 85) effectivenessGrade = 'A';
-  else if (atomicEffectiveness.overallScore >= 80) effectivenessGrade = 'A-';
-  else if (atomicEffectiveness.overallScore >= 75) effectivenessGrade = 'B+';
-  else if (atomicEffectiveness.overallScore >= 70) effectivenessGrade = 'B';
-  else if (atomicEffectiveness.overallScore >= 65) effectivenessGrade = 'B-';
-  else if (atomicEffectiveness.overallScore >= 60) effectivenessGrade = 'C+';
-  else if (atomicEffectiveness.overallScore >= 55) effectivenessGrade = 'C';
-  else if (atomicEffectiveness.overallScore >= 50) effectivenessGrade = 'C-';
-  else if (atomicEffectiveness.overallScore >= 40) effectivenessGrade = 'D';
+  let effectivenessGrade = "F";
+  if (atomicEffectiveness.overallScore >= 90) effectivenessGrade = "A+";
+  else if (atomicEffectiveness.overallScore >= 85) effectivenessGrade = "A";
+  else if (atomicEffectiveness.overallScore >= 80) effectivenessGrade = "A-";
+  else if (atomicEffectiveness.overallScore >= 75) effectivenessGrade = "B+";
+  else if (atomicEffectiveness.overallScore >= 70) effectivenessGrade = "B";
+  else if (atomicEffectiveness.overallScore >= 65) effectivenessGrade = "B-";
+  else if (atomicEffectiveness.overallScore >= 60) effectivenessGrade = "C+";
+  else if (atomicEffectiveness.overallScore >= 55) effectivenessGrade = "C";
+  else if (atomicEffectiveness.overallScore >= 50) effectivenessGrade = "C-";
+  else if (atomicEffectiveness.overallScore >= 40) effectivenessGrade = "D";
 
   return {
     // Base country data
@@ -181,25 +198,25 @@ export async function calculateCountryDataWithAtomicEnhancement(
       gdpImpactPercent,
       taxImpactPercent,
       stabilityImpactPoints,
-      overallEffectivenessGrade: effectivenessGrade
-    }
+      overallEffectivenessGrade: effectivenessGrade,
+    },
   };
 }
 
 // Helper function to get atomic intelligence recommendations
-export async function getAtomicIntelligenceRecommendations(
-  countryId: string
-): Promise<Array<{
-  type: 'component_add' | 'component_improve' | 'synergy_opportunity' | 'conflict_resolution';
-  priority: 'critical' | 'high' | 'medium' | 'low';
-  title: string;
-  description: string;
-  expectedImpact: {
-    economic: number;
-    stability: number;
-    legitimacy: number;
-  };
-}>> {
+export async function getAtomicIntelligenceRecommendations(countryId: string): Promise<
+  Array<{
+    type: "component_add" | "component_improve" | "synergy_opportunity" | "conflict_resolution";
+    priority: "critical" | "high" | "medium" | "low";
+    title: string;
+    description: string;
+    expectedImpact: {
+      economic: number;
+      stability: number;
+      legitimacy: number;
+    };
+  }>
+> {
   const atomicService = getAtomicEffectivenessService(db);
 
   // Get current country data
@@ -207,21 +224,21 @@ export async function getAtomicIntelligenceRecommendations(
     where: { id: countryId },
     include: {
       governmentComponents: { where: { isActive: true } },
-      atomicEffectiveness: true
-    }
+      atomicEffectiveness: true,
+    },
   });
 
   if (!country) return [];
 
   const recommendations = [];
-  const currentComponents = country.governmentComponents.map(c => c.componentType);
+  const currentComponents = country.governmentComponents.map((c) => c.componentType);
 
   // Check for missing high-impact components
   const highImpactComponents = [
     ComponentType.PROFESSIONAL_BUREAUCRACY,
     ComponentType.RULE_OF_LAW,
     ComponentType.INDEPENDENT_JUDICIARY,
-    ComponentType.TECHNOCRATIC_PROCESS
+    ComponentType.TECHNOCRATIC_PROCESS,
   ];
 
   for (const component of highImpactComponents) {
@@ -229,15 +246,15 @@ export async function getAtomicIntelligenceRecommendations(
       const componentData = atomicService.getComponentBreakdown([component])[0];
       if (componentData) {
         recommendations.push({
-          type: 'component_add' as const,
-          priority: 'high' as const,
-          title: `Add ${component.replace(/_/g, ' ')}`,
+          type: "component_add" as const,
+          priority: "high" as const,
+          title: `Add ${component.replace(/_/g, " ")}`,
           description: `Adding this component could significantly improve government effectiveness`,
           expectedImpact: {
             economic: (componentData.economicImpact - 1) * 100,
             stability: componentData.stabilityImpact,
-            legitimacy: componentData.legitimacyImpact
-          }
+            legitimacy: componentData.legitimacyImpact,
+          },
         });
       }
     }

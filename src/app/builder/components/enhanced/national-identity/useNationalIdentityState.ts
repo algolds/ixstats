@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { api } from '~/trpc/react';
-import { useBuilderTheming } from '~/hooks/useBuilderTheming';
-import { useCountryFlagRouteAware } from '~/hooks/useCountryFlagRouteAware';
-import { useNationalIdentityAutoSync } from '~/hooks/useNationalIdentityAutoSync';
-import { wikiCommonsFlagService } from '~/lib/wiki-commons-flag-service';
-import type { EconomicInputs, RealCountryData } from '~/app/builder/lib/economy-data-service';
+import { useState, useEffect } from "react";
+import { api } from "~/trpc/react";
+import { useBuilderTheming } from "~/hooks/useBuilderTheming";
+import { useCountryFlagRouteAware } from "~/hooks/useCountryFlagRouteAware";
+import { useNationalIdentityAutoSync } from "~/hooks/useNationalIdentityAutoSync";
+import { wikiCommonsFlagService } from "~/lib/wiki-commons-flag-service";
+import type { EconomicInputs, RealCountryData } from "~/app/builder/lib/economy-data-service";
 
 export function useNationalIdentityState(
   inputs: EconomicInputs,
@@ -17,11 +17,13 @@ export function useNationalIdentityState(
   // State management
   const [showFlagImageModal, setShowFlagImageModal] = useState(false);
   const [showCoatOfArmsImageModal, setShowCoatOfArmsImageModal] = useState(false);
-  const [selectedGovernmentType, setSelectedGovernmentType] = useState('republic');
-  const [customOfficialName, setCustomOfficialName] = useState('');
+  const [selectedGovernmentType, setSelectedGovernmentType] = useState("republic");
+  const [customOfficialName, setCustomOfficialName] = useState("");
   const [isEditingCustomName, setIsEditingCustomName] = useState(false);
   const [shouldFetchCustomTypes, setShouldFetchCustomTypes] = useState(false);
-  const [foundationCoatOfArmsUrl, setFoundationCoatOfArmsUrl] = useState<string | undefined>(undefined);
+  const [foundationCoatOfArmsUrl, setFoundationCoatOfArmsUrl] = useState<string | undefined>(
+    undefined
+  );
 
   // Collapsible section state
   const [isSymbolsOpen, setIsSymbolsOpen] = useState(true);
@@ -31,8 +33,8 @@ export function useNationalIdentityState(
 
   // Foundation country data
   const foundationCountryName = getFoundationCountryName(referenceCountry);
-  const { flag } = useCountryFlagRouteAware(foundationCountryName || '');
-  const { handleColorsExtracted } = useBuilderTheming(foundationCountryName || '');
+  const { flag } = useCountryFlagRouteAware(foundationCountryName || "");
+  const { handleColorsExtracted } = useBuilderTheming(foundationCountryName || "");
 
   // API queries
   const { data: customGovernmentTypes } = api.customTypes.getUserCustomGovernmentTypes.useQuery(
@@ -44,49 +46,45 @@ export function useNationalIdentityState(
 
   // Initialize identity data
   const identity = inputs.nationalIdentity || {
-    countryName: String(inputs.countryName || ''),
-    officialName: '',
-    governmentType: 'republic',
-    motto: '',
-    mottoNative: '',
-    capitalCity: '',
-    largestCity: '',
-    demonym: '',
-    currency: '',
-    currencySymbol: '$',
-    officialLanguages: '',
-    nationalLanguage: '',
-    nationalAnthem: '',
-    nationalReligion: '',
-    nationalDay: '',
-    callingCode: '',
-    internetTLD: '',
-    drivingSide: 'right',
-    timeZone: '',
-    isoCode: '',
-    coordinatesLatitude: '',
-    coordinatesLongitude: '',
-    emergencyNumber: '',
-    postalCodeFormat: '',
-    nationalSport: '',
-    weekStartDay: 'monday'
+    countryName: String(inputs.countryName || ""),
+    officialName: "",
+    governmentType: "republic",
+    motto: "",
+    mottoNative: "",
+    capitalCity: "",
+    largestCity: "",
+    demonym: "",
+    currency: "",
+    currencySymbol: "$",
+    officialLanguages: "",
+    nationalLanguage: "",
+    nationalAnthem: "",
+    nationalReligion: "",
+    nationalDay: "",
+    callingCode: "",
+    internetTLD: "",
+    drivingSide: "right",
+    timeZone: "",
+    isoCode: "",
+    coordinatesLatitude: "",
+    coordinatesLongitude: "",
+    emergencyNumber: "",
+    postalCodeFormat: "",
+    nationalSport: "",
+    weekStartDay: "monday",
   };
 
   // Auto-sync for national identity (edit mode only)
-  const autoSync = useNationalIdentityAutoSync(
-    countryId,
-    identity,
-    {
-      enabled: !!countryId, // Only enable in edit mode
-      debounceMs: 15000, // 15 seconds
-      onSyncSuccess: () => {
-        console.log('[NationalIdentity] Autosave successful');
-      },
-      onSyncError: (error) => {
-        console.warn('[NationalIdentity] Autosave failed:', error);
-      },
-    }
-  );
+  const autoSync = useNationalIdentityAutoSync(countryId, identity, {
+    enabled: !!countryId, // Only enable in edit mode
+    debounceMs: 15000, // 15 seconds
+    onSyncSuccess: () => {
+      console.log("[NationalIdentity] Autosave successful");
+    },
+    onSyncError: (error) => {
+      console.warn("[NationalIdentity] Autosave failed:", error);
+    },
+  });
 
   // Sync local state with loaded identity data
   useEffect(() => {
@@ -103,10 +101,11 @@ export function useNationalIdentityState(
     const fetchCoatOfArms = async () => {
       if (foundationCountryName) {
         try {
-          const coatOfArmsResult = await wikiCommonsFlagService.getCoatOfArmsUrl(foundationCountryName);
+          const coatOfArmsResult =
+            await wikiCommonsFlagService.getCoatOfArmsUrl(foundationCountryName);
           if (coatOfArmsResult) setFoundationCoatOfArmsUrl(coatOfArmsResult);
         } catch (error) {
-          console.error('Error fetching coat of arms:', error);
+          console.error("Error fetching coat of arms:", error);
         }
       }
     };
@@ -127,27 +126,27 @@ export function useNationalIdentityState(
   const handleIdentityChange = (field: string | number | symbol, value: any) => {
     const newIdentity = { ...identity, [field]: value };
 
-    if (field === 'countryName' && value && !newIdentity.demonym) {
+    if (field === "countryName" && value && !newIdentity.demonym) {
       let demonym = value.toString();
-      if (demonym.endsWith('a')) demonym += 'n';
-      else if (demonym.endsWith('y')) demonym = demonym.slice(0, -1) + 'ian';
-      else demonym += 'ian';
+      if (demonym.endsWith("a")) demonym += "n";
+      else if (demonym.endsWith("y")) demonym = demonym.slice(0, -1) + "ian";
+      else demonym += "ian";
       newIdentity.demonym = demonym;
     }
 
     onInputsChange({
       ...inputs,
       nationalIdentity: newIdentity,
-      countryName: field === 'countryName' ? value : inputs.countryName
+      countryName: field === "countryName" ? value : inputs.countryName,
     });
   };
 
   const handleFlagUrlChange = (url: string) => {
-    onInputsChange({ ...inputs, flagUrl: url, coatOfArmsUrl: inputs.coatOfArmsUrl ?? '' });
+    onInputsChange({ ...inputs, flagUrl: url, coatOfArmsUrl: inputs.coatOfArmsUrl ?? "" });
   };
 
   const handleCoatOfArmsUrlChange = (url: string) => {
-    onInputsChange({ ...inputs, flagUrl: inputs.flagUrl ?? '', coatOfArmsUrl: url });
+    onInputsChange({ ...inputs, flagUrl: inputs.flagUrl ?? "", coatOfArmsUrl: url });
   };
 
   const handleFieldValueSave = (fieldName: string, value: string) => {
@@ -194,9 +193,11 @@ export function useNationalIdentityState(
   };
 }
 
-function getFoundationCountryName(referenceCountry: RealCountryData | null | undefined): string | null {
+function getFoundationCountryName(
+  referenceCountry: RealCountryData | null | undefined
+): string | null {
   if (!referenceCountry) return null;
   if (referenceCountry.foundationCountryName) return referenceCountry.foundationCountryName;
   const name = referenceCountry.name;
-  return name.startsWith('New ') ? name.substring(4) : name;
+  return name.startsWith("New ") ? name.substring(4) : name;
 }

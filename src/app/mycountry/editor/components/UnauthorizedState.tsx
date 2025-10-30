@@ -7,9 +7,9 @@ import Link from "next/link";
 export function UnauthorizedState() {
   return (
     <div className="container mx-auto px-4 py-8">
-      <Card className="max-w-2xl mx-auto">
+      <Card className="mx-auto max-w-2xl">
         <CardHeader className="text-center">
-          <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+          <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-red-500" />
           <CardTitle className="text-2xl font-bold">Access Denied</CardTitle>
         </CardHeader>
         <CardContent className="text-center">

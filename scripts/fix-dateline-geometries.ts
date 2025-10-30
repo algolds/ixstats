@@ -15,11 +15,11 @@
  * the world-spanning geometry issue.
  */
 
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
-const SOURCE_DIR = '/ixwiki/public/projects/ixstats/scripts/geojson_wgs84';
-const OUTPUT_DIR = '/ixwiki/public/projects/ixstats/scripts/geojson_dateline_fixed';
+const SOURCE_DIR = "/ixwiki/public/projects/ixstats/scripts/geojson_wgs84";
+const OUTPUT_DIR = "/ixwiki/public/projects/ixstats/scripts/geojson_dateline_fixed";
 
 interface GeoJSONFeature {
   type: string;
@@ -44,12 +44,12 @@ function shiftCoordinates(coords: any): any {
     return coords;
   }
 
-  if (typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+  if (typeof coords[0] === "number" && typeof coords[1] === "number") {
     // This is a single coordinate pair [lng, lat]
     return [coords[0] - 360, coords[1]];
   } else {
     // This is an array of coordinates - recurse
-    return coords.map(c => shiftCoordinates(c));
+    return coords.map((c) => shiftCoordinates(c));
   }
 }
 
@@ -57,7 +57,7 @@ function shiftCoordinates(coords: any): any {
  * Fix MultiPolygon geometries by processing each polygon separately
  */
 function fixMultiPolygonCoordinates(multiPolygonCoords: any[]): any[] {
-  return multiPolygonCoords.map(polygon => {
+  return multiPolygonCoords.map((polygon) => {
     // Check bounds of this specific polygon
     const bounds = getCoordinateBounds(polygon);
 
@@ -93,15 +93,15 @@ function getCoordinateBounds(coords: any): { minLon: number; maxLon: number } {
     return { minLon: Infinity, maxLon: -Infinity };
   }
 
-  if (typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+  if (typeof coords[0] === "number" && typeof coords[1] === "number") {
     // This is a single coordinate pair [lng, lat]
     return { minLon: coords[0], maxLon: coords[0] };
   } else {
     // This is an array of coordinates - recurse
-    const bounds = coords.map(c => getCoordinateBounds(c));
+    const bounds = coords.map((c) => getCoordinateBounds(c));
     return {
-      minLon: Math.min(...bounds.map(b => b.minLon)),
-      maxLon: Math.max(...bounds.map(b => b.maxLon)),
+      minLon: Math.min(...bounds.map((b) => b.minLon)),
+      maxLon: Math.max(...bounds.map((b) => b.maxLon)),
     };
   }
 }
@@ -114,21 +114,21 @@ async function fixLayer(layerName: string): Promise<void> {
     throw new Error(`File not found: ${inputPath}`);
   }
 
-  const data = JSON.parse(fs.readFileSync(inputPath, 'utf-8')) as GeoJSONFeatureCollection;
+  const data = JSON.parse(fs.readFileSync(inputPath, "utf-8")) as GeoJSONFeatureCollection;
 
   let featuresFixed = 0;
   let polygonsShifted = 0;
 
   // Process each feature
   const fixedFeatures = data.features.map((feature) => {
-    const featureId = feature.id ?? feature.properties?.id ?? 'unknown';
+    const featureId = feature.id ?? feature.properties?.id ?? "unknown";
 
     if (feature.geometry && feature.geometry.coordinates) {
       let fixedCoordinates;
       let wasFixed = false;
       let shiftedCount = 0;
 
-      if (feature.geometry.type === 'MultiPolygon') {
+      if (feature.geometry.type === "MultiPolygon") {
         const originalCoords = feature.geometry.coordinates;
         fixedCoordinates = fixMultiPolygonCoordinates(originalCoords);
 
@@ -142,11 +142,13 @@ async function fixLayer(layerName: string): Promise<void> {
         });
 
         if (shiftedCount > 0) {
-          console.log(`  🔄 Fixed ${featureId}: ${shiftedCount}/${originalCoords.length} polygons shifted by -360°`);
+          console.log(
+            `  🔄 Fixed ${featureId}: ${shiftedCount}/${originalCoords.length} polygons shifted by -360°`
+          );
           wasFixed = true;
           polygonsShifted += shiftedCount;
         }
-      } else if (feature.geometry.type === 'Polygon') {
+      } else if (feature.geometry.type === "Polygon") {
         const originalCoords = feature.geometry.coordinates;
         fixedCoordinates = fixPolygonCoordinates(originalCoords);
 
@@ -154,7 +156,9 @@ async function fixLayer(layerName: string): Promise<void> {
         const fixedBounds = getCoordinateBounds(fixedCoordinates);
 
         if (Math.abs(origBounds.minLon - fixedBounds.minLon) > 1) {
-          console.log(`  🔄 Fixed ${featureId}: ${origBounds.minLon.toFixed(2)}° to ${origBounds.maxLon.toFixed(2)}° → ${fixedBounds.minLon.toFixed(2)}° to ${fixedBounds.maxLon.toFixed(2)}°`);
+          console.log(
+            `  🔄 Fixed ${featureId}: ${origBounds.minLon.toFixed(2)}° to ${origBounds.maxLon.toFixed(2)}° → ${fixedBounds.minLon.toFixed(2)}° to ${fixedBounds.maxLon.toFixed(2)}°`
+          );
           wasFixed = true;
           polygonsShifted++;
         }
@@ -179,19 +183,21 @@ async function fixLayer(layerName: string): Promise<void> {
 
   // Write fixed GeoJSON
   const outputData: GeoJSONFeatureCollection = {
-    type: 'FeatureCollection',
+    type: "FeatureCollection",
     features: fixedFeatures,
   };
 
   fs.writeFileSync(outputPath, JSON.stringify(outputData, null, 2));
 
-  console.log(`✓ ${layerName}: ${featuresFixed} features fixed (${polygonsShifted} polygons shifted)`);
+  console.log(
+    `✓ ${layerName}: ${featuresFixed} features fixed (${polygonsShifted} polygons shifted)`
+  );
 }
 
 async function main() {
-  console.log('🔧 Fixing Dateline Geometries\\n');
-  console.log('='.repeat(80));
-  console.log('\\n');
+  console.log("🔧 Fixing Dateline Geometries\\n");
+  console.log("=".repeat(80));
+  console.log("\\n");
 
   // Create output directory
   if (!fs.existsSync(OUTPUT_DIR)) {
@@ -199,36 +205,39 @@ async function main() {
     console.log(`✓ Created output directory: ${OUTPUT_DIR}\\n`);
   }
 
-  const layers = ['political', 'climate', 'altitudes', 'rivers', 'lakes', 'icecaps', 'background'];
+  const layers = ["political", "climate", "altitudes", "rivers", "lakes", "icecaps", "background"];
 
   for (const layer of layers) {
     try {
       console.log(`🔧 Processing layer: ${layer}`);
       await fixLayer(layer);
-      console.log('');
+      console.log("");
     } catch (error) {
-      console.error(`   ❌ Error processing ${layer}:`, error instanceof Error ? error.message : String(error));
-      console.log('');
+      console.error(
+        `   ❌ Error processing ${layer}:`,
+        error instanceof Error ? error.message : String(error)
+      );
+      console.log("");
     }
   }
 
-  console.log('='.repeat(80));
-  console.log('📋 SUMMARY\\n');
-  console.log('Strategy used:');
-  console.log('  - MultiPolygon features: Process each polygon separately');
-  console.log('  - Polygons entirely >180°: Shifted by -360° to preserve topology');
-  console.log('  - Polygons within ±180°: Left unchanged');
-  console.log('  - This handles countries like Oyashima (28 islands) correctly');
-  console.log('');
+  console.log("=".repeat(80));
+  console.log("📋 SUMMARY\\n");
+  console.log("Strategy used:");
+  console.log("  - MultiPolygon features: Process each polygon separately");
+  console.log("  - Polygons entirely >180°: Shifted by -360° to preserve topology");
+  console.log("  - Polygons within ±180°: Left unchanged");
+  console.log("  - This handles countries like Oyashima (28 islands) correctly");
+  console.log("");
   console.log(`✅ Fixed GeoJSON files saved to: ${OUTPUT_DIR}`);
-  console.log('');
-  console.log('Next steps:');
-  console.log('1. Import to PostgreSQL: bash scripts/import-dateline-fixed.sh');
-  console.log('2. Validate geometries: npx tsx scripts/validate-postgis-geometries.ts');
-  console.log('');
+  console.log("");
+  console.log("Next steps:");
+  console.log("1. Import to PostgreSQL: bash scripts/import-dateline-fixed.sh");
+  console.log("2. Validate geometries: npx tsx scripts/validate-postgis-geometries.ts");
+  console.log("");
 }
 
 main().catch((error) => {
-  console.error('❌ Fix failed:', error);
+  console.error("❌ Fix failed:", error);
   process.exit(1);
 });

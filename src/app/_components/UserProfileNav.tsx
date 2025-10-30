@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  CreditCard,
-  LogOut,
-  Settings,
-  User,
-} from "lucide-react";
+import { CreditCard, LogOut, Settings, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,10 +37,8 @@ export function UserProfileNav() {
         <DropdownMenuGroup>
           <DropdownMenuGroupLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{user.fullName}</p>
-              <p className="text-xs leading-none text-muted-foreground">
-              [ACCOUNT ROLE/TITLE]
-              </p>
+              <p className="text-sm leading-none font-medium">{user.fullName}</p>
+              <p className="text-muted-foreground text-xs leading-none">[ACCOUNT ROLE/TITLE]</p>
             </div>
           </DropdownMenuGroupLabel>
         </DropdownMenuGroup>

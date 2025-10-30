@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { InteractiveGridPattern } from '~/components/magicui/interactive-grid-pattern';
-import { useBulkFlags } from '~/hooks/useUnifiedFlags';
-import { CountrySelectorHeader } from '../../primitives/CountrySelectorHeader';
-import { FoundationArchetypeSelector } from '../../primitives/FoundationArchetypeSelector';
-import { SearchFilter } from '../../primitives/SearchFilter';
-import { CountryGrid } from '../../primitives/CountryGrid';
-import { LivePreview } from '../../primitives/LivePreview';
-import { filterCountries, generateCountryPreview } from '../../utils/country-selector-utils';
-import { archetypes } from '../../utils/country-archetypes';
-import type { CountryCardData } from '../CountryFocusCardBuilder';
-import type { RealCountryData } from '../../lib/economy-data-service';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
+import { useBulkFlags } from "~/hooks/useUnifiedFlags";
+import { CountrySelectorHeader } from "../../primitives/CountrySelectorHeader";
+import { FoundationArchetypeSelector } from "../../primitives/FoundationArchetypeSelector";
+import { SearchFilter } from "../../primitives/SearchFilter";
+import { CountryGrid } from "../../primitives/CountryGrid";
+import { LivePreview } from "../../primitives/LivePreview";
+import { filterCountries, generateCountryPreview } from "../../utils/country-selector-utils";
+import { archetypes } from "../../utils/country-archetypes";
+import type { CountryCardData } from "../CountryFocusCardBuilder";
+import type { RealCountryData } from "../../lib/economy-data-service";
 
 interface CountrySelectorProps {
   countries: RealCountryData[];
@@ -25,7 +25,7 @@ export function CountrySelector({
   countries,
   onCountrySelect,
   onBackToIntro,
-  onCreateFromScratch
+  onCreateFromScratch,
 }: CountrySelectorProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedArchetypes, setSelectedArchetypes] = useState<string[]>([]);
@@ -35,7 +35,7 @@ export function CountrySelector({
   const [livePreviewTop, setLivePreviewTop] = useState(96);
   const [isSearchStickyAndInView, setIsSearchStickyAndInView] = useState(false);
   const [isMouseOverGrid, setIsMouseOverGrid] = useState(false);
-  
+
   const searchCardRef = useRef<HTMLDivElement>(null);
   const countriesListRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
@@ -45,31 +45,34 @@ export function CountrySelector({
   }, [isSearchStickyAndInView, hoveredCountry, softSelectedCountry]);
 
   // Preload flags for all countries
-  const countryNames = useMemo(() => countries?.map(c => c.name) || [], [countries]);
-  const { flagUrls } = useBulkFlags(countryNames, 'irl');
+  const countryNames = useMemo(() => countries?.map((c) => c.name) || [], [countries]);
+  const { flagUrls } = useBulkFlags(countryNames, "irl");
   const filteredCountries = useMemo(() => {
     return filterCountries(countries || [], searchTerm, selectedArchetypes, archetypes);
   }, [countries, searchTerm, selectedArchetypes]);
 
   // Handle wheel events for smart scroll coordination
-  const handleWheel = useCallback((e: WheelEvent) => {
-    if (!isMouseOverGrid) return;
+  const handleWheel = useCallback(
+    (e: WheelEvent) => {
+      if (!isMouseOverGrid) return;
 
-    // If scrolling down and page is at bottom, start scrolling grid
-    const scrollY = window.scrollY;
-    const windowHeight = window.innerHeight;
-    const documentHeight = document.documentElement.scrollHeight;
-    const atBottom = scrollY + windowHeight >= documentHeight - 20;
-    
-    if (e.deltaY > 0 && atBottom) {
-      e.preventDefault();
-    }
-  }, [isMouseOverGrid]);
+      // If scrolling down and page is at bottom, start scrolling grid
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      const atBottom = scrollY + windowHeight >= documentHeight - 20;
+
+      if (e.deltaY > 0 && atBottom) {
+        e.preventDefault();
+      }
+    },
+    [isMouseOverGrid]
+  );
 
   // Global wheel event listener for smart scroll coordination
   useEffect(() => {
-    document.addEventListener('wheel', handleWheel, { passive: false });
-    return () => document.removeEventListener('wheel', handleWheel);
+    document.addEventListener("wheel", handleWheel, { passive: false });
+    return () => document.removeEventListener("wheel", handleWheel);
   }, [handleWheel]);
 
   // Effect to measure countries list height and update livePreviewTop
@@ -78,14 +81,14 @@ export function CountrySelector({
       if (countriesListRef.current && gridContainerRef.current) {
         const countriesListRect = countriesListRef.current.getBoundingClientRect();
         const gridContainerRect = gridContainerRef.current.getBoundingClientRect();
-        const newTop = (countriesListRect.top - gridContainerRect.top);
+        const newTop = countriesListRect.top - gridContainerRect.top;
         setLivePreviewTop(newTop);
       }
     };
 
     updateLivePreviewTop();
-    window.addEventListener('resize', updateLivePreviewTop);
-    return () => window.removeEventListener('resize', updateLivePreviewTop);
+    window.addEventListener("resize", updateLivePreviewTop);
+    return () => window.removeEventListener("resize", updateLivePreviewTop);
   }, [filteredCountries]);
 
   // Effect to observe search card sticky state
@@ -99,7 +102,7 @@ export function CountrySelector({
           setIsSearchStickyAndInView(entry.isIntersecting && entry.boundingClientRect.top <= 56);
         }
       },
-      { root: null, rootMargin: '0px', threshold: 0 }
+      { root: null, rootMargin: "0px", threshold: 0 }
     );
 
     observer.observe(searchCardElement);
@@ -108,12 +111,11 @@ export function CountrySelector({
     };
   }, []);
 
-
   const handleCountrySelect = (country: RealCountryData, customName: string) => {
-    const finalCountry = { 
-      ...country, 
+    const finalCountry = {
+      ...country,
       name: customName,
-      foundationCountryName: country.name
+      foundationCountryName: country.name,
     };
     onCountrySelect(finalCountry);
   };
@@ -127,7 +129,6 @@ export function CountrySelector({
     setSoftSelectedCountry(null);
   };
 
-
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-[var(--color-bg-primary)] via-[var(--color-bg-secondary)] to-[var(--color-bg-primary)]">
       {/* Interactive Background */}
@@ -135,10 +136,10 @@ export function CountrySelector({
         width={60}
         height={60}
         squares={[40, 30]}
-        className="absolute inset-0 opacity-20 dark:opacity-10 -z-10"
+        className="absolute inset-0 -z-10 opacity-20 dark:opacity-10"
         squaresClassName="fill-[var(--color-brand-primary)]/10 stroke-[var(--color-brand-primary)]/20 [&:nth-child(4n+1):hover]:fill-amber-500/30 [&:nth-child(4n+1):hover]:stroke-amber-500/50 [&:nth-child(4n+2):hover]:fill-blue-500/30 [&:nth-child(4n+2):hover]:stroke-blue-500/50 [&:nth-child(4n+3):hover]:fill-emerald-500/30 [&:nth-child(4n+3):hover]:stroke-emerald-500/50 [&:nth-child(4n+4):hover]:fill-purple-500/30 [&:nth-child(4n+4):hover]:stroke-purple-500/50 transition-all duration-300"
       />
-      
+
       {/* Left Sidebar - Foundation Archetypes */}
       <FoundationArchetypeSelector
         countries={countries || []}
@@ -146,19 +147,22 @@ export function CountrySelector({
         onArchetypeSelect={setSelectedArchetypes}
         onCreateFromScratch={onCreateFromScratch}
       />
-      
+
       {/* Header - Full Width Centered */}
       <div className="relative z-10 p-6">
-        <CountrySelectorHeader softSelectedCountry={softSelectedCountry} onBackToIntro={onBackToIntro} />
+        <CountrySelectorHeader
+          softSelectedCountry={softSelectedCountry}
+          onBackToIntro={onBackToIntro}
+        />
       </div>
 
       {/* Main Content Area - Center 60% + Right Sidebar */}
       {/* Main Content Area - Center 60% + Right Sidebar */}
       {/* Main Content Area - Center 60% + Right Sidebar */}
-      <div className="pl-92 pr-6">
-        <div className="relative max-w-7xl z-10 p-6 pt-0">
+      <div className="pr-6 pl-92">
+        <div className="relative z-10 max-w-7xl p-6 pt-0">
           {/* Main Content: Center Panel (Search/Countries) + Right Preview */}
-          <div className="relative flex gap-8 z-20" ref={gridContainerRef}>
+          <div className="relative z-20 flex gap-8" ref={gridContainerRef}>
             {/* Center Panel - 60% of remaining space */}
             <div className="flex-1 space-y-6">
               {/* Search and Filters */}
@@ -174,7 +178,7 @@ export function CountrySelector({
                 countries={countries || []}
                 filteredCountries={filteredCountries}
                 searchTerm={searchTerm}
-                selectedArchetype={selectedArchetypes.join(',')} // Convert array to string for backward compatibility
+                selectedArchetype={selectedArchetypes.join(",")} // Convert array to string for backward compatibility
                 onCountryHover={setHoveredCountry}
                 onCountryClick={(country) => {
                   setSoftSelectedCountry(country);
@@ -205,6 +209,5 @@ export function CountrySelector({
         </div>
       </div>
     </div>
-    
   );
 }

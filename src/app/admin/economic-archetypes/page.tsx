@@ -11,7 +11,13 @@ import { isSystemOwner } from "~/lib/system-owner-constants";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Slider } from "~/components/ui/slider";
 import { Checkbox } from "~/components/ui/checkbox";
 import { MultiSelect } from "~/components/ui/multi-select";
@@ -42,15 +48,15 @@ import {
   DollarSign,
   Users,
   Activity,
-  Award
+  Award,
 } from "lucide-react";
 import Link from "next/link";
 
 // Import component types
-import { EconomicComponentType } from '~/lib/atomic-economic-data';
-import { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
+import { EconomicComponentType } from "~/lib/atomic-economic-data";
+import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
 
-type ArchetypeEra = 'modern' | 'historical';
+type ArchetypeEra = "modern" | "historical";
 
 interface ArchetypeFormData {
   key: string;
@@ -88,15 +94,22 @@ interface ArchetypeFormData {
   recommendations: string[];
 }
 
-const COMPLEXITY_LEVELS = ['Low', 'Medium', 'High'];
+const COMPLEXITY_LEVELS = ["Low", "Medium", "High"];
 const ECONOMIC_COMPONENTS = Object.values(EconomicComponentType);
 const GOVERNMENT_COMPONENTS = Object.values(ComponentType);
-const SECTOR_TYPES = ['technology', 'finance', 'services', 'manufacturing', 'agriculture', 'government'];
+const SECTOR_TYPES = [
+  "technology",
+  "finance",
+  "services",
+  "manufacturing",
+  "agriculture",
+  "government",
+];
 
 const COMPLEXITY_COLORS: Record<string, string> = {
-  'Low': 'text-green-400',
-  'Medium': 'text-yellow-400',
-  'High': 'text-red-400'
+  Low: "text-green-400",
+  Medium: "text-yellow-400",
+  High: "text-red-400",
 };
 
 export default function EconomicArchetypesPage() {
@@ -106,20 +119,24 @@ export default function EconomicArchetypesPage() {
   const { toast } = useToast();
 
   // State
-  const [searchTerm, setSearchTerm] = useState('');
-  const [eraFilter, setEraFilter] = useState<'all' | 'modern' | 'historical'>('all');
-  const [regionFilter, setRegionFilter] = useState('all');
-  const [complexityFilter, setComplexityFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [eraFilter, setEraFilter] = useState<"all" | "modern" | "historical">("all");
+  const [regionFilter, setRegionFilter] = useState("all");
+  const [complexityFilter, setComplexityFilter] = useState("all");
   const [showActiveOnly, setShowActiveOnly] = useState(true);
   const [editingArchetype, setEditingArchetype] = useState<any | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState("general");
 
   // Queries
-  const { data: archetypes, isLoading, refetch } = api.archetypes.getAllArchetypes.useQuery(
+  const {
+    data: archetypes,
+    isLoading,
+    refetch,
+  } = api.archetypes.getAllArchetypes.useQuery(
     {
       era: eraFilter,
-      isActive: showActiveOnly ? true : undefined
+      isActive: showActiveOnly ? true : undefined,
     },
     {
       refetchOnWindowFocus: false,
@@ -136,7 +153,7 @@ export default function EconomicArchetypesPage() {
       toast({
         title: "Success",
         description: "Archetype created successfully",
-        type: "success"
+        type: "success",
       });
       refetch();
       setIsAddDialogOpen(false);
@@ -146,9 +163,9 @@ export default function EconomicArchetypesPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to create archetype",
-        type: "error"
+        type: "error",
       });
-    }
+    },
   });
 
   const updateMutation = api.archetypes.updateArchetype.useMutation({
@@ -156,7 +173,7 @@ export default function EconomicArchetypesPage() {
       toast({
         title: "Success",
         description: "Archetype updated successfully",
-        type: "success"
+        type: "success",
       });
       refetch();
       setEditingArchetype(null);
@@ -165,9 +182,9 @@ export default function EconomicArchetypesPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to update archetype",
-        type: "error"
+        type: "error",
       });
-    }
+    },
   });
 
   const deleteMutation = api.archetypes.deleteArchetype.useMutation({
@@ -175,7 +192,7 @@ export default function EconomicArchetypesPage() {
       toast({
         title: "Success",
         description: "Archetype deactivated successfully",
-        type: "success"
+        type: "success",
       });
       refetch();
     },
@@ -183,22 +200,23 @@ export default function EconomicArchetypesPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to deactivate archetype",
-        type: "error"
+        type: "error",
       });
-    }
+    },
   });
 
   // Filtered archetypes
   const filteredArchetypes = useMemo(() => {
     if (!archetypes) return [];
 
-    return archetypes.filter(archetype => {
+    return archetypes.filter((archetype) => {
       const matchesSearch =
         archetype.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         archetype.description.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesRegion = regionFilter === 'all' || archetype.region === regionFilter;
-      const matchesComplexity = complexityFilter === 'all' || archetype.implementationComplexity === complexityFilter;
+      const matchesRegion = regionFilter === "all" || archetype.region === regionFilter;
+      const matchesComplexity =
+        complexityFilter === "all" || archetype.implementationComplexity === complexityFilter;
 
       return matchesSearch && matchesRegion && matchesComplexity;
     });
@@ -207,18 +225,18 @@ export default function EconomicArchetypesPage() {
   // Extract unique regions
   const regions = useMemo(() => {
     if (!archetypes) return [];
-    return Array.from(new Set(archetypes.map(a => a.region))).sort();
+    return Array.from(new Set(archetypes.map((a) => a.region))).sort();
   }, [archetypes]);
 
   // Form data
   const [formData, setFormData] = useState<ArchetypeFormData>({
-    key: '',
-    name: '',
-    description: '',
-    region: '',
-    era: 'modern',
-    implementationComplexity: 'Medium',
-    historicalContext: '',
+    key: "",
+    name: "",
+    description: "",
+    region: "",
+    era: "modern",
+    implementationComplexity: "Medium",
+    historicalContext: "",
     characteristics: [],
     economicComponents: [],
     governmentComponents: [],
@@ -226,7 +244,7 @@ export default function EconomicArchetypesPage() {
       corporateTax: 25,
       incomeTax: 30,
       consumptionTax: 15,
-      taxEfficiency: 75
+      taxEfficiency: 75,
     },
     sectorFocus: {
       technology: 20,
@@ -234,35 +252,35 @@ export default function EconomicArchetypesPage() {
       services: 30,
       manufacturing: 20,
       agriculture: 10,
-      government: 5
+      government: 5,
     },
     employmentProfile: {
       unemploymentRate: 5,
       laborParticipation: 65,
-      wageGrowth: 3
+      wageGrowth: 3,
     },
     growthMetrics: {
       gdpGrowth: 3,
       innovationIndex: 50,
       competitiveness: 50,
-      stability: 50
+      stability: 50,
     },
     strengths: [],
     challenges: [],
     culturalFactors: [],
     modernExamples: [],
-    recommendations: []
+    recommendations: [],
   });
 
   const resetForm = () => {
     setFormData({
-      key: '',
-      name: '',
-      description: '',
-      region: '',
-      era: 'modern',
-      implementationComplexity: 'Medium',
-      historicalContext: '',
+      key: "",
+      name: "",
+      description: "",
+      region: "",
+      era: "modern",
+      implementationComplexity: "Medium",
+      historicalContext: "",
       characteristics: [],
       economicComponents: [],
       governmentComponents: [],
@@ -270,7 +288,7 @@ export default function EconomicArchetypesPage() {
         corporateTax: 25,
         incomeTax: 30,
         consumptionTax: 15,
-        taxEfficiency: 75
+        taxEfficiency: 75,
       },
       sectorFocus: {
         technology: 20,
@@ -278,26 +296,26 @@ export default function EconomicArchetypesPage() {
         services: 30,
         manufacturing: 20,
         agriculture: 10,
-        government: 5
+        government: 5,
       },
       employmentProfile: {
         unemploymentRate: 5,
         laborParticipation: 65,
-        wageGrowth: 3
+        wageGrowth: 3,
       },
       growthMetrics: {
         gdpGrowth: 3,
         innovationIndex: 50,
         competitiveness: 50,
-        stability: 50
+        stability: 50,
       },
       strengths: [],
       challenges: [],
       culturalFactors: [],
       modernExamples: [],
-      recommendations: []
+      recommendations: [],
     });
-    setActiveTab('general');
+    setActiveTab("general");
   };
 
   const handleCreate = () => {
@@ -308,7 +326,7 @@ export default function EconomicArchetypesPage() {
     if (editingArchetype?.id) {
       updateMutation.mutate({
         id: editingArchetype.id,
-        ...formData
+        ...formData,
       } as any);
     }
   };
@@ -339,28 +357,28 @@ export default function EconomicArchetypesPage() {
       challenges: archetype.challenges,
       culturalFactors: archetype.culturalFactors,
       modernExamples: archetype.modernExamples,
-      recommendations: archetype.recommendations
+      recommendations: archetype.recommendations,
     });
     setEditingArchetype(archetype);
-    setActiveTab('general');
+    setActiveTab("general");
   };
 
   const handleClone = (archetype: any) => {
     setFormData({
       ...archetype,
       key: `${archetype.key}-copy`,
-      name: `${archetype.name} (Copy)`
+      name: `${archetype.name} (Copy)`,
     });
     setIsAddDialogOpen(true);
-    setActiveTab('general');
+    setActiveTab("general");
   };
 
   // Auth checks
   if (!isLoaded) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-indigo-600"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
@@ -369,7 +387,7 @@ export default function EconomicArchetypesPage() {
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
+      <div className="flex min-h-screen flex-col items-center justify-center">
         <SignInButton mode="modal" />
       </div>
     );
@@ -377,41 +395,44 @@ export default function EconomicArchetypesPage() {
 
   const allowedRoles = new Set(["admin", "owner", "staff"]);
   const isSystemOwnerUser = !!user && isSystemOwner(user.id);
-  const hasAdminRole = typeof user?.publicMetadata?.role === "string" && allowedRoles.has(user.publicMetadata.role);
+  const hasAdminRole =
+    typeof user?.publicMetadata?.role === "string" && allowedRoles.has(user.publicMetadata.role);
 
   if (!isSystemOwnerUser && !hasAdminRole) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center border border-gray-200 dark:border-gray-700">
-          <h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Access Denied</h1>
-          <p className="text-gray-700 dark:text-gray-300 mb-6">You do not have permission to view this page.</p>
+      <div className="flex min-h-screen flex-col items-center justify-center">
+        <div className="rounded-lg border border-gray-200 bg-white p-8 text-center shadow-lg dark:border-gray-700 dark:bg-gray-800">
+          <h1 className="mb-4 text-2xl font-bold text-red-600 dark:text-red-400">Access Denied</h1>
+          <p className="mb-6 text-gray-700 dark:text-gray-300">
+            You do not have permission to view this page.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="bg-background text-foreground min-h-screen p-4 md:p-8">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="glass-card-parent p-6 rounded-xl border-2 border-[--intel-gold]/20 bg-gradient-to-br from-[--intel-gold]/5 via-transparent to-[--intel-gold]/10 mb-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="glass-card-parent mb-6 rounded-xl border-2 border-[--intel-gold]/20 bg-gradient-to-br from-[--intel-gold]/5 via-transparent to-[--intel-gold]/10 p-6">
+          <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/admin">
                 <Button variant="ghost" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to Admin
                 </Button>
               </Link>
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-xl bg-[--intel-gold]/10 border border-[--intel-gold]/20">
+                <div className="rounded-xl border border-[--intel-gold]/20 bg-[--intel-gold]/10 p-3">
                   <TrendingUp className="h-6 w-6 text-[--intel-gold]" />
                 </div>
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                  <h1 className="text-foreground text-2xl font-bold md:text-3xl">
                     Economic Archetypes
                   </h1>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Manage pre-configured economic system templates for country builders
                   </p>
                 </div>
@@ -420,22 +441,22 @@ export default function EconomicArchetypesPage() {
             <div className="flex gap-2">
               <Button
                 onClick={() => setIsAddDialogOpen(true)}
-                className="bg-[--intel-gold]/20 hover:bg-[--intel-gold]/30 text-[--intel-gold]"
+                className="bg-[--intel-gold]/20 text-[--intel-gold] hover:bg-[--intel-gold]/30"
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Add Archetype
               </Button>
               <Button variant="outline">
-                <BarChart3 className="h-4 w-4 mr-2" />
+                <BarChart3 className="mr-2 h-4 w-4" />
                 Analytics
               </Button>
             </div>
           </div>
 
           {/* Filter Bar */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="md:col-span-2 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+            <div className="relative md:col-span-2">
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
               <Input
                 placeholder="Search archetypes..."
                 value={searchTerm}
@@ -461,8 +482,10 @@ export default function EconomicArchetypesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Regions</SelectItem>
-                {regions.map(region => (
-                  <SelectItem key={region} value={region}>{region}</SelectItem>
+                {regions.map((region) => (
+                  <SelectItem key={region} value={region}>
+                    {region}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -473,20 +496,22 @@ export default function EconomicArchetypesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Complexity</SelectItem>
-                {COMPLEXITY_LEVELS.map(complexity => (
-                  <SelectItem key={complexity} value={complexity}>{complexity}</SelectItem>
+                {COMPLEXITY_LEVELS.map((complexity) => (
+                  <SelectItem key={complexity} value={complexity}>
+                    {complexity}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="flex items-center gap-2 mt-4">
+          <div className="mt-4 flex items-center gap-2">
             <Checkbox
               id="activeOnly"
               checked={showActiveOnly}
               onCheckedChange={(checked) => setShowActiveOnly(checked as boolean)}
             />
-            <label htmlFor="activeOnly" className="text-sm text-foreground cursor-pointer">
+            <label htmlFor="activeOnly" className="text-foreground cursor-pointer text-sm">
               Show active only
             </label>
           </div>
@@ -494,30 +519,34 @@ export default function EconomicArchetypesPage() {
 
         {/* Statistics */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
             <Card className="glass-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Total Archetypes</p>
-              <p className="text-3xl font-bold text-foreground mt-2">{stats.summary.totalArchetypes}</p>
+              <p className="text-foreground mt-2 text-3xl font-bold">
+                {stats.summary.totalArchetypes}
+              </p>
             </Card>
             <Card className="glass-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Active</p>
-              <p className="text-3xl font-bold text-[--intel-gold] mt-2">{stats.summary.activeArchetypes}</p>
+              <p className="mt-2 text-3xl font-bold text-[--intel-gold]">
+                {stats.summary.activeArchetypes}
+              </p>
             </Card>
             <Card className="glass-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Total Usage</p>
-              <p className="text-3xl font-bold text-blue-400 mt-2">{stats.summary.totalUsage}</p>
+              <p className="mt-2 text-3xl font-bold text-blue-400">{stats.summary.totalUsage}</p>
             </Card>
             <Card className="glass-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Average Usage</p>
-              <p className="text-3xl font-bold text-green-400 mt-2">{stats.summary.averageUsage}</p>
+              <p className="mt-2 text-3xl font-bold text-green-400">{stats.summary.averageUsage}</p>
             </Card>
           </div>
         )}
 
         {/* Archetypes Grid */}
         {isLoading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[--intel-gold] mx-auto mb-4"></div>
+          <div className="py-12 text-center">
+            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-[--intel-gold]"></div>
             <p className="text-muted-foreground">Loading archetypes...</p>
           </div>
         ) : filteredArchetypes.length === 0 ? (
@@ -525,8 +554,8 @@ export default function EconomicArchetypesPage() {
             <p className="text-[--intel-silver]">No archetypes found matching your filters</p>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredArchetypes.map(archetype => (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredArchetypes.map((archetype) => (
               <ArchetypeCard
                 key={archetype.id}
                 archetype={archetype}
@@ -571,34 +600,32 @@ interface ArchetypeCardProps {
 
 function ArchetypeCard({ archetype, onEdit, onDelete, onClone }: ArchetypeCardProps) {
   return (
-    <Card className="glass-card-child p-4 hover:border-[--intel-gold]/50 transition-all">
+    <Card className="glass-card-child p-4 transition-all hover:border-[--intel-gold]/50">
       {/* Header */}
-      <div className="flex items-start justify-between mb-3">
+      <div className="mb-3 flex items-start justify-between">
         <div className="flex-1">
-          <h3 className="font-semibold text-foreground line-clamp-1">{archetype.name}</h3>
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <span className={`text-xs px-2 py-0.5 rounded ${
-              archetype.era === 'modern'
-                ? 'bg-blue-500/20 text-blue-400'
-                : 'bg-amber-500/20 text-amber-400'
-            }`}>
+          <h3 className="text-foreground line-clamp-1 font-semibold">{archetype.name}</h3>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <span
+              className={`rounded px-2 py-0.5 text-xs ${
+                archetype.era === "modern"
+                  ? "bg-blue-500/20 text-blue-400"
+                  : "bg-amber-500/20 text-amber-400"
+              }`}
+            >
               {archetype.era}
             </span>
             <span className="text-xs text-[--intel-silver]">{archetype.region}</span>
           </div>
         </div>
-        {!archetype.isActive && (
-          <EyeOff className="h-4 w-4 text-red-400" title="Inactive" />
-        )}
+        {!archetype.isActive && <EyeOff className="h-4 w-4 text-red-400" title="Inactive" />}
       </div>
 
       {/* Description */}
-      <p className="text-xs text-[--intel-silver] line-clamp-2 mb-3">
-        {archetype.description}
-      </p>
+      <p className="mb-3 line-clamp-2 text-xs text-[--intel-silver]">{archetype.description}</p>
 
       {/* Metrics */}
-      <div className="space-y-2 mb-4">
+      <div className="mb-4 space-y-2">
         <div className="flex items-center justify-between text-xs">
           <span className="text-[--intel-silver]">Complexity:</span>
           <span className={`font-medium ${COMPLEXITY_COLORS[archetype.implementationComplexity]}`}>
@@ -607,7 +634,7 @@ function ArchetypeCard({ archetype, onEdit, onDelete, onClone }: ArchetypeCardPr
         </div>
         <div className="flex items-center justify-between text-xs">
           <span className="text-[--intel-silver]">Usage:</span>
-          <span className="font-medium text-foreground">{archetype.usageCount}×</span>
+          <span className="text-foreground font-medium">{archetype.usageCount}×</span>
         </div>
         {archetype.isCustom && (
           <div className="flex items-center gap-1 text-xs text-purple-400">
@@ -619,21 +646,11 @@ function ArchetypeCard({ archetype, onEdit, onDelete, onClone }: ArchetypeCardPr
 
       {/* Actions */}
       <div className="flex items-center gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={onEdit}
-          className="flex-1 text-xs"
-        >
-          <Pencil className="h-3 w-3 mr-1" />
+        <Button size="sm" variant="outline" onClick={onEdit} className="flex-1 text-xs">
+          <Pencil className="mr-1 h-3 w-3" />
           Edit
         </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={onClone}
-          className="text-xs"
-        >
+        <Button size="sm" variant="ghost" onClick={onClone} className="text-xs">
           <Copy className="h-3 w-3" />
         </Button>
         <Button
@@ -671,46 +688,46 @@ function ArchetypeEditorDialog({
   setActiveTab,
   onClose,
   onSave,
-  isPending
+  isPending,
 }: ArchetypeEditorDialogProps) {
   const tabs = [
-    { id: 'general', label: 'General', icon: Award },
-    { id: 'economics', label: 'Economics', icon: TrendingUp },
-    { id: 'government', label: 'Government', icon: Building2 },
-    { id: 'tax', label: 'Tax System', icon: DollarSign },
-    { id: 'employment', label: 'Employment', icon: Users },
-    { id: 'metrics', label: 'Metrics', icon: Activity },
-    { id: 'characteristics', label: 'Characteristics', icon: Award }
+    { id: "general", label: "General", icon: Award },
+    { id: "economics", label: "Economics", icon: TrendingUp },
+    { id: "government", label: "Government", icon: Building2 },
+    { id: "tax", label: "Tax System", icon: DollarSign },
+    { id: "employment", label: "Employment", icon: Users },
+    { id: "metrics", label: "Metrics", icon: Activity },
+    { id: "characteristics", label: "Characteristics", icon: Award },
   ];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col overflow-hidden">
         <DialogHeader>
-          <DialogTitle>
-            {isEditing ? 'Edit Archetype' : 'Add Archetype'}
-          </DialogTitle>
-          <DialogDescription>
-            Configure the economic archetype template
-          </DialogDescription>
+          <DialogTitle>{isEditing ? "Edit Archetype" : "Add Archetype"}</DialogTitle>
+          <DialogDescription>Configure the economic archetype template</DialogDescription>
         </DialogHeader>
 
         {/* Tab Navigation */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="flex gap-2 overflow-x-auto border-b border-white/10 pb-2 shrink-0">
-            {tabs.map(tab => {
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex flex-1 flex-col overflow-hidden"
+        >
+          <TabsList className="flex shrink-0 gap-2 overflow-x-auto border-b border-white/10 pb-2">
+            {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className={`px-3 py-2 rounded text-sm whitespace-nowrap transition-colors ${
+                  className={`rounded px-3 py-2 text-sm whitespace-nowrap transition-colors ${
                     activeTab === tab.id
-                      ? 'bg-[--intel-gold]/20 text-[--intel-gold]'
-                      : 'text-[--intel-silver] hover:text-foreground'
+                      ? "bg-[--intel-gold]/20 text-[--intel-gold]"
+                      : "hover:text-foreground text-[--intel-silver]"
                   }`}
                 >
-                  <Icon className="inline h-4 w-4 mr-1" />
+                  <Icon className="mr-1 inline h-4 w-4" />
                   {tab.label}
                 </TabsTrigger>
               );
@@ -718,7 +735,7 @@ function ArchetypeEditorDialog({
           </TabsList>
 
           {/* Tab Content */}
-          <div className="flex-1 overflow-y-auto mt-4">
+          <div className="mt-4 flex-1 overflow-y-auto">
             <TabsContent value="general">
               <GeneralTab formData={formData} setFormData={setFormData} />
             </TabsContent>
@@ -744,14 +761,14 @@ function ArchetypeEditorDialog({
         </Tabs>
 
         {/* Footer Actions */}
-        <DialogFooter className="border-t border-white/10 pt-4 shrink-0">
+        <DialogFooter className="shrink-0 border-t border-white/10 pt-4">
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
           <Button
             onClick={onSave}
             disabled={!formData.name || !formData.key || isPending}
-            className="bg-[--intel-gold]/20 hover:bg-[--intel-gold]/30 text-[--intel-gold]"
+            className="bg-[--intel-gold]/20 text-[--intel-gold] hover:bg-[--intel-gold]/30"
           >
             {isPending ? "Saving..." : isEditing ? "Update Archetype" : "Create Archetype"}
           </Button>
@@ -762,12 +779,18 @@ function ArchetypeEditorDialog({
 }
 
 // Tab Components
-function GeneralTab({ formData, setFormData }: { formData: ArchetypeFormData; setFormData: (data: ArchetypeFormData) => void }) {
+function GeneralTab({
+  formData,
+  setFormData,
+}: {
+  formData: ArchetypeFormData;
+  setFormData: (data: ArchetypeFormData) => void;
+}) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">Key *</label>
+          <label className="text-foreground mb-2 block text-sm font-medium">Key *</label>
           <Input
             value={formData.key}
             onChange={(e) => setFormData({ ...formData, key: e.target.value })}
@@ -775,7 +798,7 @@ function GeneralTab({ formData, setFormData }: { formData: ArchetypeFormData; se
           />
         </div>
         <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">Name *</label>
+          <label className="text-foreground mb-2 block text-sm font-medium">Name *</label>
           <Input
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -785,7 +808,7 @@ function GeneralTab({ formData, setFormData }: { formData: ArchetypeFormData; se
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Description *</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Description *</label>
         <Textarea
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -796,7 +819,7 @@ function GeneralTab({ formData, setFormData }: { formData: ArchetypeFormData; se
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">Region *</label>
+          <label className="text-foreground mb-2 block text-sm font-medium">Region *</label>
           <Input
             value={formData.region}
             onChange={(e) => setFormData({ ...formData, region: e.target.value })}
@@ -804,8 +827,11 @@ function GeneralTab({ formData, setFormData }: { formData: ArchetypeFormData; se
           />
         </div>
         <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">Era *</label>
-          <Select value={formData.era} onValueChange={(v: ArchetypeEra) => setFormData({ ...formData, era: v })}>
+          <label className="text-foreground mb-2 block text-sm font-medium">Era *</label>
+          <Select
+            value={formData.era}
+            onValueChange={(v: ArchetypeEra) => setFormData({ ...formData, era: v })}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -818,7 +844,9 @@ function GeneralTab({ formData, setFormData }: { formData: ArchetypeFormData; se
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Implementation Complexity</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">
+          Implementation Complexity
+        </label>
         <Select
           value={formData.implementationComplexity}
           onValueChange={(v) => setFormData({ ...formData, implementationComplexity: v })}
@@ -827,15 +855,17 @@ function GeneralTab({ formData, setFormData }: { formData: ArchetypeFormData; se
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {COMPLEXITY_LEVELS.map(level => (
-              <SelectItem key={level} value={level}>{level}</SelectItem>
+            {COMPLEXITY_LEVELS.map((level) => (
+              <SelectItem key={level} value={level}>
+                {level}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Historical Context</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Historical Context</label>
         <Textarea
           value={formData.historicalContext}
           onChange={(e) => setFormData({ ...formData, historicalContext: e.target.value })}
@@ -847,11 +877,19 @@ function GeneralTab({ formData, setFormData }: { formData: ArchetypeFormData; se
   );
 }
 
-function EconomicsTab({ formData, setFormData }: { formData: ArchetypeFormData; setFormData: (data: ArchetypeFormData) => void }) {
+function EconomicsTab({
+  formData,
+  setFormData,
+}: {
+  formData: ArchetypeFormData;
+  setFormData: (data: ArchetypeFormData) => void;
+}) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Economic Components</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">
+          Economic Components
+        </label>
         <MultiSelect
           options={ECONOMIC_COMPONENTS as readonly string[]}
           value={formData.economicComponents}
@@ -861,20 +899,24 @@ function EconomicsTab({ formData, setFormData }: { formData: ArchetypeFormData; 
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Sector Focus (%)</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Sector Focus (%)</label>
         <div className="space-y-3">
-          {SECTOR_TYPES.map(sector => (
+          {SECTOR_TYPES.map((sector) => (
             <div key={sector} className="space-y-1">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-foreground capitalize">{sector}</span>
-                <span className="text-sm text-[--intel-silver]">{formData.sectorFocus[sector] || 0}%</span>
+                <span className="text-foreground text-sm capitalize">{sector}</span>
+                <span className="text-sm text-[--intel-silver]">
+                  {formData.sectorFocus[sector] || 0}%
+                </span>
               </div>
               <Slider
                 value={[formData.sectorFocus[sector] || 0]}
-                onValueChange={([value]) => setFormData({
-                  ...formData,
-                  sectorFocus: { ...formData.sectorFocus, [sector]: value }
-                })}
+                onValueChange={([value]) =>
+                  setFormData({
+                    ...formData,
+                    sectorFocus: { ...formData.sectorFocus, [sector]: value },
+                  })
+                }
                 min={0}
                 max={100}
               />
@@ -886,11 +928,19 @@ function EconomicsTab({ formData, setFormData }: { formData: ArchetypeFormData; 
   );
 }
 
-function GovernmentTab({ formData, setFormData }: { formData: ArchetypeFormData; setFormData: (data: ArchetypeFormData) => void }) {
+function GovernmentTab({
+  formData,
+  setFormData,
+}: {
+  formData: ArchetypeFormData;
+  setFormData: (data: ArchetypeFormData) => void;
+}) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Government Components</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">
+          Government Components
+        </label>
         <MultiSelect
           options={GOVERNMENT_COMPONENTS as readonly string[]}
           value={formData.governmentComponents}
@@ -902,21 +952,31 @@ function GovernmentTab({ formData, setFormData }: { formData: ArchetypeFormData;
   );
 }
 
-function TaxTab({ formData, setFormData }: { formData: ArchetypeFormData; setFormData: (data: ArchetypeFormData) => void }) {
+function TaxTab({
+  formData,
+  setFormData,
+}: {
+  formData: ArchetypeFormData;
+  setFormData: (data: ArchetypeFormData) => void;
+}) {
   return (
     <div className="space-y-4">
       <div className="space-y-3">
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-foreground">Corporate Tax Rate</span>
-            <span className="text-sm text-[--intel-silver]">{formData.taxProfile.corporateTax}%</span>
+            <span className="text-foreground text-sm">Corporate Tax Rate</span>
+            <span className="text-sm text-[--intel-silver]">
+              {formData.taxProfile.corporateTax}%
+            </span>
           </div>
           <Slider
             value={[formData.taxProfile.corporateTax]}
-            onValueChange={([value]) => setFormData({
-              ...formData,
-              taxProfile: { ...formData.taxProfile, corporateTax: value }
-            })}
+            onValueChange={([value]) =>
+              setFormData({
+                ...formData,
+                taxProfile: { ...formData.taxProfile, corporateTax: value },
+              })
+            }
             min={0}
             max={50}
           />
@@ -924,15 +984,17 @@ function TaxTab({ formData, setFormData }: { formData: ArchetypeFormData; setFor
 
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-foreground">Income Tax Rate</span>
+            <span className="text-foreground text-sm">Income Tax Rate</span>
             <span className="text-sm text-[--intel-silver]">{formData.taxProfile.incomeTax}%</span>
           </div>
           <Slider
             value={[formData.taxProfile.incomeTax]}
-            onValueChange={([value]) => setFormData({
-              ...formData,
-              taxProfile: { ...formData.taxProfile, incomeTax: value }
-            })}
+            onValueChange={([value]) =>
+              setFormData({
+                ...formData,
+                taxProfile: { ...formData.taxProfile, incomeTax: value },
+              })
+            }
             min={0}
             max={60}
           />
@@ -940,15 +1002,19 @@ function TaxTab({ formData, setFormData }: { formData: ArchetypeFormData; setFor
 
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-foreground">Consumption Tax Rate</span>
-            <span className="text-sm text-[--intel-silver]">{formData.taxProfile.consumptionTax}%</span>
+            <span className="text-foreground text-sm">Consumption Tax Rate</span>
+            <span className="text-sm text-[--intel-silver]">
+              {formData.taxProfile.consumptionTax}%
+            </span>
           </div>
           <Slider
             value={[formData.taxProfile.consumptionTax]}
-            onValueChange={([value]) => setFormData({
-              ...formData,
-              taxProfile: { ...formData.taxProfile, consumptionTax: value }
-            })}
+            onValueChange={([value]) =>
+              setFormData({
+                ...formData,
+                taxProfile: { ...formData.taxProfile, consumptionTax: value },
+              })
+            }
             min={0}
             max={30}
           />
@@ -956,15 +1022,19 @@ function TaxTab({ formData, setFormData }: { formData: ArchetypeFormData; setFor
 
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-foreground">Tax Efficiency</span>
-            <span className="text-sm text-[--intel-silver]">{formData.taxProfile.taxEfficiency}%</span>
+            <span className="text-foreground text-sm">Tax Efficiency</span>
+            <span className="text-sm text-[--intel-silver]">
+              {formData.taxProfile.taxEfficiency}%
+            </span>
           </div>
           <Slider
             value={[formData.taxProfile.taxEfficiency]}
-            onValueChange={([value]) => setFormData({
-              ...formData,
-              taxProfile: { ...formData.taxProfile, taxEfficiency: value }
-            })}
+            onValueChange={([value]) =>
+              setFormData({
+                ...formData,
+                taxProfile: { ...formData.taxProfile, taxEfficiency: value },
+              })
+            }
             min={0}
             max={100}
           />
@@ -974,46 +1044,71 @@ function TaxTab({ formData, setFormData }: { formData: ArchetypeFormData; setFor
   );
 }
 
-function EmploymentTab({ formData, setFormData }: { formData: ArchetypeFormData; setFormData: (data: ArchetypeFormData) => void }) {
+function EmploymentTab({
+  formData,
+  setFormData,
+}: {
+  formData: ArchetypeFormData;
+  setFormData: (data: ArchetypeFormData) => void;
+}) {
   return (
     <div className="space-y-4">
       <div className="space-y-3">
         <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">Unemployment Rate (%)</label>
+          <label className="text-foreground mb-2 block text-sm font-medium">
+            Unemployment Rate (%)
+          </label>
           <Input
             type="number"
             step="0.1"
             value={formData.employmentProfile.unemploymentRate}
-            onChange={(e) => setFormData({
-              ...formData,
-              employmentProfile: { ...formData.employmentProfile, unemploymentRate: parseFloat(e.target.value) || 0 }
-            })}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                employmentProfile: {
+                  ...formData.employmentProfile,
+                  unemploymentRate: parseFloat(e.target.value) || 0,
+                },
+              })
+            }
           />
         </div>
 
         <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">Labor Participation (%)</label>
+          <label className="text-foreground mb-2 block text-sm font-medium">
+            Labor Participation (%)
+          </label>
           <Input
             type="number"
             step="0.1"
             value={formData.employmentProfile.laborParticipation}
-            onChange={(e) => setFormData({
-              ...formData,
-              employmentProfile: { ...formData.employmentProfile, laborParticipation: parseFloat(e.target.value) || 0 }
-            })}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                employmentProfile: {
+                  ...formData.employmentProfile,
+                  laborParticipation: parseFloat(e.target.value) || 0,
+                },
+              })
+            }
           />
         </div>
 
         <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">Wage Growth (%)</label>
+          <label className="text-foreground mb-2 block text-sm font-medium">Wage Growth (%)</label>
           <Input
             type="number"
             step="0.1"
             value={formData.employmentProfile.wageGrowth}
-            onChange={(e) => setFormData({
-              ...formData,
-              employmentProfile: { ...formData.employmentProfile, wageGrowth: parseFloat(e.target.value) || 0 }
-            })}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                employmentProfile: {
+                  ...formData.employmentProfile,
+                  wageGrowth: parseFloat(e.target.value) || 0,
+                },
+              })
+            }
           />
         </div>
       </div>
@@ -1021,21 +1116,31 @@ function EmploymentTab({ formData, setFormData }: { formData: ArchetypeFormData;
   );
 }
 
-function MetricsTab({ formData, setFormData }: { formData: ArchetypeFormData; setFormData: (data: ArchetypeFormData) => void }) {
+function MetricsTab({
+  formData,
+  setFormData,
+}: {
+  formData: ArchetypeFormData;
+  setFormData: (data: ArchetypeFormData) => void;
+}) {
   return (
     <div className="space-y-4">
       <div className="space-y-3">
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-foreground">GDP Growth (%)</span>
-            <span className="text-sm text-[--intel-silver]">{formData.growthMetrics.gdpGrowth}%</span>
+            <span className="text-foreground text-sm">GDP Growth (%)</span>
+            <span className="text-sm text-[--intel-silver]">
+              {formData.growthMetrics.gdpGrowth}%
+            </span>
           </div>
           <Slider
             value={[formData.growthMetrics.gdpGrowth]}
-            onValueChange={([value]) => setFormData({
-              ...formData,
-              growthMetrics: { ...formData.growthMetrics, gdpGrowth: value }
-            })}
+            onValueChange={([value]) =>
+              setFormData({
+                ...formData,
+                growthMetrics: { ...formData.growthMetrics, gdpGrowth: value },
+              })
+            }
             min={-5}
             max={15}
           />
@@ -1043,15 +1148,19 @@ function MetricsTab({ formData, setFormData }: { formData: ArchetypeFormData; se
 
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-foreground">Innovation Index</span>
-            <span className="text-sm text-[--intel-silver]">{formData.growthMetrics.innovationIndex}</span>
+            <span className="text-foreground text-sm">Innovation Index</span>
+            <span className="text-sm text-[--intel-silver]">
+              {formData.growthMetrics.innovationIndex}
+            </span>
           </div>
           <Slider
             value={[formData.growthMetrics.innovationIndex]}
-            onValueChange={([value]) => setFormData({
-              ...formData,
-              growthMetrics: { ...formData.growthMetrics, innovationIndex: value }
-            })}
+            onValueChange={([value]) =>
+              setFormData({
+                ...formData,
+                growthMetrics: { ...formData.growthMetrics, innovationIndex: value },
+              })
+            }
             min={0}
             max={100}
           />
@@ -1059,15 +1168,19 @@ function MetricsTab({ formData, setFormData }: { formData: ArchetypeFormData; se
 
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-foreground">Competitiveness</span>
-            <span className="text-sm text-[--intel-silver]">{formData.growthMetrics.competitiveness}</span>
+            <span className="text-foreground text-sm">Competitiveness</span>
+            <span className="text-sm text-[--intel-silver]">
+              {formData.growthMetrics.competitiveness}
+            </span>
           </div>
           <Slider
             value={[formData.growthMetrics.competitiveness]}
-            onValueChange={([value]) => setFormData({
-              ...formData,
-              growthMetrics: { ...formData.growthMetrics, competitiveness: value }
-            })}
+            onValueChange={([value]) =>
+              setFormData({
+                ...formData,
+                growthMetrics: { ...formData.growthMetrics, competitiveness: value },
+              })
+            }
             min={0}
             max={100}
           />
@@ -1075,15 +1188,19 @@ function MetricsTab({ formData, setFormData }: { formData: ArchetypeFormData; se
 
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-foreground">Stability</span>
-            <span className="text-sm text-[--intel-silver]">{formData.growthMetrics.stability}</span>
+            <span className="text-foreground text-sm">Stability</span>
+            <span className="text-sm text-[--intel-silver]">
+              {formData.growthMetrics.stability}
+            </span>
           </div>
           <Slider
             value={[formData.growthMetrics.stability]}
-            onValueChange={([value]) => setFormData({
-              ...formData,
-              growthMetrics: { ...formData.growthMetrics, stability: value }
-            })}
+            onValueChange={([value]) =>
+              setFormData({
+                ...formData,
+                growthMetrics: { ...formData.growthMetrics, stability: value },
+              })
+            }
             min={0}
             max={100}
           />
@@ -1093,10 +1210,16 @@ function MetricsTab({ formData, setFormData }: { formData: ArchetypeFormData; se
   );
 }
 
-function CharacteristicsTab({ formData, setFormData }: { formData: ArchetypeFormData; setFormData: (data: ArchetypeFormData) => void }) {
+function CharacteristicsTab({
+  formData,
+  setFormData,
+}: {
+  formData: ArchetypeFormData;
+  setFormData: (data: ArchetypeFormData) => void;
+}) {
   const addArrayItem = (field: keyof ArchetypeFormData) => {
     const currentArray = formData[field] as string[];
-    setFormData({ ...formData, [field]: [...currentArray, ''] });
+    setFormData({ ...formData, [field]: [...currentArray, ""] });
   };
 
   const updateArrayItem = (field: keyof ArchetypeFormData, index: number, value: string) => {
@@ -1111,11 +1234,15 @@ function CharacteristicsTab({ formData, setFormData }: { formData: ArchetypeForm
     setFormData({ ...formData, [field]: currentArray.filter((_, i) => i !== index) });
   };
 
-  const renderArrayEditor = (field: keyof ArchetypeFormData, label: string, placeholder: string) => {
+  const renderArrayEditor = (
+    field: keyof ArchetypeFormData,
+    label: string,
+    placeholder: string
+  ) => {
     const items = formData[field] as string[];
     return (
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">{label}</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">{label}</label>
         <div className="space-y-2">
           {items.map((item, index) => (
             <div key={index} className="flex gap-2">
@@ -1134,12 +1261,8 @@ function CharacteristicsTab({ formData, setFormData }: { formData: ArchetypeForm
               </Button>
             </div>
           ))}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => addArrayItem(field)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
+          <Button size="sm" variant="outline" onClick={() => addArrayItem(field)}>
+            <Plus className="mr-2 h-4 w-4" />
             Add {label.slice(0, -1)}
           </Button>
         </div>
@@ -1149,12 +1272,12 @@ function CharacteristicsTab({ formData, setFormData }: { formData: ArchetypeForm
 
   return (
     <div className="space-y-6">
-      {renderArrayEditor('characteristics', 'Characteristics', 'Enter characteristic...')}
-      {renderArrayEditor('strengths', 'Strengths', 'Enter strength...')}
-      {renderArrayEditor('challenges', 'Challenges', 'Enter challenge...')}
-      {renderArrayEditor('culturalFactors', 'Cultural Factors', 'Enter cultural factor...')}
-      {renderArrayEditor('modernExamples', 'Modern Examples', 'Enter example...')}
-      {renderArrayEditor('recommendations', 'Recommendations', 'Enter recommendation...')}
+      {renderArrayEditor("characteristics", "Characteristics", "Enter characteristic...")}
+      {renderArrayEditor("strengths", "Strengths", "Enter strength...")}
+      {renderArrayEditor("challenges", "Challenges", "Enter challenge...")}
+      {renderArrayEditor("culturalFactors", "Cultural Factors", "Enter cultural factor...")}
+      {renderArrayEditor("modernExamples", "Modern Examples", "Enter example...")}
+      {renderArrayEditor("recommendations", "Recommendations", "Enter recommendation...")}
     </div>
   );
 }

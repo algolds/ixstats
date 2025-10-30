@@ -5,13 +5,13 @@
  * Optimized with React.memo for performance.
  */
 
-'use client';
+"use client";
 
-import React from 'react';
-import { ComponentCard } from './ComponentCard';
-import { ATOMIC_ECONOMIC_COMPONENTS, type EconomicComponentType } from '~/lib/atomic-economic-data';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { Info } from 'lucide-react';
+import React from "react";
+import { ComponentCard } from "./ComponentCard";
+import { ATOMIC_ECONOMIC_COMPONENTS, type EconomicComponentType } from "~/lib/atomic-economic-data";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Info } from "lucide-react";
 
 export interface ComponentLibraryProps {
   components: EconomicComponentType[];
@@ -27,7 +27,7 @@ function ComponentLibraryComponent({
   components,
   onSelect,
   selectedIds,
-  canSelectMore
+  canSelectMore,
 }: ComponentLibraryProps) {
   if (components.length === 0) {
     return (
@@ -43,16 +43,12 @@ function ComponentLibraryComponent({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">
-          Available Components ({components.length})
-        </h3>
+        <h3 className="text-lg font-semibold">Available Components ({components.length})</h3>
         {!canSelectMore && (
-          <span className="text-sm text-amber-600">
-            Maximum components reached
-          </span>
+          <span className="text-sm text-amber-600">Maximum components reached</span>
         )}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {components.map((componentType) => {
           const component = ATOMIC_ECONOMIC_COMPONENTS[componentType];
           if (!component) return null;

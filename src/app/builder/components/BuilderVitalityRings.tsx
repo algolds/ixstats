@@ -1,24 +1,24 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { HealthRing } from '~/components/ui/health-ring';
-import { Badge } from '~/components/ui/badge';
-import { formatCurrency, formatPopulation } from '~/lib/chart-utils';
-import { 
-  TrendingUp, 
-  Users, 
-  DollarSign, 
-  Shield, 
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { HealthRing } from "~/components/ui/health-ring";
+import { Badge } from "~/components/ui/badge";
+import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
+import {
+  TrendingUp,
+  Users,
+  DollarSign,
+  Shield,
   Target,
   Activity,
   Crown,
   Zap,
-  Flag
-} from 'lucide-react';
-import { cn } from '~/lib/utils';
-import type { EconomicInputs } from '../lib/economy-data-service';
-import type { ExtractedColors } from '~/lib/image-color-extractor';
+  Flag,
+} from "lucide-react";
+import { cn } from "~/lib/utils";
+import type { EconomicInputs } from "../lib/economy-data-service";
+import type { ExtractedColors } from "~/lib/image-color-extractor";
 
 interface BuilderVitalityRingsProps {
   economicInputs: EconomicInputs;
@@ -39,15 +39,21 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
   onRingClick,
   className,
   compact = false,
-  showMomentum = true
+  showMomentum = true,
 }) => {
   const [prevMetrics, setPrevMetrics] = useState<any>(null);
   const [momentum, setMomentum] = useState({ economic: 0, social: 0, government: 0 });
 
   // Calculate health scores from economic inputs
   const economicHealth = Math.min(100, (economicInputs.coreIndicators.gdpPerCapita / 50000) * 100);
-  const socialHealth = Math.min(100, Math.max(0, (((economicInputs.demographics.populationGrowthRate) + 2) * 25)));
-  const governmentHealth = Math.min(100, (economicInputs.fiscalSystem.taxRevenueGDPPercent / 30) * 100);
+  const socialHealth = Math.min(
+    100,
+    Math.max(0, (economicInputs.demographics.populationGrowthRate + 2) * 25)
+  );
+  const governmentHealth = Math.min(
+    100,
+    (economicInputs.fiscalSystem.taxRevenueGDPPercent / 30) * 100
+  );
 
   // Calculate momentum (rate of change)
   useEffect(() => {
@@ -55,68 +61,96 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
       const economicMomentum = economicHealth - prevMetrics.economic;
       const socialMomentum = socialHealth - prevMetrics.social;
       const governmentMomentum = governmentHealth - prevMetrics.government;
-      
+
       setMomentum({
         economic: economicMomentum,
         social: socialMomentum,
-        government: governmentMomentum
+        government: governmentMomentum,
       });
     }
-    
-    setPrevMetrics({ 
-      economic: economicHealth, 
-      social: socialHealth, 
-      government: governmentHealth 
+
+    setPrevMetrics({
+      economic: economicHealth,
+      social: socialHealth,
+      government: governmentHealth,
     });
   }, [economicHealth, socialHealth, governmentHealth, showMomentum]);
 
   // Use extracted colors or fallback to defaults
   const colors = extractedColors || {
-    primary: '#10b981',
-    secondary: '#3b82f6',
-    accent: '#8b5cf6'
+    primary: "#10b981",
+    secondary: "#3b82f6",
+    accent: "#8b5cf6",
   };
 
   const rings = [
     {
-      id: 'economic',
-      label: 'Economic Vitality',
+      id: "economic",
+      label: "Economic Vitality",
       icon: <DollarSign className="h-5 w-5" />,
       value: economicHealth,
       color: colors.primary,
       metric: formatCurrency(economicInputs.coreIndicators.gdpPerCapita),
-      subtitle: 'GDP per Capita',
-      description: 'Economic strength and prosperity indicator',
+      subtitle: "GDP per Capita",
+      description: "Economic strength and prosperity indicator",
       momentum: momentum.economic,
-      badge: economicHealth > 80 ? 'Excellent' : economicHealth > 60 ? 'Strong' : economicHealth > 40 ? 'Moderate' : 'Developing',
-      badgeVariant: economicHealth > 80 ? 'default' : economicHealth > 60 ? 'secondary' : economicHealth > 40 ? 'outline' : 'destructive'
+      badge:
+        economicHealth > 80
+          ? "Excellent"
+          : economicHealth > 60
+            ? "Strong"
+            : economicHealth > 40
+              ? "Moderate"
+              : "Developing",
+      badgeVariant:
+        economicHealth > 80
+          ? "default"
+          : economicHealth > 60
+            ? "secondary"
+            : economicHealth > 40
+              ? "outline"
+              : "destructive",
     },
     {
-      id: 'social',
-      label: 'Social Vitality',
+      id: "social",
+      label: "Social Vitality",
       icon: <Users className="h-5 w-5" />,
       value: socialHealth,
       color: colors.secondary,
       metric: formatPopulation(economicInputs.coreIndicators.totalPopulation),
-      subtitle: 'Population',
-      description: 'Social stability and demographic health',
+      subtitle: "Population",
+      description: "Social stability and demographic health",
       momentum: momentum.social,
-      badge: socialHealth > 75 ? 'Thriving' : socialHealth > 50 ? 'Stable' : socialHealth > 25 ? 'Growing' : 'Emerging',
-      badgeVariant: 'outline' as const
+      badge:
+        socialHealth > 75
+          ? "Thriving"
+          : socialHealth > 50
+            ? "Stable"
+            : socialHealth > 25
+              ? "Growing"
+              : "Emerging",
+      badgeVariant: "outline" as const,
     },
     {
-      id: 'government',
-      label: 'Government Vitality',
+      id: "government",
+      label: "Government Vitality",
       icon: <Shield className="h-5 w-5" />,
       value: governmentHealth,
       color: colors.accent,
       metric: `${economicInputs.fiscalSystem.taxRevenueGDPPercent.toFixed(1)}%`,
-      subtitle: 'Tax Revenue',
-      description: 'Government efficiency and fiscal health',
+      subtitle: "Tax Revenue",
+      description: "Government efficiency and fiscal health",
       momentum: momentum.government,
-      badge: governmentHealth > 80 ? 'Efficient' : governmentHealth > 60 ? 'Balanced' : governmentHealth > 40 ? 'Adequate' : 'Strained',
-      badgeVariant: 'secondary' as const
-    }
+      badge:
+        governmentHealth > 80
+          ? "Efficient"
+          : governmentHealth > 60
+            ? "Balanced"
+            : governmentHealth > 40
+              ? "Adequate"
+              : "Strained",
+      badgeVariant: "secondary" as const,
+    },
   ];
 
   // Calculate momentum rotation speed (degrees per second)
@@ -128,34 +162,37 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
     return (
       <div className={cn("space-y-4", className)}>
         {/* Country Header */}
-        <div className="flex items-center gap-3 p-4 bg-white/5 rounded-lg border border-white/10">
+        <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-4">
           {flagUrl && (
-            <div className="w-8 h-6 rounded border border-white/20 overflow-hidden flex-shrink-0">
-              <img src={flagUrl} alt="Flag" className="w-full h-full object-cover" />
+            <div className="h-6 w-8 flex-shrink-0 overflow-hidden rounded border border-white/20">
+              <img src={flagUrl} alt="Flag" className="h-full w-full object-cover" />
             </div>
           )}
-         
         </div>
 
         {/* Compact Rings Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 md:gap-4">
           {rings.map((ring, index) => (
             <motion.div
               key={ring.id}
-              className="flex flex-col items-center p-4 md:p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-200 cursor-pointer group touch-manipulation min-h-[44px]"
+              className="group flex min-h-[44px] cursor-pointer touch-manipulation flex-col items-center rounded-lg bg-white/5 p-4 transition-all duration-200 hover:bg-white/10 md:p-3"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => onRingClick?.(index)}
             >
               <div className="relative mb-2">
                 <motion.div
-                  animate={showMomentum ? { 
-                    rotate: ring.momentum !== 0 ? [0, getMomentumRotation(ring.momentum)] : 0
-                  } : {}}
-                  transition={{ 
-                    duration: 2, 
-                    repeat: ring.momentum !== 0 ? Infinity : 0, 
-                    ease: "linear" 
+                  animate={
+                    showMomentum
+                      ? {
+                          rotate: ring.momentum !== 0 ? [0, getMomentumRotation(ring.momentum)] : 0,
+                        }
+                      : {}
+                  }
+                  transition={{
+                    duration: 2,
+                    repeat: ring.momentum !== 0 ? Infinity : 0,
+                    ease: "linear",
                   }}
                 >
                   <HealthRing
@@ -163,28 +200,39 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
                     size={50}
                     color={ring.color}
                     label={ring.label}
-                    tooltip={`${ring.description} (Momentum: ${ring.momentum > 0 ? '+' : ''}${ring.momentum.toFixed(1)})`}
+                    tooltip={`${ring.description} (Momentum: ${ring.momentum > 0 ? "+" : ""}${ring.momentum.toFixed(1)})`}
                     isClickable={true}
-                    className="group-hover:drop-shadow-lg transition-all duration-200"
+                    className="transition-all duration-200 group-hover:drop-shadow-lg"
                   />
                 </motion.div>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div style={{ color: ring.color }} className="opacity-80 group-hover:opacity-100 transition-opacity">
+                  <div
+                    style={{ color: ring.color }}
+                    className="opacity-80 transition-opacity group-hover:opacity-100"
+                  >
                     {ring.icon}
                   </div>
                 </div>
               </div>
-              <span className="text-xs font-medium text-foreground text-center">{ring.label.split(' ')[0]}</span>
-              <span className="text-xs text-muted-foreground text-center truncate w-full">
+              <span className="text-foreground text-center text-xs font-medium">
+                {ring.label.split(" ")[0]}
+              </span>
+              <span className="text-muted-foreground w-full truncate text-center text-xs">
                 {ring.metric}
               </span>
               {/* Momentum Indicator */}
               {showMomentum && ring.momentum !== 0 && (
-                <div className={cn(
-                  "text-xs font-medium flex items-center gap-1 mt-1",
-                  ring.momentum > 0 ? "text-green-400" : "text-red-400"
-                )}>
-                  {ring.momentum > 0 ? <TrendingUp className="h-3 w-3" /> : <Activity className="h-3 w-3" />}
+                <div
+                  className={cn(
+                    "mt-1 flex items-center gap-1 text-xs font-medium",
+                    ring.momentum > 0 ? "text-green-400" : "text-red-400"
+                  )}
+                >
+                  {ring.momentum > 0 ? (
+                    <TrendingUp className="h-3 w-3" />
+                  ) : (
+                    <Activity className="h-3 w-3" />
+                  )}
                   {Math.abs(ring.momentum).toFixed(1)}
                 </div>
               )}
@@ -198,16 +246,16 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
   return (
     <div className={cn("space-y-6", className)}>
       {/* Country Header with Symbols */}
-      <div className="flex items-center gap-4 p-6 bg-white/5 rounded-lg border border-white/10">
+      <div className="flex items-center gap-4 rounded-lg border border-white/10 bg-white/5 p-6">
         <div className="flex gap-2">
           {flagUrl && (
-            <div className="w-12 h-8 rounded border border-white/20 overflow-hidden">
-              <img src={flagUrl} alt="Flag" className="w-full h-full object-cover" />
+            <div className="h-8 w-12 overflow-hidden rounded border border-white/20">
+              <img src={flagUrl} alt="Flag" className="h-full w-full object-cover" />
             </div>
           )}
           {coatOfArmsUrl && (
-            <div className="w-8 h-8 rounded border border-white/20 overflow-hidden">
-              <img src={coatOfArmsUrl} alt="Coat of Arms" className="w-full h-full object-cover" />
+            <div className="h-8 w-8 overflow-hidden rounded border border-white/20">
+              <img src={coatOfArmsUrl} alt="Coat of Arms" className="h-full w-full object-cover" />
             </div>
           )}
         </div>
@@ -228,7 +276,7 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
         {rings.map((ring, index) => (
           <motion.div
             key={ring.id}
-            className="flex items-center gap-4 p-4 rounded-lg bg-white/5 hover:bg-white/10 transition-all duration-200 cursor-pointer group"
+            className="group flex cursor-pointer items-center gap-4 rounded-lg bg-white/5 p-4 transition-all duration-200 hover:bg-white/10"
             whileHover={{ scale: 1.01, y: -1 }}
             whileTap={{ scale: 0.99 }}
             onClick={() => onRingClick?.(index)}
@@ -239,13 +287,17 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
             {/* Vitality Ring with Momentum */}
             <div className="relative flex-shrink-0">
               <motion.div
-                animate={showMomentum ? { 
-                  rotate: ring.momentum !== 0 ? [0, getMomentumRotation(ring.momentum)] : 0
-                } : {}}
-                transition={{ 
-                  duration: 3, 
-                  repeat: ring.momentum !== 0 ? Infinity : 0, 
-                  ease: "linear" 
+                animate={
+                  showMomentum
+                    ? {
+                        rotate: ring.momentum !== 0 ? [0, getMomentumRotation(ring.momentum)] : 0,
+                      }
+                    : {}
+                }
+                transition={{
+                  duration: 3,
+                  repeat: ring.momentum !== 0 ? Infinity : 0,
+                  ease: "linear",
                 }}
               >
                 <HealthRing
@@ -255,13 +307,13 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
                   label={ring.label}
                   tooltip={ring.description}
                   isClickable={true}
-                  className="group-hover:drop-shadow-lg transition-all duration-200"
+                  className="transition-all duration-200 group-hover:drop-shadow-lg"
                 />
               </motion.div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <motion.div 
-                  style={{ color: ring.color }} 
-                  className="opacity-80 group-hover:opacity-100 transition-opacity"
+                <motion.div
+                  style={{ color: ring.color }}
+                  className="opacity-80 transition-opacity group-hover:opacity-100"
                   whileHover={{ scale: 1.1 }}
                 >
                   {ring.icon}
@@ -270,9 +322,9 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
             </div>
 
             {/* Info Section */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h4 className="font-semibold text-foreground group-hover:text-opacity-80 transition-colors">
+            <div className="min-w-0 flex-1">
+              <div className="mb-1 flex items-center gap-2">
+                <h4 className="text-foreground group-hover:text-opacity-80 font-semibold transition-colors">
                   {ring.label}
                 </h4>
                 <Badge variant={ring.badgeVariant as any} className="text-xs">
@@ -280,29 +332,32 @@ export const BuilderVitalityRings: React.FC<BuilderVitalityRingsProps> = ({
                 </Badge>
                 {/* Momentum Badge */}
                 {showMomentum && ring.momentum !== 0 && (
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className={cn(
                       "text-xs",
-                      ring.momentum > 0 ? "border-green-500/50 text-green-400" : "border-red-500/50 text-red-400"
+                      ring.momentum > 0
+                        ? "border-green-500/50 text-green-400"
+                        : "border-red-500/50 text-red-400"
                     )}
                   >
-                    {ring.momentum > 0 ? '+' : ''}{ring.momentum.toFixed(1)}
+                    {ring.momentum > 0 ? "+" : ""}
+                    {ring.momentum.toFixed(1)}
                   </Badge>
                 )}
               </div>
-              <div className="text-2xl font-bold mb-1" style={{ color: ring.color }}>
+              <div className="mb-1 text-2xl font-bold" style={{ color: ring.color }}>
                 {ring.metric}
               </div>
-              <p className="text-sm text-muted-foreground mb-2">{ring.subtitle}</p>
-              <p className="text-xs text-muted-foreground opacity-80 group-hover:opacity-100 transition-opacity">
+              <p className="text-muted-foreground mb-2 text-sm">{ring.subtitle}</p>
+              <p className="text-muted-foreground text-xs opacity-80 transition-opacity group-hover:opacity-100">
                 {ring.description}
               </p>
             </div>
 
             {/* Performance Indicator */}
             <div className="flex flex-col items-center gap-2">
-              <div className="text-lg font-bold glow-text" style={{ color: ring.color }}>
+              <div className="glow-text text-lg font-bold" style={{ color: ring.color }}>
                 {Math.round(ring.value)}%
               </div>
               <div className="flex items-center gap-1">

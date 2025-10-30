@@ -4,7 +4,7 @@
  */
 
 // Get the base path from environment or use empty string for root deployment
-export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || '';
+export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "";
 
 /**
  * Prepends the BASE_PATH to a given path
@@ -13,23 +13,23 @@ export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_P
  */
 export function withBasePath(path: string): string {
   // Handle root path
-  if (path === '/') {
-    return BASE_PATH || '/';
+  if (path === "/") {
+    return BASE_PATH || "/";
   }
-  
+
   // Don't double-prefix if already has base path
   if (BASE_PATH && path.startsWith(BASE_PATH)) {
     return path;
   }
-  
+
   // Handle external URLs
-  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('//')) {
+  if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("//")) {
     return path;
   }
-  
+
   // Ensure path starts with /
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
   return `${BASE_PATH}${normalizedPath}`;
 }
 
@@ -39,7 +39,7 @@ export function withBasePath(path: string): string {
  */
 export function stripBasePath(path: string): string {
   if (BASE_PATH && path.startsWith(BASE_PATH)) {
-    return path.slice(BASE_PATH.length) || '/';
+    return path.slice(BASE_PATH.length) || "/";
   }
   return path;
 }

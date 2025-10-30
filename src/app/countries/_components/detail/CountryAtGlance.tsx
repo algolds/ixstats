@@ -27,20 +27,10 @@ import {
   LocateFixed,
 } from "lucide-react";
 import { IxTime } from "~/lib/ixtime";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Separator } from "~/components/ui/separator";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import {
   formatPopulation,
   formatCurrency,
@@ -152,28 +142,17 @@ export function CountryAtGlance({
       population: formatPopulation(country.currentPopulation),
       gdpPerCapita: formatCurrency(country.currentGdpPerCapita),
       totalGdp: formatCurrency(country.currentTotalGdp),
-      
+
       // FIXED: Use proper decimal-to-percentage formatting
       populationGrowth: displayGrowthRate(country.populationGrowthRate),
       gdpGrowth: displayGrowthRate(country.adjustedGdpGrowth),
       maxGdpGrowth: displayGrowthRate(country.maxGdpGrowthRate),
-      
+
       populationDensity:
-        country.populationDensity != null
-          ? `${country.populationDensity.toFixed(1)}/km²`
-          : "N/A",
-      gdpDensity:
-        country.gdpDensity != null
-          ? `${formatCurrency(country.gdpDensity)}/km²`
-          : "N/A",
-      landArea:
-        country.landArea != null
-          ? `${country.landArea.toLocaleString()} km²`
-          : "N/A",
-      areaSqMi:
-        country.areaSqMi != null
-          ? `${country.areaSqMi.toLocaleString()} sq mi`
-          : "N/A",
+        country.populationDensity != null ? `${country.populationDensity.toFixed(1)}/km²` : "N/A",
+      gdpDensity: country.gdpDensity != null ? `${formatCurrency(country.gdpDensity)}/km²` : "N/A",
+      landArea: country.landArea != null ? `${country.landArea.toLocaleString()} km²` : "N/A",
+      areaSqMi: country.areaSqMi != null ? `${country.areaSqMi.toLocaleString()} sq mi` : "N/A",
       getGrowthIconComponent,
       getGrowthColorClass: getGrowthColor,
       getTierBadgeVariant,
@@ -182,10 +161,7 @@ export function CountryAtGlance({
 
   const timeInfo = useMemo(() => {
     const last = new Date(country.lastCalculated).getTime();
-    const yearsFromBaseline = IxTime.getYearsElapsed(
-      country.baselineDate,
-      currentIxTime
-    );
+    const yearsFromBaseline = IxTime.getYearsElapsed(country.baselineDate, currentIxTime);
     return {
       lastUpdated: IxTime.formatIxTime(last, true),
       currentGameYear: IxTime.getCurrentGameYear(currentIxTime),
@@ -198,7 +174,7 @@ export function CountryAtGlance({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
-            <Activity className="h-5 w-5 mr-2 text-primary" />
+            <Activity className="text-primary mr-2 h-5 w-5" />
             Country Overview
           </CardTitle>
         </CardHeader>
@@ -206,10 +182,7 @@ export function CountryAtGlance({
           <div className="animate-pulse space-y-4">
             <div className="grid grid-cols-2 gap-4">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-16 bg-gray-200 dark:bg-gray-700 rounded"
-                />
+                <div key={i} className="h-16 rounded bg-gray-200 dark:bg-gray-700" />
               ))}
             </div>
           </div>
@@ -225,21 +198,21 @@ export function CountryAtGlance({
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {flagUrl ? (
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 rounded-md blur-sm group-hover:blur-md transition-all" />
-                  <div className="relative w-12 h-8 rounded-md overflow-hidden border-2 border-border shadow-md group-hover:shadow-lg transition-all">
+                <div className="group relative">
+                  <div className="from-primary/20 to-primary/5 absolute inset-0 rounded-md bg-gradient-to-br blur-sm transition-all group-hover:blur-md" />
+                  <div className="border-border relative h-8 w-12 overflow-hidden rounded-md border-2 shadow-md transition-all group-hover:shadow-lg">
                     <img
                       src={flagUrl}
                       alt={`${country.name} flag`}
-                      className="w-full h-full object-cover"
+                      className="h-full w-full object-cover"
                       onError={(e) => {
-                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.style.display = "none";
                       }}
                     />
                   </div>
                 </div>
               ) : (
-                <Activity className="h-5 w-5 text-primary" />
+                <Activity className="text-primary h-5 w-5" />
               )}
               <span>Country Overview</span>
             </div>
@@ -249,7 +222,7 @@ export function CountryAtGlance({
               </Badge>
               <Badge
                 variant="outline"
-                className="cursor-pointer hover:bg-muted/70 transition-colors"
+                className="hover:bg-muted/70 cursor-pointer transition-colors"
                 onClick={() => setIsPopulationTierModalOpen(true)}
               >
                 Tier {country.populationTier}
@@ -264,198 +237,233 @@ export function CountryAtGlance({
             <>
               <Separator />
               <div className="space-y-4">
-                <h4 className="text-sm font-semibold text-muted-foreground flex items-center">
-                  <Crown className="h-4 w-4 mr-2" />
+                <h4 className="text-muted-foreground flex items-center text-sm font-semibold">
+                  <Crown className="mr-2 h-4 w-4" />
                   National Identity
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {country.nationalIdentity.officialName && (
                     <div className="flex items-start space-x-3">
-                      <Building className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <Building className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">Official Name</p>
-                        <p className="text-sm font-medium">{country.nationalIdentity.officialName}</p>
+                        <p className="text-muted-foreground text-sm">Official Name</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.officialName}
+                        </p>
                       </div>
                     </div>
                   )}
                   {country.nationalIdentity.governmentType && (
                     <div className="flex items-start space-x-3">
-                      <Crown className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <Crown className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">Government Type</p>
-                        <p className="text-sm font-medium">{country.nationalIdentity.governmentType}</p>
+                        <p className="text-muted-foreground text-sm">Government Type</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.governmentType}
+                        </p>
                       </div>
                     </div>
                   )}
                   {country.nationalIdentity.capitalCity && (
                     <div className="flex items-start space-x-3">
-                      <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <MapPin className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">Capital</p>
-                        <p className="text-sm font-medium">{country.nationalIdentity.capitalCity}</p>
+                        <p className="text-muted-foreground text-sm">Capital</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.capitalCity}
+                        </p>
                       </div>
                     </div>
                   )}
                   {country.nationalIdentity.largestCity && (
                     <div className="flex items-start space-x-3">
-                      <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <MapPin className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">Largest City</p>
-                        <p className="text-sm font-medium">{country.nationalIdentity.largestCity}</p>
+                        <p className="text-muted-foreground text-sm">Largest City</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.largestCity}
+                        </p>
                       </div>
                     </div>
                   )}
                   {country.nationalIdentity.demonym && (
                     <div className="flex items-start space-x-3">
-                      <Users className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <Users className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">Demonym</p>
+                        <p className="text-muted-foreground text-sm">Demonym</p>
                         <p className="text-sm font-medium">{country.nationalIdentity.demonym}</p>
                       </div>
                     </div>
                   )}
                   {country.nationalIdentity.officialLanguages && (
                     <div className="flex items-start space-x-3">
-                      <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <Globe className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">Official Languages</p>
-                        <p className="text-sm font-medium">{country.nationalIdentity.officialLanguages}</p>
+                        <p className="text-muted-foreground text-sm">Official Languages</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.officialLanguages}
+                        </p>
                       </div>
                     </div>
                   )}
                   {country.nationalIdentity.nationalLanguage && (
                     <div className="flex items-start space-x-3">
-                      <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <Globe className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">National Language</p>
-                        <p className="text-sm font-medium">{country.nationalIdentity.nationalLanguage}</p>
+                        <p className="text-muted-foreground text-sm">National Language</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.nationalLanguage}
+                        </p>
                       </div>
                     </div>
                   )}
                   {country.nationalIdentity.currency && (
                     <div className="flex items-start space-x-3">
-                      <DollarSign className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <DollarSign className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">Currency</p>
+                        <p className="text-muted-foreground text-sm">Currency</p>
                         <p className="text-sm font-medium">
                           {country.nationalIdentity.currency}
-                          {country.nationalIdentity.currencySymbol && ` (${country.nationalIdentity.currencySymbol})`}
+                          {country.nationalIdentity.currencySymbol &&
+                            ` (${country.nationalIdentity.currencySymbol})`}
                         </p>
                       </div>
                     </div>
                   )}
                   {country.nationalIdentity.nationalDay && (
                     <div className="flex items-start space-x-3">
-                      <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <Calendar className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">National Day</p>
-                        <p className="text-sm font-medium">{country.nationalIdentity.nationalDay}</p>
+                        <p className="text-muted-foreground text-sm">National Day</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.nationalDay}
+                        </p>
                       </div>
                     </div>
                   )}
                   {country.nationalIdentity.motto && (
                     <div className="flex items-start space-x-3 sm:col-span-2">
-                      <Flag className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <Flag className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">National Motto</p>
-                        <p className="text-sm font-medium italic">&quot;{country.nationalIdentity.motto}&quot;</p>
-                        {country.nationalIdentity.mottoNative && country.nationalIdentity.mottoNative !== country.nationalIdentity.motto && (
-                          <p className="text-xs text-muted-foreground/80 mt-1">
-                            {country.nationalIdentity.mottoNative}
-                          </p>
-                        )}
+                        <p className="text-muted-foreground text-sm">National Motto</p>
+                        <p className="text-sm font-medium italic">
+                          &quot;{country.nationalIdentity.motto}&quot;
+                        </p>
+                        {country.nationalIdentity.mottoNative &&
+                          country.nationalIdentity.mottoNative !==
+                            country.nationalIdentity.motto && (
+                            <p className="text-muted-foreground/80 mt-1 text-xs">
+                              {country.nationalIdentity.mottoNative}
+                            </p>
+                          )}
                       </div>
                     </div>
                   )}
                   {country.nationalIdentity.nationalAnthem && (
                     <div className="flex items-start space-x-3 sm:col-span-2">
-                      <Music className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <Music className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">National Anthem</p>
-                        <p className="text-sm font-medium">{country.nationalIdentity.nationalAnthem}</p>
+                        <p className="text-muted-foreground text-sm">National Anthem</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.nationalAnthem}
+                        </p>
                       </div>
                     </div>
                   )}
                   {country.nationalIdentity.nationalSport && (
                     <div className="flex items-start space-x-3">
-                      <Activity className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <Activity className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">National Sport</p>
-                        <p className="text-sm font-medium">{country.nationalIdentity.nationalSport}</p>
+                        <p className="text-muted-foreground text-sm">National Sport</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.nationalSport}
+                        </p>
                       </div>
                     </div>
                   )}
                   {country.nationalIdentity.callingCode && (
                     <div className="flex items-start space-x-3">
-                      <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <Phone className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">Calling Code</p>
-                        <p className="text-sm font-medium">{country.nationalIdentity.callingCode}</p>
+                        <p className="text-muted-foreground text-sm">Calling Code</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.callingCode}
+                        </p>
                       </div>
                     </div>
                   )}
                   {country.nationalIdentity.internetTLD && (
                     <div className="flex items-start space-x-3">
-                      <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <Globe className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">Internet TLD</p>
-                        <p className="text-sm font-medium">{country.nationalIdentity.internetTLD}</p>
+                        <p className="text-muted-foreground text-sm">Internet TLD</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.internetTLD}
+                        </p>
                       </div>
                     </div>
                   )}
                   {country.nationalIdentity.isoCode && (
                     <div className="flex items-start space-x-3">
-                      <Hash className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <Hash className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">ISO Code</p>
+                        <p className="text-muted-foreground text-sm">ISO Code</p>
                         <p className="text-sm font-medium">{country.nationalIdentity.isoCode}</p>
                       </div>
                     </div>
                   )}
                   {country.nationalIdentity.timeZone && (
                     <div className="flex items-start space-x-3">
-                      <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <Clock className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">Time Zone</p>
+                        <p className="text-muted-foreground text-sm">Time Zone</p>
                         <p className="text-sm font-medium">{country.nationalIdentity.timeZone}</p>
                       </div>
                     </div>
                   )}
                   {country.nationalIdentity.drivingSide && (
                     <div className="flex items-start space-x-3">
-                      <Car className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <Car className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">Driving Side</p>
-                        <p className="text-sm font-medium capitalize">{country.nationalIdentity.drivingSide}</p>
+                        <p className="text-muted-foreground text-sm">Driving Side</p>
+                        <p className="text-sm font-medium capitalize">
+                          {country.nationalIdentity.drivingSide}
+                        </p>
                       </div>
                     </div>
                   )}
                   {country.nationalIdentity.weekStartDay && (
                     <div className="flex items-start space-x-3">
-                      <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <Calendar className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">Week Starts On</p>
-                        <p className="text-sm font-medium capitalize">{country.nationalIdentity.weekStartDay}</p>
-                      </div>
-                    </div>
-                  )}
-                  {country.nationalIdentity.coordinatesLatitude && country.nationalIdentity.coordinatesLongitude && (
-                    <div className="flex items-start space-x-3 sm:col-span-2">
-                      <LocateFixed className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                      <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">Coordinates</p>
-                        <p className="text-sm font-medium">
-                          {country.nationalIdentity.coordinatesLatitude}, {country.nationalIdentity.coordinatesLongitude}
+                        <p className="text-muted-foreground text-sm">Week Starts On</p>
+                        <p className="text-sm font-medium capitalize">
+                          {country.nationalIdentity.weekStartDay}
                         </p>
                       </div>
                     </div>
                   )}
+                  {country.nationalIdentity.coordinatesLatitude &&
+                    country.nationalIdentity.coordinatesLongitude && (
+                      <div className="flex items-start space-x-3 sm:col-span-2">
+                        <LocateFixed className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-muted-foreground text-sm">Coordinates</p>
+                          <p className="text-sm font-medium">
+                            {country.nationalIdentity.coordinatesLatitude},{" "}
+                            {country.nationalIdentity.coordinatesLongitude}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   {country.nationalIdentity.emergencyNumber && (
                     <div className="flex items-start space-x-3">
-                      <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <Phone className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-muted-foreground">Emergency Number</p>
-                        <p className="text-sm font-medium">{country.nationalIdentity.emergencyNumber}</p>
+                        <p className="text-muted-foreground text-sm">Emergency Number</p>
+                        <p className="text-sm font-medium">
+                          {country.nationalIdentity.emergencyNumber}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -468,74 +476,60 @@ export function CountryAtGlance({
 
           {/* Economic Indicators */}
           <div className="space-y-4">
-            <h4 className="text-sm font-semibold text-muted-foreground flex items-center">
-              <DollarSign className="h-4 w-4 mr-2" />
+            <h4 className="text-muted-foreground flex items-center text-sm font-semibold">
+              <DollarSign className="mr-2 h-4 w-4" />
               Economic Indicators
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {/* GDP per Capita */}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div 
-                    className="p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors"
+                  <div
+                    className="bg-muted/50 hover:bg-muted/70 cursor-pointer rounded-lg p-3 transition-colors"
                     onClick={() => setIsGdpPerCapitaModalOpen(true)}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-xs text-muted-foreground">
-                        GDP per Capita
-                      </p>
+                    <div className="mb-1 flex items-center justify-between">
+                      <p className="text-muted-foreground text-xs">GDP per Capita</p>
                       {formatted.getGrowthIconComponent(country.adjustedGdpGrowth)}
                     </div>
-                    <p className="text-lg font-semibold">
-                      {formatted.gdpPerCapita}
-                    </p>
+                    <p className="text-lg font-semibold">{formatted.gdpPerCapita}</p>
                     <p
-                      className={`text-xs ${
-                        formatted.getGrowthColorClass(country.adjustedGdpGrowth)
-                      }`}
+                      className={`text-xs ${formatted.getGrowthColorClass(
+                        country.adjustedGdpGrowth
+                      )}`}
                     >
                       {formatted.gdpGrowth} annually
                     </p>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>
-                    Current GDP per capita, growth capped at max rate {formatted.maxGdpGrowth}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p>Current GDP per capita, growth capped at max rate {formatted.maxGdpGrowth}</p>
+                  <p className="text-muted-foreground mt-1 text-xs">
                     Economic Tier: {country.economicTier}
                   </p>
-                  <p className="text-xs text-blue-500 mt-1">
-                    Click for detailed analysis
-                  </p>
+                  <p className="mt-1 text-xs text-blue-500">Click for detailed analysis</p>
                 </TooltipContent>
               </Tooltip>
 
               {/* Total GDP */}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div 
-                    className="p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors"
+                  <div
+                    className="bg-muted/50 hover:bg-muted/70 cursor-pointer rounded-lg p-3 transition-colors"
                     onClick={() => setIsGdpModalOpen(true)}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-xs text-muted-foreground">Total GDP</p>
-                      <BarChart3 className="h-3 w-3 text-muted-foreground" />
+                    <div className="mb-1 flex items-center justify-between">
+                      <p className="text-muted-foreground text-xs">Total GDP</p>
+                      <BarChart3 className="text-muted-foreground h-3 w-3" />
                     </div>
                     <p className="text-lg font-semibold">{formatted.totalGdp}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {country.economicTier} economy
-                    </p>
+                    <p className="text-muted-foreground text-xs">{country.economicTier} economy</p>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Gross domestic product (total economic output)</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Population × GDP per Capita
-                  </p>
-                  <p className="text-xs text-blue-500 mt-1">
-                    Click for detailed analysis
-                  </p>
+                  <p className="text-muted-foreground mt-1 text-xs">Population × GDP per Capita</p>
+                  <p className="mt-1 text-xs text-blue-500">Click for detailed analysis</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -543,19 +537,13 @@ export function CountryAtGlance({
               {country.gdpDensity != null && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-xs text-muted-foreground">
-                          GDP Density
-                        </p>
-                        <MapPin className="h-3 w-3 text-muted-foreground" />
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="mb-1 flex items-center justify-between">
+                        <p className="text-muted-foreground text-xs">GDP Density</p>
+                        <MapPin className="text-muted-foreground h-3 w-3" />
                       </div>
-                      <p className="text-lg font-semibold">
-                        {formatted.gdpDensity}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        economic output per km²
-                      </p>
+                      <p className="text-lg font-semibold">{formatted.gdpDensity}</p>
+                      <p className="text-muted-foreground text-xs">economic output per km²</p>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -570,29 +558,27 @@ export function CountryAtGlance({
 
           {/* Demographics */}
           <div className="space-y-4">
-            <h4 className="text-sm font-semibold text-muted-foreground flex items-center">
-              <Users className="h-4 w-4 mr-2" />
+            <h4 className="text-muted-foreground flex items-center text-sm font-semibold">
+              <Users className="mr-2 h-4 w-4" />
               Demographics
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {/* Population */}
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div 
-                    className="p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors"
+                  <div
+                    className="bg-muted/50 hover:bg-muted/70 cursor-pointer rounded-lg p-3 transition-colors"
                     onClick={() => setIsPopulationModalOpen(true)}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-xs text-muted-foreground">Population</p>
+                    <div className="mb-1 flex items-center justify-between">
+                      <p className="text-muted-foreground text-xs">Population</p>
                       {formatted.getGrowthIconComponent(country.populationGrowthRate)}
                     </div>
-                    <p className="text-lg font-semibold">
-                      {formatted.population}
-                    </p>
+                    <p className="text-lg font-semibold">{formatted.population}</p>
                     <p
-                      className={`text-xs ${
-                        formatted.getGrowthColorClass(country.populationGrowthRate)
-                      }`}
+                      className={`text-xs ${formatted.getGrowthColorClass(
+                        country.populationGrowthRate
+                      )}`}
                     >
                       {formatted.populationGrowth} annually
                     </p>
@@ -600,12 +586,10 @@ export function CountryAtGlance({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Current population and annual growth rate</p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-muted-foreground mt-1 text-xs">
                     Population Tier: {country.populationTier}
                   </p>
-                  <p className="text-xs text-blue-500 mt-1">
-                    Click for detailed analysis
-                  </p>
+                  <p className="mt-1 text-xs text-blue-500">Click for detailed analysis</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -613,19 +597,13 @@ export function CountryAtGlance({
               {country.populationDensity != null && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-xs text-muted-foreground">
-                          Pop. Density
-                        </p>
-                        <Globe className="h-3 w-3 text-muted-foreground" />
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="mb-1 flex items-center justify-between">
+                        <p className="text-muted-foreground text-xs">Pop. Density</p>
+                        <Globe className="text-muted-foreground h-3 w-3" />
                       </div>
-                      <p className="text-lg font-semibold">
-                        {formatted.populationDensity}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        people per km²
-                      </p>
+                      <p className="text-lg font-semibold">{formatted.populationDensity}</p>
+                      <p className="text-muted-foreground text-xs">people per km²</p>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -638,17 +616,13 @@ export function CountryAtGlance({
               {country.landArea != null && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-xs text-muted-foreground">Land Area</p>
-                        <MapPin className="h-3 w-3 text-muted-foreground" />
+                    <div className="bg-muted/50 rounded-lg p-3">
+                      <div className="mb-1 flex items-center justify-between">
+                        <p className="text-muted-foreground text-xs">Land Area</p>
+                        <MapPin className="text-muted-foreground h-3 w-3" />
                       </div>
-                      <p className="text-lg font-semibold">
-                        {formatted.landArea}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatted.areaSqMi}
-                      </p>
+                      <p className="text-lg font-semibold">{formatted.landArea}</p>
+                      <p className="text-muted-foreground text-xs">{formatted.areaSqMi}</p>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -663,24 +637,20 @@ export function CountryAtGlance({
 
           {/* Growth Factors & Modifiers */}
           <div className="space-y-4">
-            <h4 className="text-sm font-semibold text-muted-foreground flex items-center">
-              <TrendingUp className="h-4 w-4 mr-2" />
+            <h4 className="text-muted-foreground flex items-center text-sm font-semibold">
+              <TrendingUp className="mr-2 h-4 w-4" />
               Growth Factors
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-xs text-muted-foreground">Max GDP Growth</p>
-                      <BarChart3 className="h-3 w-3 text-muted-foreground" />
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="mb-1 flex items-center justify-between">
+                      <p className="text-muted-foreground text-xs">Max GDP Growth</p>
+                      <BarChart3 className="text-muted-foreground h-3 w-3" />
                     </div>
-                    <p className="text-lg font-semibold">
-                      {formatted.maxGdpGrowth}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      tier-based cap
-                    </p>
+                    <p className="text-lg font-semibold">{formatted.maxGdpGrowth}</p>
+                    <p className="text-muted-foreground text-xs">tier-based cap</p>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -690,17 +660,15 @@ export function CountryAtGlance({
 
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="p-3 bg-muted/50 rounded-lg">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-xs text-muted-foreground">Local Factor</p>
-                      <Activity className="h-3 w-3 text-muted-foreground" />
+                  <div className="bg-muted/50 rounded-lg p-3">
+                    <div className="mb-1 flex items-center justify-between">
+                      <p className="text-muted-foreground text-xs">Local Factor</p>
+                      <Activity className="text-muted-foreground h-3 w-3" />
                     </div>
                     <p className="text-lg font-semibold">
                       {((country.localGrowthFactor - 1) * 100).toFixed(2)}%
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      growth modifier
-                    </p>
+                    <p className="text-muted-foreground text-xs">growth modifier</p>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -713,9 +681,9 @@ export function CountryAtGlance({
           <Separator />
 
           {/* Footer with timestamp */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex items-center justify-between text-xs">
             <div className="flex items-center">
-              <Calendar className="h-3 w-3 mr-1" />
+              <Calendar className="mr-1 h-3 w-3" />
               Last updated: {timeInfo.lastUpdated}
             </div>
             <div>
@@ -730,29 +698,29 @@ export function CountryAtGlance({
           </div>
         </CardContent>
       </Card>
-      
-      <GdpDetailsModal 
+
+      <GdpDetailsModal
         isOpen={isGdpModalOpen}
         onClose={() => setIsGdpModalOpen(false)}
         countryId={country.id}
         countryName={country.name}
       />
-      
-      <GdpPerCapitaDetailsModal 
+
+      <GdpPerCapitaDetailsModal
         isOpen={isGdpPerCapitaModalOpen}
         onClose={() => setIsGdpPerCapitaModalOpen(false)}
         countryId={country.id}
         countryName={country.name}
       />
-      
-      <PopulationDetailsModal 
+
+      <PopulationDetailsModal
         isOpen={isPopulationModalOpen}
         onClose={() => setIsPopulationModalOpen(false)}
         countryId={country.id}
         countryName={country.name}
       />
-      
-      <PopulationTierDetailsModal 
+
+      <PopulationTierDetailsModal
         isOpen={isPopulationTierModalOpen}
         onClose={() => setIsPopulationTierModalOpen(false)}
         countryId={country.id}

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
   Bell,
   X,
   AlertTriangle,
@@ -19,21 +19,21 @@ import {
   Settings,
   Search,
   Filter,
-  MoreHorizontal
-} from 'lucide-react';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { Card, CardContent } from '~/components/ui/card';
-import { Input } from '~/components/ui/input';
-import { Separator } from '~/components/ui/separator';
+  MoreHorizontal,
+} from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Card, CardContent } from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
+import { Separator } from "~/components/ui/separator";
 
 interface Notification {
   id: string;
-  type: 'alert' | 'opportunity' | 'update' | 'message' | 'achievement';
-  severity: 'critical' | 'high' | 'medium' | 'low';
+  type: "alert" | "opportunity" | "update" | "message" | "achievement";
+  severity: "critical" | "high" | "medium" | "low";
   title: string;
   description: string;
-  category: 'economic' | 'diplomatic' | 'social' | 'security' | 'governance';
+  category: "economic" | "diplomatic" | "social" | "security" | "governance";
   timestamp: number;
   actionable: boolean;
   read: boolean;
@@ -48,43 +48,48 @@ interface DynamicIslandNotificationsProps {
   className?: string;
 }
 
-function getNotificationIcon(type: Notification['type'], severity: Notification['severity']) {
-  const iconProps = { 
-    size: 16, 
-    className: severity === 'critical' ? 'text-red-500' : 
-               severity === 'high' ? 'text-orange-500' :
-               severity === 'medium' ? 'text-yellow-500' : 'text-blue-500'
+function getNotificationIcon(type: Notification["type"], severity: Notification["severity"]) {
+  const iconProps = {
+    size: 16,
+    className:
+      severity === "critical"
+        ? "text-red-500"
+        : severity === "high"
+          ? "text-orange-500"
+          : severity === "medium"
+            ? "text-yellow-500"
+            : "text-blue-500",
   };
 
   switch (type) {
-    case 'alert':
+    case "alert":
       return <AlertTriangle {...iconProps} />;
-    case 'opportunity':
+    case "opportunity":
       return <Zap {...iconProps} />;
-    case 'update':
+    case "update":
       return <CheckCircle {...iconProps} />;
-    case 'message':
+    case "message":
       return <MessageSquare {...iconProps} />;
-    case 'achievement':
+    case "achievement":
       return <Crown {...iconProps} />;
     default:
       return <Bell {...iconProps} />;
   }
 }
 
-function getCategoryIcon(category: Notification['category']) {
-  const iconProps = { size: 14, className: 'text-muted-foreground' };
-  
+function getCategoryIcon(category: Notification["category"]) {
+  const iconProps = { size: 14, className: "text-muted-foreground" };
+
   switch (category) {
-    case 'economic':
+    case "economic":
       return <TrendingUp {...iconProps} />;
-    case 'diplomatic':
+    case "diplomatic":
       return <Globe2 {...iconProps} />;
-    case 'social':
+    case "social":
       return <Users {...iconProps} />;
-    case 'governance':
+    case "governance":
       return <Building2 {...iconProps} />;
-    case 'security':
+    case "security":
       return <AlertTriangle {...iconProps} />;
     default:
       return <Bell {...iconProps} />;
@@ -96,27 +101,28 @@ export function DynamicIslandNotifications({
   onNotificationClick,
   onMarkAllRead,
   onNotificationAction,
-  className = ''
+  className = "",
 }: DynamicIslandNotificationsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'unread' | 'critical' | 'actionable'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState<"all" | "unread" | "critical" | "actionable">("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const unreadCount = notifications.filter(n => !n.read).length;
-  const criticalCount = notifications.filter(n => n.severity === 'critical' && !n.read).length;
-  
+  const unreadCount = notifications.filter((n) => !n.read).length;
+  const criticalCount = notifications.filter((n) => n.severity === "critical" && !n.read).length;
+
   // Filter notifications
   const filteredNotifications = notifications
-    .filter(notification => {
-      if (filter === 'unread') return !notification.read;
-      if (filter === 'critical') return notification.severity === 'critical';
-      if (filter === 'actionable') return notification.actionable;
+    .filter((notification) => {
+      if (filter === "unread") return !notification.read;
+      if (filter === "critical") return notification.severity === "critical";
+      if (filter === "actionable") return notification.actionable;
       return true;
     })
-    .filter(notification => 
-      searchQuery === '' || 
-      notification.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      notification.description.toLowerCase().includes(searchQuery.toLowerCase())
+    .filter(
+      (notification) =>
+        searchQuery === "" ||
+        notification.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        notification.description.toLowerCase().includes(searchQuery.toLowerCase())
     )
     .sort((a, b) => {
       // Sort by severity (critical first), then by timestamp (newest first)
@@ -132,7 +138,7 @@ export function DynamicIslandNotifications({
     // Mark as read when clicked
     if (!notification.read) {
       // This would typically trigger a state update in the parent
-      onNotificationAction?.(notification.id, 'mark_read');
+      onNotificationAction?.(notification.id, "mark_read");
     }
   };
 
@@ -150,11 +156,11 @@ export function DynamicIslandNotifications({
           >
             <Button
               onClick={() => setIsExpanded(true)}
-              className="glass-hierarchy-interactive bg-black/80 backdrop-blur-xl border-white/10 text-white hover:bg-black/90 transition-all duration-300 relative overflow-hidden"
+              className="glass-hierarchy-interactive relative overflow-hidden border-white/10 bg-black/80 text-white backdrop-blur-xl transition-all duration-300 hover:bg-black/90"
               style={{
-                borderRadius: '20px',
-                padding: '8px 16px',
-                minWidth: unreadCount > 0 ? '120px' : '80px',
+                borderRadius: "20px",
+                padding: "8px 16px",
+                minWidth: unreadCount > 0 ? "120px" : "80px",
               }}
             >
               <div className="flex items-center gap-2">
@@ -165,9 +171,9 @@ export function DynamicIslandNotifications({
                     animate={{ scale: 1 }}
                     className="flex items-center gap-1"
                   >
-                    <Badge 
-                      className={`text-xs px-1.5 py-0 ${
-                        criticalCount > 0 ? 'bg-red-500 text-white' : 'bg-blue-500 text-white'
+                    <Badge
+                      className={`px-1.5 py-0 text-xs ${
+                        criticalCount > 0 ? "bg-red-500 text-white" : "bg-blue-500 text-white"
                       }`}
                     >
                       {unreadCount}
@@ -175,7 +181,7 @@ export function DynamicIslandNotifications({
                   </motion.div>
                 )}
               </div>
-              
+
               {/* Pulse animation for critical notifications */}
               {criticalCount > 0 && (
                 <motion.div
@@ -203,10 +209,10 @@ export function DynamicIslandNotifications({
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="w-96"
           >
-            <Card className="glass-hierarchy-parent bg-black/90 backdrop-blur-xl border-white/10 text-white shadow-2xl">
+            <Card className="glass-hierarchy-parent border-white/10 bg-black/90 text-white shadow-2xl backdrop-blur-xl">
               <CardContent className="p-0">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-white/10">
+                <div className="flex items-center justify-between border-b border-white/10 p-4">
                   <div className="flex items-center gap-3">
                     <Bell className="h-5 w-5 text-white" />
                     <div>
@@ -222,7 +228,7 @@ export function DynamicIslandNotifications({
                         variant="ghost"
                         size="sm"
                         onClick={onMarkAllRead}
-                        className="text-xs text-white/80 hover:text-white hover:bg-white/10"
+                        className="text-xs text-white/80 hover:bg-white/10 hover:text-white"
                       >
                         Mark all read
                       </Button>
@@ -231,7 +237,7 @@ export function DynamicIslandNotifications({
                       variant="ghost"
                       size="sm"
                       onClick={() => setIsExpanded(false)}
-                      className="text-white/80 hover:text-white hover:bg-white/10 p-1"
+                      className="p-1 text-white/80 hover:bg-white/10 hover:text-white"
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -239,47 +245,47 @@ export function DynamicIslandNotifications({
                 </div>
 
                 {/* Search and Filters */}
-                <div className="p-4 space-y-3 border-b border-white/10">
+                <div className="space-y-3 border-b border-white/10 p-4">
                   <div className="flex items-center gap-2">
                     <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
+                      <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-white/40" />
                       <Input
                         placeholder="Search notifications..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 bg-white/5 border-white/10 text-white placeholder:text-white/40 focus:border-white/20"
+                        className="border-white/10 bg-white/5 pl-10 text-white placeholder:text-white/40 focus:border-white/20"
                       />
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-white/80 hover:text-white hover:bg-white/10"
+                      className="text-white/80 hover:bg-white/10 hover:text-white"
                     >
                       <Filter className="h-4 w-4" />
                     </Button>
                   </div>
-                  
+
                   <div className="flex gap-2">
-                    {['all', 'unread', 'critical', 'actionable'].map((filterOption) => (
+                    {["all", "unread", "critical", "actionable"].map((filterOption) => (
                       <Button
                         key={filterOption}
-                        variant={filter === filterOption ? 'secondary' : 'ghost'}
+                        variant={filter === filterOption ? "secondary" : "ghost"}
                         size="sm"
                         onClick={() => setFilter(filterOption as any)}
                         className={`text-xs capitalize ${
-                          filter === filterOption 
-                            ? 'bg-white/20 text-white' 
-                            : 'text-white/60 hover:text-white hover:bg-white/10'
+                          filter === filterOption
+                            ? "bg-white/20 text-white"
+                            : "text-white/60 hover:bg-white/10 hover:text-white"
                         }`}
                       >
                         {filterOption}
-                        {filterOption === 'unread' && unreadCount > 0 && (
-                          <Badge className="ml-1 bg-blue-500 text-white text-xs px-1">
+                        {filterOption === "unread" && unreadCount > 0 && (
+                          <Badge className="ml-1 bg-blue-500 px-1 text-xs text-white">
                             {unreadCount}
                           </Badge>
                         )}
-                        {filterOption === 'critical' && criticalCount > 0 && (
-                          <Badge className="ml-1 bg-red-500 text-white text-xs px-1">
+                        {filterOption === "critical" && criticalCount > 0 && (
+                          <Badge className="ml-1 bg-red-500 px-1 text-xs text-white">
                             {criticalCount}
                           </Badge>
                         )}
@@ -294,34 +300,38 @@ export function DynamicIslandNotifications({
                     <div className="space-y-1 p-2">
                       {filteredNotifications.map((notification, index) => (
                         <motion.div
-                          key={notification.id && notification.id.trim() ? `notification-${notification.id.trim()}` : `notification-fallback-${index}`}
+                          key={
+                            notification.id && notification.id.trim()
+                              ? `notification-${notification.id.trim()}`
+                              : `notification-fallback-${index}`
+                          }
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.05 }}
                           onClick={() => handleNotificationClick(notification)}
-                          className={`p-3 rounded-lg cursor-pointer transition-all duration-200 hover:bg-white/5 border border-transparent hover:border-white/10 ${
-                            !notification.read ? 'bg-white/5' : ''
+                          className={`cursor-pointer rounded-lg border border-transparent p-3 transition-all duration-200 hover:border-white/10 hover:bg-white/5 ${
+                            !notification.read ? "bg-white/5" : ""
                           }`}
                         >
                           <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 mt-0.5">
+                            <div className="mt-0.5 flex-shrink-0">
                               {getNotificationIcon(notification.type, notification.severity)}
                             </div>
-                            
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="text-sm font-medium text-white truncate">
+
+                            <div className="min-w-0 flex-1">
+                              <div className="mb-1 flex items-center gap-2">
+                                <h4 className="truncate text-sm font-medium text-white">
                                   {notification.title}
                                 </h4>
                                 {!notification.read && (
-                                  <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
+                                  <div className="h-2 w-2 flex-shrink-0 rounded-full bg-blue-500" />
                                 )}
                               </div>
-                              
-                              <p className="text-xs text-white/70 line-clamp-2 mb-2">
+
+                              <p className="mb-2 line-clamp-2 text-xs text-white/70">
                                 {notification.description}
                               </p>
-                              
+
                               <div className="flex items-center gap-2 text-xs text-white/50">
                                 {getCategoryIcon(notification.category)}
                                 <span className="capitalize">{notification.category}</span>
@@ -332,7 +342,7 @@ export function DynamicIslandNotifications({
                                 {notification.actionable && (
                                   <>
                                     <span>•</span>
-                                    <Badge className="bg-amber-500/20 text-amber-300 text-xs px-1">
+                                    <Badge className="bg-amber-500/20 px-1 text-xs text-amber-300">
                                       Action Required
                                     </Badge>
                                   </>
@@ -345,10 +355,10 @@ export function DynamicIslandNotifications({
                     </div>
                   ) : (
                     <div className="p-8 text-center text-white/60">
-                      <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <Bell className="mx-auto mb-2 h-8 w-8 opacity-50" />
                       <p className="text-sm">No notifications found</p>
                       {searchQuery && (
-                        <p className="text-xs mt-1">Try adjusting your search or filters</p>
+                        <p className="mt-1 text-xs">Try adjusting your search or filters</p>
                       )}
                     </div>
                   )}
@@ -356,16 +366,17 @@ export function DynamicIslandNotifications({
 
                 {/* Footer */}
                 {filteredNotifications.length > 0 && (
-                  <div className="p-3 border-t border-white/10 flex items-center justify-between">
+                  <div className="flex items-center justify-between border-t border-white/10 p-3">
                     <span className="text-xs text-white/60">
-                      {filteredNotifications.length} notification{filteredNotifications.length !== 1 ? 's' : ''}
+                      {filteredNotifications.length} notification
+                      {filteredNotifications.length !== 1 ? "s" : ""}
                     </span>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-xs text-white/60 hover:text-white hover:bg-white/10"
+                      className="text-xs text-white/60 hover:bg-white/10 hover:text-white"
                     >
-                      <Settings className="h-3 w-3 mr-1" />
+                      <Settings className="mr-1 h-3 w-3" />
                       Settings
                     </Button>
                   </div>

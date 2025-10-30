@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Progress } from '~/components/ui/progress';
-import { Button } from '~/components/ui/button';
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Progress } from "~/components/ui/progress";
+import { Button } from "~/components/ui/button";
 import {
   Building2,
   Crown,
@@ -17,23 +17,23 @@ import {
   BarChart3,
   Eye,
   ChevronsDownUp,
-  ChevronsUpDown
-} from 'lucide-react';
-import type { GovernmentStructure, GovernmentBuilderState } from '~/types/government';
-import { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
-import { formatCurrency } from '~/lib/format-utils';
-import { StructureOverview } from './government-preview/StructureOverview';
-import { ComponentsList } from './government-preview/ComponentsList';
-import { DepartmentsList } from './government-preview/DepartmentsList';
-import { BudgetAllocationList } from './government-preview/BudgetAllocationList';
-import { RevenueSourcesList } from './government-preview/RevenueSourcesList';
+  ChevronsUpDown,
+} from "lucide-react";
+import type { GovernmentStructure, GovernmentBuilderState } from "~/types/government";
+import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { formatCurrency } from "~/lib/format-utils";
+import { StructureOverview } from "./government-preview/StructureOverview";
+import { ComponentsList } from "./government-preview/ComponentsList";
+import { DepartmentsList } from "./government-preview/DepartmentsList";
+import { BudgetAllocationList } from "./government-preview/BudgetAllocationList";
+import { RevenueSourcesList } from "./government-preview/RevenueSourcesList";
 
 const getBudgetStatus = (allocated: number, total: number) => {
   const percentage = total > 0 ? (allocated / total) * 100 : 0;
-  if (percentage >= 95) return { status: 'critical', color: 'text-red-600' };
-  if (percentage >= 85) return { status: 'warning', color: 'text-orange-600' };
-  if (percentage >= 70) return { status: 'good', color: 'text-green-600' };
-  return { status: 'low', color: 'text-blue-600' };
+  if (percentage >= 95) return { status: "critical", color: "text-red-600" };
+  if (percentage >= 85) return { status: "warning", color: "text-orange-600" };
+  if (percentage >= 70) return { status: "good", color: "text-green-600" };
+  return { status: "low", color: "text-blue-600" };
 };
 
 /**
@@ -95,7 +95,7 @@ interface GovernmentStructurePreviewProps {
 export function GovernmentStructurePreview({
   governmentStructure,
   governmentComponents,
-  className
+  className,
 }: GovernmentStructurePreviewProps) {
   // Collapsible state management for main sections (all collapsed by default)
   const [isComponentsOpen, setIsComponentsOpen] = useState(false);
@@ -131,33 +131,35 @@ export function GovernmentStructurePreview({
 
   // Toggle functions for individual items
   const toggleDepartment = (id: string) => {
-    setOpenDepartments(prev => ({ ...prev, [id]: !prev[id] }));
+    setOpenDepartments((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const toggleAllocation = (id: string) => {
-    setOpenAllocations(prev => ({ ...prev, [id]: !prev[id] }));
+    setOpenAllocations((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const toggleRevenue = (id: string) => {
-    setOpenRevenues(prev => ({ ...prev, [id]: !prev[id] }));
+    setOpenRevenues((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   // Helper function to normalize government structure data
-  const normalizeGovernmentStructure = (data: GovernmentStructure | GovernmentBuilderState | null): GovernmentStructure | null => {
+  const normalizeGovernmentStructure = (
+    data: GovernmentStructure | GovernmentBuilderState | null
+  ): GovernmentStructure | null => {
     if (!data) return null;
-    
+
     // If it's already a GovernmentStructure, return as is
-    if ('id' in data && 'countryId' in data && 'governmentName' in data) {
+    if ("id" in data && "countryId" in data && "governmentName" in data) {
       return data as GovernmentStructure;
     }
-    
+
     // If it's a GovernmentBuilderState, convert it
     const builderState = data as GovernmentBuilderState;
     return {
-      id: 'preview',
-      countryId: 'preview',
-      governmentName: builderState.structure.governmentName || 'Government',
-      governmentType: builderState.structure.governmentType || 'Democracy',
+      id: "preview",
+      countryId: "preview",
+      governmentName: builderState.structure.governmentName || "Government",
+      governmentType: builderState.structure.governmentType || "Democracy",
       headOfState: builderState.structure.headOfState,
       headOfGovernment: builderState.structure.headOfGovernment,
       legislatureName: builderState.structure.legislatureName,
@@ -165,12 +167,12 @@ export function GovernmentStructurePreview({
       judicialName: builderState.structure.judicialName,
       totalBudget: builderState.structure.totalBudget || 0,
       fiscalYear: builderState.structure.fiscalYear || new Date().getFullYear().toString(),
-      budgetCurrency: builderState.structure.budgetCurrency || 'USD',
+      budgetCurrency: builderState.structure.budgetCurrency || "USD",
       createdAt: new Date(),
       updatedAt: new Date(),
       departments: builderState.departments.map((dept, index) => ({
         id: index.toString(),
-        governmentStructureId: 'preview',
+        governmentStructureId: "preview",
         name: dept.name,
         shortName: dept.shortName,
         category: dept.category,
@@ -193,27 +195,27 @@ export function GovernmentStructurePreview({
         parentDepartment: undefined,
         subDepartments: [],
         budgetAllocations: [],
-        subBudgets: []
+        subBudgets: [],
       })),
       budgetAllocations: builderState.budgetAllocations.map((alloc, index) => ({
         id: index.toString(),
-        governmentStructureId: 'preview',
+        governmentStructureId: "preview",
         departmentId: alloc.departmentId,
         allocatedAmount: alloc.allocatedAmount,
         spentAmount: 0,
         encumberedAmount: 0,
         availableAmount: alloc.allocatedAmount,
-        budgetStatus: 'In Use' as const,
+        budgetStatus: "In Use" as const,
         budgetYear: alloc.budgetYear,
         allocatedPercent: alloc.allocatedPercent,
         lastReviewed: new Date(),
         createdAt: new Date(),
         updatedAt: new Date(),
-        department: undefined as any
+        department: undefined as any,
       })),
       revenueSources: builderState.revenueSources.map((source, index) => ({
         id: index.toString(),
-        governmentStructureId: 'preview',
+        governmentStructureId: "preview",
         name: source.name,
         category: source.category,
         description: source.description,
@@ -224,19 +226,19 @@ export function GovernmentStructurePreview({
         collectionMethod: source.collectionMethod,
         administeredBy: source.administeredBy,
         createdAt: new Date(),
-        updatedAt: new Date()
-      }))
+        updatedAt: new Date(),
+      })),
     };
   };
 
   const normalizedStructure = normalizeGovernmentStructure(governmentStructure);
-  
+
   if (!normalizedStructure) {
     return (
       <Card className={className}>
         <CardContent className="flex items-center justify-center py-12">
-          <div className="text-center space-y-2">
-            <Building2 className="h-12 w-12 text-gray-400 mx-auto" />
+          <div className="space-y-2 text-center">
+            <Building2 className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="text-lg font-medium text-gray-900">No Government Structure</h3>
             <p className="text-gray-600">Configure your government structure to see the preview</p>
           </div>
@@ -248,36 +250,56 @@ export function GovernmentStructurePreview({
   const stats = {
     totalDepartments: normalizedStructure.departments.length,
     totalBudget: normalizedStructure.totalBudget,
-    totalAllocated: normalizedStructure.budgetAllocations.reduce((sum, a) => sum + a.allocatedAmount, 0),
+    totalAllocated: normalizedStructure.budgetAllocations.reduce(
+      (sum, a) => sum + a.allocatedAmount,
+      0
+    ),
     totalRevenue: normalizedStructure.revenueSources.reduce((sum, r) => sum + r.revenueAmount, 0),
-    budgetUtilization: normalizedStructure.totalBudget > 0 
-      ? (normalizedStructure.budgetAllocations.reduce((sum, a) => sum + a.allocatedAmount, 0) / normalizedStructure.totalBudget) * 100 
-      : 0
+    budgetUtilization:
+      normalizedStructure.totalBudget > 0
+        ? (normalizedStructure.budgetAllocations.reduce((sum, a) => sum + a.allocatedAmount, 0) /
+            normalizedStructure.totalBudget) *
+          100
+        : 0,
   };
 
   // Use global formatting utilities with specific currency
-  const formatCurrencyLocal = (amount: number) => formatCurrency(amount, normalizedStructure.budgetCurrency);
+  const formatCurrencyLocal = (amount: number) =>
+    formatCurrency(amount, normalizedStructure.budgetCurrency);
 
   const getGovernmentTypeIcon = (type: string) => {
     switch (type.toLowerCase()) {
-      case 'democracy': return <Users className="h-5 w-5" />;
-      case 'republic': return <Landmark className="h-5 w-5" />;
-      case 'monarchy': return <Crown className="h-5 w-5" />;
-      case 'federation': return <Building2 className="h-5 w-5" />;
-      default: return <Building2 className="h-5 w-5" />;
+      case "democracy":
+        return <Users className="h-5 w-5" />;
+      case "republic":
+        return <Landmark className="h-5 w-5" />;
+      case "monarchy":
+        return <Crown className="h-5 w-5" />;
+      case "federation":
+        return <Building2 className="h-5 w-5" />;
+      default:
+        return <Building2 className="h-5 w-5" />;
     }
   };
 
   const getDepartmentIcon = (category: string) => {
     switch (category.toLowerCase()) {
-      case 'executive': return <Crown className="h-4 w-4" />;
-      case 'legislative': return <Landmark className="h-4 w-4" />;
-      case 'judicial': return <Scale className="h-4 w-4" />;
-      case 'defense': return <Target className="h-4 w-4" />;
-      case 'finance': return <DollarSign className="h-4 w-4" />;
-      case 'health': return <Users className="h-4 w-4" />;
-      case 'education': return <Briefcase className="h-4 w-4" />;
-      default: return <Building2 className="h-4 w-4" />;
+      case "executive":
+        return <Crown className="h-4 w-4" />;
+      case "legislative":
+        return <Landmark className="h-4 w-4" />;
+      case "judicial":
+        return <Scale className="h-4 w-4" />;
+      case "defense":
+        return <Target className="h-4 w-4" />;
+      case "finance":
+        return <DollarSign className="h-4 w-4" />;
+      case "health":
+        return <Users className="h-4 w-4" />;
+      case "education":
+        return <Briefcase className="h-4 w-4" />;
+      default:
+        return <Building2 className="h-4 w-4" />;
     }
   };
 
@@ -286,7 +308,7 @@ export function GovernmentStructurePreview({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-semibold text-foreground flex items-center gap-2">
+          <h3 className="text-foreground flex items-center gap-2 text-2xl font-semibold">
             <Building2 className="h-6 w-6" />
             Government Structure Preview
           </h3>
@@ -314,7 +336,7 @@ export function GovernmentStructurePreview({
             )}
           </Button>
           <Badge variant="outline" className="bg-blue-50 text-blue-700">
-            <Eye className="h-3 w-3 mr-1" />
+            <Eye className="mr-1 h-3 w-3" />
             Preview Mode
           </Badge>
         </div>
@@ -335,30 +357,32 @@ export function GovernmentStructurePreview({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">
                 {formatCurrencyLocal(stats.totalBudget)}
               </div>
-              <div className="text-sm text-muted-foreground">Total Budget</div>
+              <div className="text-muted-foreground text-sm">Total Budget</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
                 {formatCurrencyLocal(stats.totalAllocated)}
               </div>
-              <div className="text-sm text-muted-foreground">Allocated</div>
+              <div className="text-muted-foreground text-sm">Allocated</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">
                 {formatCurrencyLocal(stats.totalRevenue)}
               </div>
-              <div className="text-sm text-muted-foreground">Projected Revenue</div>
+              <div className="text-muted-foreground text-sm">Projected Revenue</div>
             </div>
             <div className="text-center">
-              <div className={`text-2xl font-bold ${getBudgetStatus(stats.totalAllocated, stats.totalBudget).color}`}>
+              <div
+                className={`text-2xl font-bold ${getBudgetStatus(stats.totalAllocated, stats.totalBudget).color}`}
+              >
                 {stats.budgetUtilization.toFixed(1)}%
               </div>
-              <div className="text-sm text-muted-foreground">Utilization</div>
+              <div className="text-muted-foreground text-sm">Utilization</div>
             </div>
           </div>
 
@@ -366,7 +390,10 @@ export function GovernmentStructurePreview({
 
           <div className="flex items-center justify-between text-sm">
             <span>Budget Allocation Progress</span>
-            <span>{formatCurrencyLocal(stats.totalAllocated)} of {formatCurrencyLocal(stats.totalBudget)}</span>
+            <span>
+              {formatCurrencyLocal(stats.totalAllocated)} of{" "}
+              {formatCurrencyLocal(stats.totalBudget)}
+            </span>
           </div>
         </CardContent>
       </Card>
@@ -423,22 +450,26 @@ export function GovernmentStructurePreview({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">{stats.totalDepartments}</div>
-              <div className="text-sm text-muted-foreground">Departments</div>
+              <div className="text-muted-foreground text-sm">Departments</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">{governmentComponents.length}</div>
-              <div className="text-sm text-muted-foreground">Atomic Components</div>
+              <div className="text-muted-foreground text-sm">Atomic Components</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{normalizedStructure.budgetAllocations.length}</div>
-              <div className="text-sm text-muted-foreground">Budget Allocations</div>
+              <div className="text-2xl font-bold text-purple-600">
+                {normalizedStructure.budgetAllocations.length}
+              </div>
+              <div className="text-muted-foreground text-sm">Budget Allocations</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{normalizedStructure.revenueSources.length}</div>
-              <div className="text-sm text-muted-foreground">Revenue Sources</div>
+              <div className="text-2xl font-bold text-orange-600">
+                {normalizedStructure.revenueSources.length}
+              </div>
+              <div className="text-muted-foreground text-sm">Revenue Sources</div>
             </div>
           </div>
         </CardContent>

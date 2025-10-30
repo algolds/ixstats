@@ -18,7 +18,7 @@ export interface ErrorContext {
 
 export interface LoggedError {
   timestamp: string;
-  level: 'ERROR' | 'WARN' | 'INFO';
+  level: "ERROR" | "WARN" | "INFO";
   message: string;
   stack?: string;
   context?: ErrorContext;
@@ -31,8 +31,8 @@ export interface LoggedError {
  */
 export class ErrorLogger {
   private static discordWebhookUrl = process.env.DISCORD_WEBHOOK_URL;
-  private static discordEnabled = process.env.DISCORD_WEBHOOK_ENABLED === 'true';
-  private static environment = process.env.NODE_ENV || 'development';
+  private static discordEnabled = process.env.DISCORD_WEBHOOK_ENABLED === "true";
+  private static environment = process.env.NODE_ENV || "development";
 
   /**
    * Log an error with full context
@@ -40,10 +40,10 @@ export class ErrorLogger {
   static async logError(
     error: Error | string,
     context?: ErrorContext,
-    level: 'ERROR' | 'WARN' | 'INFO' = 'ERROR'
+    level: "ERROR" | "WARN" | "INFO" = "ERROR"
   ): Promise<void> {
-    const errorMessage = typeof error === 'string' ? error : error.message;
-    const stack = typeof error === 'string' ? undefined : error.stack;
+    const errorMessage = typeof error === "string" ? error : error.message;
+    const stack = typeof error === "string" ? undefined : error.stack;
 
     const logEntry: LoggedError = {
       timestamp: new Date().toISOString(),
@@ -56,30 +56,30 @@ export class ErrorLogger {
     // Console logging with proper formatting
     const logPrefix = `[${level}] [${this.environment.toUpperCase()}]`;
 
-    if (level === 'ERROR') {
+    if (level === "ERROR") {
       console.error(logPrefix, errorMessage);
-      if (stack) console.error('Stack:', stack);
-    } else if (level === 'WARN') {
+      if (stack) console.error("Stack:", stack);
+    } else if (level === "WARN") {
       console.warn(logPrefix, errorMessage);
     } else {
       console.log(logPrefix, errorMessage);
     }
 
     if (context) {
-      console.log('Context:', JSON.stringify(context, null, 2));
+      console.log("Context:", JSON.stringify(context, null, 2));
     }
 
     // Persist critical errors to database (async, don't await)
-    if (level === 'ERROR' && this.environment === 'production') {
-      this.persistErrorToDatabase(logEntry).catch(dbError => {
-        console.error('[ERROR_LOGGER] Failed to persist error to database:', dbError);
+    if (level === "ERROR" && this.environment === "production") {
+      this.persistErrorToDatabase(logEntry).catch((dbError) => {
+        console.error("[ERROR_LOGGER] Failed to persist error to database:", dbError);
       });
     }
 
     // Send to Discord webhook for production errors
-    if (this.discordEnabled && level === 'ERROR' && this.environment === 'production') {
-      this.sendToDiscord(logEntry).catch(discordError => {
-        console.error('[ERROR_LOGGER] Failed to send to Discord:', discordError);
+    if (this.discordEnabled && level === "ERROR" && this.environment === "production") {
+      this.sendToDiscord(logEntry).catch((discordError) => {
+        console.error("[ERROR_LOGGER] Failed to send to Discord:", discordError);
       });
     }
   }
@@ -92,7 +92,7 @@ export class ErrorLogger {
       await db.systemLog.create({
         data: {
           level: logEntry.level,
-          category: logEntry.context?.action || 'GENERAL',
+          category: logEntry.context?.action || "GENERAL",
           message: logEntry.message.slice(0, 1000), // Limit message length
           errorStack: logEntry.stack?.slice(0, 5000), // Limit stack length
           userId: logEntry.context?.userId || null,
@@ -103,11 +103,11 @@ export class ErrorLogger {
           userAgent: logEntry.userAgent?.slice(0, 500) || null, // Limit to 500 chars
           ip: logEntry.ip || null,
           timestamp: new Date(logEntry.timestamp),
-        }
+        },
       });
     } catch (error) {
       // Silent fail - don't throw in error logger
-      console.error('[ERROR_LOGGER] Database persist failed:', error);
+      console.error("[ERROR_LOGGER] Database persist failed:", error);
     }
   }
 
@@ -120,67 +120,67 @@ export class ErrorLogger {
     const embed = {
       title: `🚨 ${logEntry.level}: ${logEntry.message.slice(0, 100)}`,
       description: logEntry.message.slice(0, 2000),
-      color: logEntry.level === 'ERROR' ? 0xff0000 : 0xffa500,
+      color: logEntry.level === "ERROR" ? 0xff0000 : 0xffa500,
       fields: [
         {
-          name: 'Environment',
+          name: "Environment",
           value: this.environment,
-          inline: true
+          inline: true,
         },
         {
-          name: 'Timestamp',
+          name: "Timestamp",
           value: logEntry.timestamp,
-          inline: true
-        }
+          inline: true,
+        },
       ],
-      timestamp: logEntry.timestamp
+      timestamp: logEntry.timestamp,
     };
 
     // Add context fields if available
     if (logEntry.context?.userId) {
       embed.fields.push({
-        name: 'User ID',
+        name: "User ID",
         value: logEntry.context.userId.slice(0, 50),
-        inline: true
+        inline: true,
       });
     }
 
     if (logEntry.context?.countryId) {
       embed.fields.push({
-        name: 'Country ID',
+        name: "Country ID",
         value: logEntry.context.countryId.slice(0, 50),
-        inline: true
+        inline: true,
       });
     }
 
     if (logEntry.context?.path) {
       embed.fields.push({
-        name: 'Path',
+        name: "Path",
         value: logEntry.context.path.slice(0, 100),
-        inline: false
+        inline: false,
       });
     }
 
     if (logEntry.stack) {
       embed.fields.push({
-        name: 'Stack Trace',
-        value: '```\n' + logEntry.stack.slice(0, 900) + '\n```',
-        inline: false
+        name: "Stack Trace",
+        value: "```\n" + logEntry.stack.slice(0, 900) + "\n```",
+        inline: false,
       });
     }
 
     try {
       await fetch(this.discordWebhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: 'IxStats Error Logger',
-          embeds: [embed]
-        })
+          username: "IxStats Error Logger",
+          embeds: [embed],
+        }),
       });
     } catch (error) {
       // Silent fail - don't throw in error logger
-      console.error('[ERROR_LOGGER] Discord webhook failed:', error);
+      console.error("[ERROR_LOGGER] Discord webhook failed:", error);
     }
   }
 
@@ -188,21 +188,21 @@ export class ErrorLogger {
    * Log a warning
    */
   static warn(message: string, context?: ErrorContext): void {
-    this.logError(message, context, 'WARN');
+    this.logError(message, context, "WARN");
   }
 
   /**
    * Log an info message
    */
   static info(message: string, context?: ErrorContext): void {
-    this.logError(message, context, 'INFO');
+    this.logError(message, context, "INFO");
   }
 
   /**
    * Log CRUD operation failures
    */
   static async logCRUDError(
-    operation: 'CREATE' | 'READ' | 'UPDATE' | 'DELETE',
+    operation: "CREATE" | "READ" | "UPDATE" | "DELETE",
     entity: string,
     error: Error,
     context?: ErrorContext
@@ -213,7 +213,7 @@ export class ErrorLogger {
         ...context,
         action: `${operation}_${entity}`,
       },
-      'ERROR'
+      "ERROR"
     );
   }
 
@@ -230,28 +230,24 @@ export class ErrorLogger {
       {
         ...context,
         userId,
-        action: 'AUTH_ERROR',
+        action: "AUTH_ERROR",
       },
-      'ERROR'
+      "ERROR"
     );
   }
 
   /**
    * Log API/tRPC errors
    */
-  static async logAPIError(
-    endpoint: string,
-    error: Error,
-    context?: ErrorContext
-  ): Promise<void> {
+  static async logAPIError(endpoint: string, error: Error, context?: ErrorContext): Promise<void> {
     await this.logError(
       `API Error [${endpoint}]: ${error.message}`,
       {
         ...context,
         path: endpoint,
-        action: 'API_ERROR',
+        action: "API_ERROR",
       },
-      'ERROR'
+      "ERROR"
     );
   }
 }
@@ -259,22 +255,19 @@ export class ErrorLogger {
 /**
  * Global error handler for uncaught errors
  */
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-  window.addEventListener('error', (event) => {
+if (typeof window !== "undefined" && process.env.NODE_ENV === "production") {
+  window.addEventListener("error", (event) => {
     ErrorLogger.logError(event.error || event.message, {
-      component: 'Global Error Handler',
+      component: "Global Error Handler",
       path: window.location.pathname,
     });
   });
 
-  window.addEventListener('unhandledrejection', (event) => {
-    ErrorLogger.logError(
-      event.reason instanceof Error ? event.reason : String(event.reason),
-      {
-        component: 'Unhandled Promise Rejection',
-        path: window.location.pathname,
-      }
-    );
+  window.addEventListener("unhandledrejection", (event) => {
+    ErrorLogger.logError(event.reason instanceof Error ? event.reason : String(event.reason), {
+      component: "Unhandled Promise Rejection",
+      path: window.location.pathname,
+    });
   });
 }
 

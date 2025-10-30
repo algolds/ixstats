@@ -45,13 +45,11 @@ export function ScheduledChangesPanel({ countryId }: ScheduledChangesPanelProps)
   } = api.scheduledChanges.getPendingChanges.useQuery();
 
   // Fetch change history (uses user's country automatically)
-  const {
-    data: changeHistory,
-    isLoading: historyLoading,
-  } = api.scheduledChanges.getChangeHistory.useQuery(
-    { limit: 20 },
-    { enabled: activeTab === "history" }
-  );
+  const { data: changeHistory, isLoading: historyLoading } =
+    api.scheduledChanges.getChangeHistory.useQuery(
+      { limit: 20 },
+      { enabled: activeTab === "history" }
+    );
 
   // Cancel mutation
   const cancelMutation = api.scheduledChanges.cancelScheduledChange.useMutation({
@@ -108,9 +106,7 @@ export function ScheduledChangesPanel({ countryId }: ScheduledChangesPanelProps)
           <Calendar className="h-5 w-5 text-amber-500" />
           Scheduled Changes
         </CardTitle>
-        <CardDescription>
-          Track pending and past changes to your country
-        </CardDescription>
+        <CardDescription>Track pending and past changes to your country</CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "pending" | "history")}>
@@ -131,11 +127,11 @@ export function ScheduledChangesPanel({ countryId }: ScheduledChangesPanelProps)
           </TabsList>
 
           {/* Pending Changes Tab */}
-          <TabsContent value="pending" className="space-y-3 mt-4">
+          <TabsContent value="pending" className="mt-4 space-y-3">
             {pendingLoading ? (
               <div className="space-y-2">
-                <div className="h-20 bg-muted animate-pulse rounded-lg" />
-                <div className="h-20 bg-muted animate-pulse rounded-lg" />
+                <div className="bg-muted h-20 animate-pulse rounded-lg" />
+                <div className="bg-muted h-20 animate-pulse rounded-lg" />
               </div>
             ) : !pendingChanges || pendingChanges.length === 0 ? (
               <Alert>
@@ -145,10 +141,12 @@ export function ScheduledChangesPanel({ countryId }: ScheduledChangesPanelProps)
                 </AlertDescription>
               </Alert>
             ) : (
-              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+              <div className="max-h-[600px] space-y-3 overflow-y-auto pr-2">
                 <AnimatePresence>
                   {pendingChanges.map((change, index) => {
-                    const warnings = change.warnings ? JSON.parse(change.warnings) as string[] : [];
+                    const warnings = change.warnings
+                      ? (JSON.parse(change.warnings) as string[])
+                      : [];
                     const scheduledDate = new Date(change.scheduledFor);
                     const timeUntil = formatDistanceToNow(scheduledDate, { addSuffix: true });
 
@@ -161,14 +159,14 @@ export function ScheduledChangesPanel({ countryId }: ScheduledChangesPanelProps)
                         transition={{ delay: index * 0.05 }}
                         className={`rounded-lg border p-3 ${getImpactBgColor(change.impactLevel as ImpactLevel)}`}
                       >
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className="flex items-center gap-2 flex-1">
+                        <div className="mb-2 flex items-start justify-between gap-2">
+                          <div className="flex flex-1 items-center gap-2">
                             {getChangeTypeIcon(change.changeType)}
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium">
                                 {getFieldLabel(change.fieldPath)}
                               </p>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-muted-foreground text-xs">
                                 {formatValue(change.oldValue)} → {formatValue(change.newValue)}
                               </p>
                             </div>
@@ -180,11 +178,11 @@ export function ScheduledChangesPanel({ countryId }: ScheduledChangesPanelProps)
                             disabled={cancelMutation.isPending}
                             className="h-8 w-8 p-0"
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="text-destructive h-4 w-4" />
                           </Button>
                         </div>
 
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="mb-2 flex items-center gap-2">
                           <Badge
                             variant="outline"
                             className={`text-xs ${getImpactColor(change.impactLevel as ImpactLevel)}`}
@@ -192,23 +190,23 @@ export function ScheduledChangesPanel({ countryId }: ScheduledChangesPanelProps)
                             {change.impactLevel} impact
                           </Badge>
                           <Badge variant="outline" className="text-xs">
-                            <Clock className="h-3 w-3 mr-1" />
+                            <Clock className="mr-1 h-3 w-3" />
                             {timeUntil}
                           </Badge>
                         </div>
 
-                        <p className="text-xs text-muted-foreground mb-2">
-                          <Calendar className="h-3 w-3 inline mr-1" />
+                        <p className="text-muted-foreground mb-2 text-xs">
+                          <Calendar className="mr-1 inline h-3 w-3" />
                           Takes effect: {format(scheduledDate, "PPp")}
                         </p>
 
                         {warnings.length > 0 && (
-                          <div className="mt-2 p-2 bg-background/50 rounded border border-amber-200 dark:border-amber-800">
-                            <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-1 flex items-center gap-1">
+                          <div className="bg-background/50 mt-2 rounded border border-amber-200 p-2 dark:border-amber-800">
+                            <p className="mb-1 flex items-center gap-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
                               <AlertTriangle className="h-3 w-3" />
                               Warnings:
                             </p>
-                            <ul className="text-xs text-muted-foreground space-y-1">
+                            <ul className="text-muted-foreground space-y-1 text-xs">
                               {warnings.slice(0, 2).map((warning, i) => (
                                 <li key={i} className="flex gap-1">
                                   <span className="text-amber-500">•</span>
@@ -232,11 +230,11 @@ export function ScheduledChangesPanel({ countryId }: ScheduledChangesPanelProps)
           </TabsContent>
 
           {/* History Tab */}
-          <TabsContent value="history" className="space-y-3 mt-4">
+          <TabsContent value="history" className="mt-4 space-y-3">
             {historyLoading ? (
               <div className="space-y-2">
-                <div className="h-16 bg-muted animate-pulse rounded-lg" />
-                <div className="h-16 bg-muted animate-pulse rounded-lg" />
+                <div className="bg-muted h-16 animate-pulse rounded-lg" />
+                <div className="bg-muted h-16 animate-pulse rounded-lg" />
               </div>
             ) : !changeHistory || changeHistory.length === 0 ? (
               <Alert>
@@ -246,7 +244,7 @@ export function ScheduledChangesPanel({ countryId }: ScheduledChangesPanelProps)
                 </AlertDescription>
               </Alert>
             ) : (
-              <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
+              <div className="max-h-[600px] space-y-2 overflow-y-auto pr-2">
                 {changeHistory.map((change) => {
                   const isApplied = change.status === "applied";
                   const isCancelled = change.status === "cancelled";
@@ -255,33 +253,30 @@ export function ScheduledChangesPanel({ countryId }: ScheduledChangesPanelProps)
                   return (
                     <div
                       key={change.id}
-                      className="rounded-lg border p-3 bg-muted/30 hover:bg-muted/50 transition-colors"
+                      className="bg-muted/30 hover:bg-muted/50 rounded-lg border p-3 transition-colors"
                     >
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2 flex-1">
+                      <div className="mb-2 flex items-start justify-between gap-2">
+                        <div className="flex flex-1 items-center gap-2">
                           {isApplied ? (
-                            <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                            <CheckCircle className="h-4 w-4 flex-shrink-0 text-green-500" />
                           ) : (
-                            <XCircle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <XCircle className="text-muted-foreground h-4 w-4 flex-shrink-0" />
                           )}
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">
                               {getFieldLabel(change.fieldPath)}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-muted-foreground text-xs">
                               {formatValue(change.oldValue)} → {formatValue(change.newValue)}
                             </p>
                           </div>
                         </div>
-                        <Badge
-                          variant={isApplied ? "default" : "secondary"}
-                          className="text-xs"
-                        >
+                        <Badge variant={isApplied ? "default" : "secondary"} className="text-xs">
                           {change.status}
                         </Badge>
                       </div>
 
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-muted-foreground text-xs">
                         {isApplied && "Applied "}
                         {isCancelled && "Cancelled "}
                         {formatDistanceToNow(statusDate, { addSuffix: true })}
@@ -299,17 +294,15 @@ export function ScheduledChangesPanel({ countryId }: ScheduledChangesPanelProps)
           <>
             <Separator className="my-4" />
             <div className="grid grid-cols-2 gap-2 text-center">
-              <div className="p-2 bg-muted/50 rounded-lg">
-                <p className="text-2xl font-bold text-amber-600">
-                  {pendingChanges.length}
-                </p>
-                <p className="text-xs text-muted-foreground">Pending</p>
+              <div className="bg-muted/50 rounded-lg p-2">
+                <p className="text-2xl font-bold text-amber-600">{pendingChanges.length}</p>
+                <p className="text-muted-foreground text-xs">Pending</p>
               </div>
-              <div className="p-2 bg-muted/50 rounded-lg">
+              <div className="bg-muted/50 rounded-lg p-2">
                 <p className="text-2xl font-bold text-red-600">
                   {pendingChanges.filter((c) => c.impactLevel === "high").length}
                 </p>
-                <p className="text-xs text-muted-foreground">High Impact</p>
+                <p className="text-muted-foreground text-xs">High Impact</p>
               </div>
             </div>
           </>

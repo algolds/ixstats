@@ -15,11 +15,11 @@
  * Usage: npx tsx scripts/sanitize-geojson-coordinates.ts
  */
 
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
-const SOURCE_DIR = '/ixwiki/public/projects/ixstats/scripts/geojson_wgs84';
-const OUTPUT_DIR = '/ixwiki/public/projects/ixstats/scripts/geojson_sanitized';
+const SOURCE_DIR = "/ixwiki/public/projects/ixstats/scripts/geojson_wgs84";
+const OUTPUT_DIR = "/ixwiki/public/projects/ixstats/scripts/geojson_sanitized";
 
 // Sanitization thresholds
 const VALID_LON_MIN = -180;
@@ -106,8 +106,8 @@ function isValidCoordinate(coord: any): boolean {
   return (
     Array.isArray(coord) &&
     coord.length >= 2 &&
-    typeof coord[0] === 'number' &&
-    typeof coord[1] === 'number' &&
+    typeof coord[0] === "number" &&
+    typeof coord[1] === "number" &&
     isFinite(coord[0]) &&
     isFinite(coord[1]) &&
     !isNaN(coord[0]) &&
@@ -153,7 +153,7 @@ function sanitizeCoordinates(
     return null; // Invalid structure
   }
 
-  if (typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+  if (typeof coords[0] === "number" && typeof coords[1] === "number") {
     // This is a single coordinate pair [lng, lat]
     stats.totalCoordinates++;
 
@@ -201,7 +201,7 @@ function sanitizeCoordinates(
       depth === 1 &&
       sanitized.length > 0 &&
       Array.isArray(sanitized[0]) &&
-      typeof sanitized[0][0] === 'number'
+      typeof sanitized[0][0] === "number"
     ) {
       // This is a polygon ring
 
@@ -241,7 +241,7 @@ async function sanitizeLayer(layerName: string): Promise<SanitizationStats> {
     throw new Error(`File not found: ${inputPath}`);
   }
 
-  const data = JSON.parse(fs.readFileSync(inputPath, 'utf-8')) as GeoJSONFeatureCollection;
+  const data = JSON.parse(fs.readFileSync(inputPath, "utf-8")) as GeoJSONFeatureCollection;
 
   const stats: SanitizationStats = {
     layer: layerName,
@@ -260,14 +260,10 @@ async function sanitizeLayer(layerName: string): Promise<SanitizationStats> {
 
   // Sanitize each feature
   const sanitizedFeatures = data.features.map((feature) => {
-    const featureId = feature.id ?? feature.properties?.id ?? 'unknown';
+    const featureId = feature.id ?? feature.properties?.id ?? "unknown";
 
     if (feature.geometry && feature.geometry.coordinates) {
-      const sanitizedCoords = sanitizeCoordinates(
-        feature.geometry.coordinates,
-        stats,
-        featureId
-      );
+      const sanitizedCoords = sanitizeCoordinates(feature.geometry.coordinates, stats, featureId);
 
       return {
         ...feature,
@@ -283,7 +279,7 @@ async function sanitizeLayer(layerName: string): Promise<SanitizationStats> {
 
   // Write sanitized GeoJSON
   const outputData: GeoJSONFeatureCollection = {
-    type: 'FeatureCollection',
+    type: "FeatureCollection",
     features: sanitizedFeatures,
   };
 
@@ -293,9 +289,9 @@ async function sanitizeLayer(layerName: string): Promise<SanitizationStats> {
 }
 
 async function main() {
-  console.log('🔧 Sanitizing GeoJSON Coordinate Data\n');
-  console.log('='.repeat(80));
-  console.log('\n');
+  console.log("🔧 Sanitizing GeoJSON Coordinate Data\n");
+  console.log("=".repeat(80));
+  console.log("\n");
 
   // Create output directory
   if (!fs.existsSync(OUTPUT_DIR)) {
@@ -303,7 +299,7 @@ async function main() {
     console.log(`✓ Created output directory: ${OUTPUT_DIR}\n`);
   }
 
-  const layers = ['political', 'climate', 'altitudes', 'rivers', 'lakes', 'icecaps', 'background'];
+  const layers = ["political", "climate", "altitudes", "rivers", "lakes", "icecaps", "background"];
   const allStats: SanitizationStats[] = [];
 
   for (const layer of layers) {
@@ -321,8 +317,12 @@ async function main() {
         stats.fixed.removedDuplicates;
 
       if (totalFixed > 0) {
-        console.log(`   ✓ Fixed ${totalFixed.toLocaleString()} issues in ${stats.affectedFeatures.size} features`);
-        console.log(`      Features: ${stats.totalFeatures}, Coordinates: ${stats.totalCoordinates.toLocaleString()}`);
+        console.log(
+          `   ✓ Fixed ${totalFixed.toLocaleString()} issues in ${stats.affectedFeatures.size} features`
+        );
+        console.log(
+          `      Features: ${stats.totalFeatures}, Coordinates: ${stats.totalCoordinates.toLocaleString()}`
+        );
 
         if (stats.fixed.wrappedLongitude > 0) {
           console.log(`      - Wrapped longitude (>180°): ${stats.fixed.wrappedLongitude}`);
@@ -344,26 +344,32 @@ async function main() {
         }
       } else {
         console.log(`   ✓ No fixes needed`);
-        console.log(`      Features: ${stats.totalFeatures}, Coordinates: ${stats.totalCoordinates.toLocaleString()}`);
+        console.log(
+          `      Features: ${stats.totalFeatures}, Coordinates: ${stats.totalCoordinates.toLocaleString()}`
+        );
       }
 
-      console.log(`      Output: ${path.relative(process.cwd(), path.join(OUTPUT_DIR, `${layer}.geojson`))}`);
-      console.log('');
+      console.log(
+        `      Output: ${path.relative(process.cwd(), path.join(OUTPUT_DIR, `${layer}.geojson`))}`
+      );
+      console.log("");
     } catch (error) {
-      console.error(`   ❌ Error sanitizing ${layer}:`, error instanceof Error ? error.message : String(error));
-      console.log('');
+      console.error(
+        `   ❌ Error sanitizing ${layer}:`,
+        error instanceof Error ? error.message : String(error)
+      );
+      console.log("");
     }
   }
 
   // Overall summary
-  console.log('='.repeat(80));
-  console.log('📋 SANITIZATION SUMMARY\n');
+  console.log("=".repeat(80));
+  console.log("📋 SANITIZATION SUMMARY\n");
 
   const totalFeatures = allStats.reduce((sum, s) => sum + s.totalFeatures, 0);
   const totalCoordinates = allStats.reduce((sum, s) => sum + s.totalCoordinates, 0);
-  const totalAffectedFeatures = new Set(
-    allStats.flatMap((s) => Array.from(s.affectedFeatures))
-  ).size;
+  const totalAffectedFeatures = new Set(allStats.flatMap((s) => Array.from(s.affectedFeatures)))
+    .size;
 
   const totalFixed = {
     clampedLongitude: allStats.reduce((sum, s) => sum + s.fixed.clampedLongitude, 0),
@@ -386,40 +392,52 @@ async function main() {
   console.log(`Total coordinates processed: ${totalCoordinates.toLocaleString()}`);
   console.log(`Features modified: ${totalAffectedFeatures}`);
   console.log(`Total fixes applied: ${grandTotal.toLocaleString()}`);
-  console.log('');
+  console.log("");
 
   if (grandTotal > 0) {
-    console.log('✅ FIXES APPLIED:');
+    console.log("✅ FIXES APPLIED:");
     if (totalFixed.wrappedLongitude > 0) {
-      console.log(`   - Wrapped longitude (>180° → normalized): ${totalFixed.wrappedLongitude.toLocaleString()}`);
+      console.log(
+        `   - Wrapped longitude (>180° → normalized): ${totalFixed.wrappedLongitude.toLocaleString()}`
+      );
     }
     if (totalFixed.clampedLongitude > 0) {
-      console.log(`   - Clamped extreme longitude: ${totalFixed.clampedLongitude.toLocaleString()}`);
+      console.log(
+        `   - Clamped extreme longitude: ${totalFixed.clampedLongitude.toLocaleString()}`
+      );
     }
     if (totalFixed.clampedLatitude > 0) {
-      console.log(`   - Clamped latitude to Web Mercator range: ${totalFixed.clampedLatitude.toLocaleString()}`);
+      console.log(
+        `   - Clamped latitude to Web Mercator range: ${totalFixed.clampedLatitude.toLocaleString()}`
+      );
     }
     if (totalFixed.removedInvalid > 0) {
-      console.log(`   - Removed invalid coordinates (NaN/Infinity): ${totalFixed.removedInvalid.toLocaleString()}`);
+      console.log(
+        `   - Removed invalid coordinates (NaN/Infinity): ${totalFixed.removedInvalid.toLocaleString()}`
+      );
     }
     if (totalFixed.fixedUnclosedRings > 0) {
-      console.log(`   - Fixed unclosed polygon rings: ${totalFixed.fixedUnclosedRings.toLocaleString()}`);
+      console.log(
+        `   - Fixed unclosed polygon rings: ${totalFixed.fixedUnclosedRings.toLocaleString()}`
+      );
     }
     if (totalFixed.removedDuplicates > 0) {
-      console.log(`   - Removed duplicate coordinates: ${totalFixed.removedDuplicates.toLocaleString()}`);
+      console.log(
+        `   - Removed duplicate coordinates: ${totalFixed.removedDuplicates.toLocaleString()}`
+      );
     }
   }
 
-  console.log('');
+  console.log("");
   console.log(`✅ Sanitized GeoJSON files saved to: ${OUTPUT_DIR}`);
-  console.log('');
-  console.log('Next steps:');
-  console.log('1. Validate sanitized files: npx tsx scripts/validate-geojson-coordinates.ts');
-  console.log('2. Import to PostgreSQL: bash scripts/import-map-layers-sanitized.sh');
-  console.log('');
+  console.log("");
+  console.log("Next steps:");
+  console.log("1. Validate sanitized files: npx tsx scripts/validate-geojson-coordinates.ts");
+  console.log("2. Import to PostgreSQL: bash scripts/import-map-layers-sanitized.sh");
+  console.log("");
 }
 
 main().catch((error) => {
-  console.error('❌ Sanitization failed:', error);
+  console.error("❌ Sanitization failed:", error);
   process.exit(1);
 });

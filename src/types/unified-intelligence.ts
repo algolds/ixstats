@@ -8,14 +8,14 @@
  * @module unified-intelligence
  */
 
-import type { LucideIcon } from 'lucide-react';
-import type { ComponentType } from '@prisma/client';
+import type { LucideIcon } from "lucide-react";
+import type { ComponentType } from "@prisma/client";
 import type {
   ClassificationLevel as DiplomaticClassificationLevel,
   EncryptedMessage,
   KeySecurityStatus,
-  EncryptionStatistics
-} from './diplomatic-encryption';
+  EncryptionStatistics,
+} from "./diplomatic-encryption";
 
 // ============================================================================
 // BASE TYPES AND ENUMS
@@ -26,54 +26,54 @@ import type {
  * Includes all diplomatic levels plus intelligence-specific levels
  */
 export type ClassificationLevel =
-  | 'PUBLIC'
-  | 'RESTRICTED'
-  | 'CONFIDENTIAL'
-  | 'SECRET'
-  | 'TOP_SECRET';
+  | "PUBLIC"
+  | "RESTRICTED"
+  | "CONFIDENTIAL"
+  | "SECRET"
+  | "TOP_SECRET";
 
 /**
  * Priority levels for intelligence items
  */
-export type Priority = 'critical' | 'high' | 'medium' | 'low';
+export type Priority = "critical" | "high" | "medium" | "low";
 
 /**
  * Urgency levels for actions and recommendations
  */
-export type Urgency = 'urgent' | 'important' | 'routine' | 'future';
+export type Urgency = "urgent" | "important" | "routine" | "future";
 
 /**
  * Status for intelligence items and actions
  */
-export type Status = 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'failed';
+export type Status = "pending" | "in_progress" | "completed" | "cancelled" | "failed";
 
 /**
  * Trend direction for metrics and analytics
  */
-export type TrendDirection = 'up' | 'down' | 'stable';
+export type TrendDirection = "up" | "down" | "stable";
 
 /**
  * Time horizons for predictions and forecasts
  */
-export type TimeHorizon = 'immediate' | 'short' | 'medium' | 'long';
+export type TimeHorizon = "immediate" | "short" | "medium" | "long";
 
 /**
  * Intelligence categories
  */
 export type IntelligenceCategory =
-  | 'economic'
-  | 'population'
-  | 'diplomatic'
-  | 'governance'
-  | 'military'
-  | 'crisis'
-  | 'opportunity'
-  | 'security';
+  | "economic"
+  | "population"
+  | "diplomatic"
+  | "governance"
+  | "military"
+  | "crisis"
+  | "opportunity"
+  | "security";
 
 /**
  * Alert severity levels
  */
-export type AlertSeverity = 'critical' | 'warning' | 'info' | 'success';
+export type AlertSeverity = "critical" | "warning" | "info" | "success";
 
 // ============================================================================
 // INTELLIGENCE SYSTEM TYPES
@@ -91,7 +91,7 @@ export interface IntelligenceMetric {
   changeValue: number;
   changePercent: number;
   changePeriod: string;
-  status: 'excellent' | 'good' | 'concerning' | 'critical';
+  status: "excellent" | "good" | "concerning" | "critical";
   rank?: {
     global: number;
     regional: number;
@@ -118,7 +118,7 @@ export interface IntelligenceAlert {
   actionRequired: boolean;
   timeframe: TimeHorizon;
   estimatedImpact: {
-    magnitude: 'low' | 'medium' | 'high' | 'severe';
+    magnitude: "low" | "medium" | "high" | "severe";
     areas: string[];
     economicCost?: number;
     populationAffected?: number;
@@ -173,7 +173,7 @@ export interface IntelligenceBriefing {
 export interface BriefingAttachment {
   id: string;
   name: string;
-  type: 'document' | 'image' | 'chart' | 'data' | 'video' | 'link';
+  type: "document" | "image" | "chart" | "data" | "video" | "link";
   url?: string;
   classification: ClassificationLevel;
   size?: number;
@@ -185,9 +185,9 @@ export interface BriefingAttachment {
  * Intelligence source information
  */
 export interface IntelligenceSource {
-  type: 'internal' | 'external' | 'human' | 'signals' | 'open' | 'ai';
+  type: "internal" | "external" | "human" | "signals" | "open" | "ai";
   name: string;
-  reliability: 'verified' | 'probable' | 'unconfirmed' | 'questionable';
+  reliability: "verified" | "probable" | "unconfirmed" | "questionable";
   confidence: number; // 0-100
   timestamp: number;
   metadata?: Record<string, any>;
@@ -203,7 +203,7 @@ export interface IntelligenceRecommendation {
   category: IntelligenceCategory;
   urgency: Urgency;
   priority: Priority;
-  difficulty: 'easy' | 'moderate' | 'complex' | 'major';
+  difficulty: "easy" | "moderate" | "complex" | "major";
   estimatedDuration: string;
   estimatedCost: string;
   estimatedBenefit: string;
@@ -236,7 +236,7 @@ export interface IntelligenceTrend {
   name: string;
   category: IntelligenceCategory;
   direction: TrendDirection;
-  magnitude: 'minor' | 'moderate' | 'major' | 'critical';
+  magnitude: "minor" | "moderate" | "major" | "critical";
   confidence: number; // 0-100
   timeframe: string;
   startValue: number;
@@ -276,7 +276,7 @@ export interface IntelligenceOverview {
   forwardIntelligence: ForwardIntelligence;
 
   // Overall assessment
-  overallStatus: 'excellent' | 'good' | 'concerning' | 'critical';
+  overallStatus: "excellent" | "good" | "concerning" | "critical";
   confidenceLevel: number; // 0-100
   statusSummary: string;
   lastMajorChange?: {
@@ -286,7 +286,7 @@ export interface IntelligenceOverview {
   };
 
   // Display and interaction
-  viewMode: 'executive' | 'detailed' | 'crisis';
+  viewMode: "executive" | "detailed" | "crisis";
   priorityThreshold: Priority;
 
   metadata?: Record<string, any>;
@@ -299,13 +299,13 @@ export interface TrendingInsight {
   id: string;
   title: string;
   description: string;
-  category: 'performance' | 'ranking' | 'opportunity' | 'comparison';
+  category: "performance" | "ranking" | "opportunity" | "comparison";
   icon: string; // Lucide icon name
   trend: TrendDirection;
-  significance: 'major' | 'moderate' | 'minor';
+  significance: "major" | "moderate" | "minor";
   metrics: IntelligenceMetric[];
   context: {
-    comparison?: 'peer' | 'historical' | 'target';
+    comparison?: "peer" | "historical" | "target";
     timeframe: string;
     confidence: number; // 0-100
   };
@@ -326,17 +326,19 @@ export interface VitalityIntelligence {
     period: string;
     reason: string;
   };
-  status: 'excellent' | 'good' | 'concerning' | 'critical';
+  status: "excellent" | "good" | "concerning" | "critical";
   keyMetrics: IntelligenceMetric[];
   criticalAlerts: IntelligenceAlert[];
   recommendations: IntelligenceRecommendation[];
   forecast: {
-    shortTerm: { // 3 months
+    shortTerm: {
+      // 3 months
       projected: number;
       confidence: number;
       factors: string[];
     };
-    longTerm: { // 1 year
+    longTerm: {
+      // 1 year
       projected: number;
       confidence: number;
       factors: string[];
@@ -373,8 +375,8 @@ export interface PredictionIntelligence {
   category: IntelligenceCategory;
   timeHorizon: TimeHorizon;
   probability: number; // 0-100
-  impact: 'positive' | 'negative' | 'neutral';
-  magnitude: 'low' | 'medium' | 'high';
+  impact: "positive" | "negative" | "neutral";
+  magnitude: "low" | "medium" | "high";
   keyFactors: string[];
   mitigation?: IntelligenceRecommendation[];
   createdAt: number;
@@ -395,7 +397,7 @@ export interface OpportunityIntelligence {
     end: number;
     optimal: number;
   };
-  difficulty: 'easy' | 'moderate' | 'complex';
+  difficulty: "easy" | "moderate" | "complex";
   requirements: string[];
   expectedBenefit: string;
   successProbability: number;
@@ -413,11 +415,11 @@ export interface RiskIntelligence {
   description: string;
   category: IntelligenceCategory;
   probability: number; // 0-100
-  impact: 'low' | 'medium' | 'high' | 'severe';
+  impact: "low" | "medium" | "high" | "severe";
   timeframe: TimeHorizon;
   earlyWarnings: string[];
   mitigation: IntelligenceRecommendation[];
-  currentStatus: 'monitoring' | 'active' | 'mitigated' | 'realized';
+  currentStatus: "monitoring" | "active" | "mitigated" | "realized";
   createdAt: number;
   metadata?: Record<string, any>;
 }
@@ -429,7 +431,7 @@ export interface CompetitiveIntelligence {
   id: string;
   title: string;
   targetCountry: string;
-  category: 'peer' | 'competitor' | 'ally' | 'regional';
+  category: "peer" | "competitor" | "ally" | "regional";
   insights: string[];
   implications: string[];
   recommendedResponse?: IntelligenceRecommendation;
@@ -454,7 +456,7 @@ export interface CabinetMeeting {
   scheduledAt: number;
   startedAt?: number;
   endedAt?: number;
-  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  status: "scheduled" | "in_progress" | "completed" | "cancelled";
   chair: GovernmentOfficial;
   attendees: GovernmentOfficial[];
   absentees?: GovernmentOfficial[];
@@ -483,7 +485,7 @@ export interface MeetingAgendaItem {
   priority: Priority;
   estimatedDuration: number; // minutes
   presenter: GovernmentOfficial;
-  status: 'pending' | 'in_progress' | 'completed' | 'deferred';
+  status: "pending" | "in_progress" | "completed" | "deferred";
   order: number;
   attachments?: BriefingAttachment[];
   discussionPoints?: string[];
@@ -502,14 +504,14 @@ export interface MeetingDecision {
   title: string;
   description: string;
   category: IntelligenceCategory;
-  outcome: 'approved' | 'rejected' | 'deferred' | 'modified';
+  outcome: "approved" | "rejected" | "deferred" | "modified";
   votes?: {
     for: number;
     against: number;
     abstain: number;
     voters: Array<{
       officialId: string;
-      vote: 'for' | 'against' | 'abstain';
+      vote: "for" | "against" | "abstain";
     }>;
   };
   affectedPolicies?: string[]; // Policy IDs
@@ -562,7 +564,7 @@ export interface GovernmentOfficial {
   department?: string;
   title: string;
   clearanceLevel: ClassificationLevel;
-  status: 'active' | 'inactive' | 'suspended';
+  status: "active" | "inactive" | "suspended";
   contactInfo?: {
     email?: string;
     phone?: string;
@@ -585,8 +587,8 @@ export interface PolicyData {
   name: string;
   description: string;
   category: IntelligenceCategory;
-  type: 'domestic' | 'foreign' | 'economic' | 'social' | 'security' | 'environmental';
-  status: 'draft' | 'proposed' | 'active' | 'suspended' | 'archived';
+  type: "domestic" | "foreign" | "economic" | "social" | "security" | "environmental";
+  status: "draft" | "proposed" | "active" | "suspended" | "archived";
   classification: ClassificationLevel;
 
   // Policy details
@@ -611,7 +613,7 @@ export interface PolicyData {
   // Implementation
   implementationPlan?: string;
   implementationStatus?: {
-    phase: 'planning' | 'execution' | 'review' | 'completed';
+    phase: "planning" | "execution" | "review" | "completed";
     progress: number; // 0-100
     milestones: Array<{
       name: string;
@@ -751,7 +753,7 @@ export interface PolicyValidationMessage {
   field: string;
   message: string;
   code: string;
-  severity: 'error' | 'warning' | 'info';
+  severity: "error" | "warning" | "info";
 }
 
 /**
@@ -840,8 +842,8 @@ export interface DiplomaticChannel {
   name: string;
   description?: string;
   classification: ClassificationLevel;
-  type: 'bilateral' | 'multilateral' | 'public' | 'backchannel';
-  status: 'active' | 'suspended' | 'closed';
+  type: "bilateral" | "multilateral" | "public" | "backchannel";
+  status: "active" | "suspended" | "closed";
 
   // Participants
   participatingCountries: string[]; // Country IDs
@@ -882,15 +884,15 @@ export interface SecureMessage {
   subject?: string;
   content: string;
   classification: ClassificationLevel;
-  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  priority: "LOW" | "NORMAL" | "HIGH" | "URGENT";
 
   // Encryption
   encrypted: boolean;
   encryptionData?: EncryptedMessage;
-  verificationStatus: 'verified' | 'unverified' | 'failed' | 'not_applicable';
+  verificationStatus: "verified" | "unverified" | "failed" | "not_applicable";
 
   // Status
-  status: 'SENT' | 'DELIVERED' | 'READ' | 'ARCHIVED';
+  status: "SENT" | "DELIVERED" | "READ" | "ARCHIVED";
   deliveredAt?: number;
   readAt?: number;
   readBy?: string[];
@@ -918,8 +920,8 @@ export interface Embassy {
 
   // Embassy details
   name: string;
-  level: 'consulate' | 'embassy' | 'high_commission';
-  status: 'active' | 'suspended' | 'closed';
+  level: "consulate" | "embassy" | "high_commission";
+  status: "active" | "suspended" | "closed";
 
   // Leadership
   ambassador: GovernmentOfficial;
@@ -961,14 +963,14 @@ export interface Embassy {
  * Embassy specialization areas
  */
 export type EmbassySpecialization =
-  | 'trade'
-  | 'military'
-  | 'culture'
-  | 'intelligence'
-  | 'humanitarian'
-  | 'technology'
-  | 'environment'
-  | 'education';
+  | "trade"
+  | "military"
+  | "culture"
+  | "intelligence"
+  | "humanitarian"
+  | "technology"
+  | "environment"
+  | "education";
 
 /**
  * Diplomatic mission
@@ -980,13 +982,13 @@ export interface DiplomaticMission {
   // Mission details
   name: string;
   description: string;
-  type: 'negotiation' | 'humanitarian' | 'intelligence' | 'trade' | 'cultural' | 'crisis';
+  type: "negotiation" | "humanitarian" | "intelligence" | "trade" | "cultural" | "crisis";
   classification: ClassificationLevel;
   priority: Priority;
 
   // Execution
-  status: 'planning' | 'active' | 'completed' | 'failed' | 'cancelled';
-  difficulty: 'easy' | 'moderate' | 'difficult' | 'extreme';
+  status: "planning" | "active" | "completed" | "failed" | "cancelled";
+  difficulty: "easy" | "moderate" | "difficult" | "extreme";
   progress: number; // 0-100
 
   // Team
@@ -1032,8 +1034,8 @@ export interface CulturalExchange {
   // Exchange details
   name: string;
   description: string;
-  type: 'education' | 'arts' | 'sports' | 'science' | 'business' | 'youth' | 'professional';
-  status: 'planned' | 'active' | 'completed' | 'cancelled';
+  type: "education" | "arts" | "sports" | "science" | "business" | "youth" | "professional";
+  status: "planned" | "active" | "completed" | "cancelled";
 
   // Participants
   participatingCountries: string[]; // Country IDs
@@ -1077,7 +1079,7 @@ export interface Treaty {
   // Treaty details
   name: string;
   description: string;
-  type: 'bilateral' | 'multilateral' | 'trade' | 'defense' | 'environmental' | 'cultural';
+  type: "bilateral" | "multilateral" | "trade" | "defense" | "environmental" | "cultural";
   classification: ClassificationLevel;
 
   // Parties
@@ -1087,7 +1089,7 @@ export interface Treaty {
     signedAt: number;
     signedBy: GovernmentOfficial;
     ratifiedAt?: number;
-    status: 'signed' | 'ratified' | 'withdrawn';
+    status: "signed" | "ratified" | "withdrawn";
   }>;
 
   // Terms
@@ -1100,7 +1102,7 @@ export interface Treaty {
   }>;
 
   // Status
-  status: 'negotiating' | 'signed' | 'ratified' | 'active' | 'suspended' | 'terminated';
+  status: "negotiating" | "signed" | "ratified" | "active" | "suspended" | "terminated";
 
   // Implementation
   effectiveFrom?: number;
@@ -1253,7 +1255,7 @@ export interface HistoricalTrend {
  * Predictive forecasting model
  */
 export interface PredictiveModel {
-  modelType: 'linear' | 'exponential' | 'polynomial' | 'ml' | 'ensemble';
+  modelType: "linear" | "exponential" | "polynomial" | "ml" | "ensemble";
   confidence: number; // 0-100
 
   scenarios: Array<{
@@ -1317,14 +1319,20 @@ export interface ComparisonMetrics {
 
   // Historical comparisons
   historical: {
-    bestPerformance: Record<string, {
-      value: number;
-      timestamp: number;
-    }>;
-    worstPerformance: Record<string, {
-      value: number;
-      timestamp: number;
-    }>;
+    bestPerformance: Record<
+      string,
+      {
+        value: number;
+        timestamp: number;
+      }
+    >;
+    worstPerformance: Record<
+      string,
+      {
+        value: number;
+        timestamp: number;
+      }
+    >;
   };
 }
 
@@ -1336,14 +1344,14 @@ export interface ComparisonMetrics {
  * Check if classification level is valid
  */
 export function isValidClassification(level: string): level is ClassificationLevel {
-  return ['PUBLIC', 'RESTRICTED', 'CONFIDENTIAL', 'SECRET', 'TOP_SECRET'].includes(level);
+  return ["PUBLIC", "RESTRICTED", "CONFIDENTIAL", "SECRET", "TOP_SECRET"].includes(level);
 }
 
 /**
  * Check if priority level is valid
  */
 export function isValidPriority(priority: string): priority is Priority {
-  return ['critical', 'high', 'medium', 'low'].includes(priority);
+  return ["critical", "high", "medium", "low"].includes(priority);
 }
 
 /**
@@ -1354,11 +1362,11 @@ export function hasRequiredClearance(
   requiredLevel: ClassificationLevel
 ): boolean {
   const hierarchy: Record<ClassificationLevel, number> = {
-    'PUBLIC': 0,
-    'RESTRICTED': 1,
-    'CONFIDENTIAL': 2,
-    'SECRET': 3,
-    'TOP_SECRET': 4,
+    PUBLIC: 0,
+    RESTRICTED: 1,
+    CONFIDENTIAL: 2,
+    SECRET: 3,
+    TOP_SECRET: 4,
   };
 
   return hierarchy[userLevel] >= hierarchy[requiredLevel];
@@ -1383,10 +1391,10 @@ export function isRecommendationValid(recommendation: IntelligenceRecommendation
  */
 export function getPriorityOrder(priority: Priority): number {
   const order: Record<Priority, number> = {
-    'critical': 4,
-    'high': 3,
-    'medium': 2,
-    'low': 1,
+    critical: 4,
+    high: 3,
+    medium: 2,
+    low: 1,
   };
   return order[priority];
 }
@@ -1396,10 +1404,10 @@ export function getPriorityOrder(priority: Priority): number {
  */
 export function getUrgencyOrder(urgency: Urgency): number {
   const order: Record<Urgency, number> = {
-    'urgent': 4,
-    'important': 3,
-    'routine': 2,
-    'future': 1,
+    urgent: 4,
+    important: 3,
+    routine: 2,
+    future: 1,
   };
   return order[urgency];
 }
@@ -1459,12 +1467,16 @@ export type IntelligenceMetricsResponse = SuccessResponse<IntelligenceMetric[]> 
 /**
  * Intelligence alerts response
  */
-export type IntelligenceAlertsResponse = SuccessResponse<PaginatedResponse<IntelligenceAlert>> | ErrorResponse;
+export type IntelligenceAlertsResponse =
+  | SuccessResponse<PaginatedResponse<IntelligenceAlert>>
+  | ErrorResponse;
 
 /**
  * Intelligence briefings response
  */
-export type IntelligenceBriefingsResponse = SuccessResponse<PaginatedResponse<IntelligenceBriefing>> | ErrorResponse;
+export type IntelligenceBriefingsResponse =
+  | SuccessResponse<PaginatedResponse<IntelligenceBriefing>>
+  | ErrorResponse;
 
 /**
  * Policy data response
@@ -1499,25 +1511,32 @@ export type AnalyticsDataResponse = SuccessResponse<AnalyticsData> | ErrorRespon
  * Classification level hierarchy
  */
 export const CLASSIFICATION_HIERARCHY: Record<ClassificationLevel, number> = {
-  'PUBLIC': 0,
-  'RESTRICTED': 1,
-  'CONFIDENTIAL': 2,
-  'SECRET': 3,
-  'TOP_SECRET': 4,
+  PUBLIC: 0,
+  RESTRICTED: 1,
+  CONFIDENTIAL: 2,
+  SECRET: 3,
+  TOP_SECRET: 4,
 };
 
 /**
  * Default intelligence view configuration
  */
 export const DEFAULT_INTELLIGENCE_VIEW_CONFIG = {
-  mode: 'overview' as const,
+  mode: "overview" as const,
   showAlerts: true,
   showRecommendations: true,
   showComparisons: true,
   showForecasts: true,
-  priorityFilter: ['critical', 'high', 'medium', 'low'] as Priority[],
-  categoryFilter: ['economic', 'population', 'diplomatic', 'governance', 'military', 'crisis'] as IntelligenceCategory[],
-  timeHorizonFilter: ['immediate', 'short', 'medium', 'long'] as TimeHorizon[],
+  priorityFilter: ["critical", "high", "medium", "low"] as Priority[],
+  categoryFilter: [
+    "economic",
+    "population",
+    "diplomatic",
+    "governance",
+    "military",
+    "crisis",
+  ] as IntelligenceCategory[],
+  timeHorizonFilter: ["immediate", "short", "medium", "long"] as TimeHorizon[],
   maxItems: {
     alerts: 10,
     insights: 5,
@@ -1530,10 +1549,10 @@ export const DEFAULT_INTELLIGENCE_VIEW_CONFIG = {
  * Refresh intervals (milliseconds)
  */
 export const REFRESH_INTERVALS = {
-  critical: 30000,      // 30 seconds
-  high: 60000,          // 1 minute
-  medium: 300000,       // 5 minutes
-  low: 900000,          // 15 minutes
-  analytics: 1800000,   // 30 minutes
+  critical: 30000, // 30 seconds
+  high: 60000, // 1 minute
+  medium: 300000, // 5 minutes
+  low: 900000, // 15 minutes
+  analytics: 1800000, // 30 minutes
   predictions: 3600000, // 1 hour
 } as const;

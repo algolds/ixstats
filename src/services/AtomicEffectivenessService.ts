@@ -1,6 +1,11 @@
 // src/services/AtomicEffectivenessService.ts
-import { type PrismaClient } from '@prisma/client';
-import { ComponentType, type GovernmentComponent, type ComponentSynergy, type AtomicEffectiveness } from '@prisma/client';
+import { type PrismaClient } from "@prisma/client";
+import {
+  ComponentType,
+  type GovernmentComponent,
+  type ComponentSynergy,
+  type AtomicEffectiveness,
+} from "@prisma/client";
 
 interface ComponentEffectiveness {
   type: ComponentType;
@@ -13,7 +18,7 @@ interface ComponentEffectiveness {
 
 interface SynergyRule {
   components: ComponentType[];
-  synergyType: 'MULTIPLICATIVE' | 'ADDITIVE' | 'CONFLICTING';
+  synergyType: "MULTIPLICATIVE" | "ADDITIVE" | "CONFLICTING";
   effectMultiplier: number;
   description: string;
 }
@@ -21,7 +26,7 @@ interface SynergyRule {
 export class AtomicEffectivenessService {
   private cache = new Map<string, { data: AtomicEffectiveness; timestamp: number }>();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-  
+
   constructor(private db: PrismaClient) {}
 
   // Component effectiveness mappings based on the atomic design document
@@ -33,7 +38,7 @@ export class AtomicEffectivenessService {
       taxImpact: 1.2, // 20% better tax collection
       economicImpact: 1.05,
       stabilityImpact: 10,
-      legitimacyImpact: -5 // Centralization can reduce legitimacy
+      legitimacyImpact: -5, // Centralization can reduce legitimacy
     },
     [ComponentType.FEDERAL_SYSTEM]: {
       type: ComponentType.FEDERAL_SYSTEM,
@@ -41,7 +46,7 @@ export class AtomicEffectivenessService {
       taxImpact: 0.95,
       economicImpact: 1.08,
       stabilityImpact: 5,
-      legitimacyImpact: 10
+      legitimacyImpact: 10,
     },
     [ComponentType.CONFEDERATE_SYSTEM]: {
       type: ComponentType.CONFEDERATE_SYSTEM,
@@ -49,7 +54,7 @@ export class AtomicEffectivenessService {
       taxImpact: 0.85,
       economicImpact: 1.02,
       stabilityImpact: -5,
-      legitimacyImpact: 15
+      legitimacyImpact: 15,
     },
     [ComponentType.UNITARY_SYSTEM]: {
       type: ComponentType.UNITARY_SYSTEM,
@@ -57,7 +62,7 @@ export class AtomicEffectivenessService {
       taxImpact: 1.15,
       economicImpact: 1.06,
       stabilityImpact: 8,
-      legitimacyImpact: 2
+      legitimacyImpact: 2,
     },
 
     // Decision Process Components
@@ -67,7 +72,7 @@ export class AtomicEffectivenessService {
       taxImpact: 1.0,
       economicImpact: 1.03,
       stabilityImpact: 5,
-      legitimacyImpact: 25
+      legitimacyImpact: 25,
     },
     [ComponentType.AUTOCRATIC_PROCESS]: {
       type: ComponentType.AUTOCRATIC_PROCESS,
@@ -75,7 +80,7 @@ export class AtomicEffectivenessService {
       taxImpact: 1.25,
       economicImpact: 1.08,
       stabilityImpact: 15,
-      legitimacyImpact: -15
+      legitimacyImpact: -15,
     },
     [ComponentType.TECHNOCRATIC_PROCESS]: {
       type: ComponentType.TECHNOCRATIC_PROCESS,
@@ -83,7 +88,7 @@ export class AtomicEffectivenessService {
       taxImpact: 1.15,
       economicImpact: 1.25, // 25% economic boost from expert decisions
       stabilityImpact: 12,
-      legitimacyImpact: 5
+      legitimacyImpact: 5,
     },
     [ComponentType.CONSENSUS_PROCESS]: {
       type: ComponentType.CONSENSUS_PROCESS,
@@ -91,7 +96,7 @@ export class AtomicEffectivenessService {
       taxImpact: 0.9,
       economicImpact: 0.95,
       stabilityImpact: 20,
-      legitimacyImpact: 20
+      legitimacyImpact: 20,
     },
     [ComponentType.OLIGARCHIC_PROCESS]: {
       type: ComponentType.OLIGARCHIC_PROCESS,
@@ -99,7 +104,7 @@ export class AtomicEffectivenessService {
       taxImpact: 1.1,
       economicImpact: 1.1,
       stabilityImpact: 5,
-      legitimacyImpact: -10
+      legitimacyImpact: -10,
     },
 
     // Legitimacy Sources
@@ -109,7 +114,7 @@ export class AtomicEffectivenessService {
       taxImpact: 1.05,
       economicImpact: 1.08,
       stabilityImpact: 10,
-      legitimacyImpact: 30
+      legitimacyImpact: 30,
     },
     [ComponentType.TRADITIONAL_LEGITIMACY]: {
       type: ComponentType.TRADITIONAL_LEGITIMACY,
@@ -117,7 +122,7 @@ export class AtomicEffectivenessService {
       taxImpact: 1.1,
       economicImpact: 0.98,
       stabilityImpact: 25,
-      legitimacyImpact: 20
+      legitimacyImpact: 20,
     },
     [ComponentType.PERFORMANCE_LEGITIMACY]: {
       type: ComponentType.PERFORMANCE_LEGITIMACY,
@@ -125,7 +130,7 @@ export class AtomicEffectivenessService {
       taxImpact: 1.2,
       economicImpact: 1.15,
       stabilityImpact: 15,
-      legitimacyImpact: 15
+      legitimacyImpact: 15,
     },
     [ComponentType.CHARISMATIC_LEGITIMACY]: {
       type: ComponentType.CHARISMATIC_LEGITIMACY,
@@ -133,7 +138,7 @@ export class AtomicEffectivenessService {
       taxImpact: 1.15,
       economicImpact: 1.1,
       stabilityImpact: 10,
-      legitimacyImpact: 25
+      legitimacyImpact: 25,
     },
     [ComponentType.RELIGIOUS_LEGITIMACY]: {
       type: ComponentType.RELIGIOUS_LEGITIMACY,
@@ -141,7 +146,7 @@ export class AtomicEffectivenessService {
       taxImpact: 1.12,
       economicImpact: 1.0,
       stabilityImpact: 20,
-      legitimacyImpact: 18
+      legitimacyImpact: 18,
     },
     [ComponentType.INSTITUTIONAL_LEGITIMACY]: {
       type: ComponentType.INSTITUTIONAL_LEGITIMACY,
@@ -149,17 +154,17 @@ export class AtomicEffectivenessService {
       taxImpact: 1.18,
       economicImpact: 1.12,
       stabilityImpact: 15,
-      legitimacyImpact: 22
+      legitimacyImpact: 22,
     },
 
     // Institution Types
     [ComponentType.PROFESSIONAL_BUREAUCRACY]: {
       type: ComponentType.PROFESSIONAL_BUREAUCRACY,
       baseEffectiveness: 85,
-      taxImpact: 1.30, // 30% improvement as per design doc
+      taxImpact: 1.3, // 30% improvement as per design doc
       economicImpact: 1.15,
       stabilityImpact: 15,
-      legitimacyImpact: 10
+      legitimacyImpact: 10,
     },
     [ComponentType.MILITARY_ADMINISTRATION]: {
       type: ComponentType.MILITARY_ADMINISTRATION,
@@ -167,7 +172,7 @@ export class AtomicEffectivenessService {
       taxImpact: 1.25,
       economicImpact: 1.05,
       stabilityImpact: 20,
-      legitimacyImpact: -5
+      legitimacyImpact: -5,
     },
     [ComponentType.INDEPENDENT_JUDICIARY]: {
       type: ComponentType.INDEPENDENT_JUDICIARY,
@@ -175,7 +180,7 @@ export class AtomicEffectivenessService {
       taxImpact: 1.05,
       economicImpact: 1.12,
       stabilityImpact: 25,
-      legitimacyImpact: 20
+      legitimacyImpact: 20,
     },
     [ComponentType.PARTISAN_INSTITUTIONS]: {
       type: ComponentType.PARTISAN_INSTITUTIONS,
@@ -183,15 +188,15 @@ export class AtomicEffectivenessService {
       taxImpact: 1.08,
       economicImpact: 1.02,
       stabilityImpact: -5,
-      legitimacyImpact: 5
+      legitimacyImpact: 5,
     },
     [ComponentType.TECHNOCRATIC_AGENCIES]: {
       type: ComponentType.TECHNOCRATIC_AGENCIES,
       baseEffectiveness: 82,
       taxImpact: 1.18,
-      economicImpact: 1.20,
+      economicImpact: 1.2,
       stabilityImpact: 12,
-      legitimacyImpact: 8
+      legitimacyImpact: 8,
     },
 
     // Control Mechanisms
@@ -201,15 +206,15 @@ export class AtomicEffectivenessService {
       taxImpact: 1.15,
       economicImpact: 1.18,
       stabilityImpact: 30,
-      legitimacyImpact: 25
+      legitimacyImpact: 25,
     },
     [ComponentType.SURVEILLANCE_SYSTEM]: {
       type: ComponentType.SURVEILLANCE_SYSTEM,
       baseEffectiveness: 78,
-      taxImpact: 1.20,
+      taxImpact: 1.2,
       economicImpact: 1.05,
       stabilityImpact: 15,
-      legitimacyImpact: -15
+      legitimacyImpact: -15,
     },
     [ComponentType.ECONOMIC_INCENTIVES]: {
       type: ComponentType.ECONOMIC_INCENTIVES,
@@ -217,7 +222,7 @@ export class AtomicEffectivenessService {
       taxImpact: 1.08,
       economicImpact: 1.15,
       stabilityImpact: 5,
-      legitimacyImpact: 8
+      legitimacyImpact: 8,
     },
     [ComponentType.SOCIAL_PRESSURE]: {
       type: ComponentType.SOCIAL_PRESSURE,
@@ -225,15 +230,15 @@ export class AtomicEffectivenessService {
       taxImpact: 1.05,
       economicImpact: 1.02,
       stabilityImpact: 8,
-      legitimacyImpact: -5
+      legitimacyImpact: -5,
     },
     [ComponentType.MILITARY_ENFORCEMENT]: {
       type: ComponentType.MILITARY_ENFORCEMENT,
       baseEffectiveness: 80,
-      taxImpact: 1.30,
+      taxImpact: 1.3,
       economicImpact: 1.02,
       stabilityImpact: 25,
-      legitimacyImpact: -20
+      legitimacyImpact: -20,
     },
 
     // New Government Type Components
@@ -243,47 +248,47 @@ export class AtomicEffectivenessService {
       taxImpact: 1.35,
       economicImpact: 1.22,
       stabilityImpact: 15,
-      legitimacyImpact: 12
+      legitimacyImpact: 12,
     },
     [ComponentType.MINIMAL_GOVERNMENT]: {
       type: ComponentType.MINIMAL_GOVERNMENT,
       baseEffectiveness: 60,
-      taxImpact: 0.80,
+      taxImpact: 0.8,
       economicImpact: 1.15,
       stabilityImpact: 5,
-      legitimacyImpact: 10
+      legitimacyImpact: 10,
     },
     [ComponentType.PRIVATE_SECTOR_LEADERSHIP]: {
       type: ComponentType.PRIVATE_SECTOR_LEADERSHIP,
       baseEffectiveness: 75,
       taxImpact: 0.95,
-      economicImpact: 1.20,
+      economicImpact: 1.2,
       stabilityImpact: 8,
-      legitimacyImpact: 5
+      legitimacyImpact: 5,
     },
     [ComponentType.SOCIAL_DEMOCRACY]: {
       type: ComponentType.SOCIAL_DEMOCRACY,
       baseEffectiveness: 78,
       taxImpact: 1.15,
-      economicImpact: 1.10,
+      economicImpact: 1.1,
       stabilityImpact: 18,
-      legitimacyImpact: 22
+      legitimacyImpact: 22,
     },
     [ComponentType.COMPREHENSIVE_WELFARE]: {
       type: ComponentType.COMPREHENSIVE_WELFARE,
       baseEffectiveness: 72,
-      taxImpact: 1.10,
+      taxImpact: 1.1,
       economicImpact: 1.05,
       stabilityImpact: 15,
-      legitimacyImpact: 18
+      legitimacyImpact: 18,
     },
     [ComponentType.PUBLIC_SECTOR_LEADERSHIP]: {
       type: ComponentType.PUBLIC_SECTOR_LEADERSHIP,
       baseEffectiveness: 70,
-      taxImpact: 1.20,
+      taxImpact: 1.2,
       economicImpact: 1.08,
       stabilityImpact: 12,
-      legitimacyImpact: 8
+      legitimacyImpact: 8,
     },
     [ComponentType.ENVIRONMENTAL_FOCUS]: {
       type: ComponentType.ENVIRONMENTAL_FOCUS,
@@ -291,7 +296,7 @@ export class AtomicEffectivenessService {
       taxImpact: 0.95,
       economicImpact: 1.12,
       stabilityImpact: 10,
-      legitimacyImpact: 15
+      legitimacyImpact: 15,
     },
     [ComponentType.ECONOMIC_PLANNING]: {
       type: ComponentType.ECONOMIC_PLANNING,
@@ -299,7 +304,7 @@ export class AtomicEffectivenessService {
       taxImpact: 1.25,
       economicImpact: 1.18,
       stabilityImpact: 15,
-      legitimacyImpact: 5
+      legitimacyImpact: 5,
     },
     [ComponentType.DEVELOPMENTAL_STATE]: {
       type: ComponentType.DEVELOPMENTAL_STATE,
@@ -307,23 +312,23 @@ export class AtomicEffectivenessService {
       taxImpact: 1.22,
       economicImpact: 1.25,
       stabilityImpact: 18,
-      legitimacyImpact: 10
+      legitimacyImpact: 10,
     },
     [ComponentType.WORKER_PROTECTION]: {
       type: ComponentType.WORKER_PROTECTION,
       baseEffectiveness: 65,
-      taxImpact: 0.90,
+      taxImpact: 0.9,
       economicImpact: 1.05,
       stabilityImpact: 8,
-      legitimacyImpact: 15
+      legitimacyImpact: 15,
     },
     [ComponentType.MERITOCRATIC_SYSTEM]: {
       type: ComponentType.MERITOCRATIC_SYSTEM,
       baseEffectiveness: 88,
-      taxImpact: 1.30,
-      economicImpact: 1.20,
+      taxImpact: 1.3,
+      economicImpact: 1.2,
       stabilityImpact: 20,
-      legitimacyImpact: 18
+      legitimacyImpact: 18,
     },
     [ComponentType.REGIONAL_DEVELOPMENT]: {
       type: ComponentType.REGIONAL_DEVELOPMENT,
@@ -331,88 +336,110 @@ export class AtomicEffectivenessService {
       taxImpact: 0.92,
       economicImpact: 1.12,
       stabilityImpact: 10,
-      legitimacyImpact: 12
-    }
+      legitimacyImpact: 12,
+    },
   };
 
   // Predefined synergies based on the atomic design document
   private synergyRules: SynergyRule[] = [
     {
-      components: [ComponentType.TECHNOCRATIC_PROCESS, ComponentType.PROFESSIONAL_BUREAUCRACY, ComponentType.PERFORMANCE_LEGITIMACY],
-      synergyType: 'MULTIPLICATIVE',
+      components: [
+        ComponentType.TECHNOCRATIC_PROCESS,
+        ComponentType.PROFESSIONAL_BUREAUCRACY,
+        ComponentType.PERFORMANCE_LEGITIMACY,
+      ],
+      synergyType: "MULTIPLICATIVE",
       effectMultiplier: 1.5,
-      description: 'Technocratic Efficiency State: Expert-driven governance with professional implementation creates highly effective administration'
+      description:
+        "Technocratic Efficiency State: Expert-driven governance with professional implementation creates highly effective administration",
     },
     {
-      components: [ComponentType.DEMOCRATIC_PROCESS, ComponentType.INDEPENDENT_JUDICIARY, ComponentType.RULE_OF_LAW],
-      synergyType: 'MULTIPLICATIVE',
+      components: [
+        ComponentType.DEMOCRATIC_PROCESS,
+        ComponentType.INDEPENDENT_JUDICIARY,
+        ComponentType.RULE_OF_LAW,
+      ],
+      synergyType: "MULTIPLICATIVE",
       effectMultiplier: 1.4,
-      description: 'Democratic Institutional State: Democratic mandate + independent institutions creates strong rule of law'
+      description:
+        "Democratic Institutional State: Democratic mandate + independent institutions creates strong rule of law",
     },
     {
-      components: [ComponentType.CENTRALIZED_POWER, ComponentType.AUTOCRATIC_PROCESS, ComponentType.SURVEILLANCE_SYSTEM],
-      synergyType: 'MULTIPLICATIVE',
+      components: [
+        ComponentType.CENTRALIZED_POWER,
+        ComponentType.AUTOCRATIC_PROCESS,
+        ComponentType.SURVEILLANCE_SYSTEM,
+      ],
+      synergyType: "MULTIPLICATIVE",
       effectMultiplier: 1.6,
-      description: 'Authoritarian Control State: Centralized autocracy with surveillance creates rapid response but may damage legitimacy'
+      description:
+        "Authoritarian Control State: Centralized autocracy with surveillance creates rapid response but may damage legitimacy",
     },
     {
       components: [ComponentType.PROFESSIONAL_BUREAUCRACY, ComponentType.TECHNOCRATIC_AGENCIES],
-      synergyType: 'ADDITIVE',
+      synergyType: "ADDITIVE",
       effectMultiplier: 1.25,
-      description: 'Expert Administration: Professional bureaucracy enhanced by technocratic agencies'
+      description:
+        "Expert Administration: Professional bureaucracy enhanced by technocratic agencies",
     },
     {
       components: [ComponentType.RULE_OF_LAW, ComponentType.INDEPENDENT_JUDICIARY],
-      synergyType: 'MULTIPLICATIVE',
+      synergyType: "MULTIPLICATIVE",
       effectMultiplier: 1.3,
-      description: 'Strong Legal Framework: Independent judiciary enforcing rule of law creates maximum institutional credibility'
-    }
+      description:
+        "Strong Legal Framework: Independent judiciary enforcing rule of law creates maximum institutional credibility",
+    },
   ];
 
   // Conflict rules
   private conflictRules: SynergyRule[] = [
     {
       components: [ComponentType.DEMOCRATIC_PROCESS, ComponentType.SURVEILLANCE_SYSTEM],
-      synergyType: 'CONFLICTING',
+      synergyType: "CONFLICTING",
       effectMultiplier: 0.7,
-      description: 'Democratic-Surveillance Conflict: Democratic legitimacy undermined by extensive surveillance'
+      description:
+        "Democratic-Surveillance Conflict: Democratic legitimacy undermined by extensive surveillance",
     },
     {
       components: [ComponentType.CONSENSUS_PROCESS, ComponentType.AUTOCRATIC_PROCESS],
-      synergyType: 'CONFLICTING',
+      synergyType: "CONFLICTING",
       effectMultiplier: 0.5,
-      description: 'Process Conflict: Consensus and autocratic decision-making are fundamentally incompatible'
-    }
+      description:
+        "Process Conflict: Consensus and autocratic decision-making are fundamentally incompatible",
+    },
   ];
 
-  async getCountryEffectiveness(countryId: string, useCache: boolean = true): Promise<AtomicEffectiveness> {
+  async getCountryEffectiveness(
+    countryId: string,
+    useCache: boolean = true
+  ): Promise<AtomicEffectiveness> {
     if (useCache) {
       const cached = this.cache.get(countryId);
       if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
         return cached.data;
       }
     }
-    
+
     const effectiveness = await this.calculateEffectiveness(countryId);
     this.cache.set(countryId, { data: effectiveness, timestamp: Date.now() });
-    
+
     return effectiveness;
   }
 
   async calculateEffectiveness(countryId: string): Promise<AtomicEffectiveness> {
     // Get components and synergies from database
     const components = await this.db.governmentComponent.findMany({
-      where: { countryId, isActive: true }
+      where: { countryId, isActive: true },
     });
-    
+
     const existingSynergies = await this.db.componentSynergy.findMany({
-      where: { countryId }
+      where: { countryId },
     });
-    
+
     if (components.length === 0) {
       // Return default values if no atomic components
       return {
-        id: '',
+        id: "",
         countryId,
         overallScore: 50,
         taxEffectiveness: 50,
@@ -424,26 +451,39 @@ export class AtomicEffectivenessService {
         conflictPenalty: 0,
         lastCalculated: new Date(),
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
     }
-    
+
     // Calculate base scores
-    const componentTypes = components.map(c => c.componentType);
+    const componentTypes = components.map((c) => c.componentType);
     const baseScores = this.calculateBaseScores(componentTypes);
-    
+
     // Detect and apply synergies/conflicts
-    const { synergyBonus, conflictPenalty, detectedSynergies } = this.calculateSynergyEffects(componentTypes);
-    
+    const { synergyBonus, conflictPenalty, detectedSynergies } =
+      this.calculateSynergyEffects(componentTypes);
+
     // Apply modifiers to base scores
     const finalScores = {
       overallScore: Math.max(0, Math.min(100, baseScores.overall + synergyBonus - conflictPenalty)),
-      taxEffectiveness: Math.max(0, Math.min(100, baseScores.tax * (1 + synergyBonus / 100 - conflictPenalty / 100))),
-      economicPolicyScore: Math.max(0, Math.min(100, baseScores.economic * (1 + synergyBonus / 100 - conflictPenalty / 100))),
-      stabilityScore: Math.max(0, Math.min(100, baseScores.stability + synergyBonus - conflictPenalty)),
-      legitimacyScore: Math.max(0, Math.min(100, baseScores.legitimacy + synergyBonus - conflictPenalty))
+      taxEffectiveness: Math.max(
+        0,
+        Math.min(100, baseScores.tax * (1 + synergyBonus / 100 - conflictPenalty / 100))
+      ),
+      economicPolicyScore: Math.max(
+        0,
+        Math.min(100, baseScores.economic * (1 + synergyBonus / 100 - conflictPenalty / 100))
+      ),
+      stabilityScore: Math.max(
+        0,
+        Math.min(100, baseScores.stability + synergyBonus - conflictPenalty)
+      ),
+      legitimacyScore: Math.max(
+        0,
+        Math.min(100, baseScores.legitimacy + synergyBonus - conflictPenalty)
+      ),
     };
-    
+
     // Store or update in database
     const effectivenessData = await this.db.atomicEffectiveness.upsert({
       where: { countryId },
@@ -457,7 +497,7 @@ export class AtomicEffectivenessService {
         synergyBonus,
         conflictPenalty,
         lastCalculated: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       },
       create: {
         countryId,
@@ -469,15 +509,15 @@ export class AtomicEffectivenessService {
         componentCount: components.length,
         synergyBonus,
         conflictPenalty,
-        lastCalculated: new Date()
-      }
+        lastCalculated: new Date(),
+      },
     });
-    
+
     // Create synergies in database if they don't exist
     for (const synergy of detectedSynergies) {
       await this.createSynergyIfNotExists(countryId, synergy);
     }
-    
+
     return effectivenessData;
   }
 
@@ -487,8 +527,8 @@ export class AtomicEffectivenessService {
     let totalEconomicImpact = 1;
     let totalStabilityImpact = 0;
     let totalLegitimacyImpact = 0;
-    
-    componentTypes.forEach(componentType => {
+
+    componentTypes.forEach((componentType) => {
       const effectiveness = this.componentEffectiveness[componentType];
       if (effectiveness) {
         totalEffectiveness += effectiveness.baseEffectiveness;
@@ -498,15 +538,16 @@ export class AtomicEffectivenessService {
         totalLegitimacyImpact += effectiveness.legitimacyImpact;
       }
     });
-    
-    const averageEffectiveness = componentTypes.length > 0 ? totalEffectiveness / componentTypes.length : 50;
-    
+
+    const averageEffectiveness =
+      componentTypes.length > 0 ? totalEffectiveness / componentTypes.length : 50;
+
     return {
       overall: averageEffectiveness,
       tax: Math.min(100, 50 * totalTaxImpact),
       economic: Math.min(100, 50 * totalEconomicImpact),
       stability: Math.max(0, Math.min(100, 50 + totalStabilityImpact)),
-      legitimacy: Math.max(0, Math.min(100, 50 + totalLegitimacyImpact))
+      legitimacy: Math.max(0, Math.min(100, 50 + totalLegitimacyImpact)),
     };
   }
 
@@ -514,54 +555,54 @@ export class AtomicEffectivenessService {
     let synergyBonus = 0;
     let conflictPenalty = 0;
     const detectedSynergies: SynergyRule[] = [];
-    
+
     // Check for synergies
     for (const rule of this.synergyRules) {
-      const hasAllComponents = rule.components.every(comp => componentTypes.includes(comp));
+      const hasAllComponents = rule.components.every((comp) => componentTypes.includes(comp));
       if (hasAllComponents) {
         detectedSynergies.push(rule);
         const bonus = (rule.effectMultiplier - 1) * 10;
         synergyBonus += bonus;
       }
     }
-    
+
     // Check for conflicts
     for (const rule of this.conflictRules) {
-      const hasAllComponents = rule.components.every(comp => componentTypes.includes(comp));
+      const hasAllComponents = rule.components.every((comp) => componentTypes.includes(comp));
       if (hasAllComponents) {
         detectedSynergies.push(rule);
         const penalty = (1 - rule.effectMultiplier) * 10;
         conflictPenalty += penalty;
       }
     }
-    
+
     return { synergyBonus, conflictPenalty, detectedSynergies };
   }
 
   private async createSynergyIfNotExists(countryId: string, synergy: SynergyRule) {
     // For simplicity, we'll create a synergy between the first two components
     if (synergy.components.length < 2) return;
-    
+
     const [primaryType, secondaryType] = synergy.components;
-    
+
     const primaryComponent = await this.db.governmentComponent.findFirst({
-      where: { countryId, componentType: primaryType, isActive: true }
+      where: { countryId, componentType: primaryType, isActive: true },
     });
-    
+
     const secondaryComponent = await this.db.governmentComponent.findFirst({
-      where: { countryId, componentType: secondaryType, isActive: true }
+      where: { countryId, componentType: secondaryType, isActive: true },
     });
-    
+
     if (!primaryComponent || !secondaryComponent) return;
-    
+
     const existingSynergy = await this.db.componentSynergy.findFirst({
       where: {
         countryId,
         primaryComponentId: primaryComponent.id,
-        secondaryComponentId: secondaryComponent.id
-      }
+        secondaryComponentId: secondaryComponent.id,
+      },
     });
-    
+
     if (!existingSynergy) {
       await this.db.componentSynergy.create({
         data: {
@@ -570,8 +611,8 @@ export class AtomicEffectivenessService {
           secondaryComponentId: secondaryComponent.id,
           synergyType: synergy.synergyType,
           effectMultiplier: synergy.effectMultiplier,
-          description: synergy.description
-        }
+          description: synergy.description,
+        },
       });
     }
   }
@@ -586,20 +627,22 @@ export class AtomicEffectivenessService {
 
   // Helper method to get component effectiveness breakdown
   getComponentBreakdown(componentTypes: ComponentType[]): ComponentEffectiveness[] {
-    return componentTypes.map(type => this.componentEffectiveness[type]).filter((item): item is ComponentEffectiveness => item !== undefined);
+    return componentTypes
+      .map((type) => this.componentEffectiveness[type])
+      .filter((item): item is ComponentEffectiveness => item !== undefined);
   }
 
   // Helper method to detect potential synergies for a given set of components
   detectPotentialSynergies(componentTypes: ComponentType[]): SynergyRule[] {
-    return this.synergyRules.filter(rule => 
-      rule.components.every(comp => componentTypes.includes(comp))
+    return this.synergyRules.filter((rule) =>
+      rule.components.every((comp) => componentTypes.includes(comp))
     );
   }
 
   // Helper method to detect conflicts
   detectConflicts(componentTypes: ComponentType[]): SynergyRule[] {
-    return this.conflictRules.filter(rule => 
-      rule.components.every(comp => componentTypes.includes(comp))
+    return this.conflictRules.filter((rule) =>
+      rule.components.every((comp) => componentTypes.includes(comp))
     );
   }
 }

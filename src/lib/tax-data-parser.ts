@@ -3,10 +3,20 @@
  * Intelligently parses data from Core Indicators and Government Builder to pre-populate Tax Builder
  */
 
-import type { TaxSystemInput, TaxCategoryInput, TaxBracketInput, TaxExemptionInput, TaxDeductionInput } from '~/types/tax-system';
-import type { GovernmentBuilderState, DepartmentInput, RevenueSourceInput } from '~/types/government';
-import type { CoreEconomicIndicators } from '~/app/builder/lib/economy-data-service';
-import { CALCULATION_METHODS } from '~/types/tax-system';
+import type {
+  TaxSystemInput,
+  TaxCategoryInput,
+  TaxBracketInput,
+  TaxExemptionInput,
+  TaxDeductionInput,
+} from "~/types/tax-system";
+import type {
+  GovernmentBuilderState,
+  DepartmentInput,
+  RevenueSourceInput,
+} from "~/types/government";
+import type { CoreEconomicIndicators } from "~/app/builder/lib/economy-data-service";
+import { CALCULATION_METHODS } from "~/types/tax-system";
 
 export interface ParsedTaxData {
   taxSystem: TaxSystemInput;
@@ -35,7 +45,7 @@ export function parseEconomicDataForTaxSystem(
     useAggressiveParsing = true,
     includeGovernmentPolicies = true,
     autoGenerateBrackets = true,
-    targetRevenueMatch = true
+    targetRevenueMatch = true,
   } = options;
 
   // Parse core tax system structure
@@ -78,7 +88,11 @@ export function parseEconomicDataForTaxSystem(
 
   // 4. Parse government-specific taxes if government data provided
   if (governmentData && useAggressiveParsing) {
-    const govTaxData = parseTaxesFromGovernmentBuilder(governmentData, coreIndicators, includeGovernmentPolicies);
+    const govTaxData = parseTaxesFromGovernmentBuilder(
+      governmentData,
+      coreIndicators,
+      includeGovernmentPolicies
+    );
 
     // Add government-derived categories
     govTaxData.categories.forEach((cat, idx) => {
@@ -104,7 +118,7 @@ export function parseEconomicDataForTaxSystem(
     categories,
     brackets,
     exemptions,
-    deductions
+    deductions,
   };
 }
 
@@ -116,17 +130,17 @@ function parseTaxSystemFromCoreIndicators(coreIndicators: CoreEconomicIndicators
   const economicTier = getEconomicTier(gdpPerCapita);
 
   // Estimate tax system parameters based on economic development
-  const complianceRate = Math.min(95, Math.max(60, 60 + (gdpPerCapita / 1000)));
-  const collectionEfficiency = Math.min(95, Math.max(70, 70 + (gdpPerCapita / 1500)));
+  const complianceRate = Math.min(95, Math.max(60, 60 + gdpPerCapita / 1000));
+  const collectionEfficiency = Math.min(95, Math.max(70, 70 + gdpPerCapita / 1500));
 
   return {
     taxSystemName: `National Tax System`,
-    fiscalYear: 'calendar',
+    fiscalYear: "calendar",
     progressiveTax: gdpPerCapita > 15000, // Advanced economies tend to have progressive taxation
     alternativeMinTax: gdpPerCapita > 30000, // AMT common in developed economies
     alternativeMinRate: gdpPerCapita > 30000 ? 20 : undefined,
     complianceRate,
-    collectionEfficiency
+    collectionEfficiency,
   };
 }
 
@@ -136,29 +150,34 @@ function parseTaxSystemFromCoreIndicators(coreIndicators: CoreEconomicIndicators
 function parseIncomeTaxFromGDP(
   coreIndicators: CoreEconomicIndicators,
   generateBrackets: boolean
-): { category: TaxCategoryInput; brackets?: TaxBracketInput[]; deductions?: TaxDeductionInput[] } | null {
+): {
+  category: TaxCategoryInput;
+  brackets?: TaxBracketInput[];
+  deductions?: TaxDeductionInput[];
+} | null {
   const gdpPerCapita = coreIndicators.gdpPerCapita;
   const economicTier = getEconomicTier(gdpPerCapita);
 
   // Base rate varies by economic tier
   const baseRates = {
-    'Advanced': 25,
-    'Developed': 20,
-    'Emerging': 15,
-    'Developing': 10
+    Advanced: 25,
+    Developed: 20,
+    Emerging: 15,
+    Developing: 10,
   };
 
   const category: TaxCategoryInput = {
-    categoryName: 'Personal Income Tax',
-    categoryType: 'Direct Tax',
-    description: 'Progressive tax on individual income based on national economic tier',
+    categoryName: "Personal Income Tax",
+    categoryType: "Direct Tax",
+    description: "Progressive tax on individual income based on national economic tier",
     isActive: true,
     baseRate: baseRates[economicTier],
-    calculationMethod: gdpPerCapita > 15000 ? CALCULATION_METHODS.PROGRESSIVE : CALCULATION_METHODS.PERCENTAGE,
+    calculationMethod:
+      gdpPerCapita > 15000 ? CALCULATION_METHODS.PROGRESSIVE : CALCULATION_METHODS.PERCENTAGE,
     deductionAllowed: true,
     standardDeduction: Math.round(gdpPerCapita * 0.2), // 20% of GDP per capita as standard deduction
     priority: 90,
-    color: '#3b82f6'
+    color: "#3b82f6",
   };
 
   // Generate progressive brackets based on GDP per capita
@@ -170,22 +189,22 @@ function parseIncomeTaxFromGDP(
   // Generate standard deductions
   const deductions: TaxDeductionInput[] = [
     {
-      deductionName: 'Standard Deduction',
-      deductionType: 'Standard',
-      description: 'Standard deduction for all taxpayers',
+      deductionName: "Standard Deduction",
+      deductionType: "Standard",
+      description: "Standard deduction for all taxpayers",
       maximumAmount: Math.round(gdpPerCapita * 0.2),
       isActive: true,
-      priority: 100
+      priority: 100,
     },
     {
-      deductionName: 'Dependent Care',
-      deductionType: 'Itemized',
-      description: 'Deduction for dependent care expenses',
+      deductionName: "Dependent Care",
+      deductionType: "Itemized",
+      description: "Deduction for dependent care expenses",
       maximumAmount: Math.round(gdpPerCapita * 0.1),
       percentage: 100,
       isActive: true,
-      priority: 80
-    }
+      priority: 80,
+    },
   ];
 
   return { category, brackets, deductions };
@@ -199,35 +218,36 @@ function generateIncomeTaxBrackets(gdpPerCapita: number, tier: string): TaxBrack
 
   // Bracket thresholds as multiples of GDP per capita
   const bracketStructures = {
-    'Advanced': [
+    Advanced: [
       { min: 0, max: 0.3, rate: 0 },
       { min: 0.3, max: 0.8, rate: 10 },
       { min: 0.8, max: 1.5, rate: 22 },
       { min: 1.5, max: 3.0, rate: 32 },
       { min: 3.0, max: 6.0, rate: 37 },
-      { min: 6.0, max: undefined, rate: 45 }
+      { min: 6.0, max: undefined, rate: 45 },
     ],
-    'Developed': [
+    Developed: [
       { min: 0, max: 0.4, rate: 0 },
       { min: 0.4, max: 1.0, rate: 8 },
       { min: 1.0, max: 2.0, rate: 18 },
       { min: 2.0, max: 4.0, rate: 28 },
-      { min: 4.0, max: undefined, rate: 35 }
+      { min: 4.0, max: undefined, rate: 35 },
     ],
-    'Emerging': [
+    Emerging: [
       { min: 0, max: 0.5, rate: 0 },
       { min: 0.5, max: 1.5, rate: 5 },
       { min: 1.5, max: 3.0, rate: 15 },
-      { min: 3.0, max: undefined, rate: 25 }
+      { min: 3.0, max: undefined, rate: 25 },
     ],
-    'Developing': [
+    Developing: [
       { min: 0, max: 1.0, rate: 0 },
       { min: 1.0, max: 3.0, rate: 10 },
-      { min: 3.0, max: undefined, rate: 20 }
-    ]
+      { min: 3.0, max: undefined, rate: 20 },
+    ],
   };
 
-  const structure = bracketStructures[tier as keyof typeof bracketStructures] || bracketStructures['Emerging'];
+  const structure =
+    bracketStructures[tier as keyof typeof bracketStructures] || bracketStructures["Emerging"];
 
   structure.forEach((bracket, index) => {
     brackets.push({
@@ -237,7 +257,7 @@ function generateIncomeTaxBrackets(gdpPerCapita: number, tier: string): TaxBrack
       rate: bracket.rate,
       marginalRate: true,
       isActive: true,
-      priority: 100 - (index * 10)
+      priority: 100 - index * 10,
     });
   });
 
@@ -256,22 +276,24 @@ function parseCorporateTaxFromEconomy(
 
   // Corporate rates typically lower than peak individual rates
   const baseRates = {
-    'Advanced': 22,
-    'Developed': 20,
-    'Emerging': 18,
-    'Developing': 15
+    Advanced: 22,
+    Developed: 20,
+    Emerging: 18,
+    Developing: 15,
   };
 
   const category: TaxCategoryInput = {
-    categoryName: 'Corporate Income Tax',
-    categoryType: 'Direct Tax',
-    description: 'Tax on corporate profits with size-based tiers',
+    categoryName: "Corporate Income Tax",
+    categoryType: "Direct Tax",
+    description: "Tax on corporate profits with size-based tiers",
     isActive: true,
     baseRate: baseRates[economicTier],
-    calculationMethod: generateBrackets ? CALCULATION_METHODS.TIERED : CALCULATION_METHODS.PERCENTAGE,
+    calculationMethod: generateBrackets
+      ? CALCULATION_METHODS.TIERED
+      : CALCULATION_METHODS.PERCENTAGE,
     deductionAllowed: true,
     priority: 85,
-    color: '#10b981'
+    color: "#10b981",
   };
 
   // Generate tiered brackets for corporations
@@ -280,31 +302,31 @@ function parseCorporateTaxFromEconomy(
     const baseRate = baseRates[economicTier];
     brackets = [
       {
-        bracketName: 'Small Business',
+        bracketName: "Small Business",
         minIncome: 0,
         maxIncome: 100000,
         rate: Math.max(10, baseRate - 7),
         marginalRate: false,
         isActive: true,
-        priority: 100
+        priority: 100,
       },
       {
-        bracketName: 'Medium Enterprise',
+        bracketName: "Medium Enterprise",
         minIncome: 100000,
         maxIncome: 1000000,
         rate: baseRate,
         marginalRate: false,
         isActive: true,
-        priority: 90
+        priority: 90,
       },
       {
-        bracketName: 'Large Corporation',
+        bracketName: "Large Corporation",
         minIncome: 1000000,
         rate: Math.min(35, baseRate + 3),
         marginalRate: false,
         isActive: true,
-        priority: 80
-      }
+        priority: 80,
+      },
     ];
   }
 
@@ -314,30 +336,32 @@ function parseCorporateTaxFromEconomy(
 /**
  * Parse sales tax/VAT from economy
  */
-function parseSalesTaxFromEconomy(coreIndicators: CoreEconomicIndicators): { category: TaxCategoryInput } | null {
+function parseSalesTaxFromEconomy(
+  coreIndicators: CoreEconomicIndicators
+): { category: TaxCategoryInput } | null {
   const gdpPerCapita = coreIndicators.gdpPerCapita;
   const economicTier = getEconomicTier(gdpPerCapita);
 
   // VAT rates typically higher in developed economies
   const vatRates = {
-    'Advanced': 20,
-    'Developed': 15,
-    'Emerging': 12,
-    'Developing': 8
+    Advanced: 20,
+    Developed: 15,
+    Emerging: 12,
+    Developing: 8,
   };
 
   return {
     category: {
-      categoryName: 'Value Added Tax (VAT)',
-      categoryType: 'Indirect Tax',
-      description: 'Consumption tax on goods and services',
+      categoryName: "Value Added Tax (VAT)",
+      categoryType: "Indirect Tax",
+      description: "Consumption tax on goods and services",
       isActive: true,
       baseRate: vatRates[economicTier],
       calculationMethod: CALCULATION_METHODS.PERCENTAGE,
       deductionAllowed: false,
       priority: 80,
-      color: '#f59e0b'
-    }
+      color: "#f59e0b",
+    },
   };
 }
 
@@ -394,7 +418,7 @@ function mapRevenueSourceToTaxCategory(
   nominalGDP: number
 ): TaxCategoryInput | null {
   // Defensive check: ensure name exists
-  if (!source.name || typeof source.name !== 'string') {
+  if (!source.name || typeof source.name !== "string") {
     return null;
   }
 
@@ -403,45 +427,45 @@ function mapRevenueSourceToTaxCategory(
   const gdpPercent = nominalGDP > 0 ? (source.revenueAmount / nominalGDP) * 100 : 0;
 
   // Map common revenue sources to tax categories
-  if (sourceName.includes('property') || sourceName.includes('real estate')) {
+  if (sourceName.includes("property") || sourceName.includes("real estate")) {
     return {
-      categoryName: 'Property Tax',
-      categoryType: 'Direct Tax',
+      categoryName: "Property Tax",
+      categoryType: "Direct Tax",
       description: `Property tax generating ${revenuePercent.toFixed(1)}% of government revenue`,
       isActive: true,
       baseRate: Math.min(3, Math.max(0.5, gdpPercent)),
       calculationMethod: CALCULATION_METHODS.PERCENTAGE,
       deductionAllowed: false,
       priority: 70,
-      color: '#8b5cf6'
+      color: "#8b5cf6",
     };
   }
 
-  if (sourceName.includes('payroll') || sourceName.includes('social security')) {
+  if (sourceName.includes("payroll") || sourceName.includes("social security")) {
     return {
-      categoryName: 'Payroll Tax',
-      categoryType: 'Direct Tax',
+      categoryName: "Payroll Tax",
+      categoryType: "Direct Tax",
       description: `Payroll tax for social programs generating ${revenuePercent.toFixed(1)}% of revenue`,
       isActive: true,
       baseRate: Math.min(15, Math.max(5, gdpPercent * 1.5)),
       calculationMethod: CALCULATION_METHODS.PERCENTAGE,
       deductionAllowed: false,
       priority: 75,
-      color: '#06b6d4'
+      color: "#06b6d4",
     };
   }
 
-  if (sourceName.includes('excise') || sourceName.includes('sin tax')) {
+  if (sourceName.includes("excise") || sourceName.includes("sin tax")) {
     return {
-      categoryName: 'Excise Taxes',
-      categoryType: 'Indirect Tax',
+      categoryName: "Excise Taxes",
+      categoryType: "Indirect Tax",
       description: `Excise taxes on specific goods generating ${revenuePercent.toFixed(1)}% of revenue`,
       isActive: true,
       baseRate: Math.min(50, Math.max(10, gdpPercent * 3)),
       calculationMethod: CALCULATION_METHODS.PERCENTAGE,
       deductionAllowed: false,
       priority: 65,
-      color: '#ef4444'
+      color: "#ef4444",
     };
   }
 
@@ -464,43 +488,43 @@ function generateDepartmentExemptions(
 
   const category = dept.category;
 
-  if (category === 'Science and Technology') {
+  if (category === "Science and Technology") {
     exemptions.push({
-      exemptionName: 'R&D Tax Credit',
-      exemptionType: 'Corporate',
-      description: 'Tax credit for research and development investments',
+      exemptionName: "R&D Tax Credit",
+      exemptionType: "Corporate",
+      description: "Tax credit for research and development investments",
       exemptionRate: 20,
-      isActive: true
+      isActive: true,
     });
   }
 
-  if (category === 'Education') {
+  if (category === "Education") {
     exemptions.push({
-      exemptionName: 'Education Expense Deduction',
-      exemptionType: 'Individual',
-      description: 'Deduction for qualified education expenses',
+      exemptionName: "Education Expense Deduction",
+      exemptionType: "Individual",
+      description: "Deduction for qualified education expenses",
       exemptionAmount: Math.round(coreIndicators.gdpPerCapita * 0.1),
-      isActive: true
+      isActive: true,
     });
   }
 
-  if (category === 'Environment') {
+  if (category === "Environment") {
     exemptions.push({
-      exemptionName: 'Green Energy Tax Credit',
-      exemptionType: 'Corporate',
-      description: 'Credit for renewable energy investments',
+      exemptionName: "Green Energy Tax Credit",
+      exemptionType: "Corporate",
+      description: "Credit for renewable energy investments",
       exemptionRate: 30,
-      isActive: true
+      isActive: true,
     });
   }
 
-  if (category === 'Housing') {
+  if (category === "Housing") {
     exemptions.push({
-      exemptionName: 'First-Time Homebuyer Credit',
-      exemptionType: 'Individual',
-      description: 'Tax credit for first-time home purchases',
+      exemptionName: "First-Time Homebuyer Credit",
+      exemptionType: "Individual",
+      description: "Tax credit for first-time home purchases",
       exemptionAmount: Math.round(coreIndicators.gdpPerCapita * 0.15),
-      isActive: true
+      isActive: true,
     });
   }
 
@@ -515,30 +539,32 @@ function generateStandardExemptions(coreIndicators: CoreEconomicIndicators): Tax
 
   return [
     {
-      exemptionName: 'Personal Exemption',
-      exemptionType: 'Individual',
-      description: 'Standard personal exemption for all taxpayers',
+      exemptionName: "Personal Exemption",
+      exemptionType: "Individual",
+      description: "Standard personal exemption for all taxpayers",
       exemptionAmount: Math.round(gdpPerCapita * 0.15),
-      isActive: true
+      isActive: true,
     },
     {
-      exemptionName: 'Charitable Donations',
-      exemptionType: 'Individual',
-      description: 'Deduction for qualified charitable contributions',
+      exemptionName: "Charitable Donations",
+      exemptionType: "Individual",
+      description: "Deduction for qualified charitable contributions",
       exemptionRate: 100,
-      isActive: true
-    }
+      isActive: true,
+    },
   ];
 }
 
 /**
  * Get economic tier from GDP per capita
  */
-function getEconomicTier(gdpPerCapita: number): 'Advanced' | 'Developed' | 'Emerging' | 'Developing' {
-  if (gdpPerCapita >= 50000) return 'Advanced';
-  if (gdpPerCapita >= 25000) return 'Developed';
-  if (gdpPerCapita >= 10000) return 'Emerging';
-  return 'Developing';
+function getEconomicTier(
+  gdpPerCapita: number
+): "Advanced" | "Developed" | "Emerging" | "Developing" {
+  if (gdpPerCapita >= 50000) return "Advanced";
+  if (gdpPerCapita >= 25000) return "Developed";
+  if (gdpPerCapita >= 10000) return "Emerging";
+  return "Developing";
 }
 
 /**
@@ -554,7 +580,10 @@ export function calculateRecommendedTaxRevenue(
   recommendations: string[];
 } {
   const totalBudget = governmentData.structure.totalBudget;
-  const totalRevenue = governmentData.revenueSources.reduce((sum: number, source: RevenueSourceInput) => sum + source.revenueAmount, 0);
+  const totalRevenue = governmentData.revenueSources.reduce(
+    (sum: number, source: RevenueSourceInput) => sum + source.revenueAmount,
+    0
+  );
   const nominalGDP = coreIndicators.nominalGDP;
 
   const surplusDeficit = totalRevenue - totalBudget;
@@ -565,20 +594,22 @@ export function calculateRecommendedTaxRevenue(
   if (surplusDeficit < 0) {
     const deficit = Math.abs(surplusDeficit);
     recommendations.push(`Increase tax revenue by ${formatCurrency(deficit)} to balance budget`);
-    recommendations.push(`Current deficit: ${((deficit / totalBudget) * 100).toFixed(1)}% of budget`);
+    recommendations.push(
+      `Current deficit: ${((deficit / totalBudget) * 100).toFixed(1)}% of budget`
+    );
   }
 
   if (revenueGDPPercent < 15) {
-    recommendations.push('Tax revenue is low relative to GDP - consider expanding tax base');
+    recommendations.push("Tax revenue is low relative to GDP - consider expanding tax base");
   } else if (revenueGDPPercent > 40) {
-    recommendations.push('Tax burden is high - may impact economic growth');
+    recommendations.push("Tax burden is high - may impact economic growth");
   }
 
   return {
     targetRevenue: totalBudget,
     revenueGDPPercent,
     surplusDeficit,
-    recommendations
+    recommendations,
   };
 }
 
@@ -586,10 +617,10 @@ export function calculateRecommendedTaxRevenue(
  * Helper: Format currency
  */
 function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0
+    maximumFractionDigits: 0,
   }).format(amount);
 }

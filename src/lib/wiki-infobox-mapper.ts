@@ -64,128 +64,131 @@ export interface IxStatsCountryData {
 /**
  * Mapping configuration from Wiki infobox parameters to IxStats fields
  */
-export const INFOBOX_FIELD_MAPPING: Record<string, {
-  ixStatsField: string;
-  model: 'Country' | 'NationalIdentity';
-  transform?: (value: string) => any;
-}> = {
+export const INFOBOX_FIELD_MAPPING: Record<
+  string,
+  {
+    ixStatsField: string;
+    model: "Country" | "NationalIdentity";
+    transform?: (value: string) => any;
+  }
+> = {
   // === NATIONAL IDENTITY FIELDS === //
-  'conventional_long_name': {
-    ixStatsField: 'nationalIdentity.officialName',
-    model: 'NationalIdentity'
+  conventional_long_name: {
+    ixStatsField: "nationalIdentity.officialName",
+    model: "NationalIdentity",
   },
-  'native_name': {
-    ixStatsField: 'nationalIdentity.officialName', // Fallback if conventional_long_name not present
-    model: 'NationalIdentity'
+  native_name: {
+    ixStatsField: "nationalIdentity.officialName", // Fallback if conventional_long_name not present
+    model: "NationalIdentity",
   },
-  'common_name': {
-    ixStatsField: 'name',
-    model: 'Country'
+  common_name: {
+    ixStatsField: "name",
+    model: "Country",
   },
-  'national_motto': {
-    ixStatsField: 'nationalIdentity.motto',
-    model: 'NationalIdentity'
+  national_motto: {
+    ixStatsField: "nationalIdentity.motto",
+    model: "NationalIdentity",
   },
-  'englishmotto': {
-    ixStatsField: 'nationalIdentity.motto', // English version takes precedence
-    model: 'NationalIdentity'
+  englishmotto: {
+    ixStatsField: "nationalIdentity.motto", // English version takes precedence
+    model: "NationalIdentity",
   },
-  'national_anthem': {
-    ixStatsField: 'nationalIdentity.nationalAnthem',
-    model: 'NationalIdentity'
+  national_anthem: {
+    ixStatsField: "nationalIdentity.nationalAnthem",
+    model: "NationalIdentity",
   },
-  'capital': {
-    ixStatsField: 'nationalIdentity.capitalCity',
-    model: 'NationalIdentity'
+  capital: {
+    ixStatsField: "nationalIdentity.capitalCity",
+    model: "NationalIdentity",
   },
-  'largest_city': {
-    ixStatsField: 'nationalIdentity.largestCity',
-    model: 'NationalIdentity'
+  largest_city: {
+    ixStatsField: "nationalIdentity.largestCity",
+    model: "NationalIdentity",
   },
-  'official_languages': {
-    ixStatsField: 'nationalIdentity.officialLanguages',
-    model: 'NationalIdentity'
+  official_languages: {
+    ixStatsField: "nationalIdentity.officialLanguages",
+    model: "NationalIdentity",
   },
-  'national_languages': {
-    ixStatsField: 'nationalIdentity.nationalLanguage',
-    model: 'NationalIdentity'
+  national_languages: {
+    ixStatsField: "nationalIdentity.nationalLanguage",
+    model: "NationalIdentity",
   },
-  'demonym': {
-    ixStatsField: 'nationalIdentity.demonym',
-    model: 'NationalIdentity'
+  demonym: {
+    ixStatsField: "nationalIdentity.demonym",
+    model: "NationalIdentity",
   },
-  'government_type': {
-    ixStatsField: 'nationalIdentity.governmentType',
-    model: 'NationalIdentity',
+  government_type: {
+    ixStatsField: "nationalIdentity.governmentType",
+    model: "NationalIdentity",
     transform: (value) => {
       // Normalize government types to IxStats standard values
       const normalized = value.toLowerCase();
-      if (normalized.includes('republic')) return 'republic';
-      if (normalized.includes('kingdom') || normalized.includes('monarchy')) return 'kingdom';
-      if (normalized.includes('federation')) return 'federation';
-      if (normalized.includes('empire')) return 'empire';
-      if (normalized.includes('sultanate')) return 'sultanate';
-      if (normalized.includes('emirate')) return 'emirate';
-      return 'republic'; // default
-    }
+      if (normalized.includes("republic")) return "republic";
+      if (normalized.includes("kingdom") || normalized.includes("monarchy")) return "kingdom";
+      if (normalized.includes("federation")) return "federation";
+      if (normalized.includes("empire")) return "empire";
+      if (normalized.includes("sultanate")) return "sultanate";
+      if (normalized.includes("emirate")) return "emirate";
+      return "republic"; // default
+    },
   },
 
   // === COUNTRY MODEL FIELDS === //
-  'religion': {
-    ixStatsField: 'religion',
-    model: 'Country'
+  religion: {
+    ixStatsField: "religion",
+    model: "Country",
   },
-  'leader_name1': {
-    ixStatsField: 'leader',
-    model: 'Country'
+  leader_name1: {
+    ixStatsField: "leader",
+    model: "Country",
   },
-  'area_km2': {
-    ixStatsField: 'landArea',
-    model: 'Country',
-    transform: (value) => parseFloat(value.replace(/,/g, ''))
+  area_km2: {
+    ixStatsField: "landArea",
+    model: "Country",
+    transform: (value) => parseFloat(value.replace(/,/g, "")),
   },
-  'area_sq_mi': {
-    ixStatsField: 'areaSqMi',
-    model: 'Country',
-    transform: (value) => parseFloat(value.replace(/,/g, ''))
+  area_sq_mi: {
+    ixStatsField: "areaSqMi",
+    model: "Country",
+    transform: (value) => parseFloat(value.replace(/,/g, "")),
   },
-  'population_estimate': {
-    ixStatsField: 'currentPopulation',
-    model: 'Country',
-    transform: (value) => parseInt(value.replace(/,/g, ''))
+  population_estimate: {
+    ixStatsField: "currentPopulation",
+    model: "Country",
+    transform: (value) => parseInt(value.replace(/,/g, "")),
   },
-  'population_census': {
-    ixStatsField: 'currentPopulation',
-    model: 'Country',
-    transform: (value) => parseInt(value.replace(/,/g, ''))
+  population_census: {
+    ixStatsField: "currentPopulation",
+    model: "Country",
+    transform: (value) => parseInt(value.replace(/,/g, "")),
   },
-  'population_density_km2': {
-    ixStatsField: 'populationDensity',
-    model: 'Country',
-    transform: (value) => parseFloat(value.replace(/,/g, ''))
+  population_density_km2: {
+    ixStatsField: "populationDensity",
+    model: "Country",
+    transform: (value) => parseFloat(value.replace(/,/g, "")),
   },
 
   // === IMAGES === //
-  'image_flag': {
-    ixStatsField: 'flag',
-    model: 'Country',
+  image_flag: {
+    ixStatsField: "flag",
+    model: "Country",
     transform: (value) => {
       // Convert wiki file reference to URL
-      if (value.startsWith('File:') || value.startsWith('Image:')) {
-        return `https://upload.wikimedia.org/wikipedia/commons/${value.replace('File:', '').replace('Image:', '')}`;
+      if (value.startsWith("File:") || value.startsWith("Image:")) {
+        return `https://upload.wikimedia.org/wikipedia/commons/${value.replace("File:", "").replace("Image:", "")}`;
       }
       return value;
-    }
+    },
   },
-  'image_coat': {
-    ixStatsField: 'coatOfArms',
-    model: 'Country',
+  image_coat: {
+    ixStatsField: "coatOfArms",
+    model: "Country",
     transform: (value) => {
-      if (value.startsWith('File:') || value.startsWith('Image:')) {
-        return `https://upload.wikimedia.org/wikipedia/commons/${value.replace('File:', '').replace('Image:', '')}`;
+      if (value.startsWith("File:") || value.startsWith("Image:")) {
+        return `https://upload.wikimedia.org/wikipedia/commons/${value.replace("File:", "").replace("Image:", "")}`;
       }
       return value;
-    }
+    },
   },
 
   // === GEOGRAPHY (parsed from map or location data) === //
@@ -215,9 +218,9 @@ export function parseInfoboxTemplate(wikitext: string): WikiInfoboxData {
     const [, key, value] = match;
     // Clean up value (remove wiki markup, extra whitespace)
     const cleanValue = value
-      .replace(/\[\[([^\]|]+\|)?([^\]]+)\]\]/g, '$2') // Remove wiki links
-      .replace(/<[^>]+>/g, '') // Remove HTML tags
-      .replace(/\{\{[^}]+\}\}/g, '') // Remove templates
+      .replace(/\[\[([^\]|]+\|)?([^\]]+)\]\]/g, "$2") // Remove wiki links
+      .replace(/<[^>]+>/g, "") // Remove HTML tags
+      .replace(/\{\{[^}]+\}\}/g, "") // Remove templates
       .trim();
 
     if (cleanValue) {
@@ -233,21 +236,19 @@ export function parseInfoboxTemplate(wikitext: string): WikiInfoboxData {
  */
 export function mapInfoboxToIxStats(wikiData: WikiInfoboxData): IxStatsCountryData {
   const result: IxStatsCountryData = {
-    nationalIdentity: {}
+    nationalIdentity: {},
   };
 
   // Apply mappings
   for (const [wikiParam, mapping] of Object.entries(INFOBOX_FIELD_MAPPING)) {
     const wikiValue = wikiData[wikiParam];
-    if (wikiValue === null || wikiValue === undefined || wikiValue === '') continue;
+    if (wikiValue === null || wikiValue === undefined || wikiValue === "") continue;
 
     // Transform value if needed
-    const transformedValue = mapping.transform
-      ? mapping.transform(String(wikiValue))
-      : wikiValue;
+    const transformedValue = mapping.transform ? mapping.transform(String(wikiValue)) : wikiValue;
 
     // Set value in appropriate location
-    const fieldPath = mapping.ixStatsField.split('.');
+    const fieldPath = mapping.ixStatsField.split(".");
     if (fieldPath.length === 1) {
       // Top-level field
       (result as any)[fieldPath[0]] = transformedValue;
@@ -263,7 +264,10 @@ export function mapInfoboxToIxStats(wikiData: WikiInfoboxData): IxStatsCountryDa
 
   // Generate slug from name
   if (result.name) {
-    result.slug = result.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    result.slug = result.name
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "");
   }
 
   // Set baseline population same as current if we have it
@@ -282,38 +286,54 @@ export function mapInfoboxToIxStats(wikiData: WikiInfoboxData): IxStatsCountryDa
 /**
  * Parse coordinates from Wikipedia format to lat/long
  */
-export function parseCoordinates(coordString: string): { latitude: string; longitude: string } | null {
+export function parseCoordinates(
+  coordString: string
+): { latitude: string; longitude: string } | null {
   // Match formats like "51°30′N 0°7′W" or "40.7128°N, 74.0060°W"
-  const dmsMatch = coordString.match(/(\d+)[°º](\d+)?['′]?(\d+)?["″]?([NS])\s*[,\s]*(\d+)[°º](\d+)?['′]?(\d+)?["″]?([EW])/);
+  const dmsMatch = coordString.match(
+    /(\d+)[°º](\d+)?['′]?(\d+)?["″]?([NS])\s*[,\s]*(\d+)[°º](\d+)?['′]?(\d+)?["″]?([EW])/
+  );
 
   if (dmsMatch) {
-    const [, latDeg, latMin = '0', latSec = '0', latDir, lonDeg, lonMin = '0', lonSec = '0', lonDir] = dmsMatch;
+    const [
+      ,
+      latDeg,
+      latMin = "0",
+      latSec = "0",
+      latDir,
+      lonDeg,
+      lonMin = "0",
+      lonSec = "0",
+      lonDir,
+    ] = dmsMatch;
 
     let lat = parseInt(latDeg) + parseInt(latMin) / 60 + parseInt(latSec) / 3600;
     let lon = parseInt(lonDeg) + parseInt(lonMin) / 60 + parseInt(lonSec) / 3600;
 
-    if (latDir === 'S') lat = -lat;
-    if (lonDir === 'W') lon = -lon;
+    if (latDir === "S") lat = -lat;
+    if (lonDir === "W") lon = -lon;
 
     return {
       latitude: lat.toFixed(6),
-      longitude: lon.toFixed(6)
+      longitude: lon.toFixed(6),
     };
   }
 
   // Try decimal format
-  const decimalMatch = coordString.match(/(-?\d+\.?\d*)[°º]?\s*([NS])[,\s]+(-?\d+\.?\d*)[°º]?\s*([EW])/);
+  const decimalMatch = coordString.match(
+    /(-?\d+\.?\d*)[°º]?\s*([NS])[,\s]+(-?\d+\.?\d*)[°º]?\s*([EW])/
+  );
   if (decimalMatch) {
     let [, lat, latDir, lon, lonDir] = decimalMatch;
     let latitude = parseFloat(lat);
     let longitude = parseFloat(lon);
 
-    if (latDir === 'S') latitude = -Math.abs(latitude);
-    if (lonDir === 'W') longitude = -Math.abs(longitude);
+    if (latDir === "S") latitude = -Math.abs(latitude);
+    if (lonDir === "W") longitude = -Math.abs(longitude);
 
     return {
       latitude: latitude.toFixed(6),
-      longitude: longitude.toFixed(6)
+      longitude: longitude.toFixed(6),
     };
   }
 

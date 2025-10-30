@@ -18,10 +18,7 @@ const colors = {
 };
 
 // Required environment variables
-const REQUIRED_VARS = [
-  "DATABASE_URL",
-  "NODE_ENV",
-] as const;
+const REQUIRED_VARS = ["DATABASE_URL", "NODE_ENV"] as const;
 
 // Optional but recommended environment variables
 const RECOMMENDED_VARS = [
@@ -108,25 +105,19 @@ function validateClerk(): ValidationResult {
   const nodeEnv = process.env.NODE_ENV;
 
   if (!publicKey || !secretKey) {
-    result.warnings.push(
-      "Clerk authentication not configured (authentication will be disabled)"
-    );
+    result.warnings.push("Clerk authentication not configured (authentication will be disabled)");
     return result;
   }
 
   // Check for test keys in production
   if (nodeEnv === "production") {
     if (publicKey.startsWith("pk_test_")) {
-      result.errors.push(
-        "Using test Clerk public key in production (must use pk_live_*)"
-      );
+      result.errors.push("Using test Clerk public key in production (must use pk_live_*)");
       result.passed = false;
     }
 
     if (secretKey.startsWith("sk_test_")) {
-      result.errors.push(
-        "Using test Clerk secret key in production (must use sk_live_*)"
-      );
+      result.errors.push("Using test Clerk secret key in production (must use sk_live_*)");
       result.passed = false;
     }
   }
@@ -134,9 +125,7 @@ function validateClerk(): ValidationResult {
   // Check for production keys in development
   if (nodeEnv === "development") {
     if (publicKey.startsWith("pk_live_")) {
-      result.warnings.push(
-        "Using production Clerk keys in development (consider using test keys)"
-      );
+      result.warnings.push("Using production Clerk keys in development (consider using test keys)");
     }
   }
 
@@ -168,20 +157,13 @@ function validateDatabase(): ValidationResult {
     print(`  Database Type: ${dbType}`, "blue");
 
     if (nodeEnv === "production") {
-      result.warnings.push(
-        "Using SQLite in production (PostgreSQL recommended for production)"
-      );
+      result.warnings.push("Using SQLite in production (PostgreSQL recommended for production)");
     }
-  } else if (
-    databaseUrl.startsWith("postgresql://") ||
-    databaseUrl.startsWith("postgres://")
-  ) {
+  } else if (databaseUrl.startsWith("postgresql://") || databaseUrl.startsWith("postgres://")) {
     const dbType = "PostgreSQL";
     print(`  Database Type: ${dbType}`, "blue");
   } else {
-    result.warnings.push(
-      `Unknown database type: ${databaseUrl.split(":")[0]}`
-    );
+    result.warnings.push(`Unknown database type: ${databaseUrl.split(":")[0]}`);
   }
 
   return result;
@@ -202,9 +184,7 @@ function validateRedis(): ValidationResult {
   const rateLimitEnabled = process.env.RATE_LIMIT_ENABLED;
 
   if (rateLimitEnabled === "true" && !redisUrl) {
-    result.warnings.push(
-      "Rate limiting enabled without Redis (will use in-memory fallback)"
-    );
+    result.warnings.push("Rate limiting enabled without Redis (will use in-memory fallback)");
   }
 
   if (redisEnabled === "true" && !redisUrl) {
@@ -230,9 +210,7 @@ function validateDiscordWebhook(): ValidationResult {
   const nodeEnv = process.env.NODE_ENV;
 
   if (webhookEnabled === "true" && !webhookUrl) {
-    result.errors.push(
-      "DISCORD_WEBHOOK_ENABLED is true but DISCORD_WEBHOOK_URL is not set"
-    );
+    result.errors.push("DISCORD_WEBHOOK_ENABLED is true but DISCORD_WEBHOOK_URL is not set");
     result.passed = false;
   }
 
@@ -266,9 +244,7 @@ function validateBasePath(): ValidationResult {
 
   if (nodeEnv === "production") {
     if (!basePath || basePath === "/") {
-      result.warnings.push(
-        "BASE_PATH not set or set to root (expected: /projects/ixstats)"
-      );
+      result.warnings.push("BASE_PATH not set or set to root (expected: /projects/ixstats)");
     }
 
     if (basePath !== publicBasePath) {
@@ -335,14 +311,10 @@ async function checkDiskSpace(): Promise<ValidationResult> {
     print(`  Disk Space Available: ${availableGB}GB`, "blue");
 
     if (availableGB < 5) {
-      result.errors.push(
-        `Insufficient disk space: ${availableGB}GB available, 5GB required`
-      );
+      result.errors.push(`Insufficient disk space: ${availableGB}GB available, 5GB required`);
       result.passed = false;
     } else if (availableGB < 10) {
-      result.warnings.push(
-        `Low disk space: ${availableGB}GB available (10GB+ recommended)`
-      );
+      result.warnings.push(`Low disk space: ${availableGB}GB available (10GB+ recommended)`);
     }
   } catch (error) {
     result.warnings.push("Could not check disk space (not critical)");
@@ -429,16 +401,17 @@ async function testExternalAPIs(): Promise<ValidationResult> {
   // Test MediaWiki API
   if (mediawikiUrl) {
     try {
-      const response = await fetch(`${mediawikiUrl}api.php?action=query&meta=siteinfo&format=json`, {
-        signal: AbortSignal.timeout(5000),
-      });
+      const response = await fetch(
+        `${mediawikiUrl}api.php?action=query&meta=siteinfo&format=json`,
+        {
+          signal: AbortSignal.timeout(5000),
+        }
+      );
 
       if (response.ok) {
         print("✅ MediaWiki API accessible", "green");
       } else {
-        result.warnings.push(
-          `MediaWiki API returned status ${response.status}`
-        );
+        result.warnings.push(`MediaWiki API returned status ${response.status}`);
       }
     } catch (error) {
       result.warnings.push(
@@ -561,14 +534,8 @@ async function main() {
   // Summary
   printHeader("Verification Summary");
 
-  const totalErrors = allResults.reduce(
-    (sum, r) => sum + r.errors.length,
-    0
-  );
-  const totalWarnings = allResults.reduce(
-    (sum, r) => sum + r.warnings.length,
-    0
-  );
+  const totalErrors = allResults.reduce((sum, r) => sum + r.errors.length, 0);
+  const totalWarnings = allResults.reduce((sum, r) => sum + r.warnings.length, 0);
   const allPassed = allResults.every((r) => r.passed);
 
   if (totalErrors > 0) {

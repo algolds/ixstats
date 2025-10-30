@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient();
 
@@ -25,9 +25,11 @@ interface ImportedCountry {
 }
 
 async function importGeographicData() {
-  console.error('⚠️  This script is DEPRECATED!');
-  console.error('⚠️  Please use: scripts/unify-world-roster-and-map-data.ts');
-  console.error('⚠️  That script calculates the scale factor dynamically from World Roster data.\n');
+  console.error("⚠️  This script is DEPRECATED!");
+  console.error("⚠️  Please use: scripts/unify-world-roster-and-map-data.ts");
+  console.error(
+    "⚠️  That script calculates the scale factor dynamically from World Roster data.\n"
+  );
   process.exit(1);
 
   try {
@@ -40,10 +42,12 @@ async function importGeographicData() {
     `;
 
     if (!tempTableCheck[0].exists) {
-      console.error('❌ Error: temp_political_import table not found.');
-      console.log('Please run the ogr2ogr import first:');
-      console.log('cd /ixwiki/public/projects/maps/scripting/geojson_4326');
-      console.log('ogr2ogr -f "PostgreSQL" PG:"host=localhost port=5433 dbname=ixstats user=postgres" political.geojson -nln temp_political_import -overwrite');
+      console.error("❌ Error: temp_political_import table not found.");
+      console.log("Please run the ogr2ogr import first:");
+      console.log("cd /ixwiki/public/projects/maps/scripting/geojson_4326");
+      console.log(
+        'ogr2ogr -f "PostgreSQL" PG:"host=localhost port=5433 dbname=ixstats user=postgres" political.geojson -nln temp_political_import -overwrite'
+      );
       process.exit(1);
     }
 
@@ -69,17 +73,17 @@ async function importGeographicData() {
         const existing = await db.country.findFirst({
           where: {
             OR: [
-              { name: { equals: geoCountry.name, mode: 'insensitive' } },
-              { name: { contains: geoCountry.name, mode: 'insensitive' } },
-              { slug: { contains: geoCountry.name.toLowerCase().replace(/\s+/g, '-') } },
-            ]
+              { name: { equals: geoCountry.name, mode: "insensitive" } },
+              { name: { contains: geoCountry.name, mode: "insensitive" } },
+              { slug: { contains: geoCountry.name.toLowerCase().replace(/\s+/g, "-") } },
+            ],
           },
           select: {
             id: true,
             name: true,
             currentPopulation: true,
             currentTotalGdp: true,
-          }
+          },
         });
 
         if (existing) {
@@ -87,13 +91,17 @@ async function importGeographicData() {
 
           // Calculate area and coastline using PostGIS
           // Note: PostGIS uses Earth's WGS84 ellipsoid, so we multiply by IxEarth scale factor
-          const geoMetrics = await db.$queryRaw<[{
-            area_sq_mi: number;
-            area_sq_km: number;
-            coastline_km: number;
-            centroid: any;
-            bbox: any;
-          }]>`
+          const geoMetrics = await db.$queryRaw<
+            [
+              {
+                area_sq_mi: number;
+                area_sq_km: number;
+                coastline_km: number;
+                centroid: any;
+                bbox: any;
+              },
+            ]
+          >`
             WITH geom AS (
               SELECT ST_GeomFromGeoJSON(${JSON.stringify(geoCountry.geojson)}::text)::geography as geog
             )
@@ -125,11 +133,13 @@ async function importGeographicData() {
               // Recalculate density metrics
               populationDensity: existing.currentPopulation / area_sq_mi,
               gdpDensity: existing.currentTotalGdp / area_sq_mi,
-            }
+            },
           });
 
           updated++;
-          console.log(`✓ ${geoCountry.name.padEnd(30)} → ${existing.name.padEnd(30)} (${area_sq_mi.toLocaleString()} sq mi)`);
+          console.log(
+            `✓ ${geoCountry.name.padEnd(30)} → ${existing.name.padEnd(30)} (${area_sq_mi.toLocaleString()} sq mi)`
+          );
         } else {
           unmatched.push(geoCountry.name);
           console.log(`✗ ${geoCountry.name} - no match found`);
@@ -137,14 +147,14 @@ async function importGeographicData() {
       } catch (error) {
         errors.push({
           country: geoCountry.name,
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
         });
         console.error(`❌ Error processing ${geoCountry.name}: ${error}`);
       }
     }
 
-    console.log(`\n${'='.repeat(80)}`);
-    console.log('✅ Import Summary:');
+    console.log(`\n${"=".repeat(80)}`);
+    console.log("✅ Import Summary:");
     console.log(`   Total in GeoJSON: ${importedCountries.length}`);
     console.log(`   Matched: ${matched}`);
     console.log(`   Updated: ${updated}`);
@@ -153,7 +163,7 @@ async function importGeographicData() {
 
     if (unmatched.length > 0) {
       console.log(`\n⚠️  Unmatched countries (${unmatched.length}):`);
-      unmatched.slice(0, 20).forEach(name => console.log(`   - ${name}`));
+      unmatched.slice(0, 20).forEach((name) => console.log(`   - ${name}`));
       if (unmatched.length > 20) {
         console.log(`   ... and ${unmatched.length - 20} more`);
       }
@@ -167,9 +177,8 @@ async function importGeographicData() {
     }
 
     console.log(`\n✅ Geographic data import complete!`);
-
   } catch (error) {
-    console.error('❌ Fatal error during import:', error);
+    console.error("❌ Fatal error during import:", error);
     process.exit(1);
   } finally {
     await db.$disconnect();

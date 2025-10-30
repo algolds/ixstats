@@ -1,8 +1,8 @@
 "use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { 
+import React from "react";
+import { motion } from "framer-motion";
+import {
   Flag,
   MapPin,
   Calendar,
@@ -19,21 +19,21 @@ import {
   MoreHorizontal,
   Eye,
   Download,
-  FileText
-} from 'lucide-react';
-import { Card, CardContent } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
-import { 
+  FileText,
+} from "lucide-react";
+import { Card, CardContent } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuGroup,
-  DropdownMenuGroupLabel
-} from '~/components/ui/dropdown-menu';
-import { ActivityRings, createDefaultActivityRings } from './ActivityRings';
+  DropdownMenuGroupLabel,
+} from "~/components/ui/dropdown-menu";
+import { ActivityRings, createDefaultActivityRings } from "./ActivityRings";
 
 interface ActivityRing {
   id: string;
@@ -46,7 +46,7 @@ interface ActivityRing {
   metrics: {
     primary: string;
     secondary: string;
-    trend: 'up' | 'down' | 'stable';
+    trend: "up" | "down" | "stable";
     change: string;
   };
 }
@@ -89,13 +89,13 @@ interface HolographicNationCardProps {
 export function HolographicNationCard({
   country,
   flagUrl,
-  flagColors = ['#3B82F6', '#10B981', '#F59E0B'],
+  flagColors = ["#3B82F6", "#10B981", "#F59E0B"],
   isOwner = false,
   showInteractionControls = false,
-  className = ''
+  className = "",
 }: HolographicNationCardProps) {
-  const primaryColor = flagColors[0] || '#3B82F6';
-  
+  const primaryColor = flagColors[0] || "#3B82F6";
+
   // Generate activity rings data from country vitality scores
   const activityRingsData = createDefaultActivityRings({
     economicVitality: country.economicVitality,
@@ -113,14 +113,14 @@ export function HolographicNationCard({
       tier: country.populationTier,
     },
     diplomaticMetrics: {
-      allies: '12',
-      reputation: 'Rising',
-      treaties: '8',
+      allies: "12",
+      reputation: "Rising",
+      treaties: "8",
     },
     governmentMetrics: {
-      approval: '72%',
-      efficiency: 'High',
-      stability: 'Stable',
+      approval: "72%",
+      efficiency: "High",
+      stability: "Stable",
     },
   });
 
@@ -128,15 +128,15 @@ export function HolographicNationCard({
     <motion.div
       initial={{ opacity: 0, y: 20, rotateX: 15 }}
       animate={{ opacity: 1, y: 0, rotateX: 0 }}
-      transition={{ 
-        duration: 0.8, 
+      transition={{
+        duration: 0.8,
         ease: [0.4, 0, 0.2, 1],
         type: "spring",
-        stiffness: 100
+        stiffness: 100,
       }}
       className={`relative ${className}`}
     >
-      <Card className="relative overflow-hidden glass-hierarchy-parent border-0 bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl">
+      <Card className="glass-hierarchy-parent relative overflow-hidden border-0 bg-gradient-to-br from-white/10 via-white/5 to-transparent backdrop-blur-xl">
         {/* Holographic Effects */}
         <div className="absolute inset-0 overflow-hidden">
           <motion.div
@@ -144,16 +144,16 @@ export function HolographicNationCard({
             style={{
               background: `
                 radial-gradient(circle at 20% 30%, ${primaryColor}15 0%, transparent 50%),
-                radial-gradient(circle at 80% 70%, ${flagColors[1] || '#10B981'}15 0%, transparent 50%),
-                radial-gradient(circle at 40% 80%, ${flagColors[2] || '#F59E0B'}15 0%, transparent 50%)
+                radial-gradient(circle at 80% 70%, ${flagColors[1] || "#10B981"}15 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, ${flagColors[2] || "#F59E0B"}15 0%, transparent 50%)
               `,
             }}
             animate={{
               transform: [
-                'translateX(0%) translateY(0%) scale(1)',
-                'translateX(1%) translateY(-0.5%) scale(1.01)',
-                'translateX(-0.5%) translateY(0.5%) scale(0.99)',
-                'translateX(0%) translateY(0%) scale(1)',
+                "translateX(0%) translateY(0%) scale(1)",
+                "translateX(1%) translateY(-0.5%) scale(1.01)",
+                "translateX(-0.5%) translateY(0.5%) scale(0.99)",
+                "translateX(0%) translateY(0%) scale(1)",
               ],
             }}
             transition={{
@@ -162,18 +162,18 @@ export function HolographicNationCard({
               ease: "easeInOut",
             }}
           />
-          
+
           {/* Flag Background */}
           {flagUrl && (
             <motion.div
               className="absolute inset-0 opacity-[0.05] dark:opacity-[0.02]"
               style={{
                 backgroundImage: `url(${flagUrl})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-                filter: 'blur(1px) saturate(1.1) brightness(1.05)',
-                mixBlendMode: 'overlay',
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                backgroundRepeat: "no-repeat",
+                filter: "blur(1px) saturate(1.1) brightness(1.05)",
+                mixBlendMode: "overlay",
               }}
               animate={{
                 scale: [1, 1.01, 1],
@@ -197,21 +197,15 @@ export function HolographicNationCard({
                 45deg,
                 transparent 30%,
                 ${primaryColor}08 40%,
-                ${flagColors[1] || '#10B981'}12 50%,
-                ${flagColors[2] || '#F59E0B'}08 60%,
+                ${flagColors[1] || "#10B981"}12 50%,
+                ${flagColors[2] || "#F59E0B"}08 60%,
                 transparent 70%
               )
             `,
-            backgroundSize: '300% 300%',
+            backgroundSize: "300% 300%",
           }}
           animate={{
-            backgroundPosition: [
-              '0% 0%',
-              '100% 100%',
-              '0% 100%', 
-              '100% 0%',
-              '0% 0%'
-            ],
+            backgroundPosition: ["0% 0%", "100% 100%", "0% 100%", "100% 0%", "0% 0%"],
           }}
           transition={{
             duration: 15,
@@ -221,8 +215,8 @@ export function HolographicNationCard({
         />
 
         {/* Content */}
-        <CardContent className="p-6 relative z-10">
-          <div className="flex items-start gap-6 mb-6">
+        <CardContent className="relative z-10 p-6">
+          <div className="mb-6 flex items-start gap-6">
             {/* Flag Section */}
             <motion.div
               whileHover={{ scale: 1.05, rotateY: 5 }}
@@ -231,19 +225,19 @@ export function HolographicNationCard({
             >
               <div className="relative">
                 {flagUrl ? (
-                  <div className="w-20 h-14 rounded-lg overflow-hidden border-2 shadow-xl relative group">
-                    <img 
-                      src={flagUrl} 
-                      alt={`${country.name} flag`} 
-                      className="w-full h-full object-cover transition-transform group-hover:scale-110" 
+                  <div className="group relative h-14 w-20 overflow-hidden rounded-lg border-2 shadow-xl">
+                    <img
+                      src={flagUrl}
+                      alt={`${country.name} flag`}
+                      className="h-full w-full object-cover transition-transform group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
                   </div>
                 ) : (
-                  <div 
-                    className="w-20 h-14 rounded-lg border-2 shadow-xl flex items-center justify-center"
-                    style={{ 
-                      background: `linear-gradient(135deg, ${primaryColor}40, ${flagColors[1] || '#10B981'}30)`
+                  <div
+                    className="flex h-14 w-20 items-center justify-center rounded-lg border-2 shadow-xl"
+                    style={{
+                      background: `linear-gradient(135deg, ${primaryColor}40, ${flagColors[1] || "#10B981"}30)`,
                     }}
                   >
                     <Flag className="h-6 w-6 text-white/80" />
@@ -253,21 +247,21 @@ export function HolographicNationCard({
             </motion.div>
 
             {/* Main Content */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between mb-3">
+            <div className="min-w-0 flex-1">
+              <div className="mb-3 flex items-start justify-between">
                 <div>
-                  <motion.h1 
-                    className="text-2xl font-bold flex items-center gap-3 mb-1"
+                  <motion.h1
+                    className="mb-1 flex items-center gap-3 text-2xl font-bold"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 }}
                   >
                     {isOwner && <Crown className="h-6 w-6 text-amber-500" />}
-                    <span className="bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+                    <span className="from-foreground to-foreground/80 bg-gradient-to-r bg-clip-text text-transparent">
                       {country.name}
                     </span>
                   </motion.h1>
-                  <motion.p 
+                  <motion.p
                     className="text-muted-foreground flex items-center gap-2"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -277,7 +271,7 @@ export function HolographicNationCard({
                     {country.region}, {country.continent}
                   </motion.p>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
                   {isOwner && (
                     <motion.div
@@ -285,16 +279,16 @@ export function HolographicNationCard({
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 0.5 }}
                     >
-                      <Badge className="bg-amber-500/20 text-amber-200 border-amber-400/30">
-                        <Sparkles className="h-3 w-3 mr-1" />
+                      <Badge className="border-amber-400/30 bg-amber-500/20 text-amber-200">
+                        <Sparkles className="mr-1 h-3 w-3" />
                         MyCountry®
                       </Badge>
                     </motion.div>
                   )}
-                  
+
                   {/* Interaction Controls */}
                   {showInteractionControls && (
-                    <motion.div 
+                    <motion.div
                       className="flex items-center gap-2"
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -304,46 +298,46 @@ export function HolographicNationCard({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 p-0 glass-hierarchy-interactive hover:scale-105 transition"
+                        className="glass-hierarchy-interactive h-8 w-8 p-0 transition hover:scale-105"
                       >
                         <Share2 className="h-4 w-4" />
                       </Button>
-                      
+
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 w-8 p-0 glass-hierarchy-interactive hover:scale-105 transition"
+                        className="glass-hierarchy-interactive h-8 w-8 p-0 transition hover:scale-105"
                       >
                         <ExternalLink className="h-4 w-4" />
                       </Button>
-                      
+
                       {/* More Actions Dropdown */}
                       <DropdownMenu>
-                        <DropdownMenuTrigger className="h-8 w-8 p-0 glass-hierarchy-interactive hover:scale-105 transition inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground rounded-md">
+                        <DropdownMenuTrigger className="glass-hierarchy-interactive ring-offset-background focus-visible:ring-ring hover:bg-accent hover:text-accent-foreground inline-flex h-8 w-8 items-center justify-center rounded-md p-0 text-sm font-medium whitespace-nowrap transition hover:scale-105 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50">
                           <MoreHorizontal className="h-4 w-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56">
                           <DropdownMenuGroup>
                             <DropdownMenuGroupLabel>Country Actions</DropdownMenuGroupLabel>
                             <DropdownMenuSeparator />
-                            
+
                             <DropdownMenuItem>
                               <Eye className="mr-2 h-4 w-4" />
                               <span>View Public Profile</span>
                             </DropdownMenuItem>
-                            
+
                             <DropdownMenuItem>
                               <FileText className="mr-2 h-4 w-4" />
                               <span>Generate Report</span>
                             </DropdownMenuItem>
-                            
+
                             <DropdownMenuItem>
                               <Download className="mr-2 h-4 w-4" />
                               <span>Export Data</span>
                             </DropdownMenuItem>
-                            
+
                             <DropdownMenuSeparator />
-                            
+
                             {isOwner && (
                               <DropdownMenuItem>
                                 <Settings className="mr-2 h-4 w-4" />
@@ -361,59 +355,57 @@ export function HolographicNationCard({
           </div>
 
           {/* Compact Stats Grid */}
-          <motion.div 
-            className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"
+          <motion.div
+            className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
           >
-            <div className="text-center p-3 rounded-lg bg-background/60 backdrop-blur-sm border border-border/20">
-              <Users className="h-4 w-4 mx-auto mb-1 text-blue-500" />
-              <div className="text-sm font-bold text-foreground">
+            <div className="bg-background/60 border-border/20 rounded-lg border p-3 text-center backdrop-blur-sm">
+              <Users className="mx-auto mb-1 h-4 w-4 text-blue-500" />
+              <div className="text-foreground text-sm font-bold">
                 {(country.currentPopulation / 1000000).toFixed(1)}M
               </div>
-              <div className="text-xs text-muted-foreground mb-1">Population</div>
-              <Badge variant="outline" className="text-xs bg-blue-50 dark:bg-blue-950/30">
+              <div className="text-muted-foreground mb-1 text-xs">Population</div>
+              <Badge variant="outline" className="bg-blue-50 text-xs dark:bg-blue-950/30">
                 T{country.populationTier}
               </Badge>
             </div>
-            
-            <div className="text-center p-3 rounded-lg bg-background/60 backdrop-blur-sm border border-border/20">
-              <TrendingUp className="h-4 w-4 mx-auto mb-1 text-green-500" />
-              <div className="text-sm font-bold text-foreground">
+
+            <div className="bg-background/60 border-border/20 rounded-lg border p-3 text-center backdrop-blur-sm">
+              <TrendingUp className="mx-auto mb-1 h-4 w-4 text-green-500" />
+              <div className="text-foreground text-sm font-bold">
                 ${(country.currentGdpPerCapita / 1000).toFixed(0)}k
               </div>
-              <div className="text-xs text-muted-foreground mb-1">GDP/Capita</div>
-              <Badge variant="outline" className="text-xs bg-green-50 dark:bg-green-950/30">
+              <div className="text-muted-foreground mb-1 text-xs">GDP/Capita</div>
+              <Badge variant="outline" className="bg-green-50 text-xs dark:bg-green-950/30">
                 {country.economicTier}
               </Badge>
             </div>
-            
-            <div className="text-center p-3 rounded-lg bg-background/60 backdrop-blur-sm border border-border/20">
-              <Building2 className="h-4 w-4 mx-auto mb-1 text-purple-500" />
-              <div className="text-sm font-bold text-foreground">
-                {country.landArea ? (
-                  country.landArea >= 1000000 
+
+            <div className="bg-background/60 border-border/20 rounded-lg border p-3 text-center backdrop-blur-sm">
+              <Building2 className="mx-auto mb-1 h-4 w-4 text-purple-500" />
+              <div className="text-foreground text-sm font-bold">
+                {country.landArea
+                  ? country.landArea >= 1000000
                     ? `${(country.landArea / 1000000).toFixed(1)}M`
                     : country.landArea >= 1000
-                    ? `${(country.landArea / 1000).toFixed(0)}K`
-                    : country.landArea.toFixed(0)
-                ) : 'N/A'}
+                      ? `${(country.landArea / 1000).toFixed(0)}K`
+                      : country.landArea.toFixed(0)
+                  : "N/A"}
               </div>
-              <div className="text-xs text-muted-foreground mb-1">km² Area</div>
-              <Badge variant="outline" className="text-xs bg-purple-50 dark:bg-purple-950/30">
-                {country.populationDensity ? `${country.populationDensity.toFixed(0)}/km²` : 'N/A'}
+              <div className="text-muted-foreground mb-1 text-xs">km² Area</div>
+              <Badge variant="outline" className="bg-purple-50 text-xs dark:bg-purple-950/30">
+                {country.populationDensity ? `${country.populationDensity.toFixed(0)}/km²` : "N/A"}
               </Badge>
             </div>
-            
-            <div className="text-center p-3 rounded-lg bg-background/60 backdrop-blur-sm border border-border/20">
-              <Globe2 className="h-4 w-4 mx-auto mb-1 text-orange-500" />
-              <div className="text-sm font-bold text-foreground">
-                {country.capital || 'N/A'}
-              </div>
-              <div className="text-xs text-muted-foreground mb-1">Capital</div>
-              <Badge variant="outline" className="text-xs bg-orange-50 dark:bg-orange-950/30">
-                {country.founded || 'N/A'}
+
+            <div className="bg-background/60 border-border/20 rounded-lg border p-3 text-center backdrop-blur-sm">
+              <Globe2 className="mx-auto mb-1 h-4 w-4 text-orange-500" />
+              <div className="text-foreground text-sm font-bold">{country.capital || "N/A"}</div>
+              <div className="text-muted-foreground mb-1 text-xs">Capital</div>
+              <Badge variant="outline" className="bg-orange-50 text-xs dark:bg-orange-950/30">
+                {country.founded || "N/A"}
               </Badge>
             </div>
           </motion.div>
@@ -423,11 +415,11 @@ export function HolographicNationCard({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
-            className="border-t border-border/20 pt-4"
+            className="border-border/20 border-t pt-4"
           >
-            <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="mb-4 flex items-center justify-center gap-2">
               <Activity className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium text-foreground">National Vitality</span>
+              <span className="text-foreground text-sm font-medium">National Vitality</span>
             </div>
             <div className="flex justify-center">
               <ActivityRings
@@ -440,8 +432,8 @@ export function HolographicNationCard({
           </motion.div>
 
           {/* Government Info */}
-          <motion.div 
-            className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-4"
+          <motion.div
+            className="text-muted-foreground mt-4 flex flex-wrap gap-2 text-xs"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.0 }}
@@ -456,15 +448,15 @@ export function HolographicNationCard({
         </CardContent>
 
         {/* Floating Particles */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none z-5">
+        <div className="pointer-events-none absolute inset-0 z-5 overflow-hidden">
           {[...Array(6)].map((_, i) => (
             <motion.div
               key={`particle-${i}`}
-              className="absolute w-1 h-1 rounded-full"
+              className="absolute h-1 w-1 rounded-full"
               style={{
-                background: flagColors[i % flagColors.length] || '#3B82F6',
-                left: `${20 + (i * 15)}%`,
-                top: `${30 + (i * 10)}%`,
+                background: flagColors[i % flagColors.length] || "#3B82F6",
+                left: `${20 + i * 15}%`,
+                top: `${30 + i * 10}%`,
               }}
               animate={{
                 y: [-10, -20, -10],
@@ -472,7 +464,7 @@ export function HolographicNationCard({
                 scale: [1, 1.5, 1],
               }}
               transition={{
-                duration: 4 + (i * 0.5),
+                duration: 4 + i * 0.5,
                 repeat: Infinity,
                 delay: i * 0.5,
                 ease: "easeInOut",

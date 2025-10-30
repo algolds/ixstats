@@ -2,7 +2,13 @@
 // Simplified users router with profile management and country linking
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure, adminProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  adminProcedure,
+  rateLimitedPublicProcedure,
+} from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig } from "~/lib/config-service";
 import { IxStatsCalculator } from "~/lib/calculations";
@@ -10,116 +16,15 @@ import { generateSlug } from "~/lib/slug-utils";
 import { notificationHooks } from "~/lib/notification-hooks";
 import { UserManagementService } from "~/lib/user-management-service";
 import { isSystemOwner } from "~/lib/system-owner-constants";
-import type {
-  Country,
-  CountryStats,
-  BaseCountryData
-} from "~/types/ixstats";
+import type { Country, CountryStats, BaseCountryData } from "~/types/ixstats";
 
 // Temporary storage for user-country mappings until we fix the User model
 
 export const usersRouter = createTRPCRouter({
   // Get current user's profile using auth context (no input required)
-  getProfile: rateLimitedPublicProcedure
-    .query(async ({ ctx }) => {
-      try {
-        if (!ctx.auth?.userId) {
-          return {
-            userId: null,
-            countryId: null,
-            country: null,
-            hasCompletedSetup: false,
-          };
-        }
-
-        const clerkUserId = ctx.auth.userId;
-
-        // Re-use user from context when available to avoid duplicate queries
-        let userRecord: any = null;
-
-        const countryArgs = {
-          include: {
-            dmInputs: {
-              where: { isActive: true },
-              orderBy: { ixTimeTimestamp: "desc" },
-            },
-          },
-        } as const;
-
-        if (!userRecord) {
-          userRecord = await ctx.db.user.findUnique({
-            where: { clerkUserId },
-            include: {
-              country: countryArgs,
-              role: true,
-            },
-          }) as any;
-        }
-
-        // Auto-create user record if missing (handles first-time logins)
-        if (!userRecord) {
-          const userService = new UserManagementService(ctx.db);
-          userRecord = await userService.getOrCreateUser(clerkUserId);
-        }
-
-        // Attempt to hydrate country details when we have an ID but no relation loaded
-        let countryRecord = userRecord?.country ?? null;
-
-        if (userRecord?.countryId && !countryRecord) {
-          countryRecord = await ctx.db.country.findUnique({
-            where: { id: userRecord.countryId },
-            include: countryArgs.include,
-          });
-        }
-
-        // Fallback: detect existing country link via ThinkPages accounts or other records
-        if (!userRecord?.countryId || !countryRecord) {
-          const linkedAccount = await ctx.db.thinkpagesAccount.findFirst({
-            where: {
-              clerkUserId,
-              isActive: true,
-            },
-            select: {
-              countryId: true,
-            },
-          });
-
-          if (linkedAccount?.countryId && userRecord) {
-            try {
-              userRecord = await ctx.db.user.update({
-                where: { clerkUserId },
-                data: {
-                  countryId: linkedAccount.countryId,
-                },
-                include: {
-                  country: countryArgs,
-                  role: true,
-                },
-              }) as any;
-
-              countryRecord = userRecord?.country ?? null;
-            } catch (linkError) {
-              console.error("Failed to reconcile user country link:", linkError);
-            }
-          }
-        }
-
-        // If we still don't have country details, attempt to load with dmInputs for completeness
-        if (!countryRecord && userRecord?.countryId) {
-          countryRecord = await ctx.db.country.findUnique({
-            where: { id: userRecord.countryId },
-            include: countryArgs.include,
-          });
-        }
-
-        return {
-          userId: clerkUserId,
-          countryId: countryRecord?.id ?? null,
-          country: countryRecord,
-          hasCompletedSetup: Boolean(countryRecord),
-        };
-      } catch (error) {
-        console.error("Error fetching user profile:", error);
+  getProfile: rateLimitedPublicProcedure.query(async ({ ctx }) => {
+    try {
+      if (!ctx.auth?.userId) {
         return {
           userId: null,
           countryId: null,
@@ -127,7 +32,103 @@ export const usersRouter = createTRPCRouter({
           hasCompletedSetup: false,
         };
       }
-    }),
+
+      const clerkUserId = ctx.auth.userId;
+
+      // Re-use user from context when available to avoid duplicate queries
+      let userRecord: any = null;
+
+      const countryArgs = {
+        include: {
+          dmInputs: {
+            where: { isActive: true },
+            orderBy: { ixTimeTimestamp: "desc" },
+          },
+        },
+      } as const;
+
+      if (!userRecord) {
+        userRecord = (await ctx.db.user.findUnique({
+          where: { clerkUserId },
+          include: {
+            country: countryArgs,
+            role: true,
+          },
+        })) as any;
+      }
+
+      // Auto-create user record if missing (handles first-time logins)
+      if (!userRecord) {
+        const userService = new UserManagementService(ctx.db);
+        userRecord = await userService.getOrCreateUser(clerkUserId);
+      }
+
+      // Attempt to hydrate country details when we have an ID but no relation loaded
+      let countryRecord = userRecord?.country ?? null;
+
+      if (userRecord?.countryId && !countryRecord) {
+        countryRecord = await ctx.db.country.findUnique({
+          where: { id: userRecord.countryId },
+          include: countryArgs.include,
+        });
+      }
+
+      // Fallback: detect existing country link via ThinkPages accounts or other records
+      if (!userRecord?.countryId || !countryRecord) {
+        const linkedAccount = await ctx.db.thinkpagesAccount.findFirst({
+          where: {
+            clerkUserId,
+            isActive: true,
+          },
+          select: {
+            countryId: true,
+          },
+        });
+
+        if (linkedAccount?.countryId && userRecord) {
+          try {
+            userRecord = (await ctx.db.user.update({
+              where: { clerkUserId },
+              data: {
+                countryId: linkedAccount.countryId,
+              },
+              include: {
+                country: countryArgs,
+                role: true,
+              },
+            })) as any;
+
+            countryRecord = userRecord?.country ?? null;
+          } catch (linkError) {
+            console.error("Failed to reconcile user country link:", linkError);
+          }
+        }
+      }
+
+      // If we still don't have country details, attempt to load with dmInputs for completeness
+      if (!countryRecord && userRecord?.countryId) {
+        countryRecord = await ctx.db.country.findUnique({
+          where: { id: userRecord.countryId },
+          include: countryArgs.include,
+        });
+      }
+
+      return {
+        userId: clerkUserId,
+        countryId: countryRecord?.id ?? null,
+        country: countryRecord,
+        hasCompletedSetup: Boolean(countryRecord),
+      };
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      return {
+        userId: null,
+        countryId: null,
+        country: null,
+        hasCompletedSetup: false,
+      };
+    }
+  }),
 
   // Get user profile by ID (for admin use)
   getProfileById: rateLimitedPublicProcedure
@@ -139,7 +140,7 @@ export const usersRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       try {
         // Validate input
-        if (!input.userId || input.userId.trim() === '') {
+        if (!input.userId || input.userId.trim() === "") {
           throw new Error("User ID is required and cannot be empty");
         }
 
@@ -192,24 +193,24 @@ export const usersRouter = createTRPCRouter({
         if (input.userId !== ctx.auth?.userId) {
           throw new Error("UNAUTHORIZED: Cannot link country for different user");
         }
-        
+
         // Check if user already has a country
         const user = await ctx.db.user.findUnique({ where: { clerkUserId: input.userId } });
         if (user && user.countryId === input.countryId) {
           // User is already linked to this country, return success
           return { success: true, message: "User already linked to this country" };
         }
-        
+
         // Check if country is already claimed by another user
-        const claimedUser = await ctx.db.user.findFirst({ 
-          where: { 
+        const claimedUser = await ctx.db.user.findFirst({
+          where: {
             countryId: input.countryId,
-            clerkUserId: { not: input.userId } // Exclude current user
-          } 
+            clerkUserId: { not: input.userId }, // Exclude current user
+          },
         });
-        
+
         const isSystemOwnerUser = isSystemOwner(input.userId);
-        
+
         if (claimedUser && !isSystemOwnerUser) {
           throw new Error("Country is already claimed by another user");
         }
@@ -228,11 +229,11 @@ export const usersRouter = createTRPCRouter({
           });
         } else {
           // For regular users, unlink any existing country first
-          await ctx.db.user.updateMany({ 
-            where: { countryId: input.countryId }, 
-            data: { countryId: null } 
+          await ctx.db.user.updateMany({
+            where: { countryId: input.countryId },
+            data: { countryId: null },
           });
-          
+
           await ctx.db.user.upsert({
             where: { clerkUserId: input.userId },
             update: { countryId: input.countryId },
@@ -254,9 +255,9 @@ export const usersRouter = createTRPCRouter({
         try {
           await notificationHooks.onUserAccountChange({
             userId: input.userId,
-            changeType: 'country_assigned',
-            title: 'Country Assigned',
-            description: `You have been assigned to ${updatedCountry?.name || 'a country'}. You can now manage your country from the MyCountry dashboard.`,
+            changeType: "country_assigned",
+            title: "Country Assigned",
+            description: `You have been assigned to ${updatedCountry?.name || "a country"}. You can now manage your country from the MyCountry dashboard.`,
             metadata: {
               countryId: input.countryId,
               countryName: updatedCountry?.name,
@@ -285,55 +286,59 @@ export const usersRouter = createTRPCRouter({
         userId: z.string(),
         countryName: z.string(),
         // Optional: allow passing initial country data
-        initialData: z.object({
-          continent: z.string().optional(),
-          region: z.string().optional(),
-          baselinePopulation: z.number().optional(),
-          baselineGdpPerCapita: z.number().optional(),
-          landArea: z.number().optional(),
-          flag: z.string().optional(),
-          coatOfArms: z.string().optional(),
-          government: z.string().optional(),
-          currency: z.string().optional(),
-          languages: z.string().optional(),
-          capital: z.string().optional(),
-          // Additional fields for better data persistence
-          nominalGDP: z.number().optional(),
-          realGDPGrowthRate: z.number().optional(),
-          inflationRate: z.number().optional(),
-          unemploymentRate: z.number().optional(),
-          taxRevenueGDPPercent: z.number().optional(),
-          literacyRate: z.number().optional(),
-          lifeExpectancy: z.number().optional(),
-        }).optional(),
+        initialData: z
+          .object({
+            continent: z.string().optional(),
+            region: z.string().optional(),
+            baselinePopulation: z.number().optional(),
+            baselineGdpPerCapita: z.number().optional(),
+            landArea: z.number().optional(),
+            flag: z.string().optional(),
+            coatOfArms: z.string().optional(),
+            government: z.string().optional(),
+            currency: z.string().optional(),
+            languages: z.string().optional(),
+            capital: z.string().optional(),
+            // Additional fields for better data persistence
+            nominalGDP: z.number().optional(),
+            realGDPGrowthRate: z.number().optional(),
+            inflationRate: z.number().optional(),
+            unemploymentRate: z.number().optional(),
+            taxRevenueGDPPercent: z.number().optional(),
+            literacyRate: z.number().optional(),
+            lifeExpectancy: z.number().optional(),
+          })
+          .optional(),
         // National Identity data from builder
-        nationalIdentity: z.object({
-          countryName: z.string().optional(),
-          officialName: z.string().optional(),
-          governmentType: z.string().optional(),
-          motto: z.string().optional(),
-          mottoNative: z.string().optional(),
-          capitalCity: z.string().optional(),
-          largestCity: z.string().optional(),
-          demonym: z.string().optional(),
-          currency: z.string().optional(),
-          currencySymbol: z.string().optional(),
-          officialLanguages: z.string().optional(),
-          nationalLanguage: z.string().optional(),
-          nationalAnthem: z.string().optional(),
-          nationalDay: z.string().optional(),
-          callingCode: z.string().optional(),
-          internetTLD: z.string().optional(),
-          drivingSide: z.string().optional(),
-          timeZone: z.string().optional(),
-          isoCode: z.string().optional(),
-          coordinatesLatitude: z.string().optional(),
-          coordinatesLongitude: z.string().optional(),
-          emergencyNumber: z.string().optional(),
-          postalCodeFormat: z.string().optional(),
-          nationalSport: z.string().optional(),
-          weekStartDay: z.string().optional(),
-        }).optional(),
+        nationalIdentity: z
+          .object({
+            countryName: z.string().optional(),
+            officialName: z.string().optional(),
+            governmentType: z.string().optional(),
+            motto: z.string().optional(),
+            mottoNative: z.string().optional(),
+            capitalCity: z.string().optional(),
+            largestCity: z.string().optional(),
+            demonym: z.string().optional(),
+            currency: z.string().optional(),
+            currencySymbol: z.string().optional(),
+            officialLanguages: z.string().optional(),
+            nationalLanguage: z.string().optional(),
+            nationalAnthem: z.string().optional(),
+            nationalDay: z.string().optional(),
+            callingCode: z.string().optional(),
+            internetTLD: z.string().optional(),
+            drivingSide: z.string().optional(),
+            timeZone: z.string().optional(),
+            isoCode: z.string().optional(),
+            coordinatesLatitude: z.string().optional(),
+            coordinatesLongitude: z.string().optional(),
+            emergencyNumber: z.string().optional(),
+            postalCodeFormat: z.string().optional(),
+            nationalSport: z.string().optional(),
+            weekStartDay: z.string().optional(),
+          })
+          .optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -395,7 +400,9 @@ export const usersRouter = createTRPCRouter({
             populationDensity: currentStats.newStats.populationDensity,
             gdpDensity: currentStats.newStats.gdpDensity,
             // Additional economic fields from initialData
-            nominalGDP: input.initialData?.nominalGDP || defaultData.baselinePopulation * defaultData.baselineGdpPerCapita,
+            nominalGDP:
+              input.initialData?.nominalGDP ||
+              defaultData.baselinePopulation * defaultData.baselineGdpPerCapita,
             realGDPGrowthRate: input.initialData?.realGDPGrowthRate || 3.0,
             inflationRate: input.initialData?.inflationRate || 2.0,
             unemploymentRate: input.initialData?.unemploymentRate || 5.0,
@@ -519,7 +526,10 @@ export const usersRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const user = await ctx.db.user.findUnique({ where: { clerkUserId: input.userId }, include: { country: true } });
+        const user = await ctx.db.user.findUnique({
+          where: { clerkUserId: input.userId },
+          include: { country: true },
+        });
         if (!user || !user.countryId) {
           return null;
         }
@@ -559,7 +569,7 @@ export const usersRouter = createTRPCRouter({
         // For now, we'll store user preferences in a simple way
         // In a real implementation, you might have a UserProfile table
         console.log("Updating profile for user:", input.userId, "with settings:", input.settings);
-        
+
         return {
           success: true,
           message: "Profile updated successfully",
@@ -607,20 +617,30 @@ export const usersRouter = createTRPCRouter({
         else achievements += 1;
 
         if (country.currentPopulation && country.currentPopulation > 10000000) achievements += 3;
-        else if (country.currentPopulation && country.currentPopulation > 5000000) achievements += 2;
+        else if (country.currentPopulation && country.currentPopulation > 5000000)
+          achievements += 2;
         else achievements += 1;
 
-        if (country.currentTotalGdp && country.currentTotalGdp > 1000000000000) achievements += 4; // 1T+
-        else if (country.currentTotalGdp && country.currentTotalGdp > 100000000000) achievements += 3; // 100B+
-        else if (country.currentTotalGdp && country.currentTotalGdp > 10000000000) achievements += 2; // 10B+
+        if (country.currentTotalGdp && country.currentTotalGdp > 1000000000000)
+          achievements += 4; // 1T+
+        else if (country.currentTotalGdp && country.currentTotalGdp > 100000000000)
+          achievements += 3; // 100B+
+        else if (country.currentTotalGdp && country.currentTotalGdp > 10000000000)
+          achievements += 2; // 10B+
         else achievements += 1;
 
         // Influence calculation based on economic metrics
         const gdpPerCapitaScore = Math.min(40, (country.currentGdpPerCapita || 0) / 1000); // Max 40 points
-        const totalGdpScore = Math.min(30, Math.log10((country.currentTotalGdp || 1) / 1000000000) * 10); // Max 30 points
-        const populationScore = Math.min(20, Math.log10((country.currentPopulation || 1) / 1000000) * 10); // Max 20 points
+        const totalGdpScore = Math.min(
+          30,
+          Math.log10((country.currentTotalGdp || 1) / 1000000000) * 10
+        ); // Max 30 points
+        const populationScore = Math.min(
+          20,
+          Math.log10((country.currentPopulation || 1) / 1000000) * 10
+        ); // Max 20 points
         const growthScore = Math.min(10, (country.adjustedGdpGrowth || 0) * 1000); // Max 10 points
-        
+
         influence = Math.round(gdpPerCapitaScore + totalGdpScore + populationScore + growthScore);
         influence = Math.max(0, Math.min(100, influence)); // Clamp to 0-100
 
@@ -659,8 +679,8 @@ export const usersRouter = createTRPCRouter({
         const activeUsers = await ctx.db.user.findMany({
           where: {
             countryId: { not: null }, // Only users with countries
-            ...(input.excludeUserId && { 
-              clerkUserId: { not: input.excludeUserId } 
+            ...(input.excludeUserId && {
+              clerkUserId: { not: input.excludeUserId },
             }),
           },
           include: {
@@ -675,16 +695,16 @@ export const usersRouter = createTRPCRouter({
               },
             },
           },
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           take: input.limit,
         });
 
-        return activeUsers.map(user => ({
+        return activeUsers.map((user) => ({
           id: user.clerkUserId,
           countryId: user.countryId!,
-          countryName: user.country?.name || 'Unknown Country',
-          leader: user.country?.leader || 'Leader',
-          economicTier: user.country?.economicTier || 'Unknown',
+          countryName: user.country?.name || "Unknown Country",
+          leader: user.country?.leader || "Leader",
+          economicTier: user.country?.economicTier || "Unknown",
           totalGdp: user.country?.currentTotalGdp || 0,
           population: user.country?.currentPopulation || 0,
           lastActive: user.updatedAt,
@@ -697,233 +717,232 @@ export const usersRouter = createTRPCRouter({
     }),
 
   // Get current user with role and permissions
-  getCurrentUserWithRole: publicProcedure
-    .query(async ({ ctx }) => {
-      try {
-        const { userId } = ctx.auth as { userId?: string };
-        
-        if (!userId) {
-          return { user: null };
-        }
+  getCurrentUserWithRole: publicProcedure.query(async ({ ctx }) => {
+    try {
+      const { userId } = ctx.auth as { userId?: string };
 
-        const user = await ctx.db.user.findUnique({
-          where: { clerkUserId: userId },
-          include: {
-            role: {
-              include: {
-                rolePermissions: {
-                  include: {
-                    permission: true
-                  }
-                }
-              }
-            },
-            country: {
-              select: {
-                id: true,
-                name: true,
-                economicTier: true
-              }
-            }
-          }
-        });
-
-        if (!user) {
-          return { user: null };
-        }
-
-        // Transform role data to include permissions array
-        const transformedRole = user.role ? {
-          ...user.role,
-          permissions: user.role.rolePermissions.map(rp => rp.permission)
-        } : null;
-
-        return {
-          user: {
-            ...user,
-            role: transformedRole
-          }
-        };
-      } catch (error) {
-        console.error("Error fetching current user with role:", error);
+      if (!userId) {
         return { user: null };
       }
-    }),
+
+      const user = await ctx.db.user.findUnique({
+        where: { clerkUserId: userId },
+        include: {
+          role: {
+            include: {
+              rolePermissions: {
+                include: {
+                  permission: true,
+                },
+              },
+            },
+          },
+          country: {
+            select: {
+              id: true,
+              name: true,
+              economicTier: true,
+            },
+          },
+        },
+      });
+
+      if (!user) {
+        return { user: null };
+      }
+
+      // Transform role data to include permissions array
+      const transformedRole = user.role
+        ? {
+            ...user.role,
+            permissions: user.role.rolePermissions.map((rp) => rp.permission),
+          }
+        : null;
+
+      return {
+        user: {
+          ...user,
+          role: transformedRole,
+        },
+      };
+    } catch (error) {
+      console.error("Error fetching current user with role:", error);
+      return { user: null };
+    }
+  }),
 
   // Create user record if it doesn't exist and ensure roles exist
-  createUserRecord: protectedProcedure
-    .mutation(async ({ ctx }) => {
-      try {
-        // Check if auth context exists
-        if (!ctx.auth?.userId) {
-          return {
-            user: null,
-            created: false,
-            error: "Not authenticated - no auth context"
-          };
-        }
-
-        const userId = ctx.auth.userId;
-
-        // Use centralized user management service
-        const userService = new UserManagementService(ctx.db);
-        const user = await userService.getOrCreateUser(userId);
-
-        if (!user) {
-          return {
-            user: null,
-            created: false,
-            error: "Failed to create or retrieve user record"
-          };
-        }
-
-        // Check if this was a new user creation by looking at the user's creation time
-        const isNewUser = user.createdAt > new Date(Date.now() - 5000); // Created within last 5 seconds
-
-        return { 
-          user, 
-          created: isNewUser,
-          message: isNewUser ? "User created successfully" : "User already exists"
-        };
-      } catch (error) {
-        console.error("Error creating user record:", error);
+  createUserRecord: protectedProcedure.mutation(async ({ ctx }) => {
+    try {
+      // Check if auth context exists
+      if (!ctx.auth?.userId) {
         return {
           user: null,
           created: false,
-          error: `Failed to create user record: ${error instanceof Error ? error.message : 'Unknown error'}`
+          error: "Not authenticated - no auth context",
         };
       }
-    }),
+
+      const userId = ctx.auth.userId;
+
+      // Use centralized user management service
+      const userService = new UserManagementService(ctx.db);
+      const user = await userService.getOrCreateUser(userId);
+
+      if (!user) {
+        return {
+          user: null,
+          created: false,
+          error: "Failed to create or retrieve user record",
+        };
+      }
+
+      // Check if this was a new user creation by looking at the user's creation time
+      const isNewUser = user.createdAt > new Date(Date.now() - 5000); // Created within last 5 seconds
+
+      return {
+        user,
+        created: isNewUser,
+        message: isNewUser ? "User created successfully" : "User already exists",
+      };
+    } catch (error) {
+      console.error("Error creating user record:", error);
+      return {
+        user: null,
+        created: false,
+        error: `Failed to create user record: ${error instanceof Error ? error.message : "Unknown error"}`,
+      };
+    }
+  }),
 
   // Setup database with roles and permissions
-  setupDatabase: adminProcedure
-    .mutation(async ({ ctx }) => {
-      try {
-        // Create basic permissions
-        const permissions = [
-          { name: 'system.admin', displayName: 'System Administration', category: 'system' },
-          { name: 'users.manage', displayName: 'Manage Users', category: 'users' },
-          { name: 'content.manage', displayName: 'Manage Content', category: 'content' },
-          { name: 'countries.view', displayName: 'View Countries', category: 'countries' },
-          { name: 'countries.manage', displayName: 'Manage Countries', category: 'countries' },
-        ];
+  setupDatabase: adminProcedure.mutation(async ({ ctx }) => {
+    try {
+      // Create basic permissions
+      const permissions = [
+        { name: "system.admin", displayName: "System Administration", category: "system" },
+        { name: "users.manage", displayName: "Manage Users", category: "users" },
+        { name: "content.manage", displayName: "Manage Content", category: "content" },
+        { name: "countries.view", displayName: "View Countries", category: "countries" },
+        { name: "countries.manage", displayName: "Manage Countries", category: "countries" },
+      ];
 
-        for (const perm of permissions) {
-          await ctx.db.permission.upsert({
-            where: { name: perm.name },
-            update: {},
-            create: perm,
-          });
-        }
-
-        // Create roles
-        const ownerRole = await ctx.db.role.upsert({
-          where: { name: 'owner' },
+      for (const perm of permissions) {
+        await ctx.db.permission.upsert({
+          where: { name: perm.name },
           update: {},
-          create: {
-            name: 'owner',
-            displayName: 'System Owner',
-            description: 'Full system access and control',
-            level: 0,
-            isSystem: true,
-            isActive: true,
-          }
+          create: perm,
         });
+      }
 
-        const adminRole = await ctx.db.role.upsert({
-          where: { name: 'admin' },
-          update: {},
-          create: {
-            name: 'admin',
-            displayName: 'Administrator',
-            description: 'Administrative access',
-            level: 10,
-            isSystem: true,
-            isActive: true,
-          }
-        });
+      // Create roles
+      const ownerRole = await ctx.db.role.upsert({
+        where: { name: "owner" },
+        update: {},
+        create: {
+          name: "owner",
+          displayName: "System Owner",
+          description: "Full system access and control",
+          level: 0,
+          isSystem: true,
+          isActive: true,
+        },
+      });
 
-        const userRole = await ctx.db.role.upsert({
-          where: { name: 'user' },
-          update: {},
-          create: {
-            name: 'user',
-            displayName: 'Member',
-            description: 'Standard user access',
-            level: 100,
-            isSystem: true,
-            isActive: true,
-          }
-        });
+      const adminRole = await ctx.db.role.upsert({
+        where: { name: "admin" },
+        update: {},
+        create: {
+          name: "admin",
+          displayName: "Administrator",
+          description: "Administrative access",
+          level: 10,
+          isSystem: true,
+          isActive: true,
+        },
+      });
 
-        // Assign all permissions to owner role
-        const allPermissions = await ctx.db.permission.findMany();
-        for (const permission of allPermissions) {
-          await ctx.db.rolePermission.upsert({
-            where: {
-              roleId_permissionId: {
-                roleId: ownerRole.id,
-                permissionId: permission.id,
-              }
-            },
-            update: {},
-            create: {
+      const userRole = await ctx.db.role.upsert({
+        where: { name: "user" },
+        update: {},
+        create: {
+          name: "user",
+          displayName: "Member",
+          description: "Standard user access",
+          level: 100,
+          isSystem: true,
+          isActive: true,
+        },
+      });
+
+      // Assign all permissions to owner role
+      const allPermissions = await ctx.db.permission.findMany();
+      for (const permission of allPermissions) {
+        await ctx.db.rolePermission.upsert({
+          where: {
+            roleId_permissionId: {
               roleId: ownerRole.id,
               permissionId: permission.id,
-            }
-          });
-        }
-
-        return {
-          success: true,
-          message: 'Database setup completed',
-          rolesCreated: 3,
-          permissionsCreated: permissions.length,
-        };
-      } catch (error) {
-        console.error("Error setting up database:", error);
-        throw new Error(`Failed to setup database: ${error instanceof Error ? error.message : String(error)}`);
+            },
+          },
+          update: {},
+          create: {
+            roleId: ownerRole.id,
+            permissionId: permission.id,
+          },
+        });
       }
-    }),
+
+      return {
+        success: true,
+        message: "Database setup completed",
+        rolesCreated: 3,
+        permissionsCreated: permissions.length,
+      };
+    } catch (error) {
+      console.error("Error setting up database:", error);
+      throw new Error(
+        `Failed to setup database: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }),
 
   // Get user's admin favorites
-  getAdminFavorites: publicProcedure
-    .query(async ({ ctx }) => {
-      try {
-        if (!ctx.auth?.userId) {
-          return { favorites: [] };
-        }
-
-        const favorites = await ctx.db.adminFavorite.findMany({
-          where: {
-            userId: ctx.auth.userId,
-            isActive: true,
-          },
-          orderBy: [
-            { order: 'asc' },
-            { createdAt: 'desc' }
-          ]
-        });
-
-        return { favorites };
-      } catch (error) {
-        console.error("Error fetching admin favorites:", error);
-        // Return empty array instead of throwing to prevent UI breaks
+  getAdminFavorites: publicProcedure.query(async ({ ctx }) => {
+    try {
+      if (!ctx.auth?.userId) {
         return { favorites: [] };
       }
-    }),
+
+      const favorites = await ctx.db.adminFavorite.findMany({
+        where: {
+          userId: ctx.auth.userId,
+          isActive: true,
+        },
+        orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+      });
+
+      return { favorites };
+    } catch (error) {
+      console.error("Error fetching admin favorites:", error);
+      // Return empty array instead of throwing to prevent UI breaks
+      return { favorites: [] };
+    }
+  }),
 
   // Add admin panel to favorites
   addAdminFavorite: publicProcedure
-    .input(z.object({
-      panelType: z.string(),
-      panelId: z.string(),
-      displayName: z.string(),
-      description: z.string().optional(),
-      iconName: z.string().optional(),
-      url: z.string(),
-      category: z.string().default("general"),
-    }))
+    .input(
+      z.object({
+        panelType: z.string(),
+        panelId: z.string(),
+        displayName: z.string(),
+        description: z.string().optional(),
+        iconName: z.string().optional(),
+        url: z.string(),
+        category: z.string().default("general"),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       console.log("=== addAdminFavorite mutation started ===");
       console.log("Auth context:", JSON.stringify(ctx.auth, null, 2));
@@ -943,7 +962,7 @@ export const usersRouter = createTRPCRouter({
           where: {
             userId: ctx.auth.userId,
             panelId: input.panelId,
-          }
+          },
         });
         console.log("Existing favorite:", existingFavorite);
 
@@ -958,7 +977,7 @@ export const usersRouter = createTRPCRouter({
               url: input.url,
               category: input.category,
               isActive: true,
-            }
+            },
           });
           console.log("Updated existing favorite:", favorite);
           return { favorite, added: false };
@@ -966,7 +985,7 @@ export const usersRouter = createTRPCRouter({
           // Get the next order number
           const lastFavorite = await ctx.db.adminFavorite.findFirst({
             where: { userId: ctx.auth.userId },
-            orderBy: { order: 'desc' }
+            orderBy: { order: "desc" },
           });
 
           const nextOrder = (lastFavorite?.order || 0) + 1;
@@ -983,7 +1002,7 @@ export const usersRouter = createTRPCRouter({
               url: input.url,
               category: input.category,
               order: nextOrder,
-            }
+            },
           });
           console.log("Created new favorite:", favorite);
           return { favorite, added: true };
@@ -996,9 +1015,11 @@ export const usersRouter = createTRPCRouter({
 
   // Remove admin panel from favorites
   removeAdminFavorite: publicProcedure
-    .input(z.object({
-      panelId: z.string(),
-    }))
+    .input(
+      z.object({
+        panelId: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         if (!ctx.auth?.userId) {
@@ -1012,7 +1033,7 @@ export const usersRouter = createTRPCRouter({
           },
           data: {
             isActive: false,
-          }
+          },
         });
 
         return { removed: true };
@@ -1024,9 +1045,11 @@ export const usersRouter = createTRPCRouter({
 
   // Reorder admin favorites
   reorderAdminFavorites: publicProcedure
-    .input(z.object({
-      favoriteIds: z.array(z.string()),
-    }))
+    .input(
+      z.object({
+        favoriteIds: z.array(z.string()),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         if (!ctx.auth?.userId) {
@@ -1042,7 +1065,7 @@ export const usersRouter = createTRPCRouter({
             },
             data: {
               order: i + 1,
-            }
+            },
           });
         }
 
@@ -1055,9 +1078,11 @@ export const usersRouter = createTRPCRouter({
 
   // Get user by Clerk ID with role (for admin use)
   getUserWithRole: publicProcedure
-    .input(z.object({
-      clerkUserId: z.string()
-    }))
+    .input(
+      z.object({
+        clerkUserId: z.string(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         const user = await ctx.db.user.findUnique({
@@ -1067,19 +1092,19 @@ export const usersRouter = createTRPCRouter({
               include: {
                 rolePermissions: {
                   include: {
-                    permission: true
-                  }
-                }
-              }
+                    permission: true,
+                  },
+                },
+              },
             },
             country: {
               select: {
                 id: true,
                 name: true,
-                economicTier: true
-              }
-            }
-          }
+                economicTier: true,
+              },
+            },
+          },
         });
 
         if (!user) {
@@ -1087,16 +1112,18 @@ export const usersRouter = createTRPCRouter({
         }
 
         // Transform role data to include permissions array
-        const transformedRole = user.role ? {
-          ...user.role,
-          permissions: user.role.rolePermissions.map(rp => rp.permission)
-        } : null;
+        const transformedRole = user.role
+          ? {
+              ...user.role,
+              permissions: user.role.rolePermissions.map((rp) => rp.permission),
+            }
+          : null;
 
         return {
           user: {
             ...user,
-            role: transformedRole
-          }
+            role: transformedRole,
+          },
         };
       } catch (error) {
         console.error("Error fetching user with role:", error);
@@ -1105,45 +1132,12 @@ export const usersRouter = createTRPCRouter({
     }),
 
   // Get user's membership status
-  getMembershipStatus: publicProcedure
-    .query(async ({ ctx }) => {
-      try {
-        // Check if user is authenticated
-        if (!ctx.auth?.userId) {
-          return {
-            tier: 'basic' as const,
-            isPremium: false,
-            features: {
-              sdi: false,
-              eci: false,
-              intelligence: false,
-              advancedAnalytics: false,
-            },
-          };
-        }
-
-        const user = await ctx.db.user.findUnique({
-          where: { clerkUserId: ctx.auth.userId },
-          select: { membershipTier: true },
-        });
-
-        const tier = (user?.membershipTier as 'basic' | 'mycountry_premium') ?? 'basic';
-        const isPremium = tier === 'mycountry_premium';
-
+  getMembershipStatus: publicProcedure.query(async ({ ctx }) => {
+    try {
+      // Check if user is authenticated
+      if (!ctx.auth?.userId) {
         return {
-          tier,
-          isPremium,
-          features: {
-            sdi: isPremium,
-            eci: isPremium,
-            intelligence: isPremium,
-            advancedAnalytics: isPremium,
-          },
-        };
-      } catch (error) {
-        console.error("Error fetching membership status:", error);
-        return {
-          tier: 'basic' as const,
+          tier: "basic" as const,
           isPremium: false,
           features: {
             sdi: false,
@@ -1153,14 +1147,48 @@ export const usersRouter = createTRPCRouter({
           },
         };
       }
-    }),
+
+      const user = await ctx.db.user.findUnique({
+        where: { clerkUserId: ctx.auth.userId },
+        select: { membershipTier: true },
+      });
+
+      const tier = (user?.membershipTier as "basic" | "mycountry_premium") ?? "basic";
+      const isPremium = tier === "mycountry_premium";
+
+      return {
+        tier,
+        isPremium,
+        features: {
+          sdi: isPremium,
+          eci: isPremium,
+          intelligence: isPremium,
+          advancedAnalytics: isPremium,
+        },
+      };
+    } catch (error) {
+      console.error("Error fetching membership status:", error);
+      return {
+        tier: "basic" as const,
+        isPremium: false,
+        features: {
+          sdi: false,
+          eci: false,
+          intelligence: false,
+          advancedAnalytics: false,
+        },
+      };
+    }
+  }),
 
   // Update user's membership tier (for admin use)
   updateMembershipTier: adminProcedure
-    .input(z.object({
-      userId: z.string(),
-      tier: z.enum(['basic', 'mycountry_premium']),
-    }))
+    .input(
+      z.object({
+        userId: z.string(),
+        tier: z.enum(["basic", "mycountry_premium"]),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         await ctx.db.user.upsert({
@@ -1168,28 +1196,28 @@ export const usersRouter = createTRPCRouter({
           update: { membershipTier: input.tier },
           create: {
             clerkUserId: input.userId,
-            membershipTier: input.tier
+            membershipTier: input.tier,
           },
         });
 
         // Send notification to user about tier change
         try {
           const tierNames = {
-            basic: 'Basic',
-            mycountry_premium: 'MyCountry Premium',
+            basic: "Basic",
+            mycountry_premium: "MyCountry Premium",
           };
 
-          const isUpgrade = input.tier === 'mycountry_premium';
+          const isUpgrade = input.tier === "mycountry_premium";
           const message = isUpgrade
-            ? 'You now have access to SDI, ECI, Intelligence, and advanced analytics features.'
-            : 'Your membership has been changed to Basic tier.';
+            ? "You now have access to SDI, ECI, Intelligence, and advanced analytics features."
+            : "Your membership has been changed to Basic tier.";
 
           await notificationHooks.onUserAccountChange({
             userId: input.userId,
-            changeType: 'role_changed',
+            changeType: "role_changed",
             title: `Membership Updated: ${tierNames[input.tier]}`,
             description: message,
-            priority: isUpgrade ? 'high' : 'medium',
+            priority: isUpgrade ? "high" : "medium",
             metadata: {
               tier: input.tier,
               isUpgrade,

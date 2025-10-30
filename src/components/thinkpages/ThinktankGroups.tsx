@@ -1,11 +1,8 @@
 "use client";
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  FixedSizeList as List,
-  type FixedSizeListHandle,
-} from '~/lib/react-window-compat';
+import React, { useState, useCallback, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { FixedSizeList as List, type FixedSizeListHandle } from "~/lib/react-window-compat";
 import {
   Globe,
   Users,
@@ -34,29 +31,46 @@ import {
   X,
   ArrowLeft,
   File,
-  Edit3
-} from 'lucide-react';
-import { Button } from '~/components/ui/button';
-import { Input } from '~/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { ScrollArea } from '~/components/ui/scroll-area';
-import { Separator } from '~/components/ui/separator';
-import { api } from '~/trpc/react';
-import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '~/components/ui/dialog';
-import { useThinkPagesWebSocket } from '~/hooks/useThinkPagesWebSocket';
-import { Label } from '~/components/ui/label';
-import { type RichTextEditorRef } from '~/components/thinkpages/RichTextEditor';
-import { Textarea } from '~/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
-import { useUserProfiles } from '~/hooks/useUserProfiles';
-import dynamic from 'next/dynamic';
+  Edit3,
+} from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { ScrollArea } from "~/components/ui/scroll-area";
+import { Separator } from "~/components/ui/separator";
+import { api } from "~/trpc/react";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
+import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
+import { Label } from "~/components/ui/label";
+import { type RichTextEditorRef } from "~/components/thinkpages/RichTextEditor";
+import { Textarea } from "~/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { useUserProfiles } from "~/hooks/useUserProfiles";
+import dynamic from "next/dynamic";
 
-const RichTextEditor = dynamic(() => import('~/components/thinkpages/RichTextEditor'), { ssr: false });
-const CollaborativeDocument = dynamic(() => import('./primitives/CollaborativeDocument').then(mod => mod.CollaborativeDocument), { ssr: false });
+const RichTextEditor = dynamic(() => import("~/components/thinkpages/RichTextEditor"), {
+  ssr: false,
+});
+const CollaborativeDocument = dynamic(
+  () => import("./primitives/CollaborativeDocument").then((mod) => mod.CollaborativeDocument),
+  { ssr: false }
+);
 
 interface ThinktankGroupsProps {
   userId: string | null; // Changed from countryId to userId (clerkUserId), nullable for anonymous users
@@ -97,7 +111,17 @@ interface ThinktankGroup {
   isJoined?: boolean;
 }
 
-const categories = ['All', 'Worldbuilding', 'Nation Sim', 'Diplomacy', 'Economics', 'History & Lore', 'Culture', 'Geography', 'Politics'];
+const categories = [
+  "All",
+  "Worldbuilding",
+  "Nation Sim",
+  "Diplomacy",
+  "Economics",
+  "History & Lore",
+  "Culture",
+  "Geography",
+  "Politics",
+];
 
 /**
  * Memoized MessageBubble component to prevent unnecessary re-renders.
@@ -118,27 +142,25 @@ const MessageBubble = React.memo(function MessageBubble({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} px-4`}
+      className={`flex ${isOwnMessage ? "justify-end" : "justify-start"} px-4`}
     >
-      <div className={`max-w-[70%] ${isOwnMessage ? 'order-2' : 'order-1'}`}>
+      <div className={`max-w-[70%] ${isOwnMessage ? "order-2" : "order-1"}`}>
         {!isOwnMessage && (
-          <div className="flex items-center gap-2 mb-1">
+          <div className="mb-1 flex items-center gap-2">
             <Avatar className="h-6 w-6">
               <AvatarFallback className="text-xs">
                 {userDisplayName.substring(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <span className="text-xs text-muted-foreground font-medium">
-              {userDisplayName}
-            </span>
+            <span className="text-muted-foreground text-xs font-medium">{userDisplayName}</span>
           </div>
         )}
 
         <div
-          className={`p-3 rounded-2xl ${
+          className={`rounded-2xl p-3 ${
             isOwnMessage
-              ? 'bg-gradient-to-r from-orange-600 to-yellow-600 text-white ml-4'
-              : 'bg-background/50 border border-orange-200/30 mr-4'
+              ? "ml-4 bg-gradient-to-r from-orange-600 to-yellow-600 text-white"
+              : "bg-background/50 mr-4 border border-orange-200/30"
           }`}
         >
           <div
@@ -148,29 +170,34 @@ const MessageBubble = React.memo(function MessageBubble({
           />
         </div>
 
-        <div className={`flex items-center gap-1 mt-1 px-3 ${
-          isOwnMessage ? 'justify-end' : 'justify-start'
-        }`}>
-          <span className="text-xs text-muted-foreground">
+        <div
+          className={`mt-1 flex items-center gap-1 px-3 ${
+            isOwnMessage ? "justify-end" : "justify-start"
+          }`}
+        >
+          <span className="text-muted-foreground text-xs">
             {new Date(message.ixTimeTimestamp).toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit'
+              hour: "2-digit",
+              minute: "2-digit",
             })}
           </span>
           {isOwnMessage && (
             <div className="flex items-center gap-1">
               {/* Enhanced read receipts for groups */}
               {message.readReceipts && message.readReceipts.length > 0 ? (
-                <div className="flex items-center gap-1" title={`Read by ${message.readReceipts.length} members`}>
+                <div
+                  className="flex items-center gap-1"
+                  title={`Read by ${message.readReceipts.length} members`}
+                >
                   <CheckCheck className="h-3 w-3 text-orange-500" />
                   {message.readReceipts.length > 1 && (
-                    <span className="text-xs text-orange-500 font-medium">
+                    <span className="text-xs font-medium text-orange-500">
                       {message.readReceipts.length}
                     </span>
                   )}
                 </div>
               ) : (
-                <Check className="h-3 w-3 text-muted-foreground" />
+                <Check className="text-muted-foreground h-3 w-3" />
               )}
             </div>
           )}
@@ -182,90 +209,95 @@ const MessageBubble = React.memo(function MessageBubble({
 
 // Enhanced text formatting with better mention and hashtag styling
 const formatContentEnhanced = (content: string) => {
-  if (!content) return '';
-  
+  if (!content) return "";
+
   let formattedContent = content;
-  
+
   // Handle broken emoji format: "text https://cdn.discordapp.com/emojis/123.png" alt=":emoji:" class="..." title="..." />"
   // This happens when the opening <img src=" is missing
   formattedContent = formattedContent.replace(
     /\s(https:\/\/cdn\.discordapp\.com\/emojis\/\d+\.(?:png|gif|webp))"\s+alt="([^"]*?)"\s+class="([^"]*?)"\s+title="([^"]*?)"\s*\/?>/gi,
     ' <img src="$1" alt="$2" class="inline-block h-5 w-5" title="$4" />'
   );
-  
+
   // Handle HTML entity decoding progressively - some content is multiply encoded
   // First pass - handle double-encoded entities
-  formattedContent = formattedContent.replace(/&amp;amp;/g, '&amp;');
-  formattedContent = formattedContent.replace(/&amp;lt;/g, '&lt;');
-  formattedContent = formattedContent.replace(/&amp;gt;/g, '&gt;');
-  formattedContent = formattedContent.replace(/&amp;nbsp;/g, '&nbsp;');
-  formattedContent = formattedContent.replace(/&amp;quot;/g, '&quot;');
-  
+  formattedContent = formattedContent.replace(/&amp;amp;/g, "&amp;");
+  formattedContent = formattedContent.replace(/&amp;lt;/g, "&lt;");
+  formattedContent = formattedContent.replace(/&amp;gt;/g, "&gt;");
+  formattedContent = formattedContent.replace(/&amp;nbsp;/g, "&nbsp;");
+  formattedContent = formattedContent.replace(/&amp;quot;/g, "&quot;");
+
   // Second pass - handle single-encoded entities
-  formattedContent = formattedContent.replace(/&lt;/g, '<');
-  formattedContent = formattedContent.replace(/&gt;/g, '>');
-  formattedContent = formattedContent.replace(/&nbsp;/g, ' ');
+  formattedContent = formattedContent.replace(/&lt;/g, "<");
+  formattedContent = formattedContent.replace(/&gt;/g, ">");
+  formattedContent = formattedContent.replace(/&nbsp;/g, " ");
   formattedContent = formattedContent.replace(/&quot;/g, '"');
-  formattedContent = formattedContent.replace(/&amp;/g, '&');
-  
+  formattedContent = formattedContent.replace(/&amp;/g, "&");
+
   // Handle Discord emoji patterns - multiple variations
   // Pattern 1: Standard img tag
   formattedContent = formattedContent.replace(
     /<img\s+src="([^"]+)"\s+alt="([^"]*?)"\s+class="([^"]*?)"\s+title="([^"]*?)"\s*\/?>/gi,
     '<img src="$1" alt="$2" class="inline-block h-5 w-5" title="$4" />'
   );
-  
+
   // Pattern 2: Img tag with different attribute order
   formattedContent = formattedContent.replace(
     /<img\s+alt="([^"]*?)"\s+src="([^"]+)"\s+class="([^"]*?)"\s+title="([^"]*?)"\s*\/?>/gi,
     '<img src="$2" alt="$1" class="inline-block h-5 w-5" title="$4" />'
   );
-  
+
   // Pattern 3: Handle any remaining broken img tags
-  formattedContent = formattedContent.replace(
-    /<img([^>]*?)>/gi,
-    (match, attributes) => {
-      const srcMatch = attributes.match(/src="([^"]+)"/);
-      const altMatch = attributes.match(/alt="([^"]*)"/);
-      const titleMatch = attributes.match(/title="([^"]*)"/);
-      
-      if (srcMatch) {
-        const src = srcMatch[1];
-        const alt = altMatch ? altMatch[1] : '';
-        const title = titleMatch ? titleMatch[1] : alt;
-        return `<img src="${src}" alt="${alt}" class="inline-block h-5 w-5" title="${title}" />`;
-      }
-      return match;
+  formattedContent = formattedContent.replace(/<img([^>]*?)>/gi, (match, attributes) => {
+    const srcMatch = attributes.match(/src="([^"]+)"/);
+    const altMatch = attributes.match(/alt="([^"]*)"/);
+    const titleMatch = attributes.match(/title="([^"]*)"/);
+
+    if (srcMatch) {
+      const src = srcMatch[1];
+      const alt = altMatch ? altMatch[1] : "";
+      const title = titleMatch ? titleMatch[1] : alt;
+      return `<img src="${src}" alt="${alt}" class="inline-block h-5 w-5" title="${title}" />`;
     }
-  );
-  
+    return match;
+  });
+
   // Replace hashtags
-  formattedContent = formattedContent.replace(/#([a-zA-Z0-9_]+)/g, 
+  formattedContent = formattedContent.replace(
+    /#([a-zA-Z0-9_]+)/g,
     '<span class="text-blue-500 hover:underline cursor-pointer font-medium">#$1</span>'
   );
-  
+
   // Replace mentions
-  formattedContent = formattedContent.replace(/@([a-zA-Z0-9_]+)/g, 
+  formattedContent = formattedContent.replace(
+    /@([a-zA-Z0-9_]+)/g,
     '<span class="text-purple-500 hover:underline cursor-pointer font-medium">@$1</span>'
   );
-  
+
   // Replace URLs (but avoid URLs that are part of img src)
   formattedContent = formattedContent.replace(
     /(?<!src=")(?<!src=')(https?:\/\/(?!cdn\.discordapp\.com\/emojis\/)[^\s<>"]+)/g,
     '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">$1</a>'
   );
-  
+
   return formattedContent;
 };
 
-export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }: ThinktankGroupsProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [activeTab, setActiveTab] = useState<'discover' | 'joined' | 'created'>(viewOnly ? 'discover' : 'discover');
+export function ThinktankGroups({
+  userId,
+  userAccounts = [],
+  viewOnly = false,
+}: ThinktankGroupsProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [activeTab, setActiveTab] = useState<"discover" | "joined" | "created">(
+    viewOnly ? "discover" : "discover"
+  );
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<ThinktankGroup | null>(null);
-  const [messageText, setMessageText] = useState('');
-  const [view, setView] = useState<'list' | 'chat' | 'collaboration'>('list');
+  const [messageText, setMessageText] = useState("");
+  const [view, setView] = useState<"list" | "chat" | "collaboration">("list");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const richTextEditorRef = useRef<RichTextEditorRef>(null);
   const listRef = useRef<FixedSizeListHandle>(null);
@@ -274,41 +306,35 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
   const currentUserId = userId;
 
   // Real-time WebSocket functionality
-  const {
-    clientState,
-    sendTypingIndicator,
-    subscribeToGroup,
-    markMessageAsRead
-  } = useThinkPagesWebSocket({
-    accountId: currentUserId ?? undefined, // Using userId instead of account ID
-    autoReconnect: true,
-    onMessageUpdate: (update) => {
-      if (selectedGroup && (update.groupId === selectedGroup.id)) {
-        refetchMessages();
-      }
-    },
-    onGroupUpdate: (update) => {
-      refetchGroups();
-    },
-    onTypingUpdate: (update) => {
-      // Typing indicators are handled in the hook state
-    }
-  });
+  const { clientState, sendTypingIndicator, subscribeToGroup, markMessageAsRead } =
+    useThinkPagesWebSocket({
+      accountId: currentUserId ?? undefined, // Using userId instead of account ID
+      autoReconnect: true,
+      onMessageUpdate: (update) => {
+        if (selectedGroup && update.groupId === selectedGroup.id) {
+          refetchMessages();
+        }
+      },
+      onGroupUpdate: (update) => {
+        refetchGroups();
+      },
+      onTypingUpdate: (update) => {
+        // Typing indicators are handled in the hook state
+      },
+    });
 
   // Validate required props - more defensive check
-  const hasValidProps = userId && userId.trim() !== '';
-  
+  const hasValidProps = userId && userId.trim() !== "";
+
   // Early return if required props are missing
   if (!hasValidProps) {
     return (
       <div className="space-y-6">
         <Card className="glass-hierarchy-parent">
           <CardContent className="p-8 text-center">
-            <Globe className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Loading...</h3>
-            <p className="text-muted-foreground">
-              Setting up your ThinkTanks experience
-            </p>
+            <Globe className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+            <h3 className="mb-2 text-lg font-semibold">Loading...</h3>
+            <p className="text-muted-foreground">Setting up your ThinkTanks experience</p>
           </CardContent>
         </Card>
       </div>
@@ -316,34 +342,45 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
   }
 
   // API Queries with defensive input validation - USE CONDITIONAL QUERY
-  const shouldFetchGroups = hasValidProps && userId && userId.trim() !== '';
-  
-  const { data: groups, isLoading: isLoadingGroups, refetch: refetchGroups } = api.thinkpages.getThinktanks.useQuery({
-    userId: userId || 'ANONYMOUS',
-    type: activeTab === 'discover' ? 'all' : activeTab
-  }, {
-    enabled: (!viewOnly && shouldFetchGroups) || (viewOnly && activeTab === 'discover'), // Enable discover mode for anonymous users
-    retry: 0,
-    refetchOnWindowFocus: false,
-    staleTime: 30000,
-  });
+  const shouldFetchGroups = hasValidProps && userId && userId.trim() !== "";
+
+  const {
+    data: groups,
+    isLoading: isLoadingGroups,
+    refetch: refetchGroups,
+  } = api.thinkpages.getThinktanks.useQuery(
+    {
+      userId: userId || "ANONYMOUS",
+      type: activeTab === "discover" ? "all" : activeTab,
+    },
+    {
+      enabled: (!viewOnly && shouldFetchGroups) || (viewOnly && activeTab === "discover"), // Enable discover mode for anonymous users
+      retry: 0,
+      refetchOnWindowFocus: false,
+      staleTime: 30000,
+    }
+  );
 
   // Manual fetch only when conditions are met
   React.useEffect(() => {
-    if (shouldFetchGroups && userId && userId.trim() !== '') {
+    if (shouldFetchGroups && userId && userId.trim() !== "") {
       refetchGroups();
     }
   }, [shouldFetchGroups, userId, activeTab, refetchGroups]);
 
-  const { data: groupMessages, isLoading: isLoadingMessages, refetch: refetchMessages } = api.thinkpages.getThinktankMessages.useQuery(
+  const {
+    data: groupMessages,
+    isLoading: isLoadingMessages,
+    refetch: refetchMessages,
+  } = api.thinkpages.getThinktankMessages.useQuery(
     {
-      groupId: selectedGroup?.id || 'INVALID',
-      userId: currentUserId || 'ANONYMOUS'
+      groupId: selectedGroup?.id || "INVALID",
+      userId: currentUserId || "ANONYMOUS",
     },
     {
       enabled: false, // NEVER auto-enable
       retry: 0,
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
     }
   );
 
@@ -357,7 +394,7 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
       }
     });
     // Also add typing indicator user IDs
-    Array.from(clientState.typingIndicators.values()).forEach(indicator => {
+    Array.from(clientState.typingIndicators.values()).forEach((indicator) => {
       if (indicator.accountId !== currentUserId) {
         userIds.add(indicator.accountId);
       }
@@ -370,7 +407,7 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
 
   // Manual fetch for messages
   React.useEffect(() => {
-    if (selectedGroup?.id && selectedGroup.id.trim() !== '' && view === 'chat') {
+    if (selectedGroup?.id && selectedGroup.id.trim() !== "" && view === "chat") {
       refetchMessages();
       // Subscribe to real-time updates for this group
       subscribeToGroup(selectedGroup.id);
@@ -380,39 +417,39 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
   // Mutations
   const createGroupMutation = api.thinkpages.createThinktank.useMutation({
     onSuccess: () => {
-      toast.success('ThinkTank created successfully!');
+      toast.success("ThinkTank created successfully!");
       refetchGroups();
       setShowCreateModal(false);
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to create ThinkTank');
-    }
+      toast.error(error.message || "Failed to create ThinkTank");
+    },
   });
 
   const joinGroupMutation = api.thinkpages.joinThinktank.useMutation({
     onSuccess: () => {
-      toast.success('Joined ThinkTank successfully!');
+      toast.success("Joined ThinkTank successfully!");
       refetchGroups();
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to join ThinkTank');
-    }
+      toast.error(error.message || "Failed to join ThinkTank");
+    },
   });
 
   const sendMessageMutation = api.thinkpages.sendThinktankMessage.useMutation({
     onSuccess: () => {
-      setMessageText('');
+      setMessageText("");
       refetchMessages();
       scrollToBottom();
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to send message');
-    }
+      toast.error(error.message || "Failed to send message");
+    },
   });
 
   const scrollToBottom = useCallback(() => {
     if (listRef.current && groupMessages?.messages && groupMessages.messages.length > 0) {
-      listRef.current.scrollToItem(groupMessages.messages.length - 1, 'end');
+      listRef.current.scrollToItem(groupMessages.messages.length - 1, "end");
     }
   }, [groupMessages?.messages]);
 
@@ -420,124 +457,145 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
     scrollToBottom();
   }, [scrollToBottom, groupMessages?.messages.length]);
 
-  const handleSendMessage = useCallback((content?: string, plainText?: string) => {
-    const finalContent = content || messageText;
-    const finalPlainText = plainText || messageText;
-    
-    if (!finalPlainText.trim() || !selectedGroup || !currentUserId) return;
+  const handleSendMessage = useCallback(
+    (content?: string, plainText?: string) => {
+      const finalContent = content || messageText;
+      const finalPlainText = plainText || messageText;
 
-    sendMessageMutation.mutate({
-      groupId: selectedGroup.id,
-      userId: currentUserId,
-      content: finalContent,
-      messageType: content && content !== plainText ? 'text' : 'text'
-    });
+      if (!finalPlainText.trim() || !selectedGroup || !currentUserId) return;
 
-    // Clear the simple input if used
-    if (!content) {
-      setMessageText('');
-    }
-  }, [messageText, selectedGroup, currentUserId, sendMessageMutation]);
+      sendMessageMutation.mutate({
+        groupId: selectedGroup.id,
+        userId: currentUserId,
+        content: finalContent,
+        messageType: content && content !== plainText ? "text" : "text",
+      });
 
-  const handleJoinGroup = useCallback((groupId: string) => {
-    if (!currentUserId) return;
-    
-    joinGroupMutation.mutate({
-      groupId,
-      userId: currentUserId
-    });
-  }, [currentUserId, joinGroupMutation]);
+      // Clear the simple input if used
+      if (!content) {
+        setMessageText("");
+      }
+    },
+    [messageText, selectedGroup, currentUserId, sendMessageMutation]
+  );
+
+  const handleJoinGroup = useCallback(
+    (groupId: string) => {
+      if (!currentUserId) return;
+
+      joinGroupMutation.mutate({
+        groupId,
+        userId: currentUserId,
+      });
+    },
+    [currentUserId, joinGroupMutation]
+  );
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'public': return <Globe className="h-4 w-4 text-green-500" />;
-      case 'private': return <Lock className="h-4 w-4 text-blue-500" />;
-      case 'invite_only': return <Shield className="h-4 w-4 text-orange-500" />;
-      default: return <Users className="h-4 w-4" />;
+      case "public":
+        return <Globe className="h-4 w-4 text-green-500" />;
+      case "private":
+        return <Lock className="h-4 w-4 text-blue-500" />;
+      case "invite_only":
+        return <Shield className="h-4 w-4 text-orange-500" />;
+      default:
+        return <Users className="h-4 w-4" />;
     }
   };
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'public': return 'Public';
-      case 'private': return 'Private';
-      case 'invite_only': return 'Invite Only';
-      default: return 'Unknown';
+      case "public":
+        return "Public";
+      case "private":
+        return "Private";
+      case "invite_only":
+        return "Invite Only";
+      default:
+        return "Unknown";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'sent': return <Check className="h-3 w-3 text-muted-foreground" />;
-      case 'delivered': return <CheckCheck className="h-3 w-3 text-muted-foreground" />;
-      case 'read': return <CheckCheck className="h-3 w-3 text-blue-500" />;
-      default: return null;
+      case "sent":
+        return <Check className="text-muted-foreground h-3 w-3" />;
+      case "delivered":
+        return <CheckCheck className="text-muted-foreground h-3 w-3" />;
+      case "read":
+        return <CheckCheck className="h-3 w-3 text-blue-500" />;
+      default:
+        return null;
     }
   };
 
-  const filteredGroups = groups?.filter((group: ThinktankGroup | null) => {
-    if (!group) return false;
-    const query = searchQuery.toLowerCase();
-    const matchesSearch = (group.name?.toLowerCase() || '').includes(query) ||
-                         (group.description?.toLowerCase() || '').includes(query) ||
-                         (Array.isArray(group.tags) && group.tags.some((tag: string) => (tag?.toLowerCase() || '').includes(query)));
-    const matchesCategory = selectedCategory === 'All' || group.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  }) || [];
+  const filteredGroups =
+    groups?.filter((group: ThinktankGroup | null) => {
+      if (!group) return false;
+      const query = searchQuery.toLowerCase();
+      const matchesSearch =
+        (group.name?.toLowerCase() || "").includes(query) ||
+        (group.description?.toLowerCase() || "").includes(query) ||
+        (Array.isArray(group.tags) &&
+          group.tags.some((tag: string) => (tag?.toLowerCase() || "").includes(query)));
+      const matchesCategory = selectedCategory === "All" || group.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    }) || [];
 
-  if (view === 'chat' && selectedGroup) {
+  if (view === "chat" && selectedGroup) {
     return (
       <div className="space-y-6">
         {/* Chat Header */}
-        <Card className="glass-hierarchy-parent overflow-hidden relative">
+        <Card className="glass-hierarchy-parent relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-orange-600/10 via-transparent to-yellow-600/10" />
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 via-yellow-500 to-orange-500" />
-          <CardContent className="p-4 relative">
+          <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-orange-500 via-yellow-500 to-orange-500" />
+          <CardContent className="relative p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    setView('list');
+                    setView("list");
                     setSelectedGroup(null);
                   }}
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
-                
+
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={selectedGroup.avatar || undefined} />
-                  <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white font-semibold">
-                    {selectedGroup.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                  <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 font-semibold text-white">
+                    {selectedGroup.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .slice(0, 2)}
                   </AvatarFallback>
                 </Avatar>
-                
+
                 <div>
-                  <h3 className="font-semibold flex items-center gap-2">
+                  <h3 className="flex items-center gap-2 font-semibold">
                     {selectedGroup.name}
                     {getTypeIcon(selectedGroup.type)}
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {selectedGroup.memberCount} members • {selectedGroup._count.messages} messages
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setView('collaboration')}
+                  onClick={() => setView("collaboration")}
                   title="Collaborative Documents"
                 >
                   <File className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  title="More Options"
-                >
+                <Button variant="ghost" size="sm" title="More Options">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </div>
@@ -546,11 +604,11 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
         </Card>
 
         {/* Chat Messages */}
-        <Card className="glass-hierarchy-child h-[600px] flex flex-col">
+        <Card className="glass-hierarchy-child flex h-[600px] flex-col">
           <div className="flex-1">
             {isLoadingMessages ? (
-              <div className="flex justify-center items-center h-full">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <div className="flex h-full items-center justify-center">
+                <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
               </div>
             ) : groupMessages?.messages && groupMessages.messages.length > 0 ? (
               <List
@@ -565,7 +623,9 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
                   const message = groupMessages.messages[index];
                   if (!message) return null;
 
-                  const displayName = userDisplayNames.get(message.userId) || `User ${message.userId.substring(0, 8)}`;
+                  const displayName =
+                    userDisplayNames.get(message.userId) ||
+                    `User ${message.userId.substring(0, 8)}`;
 
                   return (
                     <div style={style} className="py-2">
@@ -579,43 +639,59 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
                 }}
               </List>
             ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
+              <div className="text-muted-foreground flex h-full items-center justify-center">
                 <div className="text-center">
-                  <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <MessageSquare className="mx-auto mb-4 h-12 w-12 opacity-50" />
                   <p className="text-sm">No messages yet. Start the conversation!</p>
                 </div>
               </div>
             )}
 
             {/* Enhanced Group Typing Indicators */}
-            {Array.from(clientState.typingIndicators.values())
-              .filter((indicator: any) => indicator.groupId === selectedGroup?.id && indicator.accountId !== currentUserId)
-              .length > 0 && (
-              <div className="px-4 pb-4 space-y-2">
+            {Array.from(clientState.typingIndicators.values()).filter(
+              (indicator: any) =>
+                indicator.groupId === selectedGroup?.id && indicator.accountId !== currentUserId
+            ).length > 0 && (
+              <div className="space-y-2 px-4 pb-4">
                 {Array.from(clientState.typingIndicators.values())
-                  .filter((indicator: any) => indicator.groupId === selectedGroup?.id && indicator.accountId !== currentUserId)
+                  .filter(
+                    (indicator: any) =>
+                      indicator.groupId === selectedGroup?.id &&
+                      indicator.accountId !== currentUserId
+                  )
                   .map((indicator: any) => {
                     // Get the display name from fetched user profiles
-                    const displayName = userDisplayNames.get(indicator.accountId) || `User ${indicator.accountId.substring(0, 8)}`;
+                    const displayName =
+                      userDisplayNames.get(indicator.accountId) ||
+                      `User ${indicator.accountId.substring(0, 8)}`;
 
                     return (
                       <div key={indicator.id} className="flex justify-start">
                         <div className="max-w-[70%]">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="mb-1 flex items-center gap-2">
                             <Avatar className="h-6 w-6">
-                              <AvatarFallback className="text-xs bg-gradient-to-br from-orange-500 to-orange-600 text-white">
+                              <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-xs text-white">
                                 {displayName.substring(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
-                            <span className="text-xs text-muted-foreground font-medium">
+                            <span className="text-muted-foreground text-xs font-medium">
                               {displayName} is typing...
                             </span>
                           </div>
-                          <div className="bg-muted mr-4 p-3 rounded-2xl">
+                          <div className="bg-muted mr-4 rounded-2xl p-3">
                             <div className="flex gap-1">
-                              <div className="w-2 h-2 bg-orange-500/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                              <div className="w-2 h-2 bg-orange-500/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                              <div className="w-2 h-2 bg-orange-500/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                              <div
+                                className="h-2 w-2 animate-bounce rounded-full bg-orange-500/50"
+                                style={{ animationDelay: "0ms" }}
+                              />
+                              <div
+                                className="h-2 w-2 animate-bounce rounded-full bg-orange-500/50"
+                                style={{ animationDelay: "150ms" }}
+                              />
+                              <div
+                                className="h-2 w-2 animate-bounce rounded-full bg-orange-500/50"
+                                style={{ animationDelay: "300ms" }}
+                              />
                             </div>
                           </div>
                         </div>
@@ -652,42 +728,34 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
     );
   }
 
-  if (view === 'collaboration' && selectedGroup) {
+  if (view === "collaboration" && selectedGroup) {
     return (
       <div className="space-y-6">
         {/* Collaboration Header */}
-        <Card className="glass-hierarchy-parent overflow-hidden relative">
+        <Card className="glass-hierarchy-parent relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-orange-600/10 via-transparent to-yellow-600/10" />
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 via-yellow-500 to-orange-500" />
-          <CardContent className="p-4 relative">
+          <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-orange-500 via-yellow-500 to-orange-500" />
+          <CardContent className="relative p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setView('chat')}
-                >
+                <Button variant="ghost" size="sm" onClick={() => setView("chat")}>
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
 
-                <div className="h-10 w-10 bg-gradient-to-br from-orange-600 to-orange-700 rounded-lg flex items-center justify-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-orange-600 to-orange-700">
                   <File className="h-5 w-5 text-white" />
                 </div>
 
                 <div>
-                  <h3 className="font-semibold">
-                    {selectedGroup.name} - Collaboration
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Lore writing and planning space
-                  </p>
+                  <h3 className="font-semibold">{selectedGroup.name} - Collaboration</h3>
+                  <p className="text-muted-foreground text-sm">Lore writing and planning space</p>
                 </div>
               </div>
 
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setView('list')}
+                onClick={() => setView("list")}
                 className="text-muted-foreground"
               >
                 Back to Group
@@ -712,23 +780,23 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="glass-hierarchy-parent overflow-hidden relative">
+      <Card className="glass-hierarchy-parent relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-600/10 via-transparent to-yellow-600/10" />
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-orange-500 via-yellow-500 to-orange-500" />
-        <CardContent className="p-6 relative">
+        <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-orange-500 via-yellow-500 to-orange-500" />
+        <CardContent className="relative p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <div className="h-12 w-12 bg-gradient-to-br from-orange-600 to-orange-700 rounded-lg flex items-center justify-center shadow-lg">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-orange-600 to-orange-700 shadow-lg">
                   <Globe className="h-6 w-6 text-white" />
                 </div>
-                <div className="absolute -top-1 -right-1 h-4 w-4 bg-orange-500 rounded-full border-2 border-background animate-pulse" />
+                <div className="border-background absolute -top-1 -right-1 h-4 w-4 animate-pulse rounded-full border-2 bg-orange-500" />
               </div>
               <div>
-                <h2 className="text-xl font-bold bg-gradient-to-r from-orange-600 to-yellow-600 bg-clip-text text-transparent">
+                <h2 className="bg-gradient-to-r from-orange-600 to-yellow-600 bg-clip-text text-xl font-bold text-transparent">
                   ThinkTanks
                 </h2>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Global discussion and collaboration spaces
                 </p>
               </div>
@@ -736,9 +804,9 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
             {!viewOnly ? (
               <Button
                 onClick={() => setShowCreateModal(true)}
-                className="bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700 text-white"
+                className="bg-gradient-to-r from-orange-600 to-yellow-600 text-white hover:from-orange-700 hover:to-yellow-700"
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Create Group
               </Button>
             ) : (
@@ -746,14 +814,14 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
                 👁️ View Only Mode
               </Badge>
             )}
-            <CreateGroupModal 
+            <CreateGroupModal
               isOpen={showCreateModal}
               onClose={() => setShowCreateModal(false)}
               onCreateGroup={(data) => {
                 if (!currentUserId) return;
                 createGroupMutation.mutate({
                   ...data,
-                  createdBy: currentUserId
+                  createdBy: currentUserId,
                 });
               }}
             />
@@ -762,8 +830,12 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
       </Card>
 
       {/* Navigation Tabs */}
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
-        <div className="flex items-center justify-between gap-4 mb-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as any)}
+        className="w-full"
+      >
+        <div className="mb-6 flex items-center justify-between gap-4">
           <TabsList className="glass-hierarchy-child p-1">
             {!viewOnly && (
               <TabsTrigger value="joined" className="flex items-center gap-2">
@@ -786,12 +858,12 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
           {/* Search and Filters */}
           <div className="flex items-center gap-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search groups..."
-                className="pl-10 w-64"
+                className="w-64 pl-10"
               />
             </div>
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -799,8 +871,10 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {categories.map(category => (
-                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -810,21 +884,23 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
         <TabsContent value="joined" className="space-y-4">
           {isLoadingGroups ? (
             <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {filteredGroups.filter(g => g.isJoined).map(group => (
-                <ThinktankCard 
-                  key={group.id} 
-                  group={group} 
-                  onJoin={handleJoinGroup}
-                  onEnter={(group) => {
-                    setSelectedGroup(group);
-                    setView('chat');
-                  }}
-                />
-              ))}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {filteredGroups
+                .filter((g) => g.isJoined)
+                .map((group) => (
+                  <ThinktankCard
+                    key={group.id}
+                    group={group}
+                    onJoin={handleJoinGroup}
+                    onEnter={(group) => {
+                      setSelectedGroup(group);
+                      setView("chat");
+                    }}
+                  />
+                ))}
             </div>
           )}
         </TabsContent>
@@ -832,18 +908,18 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
         <TabsContent value="discover" className="space-y-4">
           {isLoadingGroups ? (
             <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {filteredGroups.map(group => (
-                <ThinktankCard 
-                  key={group.id} 
-                  group={group} 
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {filteredGroups.map((group) => (
+                <ThinktankCard
+                  key={group.id}
+                  group={group}
                   onJoin={handleJoinGroup}
                   onEnter={(group) => {
                     setSelectedGroup(group);
-                    setView('chat');
+                    setView("chat");
                   }}
                 />
               ))}
@@ -854,32 +930,32 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
         <TabsContent value="created" className="space-y-4">
           {isLoadingGroups ? (
             <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <div className="border-primary h-8 w-8 animate-spin rounded-full border-b-2"></div>
             </div>
           ) : filteredGroups.length === 0 ? (
             <Card className="glass-hierarchy-child">
               <CardContent className="p-8 text-center">
-                <Crown className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Created Groups</h3>
+                <Crown className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+                <h3 className="mb-2 text-lg font-semibold">No Created Groups</h3>
                 <p className="text-muted-foreground mb-4">
                   Start your own community and bring together people who share your passions.
                 </p>
                 <Button onClick={() => setShowCreateModal(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Create Your First Group
                 </Button>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {filteredGroups.map(group => (
-                <ThinktankCard 
-                  key={group.id} 
-                  group={group} 
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {filteredGroups.map((group) => (
+                <ThinktankCard
+                  key={group.id}
+                  group={group}
                   onJoin={handleJoinGroup}
                   onEnter={(group) => {
                     setSelectedGroup(group);
-                    setView('chat');
+                    setView("chat");
                   }}
                 />
               ))}
@@ -898,7 +974,7 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
 const ThinktankCard = React.memo(function ThinktankCard({
   group,
   onJoin,
-  onEnter
+  onEnter,
 }: {
   group: ThinktankGroup;
   onJoin: (groupId: string) => void;
@@ -906,19 +982,27 @@ const ThinktankCard = React.memo(function ThinktankCard({
 }) {
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'public': return <Globe className="h-4 w-4 text-green-500" />;
-      case 'private': return <Lock className="h-4 w-4 text-blue-500" />;
-      case 'invite_only': return <Shield className="h-4 w-4 text-orange-500" />;
-      default: return <Users className="h-4 w-4" />;
+      case "public":
+        return <Globe className="h-4 w-4 text-green-500" />;
+      case "private":
+        return <Lock className="h-4 w-4 text-blue-500" />;
+      case "invite_only":
+        return <Shield className="h-4 w-4 text-orange-500" />;
+      default:
+        return <Users className="h-4 w-4" />;
     }
   };
 
   const getTypeLabel = (type: string) => {
     switch (type) {
-      case 'public': return 'Public';
-      case 'private': return 'Private';
-      case 'invite_only': return 'Invite Only';
-      default: return 'Unknown';
+      case "public":
+        return "Public";
+      case "private":
+        return "Private";
+      case "invite_only":
+        return "Invite Only";
+      default:
+        return "Unknown";
     }
   };
 
@@ -929,28 +1013,32 @@ const ThinktankCard = React.memo(function ThinktankCard({
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
     >
-      <Card className="glass-hierarchy-child hover:glass-hierarchy-interactive transition-all duration-300 cursor-pointer group">
+      <Card className="glass-hierarchy-child hover:glass-hierarchy-interactive group cursor-pointer transition-all duration-300">
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
-            <Avatar className="h-12 w-12 border-2 border-background shadow-lg">
+            <Avatar className="border-background h-12 w-12 border-2 shadow-lg">
               <AvatarImage src={group.avatar || undefined} alt={group.name} />
-              <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white font-semibold">
-                {group.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+              <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 font-semibold text-white">
+                {group.name
+                  .split(" ")
+                  .map((n: string) => n[0])
+                  .join("")
+                  .slice(0, 2)}
               </AvatarFallback>
             </Avatar>
-            
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="font-semibold text-sm truncate group-hover:text-orange-600 transition-colors">
+
+            <div className="min-w-0 flex-1">
+              <div className="mb-2 flex items-center gap-2">
+                <h3 className="truncate text-sm font-semibold transition-colors group-hover:text-orange-600">
                   {group.name}
                 </h3>
               </div>
-              
-              <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
-                {group.description || 'No description available'}
+
+              <p className="text-muted-foreground mb-3 line-clamp-2 text-xs">
+                {group.description || "No description available"}
               </p>
-              
-              <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
+
+              <div className="text-muted-foreground mb-3 flex items-center gap-4 text-xs">
                 <div className="flex items-center gap-1">
                   {getTypeIcon(group.type)}
                   <span>{getTypeLabel(group.type)}</span>
@@ -964,12 +1052,12 @@ const ThinktankCard = React.memo(function ThinktankCard({
                   <span>{group._count.messages} messages</span>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div className="flex flex-wrap gap-1">
                   {group.tags?.slice(0, 3).map((tag: string) => (
                     <Badge key={tag} variant="outline" className="text-xs">
-                      <Hash className="h-2 w-2 mr-1" />
+                      <Hash className="mr-1 h-2 w-2" />
                       {tag}
                     </Badge>
                   ))}
@@ -979,33 +1067,33 @@ const ThinktankCard = React.memo(function ThinktankCard({
                     </Badge>
                   )}
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   {group.isJoined ? (
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
                       onClick={(e) => {
                         e.stopPropagation();
                         onEnter(group);
                       }}
                     >
-                      <MessageSquare className="h-3 w-3 mr-1" />
+                      <MessageSquare className="mr-1 h-3 w-3" />
                       Enter
                     </Button>
                   ) : (
-                    <Button 
+                    <Button
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         onJoin(group.id);
                       }}
                     >
-                      <Plus className="h-3 w-3 mr-1" />
+                      <Plus className="mr-1 h-3 w-3" />
                       Join
                     </Button>
                   )}
-                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-orange-600 transition-colors" />
+                  <ChevronRight className="text-muted-foreground h-4 w-4 transition-colors group-hover:text-orange-600" />
                 </div>
               </div>
             </div>
@@ -1023,7 +1111,7 @@ const ThinktankCard = React.memo(function ThinktankCard({
 const CreateGroupModal = React.memo(function CreateGroupModal({
   isOpen,
   onClose,
-  onCreateGroup
+  onCreateGroup,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -1042,13 +1130,13 @@ const CreateGroupModal = React.memo(function CreateGroupModal({
     category: string;
     tags: string[];
   }>({
-    name: '',
-    description: '',
-    type: 'public',
-    category: '',
-    tags: []
+    name: "",
+    description: "",
+    type: "public",
+    category: "",
+    tags: [],
   });
-  const [tagInput, setTagInput] = useState('');
+  const [tagInput, setTagInput] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1059,50 +1147,48 @@ const CreateGroupModal = React.memo(function CreateGroupModal({
       description: formData.description || undefined,
       type: formData.type,
       category: formData.category || undefined,
-      tags: formData.tags.length > 0 ? formData.tags : undefined
+      tags: formData.tags.length > 0 ? formData.tags : undefined,
     });
 
     // Reset form
     setFormData({
-      name: '',
-      description: '',
-      type: 'public',
-      category: '',
-      tags: []
+      name: "",
+      description: "",
+      type: "public",
+      category: "",
+      tags: [],
     });
-    setTagInput('');
+    setTagInput("");
   };
 
   const addTag = () => {
     if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        tags: [...prev.tags, tagInput.trim()]
+        tags: [...prev.tags, tagInput.trim()],
       }));
-      setTagInput('');
+      setTagInput("");
     }
   };
 
   const removeTag = (tagToRemove: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      tags: prev.tags.filter((tag) => tag !== tagToRemove),
     }));
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-500/20 rounded-lg">
+            <div className="rounded-lg bg-orange-500/20 p-2">
               <Users className="h-6 w-6 text-orange-400" />
             </div>
             <div>
               <DialogTitle className="text-lg">Create New ThinkTank</DialogTitle>
-              <p className="text-sm text-muted-foreground">
-                Start a global discussion group
-              </p>
+              <p className="text-muted-foreground text-sm">Start a global discussion group</p>
             </div>
           </div>
         </DialogHeader>
@@ -1112,7 +1198,7 @@ const CreateGroupModal = React.memo(function CreateGroupModal({
             <Input
               id="group-name"
               value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
               placeholder="Enter group name..."
               required
             />
@@ -1123,7 +1209,7 @@ const CreateGroupModal = React.memo(function CreateGroupModal({
             <Textarea
               id="group-description"
               value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
               placeholder="Describe your group's purpose..."
               rows={3}
             />
@@ -1131,7 +1217,12 @@ const CreateGroupModal = React.memo(function CreateGroupModal({
 
           <div>
             <Label htmlFor="group-privacy">Privacy</Label>
-            <Select value={formData.type} onValueChange={(value: "public" | "private" | "invite_only") => setFormData(prev => ({ ...prev, type: value }))}>
+            <Select
+              value={formData.type}
+              onValueChange={(value: "public" | "private" | "invite_only") =>
+                setFormData((prev) => ({ ...prev, type: value }))
+              }
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -1145,14 +1236,21 @@ const CreateGroupModal = React.memo(function CreateGroupModal({
 
           <div>
             <Label htmlFor="group-category">Category</Label>
-            <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+            <Select
+              value={formData.category}
+              onValueChange={(value) => setFormData((prev) => ({ ...prev, category: value }))}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                {categories.filter(c => c !== 'All').map(category => (
-                  <SelectItem key={category} value={category}>{category}</SelectItem>
-                ))}
+                {categories
+                  .filter((c) => c !== "All")
+                  .map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
@@ -1165,25 +1263,20 @@ const CreateGroupModal = React.memo(function CreateGroupModal({
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 placeholder="Add a tag..."
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
                 className="flex-1"
               />
-              <Button
-                type="button"
-                onClick={addTag}
-                variant="outline"
-                size="sm"
-              >
+              <Button type="button" onClick={addTag} variant="outline" size="sm">
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
             {formData.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="mt-2 flex flex-wrap gap-2">
                 {formData.tags.map((tag: string) => (
                   <span
                     key={tag}
                     onClick={() => removeTag(tag)}
-                    className="cursor-pointer inline-flex items-center gap-1 py-1 px-2 bg-orange-500/20 text-orange-400 rounded-full text-xs hover:bg-orange-500/30 transition-colors"
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-orange-500/20 px-2 py-1 text-xs text-orange-400 transition-colors hover:bg-orange-500/30"
                   >
                     {tag}
                     <X className="h-3 w-3" />
@@ -1194,11 +1287,7 @@ const CreateGroupModal = React.memo(function CreateGroupModal({
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button
-              type="button"
-              onClick={onClose}
-              variant="outline"
-            >
+            <Button type="button" onClick={onClose} variant="outline">
               Cancel
             </Button>
             <Button

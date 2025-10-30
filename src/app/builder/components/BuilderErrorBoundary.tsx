@@ -1,10 +1,10 @@
 "use client";
 
-import React from 'react';
-import { AlertTriangle, RefreshCw, Home, ArrowLeft } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Alert, AlertDescription } from '~/components/ui/alert';
+import React from "react";
+import { AlertTriangle, RefreshCw, Home, ArrowLeft } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Alert, AlertDescription } from "~/components/ui/alert";
 import { createUrl } from "~/lib/url-utils";
 
 interface ErrorBoundaryState {
@@ -65,11 +65,11 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
 
   handleClearDraft = () => {
     // Clear builder state and retry
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       try {
-        localStorage.removeItem('builder_state');
-        localStorage.removeItem('builder_last_saved');
-        localStorage.removeItem('builder_imported_data');
+        localStorage.removeItem("builder_state");
+        localStorage.removeItem("builder_last_saved");
+        localStorage.removeItem("builder_imported_data");
       } catch (e) {
         // Failed to clear storage
       }
@@ -82,47 +82,40 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
       // Check for custom fallback component
       if (this.props.fallback) {
         const FallbackComponent = this.props.fallback;
-        return (
-          <FallbackComponent
-            error={this.state.error!}
-            retry={this.handleRetry}
-          />
-        );
+        return <FallbackComponent error={this.state.error!} retry={this.handleRetry} />;
       }
 
       // Default error UI
       return (
         <div className="container mx-auto px-4 py-8">
-          <Card className="max-w-2xl mx-auto glass-hierarchy-parent">
+          <Card className="glass-hierarchy-parent mx-auto max-w-2xl">
             <CardHeader className="text-center">
-              <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-red-500" />
-              <CardTitle className="text-2xl font-bold text-red-700">
-                Builder Error
-              </CardTitle>
+              <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-red-500" />
+              <CardTitle className="text-2xl font-bold text-red-700">Builder Error</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <Alert className="border-red-200 bg-red-50">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  An unexpected error occurred in the country builder.
-                  This could be due to corrupted data or a temporary issue.
-                  Try clearing your draft or returning to the dashboard.
+                  An unexpected error occurred in the country builder. This could be due to
+                  corrupted data or a temporary issue. Try clearing your draft or returning to the
+                  dashboard.
                 </AlertDescription>
               </Alert>
 
               {/* Error details (development only) */}
-              {process.env.NODE_ENV === 'development' && this.state.error && (
-                <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-                  <h4 className="font-semibold text-gray-800 mb-2">Error Details:</h4>
-                  <pre className="text-xs text-gray-600 overflow-auto max-h-32">
+              {process.env.NODE_ENV === "development" && this.state.error && (
+                <div className="mt-4 rounded-lg bg-gray-100 p-4">
+                  <h4 className="mb-2 font-semibold text-gray-800">Error Details:</h4>
+                  <pre className="max-h-32 overflow-auto text-xs text-gray-600">
                     {this.state.error.message}
                   </pre>
                   {this.state.errorInfo && (
                     <details className="mt-2">
-                      <summary className="text-xs text-gray-500 cursor-pointer">
+                      <summary className="cursor-pointer text-xs text-gray-500">
                         Component Stack
                       </summary>
-                      <pre className="text-xs text-gray-500 mt-1 overflow-auto max-h-32">
+                      <pre className="mt-1 max-h-32 overflow-auto text-xs text-gray-500">
                         {this.state.errorInfo.componentStack}
                       </pre>
                     </details>
@@ -134,7 +127,7 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
               <div className="flex flex-col gap-3 pt-4">
                 <Button
                   onClick={this.handleRetry}
-                  className="flex items-center justify-center gap-2 w-full"
+                  className="flex w-full items-center justify-center gap-2"
                 >
                   <RefreshCw className="h-4 w-4" />
                   Try Again
@@ -143,17 +136,17 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
                 <Button
                   variant="outline"
                   onClick={this.handleClearDraft}
-                  className="flex items-center justify-center gap-2 w-full"
+                  className="flex w-full items-center justify-center gap-2"
                 >
                   <AlertTriangle className="h-4 w-4" />
                   Clear Draft & Retry
                 </Button>
 
-                <div className="flex gap-3 w-full">
+                <div className="flex w-full gap-3">
                   <Button
                     variant="outline"
-                    onClick={() => window.location.href = createUrl('/builder/import')}
-                    className="flex items-center justify-center gap-2 flex-1"
+                    onClick={() => (window.location.href = createUrl("/builder/import"))}
+                    className="flex flex-1 items-center justify-center gap-2"
                   >
                     <ArrowLeft className="h-4 w-4" />
                     Import Page
@@ -161,8 +154,8 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
 
                   <Button
                     variant="outline"
-                    onClick={() => window.location.href = createUrl('/dashboard')}
-                    className="flex items-center justify-center gap-2 flex-1"
+                    onClick={() => (window.location.href = createUrl("/dashboard"))}
+                    className="flex flex-1 items-center justify-center gap-2"
                   >
                     <Home className="h-4 w-4" />
                     Dashboard
@@ -171,10 +164,8 @@ export class BuilderErrorBoundary extends React.Component<ErrorBoundaryProps, Er
               </div>
 
               {/* User guidance */}
-              <div className="text-center text-sm text-muted-foreground pt-4">
-                <p>
-                  If this problem persists, try clearing your draft and starting over.
-                </p>
+              <div className="text-muted-foreground pt-4 text-center text-sm">
+                <p>If this problem persists, try clearing your draft and starting over.</p>
               </div>
             </CardContent>
           </Card>
@@ -199,10 +190,13 @@ export function useBuilderErrorBoundary(onError?: (error: Error) => void) {
     setError(null);
   }, []);
 
-  const captureError = React.useCallback((error: Error) => {
-    setError(error);
-    onError?.(error);
-  }, [onError]);
+  const captureError = React.useCallback(
+    (error: Error) => {
+      setError(error);
+      onError?.(error);
+    },
+    [onError]
+  );
 
   React.useEffect(() => {
     if (error) {

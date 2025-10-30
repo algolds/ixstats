@@ -7,19 +7,22 @@
 
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { Button } from '~/components/ui/button';
-import { Building2, Users, DollarSign, Receipt } from 'lucide-react';
-import { ConflictWarningDialog, SyncStatusIndicator } from '~/components/builders/ConflictWarningDialog';
-import { SuggestionsPanel, type SuggestionItem } from '~/components/builders/SuggestionsPanel';
-import { computeGovernmentSuggestions } from '~/components/builders/suggestions/utils';
-import { useIntelligenceWebSocket } from '~/hooks/useIntelligenceWebSocket';
-import { useGovernmentBuilder } from '~/hooks/useGovernmentBuilder';
-import { getGovernmentTemplates } from './templates/governmentTemplates';
+import React, { useState, useMemo, useEffect } from "react";
+import { Button } from "~/components/ui/button";
+import { Building2, Users, DollarSign, Receipt } from "lucide-react";
+import {
+  ConflictWarningDialog,
+  SyncStatusIndicator,
+} from "~/components/builders/ConflictWarningDialog";
+import { SuggestionsPanel, type SuggestionItem } from "~/components/builders/SuggestionsPanel";
+import { computeGovernmentSuggestions } from "~/components/builders/suggestions/utils";
+import { useIntelligenceWebSocket } from "~/hooks/useIntelligenceWebSocket";
+import { useGovernmentBuilder } from "~/hooks/useGovernmentBuilder";
+import { getGovernmentTemplates } from "./templates/governmentTemplates";
 
 // Import atomic components
-import { GovernmentStructureForm } from './atoms/GovernmentStructureForm';
-import { RevenueSourceForm } from './atoms/RevenueSourceForm';
+import { GovernmentStructureForm } from "./atoms/GovernmentStructureForm";
+import { RevenueSourceForm } from "./atoms/RevenueSourceForm";
 
 // Import new modular components
 import {
@@ -30,9 +33,9 @@ import {
   NavigationButtons,
   TemplateModal,
   type Step,
-} from '~/components/builder/government';
+} from "~/components/builder/government";
 
-import type { GovernmentBuilderState } from '~/types/government';
+import type { GovernmentBuilderState } from "~/types/government";
 
 interface GovernmentBuilderProps {
   initialData?: Partial<GovernmentBuilderState>;
@@ -58,7 +61,7 @@ export function GovernmentBuilder({
   hideSaveButton = false,
   countryId,
   enableAutoSync = false,
-  gdpData
+  gdpData,
 }: GovernmentBuilderProps) {
   // ==================== LOCAL STATE ====================
   const [showTemplates, setShowTemplates] = useState(false);
@@ -106,10 +109,10 @@ export function GovernmentBuilder({
   // ==================== STEP CONFIGURATION ====================
   const steps: Step[] = useMemo(
     () => [
-      { id: 'structure', label: 'Government Structure', icon: Building2 },
-      { id: 'departments', label: 'Departments', icon: Users },
-      { id: 'budget', label: 'Budget Allocation', icon: DollarSign },
-      { id: 'revenue', label: 'Revenue Sources', icon: Receipt },
+      { id: "structure", label: "Government Structure", icon: Building2 },
+      { id: "departments", label: "Departments", icon: Users },
+      { id: "budget", label: "Budget Allocation", icon: DollarSign },
+      { id: "revenue", label: "Revenue Sources", icon: Receipt },
     ],
     []
   );
@@ -141,12 +144,12 @@ export function GovernmentBuilder({
   const intel = useIntelligenceWebSocket({ countryId });
 
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS !== 'true') return;
+    if (process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS !== "true") return;
     setSuggestions(computeGovernmentSuggestions(builderState as any));
   }, [builderState, intel.latestUpdate]);
 
   const handleApplySuggestion = (s: SuggestionItem) => {
-    if (s.id === 'budget-cap') {
+    if (s.id === "budget-cap") {
       const over =
         builderState.budgetAllocations.reduce((sum, a) => sum + (a.allocatedPercent || 0), 0) - 100;
       if (over > 0) {
@@ -158,7 +161,7 @@ export function GovernmentBuilder({
 
   // ==================== RENDER ====================
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6">
       {/* Conflict Warning Dialog */}
       <ConflictWarningDialog
         open={showConflictDialog}
@@ -209,7 +212,7 @@ export function GovernmentBuilder({
       <ValidationAlert errors={validation.errors} />
 
       {/* Intelligent Suggestions */}
-      {process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS === 'true' && suggestions.length > 0 && (
+      {process.env.NEXT_PUBLIC_ENABLE_INTEL_SUGGESTIONS === "true" && suggestions.length > 0 && (
         <SuggestionsPanel
           suggestions={suggestions}
           onApply={handleApplySuggestion}
@@ -220,7 +223,7 @@ export function GovernmentBuilder({
 
       {/* Step Content */}
       <div className="space-y-6">
-        {currentStep === 'structure' && (
+        {currentStep === "structure" && (
           <GovernmentStructureForm
             data={builderState.structure}
             onChange={updateStructure}
@@ -229,7 +232,7 @@ export function GovernmentBuilder({
           />
         )}
 
-        {currentStep === 'departments' && (
+        {currentStep === "departments" && (
           <DepartmentList
             departments={builderState.departments}
             onAddDepartment={addDepartment}
@@ -242,13 +245,13 @@ export function GovernmentBuilder({
           />
         )}
 
-        {currentStep === 'budget' && (
+        {currentStep === "budget" && (
           <BudgetAllocationList
             departments={builderState.departments}
             budgetAllocations={builderState.budgetAllocations}
             budgetSummary={budgetSummary}
             totalBudget={builderState.structure.totalBudget}
-            currency={builderState.structure.budgetCurrency || 'USD'}
+            currency={builderState.structure.budgetCurrency || "USD"}
             onUpdateAllocation={updateBudgetAllocation}
             onFixAllocations={fixBudgetAllocations}
             isReadOnly={isReadOnly}
@@ -259,14 +262,14 @@ export function GovernmentBuilder({
           />
         )}
 
-        {currentStep === 'revenue' && (
+        {currentStep === "revenue" && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-semibold text-foreground">Revenue Sources</h2>
+            <h2 className="text-foreground text-2xl font-semibold">Revenue Sources</h2>
             <RevenueSourceForm
               data={builderState.revenueSources}
               onChange={updateRevenue}
               totalRevenue={builderState.structure.totalBudget}
-              currency={builderState.structure.budgetCurrency || 'USD'}
+              currency={builderState.structure.budgetCurrency || "USD"}
               isReadOnly={isReadOnly}
               availableDepartments={builderState.departments.map((d, i) => ({
                 id: i.toString(),

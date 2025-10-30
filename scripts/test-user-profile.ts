@@ -8,7 +8,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const DEV_USER_ID = 'user_2zqmDdZvhpNQWGLdAIj2YwH8MLo';
+const DEV_USER_ID = "user_2zqmDdZvhpNQWGLdAIj2YwH8MLo";
 
 async function testUserProfile() {
   try {
@@ -21,7 +21,7 @@ async function testUserProfile() {
     console.log("📊 Step 1: Direct database query...");
     const user = await prisma.user.findUnique({
       where: { clerkUserId: DEV_USER_ID },
-      include: { 
+      include: {
         country: {
           include: {
             dmInputs: {
@@ -30,8 +30,8 @@ async function testUserProfile() {
             },
           },
         },
-        role: true 
-      }
+        role: true,
+      },
     });
 
     if (!user) {
@@ -42,15 +42,15 @@ async function testUserProfile() {
     console.log("✅ User found:");
     console.log(`   ID: ${user.id}`);
     console.log(`   Clerk ID: ${user.clerkUserId}`);
-    console.log(`   Country ID: ${user.countryId || 'None'}`);
-    console.log(`   Country Name: ${user.country?.name || 'None'}`);
-    console.log(`   Role: ${user.role?.name || 'None'} (Level: ${user.role?.level || 'N/A'})`);
+    console.log(`   Country ID: ${user.countryId || "None"}`);
+    console.log(`   Country Name: ${user.country?.name || "None"}`);
+    console.log(`   Role: ${user.role?.name || "None"} (Level: ${user.role?.level || "N/A"})`);
     console.log(`   Active: ${user.isActive}`);
     console.log("");
 
     // Step 2: Test the exact query from getProfile
     console.log("📊 Step 2: Testing getProfile query logic...");
-    
+
     const clerkUserId = DEV_USER_ID;
     const countryArgs = {
       include: {
@@ -65,13 +65,13 @@ async function testUserProfile() {
     let countryRecord: any = null;
 
     // This is the exact logic from getProfile
-    userRecord = await prisma.user.findUnique({
+    userRecord = (await prisma.user.findUnique({
       where: { clerkUserId },
       include: {
         country: countryArgs,
         role: true,
       },
-    }) as any;
+    })) as any;
 
     if (userRecord) {
       countryRecord = userRecord?.country ?? null;
@@ -94,22 +94,22 @@ async function testUserProfile() {
 
     console.log("✅ getProfile result:");
     console.log(`   User ID: ${result.userId}`);
-    console.log(`   Country ID: ${result.countryId || 'None'}`);
-    console.log(`   Country Name: ${result.country?.name || 'None'}`);
+    console.log(`   Country ID: ${result.countryId || "None"}`);
+    console.log(`   Country Name: ${result.country?.name || "None"}`);
     console.log(`   Has Completed Setup: ${result.hasCompletedSetup}`);
     console.log("");
 
     // Step 3: Check if there are any issues with the relationship
     console.log("📊 Step 3: Checking relationship integrity...");
-    
+
     if (userRecord?.countryId && !countryRecord) {
       console.log("⚠️  User has countryId but country record not found!");
-      
+
       // Try to find the country directly
       const directCountry = await prisma.country.findUnique({
-        where: { id: userRecord.countryId }
+        where: { id: userRecord.countryId },
       });
-      
+
       if (directCountry) {
         console.log(`✅ Country found directly: ${directCountry.name} (${directCountry.id})`);
       } else {
@@ -130,9 +130,8 @@ async function testUserProfile() {
       console.log("❌ User profile has issues");
       console.log("❌ Country access may not work properly");
     }
-
   } catch (error) {
-    console.error('❌ Error testing user profile:', error);
+    console.error("❌ Error testing user profile:", error);
   } finally {
     await prisma.$disconnect();
   }

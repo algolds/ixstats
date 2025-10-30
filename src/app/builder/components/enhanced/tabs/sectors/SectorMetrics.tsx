@@ -1,12 +1,12 @@
 "use client";
 
-import React from 'react';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { Button } from '~/components/ui/button';
-import { Factory, PieChart, Users, TrendingUp, Target, AlertTriangle } from 'lucide-react';
-import { MetricCard } from '../../../../primitives/enhanced';
-import type { SectorConfiguration } from '~/types/economy-builder';
-import { calculateSectorTotals } from '../utils/sectorCalculations';
+import React from "react";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Button } from "~/components/ui/button";
+import { Factory, PieChart, Users, TrendingUp, Target, AlertTriangle } from "lucide-react";
+import { MetricCard } from "../../../../primitives/enhanced";
+import type { SectorConfiguration } from "~/types/economy-builder";
+import { calculateSectorTotals } from "../utils/sectorCalculations";
 
 interface SectorMetricsProps {
   sectors: SectorConfiguration[];
@@ -35,7 +35,7 @@ export function SectorMetrics({ sectors, onNormalize }: SectorMetricsProps) {
           onClick={onNormalize}
           disabled={gdpValid && employmentValid}
         >
-          <Target className="h-4 w-4 mr-2" />
+          <Target className="mr-2 h-4 w-4" />
           Normalize
         </Button>
       </div>
@@ -60,20 +60,20 @@ export function SectorMetrics({ sectors, onNormalize }: SectorMetricsProps) {
       )}
 
       {/* Overview Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <MetricCard
           label="GDP Distribution"
           value={`${totalGDP.toFixed(1)}%`}
           icon={PieChart}
           sectionId="sectors"
-          trend={gdpValid ? 'up' : 'down'}
+          trend={gdpValid ? "up" : "down"}
         />
         <MetricCard
           label="Employment Distribution"
           value={`${totalEmployment.toFixed(1)}%`}
           icon={Users}
           sectionId="sectors"
-          trend={employmentValid ? 'up' : 'down'}
+          trend={employmentValid ? "up" : "down"}
         />
         <MetricCard
           label="Active Sectors"

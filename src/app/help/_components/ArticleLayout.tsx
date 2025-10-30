@@ -25,41 +25,41 @@ export function ArticleLayout({
 }: ArticleLayoutProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 dark:from-slate-950 dark:via-blue-950 dark:to-slate-900">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <Link
           href="/help"
-          className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-6 transition-colors"
+          className="mb-6 inline-flex items-center gap-2 text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="h-4 w-4" />
           Back to Help Center
         </Link>
 
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <Icon className={`w-8 h-8 ${iconColor}`} />
+          <div className="mb-4 flex items-center gap-3">
+            <Icon className={`h-8 w-8 ${iconColor}`} />
             <h1 className="text-4xl font-bold text-slate-900 dark:text-white">{title}</h1>
           </div>
           <p className="text-xl text-slate-600 dark:text-slate-300">{description}</p>
         </div>
 
         <div className="prose prose-slate dark:prose-invert prose-blue max-w-none">
-          <div className="bg-white border border-slate-200 dark:bg-white/5 dark:border-white/10 rounded-xl p-8 backdrop-blur-xl space-y-6">
+          <div className="space-y-6 rounded-xl border border-slate-200 bg-white p-8 backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             {children}
           </div>
         </div>
 
-        <div className="mt-8 flex justify-between items-center">
+        <div className="mt-8 flex items-center justify-between">
           {prevLink ? (
             <Link
               href={prevLink.href}
-              className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+              className="text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
             >
               ← {prevLink.label}
             </Link>
           ) : (
             <Link
               href="/help"
-              className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+              className="text-slate-600 transition-colors hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
             >
               ← Back to Help Center
             </Link>
@@ -67,7 +67,7 @@ export function ArticleLayout({
           {nextLink && (
             <Link
               href={nextLink.href}
-              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+              className="text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
             >
               {nextLink.label} →
             </Link>
@@ -80,18 +80,18 @@ export function ArticleLayout({
 
 export function InfoBox({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-blue-50 border border-blue-200 dark:bg-blue-500/10 dark:border-blue-500/30 rounded-lg p-4">
-      <h3 className="text-blue-900 dark:text-blue-300 font-semibold mb-1">{title}</h3>
-      <div className="text-blue-800 dark:text-blue-100/80 text-sm">{children}</div>
+    <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-500/30 dark:bg-blue-500/10">
+      <h3 className="mb-1 font-semibold text-blue-900 dark:text-blue-300">{title}</h3>
+      <div className="text-sm text-blue-800 dark:text-blue-100/80">{children}</div>
     </div>
   );
 }
 
 export function WarningBox({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-amber-50 border border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/30 rounded-lg p-4">
-      <h3 className="text-amber-900 dark:text-amber-300 font-semibold mb-1">{title}</h3>
-      <div className="text-amber-800 dark:text-amber-100/80 text-sm">{children}</div>
+    <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/30 dark:bg-amber-500/10">
+      <h3 className="mb-1 font-semibold text-amber-900 dark:text-amber-300">{title}</h3>
+      <div className="text-sm text-amber-800 dark:text-amber-100/80">{children}</div>
     </div>
   );
 }
@@ -99,7 +99,7 @@ export function WarningBox({ title, children }: { title: string; children: React
 export function Section({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
     <section>
-      {title && <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">{title}</h2>}
+      {title && <h2 className="mb-4 text-2xl font-bold text-slate-900 dark:text-white">{title}</h2>}
       {children}
     </section>
   );

@@ -1,18 +1,18 @@
 "use client";
 
-import React from 'react';
-import { useUser } from '~/context/auth-context';
-import { useRouter } from 'next/navigation';
-import { api } from '~/trpc/react';
-import { useCountryData } from '~/components/mycountry';
-import { QuickActionsPanel } from '~/components/quickactions/QuickActionsPanel';
-import { MeetingScheduler } from '~/components/quickactions/MeetingScheduler';
-import { PolicyCreator } from '~/components/quickactions/PolicyCreator';
-import { DefenseModal } from '~/components/quickactions/DefenseModal';
-import { Button } from '~/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { NumberFlowDisplay } from '~/components/ui/number-flow';
+import React from "react";
+import { useUser } from "~/context/auth-context";
+import { useRouter } from "next/navigation";
+import { api } from "~/trpc/react";
+import { useCountryData } from "~/components/mycountry";
+import { QuickActionsPanel } from "~/components/quickactions/QuickActionsPanel";
+import { MeetingScheduler } from "~/components/quickactions/MeetingScheduler";
+import { PolicyCreator } from "~/components/quickactions/PolicyCreator";
+import { DefenseModal } from "~/components/quickactions/DefenseModal";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import {
   FileText,
   Users,
@@ -21,9 +21,9 @@ import {
   Activity,
   Zap,
   Target,
-  CheckCircle
-} from 'lucide-react';
-import { toast } from 'sonner';
+  CheckCircle,
+} from "lucide-react";
+import { toast } from "sonner";
 
 interface QuickActionIntegrationProps {
   className?: string;
@@ -39,27 +39,30 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
 
   // Get real-time metrics
   const { data: metrics } = api.unifiedIntelligence.getRealTimeMetrics.useQuery(
-    { countryId: country?.id ?? 'placeholder-disabled' },
+    { countryId: country?.id ?? "placeholder-disabled" },
     { enabled: !!country?.id, refetchInterval: 30000 } // Refetch every 30 seconds
   );
 
   // Get policy statistics
   const { data: policies } = api.unifiedIntelligence.getEconomicPolicies.useQuery(
-    { countryId: country?.id ?? 'placeholder-disabled' },
+    { countryId: country?.id ?? "placeholder-disabled" },
     { enabled: !!country?.id }
   );
 
   // Get meeting statistics
   const { data: meetings } = api.unifiedIntelligence.getCabinetMeetings.useQuery(
-    { countryId: country?.id ?? 'placeholder-disabled' },
+    { countryId: country?.id ?? "placeholder-disabled" },
     { enabled: !!country?.id }
   );
 
   // Implementation status
   const implementationStatus = {
-    activePolicies: policies?.filter((p: any) => p.status === 'implemented')?.length || 0,
-    pendingPolicies: policies?.filter((p: any) => p.status === 'proposed' || p.status === 'under_review')?.length || 0,
-    upcomingMeetings: meetings?.filter((m: any) => new Date(m.scheduledDate) > new Date())?.length || 0,
+    activePolicies: policies?.filter((p: any) => p.status === "implemented")?.length || 0,
+    pendingPolicies:
+      policies?.filter((p: any) => p.status === "proposed" || p.status === "under_review")
+        ?.length || 0,
+    upcomingMeetings:
+      meetings?.filter((m: any) => new Date(m.scheduledDate) > new Date())?.length || 0,
     activeThreats: 0, // Will be shown in DefenseModal
   };
 
@@ -78,32 +81,24 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-center dark:border-green-800 dark:bg-green-950/20">
               <div className="text-2xl font-bold text-green-600">
-                <NumberFlowDisplay 
-                  value={metrics?.social || 50}
-                  decimalPlaces={0}
-                  className=""
-                />
+                <NumberFlowDisplay value={metrics?.social || 50} decimalPlaces={0} className="" />
               </div>
               <div className="text-sm text-green-700">Social Stability</div>
             </div>
-            
-            <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-center dark:border-blue-800 dark:bg-blue-950/20">
               <div className="text-2xl font-bold text-blue-600">
-                <NumberFlowDisplay 
-                  value={metrics?.security || 50}
-                  decimalPlaces={0}
-                  className=""
-                />
+                <NumberFlowDisplay value={metrics?.security || 50} decimalPlaces={0} className="" />
               </div>
               <div className="text-sm text-blue-700">Security Level</div>
             </div>
-            
-            <div className="text-center p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+
+            <div className="rounded-lg border border-purple-200 bg-purple-50 p-4 text-center dark:border-purple-800 dark:bg-purple-950/20">
               <div className="text-2xl font-bold text-purple-600">
-                <NumberFlowDisplay 
+                <NumberFlowDisplay
                   value={metrics?.political || 50}
                   decimalPlaces={0}
                   className=""
@@ -124,53 +119,57 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <div className="text-center">
               <div className="text-xl font-bold text-emerald-600">
-                <NumberFlowDisplay 
+                <NumberFlowDisplay
                   value={implementationStatus.activePolicies}
                   decimalPlaces={0}
                   className=""
                 />
               </div>
-              <div className="text-xs text-muted-foreground">Active Policies</div>
-              <CheckCircle className="h-4 w-4 mx-auto mt-1 text-emerald-500" />
+              <div className="text-muted-foreground text-xs">Active Policies</div>
+              <CheckCircle className="mx-auto mt-1 h-4 w-4 text-emerald-500" />
             </div>
-            
+
             <div className="text-center">
               <div className="text-xl font-bold text-yellow-600">
-                <NumberFlowDisplay 
+                <NumberFlowDisplay
                   value={implementationStatus.pendingPolicies}
                   decimalPlaces={0}
                   className=""
                 />
               </div>
-              <div className="text-xs text-muted-foreground">Pending Policies</div>
-              <FileText className="h-4 w-4 mx-auto mt-1 text-yellow-500" />
+              <div className="text-muted-foreground text-xs">Pending Policies</div>
+              <FileText className="mx-auto mt-1 h-4 w-4 text-yellow-500" />
             </div>
-            
+
             <div className="text-center">
               <div className="text-xl font-bold text-blue-600">
-                <NumberFlowDisplay 
+                <NumberFlowDisplay
                   value={implementationStatus.upcomingMeetings}
                   decimalPlaces={0}
                   className=""
                 />
               </div>
-              <div className="text-xs text-muted-foreground">Upcoming Meetings</div>
-              <Users className="h-4 w-4 mx-auto mt-1 text-blue-500" />
+              <div className="text-muted-foreground text-xs">Upcoming Meetings</div>
+              <Users className="mx-auto mt-1 h-4 w-4 text-blue-500" />
             </div>
-            
+
             <div className="text-center">
-              <div className={`text-xl font-bold ${implementationStatus.activeThreats > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                <NumberFlowDisplay 
+              <div
+                className={`text-xl font-bold ${implementationStatus.activeThreats > 0 ? "text-red-600" : "text-green-600"}`}
+              >
+                <NumberFlowDisplay
                   value={implementationStatus.activeThreats}
                   decimalPlaces={0}
                   className=""
                 />
               </div>
-              <div className="text-xs text-muted-foreground">Active Threats</div>
-              <Shield className={`h-4 w-4 mx-auto mt-1 ${implementationStatus.activeThreats > 0 ? 'text-red-500' : 'text-green-500'}`} />
+              <div className="text-muted-foreground text-xs">Active Threats</div>
+              <Shield
+                className={`mx-auto mt-1 h-4 w-4 ${implementationStatus.activeThreats > 0 ? "text-red-500" : "text-green-500"}`}
+              />
             </div>
           </div>
         </CardContent>
@@ -178,17 +177,13 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
 
       {/* Quick Actions Panel */}
       {user?.id && country?.id && (
-        <QuickActionsPanel
-          countryId={country.id}
-          userId={user.id}
-          variant="full"
-        />
+        <QuickActionsPanel countryId={country.id} userId={user.id} variant="full" />
       )}
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Button
-          className="w-full h-16 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+          className="h-16 w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700"
           onClick={() => setShowPolicyCreator(true)}
         >
           <div className="flex flex-col items-center gap-1">
@@ -198,7 +193,7 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
         </Button>
 
         <Button
-          className="w-full h-16 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+          className="h-16 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700"
           onClick={() => setShowMeetingScheduler(true)}
         >
           <div className="flex flex-col items-center gap-1">
@@ -208,7 +203,7 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
         </Button>
 
         <Button
-          className="w-full h-16 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white"
+          className="h-16 w-full bg-gradient-to-r from-red-600 to-rose-600 text-white hover:from-red-700 hover:to-rose-700"
           onClick={() => setShowDefenseModal(true)}
         >
           <div className="flex flex-col items-center gap-1">
@@ -228,25 +223,35 @@ export function QuickActionIntegration({ className }: QuickActionIntegrationProp
         </CardHeader>
         <CardContent>
           <div className="space-y-2 text-xs">
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <span>Database Integration:</span>
-              <Badge variant="default" className="bg-green-100 text-green-800">Live</Badge>
+              <Badge variant="default" className="bg-green-100 text-green-800">
+                Live
+              </Badge>
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <span>Policy Effects System:</span>
-              <Badge variant="default" className="bg-green-100 text-green-800">Active</Badge>
+              <Badge variant="default" className="bg-green-100 text-green-800">
+                Active
+              </Badge>
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <span>Quick Actions API:</span>
-              <Badge variant="default" className="bg-green-100 text-green-800">Connected</Badge>
+              <Badge variant="default" className="bg-green-100 text-green-800">
+                Connected
+              </Badge>
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <span>Real-time Metrics:</span>
-              <Badge variant="default" className="bg-green-100 text-green-800">Streaming</Badge>
+              <Badge variant="default" className="bg-green-100 text-green-800">
+                Streaming
+              </Badge>
             </div>
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <span>NumberFlow Integration:</span>
-              <Badge variant="default" className="bg-green-100 text-green-800">Enabled</Badge>
+              <Badge variant="default" className="bg-green-100 text-green-800">
+                Enabled
+              </Badge>
             </div>
           </div>
         </CardContent>

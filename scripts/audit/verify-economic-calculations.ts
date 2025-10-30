@@ -22,8 +22,7 @@ const results: CalculationTest[] = [];
 
 function log(test: CalculationTest) {
   results.push(test);
-  const icon =
-    test.status === "PASS" ? "✅" : test.status === "FAIL" ? "❌" : "⚠️";
+  const icon = test.status === "PASS" ? "✅" : test.status === "FAIL" ? "❌" : "⚠️";
   let msg = `${icon} [${test.category}] ${test.test}: ${test.message}`;
   if (test.expected !== undefined && test.actual !== undefined) {
     msg += ` (Expected: ${test.expected.toFixed(2)}, Actual: ${test.actual.toFixed(2)})`;
@@ -56,8 +55,7 @@ async function testGDPCalculations() {
       const minGDPPerCapita = 500; // $500 minimum
       const maxGDPPerCapita = 200000; // $200,000 maximum
 
-      const isValid =
-        gdpPerCapita >= minGDPPerCapita && gdpPerCapita <= maxGDPPerCapita;
+      const isValid = gdpPerCapita >= minGDPPerCapita && gdpPerCapita <= maxGDPPerCapita;
 
       log({
         category,
@@ -103,8 +101,7 @@ async function testGDPCalculations() {
       const minExpected = expectedGrowth - tierData.variance;
       const maxExpected = expectedGrowth + tierData.variance;
 
-      const isWithinRange =
-        actualGrowth >= minExpected && actualGrowth <= maxExpected;
+      const isWithinRange = actualGrowth >= minExpected && actualGrowth <= maxExpected;
 
       log({
         category,
@@ -169,8 +166,7 @@ async function testEconomicIndicators() {
         const budgetBalance = country.governmentRevenueTotal - country.totalGovernmentSpending;
         const budgetBalancePercent = (budgetBalance / country.currentTotalGdp) * 100;
 
-        const isReasonable =
-          budgetBalancePercent >= -20 && budgetBalancePercent <= 20;
+        const isReasonable = budgetBalancePercent >= -20 && budgetBalancePercent <= 20;
 
         log({
           category,
@@ -208,15 +204,12 @@ async function testTierBasedCalculations() {
       if (countries.length === 0) continue;
 
       const avgGrowthRate =
-        countries.reduce((sum, c) => sum + (c.adjustedGdpGrowth || 0), 0) /
-        countries.length;
+        countries.reduce((sum, c) => sum + (c.adjustedGdpGrowth || 0), 0) / countries.length;
 
       const expectedRate = tierGrowthRates[tier as keyof typeof tierGrowthRates].base;
-      const variance =
-        tierGrowthRates[tier as keyof typeof tierGrowthRates].variance;
+      const variance = tierGrowthRates[tier as keyof typeof tierGrowthRates].variance;
 
-      const isWithinExpected =
-        Math.abs(avgGrowthRate - expectedRate) <= variance * 2; // Allow 2x variance
+      const isWithinExpected = Math.abs(avgGrowthRate - expectedRate) <= variance * 2; // Allow 2x variance
 
       log({
         category,
@@ -251,8 +244,7 @@ async function testTierBasedCalculations() {
       tierProgressionTotal++;
     }
 
-    const progressionAccuracy =
-      (tierProgressionCorrect / tierProgressionTotal) * 100;
+    const progressionAccuracy = (tierProgressionCorrect / tierProgressionTotal) * 100;
 
     log({
       category,
@@ -378,14 +370,13 @@ async function testHistoricalTracking() {
           const lastSnapshot = snapshots[0];
 
           if (firstSnapshot && lastSnapshot && firstSnapshot.totalGdp && lastSnapshot.totalGdp) {
-            const gdpChange =
-              lastSnapshot.totalGdp / firstSnapshot.totalGdp - 1;
+            const gdpChange = lastSnapshot.totalGdp / firstSnapshot.totalGdp - 1;
             const timeSpan =
-              (lastSnapshot.ixTimeTimestamp.getTime() -
-                firstSnapshot.ixTimeTimestamp.getTime()) /
+              (lastSnapshot.ixTimeTimestamp.getTime() - firstSnapshot.ixTimeTimestamp.getTime()) /
               (1000 * 60 * 60 * 24 * 365); // Years
 
-            const impliedAnnualGrowth = timeSpan > 0 ? Math.pow(1 + gdpChange, 1 / timeSpan) - 1 : 0;
+            const impliedAnnualGrowth =
+              timeSpan > 0 ? Math.pow(1 + gdpChange, 1 / timeSpan) - 1 : 0;
 
             log({
               category,

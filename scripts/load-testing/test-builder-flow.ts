@@ -181,8 +181,7 @@ async function simulateBuilderFlow(
       include: { nationalIdentity: true },
     });
 
-    const dataPersistedCorrectly =
-      !!verifiedCountry && !!verifiedCountry.nationalIdentity;
+    const dataPersistedCorrectly = !!verifiedCountry && !!verifiedCountry.nationalIdentity;
 
     results.push({
       step: BUILDER_STEPS[0]!,
@@ -623,9 +622,7 @@ async function runBuilderTest(
         }
 
         // Check for race conditions (unique constraint violations)
-        const hasRaceCondition = result.errors.some((e) =>
-          e.toLowerCase().includes("unique")
-        );
+        const hasRaceCondition = result.errors.some((e) => e.toLowerCase().includes("unique"));
         if (hasRaceCondition) {
           raceConditionsDetected++;
         }
@@ -641,8 +638,7 @@ async function runBuilderTest(
 
   console.log(""); // New line after progress bar
 
-  const averageCompletionTime =
-    completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length;
+  const averageCompletionTime = completionTimes.reduce((a, b) => a + b, 0) / completionTimes.length;
   const dataPersistenceRate = (dataPersistenceSuccesses / dataPersistenceTotal) * 100;
   const synergyDetectionRate = 100; // Placeholder - would need actual synergy testing
 
@@ -702,8 +698,12 @@ function displayResults(result: BuilderTestResult) {
   console.log(colorize("\n=== Builder Flow Test Results ===", "cyan"));
 
   console.log(`Total Builds:        ${result.totalBuilds}`);
-  console.log(`Successful:          ${colorize(String(result.successfulBuilds), "green")} (${((result.successfulBuilds / result.totalBuilds) * 100).toFixed(2)}%)`);
-  console.log(`Failed:              ${result.failedBuilds > 0 ? colorize(String(result.failedBuilds), "red") : String(result.failedBuilds)} (${((result.failedBuilds / result.totalBuilds) * 100).toFixed(2)}%)`);
+  console.log(
+    `Successful:          ${colorize(String(result.successfulBuilds), "green")} (${((result.successfulBuilds / result.totalBuilds) * 100).toFixed(2)}%)`
+  );
+  console.log(
+    `Failed:              ${result.failedBuilds > 0 ? colorize(String(result.failedBuilds), "red") : String(result.failedBuilds)} (${((result.failedBuilds / result.totalBuilds) * 100).toFixed(2)}%)`
+  );
   console.log(`Avg Completion:      ${formatMs(result.averageCompletionTime)}`);
 
   console.log(colorize("\n=== Step Completion Rates ===", "cyan"));
@@ -735,9 +735,15 @@ function displayResults(result: BuilderTestResult) {
 // ============================================================================
 
 async function main() {
-  console.log(colorize("╔═══════════════════════════════════════════════════════════════════╗", "blue"));
-  console.log(colorize("║         IxStats E2E Builder Flow Test Suite v1.0                 ║", "blue"));
-  console.log(colorize("╚═══════════════════════════════════════════════════════════════════╝", "blue"));
+  console.log(
+    colorize("╔═══════════════════════════════════════════════════════════════════╗", "blue")
+  );
+  console.log(
+    colorize("║         IxStats E2E Builder Flow Test Suite v1.0                 ║", "blue")
+  );
+  console.log(
+    colorize("╚═══════════════════════════════════════════════════════════════════╝", "blue")
+  );
 
   // Parse command-line arguments
   const args = process.argv.slice(2);

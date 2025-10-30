@@ -242,7 +242,9 @@ async function runLoadTest(
   config: LoadTestConfig
 ): Promise<LoadTestResult> {
   console.log(`\n${colorize(`Testing: ${endpoint.name}`, "cyan")}`);
-  console.log(`${colorize(`Category: ${endpoint.category.toUpperCase()}`, "blue")} | ${colorize(`Method: ${endpoint.method}`, "blue")} | ${colorize(`Auth: ${endpoint.requiresAuth ? "Required" : "Public"}`, "blue")}`);
+  console.log(
+    `${colorize(`Category: ${endpoint.category.toUpperCase()}`, "blue")} | ${colorize(`Method: ${endpoint.method}`, "blue")} | ${colorize(`Auth: ${endpoint.requiresAuth ? "Required" : "Public"}`, "blue")}`
+  );
 
   const responseTimes: number[] = [];
   const errors = new Map<string, number>();
@@ -331,12 +333,21 @@ async function runLoadTest(
 // Results Display
 // ============================================================================
 
-function displayResults(result: LoadTestResult, targets: { p95: number; p99: number; errorRate: number }) {
+function displayResults(
+  result: LoadTestResult,
+  targets: { p95: number; p99: number; errorRate: number }
+) {
   console.log(colorize("\n=== Test Results ===", "cyan"));
   console.log(`Total Requests:      ${result.totalRequests}`);
-  console.log(`Successful:          ${colorize(String(result.successfulRequests), "green")} (${((result.successfulRequests / result.totalRequests) * 100).toFixed(2)}%)`);
-  console.log(`Failed:              ${result.failedRequests > 0 ? colorize(String(result.failedRequests), "red") : String(result.failedRequests)} (${((result.failedRequests / result.totalRequests) * 100).toFixed(2)}%)`);
-  console.log(`Rate Limited:        ${result.rateLimitedRequests > 0 ? colorize(String(result.rateLimitedRequests), "yellow") : String(result.rateLimitedRequests)} (${((result.rateLimitedRequests / result.totalRequests) * 100).toFixed(2)}%)`);
+  console.log(
+    `Successful:          ${colorize(String(result.successfulRequests), "green")} (${((result.successfulRequests / result.totalRequests) * 100).toFixed(2)}%)`
+  );
+  console.log(
+    `Failed:              ${result.failedRequests > 0 ? colorize(String(result.failedRequests), "red") : String(result.failedRequests)} (${((result.failedRequests / result.totalRequests) * 100).toFixed(2)}%)`
+  );
+  console.log(
+    `Rate Limited:        ${result.rateLimitedRequests > 0 ? colorize(String(result.rateLimitedRequests), "yellow") : String(result.rateLimitedRequests)} (${((result.rateLimitedRequests / result.totalRequests) * 100).toFixed(2)}%)`
+  );
   console.log(`Requests/Second:     ${result.requestsPerSecond.toFixed(2)}`);
 
   console.log(colorize("\n=== Response Times ===", "cyan"));
@@ -390,9 +401,15 @@ function displayResults(result: LoadTestResult, targets: { p95: number; p99: num
 // ============================================================================
 
 async function main() {
-  console.log(colorize("╔═══════════════════════════════════════════════════════════════════╗", "blue"));
-  console.log(colorize("║              IxStats API Load Testing Suite v1.0                 ║", "blue"));
-  console.log(colorize("╚═══════════════════════════════════════════════════════════════════╝", "blue"));
+  console.log(
+    colorize("╔═══════════════════════════════════════════════════════════════════╗", "blue")
+  );
+  console.log(
+    colorize("║              IxStats API Load Testing Suite v1.0                 ║", "blue")
+  );
+  console.log(
+    colorize("╚═══════════════════════════════════════════════════════════════════╝", "blue")
+  );
 
   // Parse command-line arguments
   const args = process.argv.slice(2);
@@ -420,12 +437,15 @@ async function main() {
   console.log(`  Concurrent Users:  ${concurrentUsers}`);
   console.log(`  Test Duration:     ${duration}s per endpoint`);
   console.log(`  Target Endpoint:   ${targetEndpoint}`);
-  console.log(`  Auth Token:        ${authToken ? "Provided" : "Not provided (public endpoints only)"}`);
+  console.log(
+    `  Auth Token:        ${authToken ? "Provided" : "Not provided (public endpoints only)"}`
+  );
 
   // Filter endpoints
-  const endpointsToTest = targetEndpoint === "all"
-    ? TEST_ENDPOINTS
-    : TEST_ENDPOINTS.filter((e) => e.name.toLowerCase().includes(targetEndpoint.toLowerCase()));
+  const endpointsToTest =
+    targetEndpoint === "all"
+      ? TEST_ENDPOINTS
+      : TEST_ENDPOINTS.filter((e) => e.name.toLowerCase().includes(targetEndpoint.toLowerCase()));
 
   if (endpointsToTest.length === 0) {
     console.error(colorize(`\nNo endpoints found matching: ${targetEndpoint}`, "red"));
@@ -450,8 +470,8 @@ async function main() {
       endpoint.category === "read"
         ? { p95: 500, p99: 1000, errorRate: 1 }
         : endpoint.category === "write"
-        ? { p95: 1000, p99: 2000, errorRate: 1 }
-        : { p95: 2000, p99: 5000, errorRate: 5 }; // heavy operations
+          ? { p95: 1000, p99: 2000, errorRate: 1 }
+          : { p95: 2000, p99: 5000, errorRate: 5 }; // heavy operations
 
     const result = await runLoadTest(endpoint, config);
     const passed = displayResults(result, targets);
@@ -465,17 +485,27 @@ async function main() {
   }
 
   // Summary
-  console.log(colorize("\n╔═══════════════════════════════════════════════════════════════════╗", "blue"));
-  console.log(colorize("║                        Test Summary                               ║", "blue"));
-  console.log(colorize("╚═══════════════════════════════════════════════════════════════════╝", "blue"));
+  console.log(
+    colorize("\n╔═══════════════════════════════════════════════════════════════════╗", "blue")
+  );
+  console.log(
+    colorize("║                        Test Summary                               ║", "blue")
+  );
+  console.log(
+    colorize("╚═══════════════════════════════════════════════════════════════════╝", "blue")
+  );
 
   const totalTests = results.length;
   const passedTests = results.filter((r) => r.passed).length;
   const failedTests = totalTests - passedTests;
 
   console.log(`\nTotal Tests:    ${totalTests}`);
-  console.log(`Passed:         ${colorize(String(passedTests), "green")} (${((passedTests / totalTests) * 100).toFixed(1)}%)`);
-  console.log(`Failed:         ${failedTests > 0 ? colorize(String(failedTests), "red") : String(failedTests)} (${((failedTests / totalTests) * 100).toFixed(1)}%)`);
+  console.log(
+    `Passed:         ${colorize(String(passedTests), "green")} (${((passedTests / totalTests) * 100).toFixed(1)}%)`
+  );
+  console.log(
+    `Failed:         ${failedTests > 0 ? colorize(String(failedTests), "red") : String(failedTests)} (${((failedTests / totalTests) * 100).toFixed(1)}%)`
+  );
 
   // List failed tests
   if (failedTests > 0) {

@@ -6,7 +6,7 @@
  * to maintain separation of concerns between UI and business logic.
  */
 
-import type { DemographicsConfiguration } from '~/types/economy-builder';
+import type { DemographicsConfiguration } from "~/types/economy-builder";
 
 /**
  * Derived demographic metrics calculated from base population data
@@ -70,7 +70,7 @@ export function calculateDerivedDemographics(
     ruralPop,
     dependencyRatio: demographics.totalDependencyRatio,
     workingAgeShare: demographics.ageDistribution.age15to64,
-    urbanShare: demographics.urbanRuralSplit.urban
+    urbanShare: demographics.urbanRuralSplit.urban,
   };
 }
 
@@ -90,6 +90,17 @@ export function calculateDerivedDemographics(
  * ```
  */
 export function getRegionColor(index: number): string {
-  const colors = ['blue', 'green', 'orange', 'purple', 'cyan', 'pink', 'yellow', 'red', 'indigo', 'teal'];
+  const colors = [
+    "blue",
+    "green",
+    "orange",
+    "purple",
+    "cyan",
+    "pink",
+    "yellow",
+    "red",
+    "indigo",
+    "teal",
+  ];
   return colors[index % colors.length];
 }

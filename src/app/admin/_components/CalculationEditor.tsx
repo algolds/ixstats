@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
+import {
   Calculator,
   Code,
   Save,
@@ -16,7 +16,7 @@ import {
   Globe,
   Edit3,
   Eye,
-  History
+  History,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -66,7 +66,7 @@ const CALCULATION_CATEGORIES = {
   economic: { label: "Economic", icon: DollarSign, color: "text-green-500" },
   demographic: { label: "Demographics", icon: Users, color: "text-blue-500" },
   stability: { label: "Stability", icon: Globe, color: "text-purple-500" },
-  governance: { label: "Governance", icon: TrendingUp, color: "text-orange-500" }
+  governance: { label: "Governance", icon: TrendingUp, color: "text-orange-500" },
 };
 
 export function CalculationEditor() {
@@ -116,12 +116,12 @@ function calculateGDPGrowth(baseGDP, population, tier, globalFactor, dmModifiers
       variables: {
         baseGDP: 50000,
         population: 5000000,
-        tier: 3
+        tier: 3,
       },
       constants: {
         globalFactor: 1.0321,
         minGrowthRate: -0.05,
-        populationScaling: 0.01
+        populationScaling: 0.01,
       },
       dependencies: ["dm-modifiers", "economic-tiers"],
       testCases: [
@@ -130,25 +130,26 @@ function calculateGDPGrowth(baseGDP, population, tier, globalFactor, dmModifiers
           name: "Developed Country Normal Growth",
           inputs: { baseGDP: 45000, population: 10000000, tier: 3 },
           expectedOutput: 0.048,
-          status: "pending"
+          status: "pending",
         },
         {
           id: "test-2",
           name: "Impoverished Country High Growth",
           inputs: { baseGDP: 2000, population: 50000000, tier: 1 },
           expectedOutput: 0.095,
-          status: "pending"
-        }
+          status: "pending",
+        },
       ],
       lastModified: new Date(),
       modifiedBy: "admin",
       isActive: true,
-      version: "2.1.3"
+      version: "2.1.3",
     },
     {
       id: "tax-efficiency",
       name: "Tax Collection Efficiency",
-      description: "Calculates government tax collection effectiveness with atomic government modifiers",
+      description:
+        "Calculates government tax collection effectiveness with atomic government modifiers",
       category: "economic",
       formula: `
 function calculateTaxEfficiency(baseTaxRate, governmentType, atomicComponents, corruption) {
@@ -186,32 +187,33 @@ function calculateTaxEfficiency(baseTaxRate, governmentType, atomicComponents, c
 }`,
       variables: {
         baseTaxRate: 0.25,
-        corruption: 0.12
+        corruption: 0.12,
       },
       constants: {
         maxEfficiency: 0.98,
-        professionalBureaucracyBonus: 1.30,
-        ruleOfLawBonus: 1.20
+        professionalBureaucracyBonus: 1.3,
+        ruleOfLawBonus: 1.2,
       },
       dependencies: ["atomic-components", "government-types"],
       testCases: [
         {
           id: "test-3",
           name: "High Efficiency Democracy",
-          inputs: { baseTaxRate: 0.30, corruption: 0.05 },
+          inputs: { baseTaxRate: 0.3, corruption: 0.05 },
           expectedOutput: 0.77,
-          status: "pending"
-        }
+          status: "pending",
+        },
       ],
       lastModified: new Date(Date.now() - 86400000),
       modifiedBy: "admin",
       isActive: true,
-      version: "1.8.1"
+      version: "1.8.1",
     },
     {
       id: "stability-index",
       name: "Country Stability Index",
-      description: "Calculates overall country stability based on economic, political, and social factors",
+      description:
+        "Calculates overall country stability based on economic, political, and social factors",
       category: "stability",
       formula: `
 function calculateStabilityIndex(economic, political, social, atomicComponents) {
@@ -243,13 +245,13 @@ function calculateStabilityIndex(economic, political, social, atomicComponents) 
       variables: {
         economic: 75,
         political: 68,
-        social: 82
+        social: 82,
       },
       constants: {
         economicWeight: 0.4,
         politicalWeight: 0.35,
         socialWeight: 0.25,
-        maxStability: 100
+        maxStability: 100,
       },
       dependencies: ["atomic-components"],
       testCases: [
@@ -258,18 +260,19 @@ function calculateStabilityIndex(economic, political, social, atomicComponents) 
           name: "Stable Democratic Country",
           inputs: { economic: 80, political: 75, social: 85 },
           expectedOutput: 78.5,
-          status: "pending"
-        }
+          status: "pending",
+        },
       ],
       lastModified: new Date(Date.now() - 172800000),
       modifiedBy: "admin",
       isActive: true,
-      version: "3.0.2"
+      version: "3.0.2",
     },
     {
       id: "population-growth",
       name: "Population Growth Dynamics",
-      description: "Calculates population growth with demographic transition, healthcare, and urbanization factors",
+      description:
+        "Calculates population growth with demographic transition, healthcare, and urbanization factors",
       category: "demographic",
       formula: `
 function calculatePopulationGrowth(currentPop, birthRate, deathRate, tier, healthcare, urbanization) {
@@ -302,12 +305,12 @@ function calculatePopulationGrowth(currentPop, birthRate, deathRate, tier, healt
         deathRate: 0.009,
         tier: 3,
         healthcare: 75,
-        urbanization: 65
+        urbanization: 65,
       },
       constants: {
         maxGrowth: 0.05,
         minGrowth: -0.02,
-        urbanizationFactor: 0.008
+        urbanizationFactor: 0.008,
       },
       dependencies: ["economic-tiers", "healthcare-system"],
       testCases: [
@@ -316,18 +319,19 @@ function calculatePopulationGrowth(currentPop, birthRate, deathRate, tier, healt
           name: "Developing Country High Growth",
           inputs: { birthRate: 0.025, deathRate: 0.008, tier: 2, healthcare: 60, urbanization: 40 },
           expectedOutput: 0.0195,
-          status: "pending"
-        }
+          status: "pending",
+        },
       ],
       lastModified: new Date(Date.now() - 259200000),
       modifiedBy: "admin",
       isActive: true,
-      version: "2.5.0"
+      version: "2.5.0",
     },
     {
       id: "military-strength",
       name: "Military Strength Calculation",
-      description: "Calculates effective military power with technology, training, and logistics factors",
+      description:
+        "Calculates effective military power with technology, training, and logistics factors",
       category: "governance",
       formula: `
 function calculateMilitaryStrength(personnel, equipment, technology, training, logistics, budget) {
@@ -361,32 +365,40 @@ function calculateMilitaryStrength(personnel, equipment, technology, training, l
         technology: 75,
         training: 85,
         logistics: 70,
-        budget: 50000000000
+        budget: 50000000000,
       },
       constants: {
         basePersonnelCost: 50000,
         techScalingFactor: 50,
-        logisticsPower: 0.8
+        logisticsPower: 0.8,
       },
       dependencies: ["military-units", "defense-budget"],
       testCases: [
         {
           id: "test-6",
           name: "Modern Professional Military",
-          inputs: { personnel: 400000, equipment: 12000, technology: 85, training: 90, logistics: 80, budget: 60000000000 },
+          inputs: {
+            personnel: 400000,
+            equipment: 12000,
+            technology: 85,
+            training: 90,
+            logistics: 80,
+            budget: 60000000000,
+          },
           expectedOutput: 3500000,
-          status: "pending"
-        }
+          status: "pending",
+        },
       ],
       lastModified: new Date(Date.now() - 345600000),
       modifiedBy: "admin",
       isActive: true,
-      version: "1.6.4"
+      version: "1.6.4",
     },
     {
       id: "trade-balance",
       name: "Trade Balance & Current Account",
-      description: "Calculates trade balance considering exports, imports, services, and financial flows",
+      description:
+        "Calculates trade balance considering exports, imports, services, and financial flows",
       category: "economic",
       formula: `
 function calculateTradeBalance(exports, imports, services, fdi, remittances, tourism) {
@@ -421,27 +433,34 @@ function calculateTradeBalance(exports, imports, services, fdi, remittances, tou
         services: 25000000000,
         fdi: 150000000000,
         remittances: 8000000000,
-        tourism: 12000000000
+        tourism: 12000000000,
       },
       constants: {
         fdiReturnRate: 0.07,
         goodsWeight: 0.7,
-        servicesWeight: 0.3
+        servicesWeight: 0.3,
       },
       dependencies: ["trade-partners", "exchange-rates"],
       testCases: [
         {
           id: "test-7",
           name: "Trade Surplus Economy",
-          inputs: { exports: 500000000000, imports: 350000000000, services: 30000000000, fdi: 180000000000, remittances: 10000000000, tourism: 15000000000 },
+          inputs: {
+            exports: 500000000000,
+            imports: 350000000000,
+            services: 30000000000,
+            fdi: 180000000000,
+            remittances: 10000000000,
+            tourism: 15000000000,
+          },
           expectedOutput: 205600000000,
-          status: "pending"
-        }
+          status: "pending",
+        },
       ],
       lastModified: new Date(Date.now() - 432000000),
       modifiedBy: "admin",
       isActive: true,
-      version: "2.3.1"
+      version: "2.3.1",
     },
     {
       id: "atomic-synergy",
@@ -483,93 +502,106 @@ function calculateAtomicSynergy(components) {
   return 1.0 + (totalSynergy * scalingFactor);
 }`,
       variables: {
-        components: ['PROFESSIONAL_BUREAUCRACY', 'RULE_OF_LAW', 'DEMOCRATIC_PROCESS'] as string[]
+        components: ["PROFESSIONAL_BUREAUCRACY", "RULE_OF_LAW", "DEMOCRATIC_PROCESS"] as string[],
       },
       constants: {
         maxSynergy: 2.0,
         scalingThreshold: 5,
-        baseMultiplier: 1.0
+        baseMultiplier: 1.0,
       },
       dependencies: ["atomic-government"],
       testCases: [
         {
           id: "test-8",
           name: "Democratic Rule of Law Synergy",
-          inputs: { components: ['PROFESSIONAL_BUREAUCRACY', 'RULE_OF_LAW', 'DEMOCRATIC_PROCESS', 'INDEPENDENT_JUDICIARY'] as string[] },
+          inputs: {
+            components: [
+              "PROFESSIONAL_BUREAUCRACY",
+              "RULE_OF_LAW",
+              "DEMOCRATIC_PROCESS",
+              "INDEPENDENT_JUDICIARY",
+            ] as string[],
+          },
           expectedOutput: 1.65,
-          status: "pending"
-        }
+          status: "pending",
+        },
       ],
       lastModified: new Date(Date.now() - 518400000),
       modifiedBy: "admin",
       isActive: true,
-      version: "3.2.0"
-    }
+      version: "3.2.0",
+    },
   ]);
 
   const runTestCase = async (moduleId: string, testCase: TestCase) => {
     // Simulate running the calculation
     const startTime = performance.now();
-    
+
     try {
       // Mock calculation execution
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 1000 + 500));
-      
+      await new Promise((resolve) => setTimeout(resolve, Math.random() * 1000 + 500));
+
       const endTime = performance.now();
       const executionTime = endTime - startTime;
-      
+
       // Mock result (in reality, this would execute the actual formula)
       const mockResult = testCase.expectedOutput * (0.95 + Math.random() * 0.1);
       const success = Math.abs(mockResult - testCase.expectedOutput) < 0.01;
-      
+
       const result: CalculationResult = {
         success,
         result: mockResult,
         executionTime,
         intermediateSteps: {
-          step1: (typeof testCase.inputs.baseGDP === 'number' ? testCase.inputs.baseGDP : typeof testCase.inputs.economic === 'number' ? testCase.inputs.economic : 0),
+          step1:
+            typeof testCase.inputs.baseGDP === "number"
+              ? testCase.inputs.baseGDP
+              : typeof testCase.inputs.economic === "number"
+                ? testCase.inputs.economic
+                : 0,
           step2: mockResult * 0.7,
-          step3: mockResult
-        }
+          step3: mockResult,
+        },
       };
-      
-      setTestResults(prev => ({
+
+      setTestResults((prev) => ({
         ...prev,
-        [testCase.id]: result
+        [testCase.id]: result,
       }));
-      
+
       // Update test case status
-      setModules(prev => prev.map(module => 
-        module.id === moduleId 
-          ? {
-              ...module,
-              testCases: module.testCases.map(tc =>
-                tc.id === testCase.id
-                  ? { ...tc, status: success ? "passed" : "failed", actualOutput: mockResult }
-                  : tc
-              )
-            }
-          : module
-      ));
-      
+      setModules((prev) =>
+        prev.map((module) =>
+          module.id === moduleId
+            ? {
+                ...module,
+                testCases: module.testCases.map((tc) =>
+                  tc.id === testCase.id
+                    ? { ...tc, status: success ? "passed" : "failed", actualOutput: mockResult }
+                    : tc
+                ),
+              }
+            : module
+        )
+      );
     } catch (error) {
       const result: CalculationResult = {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",
-        executionTime: performance.now() - startTime
+        executionTime: performance.now() - startTime,
       };
-      
-      setTestResults(prev => ({
+
+      setTestResults((prev) => ({
         ...prev,
-        [testCase.id]: result
+        [testCase.id]: result,
       }));
     }
   };
 
   const runAllTests = async (moduleId: string) => {
-    const module = modules.find(m => m.id === moduleId);
+    const module = modules.find((m) => m.id === moduleId);
     if (!module) return;
-    
+
     for (const testCase of module.testCases) {
       await runTestCase(moduleId, testCase);
     }
@@ -577,24 +609,29 @@ function calculateAtomicSynergy(components) {
 
   const saveModule = () => {
     if (!selectedModule) return;
-    
+
     // Mock save operation
-    setModules(prev => prev.map(m => 
-      m.id === selectedModule.id 
-        ? { ...selectedModule, lastModified: new Date(), modifiedBy: "admin" }
-        : m
-    ));
-    
+    setModules((prev) =>
+      prev.map((m) =>
+        m.id === selectedModule.id
+          ? { ...selectedModule, lastModified: new Date(), modifiedBy: "admin" }
+          : m
+      )
+    );
+
     setIsEditing(false);
-    
+
     // Add to execution history
-    setExecutionHistory(prev => [{
-      id: Date.now().toString(),
-      action: "saved",
-      module: selectedModule.name,
-      timestamp: new Date(),
-      user: "admin"
-    }, ...prev.slice(0, 9)]);
+    setExecutionHistory((prev) => [
+      {
+        id: Date.now().toString(),
+        action: "saved",
+        module: selectedModule.name,
+        timestamp: new Date(),
+        user: "admin",
+      },
+      ...prev.slice(0, 9),
+    ]);
   };
 
   return (
@@ -615,10 +652,7 @@ function calculateAtomicSynergy(components) {
                 <Play className="h-4 w-4" />
                 Run All Tests
               </Button>
-              <Button
-                onClick={() => setIsEditing(!isEditing)}
-                className="flex items-center gap-2"
-              >
+              <Button onClick={() => setIsEditing(!isEditing)} className="flex items-center gap-2">
                 <Edit3 className="h-4 w-4" />
                 {isEditing ? "Cancel" : "Edit"}
               </Button>
@@ -627,7 +661,7 @@ function calculateAtomicSynergy(components) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
         {/* Module List */}
         <div className="lg:col-span-1">
           <Card>
@@ -637,12 +671,12 @@ function calculateAtomicSynergy(components) {
             <CardContent>
               <div className="space-y-2">
                 {Object.entries(CALCULATION_CATEGORIES).map(([key, category]) => {
-                  const categoryModules = modules.filter(m => m.category === key);
+                  const categoryModules = modules.filter((m) => m.category === key);
                   if (categoryModules.length === 0) return null;
-                  
+
                   return (
                     <div key={key}>
-                      <h4 className="text-sm font-medium flex items-center gap-2 mb-2">
+                      <h4 className="mb-2 flex items-center gap-2 text-sm font-medium">
                         <category.icon className={`h-4 w-4 ${category.color}`} />
                         {category.label}
                       </h4>
@@ -650,32 +684,35 @@ function calculateAtomicSynergy(components) {
                         <div
                           key={module.id}
                           onClick={() => setSelectedModule(module)}
-                          className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                          className={`cursor-pointer rounded-lg border p-3 transition-colors ${
                             selectedModule?.id === module.id
-                              ? 'bg-primary/10 border-primary'
-                              : 'hover:bg-muted'
+                              ? "bg-primary/10 border-primary"
+                              : "hover:bg-muted"
                           }`}
                         >
                           <div className="flex items-center justify-between">
-                            <h5 className="font-medium text-sm">{module.name}</h5>
-                            <Badge variant={module.isActive ? "default" : "secondary"} className="text-xs">
+                            <h5 className="text-sm font-medium">{module.name}</h5>
+                            <Badge
+                              variant={module.isActive ? "default" : "secondary"}
+                              className="text-xs"
+                            >
                               v{module.version}
                             </Badge>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">
                             {module.description}
                           </p>
-                          <div className="flex items-center gap-2 mt-2">
+                          <div className="mt-2 flex items-center gap-2">
                             {module.testCases.length > 0 && (
                               <div className="flex items-center gap-1">
-                                {module.testCases.some(tc => tc.status === "passed") && (
+                                {module.testCases.some((tc) => tc.status === "passed") && (
                                   <CheckCircle className="h-3 w-3 text-green-500" />
                                 )}
-                                {module.testCases.some(tc => tc.status === "failed") && (
+                                {module.testCases.some((tc) => tc.status === "failed") && (
                                   <AlertTriangle className="h-3 w-3 text-red-500" />
                                 )}
-                                <span className="text-xs text-muted-foreground">
-                                  {module.testCases.filter(tc => tc.status === "passed").length}/
+                                <span className="text-muted-foreground text-xs">
+                                  {module.testCases.filter((tc) => tc.status === "passed").length}/
                                   {module.testCases.length} tests
                                 </span>
                               </div>
@@ -708,7 +745,7 @@ function calculateAtomicSynergy(components) {
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle>{selectedModule.name}</CardTitle>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           {selectedModule.description}
                         </p>
                       </div>
@@ -728,11 +765,13 @@ function calculateAtomicSynergy(components) {
                           <Textarea
                             id="formula"
                             value={selectedModule.formula}
-                            onChange={(e) => setSelectedModule({
-                              ...selectedModule,
-                              formula: e.target.value
-                            })}
-                            className="font-mono text-sm min-h-[300px]"
+                            onChange={(e) =>
+                              setSelectedModule({
+                                ...selectedModule,
+                                formula: e.target.value,
+                              })
+                            }
+                            className="min-h-[300px] font-mono text-sm"
                             placeholder="Enter JavaScript function..."
                           />
                         </div>
@@ -741,10 +780,7 @@ function calculateAtomicSynergy(components) {
                             <Save className="h-4 w-4" />
                             Save Changes
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            onClick={() => setIsEditing(false)}
-                          >
+                          <Button variant="outline" onClick={() => setIsEditing(false)}>
                             Cancel
                           </Button>
                         </div>
@@ -752,16 +788,16 @@ function calculateAtomicSynergy(components) {
                     ) : (
                       <div>
                         <Label>Formula Code</Label>
-                        <pre className="p-4 bg-muted rounded-lg text-sm font-mono overflow-x-auto whitespace-pre-wrap">
+                        <pre className="bg-muted overflow-x-auto rounded-lg p-4 font-mono text-sm whitespace-pre-wrap">
                           {selectedModule.formula}
                         </pre>
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
                       <div>
                         <Label>Dependencies</Label>
-                        <div className="flex flex-wrap gap-1 mt-1">
+                        <div className="mt-1 flex flex-wrap gap-1">
                           {selectedModule.dependencies.map((dep) => (
                             <Badge key={dep} variant="outline" className="text-xs">
                               {dep}
@@ -772,7 +808,8 @@ function calculateAtomicSynergy(components) {
                       <div>
                         <Label>Last Modified</Label>
                         <p className="text-muted-foreground">
-                          {selectedModule.lastModified.toLocaleString()} by {selectedModule.modifiedBy}
+                          {selectedModule.lastModified.toLocaleString()} by{" "}
+                          {selectedModule.modifiedBy}
                         </p>
                       </div>
                     </div>
@@ -781,11 +818,11 @@ function calculateAtomicSynergy(components) {
               </TabsContent>
 
               <TabsContent value="variables" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <Card>
                     <CardHeader>
                       <CardTitle>Variables</CardTitle>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         Input variables that can be modified
                       </p>
                     </CardHeader>
@@ -805,8 +842,8 @@ function calculateAtomicSynergy(components) {
                                     ...selectedModule,
                                     variables: {
                                       ...selectedModule.variables,
-                                      [key]: newValue
-                                    }
+                                      [key]: newValue,
+                                    },
                                   });
                                 }}
                                 className="w-32 text-right"
@@ -823,7 +860,7 @@ function calculateAtomicSynergy(components) {
                   <Card>
                     <CardHeader>
                       <CardTitle>Constants</CardTitle>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         Fixed values used in calculations
                       </p>
                     </CardHeader>
@@ -832,7 +869,7 @@ function calculateAtomicSynergy(components) {
                         {Object.entries(selectedModule.constants).map(([key, value]) => (
                           <div key={key} className="flex items-center justify-between">
                             <Label className="font-mono text-sm">{key}</Label>
-                            <span className="font-medium text-muted-foreground">{value}</span>
+                            <span className="text-muted-foreground font-medium">{value}</span>
                           </div>
                         ))}
                       </div>
@@ -845,21 +882,24 @@ function calculateAtomicSynergy(components) {
                 <Card>
                   <CardHeader>
                     <CardTitle>Test Cases</CardTitle>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Validate formula behavior with different inputs
                     </p>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       {selectedModule.testCases.map((testCase) => (
-                        <div key={testCase.id} className="border rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-3">
+                        <div key={testCase.id} className="rounded-lg border p-4">
+                          <div className="mb-3 flex items-center justify-between">
                             <h4 className="font-medium">{testCase.name}</h4>
                             <div className="flex items-center gap-2">
-                              <Badge 
+                              <Badge
                                 variant={
-                                  testCase.status === "passed" ? "default" :
-                                  testCase.status === "failed" ? "destructive" : "secondary"
+                                  testCase.status === "passed"
+                                    ? "default"
+                                    : testCase.status === "failed"
+                                      ? "destructive"
+                                      : "secondary"
                                 }
                               >
                                 {testCase.status}
@@ -875,10 +915,10 @@ function calculateAtomicSynergy(components) {
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                          <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
                             <div>
                               <Label>Inputs</Label>
-                              <div className="space-y-1 mt-1">
+                              <div className="mt-1 space-y-1">
                                 {Object.entries(testCase.inputs).map(([key, value]) => (
                                   <div key={key} className="flex justify-between">
                                     <span className="font-mono">{key}:</span>
@@ -889,27 +929,30 @@ function calculateAtomicSynergy(components) {
                             </div>
                             <div>
                               <Label>Expected Output</Label>
-                              <p className="font-mono mt-1">{testCase.expectedOutput}</p>
+                              <p className="mt-1 font-mono">{testCase.expectedOutput}</p>
                             </div>
                             <div>
                               <Label>Actual Output</Label>
-                              <p className="font-mono mt-1">
+                              <p className="mt-1 font-mono">
                                 {testCase.actualOutput?.toFixed(4) || "Not run"}
                               </p>
                             </div>
                           </div>
 
                           {testResults[testCase.id] && (
-                            <div className="mt-4 p-3 bg-muted rounded">
+                            <div className="bg-muted mt-4 rounded p-3">
                               <div className="flex items-center justify-between text-sm">
-                                <span>Execution time: {testResults[testCase.id].executionTime.toFixed(2)}ms</span>
+                                <span>
+                                  Execution time:{" "}
+                                  {testResults[testCase.id].executionTime.toFixed(2)}ms
+                                </span>
                                 {testResults[testCase.id].success ? (
-                                  <span className="text-green-600 flex items-center gap-1">
+                                  <span className="flex items-center gap-1 text-green-600">
                                     <CheckCircle className="h-4 w-4" />
                                     Passed
                                   </span>
                                 ) : (
-                                  <span className="text-red-600 flex items-center gap-1">
+                                  <span className="flex items-center gap-1 text-red-600">
                                     <AlertTriangle className="h-4 w-4" />
                                     Failed
                                   </span>
@@ -936,7 +979,7 @@ function calculateAtomicSynergy(components) {
                 <Card>
                   <CardHeader>
                     <CardTitle>Execution History</CardTitle>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       Recent changes and test executions
                     </p>
                   </CardHeader>
@@ -944,26 +987,27 @@ function calculateAtomicSynergy(components) {
                     {executionHistory.length > 0 ? (
                       <div className="space-y-3">
                         {executionHistory.map((entry) => (
-                          <div key={entry.id} className="flex items-center justify-between py-2 border-b">
+                          <div
+                            key={entry.id}
+                            className="flex items-center justify-between border-b py-2"
+                          >
                             <div className="flex items-center gap-3">
-                              <History className="h-4 w-4 text-muted-foreground" />
+                              <History className="text-muted-foreground h-4 w-4" />
                               <div>
                                 <p className="text-sm font-medium">
                                   {entry.action} - {entry.module}
                                 </p>
-                                <p className="text-xs text-muted-foreground">
-                                  by {entry.user}
-                                </p>
+                                <p className="text-muted-foreground text-xs">by {entry.user}</p>
                               </div>
                             </div>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-muted-foreground text-xs">
                               {entry.timestamp.toLocaleString()}
                             </span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-muted-foreground text-center py-8">
+                      <p className="text-muted-foreground py-8 text-center">
                         No execution history available
                       </p>
                     )}
@@ -973,9 +1017,9 @@ function calculateAtomicSynergy(components) {
             </Tabs>
           ) : (
             <Card>
-              <CardContent className="flex items-center justify-center h-64">
+              <CardContent className="flex h-64 items-center justify-center">
                 <div className="text-center">
-                  <Calculator className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                  <Calculator className="text-muted-foreground mx-auto mb-2 h-12 w-12" />
                   <p className="text-muted-foreground">Select a calculation module to edit</p>
                 </div>
               </CardContent>

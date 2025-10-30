@@ -117,32 +117,17 @@ function createDashboardConfig(): string {
       system: {
         enabled: true,
         interval: 60000, // 1 minute
-        metrics: [
-          "cpu_usage",
-          "memory_usage",
-          "disk_usage",
-          "network_io",
-        ],
+        metrics: ["cpu_usage", "memory_usage", "disk_usage", "network_io"],
       },
       application: {
         enabled: true,
         interval: 30000, // 30 seconds
-        metrics: [
-          "request_rate",
-          "response_time",
-          "error_rate",
-          "active_connections",
-        ],
+        metrics: ["request_rate", "response_time", "error_rate", "active_connections"],
       },
       database: {
         enabled: true,
         interval: 60000, // 1 minute
-        metrics: [
-          "query_time",
-          "connection_pool",
-          "slow_queries",
-          "database_size",
-        ],
+        metrics: ["query_time", "connection_pool", "slow_queries", "database_size"],
       },
     },
     alerts: {
@@ -686,10 +671,21 @@ All logs are stored in: \`${logsDir}\`
   print("", "reset");
   print("📖 Next Steps:", "yellow");
   print("   1. Review configuration files in monitoring-config/", "reset");
-  print("   2. Set up log rotation (requires root): sudo cp monitoring-config/logrotate.conf /etc/logrotate.d/ixstats", "reset");
+  print(
+    "   2. Set up log rotation (requires root): sudo cp monitoring-config/logrotate.conf /etc/logrotate.d/ixstats",
+    "reset"
+  );
   print("   3. Add cron jobs: crontab -e (copy from monitoring-config/cron-jobs.txt)", "reset");
-  print("   4. (Optional) Install systemd service: sudo cp monitoring-config/ixstats.service /etc/systemd/system/", "reset");
-  print(webhookSuccess ? "   5. ✅ Discord webhook is working" : "   5. Configure Discord webhook in .env.production", "reset");
+  print(
+    "   4. (Optional) Install systemd service: sudo cp monitoring-config/ixstats.service /etc/systemd/system/",
+    "reset"
+  );
+  print(
+    webhookSuccess
+      ? "   5. ✅ Discord webhook is working"
+      : "   5. Configure Discord webhook in .env.production",
+    "reset"
+  );
   print("   6. Test monitoring: npm run test:monitoring", "reset");
 
   print("", "reset");

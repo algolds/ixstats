@@ -66,10 +66,10 @@ interface EmbassyGridProps {
 export const EmbassyGrid = React.memo(function EmbassyGrid({
   embassies,
   isOwner,
-  onEmbassyClick
+  onEmbassyClick,
 }: EmbassyGridProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {embassies.map((embassy) => (
         <EmbassyCard
           key={embassy.id}

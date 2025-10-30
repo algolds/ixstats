@@ -1,16 +1,16 @@
 "use client";
 
-import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Progress } from '~/components/ui/progress';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { BarChart3, AlertTriangle, Activity, TrendingUp, Target, Layers } from 'lucide-react';
+import React from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Progress } from "~/components/ui/progress";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { BarChart3, AlertTriangle, Activity, TrendingUp, Target, Layers } from "lucide-react";
 import type {
   ComprehensiveIntegrationReport,
-  IntegrationTestSuite
-} from '~/app/builder/services/IntegrationTestingService';
-import { TestResultCard } from './TestResults';
+  IntegrationTestSuite,
+} from "~/app/builder/services/IntegrationTestingService";
+import { TestResultCard } from "./TestResults";
 
 interface TestControlsProps {
   activeTab: string;
@@ -31,7 +31,7 @@ export function TestControlsTabs({
   onTabChange,
   onToggleResultExpansion,
   formatDuration,
-  getPassRateColor
+  getPassRateColor,
 }: TestControlsProps) {
   return (
     <Tabs value={activeTab} onValueChange={onTabChange}>
@@ -43,10 +43,7 @@ export function TestControlsTabs({
       </TabsList>
 
       <TabsContent value="overview" className="space-y-6">
-        <SystemIntegrationScores
-          report={report}
-          getPassRateColor={getPassRateColor}
-        />
+        <SystemIntegrationScores report={report} getPassRateColor={getPassRateColor} />
 
         {report.criticalIssues.length > 0 && (
           <Alert>
@@ -55,7 +52,9 @@ export function TestControlsTabs({
               <strong>Critical Issues Found:</strong>
               <ul className="mt-2 space-y-1">
                 {report.criticalIssues.map((issue, index) => (
-                  <li key={index} className="text-sm">• {issue}</li>
+                  <li key={index} className="text-sm">
+                    • {issue}
+                  </li>
                 ))}
               </ul>
             </AlertDescription>
@@ -65,7 +64,7 @@ export function TestControlsTabs({
 
       <TabsContent value="suites">
         <div className="space-y-6">
-          {report.testSuites.map(suite => (
+          {report.testSuites.map((suite) => (
             <TestSuiteCard
               key={suite.id}
               suite={suite}
@@ -92,7 +91,7 @@ export function TestControlsTabs({
 
 function SystemIntegrationScores({
   report,
-  getPassRateColor
+  getPassRateColor,
 }: {
   report: ComprehensiveIntegrationReport;
   getPassRateColor: (rate: number) => string;
@@ -106,11 +105,13 @@ function SystemIntegrationScores({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <div>
-            <div className="flex justify-between items-center mb-2">
+            <div className="mb-2 flex items-center justify-between">
               <span className="text-sm font-medium">Economy-Government</span>
-              <span className={`font-bold ${getPassRateColor(report.systemIntegration.economyGovernment)}`}>
+              <span
+                className={`font-bold ${getPassRateColor(report.systemIntegration.economyGovernment)}`}
+              >
                 {report.systemIntegration.economyGovernment.toFixed(0)}
               </span>
             </div>
@@ -118,9 +119,11 @@ function SystemIntegrationScores({
           </div>
 
           <div>
-            <div className="flex justify-between items-center mb-2">
+            <div className="mb-2 flex items-center justify-between">
               <span className="text-sm font-medium">Economy-Tax</span>
-              <span className={`font-bold ${getPassRateColor(report.systemIntegration.economyTax)}`}>
+              <span
+                className={`font-bold ${getPassRateColor(report.systemIntegration.economyTax)}`}
+              >
                 {report.systemIntegration.economyTax.toFixed(0)}
               </span>
             </div>
@@ -128,9 +131,11 @@ function SystemIntegrationScores({
           </div>
 
           <div>
-            <div className="flex justify-between items-center mb-2">
+            <div className="mb-2 flex items-center justify-between">
               <span className="text-sm font-medium">Government-Tax</span>
-              <span className={`font-bold ${getPassRateColor(report.systemIntegration.governmentTax)}`}>
+              <span
+                className={`font-bold ${getPassRateColor(report.systemIntegration.governmentTax)}`}
+              >
                 {report.systemIntegration.governmentTax.toFixed(0)}
               </span>
             </div>
@@ -148,7 +153,7 @@ function TestSuiteCard({
   expandedResults,
   onToggleResultExpansion,
   formatDuration,
-  getPassRateColor
+  getPassRateColor,
 }: {
   suite: IntegrationTestSuite;
   showDetails: boolean;
@@ -166,7 +171,7 @@ function TestSuiteCard({
               <Layers className="h-5 w-5" />
               <span>{suite.name}</span>
             </CardTitle>
-            <p className="text-sm text-gray-600 mt-1">{suite.description}</p>
+            <p className="mt-1 text-sm text-gray-600">{suite.description}</p>
           </div>
           <div className="text-right">
             <div className={`text-2xl font-bold ${getPassRateColor(suite.overallPassRate)}`}>
@@ -177,7 +182,7 @@ function TestSuiteCard({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">{suite.tests.length}</div>
             <div className="text-sm text-gray-600">Total Tests</div>
@@ -200,13 +205,15 @@ function TestSuiteCard({
 
         <div className="flex items-center justify-between text-sm text-gray-600">
           <span>Execution Time: {formatDuration(suite.executionTime)}</span>
-          <span>Tests: {suite.summary.passed}/{suite.tests.length} passed</span>
+          <span>
+            Tests: {suite.summary.passed}/{suite.tests.length} passed
+          </span>
         </div>
 
         {showDetails && (
           <div className="mt-6 space-y-4">
             <h3 className="font-medium">Test Results</h3>
-            {suite.results.map(result => (
+            {suite.results.map((result) => (
               <TestResultCard
                 key={result.testId}
                 result={result}
@@ -224,7 +231,7 @@ function TestSuiteCard({
 
 function PerformanceMetrics({
   report,
-  formatDuration
+  formatDuration,
 }: {
   report: ComprehensiveIntegrationReport;
   formatDuration: (ms: number) => string;
@@ -239,7 +246,7 @@ function PerformanceMetrics({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">
                 {formatDuration(report.performanceMetrics.averageTestTime)}
@@ -249,14 +256,14 @@ function PerformanceMetrics({
 
             <div className="text-center">
               <div className="text-2xl font-bold text-orange-600">
-                {report.performanceMetrics.slowestTest.replace(/-/g, ' ')}
+                {report.performanceMetrics.slowestTest.replace(/-/g, " ")}
               </div>
               <div className="text-sm text-gray-600">Slowest Test</div>
             </div>
 
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
-                {report.performanceMetrics.fastestTest.replace(/-/g, ' ')}
+                {report.performanceMetrics.fastestTest.replace(/-/g, " ")}
               </div>
               <div className="text-sm text-gray-600">Fastest Test</div>
             </div>
@@ -281,7 +288,7 @@ function RecommendationsPanel({ report }: { report: ComprehensiveIntegrationRepo
           <ul className="space-y-2">
             {report.recommendations.map((rec, index) => (
               <li key={index} className="flex items-start space-x-2">
-                <span className="text-blue-600 mt-1">•</span>
+                <span className="mt-1 text-blue-600">•</span>
                 <span className="text-sm">{rec}</span>
               </li>
             ))}
@@ -300,7 +307,7 @@ function RecommendationsPanel({ report }: { report: ComprehensiveIntegrationRepo
           <ul className="space-y-2">
             {report.nextSteps.map((step, index) => (
               <li key={index} className="flex items-start space-x-2">
-                <span className="text-green-600 mt-1">•</span>
+                <span className="mt-1 text-green-600">•</span>
                 <span className="text-sm">{step}</span>
               </li>
             ))}

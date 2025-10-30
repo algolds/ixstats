@@ -6,7 +6,7 @@
  */
 
 import type React from "react";
-import type { CountryInfobox } from '~/lib/mediawiki-service';
+import type { CountryInfobox } from "~/lib/mediawiki-service";
 
 /**
  * Represents a single vitality metric for country health visualization
@@ -17,9 +17,9 @@ export interface VitalityMetric {
   value: number;
   color: string;
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
-  trend: 'up' | 'down' | 'stable';
-  status: 'excellent' | 'good' | 'fair' | 'poor';
-  classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
+  trend: "up" | "down" | "stable";
+  status: "excellent" | "good" | "fair" | "poor";
+  classification: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
 }
 
 /**
@@ -32,12 +32,12 @@ export interface CountryMetric {
   unit?: string;
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   trend?: {
-    direction: 'up' | 'down' | 'stable';
+    direction: "up" | "down" | "stable";
     value: number;
     period: string;
   };
-  classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
-  importance: 'critical' | 'high' | 'medium' | 'low';
+  classification: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
+  importance: "critical" | "high" | "medium" | "low";
 }
 
 /**
@@ -45,10 +45,10 @@ export interface CountryMetric {
  */
 export interface IntelligenceAlert {
   id: string;
-  type: 'critical' | 'warning' | 'info' | 'success';
+  type: "critical" | "warning" | "info" | "success";
   title: string;
   description: string;
-  classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
+  classification: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
   timestamp: number;
   action?: {
     label: string;
@@ -65,7 +65,7 @@ export interface CountryInformation {
   items: {
     label: string;
     value: string;
-    classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
+    classification: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
   }[];
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 }
@@ -77,8 +77,8 @@ export interface WikiSection {
   id: string;
   title: string;
   content: string;
-  classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
-  importance: 'critical' | 'high' | 'medium' | 'low';
+  classification: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
+  importance: "critical" | "high" | "medium" | "low";
   lastModified: string;
   wordCount: number;
   images?: string[];
@@ -132,7 +132,7 @@ export interface EnhancedIntelligenceBriefingProps {
   currentIxTime: number;
 
   // Security context
-  viewerClearanceLevel: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
+  viewerClearanceLevel: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
   isOwnCountry?: boolean;
 
   // Styling
@@ -146,24 +146,24 @@ export interface EnhancedIntelligenceBriefingProps {
 /**
  * Classification level type
  */
-export type ClassificationLevel = 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
+export type ClassificationLevel = "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
 
 /**
  * Trend direction type
  */
-export type TrendDirection = 'up' | 'down' | 'stable';
+export type TrendDirection = "up" | "down" | "stable";
 
 /**
  * Status type for metrics
  */
-export type StatusType = 'excellent' | 'good' | 'fair' | 'poor';
+export type StatusType = "excellent" | "good" | "fair" | "poor";
 
 /**
  * Importance level type
  */
-export type ImportanceLevel = 'critical' | 'high' | 'medium' | 'low';
+export type ImportanceLevel = "critical" | "high" | "medium" | "low";
 
 /**
  * Alert type enumeration
  */
-export type AlertType = 'critical' | 'warning' | 'info' | 'success';
+export type AlertType = "critical" | "warning" | "info" | "success";

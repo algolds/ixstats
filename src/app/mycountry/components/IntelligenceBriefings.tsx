@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import React, { useState, useMemo, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
   AlertTriangle,
   TrendingUp,
   Target,
@@ -22,36 +22,36 @@ import {
   Users,
   Globe,
   Building2,
-  DollarSign
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { Progress } from '~/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import type { 
+  DollarSign,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Progress } from "~/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import type {
   VitalityIntelligence,
   ActionableRecommendation,
   CriticalAlert,
   DataPriority,
   IntelligenceComponentProps,
-  ActionUrgency
-} from '../types/intelligence';
-import { api } from '~/trpc/react';
-import { ComponentType } from '@prisma/client';
+  ActionUrgency,
+} from "../types/intelligence";
+import { api } from "~/trpc/react";
+import { ComponentType } from "@prisma/client";
 
 // Enhanced briefing types for focused intelligence display
 interface IntelligenceBriefing {
   id: string;
   title: string;
   description: string;
-  type: 'hot_issue' | 'opportunity' | 'risk_mitigation' | 'strategic_initiative';
+  type: "hot_issue" | "opportunity" | "risk_mitigation" | "strategic_initiative";
   priority: DataPriority;
-  area: 'economic' | 'population' | 'diplomatic' | 'governance';
+  area: "economic" | "population" | "diplomatic" | "governance";
   confidence: number; // 0-100
-  urgency: 'immediate' | 'this_week' | 'this_month' | 'this_quarter';
+  urgency: "immediate" | "this_week" | "this_month" | "this_quarter";
   impact: {
-    magnitude: 'low' | 'medium' | 'high' | 'critical';
+    magnitude: "low" | "medium" | "high" | "critical";
     scope: string[];
     timeframe: string;
   };
@@ -79,63 +79,65 @@ interface IntelligenceBriefingsProps extends IntelligenceComponentProps {
 // Configuration for briefing types
 const briefingConfig = {
   hot_issue: {
-    title: 'Hot Issues',
-    description: 'Critical problems requiring immediate attention',
+    title: "Hot Issues",
+    description: "Critical problems requiring immediate attention",
     icon: AlertTriangle,
-    color: 'red',
-    bgColor: 'bg-red-50 dark:bg-red-950/20',
-    borderColor: 'border-red-200 dark:border-red-800',
-    textColor: 'text-red-600',
-    badgeColor: 'bg-red-500 text-white'
+    color: "red",
+    bgColor: "bg-red-50 dark:bg-red-950/20",
+    borderColor: "border-red-200 dark:border-red-800",
+    textColor: "text-red-600",
+    badgeColor: "bg-red-500 text-white",
   },
   opportunity: {
-    title: 'Growth Opportunities',
-    description: 'Favorable conditions to capitalize on momentum',
+    title: "Growth Opportunities",
+    description: "Favorable conditions to capitalize on momentum",
     icon: TrendingUp,
-    color: 'green',
-    bgColor: 'bg-green-50 dark:bg-green-950/20',
-    borderColor: 'border-green-200 dark:border-green-800',
-    textColor: 'text-green-600',
-    badgeColor: 'bg-green-500 text-white'
+    color: "green",
+    bgColor: "bg-green-50 dark:bg-green-950/20",
+    borderColor: "border-green-200 dark:border-green-800",
+    textColor: "text-green-600",
+    badgeColor: "bg-green-500 text-white",
   },
   risk_mitigation: {
-    title: 'Risk Mitigation',
-    description: 'Emerging challenges requiring preventive action',
+    title: "Risk Mitigation",
+    description: "Emerging challenges requiring preventive action",
     icon: Shield,
-    color: 'yellow',
-    bgColor: 'bg-yellow-50 dark:bg-yellow-950/20',
-    borderColor: 'border-yellow-200 dark:border-yellow-800',
-    textColor: 'text-yellow-600',
-    badgeColor: 'bg-yellow-500 text-white'
+    color: "yellow",
+    bgColor: "bg-yellow-50 dark:bg-yellow-950/20",
+    borderColor: "border-yellow-200 dark:border-yellow-800",
+    textColor: "text-yellow-600",
+    badgeColor: "bg-yellow-500 text-white",
   },
   strategic_initiative: {
-    title: 'Strategic Initiatives',
-    description: 'Long-term projects for sustainable development',
+    title: "Strategic Initiatives",
+    description: "Long-term projects for sustainable development",
     icon: Target,
-    color: 'blue',
-    bgColor: 'bg-blue-50 dark:bg-blue-950/20',
-    borderColor: 'border-blue-200 dark:border-blue-800',
-    textColor: 'text-blue-600',
-    badgeColor: 'bg-blue-500 text-white'
-  }
+    color: "blue",
+    bgColor: "bg-blue-50 dark:bg-blue-950/20",
+    borderColor: "border-blue-200 dark:border-blue-800",
+    textColor: "text-blue-600",
+    badgeColor: "bg-blue-500 text-white",
+  },
 } as const;
 
 const areaConfig = {
-  economic: { icon: DollarSign, label: 'Economic', color: 'text-emerald-600' },
-  population: { icon: Users, label: 'Population', color: 'text-cyan-600' },
-  diplomatic: { icon: Globe, label: 'Diplomatic', color: 'text-violet-600' },
-  governance: { icon: Building2, label: 'Governance', color: 'text-red-600' }
+  economic: { icon: DollarSign, label: "Economic", color: "text-emerald-600" },
+  population: { icon: Users, label: "Population", color: "text-cyan-600" },
+  diplomatic: { icon: Globe, label: "Diplomatic", color: "text-violet-600" },
+  governance: { icon: Building2, label: "Governance", color: "text-red-600" },
 } as const;
 
 const urgencyConfig = {
-  immediate: { label: 'Immediate', color: 'bg-red-500 text-white', priority: 4 },
-  this_week: { label: 'This Week', color: 'bg-orange-500 text-white', priority: 3 },
-  this_month: { label: 'This Month', color: 'bg-yellow-500 text-white', priority: 2 },
-  this_quarter: { label: 'This Quarter', color: 'bg-blue-500 text-white', priority: 1 }
+  immediate: { label: "Immediate", color: "bg-red-500 text-white", priority: 4 },
+  this_week: { label: "This Week", color: "bg-orange-500 text-white", priority: 3 },
+  this_month: { label: "This Month", color: "bg-yellow-500 text-white", priority: 2 },
+  this_quarter: { label: "This Quarter", color: "bg-blue-500 text-white", priority: 1 },
 } as const;
 
 // Smart briefing generator from vitality intelligence
-const generateIntelligenceBriefings = (vitalityData: VitalityIntelligence[]): IntelligenceBriefing[] => {
+const generateIntelligenceBriefings = (
+  vitalityData: VitalityIntelligence[]
+): IntelligenceBriefing[] => {
   const briefings: IntelligenceBriefing[] = [];
   const now = Date.now();
 
@@ -145,34 +147,38 @@ const generateIntelligenceBriefings = (vitalityData: VitalityIntelligence[]): In
       briefings.push({
         id: `hot-issue-${vitality.area}-${now}`,
         title: `Critical ${vitality.area.charAt(0).toUpperCase() + vitality.area.slice(1)} Issues`,
-        description: `${vitality.criticalAlerts.length} critical alert${vitality.criticalAlerts.length !== 1 ? 's' : ''} requiring immediate action`,
-        type: 'hot_issue',
-        priority: 'critical',
+        description: `${vitality.criticalAlerts.length} critical alert${vitality.criticalAlerts.length !== 1 ? "s" : ""} requiring immediate action`,
+        type: "hot_issue",
+        priority: "critical",
         area: vitality.area,
         confidence: 95,
-        urgency: 'immediate',
+        urgency: "immediate",
         impact: {
-          magnitude: 'critical',
-          scope: [vitality.area, 'overall stability'],
-          timeframe: 'immediate'
+          magnitude: "critical",
+          scope: [vitality.area, "overall stability"],
+          timeframe: "immediate",
         },
         evidence: {
-          metrics: vitality.keyMetrics.slice(0, 3).map(m => `${m.label}: ${m.value}${m.unit || ''}`),
+          metrics: vitality.keyMetrics
+            .slice(0, 3)
+            .map((m) => `${m.label}: ${m.value}${m.unit || ""}`),
           trends: [`Score: ${vitality.score}/100 (${vitality.trend})`],
-          comparisons: [`Rank: #${vitality.comparisons.rank}/${vitality.comparisons.totalCountries}`]
+          comparisons: [
+            `Rank: #${vitality.comparisons.rank}/${vitality.comparisons.totalCountries}`,
+          ],
         },
-        recommendations: vitality.recommendations.filter(r => r.urgency === 'urgent').slice(0, 2),
+        recommendations: vitality.recommendations.filter((r) => r.urgency === "urgent").slice(0, 2),
         alerts: vitality.criticalAlerts,
         createdAt: now,
         lastUpdated: now,
-        tags: ['critical', vitality.area, 'urgent']
+        tags: ["critical", vitality.area, "urgent"],
       });
     }
 
     // Generate Opportunities from strong performance
-    if (vitality.score > 75 && vitality.trend === 'up') {
+    if (vitality.score > 75 && vitality.trend === "up") {
       const topRecommendations = vitality.recommendations
-        .filter(r => r.urgency === 'important')
+        .filter((r) => r.urgency === "important")
         .sort((a, b) => b.successProbability - a.successProbability)
         .slice(0, 2);
 
@@ -181,63 +187,71 @@ const generateIntelligenceBriefings = (vitalityData: VitalityIntelligence[]): In
           id: `opportunity-${vitality.area}-${now}`,
           title: `${vitality.area.charAt(0).toUpperCase() + vitality.area.slice(1)} Growth Opportunity`,
           description: `Strong performance and positive trends create favorable conditions for strategic advancement`,
-          type: 'opportunity',
-          priority: 'high',
+          type: "opportunity",
+          priority: "high",
           area: vitality.area,
           confidence: 85,
-          urgency: 'this_week',
+          urgency: "this_week",
           impact: {
-            magnitude: 'high',
-            scope: [vitality.area, 'regional standing'],
-            timeframe: '3-6 months'
+            magnitude: "high",
+            scope: [vitality.area, "regional standing"],
+            timeframe: "3-6 months",
           },
           evidence: {
-            metrics: vitality.keyMetrics.slice(0, 2).map(m => `${m.label}: ${m.value}${m.unit || ''} (${m.trend})`),
-            trends: [`Score improving: ${vitality.change.value > 0 ? '+' : ''}${vitality.change.value.toFixed(1)} points`],
-            comparisons: [`Above peer average: ${vitality.comparisons.peerAverage.toFixed(0)}`]
+            metrics: vitality.keyMetrics
+              .slice(0, 2)
+              .map((m) => `${m.label}: ${m.value}${m.unit || ""} (${m.trend})`),
+            trends: [
+              `Score improving: ${vitality.change.value > 0 ? "+" : ""}${vitality.change.value.toFixed(1)} points`,
+            ],
+            comparisons: [`Above peer average: ${vitality.comparisons.peerAverage.toFixed(0)}`],
           },
           recommendations: topRecommendations,
           alerts: [],
           createdAt: now,
           lastUpdated: now,
-          tags: ['opportunity', vitality.area, 'growth']
+          tags: ["opportunity", vitality.area, "growth"],
         });
       }
     }
 
     // Generate Risk Mitigation for declining areas
-    if (vitality.score < 60 && vitality.trend === 'down') {
+    if (vitality.score < 60 && vitality.trend === "down") {
       briefings.push({
         id: `risk-${vitality.area}-${now}`,
         title: `${vitality.area.charAt(0).toUpperCase() + vitality.area.slice(1)} Risk Assessment`,
         description: `Declining performance indicators suggest preventive measures are needed`,
-        type: 'risk_mitigation',
-        priority: 'high',
+        type: "risk_mitigation",
+        priority: "high",
         area: vitality.area,
         confidence: 80,
-        urgency: 'this_week',
+        urgency: "this_week",
         impact: {
-          magnitude: 'medium',
+          magnitude: "medium",
           scope: [vitality.area],
-          timeframe: '1-3 months'
+          timeframe: "1-3 months",
         },
         evidence: {
-          metrics: vitality.keyMetrics.filter(m => m.trend === 'down').map(m => `${m.label}: ${m.value}${m.unit || ''} (declining)`),
+          metrics: vitality.keyMetrics
+            .filter((m) => m.trend === "down")
+            .map((m) => `${m.label}: ${m.value}${m.unit || ""} (declining)`),
           trends: [`Score declining: ${vitality.change.value.toFixed(1)} points`],
-          comparisons: [`Below peer average: ${vitality.comparisons.peerAverage.toFixed(0)}`]
+          comparisons: [`Below peer average: ${vitality.comparisons.peerAverage.toFixed(0)}`],
         },
-        recommendations: vitality.recommendations.filter(r => r.difficulty !== 'major').slice(0, 2),
+        recommendations: vitality.recommendations
+          .filter((r) => r.difficulty !== "major")
+          .slice(0, 2),
         alerts: [],
         createdAt: now,
         lastUpdated: now,
-        tags: ['risk', vitality.area, 'prevention']
+        tags: ["risk", vitality.area, "prevention"],
       });
     }
 
     // Generate Strategic Initiatives for stable, high-performing areas
-    if (vitality.score > 60 && vitality.score < 85 && vitality.trend === 'stable') {
+    if (vitality.score > 60 && vitality.score < 85 && vitality.trend === "stable") {
       const strategicRecs = vitality.recommendations
-        .filter(r => r.difficulty === 'complex' || r.difficulty === 'major')
+        .filter((r) => r.difficulty === "complex" || r.difficulty === "major")
         .slice(0, 1);
 
       if (strategicRecs.length > 0) {
@@ -245,26 +259,28 @@ const generateIntelligenceBriefings = (vitalityData: VitalityIntelligence[]): In
           id: `strategic-${vitality.area}-${now}`,
           title: `${vitality.area.charAt(0).toUpperCase() + vitality.area.slice(1)} Strategic Development`,
           description: `Stable foundation enables investment in long-term strategic initiatives`,
-          type: 'strategic_initiative',
-          priority: 'medium',
+          type: "strategic_initiative",
+          priority: "medium",
           area: vitality.area,
           confidence: 70,
-          urgency: 'this_quarter',
+          urgency: "this_quarter",
           impact: {
-            magnitude: 'high',
-            scope: [vitality.area, 'long-term development'],
-            timeframe: '6-24 months'
+            magnitude: "high",
+            scope: [vitality.area, "long-term development"],
+            timeframe: "6-24 months",
           },
           evidence: {
-            metrics: vitality.keyMetrics.slice(0, 2).map(m => `${m.label}: ${m.value}${m.unit || ''}`),
+            metrics: vitality.keyMetrics
+              .slice(0, 2)
+              .map((m) => `${m.label}: ${m.value}${m.unit || ""}`),
             trends: [`Stable performance: ${vitality.score}/100`],
-            comparisons: [`Competitive position: #${vitality.comparisons.rank}`]
+            comparisons: [`Competitive position: #${vitality.comparisons.rank}`],
           },
           recommendations: strategicRecs,
           alerts: [],
           createdAt: now,
           lastUpdated: now,
-          tags: ['strategic', vitality.area, 'long-term']
+          tags: ["strategic", vitality.area, "long-term"],
         });
       }
     }
@@ -276,9 +292,9 @@ const generateIntelligenceBriefings = (vitalityData: VitalityIntelligence[]): In
       const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
       const aPriority = priorityOrder[a.priority];
       const bPriority = priorityOrder[b.priority];
-      
+
       if (aPriority !== bPriority) return bPriority - aPriority;
-      
+
       const aUrgency = urgencyConfig[a.urgency].priority;
       const bUrgency = urgencyConfig[b.urgency].priority;
       return bUrgency - aUrgency;
@@ -286,12 +302,12 @@ const generateIntelligenceBriefings = (vitalityData: VitalityIntelligence[]): In
     .slice(0, 8); // Limit to top 8 briefings
 };
 
-function BriefingCard({ 
-  briefing, 
-  index, 
-  onAction, 
-  onExpand 
-}: { 
+function BriefingCard({
+  briefing,
+  index,
+  onAction,
+  onExpand,
+}: {
   briefing: IntelligenceBriefing;
   index: number;
   onAction?: (action: ActionableRecommendation) => void;
@@ -316,48 +332,45 @@ function BriefingCard({
       transition={{ duration: 0.5, delay: index * 0.1 }}
       className="group"
     >
-      <Card className={`glass-hierarchy-child transition-all duration-300 hover:shadow-lg ${config.borderColor} border-l-4`}>
+      <Card
+        className={`glass-hierarchy-child transition-all duration-300 hover:shadow-lg ${config.borderColor} border-l-4`}
+      >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
-            <div className="flex items-start gap-3 flex-1">
-              <div className={`p-2 rounded-lg ${config.bgColor} group-hover:scale-110 transition-transform`}>
+            <div className="flex flex-1 items-start gap-3">
+              <div
+                className={`rounded-lg p-2 ${config.bgColor} transition-transform group-hover:scale-110`}
+              >
                 <Icon className={`h-5 w-5 ${config.textColor}`} />
               </div>
-              
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
-                  <CardTitle className="text-lg font-bold line-clamp-1">{briefing.title}</CardTitle>
-                  <Badge className={`text-xs ${config.badgeColor}`}>
-                    {config.title}
-                  </Badge>
+
+              <div className="min-w-0 flex-1">
+                <div className="mb-2 flex items-center gap-2">
+                  <CardTitle className="line-clamp-1 text-lg font-bold">{briefing.title}</CardTitle>
+                  <Badge className={`text-xs ${config.badgeColor}`}>{config.title}</Badge>
                 </div>
-                
-                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+
+                <p className="text-muted-foreground mb-3 line-clamp-2 text-sm">
                   {briefing.description}
                 </p>
-                
+
                 <div className="flex items-center gap-3 text-xs">
                   <div className="flex items-center gap-1">
                     <AreaIcon className={`h-3 w-3 ${areaConf.color}`} />
                     <span>{areaConf.label}</span>
                   </div>
-                  <Badge className={`${urgencyConf.color} text-xs px-2 py-0`}>
+                  <Badge className={`${urgencyConf.color} px-2 py-0 text-xs`}>
                     {urgencyConf.label}
                   </Badge>
                   <div className="flex items-center gap-1">
-                    <BarChart3 className="h-3 w-3 text-muted-foreground" />
+                    <BarChart3 className="text-muted-foreground h-3 w-3" />
                     <span>{briefing.confidence}% confidence</span>
                   </div>
                 </div>
               </div>
             </div>
-            
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={handleExpand}
-              className="p-1 hover:bg-muted"
-            >
+
+            <Button variant="ghost" size="sm" onClick={handleExpand} className="hover:bg-muted p-1">
               {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
           </div>
@@ -367,14 +380,14 @@ function BriefingCard({
           {expanded && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
+              animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <CardContent className="pt-0 space-y-4">
+              <CardContent className="space-y-4 pt-0">
                 {/* Impact Assessment */}
                 <div className="bg-muted/30 rounded-lg p-3">
-                  <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                  <h4 className="mb-2 flex items-center gap-2 text-sm font-medium">
                     <Target className="h-4 w-4" />
                     Impact Assessment
                   </h4>
@@ -391,7 +404,7 @@ function BriefingCard({
                     </div>
                     <div>
                       <span className="text-muted-foreground">Scope:</span>
-                      <div className="flex flex-wrap gap-1 mt-1">
+                      <div className="mt-1 flex flex-wrap gap-1">
                         {briefing.impact.scope.map((scope, i) => (
                           <Badge key={i} variant="secondary" className="text-xs">
                             {scope}
@@ -405,16 +418,20 @@ function BriefingCard({
                 {/* Evidence */}
                 {briefing.evidence.metrics.length > 0 && (
                   <div>
-                    <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                    <h4 className="mb-2 flex items-center gap-2 text-sm font-medium">
                       <BarChart3 className="h-4 w-4" />
                       Supporting Evidence
                     </h4>
                     <div className="space-y-1 text-sm">
                       {briefing.evidence.metrics.map((metric, i) => (
-                        <div key={i} className="text-muted-foreground">• {metric}</div>
+                        <div key={i} className="text-muted-foreground">
+                          • {metric}
+                        </div>
                       ))}
                       {briefing.evidence.trends.map((trend, i) => (
-                        <div key={i} className="text-muted-foreground">• {trend}</div>
+                        <div key={i} className="text-muted-foreground">
+                          • {trend}
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -423,25 +440,25 @@ function BriefingCard({
                 {/* Recommendations */}
                 {briefing.recommendations.length > 0 && (
                   <div>
-                    <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
+                    <h4 className="mb-2 flex items-center gap-2 text-sm font-medium">
                       <Zap className="h-4 w-4" />
                       Recommended Actions
                     </h4>
                     <div className="space-y-2">
                       {briefing.recommendations.map((rec, i) => (
-                        <div 
+                        <div
                           key={rec.id || `rec-${i}`}
-                          className="p-2 rounded border border-border hover:bg-muted/50 cursor-pointer transition-colors"
+                          className="border-border hover:bg-muted/50 cursor-pointer rounded border p-2 transition-colors"
                           onClick={() => onAction?.(rec)}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <div className="font-medium text-sm">{rec.title}</div>
-                              <div className="text-xs text-muted-foreground">
+                              <div className="text-sm font-medium">{rec.title}</div>
+                              <div className="text-muted-foreground text-xs">
                                 {rec.estimatedDuration} • {rec.successProbability}% success rate
                               </div>
                             </div>
-                            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                            <ArrowRight className="text-muted-foreground h-4 w-4" />
                           </div>
                         </div>
                       ))}
@@ -471,23 +488,26 @@ export function IntelligenceBriefings({
   onBriefingAction,
   onBriefingExpand,
   maxBriefings = 6,
-  filterPriority = ['critical', 'high', 'medium'],
+  filterPriority = ["critical", "high", "medium"],
   showFilters = true,
-  className = '',
+  className = "",
   loading = false,
-  countryId
+  countryId,
 }: IntelligenceBriefingsProps & { countryId?: string }) {
-  const [activeTab, setActiveTab] = useState<'all' | 'hot_issue' | 'opportunity' | 'risk_mitigation' | 'strategic_initiative'>('all');
+  const [activeTab, setActiveTab] = useState<
+    "all" | "hot_issue" | "opportunity" | "risk_mitigation" | "strategic_initiative"
+  >("all");
   const [priorityFilter, setPriorityFilter] = useState<DataPriority[]>(filterPriority);
 
   // Fetch atomic intelligence recommendations
-  const { data: atomicRecommendations, isLoading: atomicLoading } = api.countries.getAtomicIntelligenceRecommendations.useQuery(
-    { countryId: countryId! },
-    { 
-      enabled: !!countryId,
-      refetchInterval: 5 * 60 * 1000 // Refetch every 5 minutes
-    }
-  );
+  const { data: atomicRecommendations, isLoading: atomicLoading } =
+    api.countries.getAtomicIntelligenceRecommendations.useQuery(
+      { countryId: countryId! },
+      {
+        enabled: !!countryId,
+        refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+      }
+    );
 
   // Fetch atomic effectiveness
   const { data: atomicEffectiveness } = api.countries.getAtomicEffectiveness.useQuery(
@@ -514,30 +534,30 @@ export function IntelligenceBriefings({
   // Generate atomic briefings from recommendations
   const atomicBriefings = useMemo(() => {
     if (!atomicRecommendations || !atomicEffectiveness) return [];
-    
+
     const briefings: IntelligenceBriefing[] = [];
-    
+
     // Convert atomic recommendations to briefings
     atomicRecommendations.forEach((rec: any, index: number) => {
-      let briefingType: IntelligenceBriefing['type'] = 'strategic_initiative';
-      let urgency: IntelligenceBriefing['urgency'] = 'this_quarter';
-      
+      let briefingType: IntelligenceBriefing["type"] = "strategic_initiative";
+      let urgency: IntelligenceBriefing["urgency"] = "this_quarter";
+
       switch (rec.type) {
-        case 'component_add':
-          briefingType = 'opportunity';
-          urgency = rec.priority === 'high' ? 'this_week' : 'this_month';
+        case "component_add":
+          briefingType = "opportunity";
+          urgency = rec.priority === "high" ? "this_week" : "this_month";
           break;
-        case 'component_improve':
-          briefingType = 'strategic_initiative';
-          urgency = 'this_month';
+        case "component_improve":
+          briefingType = "strategic_initiative";
+          urgency = "this_month";
           break;
-        case 'synergy_opportunity':
-          briefingType = 'opportunity';
-          urgency = 'this_week';
+        case "synergy_opportunity":
+          briefingType = "opportunity";
+          urgency = "this_week";
           break;
-        case 'conflict_resolution':
-          briefingType = 'risk_mitigation';
-          urgency = rec.priority === 'critical' ? 'immediate' : 'this_week';
+        case "conflict_resolution":
+          briefingType = "risk_mitigation";
+          urgency = rec.priority === "critical" ? "immediate" : "this_week";
           break;
       }
 
@@ -547,57 +567,87 @@ export function IntelligenceBriefings({
         description: rec.description,
         type: briefingType,
         priority: rec.priority as DataPriority,
-        area: 'governance',
+        area: "governance",
         confidence: 85,
         urgency,
         impact: {
           magnitude: (() => {
-            const totalImpact = Math.abs(rec.expectedImpact.economic + rec.expectedImpact.stability + rec.expectedImpact.legitimacy);
-            if (totalImpact > 0.8) return 'critical';
-            if (totalImpact > 0.5) return 'high';
-            if (totalImpact > 0.2) return 'medium';
-            return 'low';
-          })() as 'low' | 'medium' | 'high' | 'critical',
-          timeframe: urgency === 'immediate' ? 'immediate' : 'medium_term',
-          scope: ['governance', 'economic']
+            const totalImpact = Math.abs(
+              rec.expectedImpact.economic +
+                rec.expectedImpact.stability +
+                rec.expectedImpact.legitimacy
+            );
+            if (totalImpact > 0.8) return "critical";
+            if (totalImpact > 0.5) return "high";
+            if (totalImpact > 0.2) return "medium";
+            return "low";
+          })() as "low" | "medium" | "high" | "critical",
+          timeframe: urgency === "immediate" ? "immediate" : "medium_term",
+          scope: ["governance", "economic"],
         },
         evidence: {
           metrics: [
             `Current effectiveness: ${atomicEffectiveness.overallScore}%`,
             `Components active: ${atomicEffectiveness.componentCount}`,
-            rec.expectedImpact.economic > 0 ? `+${rec.expectedImpact.economic}% economic impact` : 
-            rec.expectedImpact.economic < 0 ? `${rec.expectedImpact.economic}% economic impact` : '',
-            rec.expectedImpact.stability > 0 ? `+${rec.expectedImpact.stability} stability points` : 
-            rec.expectedImpact.stability < 0 ? `${rec.expectedImpact.stability} stability points` : '',
-            rec.expectedImpact.legitimacy > 0 ? `+${rec.expectedImpact.legitimacy} legitimacy points` : 
-            rec.expectedImpact.legitimacy < 0 ? `${rec.expectedImpact.legitimacy} legitimacy points` : ''
+            rec.expectedImpact.economic > 0
+              ? `+${rec.expectedImpact.economic}% economic impact`
+              : rec.expectedImpact.economic < 0
+                ? `${rec.expectedImpact.economic}% economic impact`
+                : "",
+            rec.expectedImpact.stability > 0
+              ? `+${rec.expectedImpact.stability} stability points`
+              : rec.expectedImpact.stability < 0
+                ? `${rec.expectedImpact.stability} stability points`
+                : "",
+            rec.expectedImpact.legitimacy > 0
+              ? `+${rec.expectedImpact.legitimacy} legitimacy points`
+              : rec.expectedImpact.legitimacy < 0
+                ? `${rec.expectedImpact.legitimacy} legitimacy points`
+                : "",
           ].filter(Boolean),
           trends: [`Atomic government effectiveness trend`],
-          comparisons: [`Component efficiency vs baseline`, `System synergy analysis`]
+          comparisons: [`Component efficiency vs baseline`, `System synergy analysis`],
         },
-        recommendations: [{
-          id: `atomic-action-${index}`,
-          title: rec.type === 'component_add' ? 'Implement Component' : 
-                 rec.type === 'conflict_resolution' ? 'Resolve Conflict' : 'Optimize System',
-          description: rec.description,
-          category: 'governance',
-          urgency: rec.priority as ActionUrgency,
-          difficulty: rec.priority === 'critical' ? 'major' : rec.priority === 'high' ? 'moderate' : 'easy',
-          estimatedDuration: rec.priority === 'critical' ? '1-2 weeks' : 
-                           rec.priority === 'high' ? '2-4 weeks' : '1-2 months',
-          estimatedCost: rec.priority === 'critical' ? '$10,000' : rec.priority === 'high' ? '$5,000' : '$1,000',
-          successProbability: rec.priority === 'high' ? 85 : 
-                            rec.priority === 'medium' ? 75 : 65,
-          estimatedBenefit: rec.priority === 'critical' ? 'high' : rec.priority === 'high' ? 'medium' : 'low',
-          prerequisites: ['Government approval', 'Budget allocation'],
-          risks: rec.type === 'conflict_resolution' ? 
-                 ['System disruption', 'Transition period'] : 
-                 ['Implementation challenges', 'Resource allocation'],
-          impact: {
-            governance: rec.priority === 'critical' ? 8 : rec.priority === 'high' ? 5 : 2,
-            economic: rec.priority === 'critical' ? 6 : rec.priority === 'high' ? 4 : 1
-          }
-        }]
+        recommendations: [
+          {
+            id: `atomic-action-${index}`,
+            title:
+              rec.type === "component_add"
+                ? "Implement Component"
+                : rec.type === "conflict_resolution"
+                  ? "Resolve Conflict"
+                  : "Optimize System",
+            description: rec.description,
+            category: "governance",
+            urgency: rec.priority as ActionUrgency,
+            difficulty:
+              rec.priority === "critical" ? "major" : rec.priority === "high" ? "moderate" : "easy",
+            estimatedDuration:
+              rec.priority === "critical"
+                ? "1-2 weeks"
+                : rec.priority === "high"
+                  ? "2-4 weeks"
+                  : "1-2 months",
+            estimatedCost:
+              rec.priority === "critical"
+                ? "$10,000"
+                : rec.priority === "high"
+                  ? "$5,000"
+                  : "$1,000",
+            successProbability: rec.priority === "high" ? 85 : rec.priority === "medium" ? 75 : 65,
+            estimatedBenefit:
+              rec.priority === "critical" ? "high" : rec.priority === "high" ? "medium" : "low",
+            prerequisites: ["Government approval", "Budget allocation"],
+            risks:
+              rec.type === "conflict_resolution"
+                ? ["System disruption", "Transition period"]
+                : ["Implementation challenges", "Resource allocation"],
+            impact: {
+              governance: rec.priority === "critical" ? 8 : rec.priority === "high" ? 5 : 2,
+              economic: rec.priority === "critical" ? 6 : rec.priority === "high" ? 4 : 1,
+            },
+          },
+        ],
       } as any);
     });
 
@@ -612,42 +662,49 @@ export function IntelligenceBriefings({
 
     // Weak relationship alerts
     if (diplomaticRelations) {
-      const weakRelationships = diplomaticRelations.filter((r: any) => r.strength < 35 && r.relationship !== 'hostile');
+      const weakRelationships = diplomaticRelations.filter(
+        (r: any) => r.strength < 35 && r.relationship !== "hostile"
+      );
       if (weakRelationships.length > 0) {
         briefings.push({
           id: `diplomatic-weak-relationships-${Date.now()}`,
-          title: '⚠️ Weak Diplomatic Relationships',
+          title: "⚠️ Weak Diplomatic Relationships",
           description: `${weakRelationships.length} relationships have low strength (<35%). Proactive engagement recommended to prevent deterioration.`,
-          type: 'risk_mitigation',
-          priority: 'high',
-          area: 'diplomatic',
+          type: "risk_mitigation",
+          priority: "high",
+          area: "diplomatic",
           confidence: 90,
-          urgency: 'this_week',
+          urgency: "this_week",
           impact: {
-            magnitude: 'medium',
-            timeframe: '1-2 months',
-            scope: ['diplomatic', 'regional_standing']
+            magnitude: "medium",
+            timeframe: "1-2 months",
+            scope: ["diplomatic", "regional_standing"],
           },
           evidence: {
-            metrics: weakRelationships.slice(0, 3).map((r: any) => `${r.targetCountry}: ${r.strength}% strength`),
+            metrics: weakRelationships
+              .slice(0, 3)
+              .map((r: any) => `${r.targetCountry}: ${r.strength}% strength`),
             trends: [`${weakRelationships.length} relationships below 35% threshold`],
-            comparisons: []
+            comparisons: [],
           },
-          recommendations: [{
-            id: 'strengthen-weak-relations',
-            title: 'Launch Diplomatic Engagement Campaign',
-            description: 'Start cultural exchanges and trade missions to strengthen weak relationships',
-            category: 'diplomatic',
-            urgency: 'important',
-            difficulty: 'moderate',
-            estimatedDuration: '3-6 weeks',
-            estimatedCost: '$25,000',
-            successProbability: 75,
-            estimatedBenefit: 'medium',
-            prerequisites: ['Embassy presence', 'Budget allocation'],
-            risks: ['Limited immediate impact'],
-            impact: { diplomatic: 7, economic: 3 }
-          }]
+          recommendations: [
+            {
+              id: "strengthen-weak-relations",
+              title: "Launch Diplomatic Engagement Campaign",
+              description:
+                "Start cultural exchanges and trade missions to strengthen weak relationships",
+              category: "diplomatic",
+              urgency: "important",
+              difficulty: "moderate",
+              estimatedDuration: "3-6 weeks",
+              estimatedCost: "$25,000",
+              successProbability: 75,
+              estimatedBenefit: "medium",
+              prerequisites: ["Embassy presence", "Budget allocation"],
+              risks: ["Limited immediate impact"],
+              impact: { diplomatic: 7, economic: 3 },
+            },
+          ],
         } as any);
       }
     }
@@ -657,46 +714,48 @@ export function IntelligenceBriefings({
       const significantChanges = recentDiplomaticChanges.slice(0, 5);
       briefings.push({
         id: `diplomatic-recent-changes-${Date.now()}`,
-        title: '📋 Recent Diplomatic Activity',
+        title: "📋 Recent Diplomatic Activity",
         description: `${significantChanges.length} recent diplomatic events in the past 48 hours requiring your attention.`,
-        type: 'hot_issue',
-        priority: 'medium',
-        area: 'diplomatic',
+        type: "hot_issue",
+        priority: "medium",
+        area: "diplomatic",
         confidence: 95,
-        urgency: 'this_week',
+        urgency: "this_week",
         impact: {
-          magnitude: 'medium',
-          timeframe: 'immediate',
-          scope: ['diplomatic', 'relationships']
+          magnitude: "medium",
+          timeframe: "immediate",
+          scope: ["diplomatic", "relationships"],
         },
         evidence: {
           metrics: significantChanges.map((c: any) => `${c.targetCountry}: ${c.changeType}`),
           trends: [`${recentDiplomaticChanges.length} total events in 48h`],
-          comparisons: []
+          comparisons: [],
         },
-        recommendations: [{
-          id: 'review-diplomatic-events',
-          title: 'Review Diplomatic Events',
-          description: 'Assess recent changes and determine strategic response',
-          category: 'diplomatic',
-          urgency: 'important',
-          difficulty: 'easy',
-          estimatedDuration: '1 week',
-          estimatedCost: '$0',
-          successProbability: 90,
-          estimatedBenefit: 'low',
-          prerequisites: [],
-          risks: [],
-          impact: { diplomatic: 2 }
-        }]
+        recommendations: [
+          {
+            id: "review-diplomatic-events",
+            title: "Review Diplomatic Events",
+            description: "Assess recent changes and determine strategic response",
+            category: "diplomatic",
+            urgency: "important",
+            difficulty: "easy",
+            estimatedDuration: "1 week",
+            estimatedCost: "$0",
+            successProbability: 90,
+            estimatedBenefit: "low",
+            prerequisites: [],
+            risks: [],
+            impact: { diplomatic: 2 },
+          },
+        ],
       } as any);
     }
 
     // Embassy expansion opportunities
     if (embassies && diplomaticRelations) {
       const strongRelationsWithoutEmbassy = diplomaticRelations.filter((r: any) => {
-        const hasEmbassy = embassies.some((e: any) =>
-          e.country === r.targetCountry || e.countryId === r.targetCountryId
+        const hasEmbassy = embassies.some(
+          (e: any) => e.country === r.targetCountry || e.countryId === r.targetCountryId
         );
         return !hasEmbassy && r.strength > 65;
       });
@@ -704,38 +763,42 @@ export function IntelligenceBriefings({
       if (strongRelationsWithoutEmbassy.length > 0) {
         briefings.push({
           id: `diplomatic-embassy-expansion-${Date.now()}`,
-          title: '🏛️ Embassy Expansion Opportunities',
+          title: "🏛️ Embassy Expansion Opportunities",
           description: `${strongRelationsWithoutEmbassy.length} strong relationships exist without embassy presence. Establishing embassies unlocks missions and benefits.`,
-          type: 'opportunity',
-          priority: 'high',
-          area: 'diplomatic',
+          type: "opportunity",
+          priority: "high",
+          area: "diplomatic",
           confidence: 85,
-          urgency: 'this_month',
+          urgency: "this_month",
           impact: {
-            magnitude: 'high',
-            timeframe: '2-4 weeks',
-            scope: ['diplomatic', 'intelligence', 'economic']
+            magnitude: "high",
+            timeframe: "2-4 weeks",
+            scope: ["diplomatic", "intelligence", "economic"],
           },
           evidence: {
-            metrics: strongRelationsWithoutEmbassy.slice(0, 3).map((r: any) => `${r.targetCountry}: ${r.strength}% strength, no embassy`),
+            metrics: strongRelationsWithoutEmbassy
+              .slice(0, 3)
+              .map((r: any) => `${r.targetCountry}: ${r.strength}% strength, no embassy`),
             trends: [`${strongRelationsWithoutEmbassy.length} expansion opportunities`],
-            comparisons: [`Current embassies: ${embassies.length}`]
+            comparisons: [`Current embassies: ${embassies.length}`],
           },
-          recommendations: [{
-            id: 'establish-strategic-embassy',
-            title: 'Establish Strategic Embassy',
-            description: `Open embassy in ${strongRelationsWithoutEmbassy[0]?.targetCountry} to leverage strong relationship`,
-            category: 'diplomatic',
-            urgency: 'important',
-            difficulty: 'moderate',
-            estimatedDuration: '2-4 weeks',
-            estimatedCost: '$50,000',
-            successProbability: 85,
-            estimatedBenefit: 'high',
-            prerequisites: ['Budget allocation', 'Ambassador appointment'],
-            risks: ['Maintenance costs'],
-            impact: { diplomatic: 8, intelligence: 5, economic: 4 }
-          }]
+          recommendations: [
+            {
+              id: "establish-strategic-embassy",
+              title: "Establish Strategic Embassy",
+              description: `Open embassy in ${strongRelationsWithoutEmbassy[0]?.targetCountry} to leverage strong relationship`,
+              category: "diplomatic",
+              urgency: "important",
+              difficulty: "moderate",
+              estimatedDuration: "2-4 weeks",
+              estimatedCost: "$50,000",
+              successProbability: 85,
+              estimatedBenefit: "high",
+              prerequisites: ["Budget allocation", "Ambassador appointment"],
+              risks: ["Maintenance costs"],
+              impact: { diplomatic: 8, intelligence: 5, economic: 4 },
+            },
+          ],
         } as any);
       }
     }
@@ -752,21 +815,26 @@ export function IntelligenceBriefings({
   // Filter briefings based on tab and priority
   const filteredBriefings = useMemo(() => {
     let filtered = allBriefings;
-    
-    if (activeTab !== 'all') {
-      filtered = filtered.filter(b => b.type === activeTab);
+
+    if (activeTab !== "all") {
+      filtered = filtered.filter((b) => b.type === activeTab);
     }
-    
-    filtered = filtered.filter(b => priorityFilter.includes(b.priority));
-    
+
+    filtered = filtered.filter((b) => priorityFilter.includes(b.priority));
+
     return filtered.slice(0, maxBriefings);
   }, [allBriefings, activeTab, priorityFilter, maxBriefings]);
 
   // Count briefings by type for tab badges
   const briefingCounts = useMemo(() => {
     const counts: Record<string, number> = { all: allBriefings.length };
-    for (const type of ['hot_issue', 'opportunity', 'risk_mitigation', 'strategic_initiative'] as const) {
-      counts[type] = allBriefings.filter(b => b.type === type).length;
+    for (const type of [
+      "hot_issue",
+      "opportunity",
+      "risk_mitigation",
+      "strategic_initiative",
+    ] as const) {
+      counts[type] = allBriefings.filter((b) => b.type === type).length;
     }
     return counts;
   }, [allBriefings]);
@@ -776,10 +844,10 @@ export function IntelligenceBriefings({
       <Card className={`glass-hierarchy-child ${className}`}>
         <CardContent className="p-6">
           <div className="animate-pulse space-y-4">
-            <div className="h-6 bg-muted rounded w-1/2"></div>
+            <div className="bg-muted h-6 w-1/2 rounded"></div>
             <div className="space-y-3">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-24 bg-muted rounded"></div>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-muted h-24 rounded"></div>
               ))}
             </div>
           </div>
@@ -807,10 +875,10 @@ export function IntelligenceBriefings({
                 Curated insights requiring your attention
               </p>
             </div>
-            
+
             {showFilters && (
               <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
+                <Filter className="text-muted-foreground h-4 w-4" />
                 <Badge variant="outline" className="text-xs">
                   {filteredBriefings.length} of {allBriefings.length}
                 </Badge>
@@ -820,39 +888,42 @@ export function IntelligenceBriefings({
         </CardHeader>
 
         <CardContent>
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
-            <TabsList className="grid w-full grid-cols-5 mb-6">
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as typeof activeTab)}
+          >
+            <TabsList className="mb-6 grid w-full grid-cols-5">
               <TabsTrigger value="all" className="flex items-center gap-1">
                 <span className="hidden sm:inline">All</span>
-                <Badge variant="secondary" className="text-xs ml-1">
+                <Badge variant="secondary" className="ml-1 text-xs">
                   {briefingCounts.all}
                 </Badge>
               </TabsTrigger>
               <TabsTrigger value="hot_issue" className="flex items-center gap-1">
                 <AlertTriangle className="h-3 w-3" />
                 <span className="hidden sm:inline">Issues</span>
-                <Badge variant="secondary" className="text-xs ml-1">
+                <Badge variant="secondary" className="ml-1 text-xs">
                   {briefingCounts.hot_issue}
                 </Badge>
               </TabsTrigger>
               <TabsTrigger value="opportunity" className="flex items-center gap-1">
                 <TrendingUp className="h-3 w-3" />
                 <span className="hidden sm:inline">Opportunities</span>
-                <Badge variant="secondary" className="text-xs ml-1">
+                <Badge variant="secondary" className="ml-1 text-xs">
                   {briefingCounts.opportunity}
                 </Badge>
               </TabsTrigger>
               <TabsTrigger value="risk_mitigation" className="flex items-center gap-1">
                 <Shield className="h-3 w-3" />
                 <span className="hidden sm:inline">Risks</span>
-                <Badge variant="secondary" className="text-xs ml-1">
+                <Badge variant="secondary" className="ml-1 text-xs">
                   {briefingCounts.risk_mitigation}
                 </Badge>
               </TabsTrigger>
               <TabsTrigger value="strategic_initiative" className="flex items-center gap-1">
                 <Target className="h-3 w-3" />
                 <span className="hidden sm:inline">Strategic</span>
-                <Badge variant="secondary" className="text-xs ml-1">
+                <Badge variant="secondary" className="ml-1 text-xs">
                   {briefingCounts.strategic_initiative}
                 </Badge>
               </TabsTrigger>
@@ -863,7 +934,11 @@ export function IntelligenceBriefings({
                 {filteredBriefings.length > 0 ? (
                   filteredBriefings.map((briefing, index) => (
                     <BriefingCard
-                      key={briefing.id && briefing.id.trim() ? `briefing-${briefing.id.trim()}` : `briefing-fallback-${index}`}
+                      key={
+                        briefing.id && briefing.id.trim()
+                          ? `briefing-${briefing.id.trim()}`
+                          : `briefing-fallback-${index}`
+                      }
                       briefing={briefing}
                       index={index}
                       onAction={(action) => onBriefingAction?.(briefing, action)}
@@ -871,14 +946,13 @@ export function IntelligenceBriefings({
                     />
                   ))
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Lightbulb className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium mb-2">No briefings found</p>
+                  <div className="text-muted-foreground py-8 text-center">
+                    <Lightbulb className="mx-auto mb-4 h-12 w-12 opacity-50" />
+                    <p className="mb-2 text-lg font-medium">No briefings found</p>
                     <p className="text-sm">
-                      {activeTab === 'all' 
-                        ? 'All areas are performing well with no urgent attention needed.'
-                        : `No ${briefingConfig[activeTab as keyof typeof briefingConfig]?.title.toLowerCase()} requiring attention at this time.`
-                      }
+                      {activeTab === "all"
+                        ? "All areas are performing well with no urgent attention needed."
+                        : `No ${briefingConfig[activeTab as keyof typeof briefingConfig]?.title.toLowerCase()} requiring attention at this time.`}
                     </p>
                   </div>
                 )}

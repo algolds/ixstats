@@ -82,10 +82,11 @@ export function useFiscalData({
 
   // Memoized budget health calculation
   const budgetHealth = useMemo(
-    () => calculateBudgetHealth({
-      budgetDeficitSurplus: fiscalData.budgetDeficitSurplus,
-      nominalGDP: nominalGDP,
-    }),
+    () =>
+      calculateBudgetHealth({
+        budgetDeficitSurplus: fiscalData.budgetDeficitSurplus,
+        nominalGDP: nominalGDP,
+      }),
     [fiscalData.budgetDeficitSurplus, nominalGDP]
   );
 
@@ -147,14 +148,14 @@ export function useFiscalData({
 
       const updatedTaxRates = { ...fiscalData.taxRates };
 
-      if (type === 'salesTaxRate') updatedTaxRates.salesTaxRate = value;
-      if (type === 'propertyTaxRate') updatedTaxRates.propertyTaxRate = value;
-      if (type === 'payrollTaxRate') updatedTaxRates.payrollTaxRate = value;
-      if (type === 'wealthTaxRate') updatedTaxRates.wealthTaxRate = value;
+      if (type === "salesTaxRate") updatedTaxRates.salesTaxRate = value;
+      if (type === "propertyTaxRate") updatedTaxRates.propertyTaxRate = value;
+      if (type === "payrollTaxRate") updatedTaxRates.payrollTaxRate = value;
+      if (type === "wealthTaxRate") updatedTaxRates.wealthTaxRate = value;
 
       onFiscalDataChange({
         ...fiscalData,
-        taxRates: updatedTaxRates
+        taxRates: updatedTaxRates,
       });
     },
     [fiscalData, isReadOnly, onFiscalDataChange]

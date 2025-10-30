@@ -4,28 +4,28 @@
  * Queries the database to verify all economic data was seeded correctly
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('\n🔍 Verifying Economic Data Migration...\n');
-  console.log('='.repeat(60));
+  console.log("\n🔍 Verifying Economic Data Migration...\n");
+  console.log("=".repeat(60));
 
   // Count records in each table
   const componentCount = await prisma.economicComponentData.count();
   const synergyCount = await prisma.economicSynergy.count();
   const templateCount = await prisma.economicTemplate.count();
 
-  console.log('\n📊 Record Counts:');
+  console.log("\n📊 Record Counts:");
   console.log(`   EconomicComponentData: ${componentCount} records`);
   console.log(`   EconomicSynergy: ${synergyCount} records`);
   console.log(`   EconomicTemplate: ${templateCount} records`);
 
   // Get components by category
-  console.log('\n📂 Components by Category:');
+  console.log("\n📂 Components by Category:");
   const componentsByCategory = await prisma.economicComponentData.groupBy({
-    by: ['category'],
+    by: ["category"],
     _count: true,
   });
 
@@ -34,9 +34,9 @@ async function main() {
   }
 
   // Get synergies by type
-  console.log('\n🔗 Synergies by Type:');
+  console.log("\n🔗 Synergies by Type:");
   const synergiesByType = await prisma.economicSynergy.groupBy({
-    by: ['synergyType'],
+    by: ["synergyType"],
     _count: true,
   });
 
@@ -45,9 +45,9 @@ async function main() {
   }
 
   // Sample component with all data
-  console.log('\n📋 Sample Component (FREE_MARKET_SYSTEM):');
+  console.log("\n📋 Sample Component (FREE_MARKET_SYSTEM):");
   const sampleComponent = await prisma.economicComponentData.findUnique({
-    where: { componentType: 'FREE_MARKET_SYSTEM' },
+    where: { componentType: "FREE_MARKET_SYSTEM" },
   });
 
   if (sampleComponent) {
@@ -59,19 +59,19 @@ async function main() {
     console.log(`   Required Capacity: ${sampleComponent.requiredCapacity}`);
 
     const taxImpact = JSON.parse(sampleComponent.taxImpact);
-    console.log('\n   Tax Impact:');
+    console.log("\n   Tax Impact:");
     console.log(`      Optimal Corporate Rate: ${taxImpact.optimalCorporateRate}%`);
     console.log(`      Optimal Income Rate: ${taxImpact.optimalIncomeRate}%`);
     console.log(`      Revenue Efficiency: ${taxImpact.revenueEfficiency}`);
 
     const sectorImpact = JSON.parse(sampleComponent.sectorImpact);
-    console.log('\n   Sector Impact:');
+    console.log("\n   Sector Impact:");
     for (const [sector, impact] of Object.entries(sectorImpact)) {
       console.log(`      ${sector}: ${impact}x`);
     }
 
     const employmentImpact = JSON.parse(sampleComponent.employmentImpact);
-    console.log('\n   Employment Impact:');
+    console.log("\n   Employment Impact:");
     console.log(`      Unemployment Modifier: ${employmentImpact.unemploymentModifier}`);
     console.log(`      Participation Modifier: ${employmentImpact.participationModifier}`);
     console.log(`      Wage Growth Modifier: ${employmentImpact.wageGrowthModifier}`);
@@ -83,9 +83,9 @@ async function main() {
   }
 
   // Sample synergies
-  console.log('\n🔗 Sample Strong Synergies:');
+  console.log("\n🔗 Sample Strong Synergies:");
   const strongSynergies = await prisma.economicSynergy.findMany({
-    where: { synergyType: 'strong' },
+    where: { synergyType: "strong" },
     take: 5,
   });
 
@@ -94,7 +94,7 @@ async function main() {
   });
 
   // Sample templates
-  console.log('\n📋 Economic Templates:');
+  console.log("\n📋 Economic Templates:");
   const templates = await prisma.economicTemplate.findMany();
 
   templates.forEach((template, idx) => {
@@ -105,13 +105,13 @@ async function main() {
     console.log(`      Icon: ${template.iconName}`);
   });
 
-  console.log('\n' + '='.repeat(60));
-  console.log('✅ Verification Complete!\n');
+  console.log("\n" + "=".repeat(60));
+  console.log("✅ Verification Complete!\n");
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Verification failed:', e);
+    console.error("❌ Verification failed:", e);
     process.exit(1);
   })
   .finally(async () => {

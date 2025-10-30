@@ -13,14 +13,14 @@ interface CalculationLogsProps {
 export function CalculationLogs({ logs, isLoading, error }: CalculationLogsProps) {
   if (error) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-          <Database className="h-5 w-5 mr-2" />
+      <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+        <h2 className="mb-4 flex items-center text-lg font-semibold text-gray-900 dark:text-white">
+          <Database className="mr-2 h-5 w-5" />
           Recent Calculation Logs
         </h2>
-        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+        <div className="rounded-md border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
           <div className="flex">
-            <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+            <AlertCircle className="mr-2 h-5 w-5 text-red-400" />
             <p className="text-sm text-red-800 dark:text-red-200">
               Error loading calculation logs: {error}
             </p>
@@ -32,14 +32,14 @@ export function CalculationLogs({ logs, isLoading, error }: CalculationLogsProps
 
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-          <Database className="h-5 w-5 mr-2" />
+      <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+        <h2 className="mb-4 flex items-center text-lg font-semibold text-gray-900 dark:text-white">
+          <Database className="mr-2 h-5 w-5" />
           Recent Calculation Logs
         </h2>
         <div className="space-y-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="animate-pulse bg-gray-200 dark:bg-gray-700 h-12 rounded"></div>
+            <div key={i} className="h-12 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
           ))}
         </div>
       </div>
@@ -48,15 +48,15 @@ export function CalculationLogs({ logs, isLoading, error }: CalculationLogsProps
 
   if (!logs || logs.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-          <Database className="h-5 w-5 mr-2" />
+      <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+        <h2 className="mb-4 flex items-center text-lg font-semibold text-gray-900 dark:text-white">
+          <Database className="mr-2 h-5 w-5" />
           Recent Calculation Logs
         </h2>
-        <div className="text-center py-8">
-          <Clock className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+        <div className="py-8 text-center">
+          <Clock className="mx-auto mb-4 h-12 w-12 text-gray-400 dark:text-gray-500" />
           <p className="text-gray-500 dark:text-gray-400">No calculation logs available</p>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+          <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">
             Logs will appear here after calculations are performed
           </p>
         </div>
@@ -65,18 +65,18 @@ export function CalculationLogs({ logs, isLoading, error }: CalculationLogsProps
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-        <Database className="h-5 w-5 mr-2" />
+    <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+      <h2 className="mb-4 flex items-center text-lg font-semibold text-gray-900 dark:text-white">
+        <Database className="mr-2 h-5 w-5" />
         Recent Calculation Logs ({logs.length})
       </h2>
-      
-      <div className="max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+
+      <div className="scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 max-h-80 overflow-y-auto">
         <div className="space-y-2">
           {logs.map((log) => (
-            <div 
-              key={log.id} 
-              className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600"
+            <div
+              key={log.id}
+              className="rounded-lg border border-gray-200 bg-gray-50 p-3 dark:border-gray-600 dark:bg-gray-700"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -89,8 +89,8 @@ export function CalculationLogs({ logs, isLoading, error }: CalculationLogsProps
                   {log.executionTimeMs}ms
                 </div>
               </div>
-              
-              <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-300">
+
+              <div className="mt-2 grid grid-cols-1 gap-2 text-xs text-gray-600 md:grid-cols-2 dark:text-gray-300">
                 <div>
                   <span className="font-medium">Real Time:</span>{" "}
                   {new Date(log.timestamp).toLocaleString()}
@@ -100,12 +100,10 @@ export function CalculationLogs({ logs, isLoading, error }: CalculationLogsProps
                   {new Date(log.ixTimeTimestamp).toLocaleString()}
                 </div>
               </div>
-              
+
               <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 Global Growth Factor: {((log.globalGrowthFactor - 1) * 100).toFixed(2)}%
-                {log.notes && (
-                  <span className="ml-2">• {log.notes}</span>
-                )}
+                {log.notes && <span className="ml-2">• {log.notes}</span>}
               </div>
             </div>
           ))}

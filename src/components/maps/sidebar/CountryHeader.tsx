@@ -5,11 +5,11 @@
  * Clean white design with purple accents.
  */
 
-'use client';
+"use client";
 
-import React from 'react';
-import { Badge } from '~/components/ui/badge';
-import UnifiedCountryFlag from '~/components/UnifiedCountryFlag';
+import React from "react";
+import { Badge } from "~/components/ui/badge";
+import UnifiedCountryFlag from "~/components/UnifiedCountryFlag";
 
 interface CountryHeaderProps {
   name: string;
@@ -29,40 +29,30 @@ export const CountryHeader = React.memo(function CountryHeader({
   isNpc = false,
 }: CountryHeaderProps) {
   return (
-    <div className="relative bg-white p-4 border-b border-gray-100">
+    <div className="relative border-b border-gray-100 bg-white p-4">
       <div className="flex items-start gap-3">
-        <div className="w-12 h-9 flex-shrink-0">
-          <UnifiedCountryFlag
-            countryName={name}
-            size="lg"
-            showPlaceholder
-            shadow
-            border
-          />
+        <div className="h-9 w-12 flex-shrink-0">
+          <UnifiedCountryFlag countryName={name} size="lg" showPlaceholder shadow border />
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-lg font-bold text-gray-900 leading-tight">
-              {name}
-            </h3>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-lg leading-tight font-bold text-gray-900">{name}</h3>
             <Badge
               variant="outline"
-              className="text-xs px-2 py-0.5 bg-purple-100 border-purple-200 text-purple-700"
+              className="border-purple-200 bg-purple-100 px-2 py-0.5 text-xs text-purple-700"
             >
               Selected
             </Badge>
             {isNpc && (
               <Badge
                 variant="secondary"
-                className="text-xs px-2 py-0.5 bg-gray-200 border-gray-300 text-gray-700"
+                className="border-gray-300 bg-gray-200 px-2 py-0.5 text-xs text-gray-700"
               >
                 NPC
               </Badge>
             )}
           </div>
-          {slug && (
-            <p className="text-sm text-purple-600 mt-1">/{slug}</p>
-          )}
+          {slug && <p className="mt-1 text-sm text-purple-600">/{slug}</p>}
         </div>
       </div>
     </div>

@@ -5,10 +5,7 @@
 class LocalStorageMutex {
   private locks: Map<string, Promise<void>> = new Map();
 
-  async withLock<T>(
-    key: string,
-    operation: () => Promise<T> | T
-  ): Promise<T> {
+  async withLock<T>(key: string, operation: () => Promise<T> | T): Promise<T> {
     // Wait for any existing lock on this key
     const existingLock = this.locks.get(key);
     if (existingLock) {

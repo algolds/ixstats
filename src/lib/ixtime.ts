@@ -7,18 +7,17 @@ import type { BotTimeResponse, BotEndpointStatusResponse } from "~/types/ixstats
 export class IxTime {
   // Real-world epoch: October 4, 2020
   private static readonly REAL_WORLD_EPOCH = new Date(2020, 9, 4, 0, 0, 0, 0).getTime();
-  
+
   // In-game epoch: January 1, 2028 (this is when roster data represents)
   // This is the "in-game year zero" baseline
   private static readonly IN_GAME_EPOCH = new Date(2028, 0, 1, 0, 0, 0, 0).getTime();
-  
+
   private static readonly BASE_TIME_MULTIPLIER = 4.0; // 4x faster than real time (before speed change)
   private static readonly POST_SPEED_CHANGE_MULTIPLIER = 2.0; // 2x faster after 7/27/25
-  private static readonly SPEED_CHANGE_DATE = new Date('2025-07-27T00:00:00.000Z'); // Speed change on 7/27/25 midnight
-  private static readonly BOT_API_URL = typeof window !== 'undefined' 
-    ? env.NEXT_PUBLIC_IXTIME_BOT_URL 
-    : env.IXTIME_BOT_URL;
-  
+  private static readonly SPEED_CHANGE_DATE = new Date("2025-07-27T00:00:00.000Z"); // Speed change on 7/27/25 midnight
+  private static readonly BOT_API_URL =
+    typeof window !== "undefined" ? env.NEXT_PUBLIC_IXTIME_BOT_URL : env.IXTIME_BOT_URL;
+
   // Fallback values if bot is unavailable
   private static timeOverride: number | null = null;
   private static timeOverrideSetAt: number | null = null; // When the override was set (real time)
@@ -33,7 +32,9 @@ export class IxTime {
   static getDefaultMultiplier(): number {
     // Speed change happened on 7/27/25 real time, so check against current real time
     const currentRealTime = new Date();
-    return currentRealTime >= this.SPEED_CHANGE_DATE ? this.POST_SPEED_CHANGE_MULTIPLIER : this.BASE_TIME_MULTIPLIER;
+    return currentRealTime >= this.SPEED_CHANGE_DATE
+      ? this.POST_SPEED_CHANGE_MULTIPLIER
+      : this.BASE_TIME_MULTIPLIER;
   }
 
   /**
@@ -45,7 +46,7 @@ export class IxTime {
   }
 
   /**
-   * Get the real-world epoch timestamp (October 4, 2020) 
+   * Get the real-world epoch timestamp (October 4, 2020)
    * This is when IxTime started running
    */
   static getRealWorldEpoch(): number {
@@ -60,15 +61,15 @@ export class IxTime {
     if (multiplier === 0) {
       return this.timeOverride ?? this.getCurrentIxTimeInternal();
     }
-    
+
     // Calculate how much real time has elapsed since the real-world epoch
     const realSecondsElapsed = (realWorldTimestamp - this.REAL_WORLD_EPOCH) / 1000;
-    
+
     // Apply the time multiplier to get IxTime seconds elapsed
     const ixSecondsElapsed = realSecondsElapsed * multiplier;
-    
+
     // Add to the real-world epoch to get current IxTime
-    return this.REAL_WORLD_EPOCH + (ixSecondsElapsed * 1000);
+    return this.REAL_WORLD_EPOCH + ixSecondsElapsed * 1000;
   }
 
   /**
@@ -79,33 +80,37 @@ export class IxTime {
     if (this.timeOverride !== null && this.timeOverrideSetAt !== null) {
       const now = Date.now();
       const realTimeElapsedSinceOverride = now - this.timeOverrideSetAt;
-      
+
       // Get current multiplier
-      const currentMultiplier = this.multiplierOverride !== null ? this.multiplierOverride : this.getDefaultMultiplier();
-      
+      const currentMultiplier =
+        this.multiplierOverride !== null ? this.multiplierOverride : this.getDefaultMultiplier();
+
       // If paused, return the static override time
       if (currentMultiplier === 0) {
         return this.timeOverride;
       }
-      
+
       // Calculate progressing time from override point
       const ixTimeElapsed = realTimeElapsedSinceOverride * currentMultiplier;
       return this.timeOverride + ixTimeElapsed;
     }
-    
+
     // CORRECTED CALCULATION: July 27, 2025 00:00:00 UTC = January 1, 2040 IxTime
-    const PIVOT_POINT_REAL = new Date('2025-07-27T00:00:00.000Z').getTime();
-    const PIVOT_POINT_IXTIME = new Date('2040-01-01T00:00:00.000Z').getTime();
+    const PIVOT_POINT_REAL = new Date("2025-07-27T00:00:00.000Z").getTime();
+    const PIVOT_POINT_IXTIME = new Date("2040-01-01T00:00:00.000Z").getTime();
     const now = Date.now();
-    
+
     if (now >= PIVOT_POINT_REAL) {
       // After July 27, 2025: Use 2x multiplier from the pivot point
       const realTimeElapsed = (now - PIVOT_POINT_REAL) / 1000;
-      const currentMultiplier = this.multiplierOverride !== null ? this.multiplierOverride : this.POST_SPEED_CHANGE_MULTIPLIER;
+      const currentMultiplier =
+        this.multiplierOverride !== null
+          ? this.multiplierOverride
+          : this.POST_SPEED_CHANGE_MULTIPLIER;
       const ixTimeElapsed = realTimeElapsed * currentMultiplier * 1000;
       return PIVOT_POINT_IXTIME + ixTimeElapsed;
     } else {
-      // Before July 27, 2025: Use 4x multiplier to reach the pivot point 
+      // Before July 27, 2025: Use 4x multiplier to reach the pivot point
       const realTimeElapsed = (now - this.REAL_WORLD_EPOCH) / 1000;
       const ixTimeElapsed = realTimeElapsed * this.BASE_TIME_MULTIPLIER * 1000;
       return this.REAL_WORLD_EPOCH + ixTimeElapsed;
@@ -116,7 +121,7 @@ export class IxTime {
     const now = Date.now();
     const realSecondsElapsed = (now - this.REAL_WORLD_EPOCH) / 1000;
     const ixSecondsElapsed = realSecondsElapsed * this.BASE_TIME_MULTIPLIER;
-    return this.REAL_WORLD_EPOCH + (ixSecondsElapsed * 1000);
+    return this.REAL_WORLD_EPOCH + ixSecondsElapsed * 1000;
   }
 
   /**
@@ -124,8 +129,9 @@ export class IxTime {
    */
   static getYearsElapsed(startIxTime: number | Date, endIxTime?: number | Date): number {
     const startMs = startIxTime instanceof Date ? startIxTime.getTime() : startIxTime;
-    const endMs = endIxTime instanceof Date ? endIxTime.getTime() : (endIxTime || this.getCurrentIxTime());
-    
+    const endMs =
+      endIxTime instanceof Date ? endIxTime.getTime() : endIxTime || this.getCurrentIxTime();
+
     const millisecondsPerYear = 365.25 * 24 * 60 * 60 * 1000;
     return (endMs - startMs) / millisecondsPerYear;
   }
@@ -161,7 +167,7 @@ export class IxTime {
   static addYears(ixTime: number | Date, years: number): number {
     const timeMs = ixTime instanceof Date ? ixTime.getTime() : ixTime;
     const millisecondsPerYear = 365.25 * 24 * 60 * 60 * 1000;
-    return timeMs + (years * millisecondsPerYear);
+    return timeMs + years * millisecondsPerYear;
   }
 
   /**
@@ -187,7 +193,14 @@ export class IxTime {
    * Create an IxTime timestamp from in-game date components
    * Year should be relative to the game world (2028+)
    */
-  static createGameTime(year: number, month: number, day: number, hour = 0, minute = 0, second = 0): number {
+  static createGameTime(
+    year: number,
+    month: number,
+    day: number,
+    hour = 0,
+    minute = 0,
+    second = 0
+  ): number {
     // Create date in the game timeline
     return new Date(Date.UTC(year, month - 1, day, hour, minute, second)).getTime();
   }
@@ -198,12 +211,20 @@ export class IxTime {
   static formatIxTime(ixTime: number, includeTime = false): string {
     const ixDate = new Date(ixTime);
     const months = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ];
-    const weekdays = [
-      "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
-    ];
+    const weekdays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
     const day = ixDate.getUTCDate();
     const month = months[ixDate.getUTCMonth()];
@@ -211,9 +232,9 @@ export class IxTime {
     const weekday = weekdays[ixDate.getUTCDay()];
 
     if (includeTime) {
-      const hours = ixDate.getUTCHours().toString().padStart(2, '0');
-      const minutes = ixDate.getUTCMinutes().toString().padStart(2, '0');
-      const seconds = ixDate.getUTCSeconds().toString().padStart(2, '0');
+      const hours = ixDate.getUTCHours().toString().padStart(2, "0");
+      const minutes = ixDate.getUTCMinutes().toString().padStart(2, "0");
+      const seconds = ixDate.getUTCSeconds().toString().padStart(2, "0");
       return `${weekday}, ${month} ${day}, ${year} ${hours}:${minutes}:${seconds} (ILT)`;
     } else {
       return `${weekday}, ${month} ${day}, ${year} (ILT)`;
@@ -227,7 +248,7 @@ export class IxTime {
     const currentTime = ixTime || this.getCurrentIxTime();
     const yearsSinceEpoch = this.getYearsSinceGameEpoch(currentTime);
     const currentYear = this.getCurrentGameYear(currentTime);
-    
+
     if (yearsSinceEpoch < 0) {
       return `${Math.abs(yearsSinceEpoch).toFixed(1)} years before game start`;
     } else if (yearsSinceEpoch < 1) {
@@ -237,27 +258,29 @@ export class IxTime {
       return `${yearsSinceEpoch.toFixed(1)} years since game start (${currentYear})`;
     }
   }
-  
+
   private static async fetchFromBot(): Promise<BotTimeResponse | null> {
     try {
       const response = await fetch(`${this.BOT_API_URL}/ixtime`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(2000)
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(2000),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Bot API returned ${response.status}`);
       }
-      
+
       const data: BotTimeResponse = await response.json();
       this.lastKnownBotTime = data.ixTimeTimestamp;
       this.lastSyncTime = Date.now();
       this.botAvailable = true;
-      
+
       return data;
     } catch (error) {
-      console.warn(`[IxTime] Failed to fetch from bot: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.warn(
+        `[IxTime] Failed to fetch from bot: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
       this.botAvailable = false;
       return null;
     }
@@ -266,67 +289,76 @@ export class IxTime {
   static async fetchStatusFromBot(): Promise<BotEndpointStatusResponse | null> {
     try {
       const response = await fetch(`${this.BOT_API_URL}/ixtime/status`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(2000)
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(2000),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Bot API returned ${response.status}`);
       }
-      
+
       const data: BotEndpointStatusResponse = await response.json();
       this.lastKnownBotTime = data.ixTimeTimestamp;
       this.lastSyncTime = Date.now();
       this.botAvailable = true;
-      
+
       return data;
     } catch (error) {
-      console.warn(`[IxTime] Failed to fetch status from bot: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.warn(
+        `[IxTime] Failed to fetch status from bot: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
       this.botAvailable = false;
       return null;
     }
   }
 
-  static async syncWithBot(): Promise<{ success: boolean; message: string; data?: BotTimeResponse }> {
+  static async syncWithBot(): Promise<{
+    success: boolean;
+    message: string;
+    data?: BotTimeResponse;
+  }> {
     const botData = await this.fetchFromBot();
-    
+
     if (botData) {
       this.timeOverride = null;
       this.multiplierOverride = null;
-      
+
       return {
         success: true,
-        message: 'Successfully synced with Discord bot',
-        data: botData
+        message: "Successfully synced with Discord bot",
+        data: botData,
       };
     } else {
       return {
         success: false,
-        message: 'Failed to sync with Discord bot - using fallback time'
+        message: "Failed to sync with Discord bot - using fallback time",
       };
     }
   }
 
-  static async setBotTimeOverride(ixTime: number, multiplier?: number): Promise<{ success: boolean; message: string }> {
+  static async setBotTimeOverride(
+    ixTime: number,
+    multiplier?: number
+  ): Promise<{ success: boolean; message: string }> {
     try {
       const response = await fetch(`${this.BOT_API_URL}/ixtime/override`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ixTimeMs: ixTime, multiplier }),
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(5000),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Bot API returned ${response.status}`);
       }
-      
+
       const result = await response.json();
       return { success: true, message: result.message };
     } catch (error) {
-      return { 
-        success: false, 
-        message: `Failed to set bot time override: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      return {
+        success: false,
+        message: `Failed to set bot time override: ${error instanceof Error ? error.message : "Unknown error"}`,
       };
     }
   }
@@ -334,21 +366,21 @@ export class IxTime {
   static async clearBotOverrides(): Promise<{ success: boolean; message: string }> {
     try {
       const response = await fetch(`${this.BOT_API_URL}/ixtime/clear`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(5000)
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(5000),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Bot API returned ${response.status}`);
       }
-      
+
       const result = await response.json();
       return { success: true, message: result.message };
     } catch (error) {
-      return { 
-        success: false, 
-        message: `Failed to clear bot overrides: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      return {
+        success: false,
+        message: `Failed to clear bot overrides: ${error instanceof Error ? error.message : "Unknown error"}`,
       };
     }
   }
@@ -356,21 +388,21 @@ export class IxTime {
   static async pauseBotTime(): Promise<{ success: boolean; message: string }> {
     try {
       const response = await fetch(`${this.BOT_API_URL}/ixtime/pause`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(5000)
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(5000),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Bot API returned ${response.status}`);
       }
-      
+
       const result = await response.json();
       return { success: true, message: result.message };
     } catch (error) {
-      return { 
-        success: false, 
-        message: `Failed to pause bot time: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      return {
+        success: false,
+        message: `Failed to pause bot time: ${error instanceof Error ? error.message : "Unknown error"}`,
       };
     }
   }
@@ -378,21 +410,21 @@ export class IxTime {
   static async resumeBotTime(): Promise<{ success: boolean; message: string }> {
     try {
       const response = await fetch(`${this.BOT_API_URL}/ixtime/resume`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: AbortSignal.timeout(5000)
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: AbortSignal.timeout(5000),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Bot API returned ${response.status}`);
       }
-      
+
       const result = await response.json();
       return { success: true, message: result.message };
     } catch (error) {
-      return { 
-        success: false, 
-        message: `Failed to resume bot time: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      return {
+        success: false,
+        message: `Failed to resume bot time: ${error instanceof Error ? error.message : "Unknown error"}`,
       };
     }
   }
@@ -432,20 +464,20 @@ export class IxTime {
    */
   static setNaturalMultiplier(multiplier: number): { isNatural: boolean; message: string } {
     const naturalMultiplier = this.getDefaultMultiplier();
-    
+
     if (multiplier === naturalMultiplier) {
       // Clear override to use natural progression
       this.multiplierOverride = null;
       return {
         isNatural: true,
-        message: `Set to natural ${multiplier}x speed for current era`
+        message: `Set to natural ${multiplier}x speed for current era`,
       };
     } else {
       // Set as override since it doesn't match natural progression
       this.multiplierOverride = multiplier;
       return {
         isNatural: false,
-        message: `Set to ${multiplier}x speed (override)`
+        message: `Set to ${multiplier}x speed (override)`,
       };
     }
   }
@@ -467,12 +499,12 @@ export class IxTime {
     try {
       botStatusData = await this.fetchStatusFromBot();
     } catch (error) {
-      console.warn('[IxTime] Failed to fetch bot status in getStatus:', error);
+      console.warn("[IxTime] Failed to fetch bot status in getStatus:", error);
     }
-    
+
     const currentRealTime = Date.now();
     const currentIxTime = this.getCurrentIxTime();
-    
+
     return {
       // Local status
       currentRealTime: new Date(currentRealTime).toISOString(),
@@ -489,56 +521,60 @@ export class IxTime {
       yearsSinceGameStart: this.getYearsSinceGameEpoch(),
       currentGameYear: this.getCurrentGameYear(),
       gameTimeDescription: this.getGameTimeDescription(),
-      
+
       // Bot sync status
       botAvailable: this.botAvailable,
       lastSyncTime: this.lastSyncTime ? new Date(this.lastSyncTime).toISOString() : null,
-      lastKnownBotTime: this.lastKnownBotTime ? new Date(this.lastKnownBotTime).toISOString() : null,
-      
+      lastKnownBotTime: this.lastKnownBotTime
+        ? new Date(this.lastKnownBotTime).toISOString()
+        : null,
+
       // Bot status (if available)
-      botStatus: botStatusData ? {
-        ixTimeTimestamp: botStatusData.ixTimeTimestamp,
-        ixTimeFormatted: botStatusData.ixTimeFormatted,
-        multiplier: botStatusData.multiplier,
-        isPaused: botStatusData.isPaused,
-        hasTimeOverride: botStatusData.hasTimeOverride,
-        hasMultiplierOverride: botStatusData.hasMultiplierOverride,
-        pausedAt: botStatusData.pausedAt,
-        pauseTimestamp: botStatusData.pauseTimestamp,
-        botReady: botStatusData.botStatus?.ready || false,
-        botUser: botStatusData.botStatus?.user || null,
-        guilds: botStatusData.botStatus?.guilds || 0,
-        uptime: botStatusData.botStatus?.uptime || 0
-      } : null
+      botStatus: botStatusData
+        ? {
+            ixTimeTimestamp: botStatusData.ixTimeTimestamp,
+            ixTimeFormatted: botStatusData.ixTimeFormatted,
+            multiplier: botStatusData.multiplier,
+            isPaused: botStatusData.isPaused,
+            hasTimeOverride: botStatusData.hasTimeOverride,
+            hasMultiplierOverride: botStatusData.hasMultiplierOverride,
+            pausedAt: botStatusData.pausedAt,
+            pauseTimestamp: botStatusData.pauseTimestamp,
+            botReady: botStatusData.botStatus?.ready || false,
+            botUser: botStatusData.botStatus?.user || null,
+            guilds: botStatusData.botStatus?.guilds || 0,
+            uptime: botStatusData.botStatus?.uptime || 0,
+          }
+        : null,
     };
   }
 
   static async checkBotHealth(): Promise<{ available: boolean; message: string }> {
     try {
       const response = await fetch(`${this.BOT_API_URL}/health`, {
-        method: 'GET',
-        signal: AbortSignal.timeout(3000)
+        method: "GET",
+        signal: AbortSignal.timeout(3000),
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         this.botAvailable = true;
-        return { 
-          available: true, 
-          message: `Bot is ${data.bot?.ready ? 'ready' : 'starting up'}${data.ixtime?.isPaused ? ' (PAUSED)' : ''}` 
+        return {
+          available: true,
+          message: `Bot is ${data.bot?.ready ? "ready" : "starting up"}${data.ixtime?.isPaused ? " (PAUSED)" : ""}`,
         };
       } else {
         this.botAvailable = false;
-        return { 
-          available: false, 
-          message: `Bot API returned ${response.status}` 
+        return {
+          available: false,
+          message: `Bot API returned ${response.status}`,
         };
       }
     } catch (error) {
       this.botAvailable = false;
-      return { 
-        available: false, 
-        message: `Bot unreachable: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      return {
+        available: false,
+        message: `Bot unreachable: ${error instanceof Error ? error.message : "Unknown error"}`,
       };
     }
   }

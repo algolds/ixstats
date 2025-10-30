@@ -3,13 +3,9 @@
  * Provides automatic theming for MyCountry tab content areas
  */
 
-import React from 'react';
-import { cn } from '~/lib/utils';
-import { 
-  getTabThemeClasses, 
-  getTabCSSProperties, 
-  type TabTheme 
-} from '~/lib/mycountry-theme';
+import React from "react";
+import { cn } from "~/lib/utils";
+import { getTabThemeClasses, getTabCSSProperties, type TabTheme } from "~/lib/mycountry-theme";
 
 interface ThemedTabContentProps {
   theme: TabTheme;
@@ -26,17 +22,17 @@ export const ThemedTabContent: React.FC<ThemedTabContentProps> = ({
   theme,
   children,
   className,
-  style
+  style,
 }) => {
   const themeClasses = getTabThemeClasses(theme);
   const cssProperties = getTabCSSProperties(theme);
-  
+
   return (
     <div
       className={cn(themeClasses.content, className)}
       style={{
         ...cssProperties,
-        ...style
+        ...style,
       }}
     >
       {children}
@@ -60,23 +56,20 @@ export const ThemedGlassCard: React.FC<ThemedGlassCardProps> = ({
   children,
   className,
   interactive = false,
-  withEffects = false
+  withEffects = false,
 }) => {
   const themeClasses = getTabThemeClasses(theme);
   const cssProperties = getTabCSSProperties(theme);
-  
+
   const classes = cn(
     themeClasses.glass,
     interactive && themeClasses.interactive,
     withEffects && [themeClasses.effects.shimmer, themeClasses.effects.glow],
     className
   );
-  
+
   return (
-    <div
-      className={classes}
-      style={cssProperties as React.CSSProperties}
-    >
+    <div className={classes} style={cssProperties as React.CSSProperties}>
       {children}
     </div>
   );
@@ -86,7 +79,7 @@ interface ThemedMetricProps {
   theme: TabTheme;
   value: string | number;
   label: string;
-  size?: 'primary' | 'secondary' | 'small';
+  size?: "primary" | "secondary" | "small";
   className?: string;
 }
 
@@ -97,23 +90,16 @@ export const ThemedMetric: React.FC<ThemedMetricProps> = ({
   theme,
   value,
   label,
-  size = 'primary',
-  className
+  size = "primary",
+  className,
 }) => {
   const themeClasses = getTabThemeClasses(theme);
   const cssProperties = getTabCSSProperties(theme);
-  
+
   return (
-    <div 
-      className={cn('text-center', className)}
-      style={cssProperties as React.CSSProperties}
-    >
-      <div className={themeClasses.metric[size]}>
-        {value}
-      </div>
-      <div className="text-xs text-muted-foreground">
-        {label}
-      </div>
+    <div className={cn("text-center", className)} style={cssProperties as React.CSSProperties}>
+      <div className={themeClasses.metric[size]}>{value}</div>
+      <div className="text-muted-foreground text-xs">{label}</div>
     </div>
   );
 };

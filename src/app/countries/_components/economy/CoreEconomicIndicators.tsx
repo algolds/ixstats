@@ -1,13 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  DollarSign,
-  Users,
-  Globe,
-  BarChart3,
-  Info,
-} from "lucide-react";
+import { DollarSign, Users, Globe, BarChart3, Info } from "lucide-react";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
@@ -72,15 +66,9 @@ export function CoreEconomicIndicators({
   const [view, setView] = useState<"overview" | "detailed">("overview");
   const tier = getEconomicTier(indicators.gdpPerCapita);
   const tierStyle = getTierStyle(tier);
-  const health = computeHealth(
-    indicators.realGDPGrowthRate,
-    indicators.inflationRate
-  );
+  const health = computeHealth(indicators.realGDPGrowthRate, indicators.inflationRate);
 
-  function handleField<K extends keyof CoreEconomicIndicators>(
-    field: K,
-    value: number
-  ) {
+  function handleField<K extends keyof CoreEconomicIndicators>(field: K, value: number) {
     const next = { ...indicators, [field]: value };
     if (field === "totalPopulation" || field === "nominalGDP") {
       next.gdpPerCapita = next.nominalGDP / next.totalPopulation;
@@ -119,18 +107,16 @@ export function CoreEconomicIndicators({
   return (
     <div className="space-y-6">
       {/* Header + Tabs */}
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
+          <h3 className="flex items-center gap-2 text-lg font-semibold">
+            <BarChart3 className="text-primary h-5 w-5" />
             Core Economic Indicators
           </h3>
-          <p className="text-sm text-muted-foreground">
-            Fundamental metrics and performance
-          </p>
+          <p className="text-muted-foreground text-sm">Fundamental metrics and performance</p>
         </div>
         <Tabs value={view} onValueChange={(v) => setView(v as any)}>
-          <TabsList className="grid grid-cols-2 w-[200px]">
+          <TabsList className="grid w-[200px] grid-cols-2">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="detailed">Detailed</TabsTrigger>
           </TabsList>
@@ -140,26 +126,22 @@ export function CoreEconomicIndicators({
       {/* Overview Comparison */}
       <TabsContent value="overview" className="space-y-4">
         {showComparison && referenceCountry && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {comparison.map(({ label, user, ref, fmt, Icon }) => {
               const diff = ((user - ref) / ref) * 100;
               const positive = diff >= 0;
               return (
                 <GlassCard key={label} variant="glass">
-                  <div className="flex justify-between items-center pb-2">
-                    <h4 className="text-sm font-medium">
-                      {label}
-                    </h4>
-                    <Icon className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center justify-between pb-2">
+                    <h4 className="text-sm font-medium">{label}</h4>
+                    <Icon className="text-muted-foreground h-4 w-4" />
                   </div>
                   <div className="space-y-1">
                     <div className="text-2xl font-bold">{fmt(user)}</div>
                     {label === "GDP per Capita" && (
                       <Badge className={tierStyle.className}>{tier}</Badge>
                     )}
-                    <div className="text-xs text-muted-foreground">
-                      Ref: {fmt(ref)}
-                    </div>
+                    <div className="text-muted-foreground text-xs">Ref: {fmt(ref)}</div>
                     <div
                       className={`text-xs font-medium ${
                         positive ? "text-green-600" : "text-red-600"
@@ -178,14 +160,12 @@ export function CoreEconomicIndicators({
 
       {/* Detailed Inputs */}
       <TabsContent value="detailed" className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {/* Population & Output */}
           <GlassCard variant="glass">
             <div className="flex items-center gap-2 pb-2">
-              <Users className="h-4 w-4 text-primary" />
-              <h4 className="text-sm font-medium">
-                Population & Output
-              </h4>
+              <Users className="text-primary h-4 w-4" />
+              <h4 className="text-sm font-medium">Population & Output</h4>
             </div>
             <div className="space-y-4">
               <div>
@@ -199,9 +179,7 @@ export function CoreEconomicIndicators({
                     id="pop"
                     type="number"
                     value={indicators.totalPopulation}
-                    onChange={(e) =>
-                      handleField("totalPopulation", +e.target.value || 0)
-                    }
+                    onChange={(e) => handleField("totalPopulation", +e.target.value || 0)}
                     step={1000}
                   />
                 )}
@@ -220,9 +198,7 @@ export function CoreEconomicIndicators({
                     id="gpc"
                     type="number"
                     value={indicators.gdpPerCapita}
-                    onChange={(e) =>
-                      handleField("gdpPerCapita", +e.target.value || 0)
-                    }
+                    onChange={(e) => handleField("gdpPerCapita", +e.target.value || 0)}
                     step={100}
                   />
                 )}
@@ -230,17 +206,13 @@ export function CoreEconomicIndicators({
               <div>
                 <Label htmlFor="ngdp">Nominal GDP ($)</Label>
                 {isReadOnly ? (
-                  <div className="text-2xl font-bold">
-                    {formatCurrency(indicators.nominalGDP)}
-                  </div>
+                  <div className="text-2xl font-bold">{formatCurrency(indicators.nominalGDP)}</div>
                 ) : (
                   <Input
                     id="ngdp"
                     type="number"
                     value={indicators.nominalGDP}
-                    onChange={(e) =>
-                      handleField("nominalGDP", +e.target.value || 0)
-                    }
+                    onChange={(e) => handleField("nominalGDP", +e.target.value || 0)}
                     step={1_000_000}
                   />
                 )}
@@ -251,10 +223,8 @@ export function CoreEconomicIndicators({
           {/* Growth & Stability */}
           <GlassCard variant="glass">
             <div className="flex items-center gap-2 pb-2">
-              <BarChart3 className="h-4 w-4 text-primary" />
-              <h4 className="text-sm font-medium">
-                Growth & Stability
-              </h4>
+              <BarChart3 className="text-primary h-4 w-4" />
+              <h4 className="text-sm font-medium">Growth & Stability</h4>
             </div>
             <div className="space-y-4">
               <div>
@@ -277,7 +247,7 @@ export function CoreEconomicIndicators({
                       step={0.1}
                       className="w-full"
                     />
-                    <div className="flex justify-between text-xs text-muted-foreground">
+                    <div className="text-muted-foreground flex justify-between text-xs">
                       <span>-5%</span>
                       <span className="font-medium">
                         {formatPercentage(indicators.realGDPGrowthRate * 100)}
@@ -307,7 +277,7 @@ export function CoreEconomicIndicators({
                       step={0.1}
                       className="w-full"
                     />
-                    <div className="flex justify-between text-xs text-muted-foreground">
+                    <div className="text-muted-foreground flex justify-between text-xs">
                       <span>0%</span>
                       <span className="font-medium">
                         {formatPercentage(indicators.inflationRate * 100)}
@@ -328,9 +298,7 @@ export function CoreEconomicIndicators({
                     id="fx"
                     type="number"
                     value={indicators.currencyExchangeRate}
-                    onChange={(e) =>
-                      handleField("currencyExchangeRate", +e.target.value || 1)
-                    }
+                    onChange={(e) => handleField("currencyExchangeRate", +e.target.value || 1)}
                     step={0.01}
                     min={0.01}
                   />

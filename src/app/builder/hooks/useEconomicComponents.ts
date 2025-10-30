@@ -8,9 +8,9 @@
  * - Cross-builder synergy detection
  */
 
-import { useState, useEffect, useMemo } from 'react';
-import { EconomicComponentType } from '@prisma/client';
-import { api } from '~/trpc/react';
+import { useState, useEffect, useMemo } from "react";
+import { EconomicComponentType } from "@prisma/client";
+import { api } from "~/trpc/react";
 
 export interface UseEconomicComponentsProps {
   countryId?: string;
@@ -19,20 +19,21 @@ export interface UseEconomicComponentsProps {
 
 export function useEconomicComponents({
   countryId,
-  initialComponents = []
+  initialComponents = [],
 }: UseEconomicComponentsProps) {
   // State
-  const [selectedComponents, setSelectedComponents] = useState<EconomicComponentType[]>(initialComponents);
+  const [selectedComponents, setSelectedComponents] =
+    useState<EconomicComponentType[]>(initialComponents);
   const [isLoading, setIsLoading] = useState(false);
 
   // tRPC queries and mutations
   const getComponentsQuery = api.atomicEconomic.getComponents.useQuery(
-    { countryId: countryId || '' },
+    { countryId: countryId || "" },
     { enabled: !!countryId }
   );
 
   const getEffectivenessQuery = api.atomicEconomic.getEffectiveness.useQuery(
-    { countryId: countryId || '' },
+    { countryId: countryId || "" },
     { enabled: !!countryId }
   );
 
@@ -45,8 +46,8 @@ export function useEconomicComponents({
   useEffect(() => {
     if (getComponentsQuery.data && getComponentsQuery.data.length > 0) {
       const activeComponents = getComponentsQuery.data
-        .filter(comp => comp.isActive)
-        .map(comp => comp.componentType);
+        .filter((comp) => comp.isActive)
+        .map((comp) => comp.componentType);
       setSelectedComponents(activeComponents);
     }
   }, [getComponentsQuery.data]);
@@ -57,7 +58,7 @@ export function useEconomicComponents({
 
     setIsLoading(true);
     try {
-      const componentData = components.map(componentType => ({
+      const componentData = components.map((componentType) => ({
         componentType,
         effectivenessScore: 50, // Default effectiveness
         isActive: true,
@@ -73,7 +74,7 @@ export function useEconomicComponents({
 
       setSelectedComponents(components);
     } catch (error) {
-      console.error('Failed to save economic components:', error);
+      console.error("Failed to save economic components:", error);
     } finally {
       setIsLoading(false);
     }
@@ -94,9 +95,9 @@ export function useEconomicComponents({
         requiredCapacity: 50,
       });
 
-      setSelectedComponents(prev => [...prev, componentType]);
+      setSelectedComponents((prev) => [...prev, componentType]);
     } catch (error) {
-      console.error('Failed to add economic component:', error);
+      console.error("Failed to add economic component:", error);
     } finally {
       setIsLoading(false);
     }
@@ -109,14 +110,16 @@ export function useEconomicComponents({
     setIsLoading(true);
     try {
       // Find the component ID
-      const component = getComponentsQuery.data?.find(comp => comp.componentType === componentType);
+      const component = getComponentsQuery.data?.find(
+        (comp) => comp.componentType === componentType
+      );
       if (component) {
         await removeComponentMutation.mutateAsync({ id: component.id });
       }
 
-      setSelectedComponents(prev => prev.filter(comp => comp !== componentType));
+      setSelectedComponents((prev) => prev.filter((comp) => comp !== componentType));
     } catch (error) {
-      console.error('Failed to remove economic component:', error);
+      console.error("Failed to remove economic component:", error);
     } finally {
       setIsLoading(false);
     }
@@ -132,12 +135,17 @@ export function useEconomicComponents({
   };
 
   // Update component effectiveness
-  const updateEffectiveness = async (componentType: EconomicComponentType, effectivenessScore: number) => {
+  const updateEffectiveness = async (
+    componentType: EconomicComponentType,
+    effectivenessScore: number
+  ) => {
     if (!countryId) return;
 
     setIsLoading(true);
     try {
-      const component = getComponentsQuery.data?.find(comp => comp.componentType === componentType);
+      const component = getComponentsQuery.data?.find(
+        (comp) => comp.componentType === componentType
+      );
       if (component) {
         await updateComponentMutation.mutateAsync({
           id: component.id,
@@ -145,7 +153,7 @@ export function useEconomicComponents({
         });
       }
     } catch (error) {
-      console.error('Failed to update component effectiveness:', error);
+      console.error("Failed to update component effectiveness:", error);
     } finally {
       setIsLoading(false);
     }
@@ -154,7 +162,7 @@ export function useEconomicComponents({
   // Computed values
   const effectiveness = getEffectivenessQuery.data;
   const components = getComponentsQuery.data || [];
-  const activeComponents = components.filter(comp => comp.isActive);
+  const activeComponents = components.filter((comp) => comp.isActive);
 
   return {
     // State
@@ -178,4 +186,3 @@ export function useEconomicComponents({
     isRemoving: removeComponentMutation.isPending,
   };
 }
-

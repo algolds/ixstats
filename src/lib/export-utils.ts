@@ -1,6 +1,6 @@
-import Papa from 'papaparse';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import Papa from "papaparse";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 
 /**
  * Export data to CSV file
@@ -14,16 +14,16 @@ export function exportDataToCSV<T extends Record<string, any>>(
   columns?: (keyof T)[]
 ): void {
   if (!data || data.length === 0) {
-    console.warn('No data to export');
+    console.warn("No data to export");
     return;
   }
 
   // Filter data to only include specified columns if provided
   let processedData = data;
   if (columns && columns.length > 0) {
-    processedData = data.map(row => {
+    processedData = data.map((row) => {
       const filteredRow: Partial<T> = {};
-      columns.forEach(col => {
+      columns.forEach((col) => {
         filteredRow[col] = row[col];
       });
       return filteredRow as T;
@@ -34,13 +34,13 @@ export function exportDataToCSV<T extends Record<string, any>>(
   const csv = Papa.unparse(processedData);
 
   // Create blob and download
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
   const url = URL.createObjectURL(blob);
 
-  link.setAttribute('href', url);
-  link.setAttribute('download', `${filename}.csv`);
-  link.style.visibility = 'hidden';
+  link.setAttribute("href", url);
+  link.setAttribute("download", `${filename}.csv`);
+  link.style.visibility = "hidden";
 
   document.body.appendChild(link);
   link.click();
@@ -60,17 +60,15 @@ export async function exportChartToPDF(
   filename: string,
   options: {
     title?: string;
-    orientation?: 'portrait' | 'landscape';
+    orientation?: "portrait" | "landscape";
     quality?: number;
   } = {}
 ): Promise<void> {
   try {
-    const { title, orientation = 'landscape', quality = 0.95 } = options;
+    const { title, orientation = "landscape", quality = 0.95 } = options;
 
     // Get the element
-    const element = typeof elementId === 'string'
-      ? document.getElementById(elementId)
-      : elementId;
+    const element = typeof elementId === "string" ? document.getElementById(elementId) : elementId;
 
     if (!element) {
       console.error(`Element ${elementId} not found`);
@@ -80,36 +78,36 @@ export async function exportChartToPDF(
     // Capture the element as canvas
     const canvas = await html2canvas(element, {
       scale: 2, // Higher quality
-      backgroundColor: '#ffffff',
+      backgroundColor: "#ffffff",
       logging: false,
       useCORS: true,
     });
 
     // Calculate dimensions
-    const imgWidth = orientation === 'portrait' ? 210 : 297; // A4 size in mm
+    const imgWidth = orientation === "portrait" ? 210 : 297; // A4 size in mm
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
     // Create PDF
     const pdf = new jsPDF({
       orientation,
-      unit: 'mm',
-      format: 'a4',
+      unit: "mm",
+      format: "a4",
     });
 
     // Add title if provided
     if (title) {
       pdf.setFontSize(16);
-      pdf.text(title, imgWidth / 2, 15, { align: 'center' });
+      pdf.text(title, imgWidth / 2, 15, { align: "center" });
     }
 
     // Add image to PDF
-    const imgData = canvas.toDataURL('image/png', quality);
-    pdf.addImage(imgData, 'PNG', 10, title ? 25 : 10, imgWidth - 20, imgHeight);
+    const imgData = canvas.toDataURL("image/png", quality);
+    pdf.addImage(imgData, "PNG", 10, title ? 25 : 10, imgWidth - 20, imgHeight);
 
     // Save PDF
     pdf.save(`${filename}.pdf`);
   } catch (error) {
-    console.error('Error exporting to PDF:', error);
+    console.error("Error exporting to PDF:", error);
     throw error;
   }
 }
@@ -129,35 +127,32 @@ export async function exportDashboardReport(
   filename: string,
   options: {
     reportTitle?: string;
-    orientation?: 'portrait' | 'landscape';
+    orientation?: "portrait" | "landscape";
     quality?: number;
   } = {}
 ): Promise<void> {
   try {
-    const { reportTitle, orientation = 'landscape', quality = 0.95 } = options;
+    const { reportTitle, orientation = "landscape", quality = 0.95 } = options;
 
     const pdf = new jsPDF({
       orientation,
-      unit: 'mm',
-      format: 'a4',
+      unit: "mm",
+      format: "a4",
     });
 
-    const pageWidth = orientation === 'portrait' ? 210 : 297;
-    const pageHeight = orientation === 'portrait' ? 297 : 210;
+    const pageWidth = orientation === "portrait" ? 210 : 297;
+    const pageHeight = orientation === "portrait" ? 297 : 210;
     let isFirstPage = true;
 
     // Add cover page if report title provided
     if (reportTitle) {
       pdf.setFontSize(24);
-      pdf.text(reportTitle, pageWidth / 2, 50, { align: 'center' });
+      pdf.text(reportTitle, pageWidth / 2, 50, { align: "center" });
 
       pdf.setFontSize(12);
-      pdf.text(
-        `Generated on ${new Date().toLocaleString()}`,
-        pageWidth / 2,
-        60,
-        { align: 'center' }
-      );
+      pdf.text(`Generated on ${new Date().toLocaleString()}`, pageWidth / 2, 60, {
+        align: "center",
+      });
 
       isFirstPage = false;
     }
@@ -173,7 +168,7 @@ export async function exportDashboardReport(
       isFirstPage = false;
 
       // Get the element
-      const element = typeof id === 'string' ? document.getElementById(id) : id;
+      const element = typeof id === "string" ? document.getElementById(id) : id;
       if (!element) {
         console.warn(`Element ${id} not found, skipping...`);
         continue;
@@ -182,7 +177,7 @@ export async function exportDashboardReport(
       // Capture element as canvas
       const canvas = await html2canvas(element, {
         scale: 2,
-        backgroundColor: '#ffffff',
+        backgroundColor: "#ffffff",
         logging: false,
         useCORS: true,
       });
@@ -192,7 +187,7 @@ export async function exportDashboardReport(
       // Add title if provided
       if (title) {
         pdf.setFontSize(16);
-        pdf.text(title, pageWidth / 2, yOffset, { align: 'center' });
+        pdf.text(title, pageWidth / 2, yOffset, { align: "center" });
         yOffset += 8;
       }
 
@@ -200,7 +195,7 @@ export async function exportDashboardReport(
       if (description) {
         pdf.setFontSize(10);
         pdf.setTextColor(100);
-        pdf.text(description, pageWidth / 2, yOffset, { align: 'center' });
+        pdf.text(description, pageWidth / 2, yOffset, { align: "center" });
         pdf.setTextColor(0);
         yOffset += 8;
       }
@@ -222,8 +217,8 @@ export async function exportDashboardReport(
       const xOffset = (pageWidth - imgWidth) / 2;
 
       // Add image to PDF
-      const imgData = canvas.toDataURL('image/png', quality);
-      pdf.addImage(imgData, 'PNG', xOffset, yOffset, imgWidth, imgHeight);
+      const imgData = canvas.toDataURL("image/png", quality);
+      pdf.addImage(imgData, "PNG", xOffset, yOffset, imgWidth, imgHeight);
 
       // Add page number
       pdf.setFontSize(8);
@@ -232,7 +227,7 @@ export async function exportDashboardReport(
         `Page ${pdf.getNumberOfPages() - (reportTitle ? 1 : 0)} of ${elements.length}`,
         pageWidth - 15,
         pageHeight - 5,
-        { align: 'right' }
+        { align: "right" }
       );
       pdf.setTextColor(0);
     }
@@ -240,7 +235,7 @@ export async function exportDashboardReport(
     // Save PDF
     pdf.save(`${filename}.pdf`);
   } catch (error) {
-    console.error('Error exporting dashboard report:', error);
+    console.error("Error exporting dashboard report:", error);
     throw error;
   }
 }
@@ -257,16 +252,16 @@ export function exportTableToCSV<T extends Record<string, any>>(
   headerMap?: Record<keyof T, string>
 ): void {
   if (!data || data.length === 0) {
-    console.warn('No data to export');
+    console.warn("No data to export");
     return;
   }
 
   // Transform headers if mapping provided
   let processedData = data;
   if (headerMap) {
-    processedData = data.map(row => {
+    processedData = data.map((row) => {
       const transformedRow: Record<string, any> = {};
-      Object.keys(row).forEach(key => {
+      Object.keys(row).forEach((key) => {
         const newKey = headerMap[key as keyof T] || key;
         transformedRow[newKey] = row[key];
       });

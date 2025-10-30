@@ -23,7 +23,7 @@ import {
   CheckCircle,
   Info,
   Database,
-  ArrowRight
+  ArrowRight,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -47,55 +47,55 @@ const DATA_TYPE_CONFIG = {
     label: "Economic",
     color: "text-green-500",
     bgColor: "bg-green-500/10",
-    borderColor: "border-green-500/20"
+    borderColor: "border-green-500/20",
   },
   intelligence: {
     icon: Eye,
     label: "Intelligence",
     color: "text-blue-500",
     bgColor: "bg-blue-500/10",
-    borderColor: "border-blue-500/20"
+    borderColor: "border-blue-500/20",
   },
   research: {
     icon: Beaker,
     label: "Research",
     color: "text-purple-500",
     bgColor: "bg-purple-500/10",
-    borderColor: "border-purple-500/20"
+    borderColor: "border-purple-500/20",
   },
   cultural: {
     icon: Palette,
     label: "Cultural",
     color: "text-pink-500",
     bgColor: "bg-pink-500/10",
-    borderColor: "border-pink-500/20"
+    borderColor: "border-pink-500/20",
   },
   policy: {
     icon: FileText,
     label: "Policy",
     color: "text-amber-500",
     bgColor: "bg-amber-500/10",
-    borderColor: "border-amber-500/20"
-  }
+    borderColor: "border-amber-500/20",
+  },
 } as const;
 
 export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModalProps) {
-  const [activeTab, setActiveTab] = useState<SharedDataType | 'all' | 'overview'>('overview');
+  const [activeTab, setActiveTab] = useState<SharedDataType | "all" | "overview">("overview");
   const [mounted, setMounted] = useState(false);
   const [isEditingOverview, setIsEditingOverview] = useState(false);
   const [overviewData, setOverviewData] = useState({
-    description: '',
+    description: "",
     priorities: [] as string[],
     goals: [] as string[],
-    achievements: [] as string[]
+    achievements: [] as string[],
   });
 
   React.useEffect(() => {
     setMounted(true);
     // Prevent body scroll when modal is open
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, []);
 
@@ -110,16 +110,20 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
   const currentUserCountryId = embassy?.guestCountryId; // Simplified - in production get from auth
 
   // Check if current user has access to shared data
-  const hasDataAccess = embassy && (
-    currentUserCountryId === embassy.hostCountryId ||
-    currentUserCountryId === embassy.guestCountryId
-  );
+  const hasDataAccess =
+    embassy &&
+    (currentUserCountryId === embassy.hostCountryId ||
+      currentUserCountryId === embassy.guestCountryId);
 
   // Fetch shared data (only when not on overview tab AND user has access)
-  const shouldFetchData = activeTab !== 'overview' && hasDataAccess;
-  const dataType = activeTab === 'all' || activeTab === 'overview' ? undefined : activeTab;
+  const shouldFetchData = activeTab !== "overview" && hasDataAccess;
+  const dataType = activeTab === "all" || activeTab === "overview" ? undefined : activeTab;
 
-  const { data: sharedData, isLoading: isLoadingData, refetch } = api.diplomatic.getSharedData.useQuery(
+  const {
+    data: sharedData,
+    isLoading: isLoadingData,
+    refetch,
+  } = api.diplomatic.getSharedData.useQuery(
     { embassyId, dataType },
     { enabled: !!embassyId && shouldFetchData, refetchInterval: 30000 }
   );
@@ -133,12 +137,12 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
   // Mutation for updating embassy profile
   const updateProfileMutation = api.diplomatic.updateEmbassyProfile.useMutation({
     onSuccess: () => {
-      toast.success('Embassy profile updated successfully');
+      toast.success("Embassy profile updated successfully");
       setIsEditingOverview(false);
     },
     onError: (error) => {
       toast.error(`Failed to update profile: ${error.message}`);
-    }
+    },
   });
 
   const isLoading = isLoadingEmbassy || isLoadingData;
@@ -148,18 +152,18 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
     if (embassy && !isEditingOverview) {
       try {
         setOverviewData({
-          description: embassy.description || '',
+          description: embassy.description || "",
           priorities: embassy.strategicPriorities ? JSON.parse(embassy.strategicPriorities) : [],
           goals: embassy.partnershipGoals ? JSON.parse(embassy.partnershipGoals) : [],
-          achievements: embassy.keyAchievements ? JSON.parse(embassy.keyAchievements) : []
+          achievements: embassy.keyAchievements ? JSON.parse(embassy.keyAchievements) : [],
         });
       } catch (error) {
-        console.error('Failed to parse embassy profile data:', error);
+        console.error("Failed to parse embassy profile data:", error);
         setOverviewData({
-          description: embassy.description || '',
+          description: embassy.description || "",
           priorities: [],
           goals: [],
-          achievements: []
+          achievements: [],
         });
       }
     }
@@ -168,10 +172,10 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
   // Handle ESC key to close
   React.useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
   }, [onClose]);
 
   if (!mounted) return null;
@@ -191,55 +195,51 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
           exit={{ scale: 0.95, opacity: 0 }}
           transition={{ type: "spring", duration: 0.3 }}
           className={cn(
-            "relative w-full max-w-6xl max-h-[90vh] overflow-hidden",
-            "bg-background/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl",
+            "relative max-h-[90vh] w-full max-w-6xl overflow-hidden",
+            "bg-background/95 border-border/50 rounded-2xl border shadow-2xl backdrop-blur-xl",
             "glass-hierarchy-modal"
           )}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-xl border-b border-border/50 px-6 py-4">
+          <div className="bg-background/95 border-border/50 sticky top-0 z-10 border-b px-6 py-4 backdrop-blur-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 p-3">
                   <Share2 className="h-6 w-6 text-blue-500" />
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold">Embassy Partnership</h2>
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    {embassy?.hostCountryId || 'Loading...'} ⟷ {embassy?.guestCountryId || 'Loading...'}
+                  <p className="text-muted-foreground flex items-center gap-2 text-sm">
+                    {embassy?.hostCountryId || "Loading..."} ⟷{" "}
+                    {embassy?.guestCountryId || "Loading..."}
                     {hasDataAccess ? (
                       <Badge variant="default" className="ml-2">
-                        <Unlock className="h-3 w-3 mr-1" />
+                        <Unlock className="mr-1 h-3 w-3" />
                         Authorized
                       </Badge>
                     ) : (
                       <Badge variant="secondary" className="ml-2">
-                        <Lock className="h-3 w-3 mr-1" />
+                        <Lock className="mr-1 h-3 w-3" />
                         Public View
                       </Badge>
                     )}
                   </p>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="rounded-full"
-              >
+              <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
                 <X className="h-5 w-5" />
               </Button>
             </div>
           </div>
 
           {/* Content */}
-          <div className="overflow-y-auto max-h-[calc(90vh-120px)] px-6 py-6">
+          <div className="max-h-[calc(90vh-120px)] overflow-y-auto px-6 py-6">
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="text-center space-y-3">
-                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
-                  <p className="text-sm text-muted-foreground">Loading shared data...</p>
+                <div className="space-y-3 text-center">
+                  <div className="border-primary mx-auto h-8 w-8 animate-spin rounded-full border-4 border-t-transparent" />
+                  <p className="text-muted-foreground text-sm">Loading shared data...</p>
                 </div>
               </div>
             ) : (
@@ -254,28 +254,28 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                         <div className="space-y-1">
-                          <div className="text-xs text-muted-foreground">Level</div>
+                          <div className="text-muted-foreground text-xs">Level</div>
                           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                             {embassy.level || 1}
                           </div>
                         </div>
                         <div className="space-y-1">
-                          <div className="text-xs text-muted-foreground">Influence</div>
+                          <div className="text-muted-foreground text-xs">Influence</div>
                           <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                             {embassy.influence?.toFixed(0) || 0}
                           </div>
                         </div>
                         <div className="space-y-1">
-                          <div className="text-xs text-muted-foreground">Staff</div>
+                          <div className="text-muted-foreground text-xs">Staff</div>
                           <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                             {embassy.staffCount || 1}
                           </div>
                         </div>
                         <div className="space-y-1">
-                          <div className="text-xs text-muted-foreground">Status</div>
-                          <Badge variant={embassy.status === 'ACTIVE' ? 'default' : 'secondary'}>
+                          <div className="text-muted-foreground text-xs">Status</div>
+                          <Badge variant={embassy.status === "ACTIVE" ? "default" : "secondary"}>
                             {embassy.status}
                           </Badge>
                         </div>
@@ -285,11 +285,17 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                 )}
 
                 {/* Tabs for data types */}
-                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="w-full">
-                  <TabsList className={cn(
-                    "glass-hierarchy-child",
-                    hasDataAccess ? "grid w-full grid-cols-7" : "flex w-full justify-center"
-                  )}>
+                <Tabs
+                  value={activeTab}
+                  onValueChange={(v) => setActiveTab(v as typeof activeTab)}
+                  className="w-full"
+                >
+                  <TabsList
+                    className={cn(
+                      "glass-hierarchy-child",
+                      hasDataAccess ? "grid w-full grid-cols-7" : "flex w-full justify-center"
+                    )}
+                  >
                     <TabsTrigger value="overview">Overview</TabsTrigger>
                     {hasDataAccess && (
                       <>
@@ -306,11 +312,11 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                   <div className="mt-6">
                     {/* Overview Tab */}
                     <TabsContent value="overview" className="space-y-6">
-                      <Card className="glass-hierarchy-child border-primary/20 bg-gradient-to-br from-primary/5 to-blue-500/5">
+                      <Card className="glass-hierarchy-child border-primary/20 from-primary/5 bg-gradient-to-br to-blue-500/5">
                         <CardHeader>
                           <div className="flex items-center justify-between">
                             <CardTitle className="flex items-center gap-2">
-                              <Building2 className="h-5 w-5 text-primary" />
+                              <Building2 className="text-primary h-5 w-5" />
                               Embassy Profile
                             </CardTitle>
                             {isOwner && (
@@ -333,9 +339,11 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                                       updateProfileMutation.mutate({
                                         embassyId,
                                         description: overviewData.description,
-                                        strategicPriorities: JSON.stringify(overviewData.priorities),
+                                        strategicPriorities: JSON.stringify(
+                                          overviewData.priorities
+                                        ),
                                         partnershipGoals: JSON.stringify(overviewData.goals),
-                                        keyAchievements: JSON.stringify(overviewData.achievements)
+                                        keyAchievements: JSON.stringify(overviewData.achievements),
                                       });
                                     } else {
                                       setIsEditingOverview(true);
@@ -343,7 +351,11 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                                   }}
                                   disabled={updateProfileMutation.isPending}
                                 >
-                                  {updateProfileMutation.isPending ? 'Saving...' : isEditingOverview ? 'Save' : 'Edit'}
+                                  {updateProfileMutation.isPending
+                                    ? "Saving..."
+                                    : isEditingOverview
+                                      ? "Save"
+                                      : "Edit"}
                                 </Button>
                               </div>
                             )}
@@ -352,27 +364,33 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                         <CardContent className="space-y-6">
                           {/* Description */}
                           <div>
-                            <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                            <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold">
                               <FileText className="h-4 w-4" />
                               Description
                             </h4>
                             {isEditingOverview ? (
                               <textarea
                                 value={overviewData.description}
-                                onChange={(e) => setOverviewData(prev => ({ ...prev, description: e.target.value }))}
+                                onChange={(e) =>
+                                  setOverviewData((prev) => ({
+                                    ...prev,
+                                    description: e.target.value,
+                                  }))
+                                }
                                 placeholder="Describe the nature and purpose of this diplomatic relationship..."
-                                className="w-full p-3 bg-background/50 border border-border rounded-lg resize-none min-h-[100px]"
+                                className="bg-background/50 border-border min-h-[100px] w-full resize-none rounded-lg border p-3"
                               />
                             ) : (
-                              <p className="text-sm text-muted-foreground leading-relaxed">
-                                {overviewData.description || 'No description set. Click Edit to add one.'}
+                              <p className="text-muted-foreground text-sm leading-relaxed">
+                                {overviewData.description ||
+                                  "No description set. Click Edit to add one."}
                               </p>
                             )}
                           </div>
 
                           {/* Priorities */}
                           <div>
-                            <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                            <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold">
                               <Award className="h-4 w-4" />
                               Strategic Priorities (max 3)
                             </h4>
@@ -380,20 +398,28 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                               <MultiSelect
                                 options={diplomaticOptions?.strategicPriorities ?? []}
                                 value={overviewData.priorities}
-                                onChange={(value) => setOverviewData(prev => ({ ...prev, priorities: value }))}
+                                onChange={(value) =>
+                                  setOverviewData((prev) => ({ ...prev, priorities: value }))
+                                }
                                 placeholder="Select up to 3 strategic priorities..."
                                 maxSelections={3}
                               />
                             ) : (
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                              <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
                                 {overviewData.priorities.length > 0 ? (
                                   overviewData.priorities.map((priority, idx) => (
-                                    <Badge key={idx} variant="secondary" className="justify-center py-2">
+                                    <Badge
+                                      key={idx}
+                                      variant="secondary"
+                                      className="justify-center py-2"
+                                    >
                                       {priority}
                                     </Badge>
                                   ))
                                 ) : (
-                                  <p className="text-sm text-muted-foreground col-span-3">No priorities set. Click Edit to add priorities.</p>
+                                  <p className="text-muted-foreground col-span-3 text-sm">
+                                    No priorities set. Click Edit to add priorities.
+                                  </p>
                                 )}
                               </div>
                             )}
@@ -401,7 +427,7 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
 
                           {/* Goals */}
                           <div>
-                            <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                            <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold">
                               <CheckCircle className="h-4 w-4" />
                               Partnership Goals (max 3)
                             </h4>
@@ -409,7 +435,9 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                               <MultiSelect
                                 options={diplomaticOptions?.partnershipGoals ?? []}
                                 value={overviewData.goals}
-                                onChange={(value) => setOverviewData(prev => ({ ...prev, goals: value }))}
+                                onChange={(value) =>
+                                  setOverviewData((prev) => ({ ...prev, goals: value }))
+                                }
                                 placeholder="Select up to 3 partnership goals..."
                                 maxSelections={3}
                               />
@@ -418,12 +446,14 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                                 {overviewData.goals.length > 0 ? (
                                   overviewData.goals.map((goal, idx) => (
                                     <li key={idx} className="flex items-start gap-2 text-sm">
-                                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
+                                      <CheckCircle className="mt-0.5 h-4 w-4 text-green-500" />
                                       <span>{goal}</span>
                                     </li>
                                   ))
                                 ) : (
-                                  <p className="text-sm text-muted-foreground">No goals set. Click Edit to add goals.</p>
+                                  <p className="text-muted-foreground text-sm">
+                                    No goals set. Click Edit to add goals.
+                                  </p>
                                 )}
                               </ul>
                             )}
@@ -431,7 +461,7 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
 
                           {/* Achievements */}
                           <div>
-                            <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                            <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold">
                               <Award className="h-4 w-4" />
                               Key Achievements (max 5)
                             </h4>
@@ -439,7 +469,9 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                               <MultiSelect
                                 options={diplomaticOptions?.keyAchievements ?? []}
                                 value={overviewData.achievements}
-                                onChange={(value) => setOverviewData(prev => ({ ...prev, achievements: value }))}
+                                onChange={(value) =>
+                                  setOverviewData((prev) => ({ ...prev, achievements: value }))
+                                }
                                 placeholder="Select up to 5 key achievements..."
                                 maxSelections={5}
                               />
@@ -448,39 +480,47 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                                 {overviewData.achievements.length > 0 ? (
                                   overviewData.achievements.map((achievement, idx) => (
                                     <li key={idx} className="flex items-start gap-2 text-sm">
-                                      <Award className="h-4 w-4 text-amber-500 mt-0.5" />
+                                      <Award className="mt-0.5 h-4 w-4 text-amber-500" />
                                       <span>{achievement}</span>
                                     </li>
                                   ))
                                 ) : (
-                                  <p className="text-sm text-muted-foreground">No achievements set. Click Edit to add achievements.</p>
+                                  <p className="text-muted-foreground text-sm">
+                                    No achievements set. Click Edit to add achievements.
+                                  </p>
                                 )}
                               </ul>
                             )}
                           </div>
 
                           {/* Quick Stats */}
-                          <div className="pt-4 border-t">
-                            <h4 className="text-sm font-semibold mb-3">At a Glance</h4>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                              <div className="text-center p-3 bg-background/50 rounded-lg">
-                                <Calendar className="h-4 w-4 mx-auto mb-1 text-blue-500" />
-                                <div className="text-xs text-muted-foreground">Established</div>
-                                <div className="font-semibold">{embassy?.establishedAt ? new Date(embassy.establishedAt).getFullYear() : 'N/A'}</div>
+                          <div className="border-t pt-4">
+                            <h4 className="mb-3 text-sm font-semibold">At a Glance</h4>
+                            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                              <div className="bg-background/50 rounded-lg p-3 text-center">
+                                <Calendar className="mx-auto mb-1 h-4 w-4 text-blue-500" />
+                                <div className="text-muted-foreground text-xs">Established</div>
+                                <div className="font-semibold">
+                                  {embassy?.establishedAt
+                                    ? new Date(embassy.establishedAt).getFullYear()
+                                    : "N/A"}
+                                </div>
                               </div>
-                              <div className="text-center p-3 bg-background/50 rounded-lg">
-                                <Users className="h-4 w-4 mx-auto mb-1 text-green-500" />
-                                <div className="text-xs text-muted-foreground">Staff</div>
+                              <div className="bg-background/50 rounded-lg p-3 text-center">
+                                <Users className="mx-auto mb-1 h-4 w-4 text-green-500" />
+                                <div className="text-muted-foreground text-xs">Staff</div>
                                 <div className="font-semibold">{embassy?.staffCount || 0}</div>
                               </div>
-                              <div className="text-center p-3 bg-background/50 rounded-lg">
-                                <BarChart3 className="h-4 w-4 mx-auto mb-1 text-purple-500" />
-                                <div className="text-xs text-muted-foreground">Influence</div>
-                                <div className="font-semibold">{embassy?.influence?.toFixed(0) || 0}</div>
+                              <div className="bg-background/50 rounded-lg p-3 text-center">
+                                <BarChart3 className="mx-auto mb-1 h-4 w-4 text-purple-500" />
+                                <div className="text-muted-foreground text-xs">Influence</div>
+                                <div className="font-semibold">
+                                  {embassy?.influence?.toFixed(0) || 0}
+                                </div>
                               </div>
-                              <div className="text-center p-3 bg-background/50 rounded-lg">
-                                <Building2 className="h-4 w-4 mx-auto mb-1 text-amber-500" />
-                                <div className="text-xs text-muted-foreground">Level</div>
+                              <div className="bg-background/50 rounded-lg p-3 text-center">
+                                <Building2 className="mx-auto mb-1 h-4 w-4 text-amber-500" />
+                                <div className="text-muted-foreground text-xs">Level</div>
                                 <div className="font-semibold">{embassy?.level || 1}</div>
                               </div>
                             </div>
@@ -490,65 +530,73 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
 
                       {/* Shared Data Access Cards */}
                       {hasDataAccess && embassy && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                           {/* Host Country Data Access */}
-                          <Card className="glass-hierarchy-child border-blue-500/20 hover:border-blue-500/40 transition-colors">
+                          <Card className="glass-hierarchy-child border-blue-500/20 transition-colors hover:border-blue-500/40">
                             <CardHeader className="pb-3">
-                              <CardTitle className="text-base flex items-center gap-2">
+                              <CardTitle className="flex items-center gap-2 text-base">
                                 <Building2 className="h-4 w-4 text-blue-500" />
-                                {embassy.hostCountryId || 'Host Country'}
+                                {embassy.hostCountryId || "Host Country"}
                               </CardTitle>
                               <CardDescription className="text-xs">
                                 Host country shared data
                               </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-3">
-                              <div className="text-sm text-muted-foreground">
-                                Access shared economic data, intelligence reports, research findings, cultural programs, and policy documents from the host nation.
+                              <div className="text-muted-foreground text-sm">
+                                Access shared economic data, intelligence reports, research
+                                findings, cultural programs, and policy documents from the host
+                                nation.
                               </div>
                               <Button
-                                onClick={() => setActiveTab('all')}
+                                onClick={() => setActiveTab("all")}
                                 className="w-full"
                                 variant="outline"
                               >
-                                <Database className="h-4 w-4 mr-2" />
+                                <Database className="mr-2 h-4 w-4" />
                                 View Shared Data
-                                <ArrowRight className="h-4 w-4 ml-auto" />
+                                <ArrowRight className="ml-auto h-4 w-4" />
                               </Button>
                               <div className="flex items-center gap-2 text-xs">
                                 <Lock className="h-3 w-3 text-green-500" />
-                                <span className="text-muted-foreground">Secure diplomatic channel</span>
+                                <span className="text-muted-foreground">
+                                  Secure diplomatic channel
+                                </span>
                               </div>
                             </CardContent>
                           </Card>
 
                           {/* Guest Country Data Access */}
-                          <Card className="glass-hierarchy-child border-purple-500/20 hover:border-purple-500/40 transition-colors">
+                          <Card className="glass-hierarchy-child border-purple-500/20 transition-colors hover:border-purple-500/40">
                             <CardHeader className="pb-3">
-                              <CardTitle className="text-base flex items-center gap-2">
+                              <CardTitle className="flex items-center gap-2 text-base">
                                 <Building2 className="h-4 w-4 text-purple-500" />
-                                {embassy.guestCountryId || 'Guest Country'}
+                                {embassy.guestCountryId || "Guest Country"}
                               </CardTitle>
                               <CardDescription className="text-xs">
                                 Guest country shared data
                               </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-3">
-                              <div className="text-sm text-muted-foreground">
-                                Access shared economic data, intelligence reports, research findings, cultural programs, and policy documents from the guest nation.
+                              <div className="text-muted-foreground text-sm">
+                                Access shared economic data, intelligence reports, research
+                                findings, cultural programs, and policy documents from the guest
+                                nation.
                               </div>
                               <Button
-                                onClick={() => setActiveTab('all')}
+                                onClick={() => setActiveTab("all")}
                                 className="w-full"
                                 variant="outline"
                               >
-                                <Database className="h-4 w-4 mr-2" />
+                                <Database className="mr-2 h-4 w-4" />
                                 View Shared Data
-                                <ArrowRight className="h-4 w-4 ml-auto" />
+                                <ArrowRight className="ml-auto h-4 w-4" />
                               </Button>
                               <div className="flex items-center gap-2 text-xs">
                                 <Lock className="h-3 w-3 text-green-500" />
-                                <span className="text-muted-foreground">Secure diplomatic channel</span>
+                                <span className="text-muted-foreground">
+                                  Secure diplomatic channel
+                                </span>
                               </div>
                             </CardContent>
                           </Card>
@@ -559,11 +607,13 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                       {!hasDataAccess && (
                         <Card className="glass-hierarchy-child border-amber-500/20 bg-amber-500/5">
                           <CardContent className="py-8">
-                            <div className="text-center space-y-3">
-                              <Lock className="h-12 w-12 mx-auto text-amber-500" />
+                            <div className="space-y-3 text-center">
+                              <Lock className="mx-auto h-12 w-12 text-amber-500" />
                               <h3 className="text-lg font-semibold">Restricted Access</h3>
-                              <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                                Shared data is only accessible to the host and guest countries involved in this diplomatic relationship. Public users can view the embassy overview above.
+                              <p className="text-muted-foreground mx-auto max-w-md text-sm">
+                                Shared data is only accessible to the host and guest countries
+                                involved in this diplomatic relationship. Public users can view the
+                                embassy overview above.
                               </p>
                             </div>
                           </CardContent>
@@ -603,13 +653,17 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Info className="h-4 w-4 text-amber-500" />
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-muted-foreground text-sm">
                             Manage data sharing settings
                           </span>
                         </div>
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm" onClick={() => toast.info('Share new data functionality coming soon')}>
-                            <Share2 className="h-4 w-4 mr-2" />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => toast.info("Share new data functionality coming soon")}
+                          >
+                            <Share2 className="mr-2 h-4 w-4" />
                             Share New Data
                           </Button>
                           <Button variant="outline" size="sm" onClick={() => refetch()}>
@@ -635,22 +689,29 @@ export function SharedDataModal({ embassyId, onClose, isOwner }: SharedDataModal
 function renderAllData(data: SharedDataCollection | undefined, isOwner: boolean) {
   if (!data) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+      <div className="text-muted-foreground py-8 text-center">
+        <AlertCircle className="mx-auto mb-4 h-12 w-12 opacity-50" />
         <p>No shared data available yet</p>
         {isOwner && (
-          <p className="text-xs mt-2">Share data with your embassy partner to strengthen cooperation</p>
+          <p className="mt-2 text-xs">
+            Share data with your embassy partner to strengthen cooperation
+          </p>
         )}
       </div>
     );
   }
 
-  const hasData = data.economic || data.intelligence?.length || data.research?.length || data.cultural || data.policy?.length;
+  const hasData =
+    data.economic ||
+    data.intelligence?.length ||
+    data.research?.length ||
+    data.cultural ||
+    data.policy?.length;
 
   if (!hasData) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+      <div className="text-muted-foreground py-8 text-center">
+        <AlertCircle className="mx-auto mb-4 h-12 w-12 opacity-50" />
         <p>No shared data available yet</p>
       </div>
     );
@@ -660,9 +721,7 @@ function renderAllData(data: SharedDataCollection | undefined, isOwner: boolean)
     <div className="space-y-4">
       {data.economic && renderEconomicData(data.economic)}
       {data.intelligence && data.intelligence.length > 0 && (
-        <div className="space-y-4">
-          {renderIntelligenceData(data.intelligence, isOwner)}
-        </div>
+        <div className="space-y-4">{renderIntelligenceData(data.intelligence, isOwner)}</div>
       )}
       {data.research && data.research.length > 0 && renderResearchData(data.research)}
       {data.cultural && renderCulturalData(data.cultural)}
@@ -684,12 +743,23 @@ function renderEconomicData(data: any) {
         <CardDescription>Trade volume, joint ventures, and economic benefits</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <MetricCard label="Trade Volume" value={`$${(data.tradeVolume || 0).toLocaleString()}M`} trend={data.tradeGrowth} />
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+          <MetricCard
+            label="Trade Volume"
+            value={`$${(data.tradeVolume || 0).toLocaleString()}M`}
+            trend={data.tradeGrowth}
+          />
           <MetricCard label="Joint Ventures" value={data.jointVentures || 0} />
-          <MetricCard label="Investment" value={`$${(data.investmentValue || 0).toLocaleString()}M`} />
+          <MetricCard
+            label="Investment"
+            value={`$${(data.investmentValue || 0).toLocaleString()}M`}
+          />
           <MetricCard label="Tariffs Reduced" value={`${data.tariffsReduced || 0}%`} positive />
-          <MetricCard label="Economic Benefit" value={`+${(data.economicBenefit || 0).toFixed(1)}%`} positive />
+          <MetricCard
+            label="Economic Benefit"
+            value={`+${(data.economicBenefit || 0).toFixed(1)}%`}
+            positive
+          />
         </div>
       </CardContent>
     </Card>
@@ -712,7 +782,7 @@ function renderIntelligenceData(data: any[] | undefined, isOwner: boolean) {
                 </CardTitle>
                 <CardDescription>{report.summary}</CardDescription>
               </div>
-              <Badge variant={report.classification === 'PUBLIC' ? 'default' : 'secondary'}>
+              <Badge variant={report.classification === "PUBLIC" ? "default" : "secondary"}>
                 {report.classification}
               </Badge>
             </div>
@@ -722,18 +792,16 @@ function renderIntelligenceData(data: any[] | undefined, isOwner: boolean) {
               <div className="text-sm font-semibold">Key Findings:</div>
               <ul className="space-y-1">
                 {report.keyFindings?.map((finding: string, i: number) => (
-                  <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                  <li key={i} className="text-muted-foreground flex items-start gap-2 text-sm">
+                    <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
                     <span>{finding}</span>
                   </li>
                 ))}
               </ul>
             </div>
-            <div className="flex items-center justify-between pt-4 border-t">
-              <div className="text-xs text-muted-foreground">
-                Confidence: {report.confidence}%
-              </div>
-              <div className="text-xs text-muted-foreground">
+            <div className="flex items-center justify-between border-t pt-4">
+              <div className="text-muted-foreground text-xs">Confidence: {report.confidence}%</div>
+              <div className="text-muted-foreground text-xs">
                 Updated: {new Date(report.lastUpdated).toLocaleDateString()}
               </div>
             </div>
@@ -756,9 +824,7 @@ function renderResearchData(data: any[] | undefined) {
               <Beaker className="h-5 w-5 text-purple-500" />
               {project.researchArea}
             </CardTitle>
-            <CardDescription>
-              {project.collaborators?.length || 0} collaborator(s)
-            </CardDescription>
+            <CardDescription>{project.collaborators?.length || 0} collaborator(s)</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -793,13 +859,13 @@ function renderCulturalData(data: any) {
         <CardDescription>Programs, events, and cultural impact</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           <MetricCard label="Exchange Programs" value={data.exchangePrograms || 0} />
           <MetricCard label="Cultural Events" value={data.culturalEvents || 0} />
           <MetricCard label="Artists Exchanged" value={data.artistsExchanged || 0} />
           <MetricCard label="Students Exchanged" value={data.studentsExchanged || 0} />
         </div>
-        <div className="space-y-2 pt-4 border-t">
+        <div className="space-y-2 border-t pt-4">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Cultural Impact</span>
             <span className="font-semibold">{data.culturalImpactScore || 0}%</span>
@@ -834,7 +900,7 @@ function renderPolicyData(data: any[] | undefined) {
                 </CardTitle>
                 <CardDescription>{policy.agreementType} agreement</CardDescription>
               </div>
-              <Badge variant={policy.status === 'ratified' ? 'default' : 'secondary'}>
+              <Badge variant={policy.status === "ratified" ? "default" : "secondary"}>
                 {policy.status}
               </Badge>
             </div>
@@ -845,20 +911,18 @@ function renderPolicyData(data: any[] | undefined) {
                 <div className="text-sm font-semibold">Key Provisions:</div>
                 <ul className="space-y-1">
                   {(policy.keyProvisions as string[]).map((provision: string, i: number) => (
-                    <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                    <li key={i} className="text-muted-foreground flex items-start gap-2 text-sm">
+                      <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
                       <span>{provision}</span>
                     </li>
                   ))}
                 </ul>
               </div>
             )}
-            <div className="flex items-center justify-between pt-4 border-t">
-              <div className="text-xs text-muted-foreground">
-                Compliance: {policy.compliance}%
-              </div>
+            <div className="flex items-center justify-between border-t pt-4">
+              <div className="text-muted-foreground text-xs">Compliance: {policy.compliance}%</div>
               {policy.effectiveDate && (
-                <div className="text-xs text-muted-foreground">
+                <div className="text-muted-foreground text-xs">
                   Effective: {new Date(policy.effectiveDate).toLocaleDateString()}
                 </div>
               )}
@@ -875,27 +939,36 @@ function EmptyState({ type }: { type: string }) {
   const Icon = config?.icon || AlertCircle;
 
   return (
-    <div className="text-center py-8 text-muted-foreground">
-      <Icon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+    <div className="text-muted-foreground py-8 text-center">
+      <Icon className="mx-auto mb-4 h-12 w-12 opacity-50" />
       <p>No {config?.label || type} data shared yet</p>
     </div>
   );
 }
 
-function MetricCard({ label, value, trend, positive }: { label: string; value: string | number; trend?: number; positive?: boolean }) {
+function MetricCard({
+  label,
+  value,
+  trend,
+  positive,
+}: {
+  label: string;
+  value: string | number;
+  trend?: number;
+  positive?: boolean;
+}) {
   return (
-    <div className="bg-background/50 border border-border/50 rounded-lg p-3 space-y-1">
-      <div className="text-xs text-muted-foreground">{label}</div>
+    <div className="bg-background/50 border-border/50 space-y-1 rounded-lg border p-3">
+      <div className="text-muted-foreground text-xs">{label}</div>
       <div className="flex items-baseline gap-2">
         <div className="text-xl font-bold">{value}</div>
         {trend !== undefined && (
           <span className={cn("text-xs", trend > 0 ? "text-green-500" : "text-red-500")}>
-            {trend > 0 ? '+' : ''}{trend}%
+            {trend > 0 ? "+" : ""}
+            {trend}%
           </span>
         )}
-        {positive && (
-          <CheckCircle className="h-4 w-4 text-green-500" />
-        )}
+        {positive && <CheckCircle className="h-4 w-4 text-green-500" />}
       </div>
     </div>
   );

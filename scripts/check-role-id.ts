@@ -8,7 +8,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const ROLE_ID = 'cmgn9cbl600244kyxt8z60ola';
+const ROLE_ID = "cmgn9cbl600244kyxt8z60ola";
 
 async function checkRoleId() {
   try {
@@ -19,7 +19,7 @@ async function checkRoleId() {
 
     // Check what role this ID corresponds to
     const role = await prisma.role.findUnique({
-      where: { id: ROLE_ID }
+      where: { id: ROLE_ID },
     });
 
     if (role) {
@@ -39,7 +39,7 @@ async function checkRoleId() {
     // Check all roles to see what's available
     console.log("📊 All available roles:");
     const allRoles = await prisma.role.findMany({
-      orderBy: { level: 'asc' }
+      orderBy: { level: "asc" },
     });
 
     allRoles.forEach((role, index) => {
@@ -51,21 +51,20 @@ async function checkRoleId() {
     // Check the current user's role
     console.log("🔍 Current user's role:");
     const user = await prisma.user.findUnique({
-      where: { clerkUserId: 'user_2zqmDdZvhpNQWGLdAIj2YwH8MLo' },
-      include: { role: true }
+      where: { clerkUserId: "user_2zqmDdZvhpNQWGLdAIj2YwH8MLo" },
+      include: { role: true },
     });
 
     if (user) {
       console.log(`   User ID: ${user.id}`);
       console.log(`   Role ID: ${user.roleId}`);
-      console.log(`   Role Name: ${user.role?.name || 'none'}`);
-      console.log(`   Role Level: ${user.role?.level || 'N/A'}`);
+      console.log(`   Role Name: ${user.role?.name || "none"}`);
+      console.log(`   Role Level: ${user.role?.level || "N/A"}`);
     } else {
       console.log("❌ User not found!");
     }
-
   } catch (error) {
-    console.error('❌ Error checking role ID:', error);
+    console.error("❌ Error checking role ID:", error);
   } finally {
     await prisma.$disconnect();
   }

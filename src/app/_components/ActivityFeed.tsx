@@ -5,15 +5,7 @@ import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
-import { 
-  Activity, 
-  TrendingUp, 
-  Star, 
-  Users, 
-  DollarSign,
-  Clock,
-  ArrowUp
-} from "lucide-react";
+import { Activity, TrendingUp, Star, Users, DollarSign, Clock, ArrowUp } from "lucide-react";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
 
@@ -66,12 +58,19 @@ export function ActivityFeed({ countries, isLoading }: ActivityFeedProps) {
       try {
         // Find top performers for milestones (using spread to avoid mutating original array)
         const topGdp = [...countries].sort((a, b) => b.currentTotalGdp - a.currentTotalGdp)[0];
-        const topPerCapita = [...countries].sort((a, b) => b.currentGdpPerCapita - a.currentGdpPerCapita)[0];
-        const topGrowth = [...countries].sort((a, b) => b.adjustedGdpGrowth - a.adjustedGdpGrowth)[0];
-        const topPopulation = [...countries].sort((a, b) => b.currentPopulation - a.currentPopulation)[0];
+        const topPerCapita = [...countries].sort(
+          (a, b) => b.currentGdpPerCapita - a.currentGdpPerCapita
+        )[0];
+        const topGrowth = [...countries].sort(
+          (a, b) => b.adjustedGdpGrowth - a.adjustedGdpGrowth
+        )[0];
+        const topPopulation = [...countries].sort(
+          (a, b) => b.currentPopulation - a.currentPopulation
+        )[0];
 
         // Milestones
-        if (topGdp && topGdp.currentTotalGdp > 1000000000000) { // 1 trillion
+        if (topGdp && topGdp.currentTotalGdp > 1000000000000) {
+          // 1 trillion
           newActivities.push({
             id: "milestone-gdp",
             type: "milestone",
@@ -103,7 +102,8 @@ export function ActivityFeed({ countries, isLoading }: ActivityFeedProps) {
           });
         }
 
-        if (topGrowth && topGrowth.adjustedGdpGrowth > 0.05) { // 5% growth
+        if (topGrowth && topGrowth.adjustedGdpGrowth > 0.05) {
+          // 5% growth
           newActivities.push({
             id: "milestone-growth",
             type: "growth",
@@ -119,7 +119,8 @@ export function ActivityFeed({ countries, isLoading }: ActivityFeedProps) {
           });
         }
 
-        if (topPopulation && topPopulation.currentPopulation > 100000000) { // 100 million
+        if (topPopulation && topPopulation.currentPopulation > 100000000) {
+          // 100 million
           newActivities.push({
             id: "milestone-population",
             type: "milestone",
@@ -136,9 +137,9 @@ export function ActivityFeed({ countries, isLoading }: ActivityFeedProps) {
         }
 
         // Tier changes (simulated)
-        const tierChangeCandidates = countries.filter(c => 
-          c.economicTier === "Developing" || c.economicTier === "Developed"
-        ).slice(0, 2);
+        const tierChangeCandidates = countries
+          .filter((c) => c.economicTier === "Developing" || c.economicTier === "Developed")
+          .slice(0, 2);
 
         tierChangeCandidates.forEach((country, index) => {
           const newTier = country.economicTier === "Developing" ? "Developed" : "Healthy";
@@ -198,13 +199,13 @@ export function ActivityFeed({ countries, isLoading }: ActivityFeedProps) {
   const getActivityIcon = (activity: ActivityItem) => {
     try {
       const Icon = activity.icon;
-      if (!Icon || typeof Icon !== 'function') {
-        return <Activity className="h-4 w-4 text-muted-foreground" />;
+      if (!Icon || typeof Icon !== "function") {
+        return <Activity className="text-muted-foreground h-4 w-4" />;
       }
       return <Icon className={`h-4 w-4 ${activity.color}`} />;
     } catch (error) {
       console.error("Error rendering activity icon:", error);
-      return <Activity className="h-4 w-4 text-muted-foreground" />;
+      return <Activity className="text-muted-foreground h-4 w-4" />;
     }
   };
 
@@ -212,12 +213,12 @@ export function ActivityFeed({ countries, isLoading }: ActivityFeedProps) {
     try {
       const now = new Date();
       const diffMs = now.getTime() - timestamp.getTime();
-      
+
       // Handle invalid dates
       if (isNaN(diffMs) || diffMs < 0) {
         return "Recently";
       }
-      
+
       const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
       const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
@@ -233,20 +234,37 @@ export function ActivityFeed({ countries, isLoading }: ActivityFeedProps) {
 
   const getActivityBadge = (type: ActivityItem["type"]) => {
     const badges = {
-      milestone: { label: "Milestone", color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
-      tier_change: { label: "Tier Change", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" },
-      growth: { label: "Growth", color: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200" },
-      new_country: { label: "New", color: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200" },
+      milestone: {
+        label: "Milestone",
+        color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+      },
+      tier_change: {
+        label: "Tier Change",
+        color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+      },
+      growth: {
+        label: "Growth",
+        color: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+      },
+      new_country: {
+        label: "New",
+        color: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+      },
     };
-    return badges[type] || { label: "Activity", color: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200" };
+    return (
+      badges[type] || {
+        label: "Activity",
+        color: "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200",
+      }
+    );
   };
 
   return (
     <Card
-      className="transition-all duration-300 hover:scale-[1.01] hover:shadow-xl group/card"
+      className="group/card transition-all duration-300 hover:scale-[1.01] hover:shadow-xl"
       style={{
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
         boxShadow: `
           0 4px 16px rgba(0, 0, 0, 0.1),
           0 1px 4px rgba(0, 0, 0, 0.05),
@@ -256,7 +274,7 @@ export function ActivityFeed({ countries, isLoading }: ActivityFeedProps) {
     >
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Activity className="h-5 w-5 text-green-500 group-hover/card:text-green-400 transition-colors" />
+          <Activity className="h-5 w-5 text-green-500 transition-colors group-hover/card:text-green-400" />
           Recent Activity
           <Badge variant="secondary" className="ml-auto">
             Live
@@ -266,46 +284,42 @@ export function ActivityFeed({ countries, isLoading }: ActivityFeedProps) {
       <CardContent>
         <div className="space-y-4">
           {activities.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Clock className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <div className="text-muted-foreground py-8 text-center">
+              <Clock className="mx-auto mb-2 h-8 w-8 opacity-50" />
               <p className="text-sm">No recent activity</p>
               <p className="text-xs">Activity will appear here as countries reach milestones</p>
             </div>
           ) : (
             activities.slice(0, 8).map((activity) => (
-              <div 
-                key={activity.id} 
-                className="flex items-start gap-3 group p-3 rounded-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-md"
+              <div
+                key={activity.id}
+                className="group flex items-start gap-3 rounded-lg p-3 transition-all duration-300 hover:scale-[1.02] hover:shadow-md"
               >
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted group-hover:bg-muted/80 transition-all duration-300 group-hover:scale-110">
+                <div className="bg-muted group-hover:bg-muted/80 flex h-8 w-8 items-center justify-center rounded-full transition-all duration-300 group-hover:scale-110">
                   {getActivityIcon(activity)}
                 </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-medium text-sm text-foreground">
-                      {activity.title}
-                    </h4>
-                    <Badge 
-                      variant="secondary" 
+
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex items-center gap-2">
+                    <h4 className="text-foreground text-sm font-medium">{activity.title}</h4>
+                    <Badge
+                      variant="secondary"
                       className={`text-xs ${getActivityBadge(activity.type).color}`}
                     >
                       {getActivityBadge(activity.type).label}
                     </Badge>
                   </div>
-                  
-                  <p className="text-sm text-muted-foreground mb-1">
-                    {activity.description}
-                  </p>
-                  
+
+                  <p className="text-muted-foreground mb-1 text-sm">{activity.description}</p>
+
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       {formatTimestamp(activity.timestamp)}
                     </span>
                     {activity.country && activity.countryId && (
                       <Link
                         href={createUrl(`/countries/${activity.countrySlug || activity.countryId}`)}
-                        className="text-xs text-primary hover:underline"
+                        className="text-primary text-xs hover:underline"
                       >
                         View {activity.country}
                       </Link>
@@ -318,10 +332,8 @@ export function ActivityFeed({ countries, isLoading }: ActivityFeedProps) {
         </div>
 
         {activities.length > 8 && (
-          <div className="mt-4 pt-4 border-t">
-            <button 
-              className="text-sm text-muted-foreground hover:text-foreground transition-all duration-300 hover:scale-105 hover:underline"
-            >
+          <div className="mt-4 border-t pt-4">
+            <button className="text-muted-foreground hover:text-foreground text-sm transition-all duration-300 hover:scale-105 hover:underline">
               View all activity →
             </button>
           </div>
@@ -329,4 +341,4 @@ export function ActivityFeed({ countries, isLoading }: ActivityFeedProps) {
       </CardContent>
     </Card>
   );
-} 
+}

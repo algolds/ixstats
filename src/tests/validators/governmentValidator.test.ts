@@ -1,17 +1,25 @@
-import { describe, it, expect } from '@jest/globals';
-import { GovernmentBuilderStateSchema } from '~/types/validation/government';
+import { describe, it, expect } from "@jest/globals";
+import { GovernmentBuilderStateSchema } from "~/types/validation/government";
 
-describe('GovernmentBuilder validation', () => {
-  it('fails when totalBudget <= 0 and department name missing', () => {
+describe("GovernmentBuilder validation", () => {
+  it("fails when totalBudget <= 0 and department name missing", () => {
     const invalid = {
       structure: {
-        governmentName: '',
-        governmentType: 'Unitary State',
+        governmentName: "",
+        governmentType: "Unitary State",
         totalBudget: 0,
-        fiscalYear: 'Calendar Year',
-        budgetCurrency: 'USD',
+        fiscalYear: "Calendar Year",
+        budgetCurrency: "USD",
       },
-      departments: [{ name: '', category: 'Other', organizationalLevel: 'Ministry', color: '#000000', priority: 50 }],
+      departments: [
+        {
+          name: "",
+          category: "Other",
+          organizationalLevel: "Ministry",
+          color: "#000000",
+          priority: 50,
+        },
+      ],
       budgetAllocations: [],
       revenueSources: [],
     } as any;
@@ -19,16 +27,24 @@ describe('GovernmentBuilder validation', () => {
     expect(result.success).toBe(false);
   });
 
-  it('passes for minimal valid structure', () => {
+  it("passes for minimal valid structure", () => {
     const valid = {
       structure: {
-        governmentName: 'Test Gov',
-        governmentType: 'Unitary State',
+        governmentName: "Test Gov",
+        governmentType: "Unitary State",
         totalBudget: 100,
-        fiscalYear: 'Calendar Year',
-        budgetCurrency: 'USD',
+        fiscalYear: "Calendar Year",
+        budgetCurrency: "USD",
       },
-      departments: [{ name: 'Finance', category: 'Finance', organizationalLevel: 'Ministry', color: '#000000', priority: 50 }],
+      departments: [
+        {
+          name: "Finance",
+          category: "Finance",
+          organizationalLevel: "Ministry",
+          color: "#000000",
+          priority: 50,
+        },
+      ],
       budgetAllocations: [],
       revenueSources: [],
     };
@@ -36,5 +52,3 @@ describe('GovernmentBuilder validation', () => {
     expect(result.success).toBe(true);
   });
 });
-
-

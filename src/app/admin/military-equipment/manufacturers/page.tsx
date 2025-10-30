@@ -10,7 +10,13 @@ import { SignInButton, useUser } from "~/context/auth-context";
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { MultiSelect } from "~/components/ui/multi-select";
 import {
   Table,
@@ -18,7 +24,7 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow
+  TableRow,
 } from "~/components/ui/table";
 import {
   Dialog,
@@ -42,7 +48,7 @@ import {
   ArrowLeft,
   Globe,
   Package,
-  ArrowUpDown
+  ArrowUpDown,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -65,28 +71,28 @@ interface Manufacturer {
 }
 
 const SPECIALTIES = [
-  'aircraft',
-  'ships',
-  'vehicles',
-  'weapons',
-  'missiles',
-  'electronics',
-  'radar',
-  'communications',
-  'naval',
-  'aerospace',
-  'armored-vehicles',
-  'artillery',
-  'small-arms',
-  'submarines',
-  'helicopters',
-  'drones',
-  'cyber-systems',
-  'satellites'
+  "aircraft",
+  "ships",
+  "vehicles",
+  "weapons",
+  "missiles",
+  "electronics",
+  "radar",
+  "communications",
+  "naval",
+  "aerospace",
+  "armored-vehicles",
+  "artillery",
+  "small-arms",
+  "submarines",
+  "helicopters",
+  "drones",
+  "cyber-systems",
+  "satellites",
 ] as const;
 
-type SortField = 'name' | 'country' | 'equipmentCount' | 'founded';
-type SortDirection = 'asc' | 'desc';
+type SortField = "name" | "country" | "equipmentCount" | "founded";
+type SortDirection = "asc" | "desc";
 
 export default function ManufacturersPage() {
   usePageTitle({ title: "Defense Manufacturers Admin" });
@@ -95,28 +101,32 @@ export default function ManufacturersPage() {
   const { toast } = useToast();
 
   // State
-  const [countryFilter, setCountryFilter] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [countryFilter, setCountryFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [showInactive, setShowInactive] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [sortField, setSortField] = useState<SortField>('name');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   // Form state
   const [formData, setFormData] = useState({
-    name: '',
-    country: '',
+    name: "",
+    country: "",
     specialty: [] as string[],
     founded: undefined as number | undefined,
-    description: '',
-    isActive: true
+    description: "",
+    isActive: true,
   });
 
   // Queries
-  const { data: manufacturers, isLoading, refetch } = api.militaryEquipment.getManufacturers.useQuery(
+  const {
+    data: manufacturers,
+    isLoading,
+    refetch,
+  } = api.militaryEquipment.getManufacturers.useQuery(
     {
-      isActive: showInactive ? undefined : true
+      isActive: showInactive ? undefined : true,
     },
     {
       refetchOnWindowFocus: false,
@@ -129,7 +139,7 @@ export default function ManufacturersPage() {
       toast({
         title: "Success",
         description: "Manufacturer created successfully",
-        type: "success"
+        type: "success",
       });
       refetch();
       setIsAddDialogOpen(false);
@@ -139,9 +149,9 @@ export default function ManufacturersPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to create manufacturer",
-        type: "error"
+        type: "error",
       });
-    }
+    },
   });
 
   const updateMutation = api.militaryEquipment.updateManufacturer.useMutation({
@@ -149,7 +159,7 @@ export default function ManufacturersPage() {
       toast({
         title: "Success",
         description: "Manufacturer updated successfully",
-        type: "success"
+        type: "success",
       });
       refetch();
       setEditingId(null);
@@ -159,15 +169,15 @@ export default function ManufacturersPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to update manufacturer",
-        type: "error"
+        type: "error",
       });
-    }
+    },
   });
 
   // Get unique countries for filter
   const countries = useMemo(() => {
     if (!manufacturers) return [];
-    const uniqueCountries = new Set(manufacturers.map(m => m.country));
+    const uniqueCountries = new Set(manufacturers.map((m) => m.country));
     return Array.from(uniqueCountries).sort();
   }, [manufacturers]);
 
@@ -175,9 +185,9 @@ export default function ManufacturersPage() {
   const filteredManufacturers = useMemo(() => {
     if (!manufacturers) return [];
 
-    let filtered = manufacturers.filter(manufacturer => {
+    let filtered = manufacturers.filter((manufacturer) => {
       // Country filter
-      if (countryFilter !== 'all' && manufacturer.country !== countryFilter) return false;
+      if (countryFilter !== "all" && manufacturer.country !== countryFilter) return false;
 
       // Search filter
       if (searchQuery) {
@@ -193,9 +203,9 @@ export default function ManufacturersPage() {
     });
 
     // Add equipment count for sorting
-    const withCounts = filtered.map(m => ({
+    const withCounts = filtered.map((m) => ({
       ...m,
-      equipmentCount: m.equipment?.length || 0
+      equipmentCount: m.equipment?.length || 0,
     }));
 
     // Sort
@@ -203,21 +213,21 @@ export default function ManufacturersPage() {
       let comparison = 0;
 
       switch (sortField) {
-        case 'name':
+        case "name":
           comparison = a.name.localeCompare(b.name);
           break;
-        case 'country':
+        case "country":
           comparison = a.country.localeCompare(b.country);
           break;
-        case 'equipmentCount':
+        case "equipmentCount":
           comparison = a.equipmentCount - b.equipmentCount;
           break;
-        case 'founded':
+        case "founded":
           comparison = (a.founded || 0) - (b.founded || 0);
           break;
       }
 
-      return sortDirection === 'asc' ? comparison : -comparison;
+      return sortDirection === "asc" ? comparison : -comparison;
     });
 
     return withCounts;
@@ -226,12 +236,12 @@ export default function ManufacturersPage() {
   // Handlers
   const resetForm = () => {
     setFormData({
-      name: '',
-      country: '',
+      name: "",
+      country: "",
       specialty: [],
       founded: undefined,
-      description: '',
-      isActive: true
+      description: "",
+      isActive: true,
     });
   };
 
@@ -240,7 +250,7 @@ export default function ManufacturersPage() {
       toast({
         title: "Validation Error",
         description: "Name and country are required",
-        type: "error"
+        type: "error",
       });
       return;
     }
@@ -248,10 +258,10 @@ export default function ManufacturersPage() {
     createMutation.mutate({
       name: formData.name,
       country: formData.country,
-      specialty: formData.specialty.length > 0 ? formData.specialty.join(', ') : undefined,
+      specialty: formData.specialty.length > 0 ? formData.specialty.join(", ") : undefined,
       founded: formData.founded,
       description: formData.description || undefined,
-      isActive: formData.isActive
+      isActive: formData.isActive,
     });
   };
 
@@ -260,10 +270,12 @@ export default function ManufacturersPage() {
     setFormData({
       name: manufacturer.name,
       country: manufacturer.country,
-      specialty: manufacturer.specialty ? manufacturer.specialty.split(', ').map(s => s.trim()) : [],
+      specialty: manufacturer.specialty
+        ? manufacturer.specialty.split(", ").map((s) => s.trim())
+        : [],
       founded: manufacturer.founded || undefined,
-      description: manufacturer.description || '',
-      isActive: manufacturer.isActive
+      description: manufacturer.description || "",
+      isActive: manufacturer.isActive,
     });
     setIsAddDialogOpen(true);
   };
@@ -273,7 +285,7 @@ export default function ManufacturersPage() {
       toast({
         title: "Validation Error",
         description: "Name and country are required",
-        type: "error"
+        type: "error",
       });
       return;
     }
@@ -282,40 +294,43 @@ export default function ManufacturersPage() {
       id: editingId,
       name: formData.name,
       country: formData.country,
-      specialty: formData.specialty.length > 0 ? formData.specialty.join(', ') : undefined,
+      specialty: formData.specialty.length > 0 ? formData.specialty.join(", ") : undefined,
       founded: formData.founded,
       description: formData.description || undefined,
-      isActive: formData.isActive
+      isActive: formData.isActive,
     });
   };
 
   const handleToggleActive = (manufacturer: Manufacturer) => {
     updateMutation.mutate({
       id: manufacturer.id,
-      isActive: !manufacturer.isActive
+      isActive: !manufacturer.isActive,
     });
   };
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
   const parseSpecialties = (specialty: string | null): string[] => {
     if (!specialty) return [];
-    return specialty.split(',').map(s => s.trim()).filter(Boolean);
+    return specialty
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
   };
 
   // Auth checks
   if (!isLoaded) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-indigo-600"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
@@ -324,7 +339,7 @@ export default function ManufacturersPage() {
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
+      <div className="flex min-h-screen flex-col items-center justify-center">
         <SignInButton mode="modal" />
       </div>
     );
@@ -332,57 +347,66 @@ export default function ManufacturersPage() {
 
   const allowedRoles = new Set(["admin", "owner", "staff"]);
   const isSystemOwnerUser = !!user && isSystemOwner(user.id);
-  const hasAdminRole = typeof user?.publicMetadata?.role === "string" && allowedRoles.has(user.publicMetadata.role);
+  const hasAdminRole =
+    typeof user?.publicMetadata?.role === "string" && allowedRoles.has(user.publicMetadata.role);
 
   if (!isSystemOwnerUser && !hasAdminRole) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center border border-gray-200 dark:border-gray-700">
-          <h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Access Denied</h1>
-          <p className="text-gray-700 dark:text-gray-300 mb-6">You do not have permission to view this page.</p>
+      <div className="flex min-h-screen flex-col items-center justify-center">
+        <div className="rounded-lg border border-gray-200 bg-white p-8 text-center shadow-lg dark:border-gray-700 dark:bg-gray-800">
+          <h1 className="mb-4 text-2xl font-bold text-red-600 dark:text-red-400">Access Denied</h1>
+          <p className="mb-6 text-gray-700 dark:text-gray-300">
+            You do not have permission to view this page.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="bg-background text-foreground min-h-screen p-4 md:p-8">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="glass-card-parent p-6 rounded-xl border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 mb-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="glass-card-parent border-primary/20 from-primary/5 to-primary/10 mb-6 rounded-xl border-2 bg-gradient-to-br via-transparent p-6">
+          <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/admin">
                 <Button variant="ghost" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to Admin
                 </Button>
               </Link>
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-xl bg-primary/10 border border-primary/20">
-                  <Factory className="h-6 w-6 text-primary" />
+                <div className="bg-primary/10 border-primary/20 rounded-xl border p-3">
+                  <Factory className="text-primary h-6 w-6" />
                 </div>
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                  <h1 className="text-foreground text-2xl font-bold md:text-3xl">
                     Defense Manufacturers
                   </h1>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Manage military equipment manufacturers
                   </p>
                 </div>
               </div>
             </div>
-            <Button onClick={() => { setEditingId(null); resetForm(); setIsAddDialogOpen(true); }}>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button
+              onClick={() => {
+                setEditingId(null);
+                resetForm();
+                setIsAddDialogOpen(true);
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
               Add Manufacturer
             </Button>
           </div>
 
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
               <Input
                 placeholder="Search manufacturers..."
                 value={searchQuery}
@@ -394,13 +418,15 @@ export default function ManufacturersPage() {
             {/* Country filter */}
             <Select value={countryFilter} onValueChange={setCountryFilter}>
               <SelectTrigger>
-                <Globe className="h-4 w-4 mr-2" />
+                <Globe className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="All Countries" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Countries</SelectItem>
-                {countries.map(country => (
-                  <SelectItem key={country} value={country}>{country}</SelectItem>
+                {countries.map((country) => (
+                  <SelectItem key={country} value={country}>
+                    {country}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -411,13 +437,17 @@ export default function ManufacturersPage() {
               onClick={() => setShowInactive(!showInactive)}
               className="w-full"
             >
-              {showInactive ? <ToggleRight className="h-4 w-4 mr-2" /> : <ToggleLeft className="h-4 w-4 mr-2" />}
+              {showInactive ? (
+                <ToggleRight className="mr-2 h-4 w-4" />
+              ) : (
+                <ToggleLeft className="mr-2 h-4 w-4" />
+              )}
               {showInactive ? "Showing All" : "Active Only"}
             </Button>
 
             {/* Stats placeholder */}
-            <div className="flex items-center justify-center px-4 py-2 rounded-md bg-primary/5 border border-primary/20">
-              <Package className="h-4 w-4 mr-2 text-primary" />
+            <div className="bg-primary/5 border-primary/20 flex items-center justify-center rounded-md border px-4 py-2">
+              <Package className="text-primary mr-2 h-4 w-4" />
               <span className="text-sm font-medium">
                 {filteredManufacturers.length} manufacturers
               </span>
@@ -426,18 +456,25 @@ export default function ManufacturersPage() {
         </div>
 
         {/* Table */}
-        <div className="glass-card-child p-6 rounded-xl border border-border/50">
+        <div className="glass-card-child border-border/50 rounded-xl border p-6">
           {isLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <div className="py-12 text-center">
+              <div className="border-primary mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2"></div>
               <p className="text-muted-foreground">Loading manufacturers...</p>
             </div>
           ) : filteredManufacturers.length === 0 ? (
-            <div className="text-center py-12">
-              <Filter className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <div className="py-12 text-center">
+              <Filter className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
               <p className="text-muted-foreground">No manufacturers found</p>
-              <Button className="mt-4" onClick={() => { setEditingId(null); resetForm(); setIsAddDialogOpen(true); }}>
-                <Plus className="h-4 w-4 mr-2" />
+              <Button
+                className="mt-4"
+                onClick={() => {
+                  setEditingId(null);
+                  resetForm();
+                  setIsAddDialogOpen(true);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
                 Add First Manufacturer
               </Button>
             </div>
@@ -448,8 +485,8 @@ export default function ManufacturersPage() {
                   <TableRow>
                     <TableHead>
                       <button
-                        onClick={() => handleSort('name')}
-                        className="flex items-center gap-1 hover:text-primary transition-colors"
+                        onClick={() => handleSort("name")}
+                        className="hover:text-primary flex items-center gap-1 transition-colors"
                       >
                         Name
                         <ArrowUpDown className="h-3 w-3" />
@@ -457,8 +494,8 @@ export default function ManufacturersPage() {
                     </TableHead>
                     <TableHead>
                       <button
-                        onClick={() => handleSort('country')}
-                        className="flex items-center gap-1 hover:text-primary transition-colors"
+                        onClick={() => handleSort("country")}
+                        className="hover:text-primary flex items-center gap-1 transition-colors"
                       >
                         Country
                         <ArrowUpDown className="h-3 w-3" />
@@ -467,8 +504,8 @@ export default function ManufacturersPage() {
                     <TableHead>Specialties</TableHead>
                     <TableHead>
                       <button
-                        onClick={() => handleSort('founded')}
-                        className="flex items-center gap-1 hover:text-primary transition-colors"
+                        onClick={() => handleSort("founded")}
+                        className="hover:text-primary flex items-center gap-1 transition-colors"
                       >
                         Founded
                         <ArrowUpDown className="h-3 w-3" />
@@ -476,8 +513,8 @@ export default function ManufacturersPage() {
                     </TableHead>
                     <TableHead>
                       <button
-                        onClick={() => handleSort('equipmentCount')}
-                        className="flex items-center gap-1 hover:text-primary transition-colors"
+                        onClick={() => handleSort("equipmentCount")}
+                        className="hover:text-primary flex items-center gap-1 transition-colors"
                       >
                         Equipment
                         <ArrowUpDown className="h-3 w-3" />
@@ -497,7 +534,7 @@ export default function ManufacturersPage() {
                         <TableCell className="font-medium">{manufacturer.name}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Globe className="h-3 w-3 text-muted-foreground" />
+                            <Globe className="text-muted-foreground h-3 w-3" />
                             {manufacturer.country}
                           </div>
                         </TableCell>
@@ -516,29 +553,29 @@ export default function ManufacturersPage() {
                               )}
                             </div>
                           ) : (
-                            <span className="text-sm text-muted-foreground italic">None</span>
+                            <span className="text-muted-foreground text-sm italic">None</span>
                           )}
                         </TableCell>
                         <TableCell>
                           {manufacturer.founded ? (
                             <span className="text-sm">{manufacturer.founded}</span>
                           ) : (
-                            <span className="text-sm text-muted-foreground italic">N/A</span>
+                            <span className="text-muted-foreground text-sm italic">N/A</span>
                           )}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Package className="h-3 w-3 text-muted-foreground" />
+                            <Package className="text-muted-foreground h-3 w-3" />
                             <span className="text-sm font-medium">{equipmentCount}</span>
                           </div>
                         </TableCell>
                         <TableCell>
                           {manufacturer.isActive ? (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                            <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-400">
                               Active
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400">
+                            <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800 dark:bg-gray-900/30 dark:text-gray-400">
                               Inactive
                             </span>
                           )}
@@ -557,7 +594,11 @@ export default function ManufacturersPage() {
                               variant="ghost"
                               onClick={() => handleToggleActive(manufacturer)}
                             >
-                              {manufacturer.isActive ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+                              {manufacturer.isActive ? (
+                                <ToggleRight className="h-4 w-4" />
+                              ) : (
+                                <ToggleLeft className="h-4 w-4" />
+                              )}
                             </Button>
                           </div>
                         </TableCell>
@@ -571,50 +612,53 @@ export default function ManufacturersPage() {
         </div>
 
         {/* Stats */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="glass-card-child p-4 rounded-lg border border-border/50">
-            <div className="text-2xl font-bold text-foreground">{manufacturers?.length || 0}</div>
-            <div className="text-sm text-muted-foreground">Total Manufacturers</div>
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="glass-card-child border-border/50 rounded-lg border p-4">
+            <div className="text-foreground text-2xl font-bold">{manufacturers?.length || 0}</div>
+            <div className="text-muted-foreground text-sm">Total Manufacturers</div>
           </div>
-          <div className="glass-card-child p-4 rounded-lg border border-border/50">
-            <div className="text-2xl font-bold text-foreground">
-              {manufacturers?.filter(m => m.isActive).length || 0}
+          <div className="glass-card-child border-border/50 rounded-lg border p-4">
+            <div className="text-foreground text-2xl font-bold">
+              {manufacturers?.filter((m) => m.isActive).length || 0}
             </div>
-            <div className="text-sm text-muted-foreground">Active</div>
+            <div className="text-muted-foreground text-sm">Active</div>
           </div>
-          <div className="glass-card-child p-4 rounded-lg border border-border/50">
-            <div className="text-2xl font-bold text-foreground">
-              {countries.length}
-            </div>
-            <div className="text-sm text-muted-foreground">Countries</div>
+          <div className="glass-card-child border-border/50 rounded-lg border p-4">
+            <div className="text-foreground text-2xl font-bold">{countries.length}</div>
+            <div className="text-muted-foreground text-sm">Countries</div>
           </div>
-          <div className="glass-card-child p-4 rounded-lg border border-border/50">
-            <div className="text-2xl font-bold text-foreground">
+          <div className="glass-card-child border-border/50 rounded-lg border p-4">
+            <div className="text-foreground text-2xl font-bold">
               {manufacturers?.reduce((sum, m) => sum + (m.equipment?.length || 0), 0) || 0}
             </div>
-            <div className="text-sm text-muted-foreground">Total Equipment</div>
+            <div className="text-muted-foreground text-sm">Total Equipment</div>
           </div>
         </div>
 
         {/* Add/Edit Dialog */}
-        <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
-          setIsAddDialogOpen(open);
-          if (!open) {
-            setEditingId(null);
-            resetForm();
-          }
-        }}>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <Dialog
+          open={isAddDialogOpen}
+          onOpenChange={(open) => {
+            setIsAddDialogOpen(open);
+            if (!open) {
+              setEditingId(null);
+              resetForm();
+            }
+          }}
+        >
+          <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingId ? 'Edit' : 'Add'} Manufacturer</DialogTitle>
+              <DialogTitle>{editingId ? "Edit" : "Add"} Manufacturer</DialogTitle>
               <DialogDescription>
-                {editingId ? 'Update manufacturer information' : 'Create a new defense manufacturer'}
+                {editingId
+                  ? "Update manufacturer information"
+                  : "Create a new defense manufacturer"}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">Name *</label>
+                <label className="text-foreground mb-2 block text-sm font-medium">Name *</label>
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -623,7 +667,7 @@ export default function ManufacturersPage() {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">Country *</label>
+                <label className="text-foreground mb-2 block text-sm font-medium">Country *</label>
                 <Input
                   value={formData.country}
                   onChange={(e) => setFormData({ ...formData, country: e.target.value })}
@@ -632,7 +676,9 @@ export default function ManufacturersPage() {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">Specialties</label>
+                <label className="text-foreground mb-2 block text-sm font-medium">
+                  Specialties
+                </label>
                 <MultiSelect
                   options={SPECIALTIES}
                   value={formData.specialty}
@@ -643,11 +689,16 @@ export default function ManufacturersPage() {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">Founded</label>
+                <label className="text-foreground mb-2 block text-sm font-medium">Founded</label>
                 <Input
                   type="number"
-                  value={formData.founded || ''}
-                  onChange={(e) => setFormData({ ...formData, founded: e.target.value ? parseInt(e.target.value) : undefined })}
+                  value={formData.founded || ""}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      founded: e.target.value ? parseInt(e.target.value) : undefined,
+                    })
+                  }
                   placeholder="e.g., 1995"
                   min="1800"
                   max="2100"
@@ -655,7 +706,9 @@ export default function ManufacturersPage() {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-foreground mb-2 block">Description</label>
+                <label className="text-foreground mb-2 block text-sm font-medium">
+                  Description
+                </label>
                 <Input
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -669,9 +722,12 @@ export default function ManufacturersPage() {
                   id="isActive"
                   checked={formData.isActive}
                   onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="rounded border-border"
+                  className="border-border rounded"
                 />
-                <label htmlFor="isActive" className="text-sm font-medium text-foreground cursor-pointer">
+                <label
+                  htmlFor="isActive"
+                  className="text-foreground cursor-pointer text-sm font-medium"
+                >
                   Active
                 </label>
               </div>
@@ -683,9 +739,18 @@ export default function ManufacturersPage() {
               </Button>
               <Button
                 onClick={editingId ? handleUpdate : handleCreate}
-                disabled={!formData.name || !formData.country || createMutation.isPending || updateMutation.isPending}
+                disabled={
+                  !formData.name ||
+                  !formData.country ||
+                  createMutation.isPending ||
+                  updateMutation.isPending
+                }
               >
-                {createMutation.isPending || updateMutation.isPending ? "Saving..." : editingId ? "Update" : "Create"}
+                {createMutation.isPending || updateMutation.isPending
+                  ? "Saving..."
+                  : editingId
+                    ? "Update"
+                    : "Create"}
               </Button>
             </DialogFooter>
           </DialogContent>

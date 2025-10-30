@@ -1,9 +1,9 @@
 "use client";
 
-import React from 'react';
-import { EnhancedSlider } from '../../../../primitives/enhanced';
-import { Users } from 'lucide-react';
-import type { LaborConfiguration } from '~/types/economy-builder';
+import React from "react";
+import { EnhancedSlider } from "../../../../primitives/enhanced";
+import { Users } from "lucide-react";
+import type { LaborConfiguration } from "~/types/economy-builder";
 
 interface WorkforceSectionProps {
   laborMarket: LaborConfiguration;
@@ -18,7 +18,7 @@ export function WorkforceSection({ laborMarket, onChange, showAdvanced }: Workfo
         label="Labor Force Participation Rate"
         description="Percentage of working-age population in the labor force"
         value={laborMarket.laborForceParticipationRate}
-        onChange={(value) => onChange('laborForceParticipationRate', value)}
+        onChange={(value) => onChange("laborForceParticipationRate", value)}
         min={30}
         max={90}
         step={0.1}
@@ -33,7 +33,7 @@ export function WorkforceSection({ laborMarket, onChange, showAdvanced }: Workfo
         label="Female Participation Rate"
         description="Female labor force participation rate"
         value={laborMarket.femaleParticipationRate}
-        onChange={(value) => onChange('femaleParticipationRate', value)}
+        onChange={(value) => onChange("femaleParticipationRate", value)}
         min={20}
         max={80}
         step={0.1}
@@ -47,7 +47,7 @@ export function WorkforceSection({ laborMarket, onChange, showAdvanced }: Workfo
         label="Male Participation Rate"
         description="Male labor force participation rate"
         value={laborMarket.maleParticipationRate}
-        onChange={(value) => onChange('maleParticipationRate', value)}
+        onChange={(value) => onChange("maleParticipationRate", value)}
         min={40}
         max={95}
         step={0.1}
@@ -58,12 +58,12 @@ export function WorkforceSection({ laborMarket, onChange, showAdvanced }: Workfo
       />
 
       {showAdvanced && (
-        <div className="space-y-4 pt-4 border-t">
+        <div className="space-y-4 border-t pt-4">
           <EnhancedSlider
             label="Youth Unemployment Rate"
             description="Unemployment rate for ages 15-24"
             value={laborMarket.youthUnemploymentRate}
-            onChange={(value) => onChange('youthUnemploymentRate', value)}
+            onChange={(value) => onChange("youthUnemploymentRate", value)}
             min={5}
             max={50}
             step={0.1}
@@ -77,7 +77,7 @@ export function WorkforceSection({ laborMarket, onChange, showAdvanced }: Workfo
             label="Senior Employment Rate"
             description="Employment rate for ages 55+"
             value={laborMarket.seniorEmploymentRate}
-            onChange={(value) => onChange('seniorEmploymentRate', value)}
+            onChange={(value) => onChange("seniorEmploymentRate", value)}
             min={20}
             max={80}
             step={0.1}

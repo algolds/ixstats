@@ -1,10 +1,10 @@
 // Optimized Query Service - Phase 3 Performance Enhancement
 // Advanced database query optimization with batching, caching, and performance monitoring
 
-import { db } from '~/server/db';
-import { intelligenceCache, CacheUtils, type CacheType } from '~/lib/intelligence-cache';
-import { performanceMonitor } from '~/lib/performance-monitor';
-import type { Prisma } from '@prisma/client';
+import { db } from "~/server/db";
+import { intelligenceCache, CacheUtils, type CacheType } from "~/lib/intelligence-cache";
+import { performanceMonitor } from "~/lib/performance-monitor";
+import type { Prisma } from "@prisma/client";
 
 interface QueryOptions {
   cache?: boolean;
@@ -33,13 +33,10 @@ export class OptimizedQueryService {
   /**
    * Execute optimized country query with intelligent caching
    */
-  async getCountryById(
-    id: string,
-    options: QueryOptions = {}
-  ): Promise<any> {
-    const cacheKey = CacheUtils.generateKey('country', id);
+  async getCountryById(id: string, options: QueryOptions = {}): Promise<any> {
+    const cacheKey = CacheUtils.generateKey("country", id);
     const startTime = performance.now();
-    
+
     try {
       // Check cache first
       if (options.cache !== false) {
@@ -50,7 +47,7 @@ export class OptimizedQueryService {
             duration: performance.now() - startTime,
             success: true,
             cacheHit: true,
-            countryId: id
+            countryId: id,
           });
           return cached;
         }
@@ -62,19 +59,15 @@ export class OptimizedQueryService {
         include: {
           _count: {
             select: {
-              dmInputs: true
-            }
-          }
-        }
+              dmInputs: true,
+            },
+          },
+        },
       });
 
       // Cache the result
       if (country && options.cache !== false) {
-        intelligenceCache.set(
-          cacheKey, 
-          country, 
-          options.cacheType || 'standard'
-        );
+        intelligenceCache.set(cacheKey, country, options.cacheType || "standard");
       }
 
       performanceMonitor.recordQuery({
@@ -83,7 +76,7 @@ export class OptimizedQueryService {
         success: true,
         cacheHit: false,
         countryId: id,
-        dataSize: JSON.stringify(country).length
+        dataSize: JSON.stringify(country).length,
       });
 
       return country;
@@ -92,9 +85,9 @@ export class OptimizedQueryService {
         queryKey: `getCountryById:${id}`,
         duration: performance.now() - startTime,
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
         cacheHit: false,
-        countryId: id
+        countryId: id,
       });
       throw error;
     }
@@ -108,7 +101,7 @@ export class OptimizedQueryService {
     limit = 50,
     options: QueryOptions = {}
   ): Promise<any> {
-    const cacheKey = CacheUtils.generateKey('intelligence', countryId, `limit:${limit}`);
+    const cacheKey = CacheUtils.generateKey("intelligence", countryId, `limit:${limit}`);
     const startTime = performance.now();
 
     try {
@@ -121,7 +114,7 @@ export class OptimizedQueryService {
             duration: performance.now() - startTime,
             success: true,
             cacheHit: true,
-            countryId
+            countryId,
           });
           return cached;
         }
@@ -130,15 +123,9 @@ export class OptimizedQueryService {
       // Execute optimized query with proper indexing
       const intelligence = await db.intelligenceItem.findMany({
         where: {
-          OR: [
-            { affectedCountries: { contains: countryId } },
-            { category: 'economic' }
-          ]
+          OR: [{ affectedCountries: { contains: countryId } }, { category: "economic" }],
         },
-        orderBy: [
-          { priority: 'desc' },
-          { timestamp: 'desc' }
-        ],
+        orderBy: [{ priority: "desc" }, { timestamp: "desc" }],
         take: limit,
         select: {
           id: true,
@@ -148,17 +135,13 @@ export class OptimizedQueryService {
           priority: true,
           timestamp: true,
           source: true,
-          affectedCountries: true
-        }
+          affectedCountries: true,
+        },
       });
 
       // Cache with shorter TTL for dynamic data
       if (options.cache !== false) {
-        intelligenceCache.set(
-          cacheKey,
-          intelligence,
-          options.cacheType || 'critical'
-        );
+        intelligenceCache.set(cacheKey, intelligence, options.cacheType || "critical");
       }
 
       performanceMonitor.recordQuery({
@@ -167,7 +150,7 @@ export class OptimizedQueryService {
         success: true,
         cacheHit: false,
         countryId,
-        dataSize: JSON.stringify(intelligence).length
+        dataSize: JSON.stringify(intelligence).length,
       });
 
       return intelligence;
@@ -176,9 +159,9 @@ export class OptimizedQueryService {
         queryKey: `getIntelligenceFeed:${countryId}`,
         duration: performance.now() - startTime,
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
         cacheHit: false,
-        countryId
+        countryId,
       });
       throw error;
     }
@@ -200,7 +183,7 @@ export class OptimizedQueryService {
     try {
       // Check cache for all requested countries
       for (const id of countryIds) {
-        const cacheKey = CacheUtils.generateKey('country', id);
+        const cacheKey = CacheUtils.generateKey("country", id);
         const cached = intelligenceCache.get(cacheKey);
         if (cached && options.cache !== false) {
           results[id] = cached;
@@ -213,32 +196,28 @@ export class OptimizedQueryService {
       if (uncachedIds.length > 0) {
         const countries = await db.country.findMany({
           where: {
-            id: { in: uncachedIds }
+            id: { in: uncachedIds },
           },
           include: {
             dmInputs: {
-              orderBy: { ixTimeTimestamp: 'desc' },
-              take: 1
+              orderBy: { ixTimeTimestamp: "desc" },
+              take: 1,
             },
             _count: {
               select: {
-                dmInputs: true
-              }
-            }
-          }
+                dmInputs: true,
+              },
+            },
+          },
         });
 
         // Cache and organize results
         for (const country of countries) {
           results[country.id] = country;
-          
+
           if (options.cache !== false) {
-            const cacheKey = CacheUtils.generateKey('country', country.id);
-            intelligenceCache.set(
-              cacheKey,
-              country,
-              options.cacheType || 'standard'
-            );
+            const cacheKey = CacheUtils.generateKey("country", country.id);
+            intelligenceCache.set(cacheKey, country, options.cacheType || "standard");
           }
         }
       }
@@ -248,7 +227,7 @@ export class OptimizedQueryService {
         duration: performance.now() - startTime,
         success: true,
         cacheHit: countryIds.length - uncachedIds.length > 0,
-        dataSize: JSON.stringify(results).length
+        dataSize: JSON.stringify(results).length,
       });
 
       return results;
@@ -257,8 +236,8 @@ export class OptimizedQueryService {
         queryKey: `getBatchedCountryData:${countryIds.length}`,
         duration: performance.now() - startTime,
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        cacheHit: false
+        error: error instanceof Error ? error.message : "Unknown error",
+        cacheHit: false,
       });
       throw error;
     }
@@ -267,11 +246,8 @@ export class OptimizedQueryService {
   /**
    * Execute optimized vitality intelligence query
    */
-  async getVitalityIntelligence(
-    countryId: string,
-    options: QueryOptions = {}
-  ): Promise<any> {
-    const cacheKey = CacheUtils.generateKey('vitality', countryId);
+  async getVitalityIntelligence(countryId: string, options: QueryOptions = {}): Promise<any> {
+    const cacheKey = CacheUtils.generateKey("vitality", countryId);
     const startTime = performance.now();
 
     try {
@@ -284,7 +260,7 @@ export class OptimizedQueryService {
             duration: performance.now() - startTime,
             success: true,
             cacheHit: true,
-            countryId
+            countryId,
           });
           return cached;
         }
@@ -295,10 +271,10 @@ export class OptimizedQueryService {
         where: { id: countryId },
         include: {
           dmInputs: {
-            orderBy: { ixTimeTimestamp: 'desc' },
-            take: 2
-          }
-        }
+            orderBy: { ixTimeTimestamp: "desc" },
+            take: 2,
+          },
+        },
       });
 
       if (!country) return null;
@@ -311,7 +287,7 @@ export class OptimizedQueryService {
         intelligenceCache.set(
           cacheKey,
           vitalityIntelligence,
-          'critical' // Short TTL for vitality data
+          "critical" // Short TTL for vitality data
         );
       }
 
@@ -321,7 +297,7 @@ export class OptimizedQueryService {
         success: true,
         cacheHit: false,
         countryId,
-        dataSize: JSON.stringify(vitalityIntelligence).length
+        dataSize: JSON.stringify(vitalityIntelligence).length,
       });
 
       return vitalityIntelligence;
@@ -330,9 +306,9 @@ export class OptimizedQueryService {
         queryKey: `getVitalityIntelligence:${countryId}`,
         duration: performance.now() - startTime,
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
         cacheHit: false,
-        countryId
+        countryId,
       });
       throw error;
     }
@@ -341,11 +317,8 @@ export class OptimizedQueryService {
   /**
    * Execute optimized regional comparison query
    */
-  async getRegionalComparison(
-    countryId: string,
-    options: QueryOptions = {}
-  ): Promise<any> {
-    const cacheKey = CacheUtils.generateKey('regional-comparison', countryId);
+  async getRegionalComparison(countryId: string, options: QueryOptions = {}): Promise<any> {
+    const cacheKey = CacheUtils.generateKey("regional-comparison", countryId);
     const startTime = performance.now();
 
     try {
@@ -358,7 +331,7 @@ export class OptimizedQueryService {
             duration: performance.now() - startTime,
             success: true,
             cacheHit: true,
-            countryId
+            countryId,
           });
           return cached;
         }
@@ -367,13 +340,13 @@ export class OptimizedQueryService {
       // Get target country and region
       const targetCountry = await db.country.findUnique({
         where: { id: countryId },
-        select: { 
-          id: true, 
-          name: true, 
+        select: {
+          id: true,
+          name: true,
           region: true,
           currentTotalGdp: true,
-          economicTier: true
-        }
+          economicTier: true,
+        },
       });
 
       if (!targetCountry || !targetCountry.region) return null;
@@ -382,7 +355,7 @@ export class OptimizedQueryService {
       const regionalCountries = await db.country.findMany({
         where: {
           region: targetCountry.region,
-          id: { not: countryId }
+          id: { not: countryId },
         },
         take: 10, // Limit for performance
         select: {
@@ -390,27 +363,23 @@ export class OptimizedQueryService {
           name: true,
           region: true,
           currentTotalGdp: true,
-          economicTier: true
+          economicTier: true,
         },
         orderBy: {
-          currentTotalGdp: 'desc'
-        }
+          currentTotalGdp: "desc",
+        },
       });
 
       const comparison = {
         targetCountry,
         regionalCountries,
         region: targetCountry.region,
-        comparison: this.calculateRegionalMetrics(targetCountry, regionalCountries)
+        comparison: this.calculateRegionalMetrics(targetCountry, regionalCountries),
       };
 
       // Cache with longer TTL for regional data
       if (options.cache !== false) {
-        intelligenceCache.set(
-          cacheKey,
-          comparison,
-          'standard'
-        );
+        intelligenceCache.set(cacheKey, comparison, "standard");
       }
 
       performanceMonitor.recordQuery({
@@ -419,7 +388,7 @@ export class OptimizedQueryService {
         success: true,
         cacheHit: false,
         countryId,
-        dataSize: JSON.stringify(comparison).length
+        dataSize: JSON.stringify(comparison).length,
       });
 
       return comparison;
@@ -428,9 +397,9 @@ export class OptimizedQueryService {
         queryKey: `getRegionalComparison:${countryId}`,
         duration: performance.now() - startTime,
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
         cacheHit: false,
-        countryId
+        countryId,
       });
       throw error;
     }
@@ -441,7 +410,7 @@ export class OptimizedQueryService {
    */
   invalidateCountryCache(countryId: string): void {
     intelligenceCache.invalidateCountryIntelligence(countryId);
-    
+
     // Also invalidate regional comparisons that might include this country
     intelligenceCache.invalidateByPattern(new RegExp(`regional-comparison`));
   }
@@ -458,9 +427,9 @@ export class OptimizedQueryService {
     if (!currentGdp || !currentPopulation) {
       return {
         vitalityScore: 0,
-        economicHealth: 'unknown',
-        populationTrend: 'unknown',
-        alerts: []
+        economicHealth: "unknown",
+        populationTrend: "unknown",
+        alerts: [],
       };
     }
 
@@ -468,45 +437,50 @@ export class OptimizedQueryService {
 
     const populationGrowth = country.populationGrowthRate || 0;
 
-    const vitalityScore = Math.max(0, Math.min(100, 50 + (economicGrowth * 2) + populationGrowth));
+    const vitalityScore = Math.max(0, Math.min(100, 50 + economicGrowth * 2 + populationGrowth));
 
     return {
       vitalityScore: Math.round(vitalityScore),
-      economicHealth: economicGrowth > 3 ? 'excellent' : economicGrowth > 0 ? 'good' : 'declining',
-      populationTrend: populationGrowth > 1 ? 'growing' : populationGrowth > -1 ? 'stable' : 'declining',
+      economicHealth: economicGrowth > 3 ? "excellent" : economicGrowth > 0 ? "good" : "declining",
+      populationTrend:
+        populationGrowth > 1 ? "growing" : populationGrowth > -1 ? "stable" : "declining",
       economicGrowth: Math.round(economicGrowth * 100) / 100,
       populationGrowth: Math.round(populationGrowth * 100) / 100,
-      alerts: this.generateVitalityAlerts(vitalityScore, economicGrowth, populationGrowth)
+      alerts: this.generateVitalityAlerts(vitalityScore, economicGrowth, populationGrowth),
     };
   }
 
   /**
    * Generate vitality alerts based on metrics
    */
-  private generateVitalityAlerts(vitalityScore: number, economicGrowth: number, populationGrowth: number): any[] {
+  private generateVitalityAlerts(
+    vitalityScore: number,
+    economicGrowth: number,
+    populationGrowth: number
+  ): any[] {
     const alerts: any[] = [];
 
     if (vitalityScore < 30) {
       alerts.push({
-        type: 'critical',
-        message: 'Critical vitality warning - immediate attention required',
-        metric: 'vitality'
+        type: "critical",
+        message: "Critical vitality warning - immediate attention required",
+        metric: "vitality",
       });
     }
 
     if (economicGrowth < -5) {
       alerts.push({
-        type: 'economic',
-        message: 'Severe economic decline detected',
-        metric: 'economy'
+        type: "economic",
+        message: "Severe economic decline detected",
+        metric: "economy",
       });
     }
 
     if (populationGrowth < -2) {
       alerts.push({
-        type: 'demographic',
-        message: 'Significant population decline',
-        metric: 'population'
+        type: "demographic",
+        message: "Significant population decline",
+        metric: "population",
       });
     }
 
@@ -521,14 +495,14 @@ export class OptimizedQueryService {
 
     const targetGDP = targetCountry.currentTotalGdp;
     const regionalGDPs = regionalCountries
-      .map(c => c.currentTotalGdp)
-      .filter(gdp => gdp !== undefined && gdp > 0);
+      .map((c) => c.currentTotalGdp)
+      .filter((gdp) => gdp !== undefined && gdp > 0);
 
     if (regionalGDPs.length === 0) return {};
 
     const averageGDP = regionalGDPs.reduce((sum, gdp) => sum + gdp, 0) / regionalGDPs.length;
     const medianGDP = regionalGDPs.sort((a, b) => a - b)[Math.floor(regionalGDPs.length / 2)];
-    const rank = regionalGDPs.filter(gdp => gdp > targetGDP).length + 1;
+    const rank = regionalGDPs.filter((gdp) => gdp > targetGDP).length + 1;
 
     return {
       gdpComparison: {
@@ -538,9 +512,9 @@ export class OptimizedQueryService {
           median: Math.round(medianGDP),
           rank: rank,
           total: regionalGDPs.length + 1,
-          percentile: Math.round((1 - (rank - 1) / (regionalGDPs.length + 1)) * 100)
-        }
-      }
+          percentile: Math.round((1 - (rank - 1) / (regionalGDPs.length + 1)) * 100),
+        },
+      },
     };
   }
 }

@@ -49,7 +49,12 @@ export interface NetworkSynergyData {
 
 export interface Opportunity {
   id: string;
-  type: 'triangulation' | 'economic_complementarity' | 'cultural_affinity' | 'strategic_position' | 'emerging_power';
+  type:
+    | "triangulation"
+    | "economic_complementarity"
+    | "cultural_affinity"
+    | "strategic_position"
+    | "emerging_power";
   targetCountry: string;
   targetCountryId: string;
   score: number; // 0-100
@@ -61,13 +66,18 @@ export interface Opportunity {
     diplomatic?: number;
   };
   recommendedAction: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
 }
 
 export interface Vulnerability {
   id: string;
-  type: 'single_point_of_failure' | 'rivalry_exposure' | 'over_dependency' | 'weak_diversification' | 'unstable_partner';
-  severity: 'critical' | 'high' | 'medium' | 'low';
+  type:
+    | "single_point_of_failure"
+    | "rivalry_exposure"
+    | "over_dependency"
+    | "weak_diversification"
+    | "unstable_partner";
+  severity: "critical" | "high" | "medium" | "low";
   description: string;
   affectedCountries: string[];
   riskScore: number; // 0-100
@@ -158,30 +168,15 @@ export class NetworkSynergyCalculator {
       data.treaties
     );
 
-    const researchSpeedBonus = this.calculateResearchBonus(
-      data.embassies,
-      data.treaties
-    );
+    const researchSpeedBonus = this.calculateResearchBonus(data.embassies, data.treaties);
 
-    const tradeRouteEfficiency = this.calculateTradeEfficiency(
-      data.relationships,
-      data.embassies
-    );
+    const tradeRouteEfficiency = this.calculateTradeEfficiency(data.relationships, data.embassies);
 
-    const culturalSoftPower = this.calculateSoftPower(
-      data.culturalExchanges,
-      culturalInfluence
-    );
+    const culturalSoftPower = this.calculateSoftPower(data.culturalExchanges, culturalInfluence);
 
-    const allianceStrength = this.calculateAllianceStrength(
-      data.relationships,
-      data.treaties
-    );
+    const allianceStrength = this.calculateAllianceStrength(data.relationships, data.treaties);
 
-    const economicBloc = this.identifyEconomicBloc(
-      data.relationships,
-      data.treaties
-    );
+    const economicBloc = this.identifyEconomicBloc(data.relationships, data.treaties);
 
     const strategicOpportunities = this.findOpportunities(data);
     const vulnerabilities = this.identifyVulnerabilities(data);
@@ -224,7 +219,7 @@ export class NetworkSynergyCalculator {
     let baseMultiplier = 1.0;
 
     // Embassy contribution (max +0.4)
-    const activeEmbassies = embassies.filter(e => e.status === 'ACTIVE' || e.status === 'active');
+    const activeEmbassies = embassies.filter((e) => e.status === "ACTIVE" || e.status === "active");
     const embassyBonus = Math.min(
       activeEmbassies.reduce((sum, e) => {
         const levelBonus = e.level * 0.02; // 2% per level
@@ -235,8 +230,8 @@ export class NetworkSynergyCalculator {
     );
 
     // Trade relationship contribution (max +0.5)
-    const tradeRelationships = relationships.filter(r =>
-      r.relationship === 'alliance' || r.relationship === 'trade'
+    const tradeRelationships = relationships.filter(
+      (r) => r.relationship === "alliance" || r.relationship === "trade"
     );
     const tradeBonus = Math.min(
       tradeRelationships.reduce((sum, r) => {
@@ -248,21 +243,19 @@ export class NetworkSynergyCalculator {
     );
 
     // Treaty contribution (max +0.3)
-    const economicTreaties = treaties.filter(t =>
-      t.type === 'trade' || t.type === 'economic'
-    );
+    const economicTreaties = treaties.filter((t) => t.type === "trade" || t.type === "economic");
     const treatyBonus = Math.min(economicTreaties.length * 0.05, 0.3); // 5% per treaty, cap at +30%
 
     // Diversity bonus (max +0.2)
     const uniquePartners = new Set([
-      ...embassies.map(e => e.countryId),
-      ...relationships.map(r => r.targetCountryId)
+      ...embassies.map((e) => e.countryId),
+      ...relationships.map((r) => r.targetCountryId),
     ]).size;
     const diversityBonus = Math.min(uniquePartners * 0.01, 0.2); // 1% per unique partner
 
     // Network effect (max +0.1)
     // Bonus for having multiple strong connections
-    const strongConnections = relationships.filter(r => r.strength >= 70).length;
+    const strongConnections = relationships.filter((r) => r.strength >= 70).length;
     const networkBonus = Math.min(strongConnections * 0.02, 0.1);
 
     baseMultiplier += embassyBonus + tradeBonus + treatyBonus + diversityBonus + networkBonus;
@@ -282,28 +275,26 @@ export class NetworkSynergyCalculator {
     let bonus = 0;
 
     // Shared intelligence contribution (max +40%)
-    const highValueData = sharedData.filter(d =>
-      d.classification === 'CONFIDENTIAL' || d.classification === 'RESTRICTED'
+    const highValueData = sharedData.filter(
+      (d) => d.classification === "CONFIDENTIAL" || d.classification === "RESTRICTED"
     );
     bonus += Math.min(highValueData.length * 2, 40); // 2% per high-value data point
 
     // Intelligence-focused embassies (max +30%)
-    const intelligenceEmbassies = embassies.filter(e =>
-      e.specialization === 'intelligence'
-    );
+    const intelligenceEmbassies = embassies.filter((e) => e.specialization === "intelligence");
     bonus += Math.min(
-      intelligenceEmbassies.reduce((sum, e) => sum + (e.level * 3), 0),
+      intelligenceEmbassies.reduce((sum, e) => sum + e.level * 3, 0),
       30
     );
 
     // Strong alliance intelligence sharing (max +20%)
-    const allianceRelationships = relationships.filter(r =>
-      r.relationship === 'alliance' && r.strength >= 80
+    const allianceRelationships = relationships.filter(
+      (r) => r.relationship === "alliance" && r.strength >= 80
     );
     bonus += Math.min(allianceRelationships.length * 5, 20);
 
     // Network breadth bonus (max +10%)
-    const intelligenceSources = new Set(sharedData.map(d => d.sourceCountryId)).size;
+    const intelligenceSources = new Set(sharedData.map((d) => d.sourceCountryId)).size;
     bonus += Math.min(intelligenceSources * 1, 10);
 
     return Math.min(bonus, 100);
@@ -320,7 +311,7 @@ export class NetworkSynergyCalculator {
     let influence = 0;
 
     // Active cultural exchanges
-    const activeExchanges = culturalExchanges.filter(e => e.status === 'active');
+    const activeExchanges = culturalExchanges.filter((e) => e.status === "active");
     influence += activeExchanges.reduce((sum, e) => {
       const impactScore = e.culturalImpact || 0;
       const diplomaticScore = e.diplomaticValue || 0;
@@ -329,11 +320,11 @@ export class NetworkSynergyCalculator {
     }, 0);
 
     // Completed exchanges (legacy influence)
-    const completedExchanges = culturalExchanges.filter(e => e.status === 'completed');
+    const completedExchanges = culturalExchanges.filter((e) => e.status === "completed");
     influence += completedExchanges.length * 20; // 20 points per completed exchange
 
     // Relationship cultural affinity
-    const culturalRelationships = relationships.filter(r => r.strength >= 60);
+    const culturalRelationships = relationships.filter((r) => r.strength >= 60);
     influence += culturalRelationships.length * 15;
 
     return Math.min(Math.max(influence, 0), 1000);
@@ -352,19 +343,19 @@ export class NetworkSynergyCalculator {
 
     // Embassy power
     power += embassies.reduce((sum, e) => {
-      return sum + (e.level * 100) + (e.influence || 0);
+      return sum + e.level * 100 + (e.influence || 0);
     }, 0);
 
     // Relationship power
     power += relationships.reduce((sum, r) => {
       const baseValue = r.strength * 2; // Max 200 per relationship
-      const typeMultiplier = r.relationship === 'alliance' ? 1.5 :
-                            r.relationship === 'trade' ? 1.2 : 1.0;
-      return sum + (baseValue * typeMultiplier);
+      const typeMultiplier =
+        r.relationship === "alliance" ? 1.5 : r.relationship === "trade" ? 1.2 : 1.0;
+      return sum + baseValue * typeMultiplier;
     }, 0);
 
     // Treaty power
-    power += treaties.filter(t => t.status === 'active').length * 150;
+    power += treaties.filter((t) => t.status === "active").length * 150;
 
     return Math.min(Math.max(power, 0), 10000);
   }
@@ -373,21 +364,16 @@ export class NetworkSynergyCalculator {
    * Calculate research speed bonus (0-50%)
    * From collaborative research
    */
-  static calculateResearchBonus(
-    embassies: EmbassyData[],
-    treaties: TreatyData[]
-  ): number {
+  static calculateResearchBonus(embassies: EmbassyData[], treaties: TreatyData[]): number {
     let bonus = 0;
 
     // Research-focused embassies
-    const researchEmbassies = embassies.filter(e =>
-      e.specialization === 'research'
-    );
-    bonus += researchEmbassies.reduce((sum, e) => sum + (e.level * 3), 0);
+    const researchEmbassies = embassies.filter((e) => e.specialization === "research");
+    bonus += researchEmbassies.reduce((sum, e) => sum + e.level * 3, 0);
 
     // Research treaties
-    const researchTreaties = treaties.filter(t =>
-      t.type === 'research' || t.type === 'technology'
+    const researchTreaties = treaties.filter(
+      (t) => t.type === "research" || t.type === "technology"
     );
     bonus += researchTreaties.length * 8;
 
@@ -405,14 +391,14 @@ export class NetworkSynergyCalculator {
     let efficiency = 100; // Base 100%
 
     // Strong trade relationships
-    const tradeRelationships = relationships.filter(r =>
-      (r.relationship === 'trade' || r.relationship === 'alliance') && r.strength >= 50
+    const tradeRelationships = relationships.filter(
+      (r) => (r.relationship === "trade" || r.relationship === "alliance") && r.strength >= 50
     );
     efficiency += tradeRelationships.length * 5; // +5% per strong trade relationship
 
     // Trade-focused embassies
-    const tradeEmbassies = embassies.filter(e => e.specialization === 'trade');
-    efficiency += tradeEmbassies.reduce((sum, e) => sum + (e.level * 2), 0);
+    const tradeEmbassies = embassies.filter((e) => e.specialization === "trade");
+    efficiency += tradeEmbassies.reduce((sum, e) => sum + e.level * 2, 0);
 
     // Network redundancy bonus (multiple routes)
     if (tradeRelationships.length >= 5) efficiency += 10;
@@ -435,12 +421,12 @@ export class NetworkSynergyCalculator {
     softPower += culturalInfluence / 10; // Max 100 from 1000 influence
 
     // Diversity of cultural programs
-    const uniqueTypes = new Set(culturalExchanges.map(e => e.type)).size;
+    const uniqueTypes = new Set(culturalExchanges.map((e) => e.type)).size;
     softPower += uniqueTypes * 3;
 
     // International reach
     const uniqueCountries = new Set(
-      culturalExchanges.flatMap(e => e.participatingCountries.map(p => p.countryId))
+      culturalExchanges.flatMap((e) => e.participatingCountries.map((p) => p.countryId))
     ).size;
     softPower += uniqueCountries * 2;
 
@@ -458,12 +444,12 @@ export class NetworkSynergyCalculator {
     let strength = 0;
 
     // Alliance relationships
-    const alliances = relationships.filter(r => r.relationship === 'alliance');
-    strength += alliances.reduce((sum, r) => sum + (r.strength / 2), 0); // Max 50 per alliance
+    const alliances = relationships.filter((r) => r.relationship === "alliance");
+    strength += alliances.reduce((sum, r) => sum + r.strength / 2, 0); // Max 50 per alliance
 
     // Security treaties
-    const securityTreaties = treaties.filter(t =>
-      t.type === 'defense' || t.type === 'security' || t.type === 'military'
+    const securityTreaties = treaties.filter(
+      (t) => t.type === "defense" || t.type === "security" || t.type === "military"
     );
     strength += securityTreaties.length * 15;
 
@@ -480,26 +466,23 @@ export class NetworkSynergyCalculator {
   static identifyEconomicBloc(
     relationships: RelationshipData[],
     treaties: TreatyData[]
-  ): NetworkSynergyData['economicBloc'] {
+  ): NetworkSynergyData["economicBloc"] {
     const members: string[] = [];
     let totalGdp = 0;
     let tradeVolume = 0;
 
     // Find strong economic partners
-    const economicPartners = relationships.filter(r =>
-      (r.relationship === 'alliance' || r.relationship === 'trade') && r.strength >= 60
+    const economicPartners = relationships.filter(
+      (r) => (r.relationship === "alliance" || r.relationship === "trade") && r.strength >= 60
     );
 
-    economicPartners.forEach(r => {
+    economicPartners.forEach((r) => {
       members.push(r.targetCountryId);
       tradeVolume += r.tradeVolume || 0;
     });
 
     // Calculate power ranking (simplified)
-    const powerRanking = Math.min(
-      Math.floor(members.length * 10 + (tradeVolume / 1000000)),
-      100
-    );
+    const powerRanking = Math.min(Math.floor(members.length * 10 + tradeVolume / 1000000), 100);
 
     return {
       members,
@@ -522,38 +505,37 @@ export class NetworkSynergyCalculator {
     const opportunities: Opportunity[] = [];
 
     // Triangulation opportunities (partners' partners)
-    const partnerIds = new Set(data.relationships.map(r => r.targetCountryId));
+    const partnerIds = new Set(data.relationships.map((r) => r.targetCountryId));
     // In real implementation, would query for partners' relationships
 
     // Economic complementarity (missing trade relationships)
     const hasTradeWith = new Set(
       data.relationships
-        .filter(r => r.relationship === 'trade' || r.relationship === 'alliance')
-        .map(r => r.targetCountryId)
+        .filter((r) => r.relationship === "trade" || r.relationship === "alliance")
+        .map((r) => r.targetCountryId)
     );
 
     // Cultural affinity (shared cultural exchanges)
     const culturalPartners = new Set(
-      data.culturalExchanges.flatMap(e =>
-        e.participatingCountries.map(p => p.countryId)
-      )
+      data.culturalExchanges.flatMap((e) => e.participatingCountries.map((p) => p.countryId))
     );
 
     // Example opportunity (in real implementation, would be data-driven)
     if (data.relationships.length < 5) {
       opportunities.push({
-        id: 'expand_network',
-        type: 'economic_complementarity',
-        targetCountry: 'Potential Partners',
-        targetCountryId: 'various',
+        id: "expand_network",
+        type: "economic_complementarity",
+        targetCountry: "Potential Partners",
+        targetCountryId: "various",
         score: 75,
-        reasoning: 'Your diplomatic network is still developing. Expanding to 5+ strong relationships would unlock network effects.',
+        reasoning:
+          "Your diplomatic network is still developing. Expanding to 5+ strong relationships would unlock network effects.",
         potentialBenefits: {
           economic: 15,
           diplomatic: 20,
         },
-        recommendedAction: 'Establish embassies in complementary economies',
-        priority: 'high',
+        recommendedAction: "Establish embassies in complementary economies",
+        priority: "high",
       });
     }
 
@@ -573,46 +555,49 @@ export class NetworkSynergyCalculator {
 
     // Over-dependency check (single dominant relationship)
     const totalRelationshipStrength = data.relationships.reduce((sum, r) => sum + r.strength, 0);
-    const strongestRelationship = Math.max(...data.relationships.map(r => r.strength), 0);
+    const strongestRelationship = Math.max(...data.relationships.map((r) => r.strength), 0);
 
     if (totalRelationshipStrength > 0 && strongestRelationship / totalRelationshipStrength > 0.5) {
       vulnerabilities.push({
-        id: 'over_dependency',
-        type: 'over_dependency',
-        severity: 'high',
-        description: 'Your diplomatic network is heavily dependent on a single relationship',
+        id: "over_dependency",
+        type: "over_dependency",
+        severity: "high",
+        description: "Your diplomatic network is heavily dependent on a single relationship",
         affectedCountries: [
-          data.relationships.find(r => r.strength === strongestRelationship)?.targetCountryId || 'unknown'
+          data.relationships.find((r) => r.strength === strongestRelationship)?.targetCountryId ||
+            "unknown",
         ],
         riskScore: 75,
-        mitigation: 'Diversify your diplomatic portfolio by strengthening relationships with additional partners',
+        mitigation:
+          "Diversify your diplomatic portfolio by strengthening relationships with additional partners",
       });
     }
 
     // Weak diversification (too few partners)
     if (data.relationships.length < 3) {
       vulnerabilities.push({
-        id: 'weak_diversification',
-        type: 'weak_diversification',
-        severity: 'medium',
-        description: 'Limited diplomatic network provides fewer opportunities and increased risk',
+        id: "weak_diversification",
+        type: "weak_diversification",
+        severity: "medium",
+        description: "Limited diplomatic network provides fewer opportunities and increased risk",
         affectedCountries: [],
         riskScore: 60,
-        mitigation: 'Establish relationships with at least 5 countries for network resilience',
+        mitigation: "Establish relationships with at least 5 countries for network resilience",
       });
     }
 
     // Tension exposure
-    const tensionRelationships = data.relationships.filter(r => r.relationship === 'tension');
+    const tensionRelationships = data.relationships.filter((r) => r.relationship === "tension");
     if (tensionRelationships.length > 0) {
       vulnerabilities.push({
-        id: 'rivalry_exposure',
-        type: 'rivalry_exposure',
-        severity: 'medium',
+        id: "rivalry_exposure",
+        type: "rivalry_exposure",
+        severity: "medium",
         description: `You have ${tensionRelationships.length} tense relationship(s) that may create complications`,
-        affectedCountries: tensionRelationships.map(r => r.targetCountryId),
-        riskScore: 50 + (tensionRelationships.length * 10),
-        mitigation: 'Consider diplomatic initiatives to resolve tensions or strengthen alliances for balance',
+        affectedCountries: tensionRelationships.map((r) => r.targetCountryId),
+        riskScore: 50 + tensionRelationships.length * 10,
+        mitigation:
+          "Consider diplomatic initiatives to resolve tensions or strengthen alliances for balance",
       });
     }
 
@@ -631,34 +616,44 @@ export class NetworkSynergyCalculator {
     const advantages: string[] = [];
 
     // Strong alliance network
-    const alliances = data.relationships.filter(r => r.relationship === 'alliance');
+    const alliances = data.relationships.filter((r) => r.relationship === "alliance");
     if (alliances.length >= 3) {
-      advantages.push(`Strong Alliance Network: ${alliances.length} formal alliances provide security and trade benefits`);
+      advantages.push(
+        `Strong Alliance Network: ${alliances.length} formal alliances provide security and trade benefits`
+      );
     }
 
     // Cultural dominance
     if (data.culturalExchanges.length >= 5) {
-      advantages.push(`Cultural Influence: ${data.culturalExchanges.length} cultural programs enhance soft power globally`);
+      advantages.push(
+        `Cultural Influence: ${data.culturalExchanges.length} cultural programs enhance soft power globally`
+      );
     }
 
     // Embassy excellence
-    const highLevelEmbassies = data.embassies.filter(e => e.level >= 3);
+    const highLevelEmbassies = data.embassies.filter((e) => e.level >= 3);
     if (highLevelEmbassies.length >= 3) {
-      advantages.push(`Diplomatic Excellence: ${highLevelEmbassies.length} high-level embassies provide enhanced capabilities`);
+      advantages.push(
+        `Diplomatic Excellence: ${highLevelEmbassies.length} high-level embassies provide enhanced capabilities`
+      );
     }
 
     // Treaty framework
-    const activeTreaties = data.treaties.filter(t => t.status === 'active');
+    const activeTreaties = data.treaties.filter((t) => t.status === "active");
     if (activeTreaties.length >= 5) {
-      advantages.push(`Legal Framework: ${activeTreaties.length} active treaties provide stable international framework`);
+      advantages.push(
+        `Legal Framework: ${activeTreaties.length} active treaties provide stable international framework`
+      );
     }
 
     // Diverse specializations
     const specializations = new Set(
-      data.embassies.filter(e => e.specialization).map(e => e.specialization)
+      data.embassies.filter((e) => e.specialization).map((e) => e.specialization)
     );
     if (specializations.size >= 3) {
-      advantages.push(`Specialized Capabilities: ${specializations.size} different embassy specializations provide diverse strengths`);
+      advantages.push(
+        `Specialized Capabilities: ${specializations.size} different embassy specializations provide diverse strengths`
+      );
     }
 
     return advantages;
@@ -671,14 +666,19 @@ export class NetworkSynergyCalculator {
   static simulateChoice(
     currentNetwork: NetworkSynergyData,
     choice: {
-      type: 'establish_embassy' | 'cultural_exchange' | 'treaty' | 'break_ties';
+      type: "establish_embassy" | "cultural_exchange" | "treaty" | "break_ties";
       targetCountry: string;
       parameters: Record<string, any>;
     }
   ): {
     newNetwork: NetworkSynergyData;
     delta: Partial<NetworkSynergyData>;
-    recommendation: 'highly_recommended' | 'recommended' | 'neutral' | 'not_recommended' | 'strongly_discouraged';
+    recommendation:
+      | "highly_recommended"
+      | "recommended"
+      | "neutral"
+      | "not_recommended"
+      | "strongly_discouraged";
     reasoning: string;
   } {
     // Create a copy of current network for simulation
@@ -691,37 +691,64 @@ export class NetworkSynergyCalculator {
     let diplomaticDelta = 0;
 
     switch (choice.type) {
-      case 'establish_embassy':
+      case "establish_embassy":
         economicDelta = 0.05; // +5% economic multiplier
         intelligenceDelta = 5; // +5% intelligence bonus
         diplomaticDelta = 200; // +200 diplomatic power
-        newNetwork.economicMultiplier = Math.min(currentNetwork.economicMultiplier + economicDelta, 2.5);
-        newNetwork.intelligenceBonus = Math.min(currentNetwork.intelligenceBonus + intelligenceDelta, 100);
-        newNetwork.diplomaticPower = Math.min(currentNetwork.diplomaticPower + diplomaticDelta, 10000);
+        newNetwork.economicMultiplier = Math.min(
+          currentNetwork.economicMultiplier + economicDelta,
+          2.5
+        );
+        newNetwork.intelligenceBonus = Math.min(
+          currentNetwork.intelligenceBonus + intelligenceDelta,
+          100
+        );
+        newNetwork.diplomaticPower = Math.min(
+          currentNetwork.diplomaticPower + diplomaticDelta,
+          10000
+        );
         break;
 
-      case 'cultural_exchange':
+      case "cultural_exchange":
         culturalDelta = 50; // +50 cultural influence
         economicDelta = 0.02; // +2% economic multiplier (soft power benefits)
-        newNetwork.culturalInfluence = Math.min(currentNetwork.culturalInfluence + culturalDelta, 1000);
+        newNetwork.culturalInfluence = Math.min(
+          currentNetwork.culturalInfluence + culturalDelta,
+          1000
+        );
         newNetwork.culturalSoftPower = Math.min(currentNetwork.culturalSoftPower + 5, 100);
-        newNetwork.economicMultiplier = Math.min(currentNetwork.economicMultiplier + economicDelta, 2.5);
+        newNetwork.economicMultiplier = Math.min(
+          currentNetwork.economicMultiplier + economicDelta,
+          2.5
+        );
         break;
 
-      case 'treaty':
+      case "treaty":
         economicDelta = 0.08; // +8% economic multiplier (treaties are significant)
         diplomaticDelta = 300; // +300 diplomatic power
-        newNetwork.economicMultiplier = Math.min(currentNetwork.economicMultiplier + economicDelta, 2.5);
-        newNetwork.diplomaticPower = Math.min(currentNetwork.diplomaticPower + diplomaticDelta, 10000);
+        newNetwork.economicMultiplier = Math.min(
+          currentNetwork.economicMultiplier + economicDelta,
+          2.5
+        );
+        newNetwork.diplomaticPower = Math.min(
+          currentNetwork.diplomaticPower + diplomaticDelta,
+          10000
+        );
         break;
 
-      case 'break_ties':
-        economicDelta = -0.10; // -10% economic multiplier (breaking ties hurts)
+      case "break_ties":
+        economicDelta = -0.1; // -10% economic multiplier (breaking ties hurts)
         diplomaticDelta = -500; // -500 diplomatic power
         intelligenceDelta = -10; // -10% intelligence bonus
-        newNetwork.economicMultiplier = Math.max(currentNetwork.economicMultiplier + economicDelta, 1.0);
+        newNetwork.economicMultiplier = Math.max(
+          currentNetwork.economicMultiplier + economicDelta,
+          1.0
+        );
         newNetwork.diplomaticPower = Math.max(currentNetwork.diplomaticPower + diplomaticDelta, 0);
-        newNetwork.intelligenceBonus = Math.max(currentNetwork.intelligenceBonus + intelligenceDelta, 0);
+        newNetwork.intelligenceBonus = Math.max(
+          currentNetwork.intelligenceBonus + intelligenceDelta,
+          0
+        );
         break;
     }
 
@@ -731,26 +758,34 @@ export class NetworkSynergyCalculator {
     delta.diplomaticPower = diplomaticDelta;
 
     // Determine recommendation
-    const totalImpact = (economicDelta * 100) + intelligenceDelta + (culturalDelta / 10) + (diplomaticDelta / 100);
+    const totalImpact =
+      economicDelta * 100 + intelligenceDelta + culturalDelta / 10 + diplomaticDelta / 100;
 
-    let recommendation: 'highly_recommended' | 'recommended' | 'neutral' | 'not_recommended' | 'strongly_discouraged';
+    let recommendation:
+      | "highly_recommended"
+      | "recommended"
+      | "neutral"
+      | "not_recommended"
+      | "strongly_discouraged";
     let reasoning: string;
 
     if (totalImpact >= 50) {
-      recommendation = 'highly_recommended';
-      reasoning = 'This action provides significant benefits across multiple dimensions of your diplomatic network';
+      recommendation = "highly_recommended";
+      reasoning =
+        "This action provides significant benefits across multiple dimensions of your diplomatic network";
     } else if (totalImpact >= 20) {
-      recommendation = 'recommended';
-      reasoning = 'This action provides solid benefits and strengthens your network position';
+      recommendation = "recommended";
+      reasoning = "This action provides solid benefits and strengthens your network position";
     } else if (totalImpact >= -10) {
-      recommendation = 'neutral';
-      reasoning = 'This action has minimal impact on your overall network strength';
+      recommendation = "neutral";
+      reasoning = "This action has minimal impact on your overall network strength";
     } else if (totalImpact >= -30) {
-      recommendation = 'not_recommended';
-      reasoning = 'This action may weaken your network position without clear benefits';
+      recommendation = "not_recommended";
+      reasoning = "This action may weaken your network position without clear benefits";
     } else {
-      recommendation = 'strongly_discouraged';
-      reasoning = 'This action would significantly harm your diplomatic network and should be avoided unless absolutely necessary';
+      recommendation = "strongly_discouraged";
+      reasoning =
+        "This action would significantly harm your diplomatic network and should be avoided unless absolutely necessary";
     }
 
     return {
@@ -765,15 +800,15 @@ export class NetworkSynergyCalculator {
 
   private static calculateEmbassyContribution(embassies: EmbassyData[]): number {
     return embassies.reduce((sum, e) => {
-      return sum + (e.level * 10) + (e.influence || 0) / 10;
+      return sum + e.level * 10 + (e.influence || 0) / 10;
     }, 0);
   }
 
   private static calculateRelationshipContribution(relationships: RelationshipData[]): number {
     return relationships.reduce((sum, r) => {
-      const typeMultiplier = r.relationship === 'alliance' ? 1.5 :
-                            r.relationship === 'trade' ? 1.2 : 1.0;
-      return sum + (r.strength * typeMultiplier);
+      const typeMultiplier =
+        r.relationship === "alliance" ? 1.5 : r.relationship === "trade" ? 1.2 : 1.0;
+      return sum + r.strength * typeMultiplier;
     }, 0);
   }
 
@@ -784,14 +819,14 @@ export class NetworkSynergyCalculator {
   }
 
   private static calculateTreatyContribution(treaties: TreatyData[]): number {
-    return treaties.filter(t => t.status === 'active').length * 50;
+    return treaties.filter((t) => t.status === "active").length * 50;
   }
 
   private static calculateIntelligenceContribution(sharedData: SharedDataPoint[]): number {
     return sharedData.reduce((sum, d) => {
-      const classificationMultiplier = d.classification === 'CONFIDENTIAL' ? 3 :
-                                      d.classification === 'RESTRICTED' ? 2 : 1;
-      return sum + (10 * classificationMultiplier);
+      const classificationMultiplier =
+        d.classification === "CONFIDENTIAL" ? 3 : d.classification === "RESTRICTED" ? 2 : 1;
+      return sum + 10 * classificationMultiplier;
     }, 0);
   }
 }

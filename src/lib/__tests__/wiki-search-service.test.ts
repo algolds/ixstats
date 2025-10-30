@@ -57,12 +57,12 @@ describe("wiki-search-service base path handling", () => {
     await searchWiki("Caphiria", "ixwiki");
 
     const fetchCalls = (global.fetch as FetchMock).mock.calls;
-    const targetCall = fetchCalls.find(([url]) =>
-      typeof url === "string" && url.includes("/api/ixwiki-proxy"),
+    const targetCall = fetchCalls.find(
+      ([url]) => typeof url === "string" && url.includes("/api/ixwiki-proxy")
     );
     expect(targetCall).toBeDefined();
     expect(targetCall?.[0] as string).toMatch(
-      /^https:\/\/ixstats\.example\.com\/projects\/ixstats\/api\/ixwiki-proxy\/wiki\/api\.php\?/,
+      /^https:\/\/ixstats\.example\.com\/projects\/ixstats\/api\/ixwiki-proxy\/wiki\/api\.php\?/
     );
   });
 
@@ -75,11 +75,13 @@ describe("wiki-search-service base path handling", () => {
     await searchWiki("Caphiria", "iiwiki");
 
     const fetchCalls = (global.fetch as FetchMock).mock.calls;
-    const targetCall = fetchCalls.find(([url]) =>
-      typeof url === "string" && url.includes("/api/iiwiki-proxy"),
+    const targetCall = fetchCalls.find(
+      ([url]) => typeof url === "string" && url.includes("/api/iiwiki-proxy")
     );
     expect(targetCall).toBeDefined();
-    expect(targetCall?.[0] as string).toMatch(/^\/projects\/ixstats\/api\/iiwiki-proxy\/wiki\/api\.php\?/);
+    expect(targetCall?.[0] as string).toMatch(
+      /^\/projects\/ixstats\/api\/iiwiki-proxy\/wiki\/api\.php\?/
+    );
   });
 
   it("supports all configured wiki endpoints", async () => {
@@ -97,7 +99,7 @@ describe("wiki-search-service base path handling", () => {
     expect(fetchCalls.some((url) => url.includes("/api/ixwiki-proxy/wiki/api.php?"))).toBe(true);
     expect(fetchCalls.some((url) => url.includes("/api/iiwiki-proxy/wiki/api.php?"))).toBe(true);
     expect(fetchCalls.some((url) => url.includes("/api/althistory-wiki-proxy/api.php?"))).toBe(
-      true,
+      true
     );
   });
 

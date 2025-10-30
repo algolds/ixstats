@@ -215,7 +215,9 @@ async function testRateLimit(
   const elapsed = Date.now() - startTime;
 
   // Test 2: Validate legitimate traffic (well under limit)
-  console.log(`\nTesting legitimate traffic (${Math.floor(endpoint.expectedLimit * 0.5)} requests)...`);
+  console.log(
+    `\nTesting legitimate traffic (${Math.floor(endpoint.expectedLimit * 0.5)} requests)...`
+  );
 
   await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds
 
@@ -297,12 +299,16 @@ function displayResults(result: RateLimitTestResult) {
   console.log(
     `Actual Limit:        ${result.actualLimit} req/min (${limitAccuracy}% accurate) ${limitPass ? colorize("✓", "green") : colorize("✗", "red")}`
   );
-  console.log(`First Rate Limit:    Request #${result.firstRateLimitAt > 0 ? result.firstRateLimitAt : "N/A"}`);
+  console.log(
+    `First Rate Limit:    Request #${result.firstRateLimitAt > 0 ? result.firstRateLimitAt : "N/A"}`
+  );
 
   console.log(colorize("\n=== Request Statistics ===", "cyan"));
   console.log(`Total Requests:      ${result.totalRequests}`);
   console.log(`Successful:          ${colorize(String(result.successfulRequests), "green")}`);
-  console.log(`Rate Limited:        ${result.rateLimitedRequests > 0 ? colorize(String(result.rateLimitedRequests), "yellow") : String(result.rateLimitedRequests)}`);
+  console.log(
+    `Rate Limited:        ${result.rateLimitedRequests > 0 ? colorize(String(result.rateLimitedRequests), "yellow") : String(result.rateLimitedRequests)}`
+  );
 
   console.log(colorize("\n=== Validation Checks ===", "cyan"));
 
@@ -342,9 +348,15 @@ function displayResults(result: RateLimitTestResult) {
 // ============================================================================
 
 async function testRedisFallback(config: RateLimitTestConfig): Promise<boolean> {
-  console.log(colorize("\n╔═══════════════════════════════════════════════════════════════════╗", "blue"));
-  console.log(colorize("║                   Redis Fallback Test                             ║", "blue"));
-  console.log(colorize("╚═══════════════════════════════════════════════════════════════════╝", "blue"));
+  console.log(
+    colorize("\n╔═══════════════════════════════════════════════════════════════════╗", "blue")
+  );
+  console.log(
+    colorize("║                   Redis Fallback Test                             ║", "blue")
+  );
+  console.log(
+    colorize("╚═══════════════════════════════════════════════════════════════════╝", "blue")
+  );
 
   console.log("\nThis test validates that rate limiting gracefully falls back to");
   console.log("in-memory storage when Redis is unavailable.\n");
@@ -368,9 +380,15 @@ async function testRedisFallback(config: RateLimitTestConfig): Promise<boolean> 
 // ============================================================================
 
 async function main() {
-  console.log(colorize("╔═══════════════════════════════════════════════════════════════════╗", "blue"));
-  console.log(colorize("║            IxStats Rate Limiting Test Suite v1.0                 ║", "blue"));
-  console.log(colorize("╚═══════════════════════════════════════════════════════════════════╝", "blue"));
+  console.log(
+    colorize("╔═══════════════════════════════════════════════════════════════════╗", "blue")
+  );
+  console.log(
+    colorize("║            IxStats Rate Limiting Test Suite v1.0                 ║", "blue")
+  );
+  console.log(
+    colorize("╚═══════════════════════════════════════════════════════════════════╝", "blue")
+  );
 
   // Parse command-line arguments
   const args = process.argv.slice(2);
@@ -400,10 +418,7 @@ async function main() {
   // Warning if tokens not provided
   if (!authToken) {
     console.log(
-      colorize(
-        "\n⚠️  No auth token provided. Authenticated endpoints will be skipped.",
-        "yellow"
-      )
+      colorize("\n⚠️  No auth token provided. Authenticated endpoints will be skipped.", "yellow")
     );
   }
 
@@ -426,9 +441,7 @@ async function main() {
     }
 
     if (endpoint.requiresAdmin && !adminToken) {
-      console.log(
-        `\n${colorize(`Skipping ${endpoint.name}`, "yellow")} - Requires admin token`
-      );
+      console.log(`\n${colorize(`Skipping ${endpoint.name}`, "yellow")} - Requires admin token`);
       continue;
     }
 
@@ -449,9 +462,15 @@ async function main() {
   }
 
   // Summary
-  console.log(colorize("\n╔═══════════════════════════════════════════════════════════════════╗", "blue"));
-  console.log(colorize("║                        Test Summary                               ║", "blue"));
-  console.log(colorize("╚═══════════════════════════════════════════════════════════════════╝", "blue"));
+  console.log(
+    colorize("\n╔═══════════════════════════════════════════════════════════════════╗", "blue")
+  );
+  console.log(
+    colorize("║                        Test Summary                               ║", "blue")
+  );
+  console.log(
+    colorize("╚═══════════════════════════════════════════════════════════════════╝", "blue")
+  );
 
   const totalTests = results.length;
   const passedTests = results.filter((r) => r.passed).length;
@@ -482,10 +501,7 @@ async function main() {
 
   if (failedTests > 0) {
     console.log(
-      colorize(
-        "⚠️  Some rate limits are not working as expected. Check configuration:",
-        "yellow"
-      )
+      colorize("⚠️  Some rate limits are not working as expected. Check configuration:", "yellow")
     );
     console.log("   - Verify RATE_LIMIT_ENABLED=true in .env");
     console.log("   - Check tRPC middleware rate limit configurations");

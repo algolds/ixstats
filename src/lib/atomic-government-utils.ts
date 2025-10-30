@@ -14,10 +14,10 @@
  * @module atomic-government-utils
  */
 
-import { ComponentType } from '@prisma/client';
-import type { AtomicGovernmentComponent } from './atomic-government-data';
-import { ATOMIC_COMPONENTS } from './atomic-government-data';
-import type { EffectivenessMetrics } from '~/components/atomic/shared/types';
+import { ComponentType } from "@prisma/client";
+import type { AtomicGovernmentComponent } from "./atomic-government-data";
+import { ATOMIC_COMPONENTS } from "./atomic-government-data";
+import type { EffectivenessMetrics } from "~/components/atomic/shared/types";
 
 /**
  * Calculate government effectiveness metrics based on selected components
@@ -33,8 +33,7 @@ export function calculateGovernmentEffectiveness(
     .filter((comp): comp is AtomicGovernmentComponent => comp !== undefined);
 
   const baseEffectiveness =
-    components.reduce((sum, comp) => sum + comp.effectiveness, 0) /
-    (components.length || 1);
+    components.reduce((sum, comp) => sum + comp.effectiveness, 0) / (components.length || 1);
 
   let synergyBonus = 0;
   let synergyCount = 0;
@@ -102,10 +101,7 @@ export function checkGovernmentSynergy(comp1: string, comp2: string): number {
  * @param comp2 - Second component type
  * @returns True if components conflict
  */
-export function checkGovernmentConflict(
-  comp1: string,
-  comp2: string
-): boolean {
+export function checkGovernmentConflict(comp1: string, comp2: string): boolean {
   const component1 = ATOMIC_COMPONENTS[comp1 as ComponentType];
   const component2 = ATOMIC_COMPONENTS[comp2 as ComponentType];
 
@@ -131,9 +127,7 @@ export function filterByCategory(
   if (!category) return components;
 
   return Object.fromEntries(
-    Object.entries(components).filter(
-      ([, comp]) => comp?.category === category
-    )
+    Object.entries(components).filter(([, comp]) => comp?.category === category)
   ) as Partial<Record<ComponentType, AtomicGovernmentComponent>>;
 }
 
@@ -228,9 +222,7 @@ export function detectConflicts(
  * @param selectedComponents - Array of selected component types
  * @returns Total implementation cost
  */
-export function calculateImplementationCost(
-  selectedComponents: ComponentType[]
-): number {
+export function calculateImplementationCost(selectedComponents: ComponentType[]): number {
   return selectedComponents.reduce((total, type) => {
     const component = ATOMIC_COMPONENTS[type];
     return total + (component?.implementationCost ?? 0);
@@ -243,9 +235,7 @@ export function calculateImplementationCost(
  * @param selectedComponents - Array of selected component types
  * @returns Total maintenance cost
  */
-export function calculateMaintenanceCost(
-  selectedComponents: ComponentType[]
-): number {
+export function calculateMaintenanceCost(selectedComponents: ComponentType[]): number {
   return selectedComponents.reduce((total, type) => {
     const component = ATOMIC_COMPONENTS[type];
     return total + (component?.maintenanceCost ?? 0);
@@ -258,9 +248,7 @@ export function calculateMaintenanceCost(
  * @param selectedComponents - Array of selected component types
  * @returns Total required capacity
  */
-export function calculateRequiredCapacity(
-  selectedComponents: ComponentType[]
-): number {
+export function calculateRequiredCapacity(selectedComponents: ComponentType[]): number {
   return selectedComponents.reduce((total, type) => {
     const component = ATOMIC_COMPONENTS[type];
     return total + (component?.requiredCapacity ?? 0);
@@ -281,7 +269,7 @@ export function validateSelection(
   const errors: string[] = [];
 
   if (selectedComponents.length === 0) {
-    errors.push('At least one component must be selected');
+    errors.push("At least one component must be selected");
   }
 
   if (selectedComponents.length > maxComponents) {
@@ -290,9 +278,7 @@ export function validateSelection(
 
   const conflicts = detectConflicts(selectedComponents);
   if (conflicts.length > 0) {
-    errors.push(
-      `${conflicts.length} conflict${conflicts.length > 1 ? 's' : ''} detected`
-    );
+    errors.push(`${conflicts.length} conflict${conflicts.length > 1 ? "s" : ""} detected`);
   }
 
   return {
@@ -329,7 +315,7 @@ export function getCategories(
  */
 export function calculateComplexityDistribution(
   selectedComponents: ComponentType[]
-): Record<'Low' | 'Medium' | 'High', number> {
+): Record<"Low" | "Medium" | "High", number> {
   const distribution = { Low: 0, Medium: 0, High: 0 };
 
   selectedComponents.forEach((type) => {

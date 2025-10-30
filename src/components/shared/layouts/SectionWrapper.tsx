@@ -1,16 +1,16 @@
 "use client";
 
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
-import { Progress } from '~/components/ui/progress';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { cn } from '~/lib/utils';
-import { Info, AlertTriangle, CheckCircle, HelpCircle } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components/ui/tooltip';
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Progress } from "~/components/ui/progress";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { cn } from "~/lib/utils";
+import { Info, AlertTriangle, CheckCircle, HelpCircle } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 
 export interface SectionWrapperProps {
   title: string;
@@ -24,19 +24,19 @@ export interface SectionWrapperProps {
     accent: string;
     bg: string;
   };
-  status?: 'default' | 'loading' | 'error' | 'success' | 'warning';
+  status?: "default" | "loading" | "error" | "success" | "warning";
   statusMessage?: string;
   progress?: number;
   badge?: {
     label: string;
-    variant?: 'default' | 'secondary' | 'destructive' | 'outline';
+    variant?: "default" | "secondary" | "destructive" | "outline";
   };
   actions?: React.ReactNode;
   collapsible?: boolean;
   defaultCollapsed?: boolean;
   help?: string;
   alert?: {
-    type: 'info' | 'warning' | 'error' | 'success';
+    type: "info" | "warning" | "error" | "success";
     message: string;
   };
 }
@@ -46,15 +46,15 @@ const statusIcons = {
   loading: motion.div,
   error: AlertTriangle,
   success: CheckCircle,
-  warning: AlertTriangle
+  warning: AlertTriangle,
 };
 
 const statusColors = {
-  default: 'border-border/20',
-  loading: 'border-blue-500/20 bg-blue-500/5',
-  error: 'border-red-500/20 bg-red-500/5',
-  success: 'border-green-500/20 bg-green-500/5',
-  warning: 'border-yellow-500/20 bg-yellow-500/5'
+  default: "border-border/20",
+  loading: "border-blue-500/20 bg-blue-500/5",
+  error: "border-red-500/20 bg-red-500/5",
+  success: "border-green-500/20 bg-green-500/5",
+  warning: "border-yellow-500/20 bg-yellow-500/5",
 };
 
 export function SectionWrapper({
@@ -64,7 +64,7 @@ export function SectionWrapper({
   children,
   className,
   theme,
-  status = 'default',
+  status = "default",
   statusMessage,
   progress,
   badge,
@@ -72,20 +72,22 @@ export function SectionWrapper({
   collapsible = false,
   defaultCollapsed = false,
   help,
-  alert
+  alert,
 }: SectionWrapperProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed);
 
   const StatusIcon = statusIcons[status];
-  const themeStyles = theme ? {
-    borderColor: theme.accent,
-    background: `linear-gradient(135deg, ${theme.bg} 0%, transparent 100%)`
-  } : undefined;
+  const themeStyles = theme
+    ? {
+        borderColor: theme.accent,
+        background: `linear-gradient(135deg, ${theme.bg} 0%, transparent 100%)`,
+      }
+    : undefined;
 
   return (
     <Card
       className={cn(
-        'glass-hierarchy-child transition-all duration-200',
+        "glass-hierarchy-child transition-all duration-200",
         statusColors[status],
         className
       )}
@@ -93,16 +95,15 @@ export function SectionWrapper({
     >
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3 flex-1">
+          <div className="flex flex-1 items-start gap-3">
             {Icon && (
-              <div className={cn(
-                "p-2 rounded-lg mt-0.5",
-                theme ? `bg-gradient-to-br ${theme.primary}` : "bg-primary/10"
-              )}>
-                <Icon className={cn(
-                  "h-5 w-5",
-                  theme ? "text-white" : "text-primary"
-                )} />
+              <div
+                className={cn(
+                  "mt-0.5 rounded-lg p-2",
+                  theme ? `bg-gradient-to-br ${theme.primary}` : "bg-primary/10"
+                )}
+              >
+                <Icon className={cn("h-5 w-5", theme ? "text-white" : "text-primary")} />
               </div>
             )}
             <div className="flex-1 space-y-1">
@@ -112,30 +113,28 @@ export function SectionWrapper({
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+                        <HelpCircle className="text-muted-foreground h-4 w-4 cursor-help" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p className="text-sm max-w-xs">{help}</p>
+                        <p className="max-w-xs text-sm">{help}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 )}
                 {badge && (
-                  <Badge variant={badge.variant || 'default'} className="text-xs">
+                  <Badge variant={badge.variant || "default"} className="text-xs">
                     {badge.label}
                   </Badge>
                 )}
               </div>
-              {description && (
-                <CardDescription className="text-sm">{description}</CardDescription>
-              )}
+              {description && <CardDescription className="text-sm">{description}</CardDescription>}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {status !== 'default' && statusMessage && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                {status === 'loading' ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            {status !== "default" && statusMessage && (
+              <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                {status === "loading" ? (
+                  <div className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
                 ) : (
                   <StatusIcon className="h-4 w-4" />
                 )}
@@ -162,7 +161,7 @@ export function SectionWrapper({
         </div>
         {progress !== undefined && (
           <div className="mt-3 space-y-1">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="text-muted-foreground flex items-center justify-between text-xs">
               <span>Progress</span>
               <span>{Math.round(progress)}%</span>
             </div>
@@ -171,12 +170,15 @@ export function SectionWrapper({
         )}
         {alert && (
           <Alert
-            variant={alert.type === 'error' ? 'destructive' : 'default'}
+            variant={alert.type === "error" ? "destructive" : "default"}
             className={cn(
-              'mt-3',
-              alert.type === 'warning' && 'border-yellow-500/20 bg-yellow-500/5 text-yellow-700 dark:text-yellow-400',
-              alert.type === 'info' && 'border-blue-500/20 bg-blue-500/5 text-blue-700 dark:text-blue-400',
-              alert.type === 'success' && 'border-green-500/20 bg-green-500/5 text-green-700 dark:text-green-400'
+              "mt-3",
+              alert.type === "warning" &&
+                "border-yellow-500/20 bg-yellow-500/5 text-yellow-700 dark:text-yellow-400",
+              alert.type === "info" &&
+                "border-blue-500/20 bg-blue-500/5 text-blue-700 dark:text-blue-400",
+              alert.type === "success" &&
+                "border-green-500/20 bg-green-500/5 text-green-700 dark:text-green-400"
             )}
           >
             <AlertDescription>{alert.message}</AlertDescription>
@@ -187,7 +189,7 @@ export function SectionWrapper({
         {!isCollapsed && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
+            animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
@@ -200,57 +202,57 @@ export function SectionWrapper({
 }
 
 // Themed section wrapper variants
-export function EconomicSection(props: Omit<SectionWrapperProps, 'theme'>) {
+export function EconomicSection(props: Omit<SectionWrapperProps, "theme">) {
   return (
     <SectionWrapper
       {...props}
       theme={{
-        primary: 'from-blue-500 to-cyan-600',
-        secondary: 'from-blue-500/10 to-cyan-600/10',
-        accent: 'rgb(59, 130, 246)',
-        bg: 'rgba(59, 130, 246, 0.05)'
+        primary: "from-blue-500 to-cyan-600",
+        secondary: "from-blue-500/10 to-cyan-600/10",
+        accent: "rgb(59, 130, 246)",
+        bg: "rgba(59, 130, 246, 0.05)",
       }}
     />
   );
 }
 
-export function GovernmentSection(props: Omit<SectionWrapperProps, 'theme'>) {
+export function GovernmentSection(props: Omit<SectionWrapperProps, "theme">) {
   return (
     <SectionWrapper
       {...props}
       theme={{
-        primary: 'from-purple-500 to-violet-600',
-        secondary: 'from-purple-500/10 to-violet-600/10',
-        accent: 'rgb(168, 85, 247)',
-        bg: 'rgba(168, 85, 247, 0.05)'
+        primary: "from-purple-500 to-violet-600",
+        secondary: "from-purple-500/10 to-violet-600/10",
+        accent: "rgb(168, 85, 247)",
+        bg: "rgba(168, 85, 247, 0.05)",
       }}
     />
   );
 }
 
-export function DiplomaticSection(props: Omit<SectionWrapperProps, 'theme'>) {
+export function DiplomaticSection(props: Omit<SectionWrapperProps, "theme">) {
   return (
     <SectionWrapper
       {...props}
       theme={{
-        primary: 'from-amber-500 to-orange-600',
-        secondary: 'from-amber-500/10 to-orange-600/10',
-        accent: 'rgb(245, 158, 11)',
-        bg: 'rgba(245, 158, 11, 0.05)'
+        primary: "from-amber-500 to-orange-600",
+        secondary: "from-amber-500/10 to-orange-600/10",
+        accent: "rgb(245, 158, 11)",
+        bg: "rgba(245, 158, 11, 0.05)",
       }}
     />
   );
 }
 
-export function IntelligenceSection(props: Omit<SectionWrapperProps, 'theme'>) {
+export function IntelligenceSection(props: Omit<SectionWrapperProps, "theme">) {
   return (
     <SectionWrapper
       {...props}
       theme={{
-        primary: 'from-indigo-500 to-blue-600',
-        secondary: 'from-indigo-500/10 to-blue-600/10',
-        accent: 'rgb(99, 102, 241)',
-        bg: 'rgba(99, 102, 241, 0.05)'
+        primary: "from-indigo-500 to-blue-600",
+        secondary: "from-indigo-500/10 to-blue-600/10",
+        accent: "rgb(99, 102, 241)",
+        bg: "rgba(99, 102, 241, 0.05)",
       }}
     />
   );

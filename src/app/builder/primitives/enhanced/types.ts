@@ -1,6 +1,15 @@
 // Enhanced Primitive Types
 
-export type SectionId = 'symbols' | 'core' | 'labor' | 'fiscal' | 'government' | 'demographics' | 'spending' | 'sectors' | 'preview';
+export type SectionId =
+  | "symbols"
+  | "core"
+  | "labor"
+  | "fiscal"
+  | "government"
+  | "demographics"
+  | "spending"
+  | "sectors"
+  | "preview";
 
 export interface SectionColorScheme {
   primary: string;
@@ -12,13 +21,13 @@ export interface SectionColorScheme {
   muted: string;
 }
 
-export type PrimitiveTheme = 
-  | 'gold'    // National Symbols, Fiscal System
-  | 'blue'    // Core Indicators  
-  | 'emerald' // Labor & Employment
-  | 'purple'  // Government Spending
-  | 'red'     // Demographics
-  | 'default';
+export type PrimitiveTheme =
+  | "gold" // National Symbols, Fiscal System
+  | "blue" // Core Indicators
+  | "emerald" // Labor & Employment
+  | "purple" // Government Spending
+  | "red" // Demographics
+  | "default";
 
 export interface EnhancedInputProps {
   value: number;
@@ -32,7 +41,7 @@ export interface EnhancedInputProps {
   unit?: string;
   sectionId?: SectionId;
   theme?: PrimitiveTheme;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   disabled?: boolean;
   required?: boolean;
   referenceValue?: number;
@@ -82,17 +91,17 @@ export interface MetricCardProps {
   icon?: React.ComponentType<any>;
   sectionId?: SectionId;
   theme?: PrimitiveTheme;
-  trend?: 'up' | 'down' | 'neutral';
+  trend?: "up" | "down" | "neutral";
   change?: number;
   changeUnit?: string;
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
 }
 
 export interface AnimationConfig {
   enabled?: boolean;
   duration?: number;
-  easing?: 'easeInOut' | 'easeIn' | 'easeOut' | 'linear';
+  easing?: "easeInOut" | "easeIn" | "easeOut" | "linear";
   delay?: number;
   stagger?: number;
 }

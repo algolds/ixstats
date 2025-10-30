@@ -10,7 +10,13 @@ import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Search, RotateCcw } from "lucide-react";
 import type { TimeRange, MetricType } from "~/hooks/useHistoricalEconomicData";
 
@@ -30,10 +36,10 @@ interface FilterControlsProps {
 }
 
 const eventTypes = [
-  { value: 'dm_input', label: 'DM Input' },
-  { value: 'policy_change', label: 'Policy Change' },
-  { value: 'economic_shift', label: 'Economic Shift' },
-  { value: 'external_event', label: 'External Event' },
+  { value: "dm_input", label: "DM Input" },
+  { value: "policy_change", label: "Policy Change" },
+  { value: "economic_shift", label: "Economic Shift" },
+  { value: "external_event", label: "External Event" },
 ];
 
 export const FilterControls = React.memo(function FilterControls({
@@ -53,10 +59,15 @@ export const FilterControls = React.memo(function FilterControls({
   return (
     <Card>
       <CardContent className="p-4">
-        <div className="flex flex-wrap gap-4 items-center">
+        <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <Label htmlFor="timeRange" className="text-sm">Time Range:</Label>
-            <Select value={selectedTimeRange} onValueChange={(value: TimeRange) => setSelectedTimeRange(value)}>
+            <Label htmlFor="timeRange" className="text-sm">
+              Time Range:
+            </Label>
+            <Select
+              value={selectedTimeRange}
+              onValueChange={(value: TimeRange) => setSelectedTimeRange(value)}
+            >
               <SelectTrigger className="w-24">
                 <SelectValue />
               </SelectTrigger>
@@ -70,8 +81,13 @@ export const FilterControls = React.memo(function FilterControls({
           </div>
 
           <div className="flex items-center gap-2">
-            <Label htmlFor="metric" className="text-sm">Metric:</Label>
-            <Select value={selectedMetric} onValueChange={(value: MetricType) => setSelectedMetric(value)}>
+            <Label htmlFor="metric" className="text-sm">
+              Metric:
+            </Label>
+            <Select
+              value={selectedMetric}
+              onValueChange={(value: MetricType) => setSelectedMetric(value)}
+            >
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
@@ -84,14 +100,16 @@ export const FilterControls = React.memo(function FilterControls({
           </div>
 
           <div className="flex items-center gap-2">
-            <Label htmlFor="eventType" className="text-sm">Event Type:</Label>
+            <Label htmlFor="eventType" className="text-sm">
+              Event Type:
+            </Label>
             <Select value={selectedEventType} onValueChange={setSelectedEventType}>
               <SelectTrigger className="w-36">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
-                {eventTypes.map(type => (
+                {eventTypes.map((type) => (
                   <SelectItem key={type.value} value={type.value}>
                     {type.label}
                   </SelectItem>
@@ -101,7 +119,9 @@ export const FilterControls = React.memo(function FilterControls({
           </div>
 
           <div className="flex items-center gap-2">
-            <Label htmlFor="severity" className="text-sm">Severity:</Label>
+            <Label htmlFor="severity" className="text-sm">
+              Severity:
+            </Label>
             <Select value={selectedSeverity} onValueChange={setSelectedSeverity}>
               <SelectTrigger className="w-28">
                 <SelectValue />
@@ -116,8 +136,8 @@ export const FilterControls = React.memo(function FilterControls({
             </Select>
           </div>
 
-          <div className="flex-1 min-w-[200px] relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="relative min-w-[200px] flex-1">
+            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
             <Input
               placeholder="Search events..."
               value={searchQuery}

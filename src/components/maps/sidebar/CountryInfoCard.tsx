@@ -5,16 +5,16 @@
  * Clean white design with purple accents.
  */
 
-'use client';
+"use client";
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
-import { RiMapPinLine, RiBarChartBoxLine } from 'react-icons/ri';
-import { CountryHeader } from './CountryHeader';
-import { NationalIdentitySection } from './NationalIdentitySection';
-import { GeographicStatsSection } from './GeographicStatsSection';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { RiMapPinLine, RiBarChartBoxLine } from "react-icons/ri";
+import { CountryHeader } from "./CountryHeader";
+import { NationalIdentitySection } from "./NationalIdentitySection";
+import { GeographicStatsSection } from "./GeographicStatsSection";
 
 interface CountryInfo {
   id: string;
@@ -56,18 +56,16 @@ export const CountryInfoCard = React.memo(function CountryInfoCard({
   const isLoading = !selectedCountry.countryId;
 
   return (
-    <Card className="bg-white border-gray-200 shadow-lg overflow-hidden">
+    <Card className="overflow-hidden border-gray-200 bg-white shadow-lg">
       {/* Header Section */}
-      <CardHeader className="pb-3 border-b border-gray-100">
+      <CardHeader className="border-b border-gray-100 pb-3">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-purple-500" />
-          <CardTitle className="text-gray-900 text-base font-semibold">
+          <div className="h-2 w-2 rounded-full bg-purple-500" />
+          <CardTitle className="text-base font-semibold text-gray-900">
             Country Information
           </CardTitle>
         </div>
-        <p className="text-xs text-gray-500 mt-1">
-          Click a country on the map to view details
-        </p>
+        <p className="mt-1 text-xs text-gray-500">Click a country on the map to view details</p>
       </CardHeader>
 
       <CardContent className="p-0">
@@ -83,15 +81,13 @@ export const CountryInfoCard = React.memo(function CountryInfoCard({
 
         {isLoading ? (
           // Loading skeleton
-          <div className="p-4 space-y-4">
+          <div className="space-y-4 p-4">
             <div className="animate-pulse space-y-3">
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-              <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+              <div className="h-4 w-3/4 rounded bg-gray-200"></div>
+              <div className="h-4 w-1/2 rounded bg-gray-200"></div>
+              <div className="h-4 w-5/6 rounded bg-gray-200"></div>
             </div>
-            <div className="text-center text-xs text-gray-400 pt-4">
-              Loading country details...
-            </div>
+            <div className="pt-4 text-center text-xs text-gray-400">Loading country details...</div>
           </div>
         ) : (
           <>
@@ -133,8 +129,8 @@ export const CountryInfoCard = React.memo(function CountryInfoCard({
                   rel="noopener noreferrer"
                   className="block"
                 >
-                  <Button className="w-full bg-purple-500 hover:bg-purple-600 text-white border-0">
-                    <RiMapPinLine className="w-4 h-4 mr-2" />
+                  <Button className="w-full border-0 bg-purple-500 text-white hover:bg-purple-600">
+                    <RiMapPinLine className="mr-2 h-4 w-4" />
                     View Country Page
                   </Button>
                 </a>
@@ -143,18 +139,18 @@ export const CountryInfoCard = React.memo(function CountryInfoCard({
 
             {/* Metadata Footer */}
             {selectedCountry.countryId && (
-              <div className="px-4 pb-3 border-t border-gray-100 pt-3">
-                <div className="text-xs text-gray-400 text-center">
+              <div className="border-t border-gray-100 px-4 pt-3 pb-3">
+                <div className="text-center text-xs text-gray-400">
                   ID: {selectedCountry.countryId}
                 </div>
               </div>
             )}
 
             {/* Map Statistics Section */}
-            <div className="px-4 pb-4 border-t border-gray-100 pt-3">
+            <div className="border-t border-gray-100 px-4 pt-3 pb-4">
               <div className="flex items-center gap-2">
-                <RiBarChartBoxLine className="w-4 h-4 text-purple-500" />
-                <span className="text-xs font-semibold text-gray-900 uppercase tracking-wide">
+                <RiBarChartBoxLine className="h-4 w-4 text-purple-500" />
+                <span className="text-xs font-semibold tracking-wide text-gray-900 uppercase">
                   Map Statistics
                 </span>
               </div>

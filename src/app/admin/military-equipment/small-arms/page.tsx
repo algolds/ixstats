@@ -11,7 +11,13 @@ import { isSystemOwner } from "~/lib/system-owner-constants";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Card } from "~/components/ui/card";
 import { Slider } from "~/components/ui/slider";
@@ -52,17 +58,17 @@ import Link from "next/link";
 
 // Equipment types with icons
 const EQUIPMENT_TYPES = [
-  { value: 'pistols', label: 'Pistols', icon: Target },
-  { value: 'assault_rifles', label: 'Assault Rifles', icon: Crosshair },
-  { value: 'battle_rifles', label: 'Battle Rifles', icon: Crosshair },
-  { value: 'sniper_rifles', label: 'Sniper Rifles', icon: Target },
-  { value: 'submachine_guns', label: 'Submachine Guns', icon: Zap },
-  { value: 'machine_guns', label: 'Machine Guns', icon: Zap },
-  { value: 'grenade_launchers', label: 'Grenade Launchers', icon: Shield },
-  { value: 'shotguns', label: 'Shotguns', icon: Target },
-  { value: 'tactical_equipment', label: 'Tactical Equipment', icon: Shield },
-  { value: 'anti_tank_weapons', label: 'Anti-Tank Weapons', icon: Target },
-  { value: 'manpads', label: 'MANPADS', icon: Zap },
+  { value: "pistols", label: "Pistols", icon: Target },
+  { value: "assault_rifles", label: "Assault Rifles", icon: Crosshair },
+  { value: "battle_rifles", label: "Battle Rifles", icon: Crosshair },
+  { value: "sniper_rifles", label: "Sniper Rifles", icon: Target },
+  { value: "submachine_guns", label: "Submachine Guns", icon: Zap },
+  { value: "machine_guns", label: "Machine Guns", icon: Zap },
+  { value: "grenade_launchers", label: "Grenade Launchers", icon: Shield },
+  { value: "shotguns", label: "Shotguns", icon: Target },
+  { value: "tactical_equipment", label: "Tactical Equipment", icon: Shield },
+  { value: "anti_tank_weapons", label: "Anti-Tank Weapons", icon: Target },
+  { value: "manpads", label: "MANPADS", icon: Zap },
 ];
 
 interface EquipmentFormData {
@@ -100,29 +106,33 @@ export default function SmallArmsEquipmentPage() {
   const { toast } = useToast();
 
   // State
-  const [activeMainTab, setActiveMainTab] = useState('catalog');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [eraFilter, setEraFilter] = useState('all');
-  const [manufacturerFilter, setManufacturerFilter] = useState('all');
+  const [activeMainTab, setActiveMainTab] = useState("catalog");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [eraFilter, setEraFilter] = useState("all");
+  const [manufacturerFilter, setManufacturerFilter] = useState("all");
   const [showInactive, setShowInactive] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<any | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [activeEditorTab, setActiveEditorTab] = useState('general');
+  const [activeEditorTab, setActiveEditorTab] = useState("general");
 
   // Manufacturer management state
   const [isManufacturerDialogOpen, setIsManufacturerDialogOpen] = useState(false);
   const [editingManufacturer, setEditingManufacturer] = useState<any | null>(null);
 
   // Bulk import state
-  const [bulkImportJson, setBulkImportJson] = useState('');
+  const [bulkImportJson, setBulkImportJson] = useState("");
 
   // Queries
-  const { data: equipment, isLoading, refetch } = api.smallArmsEquipment.getAllEquipment.useQuery(
+  const {
+    data: equipment,
+    isLoading,
+    refetch,
+  } = api.smallArmsEquipment.getAllEquipment.useQuery(
     {
-      equipmentType: typeFilter !== 'all' ? typeFilter : undefined,
-      eraKey: eraFilter !== 'all' ? eraFilter : undefined,
-      manufacturerKey: manufacturerFilter !== 'all' ? manufacturerFilter : undefined,
+      equipmentType: typeFilter !== "all" ? typeFilter : undefined,
+      eraKey: eraFilter !== "all" ? eraFilter : undefined,
+      manufacturerKey: manufacturerFilter !== "all" ? manufacturerFilter : undefined,
       isActive: showInactive ? undefined : true,
       includeManufacturer: true,
       includeEra: true,
@@ -150,7 +160,7 @@ export default function SmallArmsEquipmentPage() {
       toast({
         title: "Success",
         description: "Equipment created successfully",
-        type: "success"
+        type: "success",
       });
       refetch();
       setIsAddDialogOpen(false);
@@ -160,9 +170,9 @@ export default function SmallArmsEquipmentPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to create equipment",
-        type: "error"
+        type: "error",
       });
-    }
+    },
   });
 
   const updateMutation = api.smallArmsEquipment.updateEquipment.useMutation({
@@ -170,7 +180,7 @@ export default function SmallArmsEquipmentPage() {
       toast({
         title: "Success",
         description: "Equipment updated successfully",
-        type: "success"
+        type: "success",
       });
       refetch();
       setEditingEquipment(null);
@@ -179,9 +189,9 @@ export default function SmallArmsEquipmentPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to update equipment",
-        type: "error"
+        type: "error",
       });
-    }
+    },
   });
 
   const deleteMutation = api.smallArmsEquipment.deleteEquipment.useMutation({
@@ -189,7 +199,7 @@ export default function SmallArmsEquipmentPage() {
       toast({
         title: "Success",
         description: "Equipment deactivated successfully",
-        type: "success"
+        type: "success",
       });
       refetch();
     },
@@ -197,9 +207,9 @@ export default function SmallArmsEquipmentPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to deactivate equipment",
-        type: "error"
+        type: "error",
       });
-    }
+    },
   });
 
   const createManufacturerMutation = api.smallArmsEquipment.createManufacturer.useMutation({
@@ -207,7 +217,7 @@ export default function SmallArmsEquipmentPage() {
       toast({
         title: "Success",
         description: "Manufacturer created successfully",
-        type: "success"
+        type: "success",
       });
       refetch();
       setIsManufacturerDialogOpen(false);
@@ -217,9 +227,9 @@ export default function SmallArmsEquipmentPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to create manufacturer",
-        type: "error"
+        type: "error",
       });
-    }
+    },
   });
 
   const updateManufacturerMutation = api.smallArmsEquipment.updateManufacturer.useMutation({
@@ -227,7 +237,7 @@ export default function SmallArmsEquipmentPage() {
       toast({
         title: "Success",
         description: "Manufacturer updated successfully",
-        type: "success"
+        type: "success",
       });
       refetch();
       setIsManufacturerDialogOpen(false);
@@ -238,9 +248,9 @@ export default function SmallArmsEquipmentPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to update manufacturer",
-        type: "error"
+        type: "error",
       });
-    }
+    },
   });
 
   const bulkImportMutation = api.smallArmsEquipment.bulkImportEquipment.useMutation({
@@ -248,25 +258,25 @@ export default function SmallArmsEquipmentPage() {
       toast({
         title: "Success",
         description: `Imported ${data.imported} equipment items`,
-        type: "success"
+        type: "success",
       });
       refetch();
-      setBulkImportJson('');
+      setBulkImportJson("");
     },
     onError: (error) => {
       toast({
         title: "Error",
         description: error.message || "Failed to import equipment",
-        type: "error"
+        type: "error",
       });
-    }
+    },
   });
 
   // Filtered equipment
   const filteredEquipment = useMemo(() => {
     if (!equipment) return [];
 
-    return equipment.filter(item => {
+    return equipment.filter((item) => {
       const matchesSearch =
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -278,62 +288,62 @@ export default function SmallArmsEquipmentPage() {
 
   // Form data
   const [formData, setFormData] = useState<EquipmentFormData>({
-    key: '',
-    name: '',
-    manufacturerKey: '',
-    category: '',
-    equipmentType: 'pistols',
-    eraKey: '',
+    key: "",
+    name: "",
+    manufacturerKey: "",
+    category: "",
+    equipmentType: "pistols",
+    eraKey: "",
     weight: 0,
     unitCost: 0,
     maintenanceCost: 0,
-    imageUrl: '',
-    caliber: '',
+    imageUrl: "",
+    caliber: "",
     capacity: null,
     effectiveRange: null,
     fireRate: null,
-    protectionLevel: '',
+    protectionLevel: "",
     range: null,
     altitude: null,
-    description: '',
+    description: "",
   });
 
   const [manufacturerFormData, setManufacturerFormData] = useState<ManufacturerFormData>({
-    key: '',
-    name: '',
-    country: '',
+    key: "",
+    name: "",
+    country: "",
     specialty: [],
   });
 
   const resetForm = () => {
     setFormData({
-      key: '',
-      name: '',
-      manufacturerKey: '',
-      category: '',
-      equipmentType: 'pistols',
-      eraKey: '',
+      key: "",
+      name: "",
+      manufacturerKey: "",
+      category: "",
+      equipmentType: "pistols",
+      eraKey: "",
       weight: 0,
       unitCost: 0,
       maintenanceCost: 0,
-      imageUrl: '',
-      caliber: '',
+      imageUrl: "",
+      caliber: "",
       capacity: null,
       effectiveRange: null,
       fireRate: null,
-      protectionLevel: '',
+      protectionLevel: "",
       range: null,
       altitude: null,
-      description: '',
+      description: "",
     });
-    setActiveEditorTab('general');
+    setActiveEditorTab("general");
   };
 
   const resetManufacturerForm = () => {
     setManufacturerFormData({
-      key: '',
-      name: '',
-      country: '',
+      key: "",
+      name: "",
+      country: "",
       specialty: [],
     });
   };
@@ -343,7 +353,7 @@ export default function SmallArmsEquipmentPage() {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields",
-        type: "error"
+        type: "error",
       });
       return;
     }
@@ -406,18 +416,18 @@ export default function SmallArmsEquipmentPage() {
       weight: item.weight,
       unitCost: item.unitCost,
       maintenanceCost: item.maintenanceCost,
-      imageUrl: item.imageUrl || '',
-      caliber: item.caliber || '',
+      imageUrl: item.imageUrl || "",
+      caliber: item.caliber || "",
       capacity: item.capacity,
       effectiveRange: item.effectiveRange,
       fireRate: item.fireRate,
-      protectionLevel: item.protectionLevel || '',
+      protectionLevel: item.protectionLevel || "",
       range: item.range,
       altitude: item.altitude,
-      description: item.description || '',
+      description: item.description || "",
     });
     setEditingEquipment(item);
-    setActiveEditorTab('general');
+    setActiveEditorTab("general");
   };
 
   const handleCreateManufacturer = () => {
@@ -425,7 +435,7 @@ export default function SmallArmsEquipmentPage() {
       toast({
         title: "Validation Error",
         description: "Name and key are required",
-        type: "error"
+        type: "error",
       });
       return;
     }
@@ -451,9 +461,10 @@ export default function SmallArmsEquipmentPage() {
       key: manufacturer.key,
       name: manufacturer.name,
       country: manufacturer.country,
-      specialty: typeof manufacturer.specialty === 'string'
-        ? JSON.parse(manufacturer.specialty)
-        : manufacturer.specialty || [],
+      specialty:
+        typeof manufacturer.specialty === "string"
+          ? JSON.parse(manufacturer.specialty)
+          : manufacturer.specialty || [],
     });
     setEditingManufacturer(manufacturer);
     setIsManufacturerDialogOpen(true);
@@ -463,14 +474,14 @@ export default function SmallArmsEquipmentPage() {
     try {
       const parsed = JSON.parse(bulkImportJson);
       if (!Array.isArray(parsed)) {
-        throw new Error('JSON must be an array of equipment objects');
+        throw new Error("JSON must be an array of equipment objects");
       }
       bulkImportMutation.mutate({ equipment: parsed });
     } catch (error) {
       toast({
         title: "Invalid JSON",
         description: error instanceof Error ? error.message : "Failed to parse JSON",
-        type: "error"
+        type: "error",
       });
     }
   };
@@ -478,9 +489,9 @@ export default function SmallArmsEquipmentPage() {
   // Auth checks
   if (!isLoaded) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="border-primary mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2"></div>
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
@@ -489,7 +500,7 @@ export default function SmallArmsEquipmentPage() {
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
+      <div className="flex min-h-screen flex-col items-center justify-center">
         <SignInButton mode="modal" />
       </div>
     );
@@ -497,41 +508,44 @@ export default function SmallArmsEquipmentPage() {
 
   const allowedRoles = new Set(["admin", "owner", "staff"]);
   const isSystemOwnerUser = !!user && isSystemOwner(user.id);
-  const hasAdminRole = typeof user?.publicMetadata?.role === "string" && allowedRoles.has(user.publicMetadata.role);
+  const hasAdminRole =
+    typeof user?.publicMetadata?.role === "string" && allowedRoles.has(user.publicMetadata.role);
 
   if (!isSystemOwnerUser && !hasAdminRole) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center border border-gray-200 dark:border-gray-700">
-          <h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Access Denied</h1>
-          <p className="text-gray-700 dark:text-gray-300 mb-6">You do not have permission to view this page.</p>
+      <div className="flex min-h-screen flex-col items-center justify-center">
+        <div className="rounded-lg border border-gray-200 bg-white p-8 text-center shadow-lg dark:border-gray-700 dark:bg-gray-800">
+          <h1 className="mb-4 text-2xl font-bold text-red-600 dark:text-red-400">Access Denied</h1>
+          <p className="mb-6 text-gray-700 dark:text-gray-300">
+            You do not have permission to view this page.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="bg-background text-foreground min-h-screen p-4 md:p-8">
+      <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="glass-card-parent p-6 rounded-xl border-2 border-orange-500/20 bg-gradient-to-br from-orange-500/5 via-transparent to-orange-500/10 mb-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="glass-card-parent mb-6 rounded-xl border-2 border-orange-500/20 bg-gradient-to-br from-orange-500/5 via-transparent to-orange-500/10 p-6">
+          <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/admin">
                 <Button variant="ghost" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to Admin
                 </Button>
               </Link>
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                <div className="rounded-xl border border-orange-500/20 bg-orange-500/10 p-3">
                   <Shield className="h-6 w-6 text-orange-500" />
                 </div>
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                  <h1 className="text-foreground text-2xl font-bold md:text-3xl">
                     Small Arms Equipment
                   </h1>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Manage military equipment catalog and manufacturers
                   </p>
                 </div>
@@ -540,9 +554,9 @@ export default function SmallArmsEquipmentPage() {
             <div className="flex gap-2">
               <Button
                 onClick={() => setIsAddDialogOpen(true)}
-                className="bg-orange-500/20 hover:bg-orange-500/30 text-orange-500"
+                className="bg-orange-500/20 text-orange-500 hover:bg-orange-500/30"
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Add Equipment
               </Button>
             </div>
@@ -552,15 +566,15 @@ export default function SmallArmsEquipmentPage() {
           <Tabs value={activeMainTab} onValueChange={setActiveMainTab}>
             <TabsList className="flex gap-2 overflow-x-auto border-b border-white/10 pb-2">
               <TabsTrigger value="catalog">
-                <Target className="h-4 w-4 mr-2" />
+                <Target className="mr-2 h-4 w-4" />
                 Equipment Catalog
               </TabsTrigger>
               <TabsTrigger value="manufacturers">
-                <Factory className="h-4 w-4 mr-2" />
+                <Factory className="mr-2 h-4 w-4" />
                 Manufacturers
               </TabsTrigger>
               <TabsTrigger value="bulk-import">
-                <Upload className="h-4 w-4 mr-2" />
+                <Upload className="mr-2 h-4 w-4" />
                 Bulk Import
               </TabsTrigger>
             </TabsList>
@@ -568,35 +582,41 @@ export default function SmallArmsEquipmentPage() {
         </div>
 
         {/* Main Content */}
-        {activeMainTab === 'catalog' && (
+        {activeMainTab === "catalog" && (
           <>
             {/* Statistics */}
             {stats && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
                 <Card className="glass-card-child p-4">
-                  <p className="text-sm text-muted-foreground">Total Equipment</p>
-                  <p className="text-3xl font-bold text-foreground mt-2">{stats.totalEquipment}</p>
+                  <p className="text-muted-foreground text-sm">Total Equipment</p>
+                  <p className="text-foreground mt-2 text-3xl font-bold">{stats.totalEquipment}</p>
                 </Card>
                 <Card className="glass-card-child p-4">
-                  <p className="text-sm text-muted-foreground">Equipment Types</p>
-                  <p className="text-3xl font-bold text-blue-400 mt-2">{stats.equipmentByType.length}</p>
+                  <p className="text-muted-foreground text-sm">Equipment Types</p>
+                  <p className="mt-2 text-3xl font-bold text-blue-400">
+                    {stats.equipmentByType.length}
+                  </p>
                 </Card>
                 <Card className="glass-card-child p-4">
-                  <p className="text-sm text-muted-foreground">Manufacturers</p>
-                  <p className="text-3xl font-bold text-green-400 mt-2">{stats.totalManufacturers}</p>
+                  <p className="text-muted-foreground text-sm">Manufacturers</p>
+                  <p className="mt-2 text-3xl font-bold text-green-400">
+                    {stats.totalManufacturers}
+                  </p>
                 </Card>
                 <Card className="glass-card-child p-4">
-                  <p className="text-sm text-muted-foreground">Eras</p>
-                  <p className="text-3xl font-bold text-purple-400 mt-2">{stats.equipmentByEra.length}</p>
+                  <p className="text-muted-foreground text-sm">Eras</p>
+                  <p className="mt-2 text-3xl font-bold text-purple-400">
+                    {stats.equipmentByEra.length}
+                  </p>
                 </Card>
               </div>
             )}
 
             {/* Filters */}
-            <Card className="glass-card-parent p-4 mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <div className="md:col-span-2 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Card className="glass-card-parent mb-6 p-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+                <div className="relative md:col-span-2">
+                  <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
                   <Input
                     placeholder="Search equipment..."
                     value={searchTerm}
@@ -611,8 +631,10 @@ export default function SmallArmsEquipmentPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Types</SelectItem>
-                    {EQUIPMENT_TYPES.map(type => (
-                      <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                    {EQUIPMENT_TYPES.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -623,8 +645,10 @@ export default function SmallArmsEquipmentPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Eras</SelectItem>
-                    {eras?.map(era => (
-                      <SelectItem key={era.key} value={era.key}>{era.label}</SelectItem>
+                    {eras?.map((era) => (
+                      <SelectItem key={era.key} value={era.key}>
+                        {era.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -635,7 +659,7 @@ export default function SmallArmsEquipmentPage() {
                     checked={showInactive}
                     onCheckedChange={(checked) => setShowInactive(checked as boolean)}
                   />
-                  <label htmlFor="showInactive" className="text-sm text-foreground cursor-pointer">
+                  <label htmlFor="showInactive" className="text-foreground cursor-pointer text-sm">
                     Show inactive
                   </label>
                 </div>
@@ -644,18 +668,18 @@ export default function SmallArmsEquipmentPage() {
 
             {/* Equipment Grid */}
             {isLoading ? (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+              <div className="py-12 text-center">
+                <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-orange-500"></div>
                 <p className="text-muted-foreground">Loading equipment...</p>
               </div>
             ) : filteredEquipment.length === 0 ? (
               <Card className="glass-card-parent p-12 text-center">
-                <Filter className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <Filter className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
                 <p className="text-muted-foreground">No equipment found matching your filters</p>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredEquipment.map(item => (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {filteredEquipment.map((item) => (
                   <EquipmentCard
                     key={item.key}
                     equipment={item}
@@ -668,24 +692,24 @@ export default function SmallArmsEquipmentPage() {
           </>
         )}
 
-        {activeMainTab === 'manufacturers' && (
+        {activeMainTab === "manufacturers" && (
           <>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-foreground">Manufacturers</h2>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-foreground text-xl font-bold">Manufacturers</h2>
               <Button
                 onClick={() => {
                   resetManufacturerForm();
                   setIsManufacturerDialogOpen(true);
                 }}
-                className="bg-orange-500/20 hover:bg-orange-500/30 text-orange-500"
+                className="bg-orange-500/20 text-orange-500 hover:bg-orange-500/30"
               >
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Add Manufacturer
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {manufacturers?.map(manufacturer => (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {manufacturers?.map((manufacturer) => (
                 <ManufacturerCard
                   key={manufacturer.key}
                   manufacturer={manufacturer}
@@ -696,10 +720,10 @@ export default function SmallArmsEquipmentPage() {
           </>
         )}
 
-        {activeMainTab === 'bulk-import' && (
+        {activeMainTab === "bulk-import" && (
           <Card className="glass-card-parent p-6">
-            <h2 className="text-xl font-bold text-foreground mb-4">Bulk Import Equipment</h2>
-            <p className="text-sm text-muted-foreground mb-4">
+            <h2 className="text-foreground mb-4 text-xl font-bold">Bulk Import Equipment</h2>
+            <p className="text-muted-foreground mb-4 text-sm">
               Paste JSON array of equipment objects to import multiple items at once.
             </p>
 
@@ -708,30 +732,27 @@ export default function SmallArmsEquipmentPage() {
               onChange={(e) => setBulkImportJson(e.target.value)}
               placeholder='[{"key": "M4_CARBINE", "name": "M4 Carbine", ...}]'
               rows={15}
-              className="font-mono text-xs mb-4"
+              className="mb-4 font-mono text-xs"
             />
 
             <div className="flex items-center gap-2">
               <Button
                 onClick={handleBulkImport}
                 disabled={!bulkImportJson || bulkImportMutation.isPending}
-                className="bg-orange-500/20 hover:bg-orange-500/30 text-orange-500"
+                className="bg-orange-500/20 text-orange-500 hover:bg-orange-500/30"
               >
-                <Upload className="h-4 w-4 mr-2" />
-                {bulkImportMutation.isPending ? 'Importing...' : 'Import Equipment'}
+                <Upload className="mr-2 h-4 w-4" />
+                {bulkImportMutation.isPending ? "Importing..." : "Import Equipment"}
               </Button>
-              <Button
-                variant="ghost"
-                onClick={() => setBulkImportJson('')}
-              >
+              <Button variant="ghost" onClick={() => setBulkImportJson("")}>
                 Clear
               </Button>
             </div>
 
-            <div className="mt-6 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-              <h4 className="text-sm font-medium text-foreground mb-2">JSON Format Example</h4>
-              <pre className="text-xs text-muted-foreground overflow-x-auto">
-{`[
+            <div className="mt-6 rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
+              <h4 className="text-foreground mb-2 text-sm font-medium">JSON Format Example</h4>
+              <pre className="text-muted-foreground overflow-x-auto text-xs">
+                {`[
   {
     "key": "M4_CARBINE",
     "name": "M4 Carbine",
@@ -803,68 +824,68 @@ interface EquipmentCardProps {
 }
 
 function EquipmentCard({ equipment, onEdit, onDelete }: EquipmentCardProps) {
-  const typeData = EQUIPMENT_TYPES.find(t => t.value === equipment.equipmentType);
+  const typeData = EQUIPMENT_TYPES.find((t) => t.value === equipment.equipmentType);
   const Icon = typeData?.icon || Target;
 
   return (
-    <Card className="glass-card-child p-4 hover:border-orange-500/50 transition-all">
+    <Card className="glass-card-child p-4 transition-all hover:border-orange-500/50">
       {/* Header */}
-      <div className="flex items-start justify-between mb-3">
+      <div className="mb-3 flex items-start justify-between">
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="mb-1 flex items-center gap-2">
             <Icon className="h-4 w-4 text-orange-500" />
-            <h3 className="font-semibold text-foreground text-sm line-clamp-1">{equipment.name}</h3>
+            <h3 className="text-foreground line-clamp-1 text-sm font-semibold">{equipment.name}</h3>
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs px-2 py-0.5 rounded bg-orange-500/20 text-orange-400">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded bg-orange-500/20 px-2 py-0.5 text-xs text-orange-400">
               {typeData?.label || equipment.equipmentType}
             </span>
             {equipment.era && (
-              <span className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-400">
+              <span className="rounded bg-blue-500/20 px-2 py-0.5 text-xs text-blue-400">
                 {equipment.era.label}
               </span>
             )}
           </div>
         </div>
-        {!equipment.isActive && (
-          <EyeOff className="h-4 w-4 text-red-400" title="Inactive" />
-        )}
+        {!equipment.isActive && <EyeOff className="h-4 w-4 text-red-400" title="Inactive" />}
       </div>
 
       {/* Image Preview */}
       {equipment.imageUrl ? (
-        <div className="mb-3 h-32 rounded-lg overflow-hidden bg-black/30">
+        <div className="mb-3 h-32 overflow-hidden rounded-lg bg-black/30">
           <img
             src={equipment.imageUrl}
             alt={equipment.name}
-            className="w-full h-full object-contain"
+            className="h-full w-full object-contain"
           />
         </div>
       ) : (
-        <div className="mb-3 h-32 rounded-lg bg-black/30 flex items-center justify-center">
-          <Image className="h-8 w-8 text-muted-foreground" />
+        <div className="mb-3 flex h-32 items-center justify-center rounded-lg bg-black/30">
+          <Image className="text-muted-foreground h-8 w-8" />
         </div>
       )}
 
       {/* Specifications */}
-      <div className="space-y-2 mb-3 text-xs">
+      <div className="mb-3 space-y-2 text-xs">
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Manufacturer:</span>
-          <span className="font-medium text-foreground">{equipment.manufacturer?.name || 'N/A'}</span>
+          <span className="text-foreground font-medium">
+            {equipment.manufacturer?.name || "N/A"}
+          </span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Category:</span>
-          <span className="font-medium text-foreground">{equipment.category}</span>
+          <span className="text-foreground font-medium">{equipment.category}</span>
         </div>
         {equipment.caliber && (
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Caliber:</span>
-            <span className="font-medium text-foreground">{equipment.caliber}</span>
+            <span className="text-foreground font-medium">{equipment.caliber}</span>
           </div>
         )}
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Weight:</span>
-          <span className="font-medium text-foreground">{equipment.weight} kg</span>
+          <span className="text-foreground font-medium">{equipment.weight} kg</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Unit Cost:</span>
@@ -873,26 +894,21 @@ function EquipmentCard({ equipment, onEdit, onDelete }: EquipmentCardProps) {
         {equipment.effectiveRange && (
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Range:</span>
-            <span className="font-medium text-foreground">{equipment.effectiveRange}m</span>
+            <span className="text-foreground font-medium">{equipment.effectiveRange}m</span>
           </div>
         )}
         {equipment.capacity && (
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Capacity:</span>
-            <span className="font-medium text-foreground">{equipment.capacity} rds</span>
+            <span className="text-foreground font-medium">{equipment.capacity} rds</span>
           </div>
         )}
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2 pt-3 border-t border-white/10">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={onEdit}
-          className="flex-1 text-xs"
-        >
-          <Pencil className="h-3 w-3 mr-1" />
+      <div className="flex items-center gap-2 border-t border-white/10 pt-3">
+        <Button size="sm" variant="outline" onClick={onEdit} className="flex-1 text-xs">
+          <Pencil className="mr-1 h-3 w-3" />
           Edit
         </Button>
         <Button
@@ -934,38 +950,34 @@ function EquipmentEditorDialog({
   eras,
   onClose,
   onSave,
-  isPending
+  isPending,
 }: EquipmentEditorDialogProps) {
   const tabs = [
-    { id: 'general', label: 'General', icon: Settings },
-    { id: 'specifications', label: 'Specifications', icon: Gauge },
-    { id: 'costs', label: 'Costs', icon: DollarSign },
-    { id: 'media', label: 'Media', icon: Image },
+    { id: "general", label: "General", icon: Settings },
+    { id: "specifications", label: "Specifications", icon: Gauge },
+    { id: "costs", label: "Costs", icon: DollarSign },
+    { id: "media", label: "Media", icon: Image },
   ];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="flex max-h-[90vh] max-w-4xl flex-col overflow-hidden">
         <DialogHeader>
-          <DialogTitle>
-            {isEditing ? 'Edit Equipment' : 'Add Equipment'}
-          </DialogTitle>
-          <DialogDescription>
-            Configure equipment specifications and metadata
-          </DialogDescription>
+          <DialogTitle>{isEditing ? "Edit Equipment" : "Add Equipment"}</DialogTitle>
+          <DialogDescription>Configure equipment specifications and metadata</DialogDescription>
         </DialogHeader>
 
         {/* Tab Navigation */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="flex gap-2 overflow-x-auto border-b border-white/10 pb-2 shrink-0">
-            {tabs.map(tab => {
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex flex-1 flex-col overflow-hidden"
+        >
+          <TabsList className="flex shrink-0 gap-2 overflow-x-auto border-b border-white/10 pb-2">
+            {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
-                <TabsTrigger
-                  key={tab.id}
-                  value={tab.id}
-                  className="flex items-center gap-2"
-                >
+                <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-2">
                   <Icon className="h-4 w-4" />
                   {tab.label}
                 </TabsTrigger>
@@ -974,7 +986,7 @@ function EquipmentEditorDialog({
           </TabsList>
 
           {/* Tab Content */}
-          <div className="flex-1 overflow-y-auto mt-4">
+          <div className="mt-4 flex-1 overflow-y-auto">
             <TabsContent value="general">
               <GeneralTab
                 formData={formData}
@@ -996,14 +1008,14 @@ function EquipmentEditorDialog({
         </Tabs>
 
         {/* Footer Actions */}
-        <DialogFooter className="border-t border-white/10 pt-4 shrink-0">
+        <DialogFooter className="shrink-0 border-t border-white/10 pt-4">
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
           <Button
             onClick={onSave}
             disabled={!formData.name || !formData.key || isPending}
-            className="bg-orange-500/20 hover:bg-orange-500/30 text-orange-500"
+            className="bg-orange-500/20 text-orange-500 hover:bg-orange-500/30"
           >
             {isPending ? "Saving..." : isEditing ? "Update Equipment" : "Create Equipment"}
           </Button>
@@ -1014,7 +1026,12 @@ function EquipmentEditorDialog({
 }
 
 // Tab Components
-function GeneralTab({ formData, setFormData, manufacturers, eras }: {
+function GeneralTab({
+  formData,
+  setFormData,
+  manufacturers,
+  eras,
+}: {
   formData: EquipmentFormData;
   setFormData: (data: EquipmentFormData) => void;
   manufacturers: any[];
@@ -1023,17 +1040,21 @@ function GeneralTab({ formData, setFormData, manufacturers, eras }: {
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Equipment Key *</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Equipment Key *</label>
         <Input
           value={formData.key}
-          onChange={(e) => setFormData({ ...formData, key: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
+          onChange={(e) =>
+            setFormData({ ...formData, key: e.target.value.toUpperCase().replace(/\s+/g, "_") })
+          }
           placeholder="e.g., M4_CARBINE"
         />
-        <p className="text-xs text-muted-foreground mt-1">Unique identifier (uppercase, underscores)</p>
+        <p className="text-muted-foreground mt-1 text-xs">
+          Unique identifier (uppercase, underscores)
+        </p>
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Name *</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Name *</label>
         <Input
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -1043,7 +1064,7 @@ function GeneralTab({ formData, setFormData, manufacturers, eras }: {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">Equipment Type *</label>
+          <label className="text-foreground mb-2 block text-sm font-medium">Equipment Type *</label>
           <Select
             value={formData.equipmentType}
             onValueChange={(value) => setFormData({ ...formData, equipmentType: value })}
@@ -1052,15 +1073,17 @@ function GeneralTab({ formData, setFormData, manufacturers, eras }: {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {EQUIPMENT_TYPES.map(type => (
-                <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+              {EQUIPMENT_TYPES.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
         <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">Category</label>
+          <label className="text-foreground mb-2 block text-sm font-medium">Category</label>
           <Input
             value={formData.category}
             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -1071,7 +1094,7 @@ function GeneralTab({ formData, setFormData, manufacturers, eras }: {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">Manufacturer *</label>
+          <label className="text-foreground mb-2 block text-sm font-medium">Manufacturer *</label>
           <Select
             value={formData.manufacturerKey}
             onValueChange={(value) => setFormData({ ...formData, manufacturerKey: value })}
@@ -1080,15 +1103,17 @@ function GeneralTab({ formData, setFormData, manufacturers, eras }: {
               <SelectValue placeholder="Select manufacturer" />
             </SelectTrigger>
             <SelectContent>
-              {manufacturers.map(mfr => (
-                <SelectItem key={mfr.key} value={mfr.key}>{mfr.name}</SelectItem>
+              {manufacturers.map((mfr) => (
+                <SelectItem key={mfr.key} value={mfr.key}>
+                  {mfr.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
         <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">Era *</label>
+          <label className="text-foreground mb-2 block text-sm font-medium">Era *</label>
           <Select
             value={formData.eraKey}
             onValueChange={(value) => setFormData({ ...formData, eraKey: value })}
@@ -1097,8 +1122,10 @@ function GeneralTab({ formData, setFormData, manufacturers, eras }: {
               <SelectValue placeholder="Select era" />
             </SelectTrigger>
             <SelectContent>
-              {eras.map(era => (
-                <SelectItem key={era.key} value={era.key}>{era.label}</SelectItem>
+              {eras.map((era) => (
+                <SelectItem key={era.key} value={era.key}>
+                  {era.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -1106,7 +1133,7 @@ function GeneralTab({ formData, setFormData, manufacturers, eras }: {
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Description</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Description</label>
         <Textarea
           value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -1118,14 +1145,17 @@ function GeneralTab({ formData, setFormData, manufacturers, eras }: {
   );
 }
 
-function SpecificationsTab({ formData, setFormData }: {
+function SpecificationsTab({
+  formData,
+  setFormData,
+}: {
   formData: EquipmentFormData;
   setFormData: (data: EquipmentFormData) => void;
 }) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Weight (kg)</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Weight (kg)</label>
         <Input
           type="number"
           step="0.1"
@@ -1136,7 +1166,7 @@ function SpecificationsTab({ formData, setFormData }: {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">Caliber</label>
+          <label className="text-foreground mb-2 block text-sm font-medium">Caliber</label>
           <Input
             value={formData.caliber}
             onChange={(e) => setFormData({ ...formData, caliber: e.target.value })}
@@ -1145,38 +1175,59 @@ function SpecificationsTab({ formData, setFormData }: {
         </div>
 
         <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">Magazine Capacity (rounds)</label>
+          <label className="text-foreground mb-2 block text-sm font-medium">
+            Magazine Capacity (rounds)
+          </label>
           <Input
             type="number"
-            value={formData.capacity || ''}
-            onChange={(e) => setFormData({ ...formData, capacity: e.target.value ? parseInt(e.target.value) : null })}
+            value={formData.capacity || ""}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                capacity: e.target.value ? parseInt(e.target.value) : null,
+              })
+            }
           />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">Effective Range (m)</label>
+          <label className="text-foreground mb-2 block text-sm font-medium">
+            Effective Range (m)
+          </label>
           <Input
             type="number"
-            value={formData.effectiveRange || ''}
-            onChange={(e) => setFormData({ ...formData, effectiveRange: e.target.value ? parseInt(e.target.value) : null })}
+            value={formData.effectiveRange || ""}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                effectiveRange: e.target.value ? parseInt(e.target.value) : null,
+              })
+            }
           />
         </div>
 
         <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">Fire Rate (RPM)</label>
+          <label className="text-foreground mb-2 block text-sm font-medium">Fire Rate (RPM)</label>
           <Input
             type="number"
-            value={formData.fireRate || ''}
-            onChange={(e) => setFormData({ ...formData, fireRate: e.target.value ? parseInt(e.target.value) : null })}
+            value={formData.fireRate || ""}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                fireRate: e.target.value ? parseInt(e.target.value) : null,
+              })
+            }
           />
-          <p className="text-xs text-muted-foreground mt-1">0 = semi-automatic</p>
+          <p className="text-muted-foreground mt-1 text-xs">0 = semi-automatic</p>
         </div>
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Protection Level (for armor)</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">
+          Protection Level (for armor)
+        </label>
         <Input
           value={formData.protectionLevel}
           onChange={(e) => setFormData({ ...formData, protectionLevel: e.target.value })}
@@ -1186,71 +1237,93 @@ function SpecificationsTab({ formData, setFormData }: {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">Maximum Range (m)</label>
+          <label className="text-foreground mb-2 block text-sm font-medium">
+            Maximum Range (m)
+          </label>
           <Input
             type="number"
-            value={formData.range || ''}
-            onChange={(e) => setFormData({ ...formData, range: e.target.value ? parseInt(e.target.value) : null })}
+            value={formData.range || ""}
+            onChange={(e) =>
+              setFormData({ ...formData, range: e.target.value ? parseInt(e.target.value) : null })
+            }
           />
-          <p className="text-xs text-muted-foreground mt-1">For missiles/rockets</p>
+          <p className="text-muted-foreground mt-1 text-xs">For missiles/rockets</p>
         </div>
 
         <div>
-          <label className="text-sm font-medium text-foreground mb-2 block">Maximum Altitude (m)</label>
+          <label className="text-foreground mb-2 block text-sm font-medium">
+            Maximum Altitude (m)
+          </label>
           <Input
             type="number"
-            value={formData.altitude || ''}
-            onChange={(e) => setFormData({ ...formData, altitude: e.target.value ? parseInt(e.target.value) : null })}
+            value={formData.altitude || ""}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                altitude: e.target.value ? parseInt(e.target.value) : null,
+              })
+            }
           />
-          <p className="text-xs text-muted-foreground mt-1">For MANPADS</p>
+          <p className="text-muted-foreground mt-1 text-xs">For MANPADS</p>
         </div>
       </div>
     </div>
   );
 }
 
-function CostsTab({ formData, setFormData }: {
+function CostsTab({
+  formData,
+  setFormData,
+}: {
   formData: EquipmentFormData;
   setFormData: (data: EquipmentFormData) => void;
 }) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Unit Cost (USD)</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Unit Cost (USD)</label>
         <Input
           type="number"
           step="0.01"
           value={formData.unitCost}
           onChange={(e) => setFormData({ ...formData, unitCost: parseFloat(e.target.value) || 0 })}
         />
-        <p className="text-xs text-muted-foreground mt-1">Acquisition cost per unit</p>
+        <p className="text-muted-foreground mt-1 text-xs">Acquisition cost per unit</p>
       </div>
 
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Annual Maintenance Cost (USD)</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">
+          Annual Maintenance Cost (USD)
+        </label>
         <Input
           type="number"
           step="0.01"
           value={formData.maintenanceCost}
-          onChange={(e) => setFormData({ ...formData, maintenanceCost: parseFloat(e.target.value) || 0 })}
+          onChange={(e) =>
+            setFormData({ ...formData, maintenanceCost: parseFloat(e.target.value) || 0 })
+          }
         />
-        <p className="text-xs text-muted-foreground mt-1">Yearly maintenance and upkeep costs</p>
+        <p className="text-muted-foreground mt-1 text-xs">Yearly maintenance and upkeep costs</p>
       </div>
 
-      <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-        <h4 className="text-sm font-medium text-foreground mb-2">Cost Summary</h4>
-        <div className="space-y-1 text-xs text-muted-foreground">
+      <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
+        <h4 className="text-foreground mb-2 text-sm font-medium">Cost Summary</h4>
+        <div className="text-muted-foreground space-y-1 text-xs">
           <div className="flex justify-between">
             <span>Unit Cost:</span>
-            <span className="text-foreground font-medium">${formData.unitCost.toLocaleString()}</span>
+            <span className="text-foreground font-medium">
+              ${formData.unitCost.toLocaleString()}
+            </span>
           </div>
           <div className="flex justify-between">
             <span>Annual Maintenance:</span>
-            <span className="text-foreground font-medium">${formData.maintenanceCost.toLocaleString()}</span>
+            <span className="text-foreground font-medium">
+              ${formData.maintenanceCost.toLocaleString()}
+            </span>
           </div>
-          <div className="flex justify-between pt-2 border-t border-white/10">
+          <div className="flex justify-between border-t border-white/10 pt-2">
             <span>5-Year Total Cost of Ownership:</span>
-            <span className="text-green-400 font-medium">
+            <span className="font-medium text-green-400">
               ${(formData.unitCost + formData.maintenanceCost * 5).toLocaleString()}
             </span>
           </div>
@@ -1260,14 +1333,17 @@ function CostsTab({ formData, setFormData }: {
   );
 }
 
-function MediaTab({ formData, setFormData }: {
+function MediaTab({
+  formData,
+  setFormData,
+}: {
   formData: EquipmentFormData;
   setFormData: (data: EquipmentFormData) => void;
 }) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="text-sm font-medium text-foreground mb-2 block">Image URL</label>
+        <label className="text-foreground mb-2 block text-sm font-medium">Image URL</label>
         <Input
           value={formData.imageUrl}
           onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
@@ -1276,16 +1352,17 @@ function MediaTab({ formData, setFormData }: {
       </div>
 
       {formData.imageUrl && (
-        <div className="p-4 rounded-lg bg-black/20 border border-white/10">
-          <p className="text-sm font-medium text-foreground mb-3">Image Preview</p>
-          <div className="h-64 rounded-lg overflow-hidden bg-black/30 flex items-center justify-center">
+        <div className="rounded-lg border border-white/10 bg-black/20 p-4">
+          <p className="text-foreground mb-3 text-sm font-medium">Image Preview</p>
+          <div className="flex h-64 items-center justify-center overflow-hidden rounded-lg bg-black/30">
             <img
               src={formData.imageUrl}
               alt="Equipment preview"
-              className="max-w-full max-h-full object-contain"
+              className="max-h-full max-w-full object-contain"
               onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                e.currentTarget.parentElement!.innerHTML = '<p class="text-red-400 text-sm">Failed to load image</p>';
+                e.currentTarget.style.display = "none";
+                e.currentTarget.parentElement!.innerHTML =
+                  '<p class="text-red-400 text-sm">Failed to load image</p>';
               }}
             />
           </div>
@@ -1302,19 +1379,20 @@ interface ManufacturerCardProps {
 }
 
 function ManufacturerCard({ manufacturer, onEdit }: ManufacturerCardProps) {
-  const specialty = typeof manufacturer.specialty === 'string'
-    ? JSON.parse(manufacturer.specialty)
-    : manufacturer.specialty || [];
+  const specialty =
+    typeof manufacturer.specialty === "string"
+      ? JSON.parse(manufacturer.specialty)
+      : manufacturer.specialty || [];
 
   return (
-    <Card className="glass-card-child p-4 hover:border-orange-500/50 transition-all">
-      <div className="flex items-start justify-between mb-3">
+    <Card className="glass-card-child p-4 transition-all hover:border-orange-500/50">
+      <div className="mb-3 flex items-start justify-between">
         <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="mb-1 flex items-center gap-2">
             <Factory className="h-4 w-4 text-orange-500" />
-            <h3 className="font-semibold text-foreground text-sm">{manufacturer.name}</h3>
+            <h3 className="text-foreground text-sm font-semibold">{manufacturer.name}</h3>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="text-muted-foreground flex items-center gap-2 text-xs">
             <Globe className="h-3 w-3" />
             <span>{manufacturer.country}</span>
           </div>
@@ -1322,27 +1400,22 @@ function ManufacturerCard({ manufacturer, onEdit }: ManufacturerCardProps) {
       </div>
 
       <div className="mb-3">
-        <p className="text-xs text-muted-foreground mb-2">Specialties:</p>
+        <p className="text-muted-foreground mb-2 text-xs">Specialties:</p>
         <div className="flex flex-wrap gap-1">
           {specialty.map((spec: string, idx: number) => (
-            <span key={idx} className="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-400">
+            <span key={idx} className="rounded bg-blue-500/20 px-2 py-0.5 text-xs text-blue-400">
               {spec}
             </span>
           ))}
         </div>
       </div>
 
-      <div className="flex items-center justify-between text-xs pt-3 border-t border-white/10">
+      <div className="flex items-center justify-between border-t border-white/10 pt-3 text-xs">
         <span className="text-muted-foreground">
           Equipment: {manufacturer._count?.equipment || 0}
         </span>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={onEdit}
-          className="text-xs"
-        >
-          <Pencil className="h-3 w-3 mr-1" />
+        <Button size="sm" variant="outline" onClick={onEdit} className="text-xs">
+          <Pencil className="mr-1 h-3 w-3" />
           Edit
         </Button>
       </div>
@@ -1368,23 +1441,21 @@ function ManufacturerDialog({
   setFormData,
   onClose,
   onSave,
-  isPending
+  isPending,
 }: ManufacturerDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>
-            {isEditing ? 'Edit Manufacturer' : 'Add Manufacturer'}
-          </DialogTitle>
-          <DialogDescription>
-            Configure manufacturer details and specialty areas
-          </DialogDescription>
+          <DialogTitle>{isEditing ? "Edit Manufacturer" : "Add Manufacturer"}</DialogTitle>
+          <DialogDescription>Configure manufacturer details and specialty areas</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">Manufacturer Key *</label>
+            <label className="text-foreground mb-2 block text-sm font-medium">
+              Manufacturer Key *
+            </label>
             <Input
               value={formData.key}
               onChange={(e) => setFormData({ ...formData, key: e.target.value.toUpperCase() })}
@@ -1394,7 +1465,7 @@ function ManufacturerDialog({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">Name *</label>
+            <label className="text-foreground mb-2 block text-sm font-medium">Name *</label>
             <Input
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -1403,7 +1474,7 @@ function ManufacturerDialog({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">Country</label>
+            <label className="text-foreground mb-2 block text-sm font-medium">Country</label>
             <Input
               value={formData.country}
               onChange={(e) => setFormData({ ...formData, country: e.target.value })}
@@ -1412,16 +1483,23 @@ function ManufacturerDialog({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-foreground mb-2 block">Specialties</label>
+            <label className="text-foreground mb-2 block text-sm font-medium">Specialties</label>
             <Input
-              value={formData.specialty.join(', ')}
-              onChange={(e) => setFormData({
-                ...formData,
-                specialty: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
-              })}
+              value={formData.specialty.join(", ")}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  specialty: e.target.value
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean),
+                })
+              }
               placeholder="e.g., Rifles, Pistols, Carbines (comma-separated)"
             />
-            <p className="text-xs text-muted-foreground mt-1">Comma-separated list of specialties</p>
+            <p className="text-muted-foreground mt-1 text-xs">
+              Comma-separated list of specialties
+            </p>
           </div>
         </div>
 
@@ -1432,7 +1510,7 @@ function ManufacturerDialog({
           <Button
             onClick={onSave}
             disabled={!formData.name || !formData.key || isPending}
-            className="bg-orange-500/20 hover:bg-orange-500/30 text-orange-500"
+            className="bg-orange-500/20 text-orange-500 hover:bg-orange-500/30"
           >
             {isPending ? "Saving..." : isEditing ? "Update Manufacturer" : "Create Manufacturer"}
           </Button>

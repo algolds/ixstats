@@ -28,12 +28,12 @@ export function EditorHeader({
   onSave,
   isSaving,
   hasChanges,
-  econSaveState
+  econSaveState,
 }: EditorHeaderProps) {
   return (
     <Card className="glass-hierarchy-parent border-amber-200 dark:border-amber-800">
       <CardHeader>
-        <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex-1">
             <CardTitle className="text-2xl font-bold text-amber-600 dark:text-amber-400">
               MyCountry Editor: {countryName}
@@ -42,22 +42,22 @@ export function EditorHeader({
           </div>
           <div className="flex items-center gap-3">
             {hasChanges && (
-              <Badge className="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
-                {totalChanges} Change{totalChanges !== 1 ? 's' : ''}
+              <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                {totalChanges} Change{totalChanges !== 1 ? "s" : ""}
               </Badge>
             )}
             <Badge variant="secondary" className="text-xs">
               {econSaveState.isSaving
-                ? 'Saving economic data…'
+                ? "Saving economic data…"
                 : econSaveState.pendingChanges
-                  ? 'Unsaved economic changes'
+                  ? "Unsaved economic changes"
                   : econSaveState.lastSavedAt
                     ? `Saved ${Math.max(0, Math.floor((Date.now() - econSaveState.lastSavedAt.getTime()) / 1000))}s ago`
-                    : 'Not saved yet'}
+                    : "Not saved yet"}
             </Badge>
             <Button onClick={onToggleAdvanced} variant="outline" size="default">
-              <Settings2 className="h-4 w-4 mr-2" />
-              {showAdvanced ? 'Simple' : 'Advanced'}
+              <Settings2 className="mr-2 h-4 w-4" />
+              {showAdvanced ? "Simple" : "Advanced"}
             </Button>
             <Button
               onClick={onSave}
@@ -65,8 +65,8 @@ export function EditorHeader({
               size="default"
               className="bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700"
             >
-              <Save className="h-4 w-4 mr-2" />
-              {isSaving ? 'Saving...' : 'Save Changes'}
+              <Save className="mr-2 h-4 w-4" />
+              {isSaving ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         </div>

@@ -7,9 +7,9 @@
  * @module useGovernmentBuilder
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { toast } from 'sonner';
-import { IxTime } from '~/lib/ixtime';
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { toast } from "sonner";
+import { IxTime } from "~/lib/ixtime";
 import {
   validateGovernmentBuilderState,
   generateBudgetSummary,
@@ -18,8 +18,8 @@ import {
   type ValidationResult,
   type BudgetSummary,
   type GovernmentSummary,
-} from '~/lib/government-builder-validation';
-import { useGovernmentBuilderAutoSync } from './useBuilderAutoSync';
+} from "~/lib/government-builder-validation";
+import { useGovernmentBuilderAutoSync } from "./useBuilderAutoSync";
 import type {
   GovernmentBuilderState,
   GovernmentStructureInput,
@@ -27,8 +27,8 @@ import type {
   BudgetAllocationInput,
   RevenueSourceInput,
   GovernmentTemplate,
-} from '~/types/government';
-import type { TaxCategoryInput } from '~/types/tax-system';
+} from "~/types/government";
+import type { TaxCategoryInput } from "~/types/tax-system";
 
 // ==================== TYPES ====================
 
@@ -47,7 +47,7 @@ export interface UseGovernmentBuilderReturn {
   budgetSummary: BudgetSummary;
   governmentSummary: GovernmentSummary;
   isSaving: boolean;
-  currentStep: 'structure' | 'departments' | 'budget' | 'revenue';
+  currentStep: "structure" | "departments" | "budget" | "revenue";
 
   // Sync state (when auto-sync is enabled)
   syncState: {
@@ -75,7 +75,7 @@ export interface UseGovernmentBuilderReturn {
   importTaxData: (taxCategories: TaxCategoryInput[]) => void;
 
   // Navigation
-  setCurrentStep: (step: 'structure' | 'departments' | 'budget' | 'revenue') => void;
+  setCurrentStep: (step: "structure" | "departments" | "budget" | "revenue") => void;
   goToNextStep: () => void;
   goToPreviousStep: () => void;
 
@@ -105,19 +105,13 @@ export function useGovernmentBuilder(
   initialData: Partial<GovernmentBuilderState> = {},
   options: UseGovernmentBuilderOptions = {}
 ): UseGovernmentBuilderReturn {
-  const {
-    countryId,
-    enableAutoSync = false,
-    isReadOnly = false,
-    onSave,
-    onChange,
-  } = options;
+  const { countryId, enableAutoSync = false, isReadOnly = false, onSave, onChange } = options;
 
   // ==================== LOCAL STATE ====================
 
   const [currentStep, setCurrentStep] = useState<
-    'structure' | 'departments' | 'budget' | 'revenue'
-  >('structure');
+    "structure" | "departments" | "budget" | "revenue"
+  >("structure");
   const [isSaving, setIsSaving] = useState(false);
   const [allCollapsed, setAllCollapsed] = useState(true);
   const [budgetAllocationsCollapsed, setBudgetAllocationsCollapsed] = useState<
@@ -126,11 +120,11 @@ export function useGovernmentBuilder(
 
   const [localBuilderState, setLocalBuilderState] = useState<GovernmentBuilderState>({
     structure: {
-      governmentName: '',
-      governmentType: 'Constitutional Monarchy',
+      governmentName: "",
+      governmentType: "Constitutional Monarchy",
       totalBudget: 1000000000,
-      fiscalYear: 'Calendar Year',
-      budgetCurrency: 'USD',
+      fiscalYear: "Calendar Year",
+      budgetCurrency: "USD",
       ...initialData?.structure,
     },
     departments: initialData?.departments || [],
@@ -152,7 +146,7 @@ export function useGovernmentBuilder(
     enabled: enableAutoSync && !!countryId,
     showConflictWarnings: true,
     onSyncSuccess: (result) => {
-      toast.success('Government changes saved');
+      toast.success("Government changes saved");
     },
     onSyncError: (error) => {
       toast.error(`Failed to save: ${error.message}`);
@@ -174,20 +168,14 @@ export function useGovernmentBuilder(
 
   // ==================== VALIDATION ====================
 
-  const validation = useMemo(
-    () => validateGovernmentBuilderState(builderState),
-    [builderState]
-  );
+  const validation = useMemo(() => validateGovernmentBuilderState(builderState), [builderState]);
 
   const budgetSummary = useMemo(
     () => generateBudgetSummary(builderState.budgetAllocations, builderState.structure.totalBudget),
     [builderState.budgetAllocations, builderState.structure.totalBudget]
   );
 
-  const governmentSummary = useMemo(
-    () => generateGovernmentSummary(builderState),
-    [builderState]
-  );
+  const governmentSummary = useMemo(() => generateGovernmentSummary(builderState), [builderState]);
 
   // ==================== CHANGE NOTIFICATION ====================
 
@@ -210,12 +198,12 @@ export function useGovernmentBuilder(
 
   const addDepartment = useCallback(() => {
     const newDepartment: DepartmentInput = {
-      name: '',
-      category: 'Other',
-      description: '',
-      ministerTitle: 'Minister',
-      organizationalLevel: 'Ministry',
-      color: '#6366f1',
+      name: "",
+      category: "Other",
+      description: "",
+      ministerTitle: "Minister",
+      organizationalLevel: "Ministry",
+      color: "#6366f1",
       priority: 50,
       functions: [],
     };
@@ -252,9 +240,7 @@ export function useGovernmentBuilder(
     (index: number, updated: BudgetAllocationInput) => {
       setBuilderState((prev) => {
         const newAllocations = [...prev.budgetAllocations];
-        const existingIndex = newAllocations.findIndex(
-          (a) => a.departmentId === index.toString()
-        );
+        const existingIndex = newAllocations.findIndex((a) => a.departmentId === index.toString());
 
         if (existingIndex >= 0) {
           newAllocations[existingIndex] = updated;
@@ -292,7 +278,7 @@ export function useGovernmentBuilder(
       const numDepartments = prev.departments.length;
 
       if (numDepartments === 0) {
-        toast.error('No departments to allocate budget to');
+        toast.error("No departments to allocate budget to");
         return prev;
       }
 
@@ -311,13 +297,13 @@ export function useGovernmentBuilder(
             budgetYear: new Date(IxTime.getCurrentIxTime()).getFullYear(),
             allocatedAmount: 0,
             allocatedPercent: 0,
-            notes: '',
+            notes: "",
           });
         }
       });
 
-      const orderedAllocations = prev.departments.map((dept, index) =>
-        allocationMap.get(index.toString())!
+      const orderedAllocations = prev.departments.map(
+        (dept, index) => allocationMap.get(index.toString())!
       );
 
       const currentTotalPercent = orderedAllocations.reduce(
@@ -330,12 +316,10 @@ export function useGovernmentBuilder(
       // If already at 100%, just fix amounts
       if (Math.abs(currentTotalPercent - 100) < 0.1) {
         fixedAllocations = orderedAllocations.map((alloc) => {
-          const expectedAmount = Math.round(
-            (totalBudget * (alloc.allocatedPercent || 0)) / 100
-          );
+          const expectedAmount = Math.round((totalBudget * (alloc.allocatedPercent || 0)) / 100);
           return { ...alloc, allocatedAmount: expectedAmount };
         });
-        toast.success('Budget allocations synchronized');
+        toast.success("Budget allocations synchronized");
       }
       // Scale existing percentages proportionally
       else if (currentTotalPercent > 0) {
@@ -393,18 +377,18 @@ export function useGovernmentBuilder(
     (taxCategories: TaxCategoryInput[]) => {
       // Import tax categories as revenue sources
       // This is a placeholder - implement conversion logic as needed
-      toast.info('Tax data import: implementation needed');
+      toast.info("Tax data import: implementation needed");
     },
     [setBuilderState]
   );
 
   // ==================== NAVIGATION ====================
 
-  const steps: Array<'structure' | 'departments' | 'budget' | 'revenue'> = [
-    'structure',
-    'departments',
-    'budget',
-    'revenue',
+  const steps: Array<"structure" | "departments" | "budget" | "revenue"> = [
+    "structure",
+    "departments",
+    "budget",
+    "revenue",
   ];
 
   const goToNextStep = useCallback(() => {
@@ -465,7 +449,7 @@ export function useGovernmentBuilder(
     const currentValidation = validateGovernmentBuilderState(builderState);
 
     if (!currentValidation.isValid) {
-      toast.error('Please fix validation errors before saving');
+      toast.error("Please fix validation errors before saving");
       return;
     }
 
@@ -478,10 +462,10 @@ export function useGovernmentBuilder(
           errors: currentValidation.errors,
         };
         await onSave(submission);
-        toast.success('Government saved successfully');
+        toast.success("Government saved successfully");
       } catch (error) {
-        console.error('Save failed:', error);
-        toast.error('Failed to save government');
+        console.error("Save failed:", error);
+        toast.error("Failed to save government");
       } finally {
         setIsSaving(false);
       }

@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { cn } from '~/lib/utils';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { cn } from "~/lib/utils";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 export interface ExpandableCardProps {
   title: string;
@@ -30,8 +30,8 @@ export function ExpandableCard({
   expandedContent,
   className,
   headerActions,
-  collapsedHeight = 'auto',
-  onExpandChange
+  collapsedHeight = "auto",
+  onExpandChange,
 }: ExpandableCardProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
@@ -42,22 +42,19 @@ export function ExpandableCard({
   };
 
   return (
-    <Card className={cn('glass-hierarchy-interactive transition-all duration-200', className)}>
-      <CardHeader
-        className="cursor-pointer"
-        onClick={toggleExpanded}
-      >
+    <Card className={cn("glass-hierarchy-interactive transition-all duration-200", className)}>
+      <CardHeader className="cursor-pointer" onClick={toggleExpanded}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {Icon && (
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Icon className="h-5 w-5 text-primary" />
+              <div className="bg-primary/10 rounded-lg p-2">
+                <Icon className="text-primary h-5 w-5" />
               </div>
             )}
             <div>
               <CardTitle className="text-lg font-semibold">{title}</CardTitle>
               {description && (
-                <CardDescription className="text-sm mt-1">{description}</CardDescription>
+                <CardDescription className="mt-1 text-sm">{description}</CardDescription>
               )}
             </div>
           </div>
@@ -72,11 +69,7 @@ export function ExpandableCard({
                 toggleExpanded();
               }}
             >
-              {isExpanded ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
+              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
           </div>
         </div>
@@ -89,7 +82,7 @@ export function ExpandableCard({
             animate={{ height: collapsedHeight, opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            style={{ overflow: 'hidden' }}
+            style={{ overflow: "hidden" }}
           >
             <CardContent>{children}</CardContent>
           </motion.div>
@@ -100,14 +93,12 @@ export function ExpandableCard({
         {isExpanded && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
+            animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            style={{ overflow: 'hidden' }}
+            style={{ overflow: "hidden" }}
           >
-            <CardContent>
-              {expandedContent || children}
-            </CardContent>
+            <CardContent>{expandedContent || children}</CardContent>
           </motion.div>
         )}
       </AnimatePresence>

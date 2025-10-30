@@ -6,20 +6,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
-import {
-  RiArrowDownLine,
-  RiArrowRightLine,
-  RiExternalLinkLine,
-  RiImageLine,
-} from "react-icons/ri";
+import { RiArrowDownLine, RiArrowRightLine, RiExternalLinkLine, RiImageLine } from "react-icons/ri";
 import { SECTION_ICONS } from "./constants";
 
 const CLASSIFICATION_STYLES = {
-  PUBLIC: { color: 'text-green-600 dark:text-green-400' },
-  RESTRICTED: { color: 'text-yellow-600 dark:text-yellow-400' },
-  CONFIDENTIAL: { color: 'text-red-600 dark:text-red-400' },
-  SECRET: { color: 'text-orange-600 dark:text-orange-400' },
-  TOP_SECRET: { color: 'text-purple-600 dark:text-purple-400' },
+  PUBLIC: { color: "text-green-600 dark:text-green-400" },
+  RESTRICTED: { color: "text-yellow-600 dark:text-yellow-400" },
+  CONFIDENTIAL: { color: "text-red-600 dark:text-red-400" },
+  SECRET: { color: "text-orange-600 dark:text-orange-400" },
+  TOP_SECRET: { color: "text-purple-600 dark:text-purple-400" },
 } as const;
 import { parseWikiContent, truncateContent } from "~/lib/wiki-intelligence-parser";
 import type { WikiSection } from "~/lib/wiki-intelligence-parser";
@@ -80,7 +75,8 @@ export function WikiSectionCard({
   countryName,
 }: WikiSectionCardProps): React.ReactElement {
   // Get the appropriate icon for this section
-  const SectionIcon = SECTION_ICONS[section.id as keyof typeof SECTION_ICONS] || SECTION_ICONS.default;
+  const SectionIcon =
+    SECTION_ICONS[section.id as keyof typeof SECTION_ICONS] || SECTION_ICONS.default;
 
   // Calculate importance badge styling
   const getImportanceBadgeClass = (importance: string): string => {
@@ -99,14 +95,14 @@ export function WikiSectionCard({
       <Card className="glass-hierarchy-child">
         {/* Section Header */}
         <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-accent/10 transition-colors">
+          <CardHeader className="hover:bg-accent/10 cursor-pointer transition-colors">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <SectionIcon className="h-5 w-5" style={{ color: flagColors.primary }} />
                 {section.title}
                 <RiArrowDownLine
                   className={cn(
-                    "h-4 w-4 text-muted-foreground transition-transform ml-2",
+                    "text-muted-foreground ml-2 h-4 w-4 transition-transform",
                     isOpen && "rotate-180"
                   )}
                 />
@@ -117,7 +113,9 @@ export function WikiSectionCard({
                   variant="outline"
                   className={cn(
                     "text-xs",
-                    CLASSIFICATION_STYLES[section.classification as keyof typeof CLASSIFICATION_STYLES]?.color || CLASSIFICATION_STYLES.PUBLIC.color
+                    CLASSIFICATION_STYLES[
+                      section.classification as keyof typeof CLASSIFICATION_STYLES
+                    ]?.color || CLASSIFICATION_STYLES.PUBLIC.color
                   )}
                 >
                   {section.classification}
@@ -127,10 +125,10 @@ export function WikiSectionCard({
                   variant="secondary"
                   className={cn(
                     "text-xs",
-                    section.importance ? getImportanceBadgeClass(section.importance) : ''
+                    section.importance ? getImportanceBadgeClass(section.importance) : ""
                   )}
                 >
-                  {section.importance?.toUpperCase() ?? 'MEDIUM'}
+                  {section.importance?.toUpperCase() ?? "MEDIUM"}
                 </Badge>
               </div>
             </div>
@@ -146,21 +144,24 @@ export function WikiSectionCard({
                 const { truncated, isTruncated } = truncateContent(section.content);
                 return (
                   <>
-                    <div className="text-sm leading-relaxed prose prose-sm prose-invert max-w-none">
+                    <div className="prose prose-sm prose-invert max-w-none text-sm leading-relaxed">
                       {parseWikiContent(truncated, handleWikiLinkClick)}
                     </div>
                     {isTruncated && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => section.id && onShowFullContent({
-                          title: section.title,
-                          content: section.content,
-                          id: section.id
-                        })}
-                        className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 -mt-2"
+                        onClick={() =>
+                          section.id &&
+                          onShowFullContent({
+                            title: section.title,
+                            content: section.content,
+                            id: section.id,
+                          })
+                        }
+                        className="-mt-2 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300"
                       >
-                        See More <RiArrowRightLine className="h-4 w-4 ml-1" />
+                        See More <RiArrowRightLine className="ml-1 h-4 w-4" />
                       </Button>
                     )}
                   </>
@@ -170,18 +171,22 @@ export function WikiSectionCard({
               {/* Display actual images if they exist */}
               {section.images && section.images.length > 0 && (
                 <div className="mt-4 space-y-2">
-                  <p className="text-xs text-muted-foreground mb-2">Media from wiki source:</p>
+                  <p className="text-muted-foreground mb-2 text-xs">Media from wiki source:</p>
                   <div className="flex flex-wrap gap-2">
                     {section.images.map((imageLink: string, index: number) => {
-                      const fileName = imageLink.replace(/\[\[File:([^|\\]+).*\]\]/, '$1');
+                      const fileName = imageLink.replace(/\[\[File:([^|\\]+).*\]\]/, "$1");
                       return (
                         <img
                           key={index}
                           src={`https://ixwiki.com/wiki/Special:Filepath/${fileName}`}
                           alt={`Image from ${section.title}`}
-                          className="max-w-32 h-auto rounded border border-muted-foreground/30 cursor-pointer"
-                          onError={(e: React.SyntheticEvent<HTMLImageElement>) => e.currentTarget.style.display = 'none'}
-                          onClick={() => window.open(`https://ixwiki.com/wiki/File:${fileName}`, '_blank')}
+                          className="border-muted-foreground/30 h-auto max-w-32 cursor-pointer rounded border"
+                          onError={(e: React.SyntheticEvent<HTMLImageElement>) =>
+                            (e.currentTarget.style.display = "none")
+                          }
+                          onClick={() =>
+                            window.open(`https://ixwiki.com/wiki/File:${fileName}`, "_blank")
+                          }
                         />
                       );
                     })}
@@ -190,17 +195,20 @@ export function WikiSectionCard({
               )}
 
               {/* Full Article Access */}
-              <div className="flex gap-2 pt-3 border-t border-border/30">
+              <div className="border-border/30 flex gap-2 border-t pt-3">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => {
                     // Use the section title directly as it's already the correct page name
-                    window.open(`https://ixwiki.com/wiki/${encodeURIComponent(section.title)}`, '_blank');
+                    window.open(
+                      `https://ixwiki.com/wiki/${encodeURIComponent(section.title)}`,
+                      "_blank"
+                    );
                   }}
                   className="flex-1"
                 >
-                  <RiExternalLinkLine className="h-3 w-3 mr-1" />
+                  <RiExternalLinkLine className="mr-1 h-3 w-3" />
                   View Full Article
                 </Button>
 
@@ -210,28 +218,33 @@ export function WikiSectionCard({
                     size="sm"
                     onClick={() => {
                       // Show category page for this section's media
-                      const articleName = section.title.includes(' of ')
+                      const articleName = section.title.includes(" of ")
                         ? section.title
                         : `${section.title} of ${countryName}`;
-                      window.open(`https://ixwiki.com/wiki/Category:${encodeURIComponent(articleName)}_images`, '_blank');
+                      window.open(
+                        `https://ixwiki.com/wiki/Category:${encodeURIComponent(articleName)}_images`,
+                        "_blank"
+                      );
                     }}
                   >
-                    <RiImageLine className="h-3 w-3 mr-1" />
+                    <RiImageLine className="mr-1 h-3 w-3" />
                     {section.images.length} Media
                   </Button>
                 )}
               </div>
 
               {/* Section metadata */}
-              <div className="mt-4 pt-3 border-t border-border/30 text-xs text-muted-foreground">
+              <div className="border-border/30 text-muted-foreground mt-4 border-t pt-3 text-xs">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <span>{section.wordCount} words</span>
                     {section.lastModified && (
-                      <span>Last updated: {new Date(section.lastModified).toLocaleDateString()}</span>
+                      <span>
+                        Last updated: {new Date(section.lastModified).toLocaleDateString()}
+                      </span>
                     )}
                   </div>
-                  {section.content.includes('[') && (
+                  {section.content.includes("[") && (
                     <span className="flex items-center gap-1 text-blue-400">
                       <RiExternalLinkLine className="h-3 w-3" />
                       {section.content.match(/\[\[[^\]]*\]\]/g)?.length || 0} wiki links

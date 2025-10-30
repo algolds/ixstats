@@ -29,9 +29,9 @@ export const WikiFooter: React.FC<WikiFooterProps> = ({
   return (
     <div className="glass-hierarchy-child rounded-lg p-4">
       <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          Wiki data last updated: {IxTime.formatIxTime(lastUpdated, true)} •
-          Confidence: {confidence}%
+        <div className="text-muted-foreground text-sm">
+          Wiki data last updated: {IxTime.formatIxTime(lastUpdated, true)} • Confidence:{" "}
+          {confidence}%
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-xs">

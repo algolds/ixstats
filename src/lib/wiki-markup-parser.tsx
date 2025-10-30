@@ -37,8 +37,8 @@ export const parseWikiContent = (
   parsed = parsed.replace(/''([^']+)''/g, '<em class="italic">$1</em>'); // Italics
 
   // Add basic line breaks
-  parsed = parsed.replace(/\n\n/g, '<br/><br/>');
-  parsed = parsed.replace(/\n/g, ' ');
+  parsed = parsed.replace(/\n\n/g, "<br/><br/>");
+  parsed = parsed.replace(/\n/g, " ");
 
   // SECURITY: Sanitize parsed wiki markup to prevent XSS
   const sanitized = sanitizeWikiContent(parsed);
@@ -48,7 +48,7 @@ export const parseWikiContent = (
       dangerouslySetInnerHTML={{ __html: sanitized }}
       onClick={(e) => {
         const target = e.target as HTMLElement;
-        const link = target.getAttribute('data-link');
+        const link = target.getAttribute("data-link");
         if (link) {
           e.preventDefault();
           linkHandler(link);
@@ -64,9 +64,9 @@ export const parseWikiContent = (
  * @param link - The link to open (wiki page name or external URL)
  */
 export const handleWikiLinkClick = (link: string): void => {
-  if (link.startsWith('http')) {
-    window.open(link, '_blank');
+  if (link.startsWith("http")) {
+    window.open(link, "_blank");
   } else {
-    window.open(`https://ixwiki.com/wiki/${encodeURIComponent(link)}`, '_blank');
+    window.open(`https://ixwiki.com/wiki/${encodeURIComponent(link)}`, "_blank");
   }
 };

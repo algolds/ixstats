@@ -2,13 +2,13 @@
 // Centralized reusable components for IxStats
 
 // Data Display
-export * from './data-display';
+export * from "./data-display";
 
 // Forms
-export * from './forms';
+export * from "./forms";
 
 // Layouts
-export * from './layouts';
+export * from "./layouts";
 
 // Feedback
-export * from './feedback';
+export * from "./feedback";

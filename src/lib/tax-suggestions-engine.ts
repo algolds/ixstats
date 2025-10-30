@@ -44,16 +44,18 @@ function getEconomicOptimizationSuggestions(builderState: TaxBuilderState): Sugg
   const suggestions: SuggestionItem[] = [];
 
   // Check for regressive tax structures
-  const hasRegressiveStructure = builderState.categories.some((cat: TaxBuilderState['categories'][number], idx: number) => {
-    const brackets = builderState.brackets[idx.toString()] || [];
-    if (brackets.length < 2) return false;
+  const hasRegressiveStructure = builderState.categories.some(
+    (cat: TaxBuilderState["categories"][number], idx: number) => {
+      const brackets = builderState.brackets[idx.toString()] || [];
+      if (brackets.length < 2) return false;
 
-    const sorted = [...brackets].sort((a, b) => a.minIncome - b.minIncome);
-    for (let i = 1; i < sorted.length; i++) {
-      if (sorted[i].rate < sorted[i - 1].rate) return true;
+      const sorted = [...brackets].sort((a, b) => a.minIncome - b.minIncome);
+      for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i].rate < sorted[i - 1].rate) return true;
+      }
+      return false;
     }
-    return false;
-  });
+  );
 
   if (hasRegressiveStructure) {
     suggestions.push({
@@ -66,8 +68,9 @@ function getEconomicOptimizationSuggestions(builderState: TaxBuilderState): Sugg
   }
 
   // Check for missing corporate tax
-  const hasCorporateTax = builderState.categories.some((cat: TaxBuilderState['categories'][number]) =>
-    cat.categoryName.toLowerCase().includes("corporate")
+  const hasCorporateTax = builderState.categories.some(
+    (cat: TaxBuilderState["categories"][number]) =>
+      cat.categoryName.toLowerCase().includes("corporate")
   );
 
   if (!hasCorporateTax && builderState.categories.length > 0) {
@@ -82,7 +85,7 @@ function getEconomicOptimizationSuggestions(builderState: TaxBuilderState): Sugg
 
   // Check for VAT/sales tax
   const hasIndirectTax = builderState.categories.some(
-    (cat: TaxBuilderState['categories'][number]) => cat.categoryType === "Indirect Tax"
+    (cat: TaxBuilderState["categories"][number]) => cat.categoryType === "Indirect Tax"
   );
 
   if (!hasIndirectTax && builderState.categories.length > 0) {
@@ -104,7 +107,7 @@ function getEconomicOptimizationSuggestions(builderState: TaxBuilderState): Sugg
 function getBracketStructureSuggestions(builderState: TaxBuilderState): SuggestionItem[] {
   const suggestions: SuggestionItem[] = [];
 
-  builderState.categories.forEach((cat: TaxBuilderState['categories'][number], idx: number) => {
+  builderState.categories.forEach((cat: TaxBuilderState["categories"][number], idx: number) => {
     const brackets = builderState.brackets[idx.toString()] || [];
 
     // Progressive categories with no brackets
@@ -120,7 +123,9 @@ function getBracketStructureSuggestions(builderState: TaxBuilderState): Suggesti
 
     // Check for large gaps between brackets
     if (brackets.length >= 2) {
-      const sorted = [...brackets].sort((a: { minIncome: number }, b: { minIncome: number }) => a.minIncome - b.minIncome);
+      const sorted = [...brackets].sort(
+        (a: { minIncome: number }, b: { minIncome: number }) => a.minIncome - b.minIncome
+      );
       for (let i = 1; i < sorted.length; i++) {
         const prev = sorted[i - 1];
         const curr = sorted[i];
@@ -204,10 +209,10 @@ function getRevenueBalanceSuggestions(builderState: TaxBuilderState): Suggestion
   // Check for balanced revenue sources
   if (builderState.categories.length >= 3) {
     const directTaxCount = builderState.categories.filter(
-      (cat: TaxBuilderState['categories'][number]) => cat.categoryType === "Direct Tax"
+      (cat: TaxBuilderState["categories"][number]) => cat.categoryType === "Direct Tax"
     ).length;
     const indirectTaxCount = builderState.categories.filter(
-      (cat: TaxBuilderState['categories'][number]) => cat.categoryType === "Indirect Tax"
+      (cat: TaxBuilderState["categories"][number]) => cat.categoryType === "Indirect Tax"
     ).length;
 
     const directRatio = directTaxCount / builderState.categories.length;

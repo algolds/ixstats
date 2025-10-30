@@ -2,15 +2,10 @@
 // Enhanced Economic Calculation Framework
 // Building on existing calculations with grouped methodologies and detailed analysis
 
-import { IxTime } from './ixtime';
-import { IxStatsCalculator, EconomicTier, PopulationTier } from './calculations';
-import type { 
-  CountryStats, 
-  EconomicConfig, 
-  HistoricalDataPoint,
-  DmInputs 
-} from '../types/ixstats';
-import type { EconomyData, CoreEconomicIndicatorsData } from '../types/economics';
+import { IxTime } from "./ixtime";
+import { IxStatsCalculator, EconomicTier, PopulationTier } from "./calculations";
+import type { CountryStats, EconomicConfig, HistoricalDataPoint, DmInputs } from "../types/ixstats";
+import type { EconomyData, CoreEconomicIndicatorsData } from "../types/economics";
 
 // ===== ENHANCED CALCULATION GROUPS =====
 
@@ -21,20 +16,20 @@ import type { EconomyData, CoreEconomicIndicatorsData } from '../types/economics
 export interface EconomicResilienceMetrics {
   overallScore: number;
   components: {
-    fiscalStability: number;      // Debt, budget balance, tax efficiency
-    monetaryStability: number;    // Inflation, currency stability, reserves
-    structuralBalance: number;    // Economic diversity, export dependency
-    socialCohesion: number;       // Income inequality, employment stability
+    fiscalStability: number; // Debt, budget balance, tax efficiency
+    monetaryStability: number; // Inflation, currency stability, reserves
+    structuralBalance: number; // Economic diversity, export dependency
+    socialCohesion: number; // Income inequality, employment stability
   };
   riskFactors: Array<{
     factor: string;
-    impact: 'low' | 'medium' | 'high';
+    impact: "low" | "medium" | "high";
     description: string;
   }>;
   projections: {
-    '6_month': number;
-    '1_year': number;
-    '2_year': number;
+    "6_month": number;
+    "1_year": number;
+    "2_year": number;
   };
 }
 
@@ -45,15 +40,15 @@ export interface EconomicResilienceMetrics {
 export interface ProductivityInnovationMetrics {
   overallScore: number;
   components: {
-    laborProductivity: number;    // GDP per hour worked, skill level
-    capitalEfficiency: number;    // Capital investment returns, infrastructure
+    laborProductivity: number; // GDP per hour worked, skill level
+    capitalEfficiency: number; // Capital investment returns, infrastructure
     technologicalAdaptation: number; // R&D spend, patent activity, digital adoption
-    entrepreneurshipIndex: number;   // Business creation, regulatory ease
+    entrepreneurshipIndex: number; // Business creation, regulatory ease
   };
   growthDrivers: Array<{
     driver: string;
     strength: number;
-    trendDirection: 'increasing' | 'stable' | 'decreasing';
+    trendDirection: "increasing" | "stable" | "decreasing";
   }>;
   competitiveAdvantages: string[];
 }
@@ -65,10 +60,10 @@ export interface ProductivityInnovationMetrics {
 export interface SocialEconomicWellbeingMetrics {
   overallScore: number;
   components: {
-    livingStandards: number;      // Cost of living adjusted income, housing
-    healthcareAccess: number;     // Healthcare spending, coverage, outcomes
+    livingStandards: number; // Cost of living adjusted income, housing
+    healthcareAccess: number; // Healthcare spending, coverage, outcomes
     educationOpportunity: number; // Education spending, literacy, skill development
-    socialMobility: number;       // Income mobility, wealth concentration
+    socialMobility: number; // Income mobility, wealth concentration
   };
   inequalityFactors: {
     giniCoefficient: number;
@@ -95,19 +90,19 @@ export interface SocialEconomicWellbeingMetrics {
 export interface EconomicComplexityMetrics {
   overallScore: number;
   components: {
-    exportDiversity: number;      // Product complexity, market diversification
+    exportDiversity: number; // Product complexity, market diversification
     valueChainIntegration: number; // Supply chain participation, value addition
     financialSophistication: number; // Banking, capital markets, fintech
-    regulatoryQuality: number;    // Business environment, rule of law
+    regulatoryQuality: number; // Business environment, rule of law
   };
   tradeMetrics: {
     exportComplexityIndex: number;
     importDependencyRatio: number;
-    tradeBalanceTrend: 'improving' | 'stable' | 'deteriorating';
+    tradeBalanceTrend: "improving" | "stable" | "deteriorating";
     majorTradingPartners: Array<{
       country: string;
       shareOfTrade: number;
-      relationship: 'strategic' | 'transactional' | 'dependent';
+      relationship: "strategic" | "transactional" | "dependent";
     }>;
   };
   futureOpportunities: string[];
@@ -120,28 +115,28 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
     fiscalStability: 0.3,
     monetaryStability: 0.25,
     structuralBalance: 0.25,
-    socialCohesion: 0.2
+    socialCohesion: 0.2,
   };
 
   private productivityWeights = {
     laborProductivity: 0.35,
     capitalEfficiency: 0.25,
     technologicalAdaptation: 0.25,
-    entrepreneurshipIndex: 0.15
+    entrepreneurshipIndex: 0.15,
   };
 
   private wellbeingWeights = {
     livingStandards: 0.3,
     healthcareAccess: 0.25,
     educationOpportunity: 0.25,
-    socialMobility: 0.2
+    socialMobility: 0.2,
   };
 
   private complexityWeights = {
     exportDiversity: 0.3,
     valueChainIntegration: 0.25,
     financialSophistication: 0.25,
-    regulatoryQuality: 0.2
+    regulatoryQuality: 0.2,
   };
 
   /**
@@ -154,18 +149,18 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
   ): EconomicResilienceMetrics {
     // Fiscal Stability (0-100)
     const fiscalStability = this.calculateFiscalStability(countryStats, economyData);
-    
+
     // Monetary Stability (0-100)
     const monetaryStability = this.calculateMonetaryStability(economyData, historicalData);
-    
+
     // Structural Balance (0-100)
     const structuralBalance = this.calculateStructuralBalance(countryStats, economyData);
-    
+
     // Social Cohesion (0-100)
     const socialCohesion = this.calculateSocialCohesion(economyData);
 
     // Overall resilience score
-    const overallScore = 
+    const overallScore =
       fiscalStability * this.resilienceWeights.fiscalStability +
       monetaryStability * this.resilienceWeights.monetaryStability +
       structuralBalance * this.resilienceWeights.structuralBalance +
@@ -183,10 +178,10 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
         fiscalStability: Math.round(fiscalStability),
         monetaryStability: Math.round(monetaryStability),
         structuralBalance: Math.round(structuralBalance),
-        socialCohesion: Math.round(socialCohesion)
+        socialCohesion: Math.round(socialCohesion),
       },
       riskFactors,
-      projections
+      projections,
     };
   }
 
@@ -203,7 +198,7 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
     const technologicalAdaptation = this.calculateTechnologicalAdaptation(economyData);
     const entrepreneurshipIndex = this.calculateEntrepreneurshipIndex(economyData);
 
-    const overallScore = 
+    const overallScore =
       laborProductivity * this.productivityWeights.laborProductivity +
       capitalEfficiency * this.productivityWeights.capitalEfficiency +
       technologicalAdaptation * this.productivityWeights.technologicalAdaptation +
@@ -218,10 +213,10 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
         laborProductivity: Math.round(laborProductivity),
         capitalEfficiency: Math.round(capitalEfficiency),
         technologicalAdaptation: Math.round(technologicalAdaptation),
-        entrepreneurshipIndex: Math.round(entrepreneurshipIndex)
+        entrepreneurshipIndex: Math.round(entrepreneurshipIndex),
       },
       growthDrivers,
-      competitiveAdvantages
+      competitiveAdvantages,
     };
   }
 
@@ -237,7 +232,7 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
     const educationOpportunity = this.calculateEducationOpportunity(economyData);
     const socialMobility = this.calculateSocialMobility(economyData);
 
-    const overallScore = 
+    const overallScore =
       livingStandards * this.wellbeingWeights.livingStandards +
       healthcareAccess * this.wellbeingWeights.healthcareAccess +
       educationOpportunity * this.wellbeingWeights.educationOpportunity +
@@ -252,10 +247,10 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
         livingStandards: Math.round(livingStandards),
         healthcareAccess: Math.round(healthcareAccess),
         educationOpportunity: Math.round(educationOpportunity),
-        socialMobility: Math.round(socialMobility)
+        socialMobility: Math.round(socialMobility),
       },
       inequalityFactors,
-      trendAnalysis
+      trendAnalysis,
     };
   }
 
@@ -271,7 +266,7 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
     const financialSophistication = this.calculateFinancialSophistication(economyData);
     const regulatoryQuality = this.calculateRegulatoryQuality(economyData);
 
-    const overallScore = 
+    const overallScore =
       exportDiversity * this.complexityWeights.exportDiversity +
       valueChainIntegration * this.complexityWeights.valueChainIntegration +
       financialSophistication * this.complexityWeights.financialSophistication +
@@ -286,10 +281,10 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
         exportDiversity: Math.round(exportDiversity),
         valueChainIntegration: Math.round(valueChainIntegration),
         financialSophistication: Math.round(financialSophistication),
-        regulatoryQuality: Math.round(regulatoryQuality)
+        regulatoryQuality: Math.round(regulatoryQuality),
       },
       tradeMetrics,
-      futureOpportunities
+      futureOpportunities,
     };
   }
 
@@ -307,9 +302,12 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
 
     // Budget balance factor
     const budgetBalance = economyData.fiscal.budgetDeficitSurplus / economyData.core.nominalGDP;
-    if (budgetBalance > 0.02) score += 15; // Surplus
-    else if (budgetBalance > -0.03) score += 10; // Small deficit
-    else if (budgetBalance > -0.06) score += 0; // Moderate deficit
+    if (budgetBalance > 0.02)
+      score += 15; // Surplus
+    else if (budgetBalance > -0.03)
+      score += 10; // Small deficit
+    else if (budgetBalance > -0.06)
+      score += 0; // Moderate deficit
     else score -= 15; // Large deficit
 
     // Tax efficiency factor
@@ -320,24 +318,32 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
     return Math.max(0, Math.min(100, score));
   }
 
-  private calculateMonetaryStability(economyData: EconomyData, historicalData: HistoricalDataPoint[]): number {
+  private calculateMonetaryStability(
+    economyData: EconomyData,
+    historicalData: HistoricalDataPoint[]
+  ): number {
     let score = 50; // Base score
 
     // Inflation stability
     const inflation = economyData.core.inflationRate;
-    if (inflation >= 0.01 && inflation <= 0.04) score += 25; // Ideal range
-    else if (inflation >= 0 && inflation <= 0.06) score += 15; // Acceptable range
-    else if (inflation > 0.1) score -= 20; // High inflation penalty
+    if (inflation >= 0.01 && inflation <= 0.04)
+      score += 25; // Ideal range
+    else if (inflation >= 0 && inflation <= 0.06)
+      score += 15; // Acceptable range
+    else if (inflation > 0.1)
+      score -= 20; // High inflation penalty
     else if (inflation < -0.02) score -= 15; // Deflation penalty
 
     // Growth volatility (if historical data available)
     if (historicalData.length >= 10) {
-      const growthRates = historicalData.slice(-10).map(d => d.gdpGrowthRate);
+      const growthRates = historicalData.slice(-10).map((d) => d.gdpGrowthRate);
       const avgGrowth = growthRates.reduce((sum, rate) => sum + rate, 0) / growthRates.length;
       const volatility = this.calculateStandardDeviation(growthRates);
-      
-      if (volatility <= 0.02) score += 15; // Low volatility
-      else if (volatility <= 0.04) score += 10; // Moderate volatility
+
+      if (volatility <= 0.02)
+        score += 15; // Low volatility
+      else if (volatility <= 0.04)
+        score += 10; // Moderate volatility
       else if (volatility > 0.08) score -= 15; // High volatility
     }
 
@@ -403,9 +409,12 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
 
     // Income inequality factor
     const gini = economyData.income.incomeInequalityGini;
-    if (gini <= 0.3) score += 25; // Very low inequality
-    else if (gini <= 0.4) score += 15; // Low inequality
-    else if (gini <= 0.5) score += 5; // Moderate inequality
+    if (gini <= 0.3)
+      score += 25; // Very low inequality
+    else if (gini <= 0.4)
+      score += 15; // Low inequality
+    else if (gini <= 0.5)
+      score += 5; // Moderate inequality
     else score -= 15; // High inequality
 
     // Social mobility factor
@@ -455,14 +464,19 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
 
     // Government spending efficiency
     const spendingGDP = economyData.spending.spendingGDPPercent;
-    if (spendingGDP >= 20 && spendingGDP <= 40) score += 15; // Optimal range
+    if (spendingGDP >= 20 && spendingGDP <= 40)
+      score += 15; // Optimal range
     else if (spendingGDP < 15 || spendingGDP > 50) score -= 10; // Inefficient range
 
     // Investment in productive sectors
-    const infrastructureSpending = economyData.spending.spendingCategories
-      .find(cat => cat.category.toLowerCase().includes('infrastructure'))?.percent || 0;
-    const educationSpending = economyData.spending.spendingCategories
-      .find(cat => cat.category.toLowerCase().includes('education'))?.percent || 0;
+    const infrastructureSpending =
+      economyData.spending.spendingCategories.find((cat) =>
+        cat.category.toLowerCase().includes("infrastructure")
+      )?.percent || 0;
+    const educationSpending =
+      economyData.spending.spendingCategories.find((cat) =>
+        cat.category.toLowerCase().includes("education")
+      )?.percent || 0;
 
     score += (infrastructureSpending + educationSpending) * 0.5; // Productive investment bonus
 
@@ -501,43 +515,47 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
     // High debt risk
     if (economyData.fiscal.totalDebtGDPRatio > 100) {
       risks.push({
-        factor: 'High Government Debt',
-        impact: 'high' as const,
-        description: `Debt-to-GDP ratio of ${Number(economyData.fiscal.totalDebtGDPRatio ?? 0).toFixed(1)}% may limit fiscal flexibility`
+        factor: "High Government Debt",
+        impact: "high" as const,
+        description: `Debt-to-GDP ratio of ${Number(economyData.fiscal.totalDebtGDPRatio ?? 0).toFixed(1)}% may limit fiscal flexibility`,
       });
     }
 
     // High unemployment risk
     if (economyData.labor.unemploymentRate > 12) {
       risks.push({
-        factor: 'High Unemployment',
-        impact: 'medium' as const,
-        description: `Unemployment rate of ${Number(economyData.labor.unemploymentRate ?? 0).toFixed(1)}% indicates structural issues`
+        factor: "High Unemployment",
+        impact: "medium" as const,
+        description: `Unemployment rate of ${Number(economyData.labor.unemploymentRate ?? 0).toFixed(1)}% indicates structural issues`,
       });
     }
 
     // Inflation risk
     if (economyData.core.inflationRate > 0.08) {
       risks.push({
-        factor: 'High Inflation',
-        impact: 'high' as const,
-        description: `Inflation rate of ${Number((economyData.core.inflationRate ?? 0) * 100).toFixed(1)}% erodes purchasing power`
+        factor: "High Inflation",
+        impact: "high" as const,
+        description: `Inflation rate of ${Number((economyData.core.inflationRate ?? 0) * 100).toFixed(1)}% erodes purchasing power`,
       });
     }
 
     return risks;
   }
 
-  private projectResilience(currentScore: number, historicalData: HistoricalDataPoint[], riskFactors: any[]) {
+  private projectResilience(
+    currentScore: number,
+    historicalData: HistoricalDataPoint[],
+    riskFactors: any[]
+  ) {
     // Simple projection model - in reality would use more sophisticated forecasting
     const riskPenalty = riskFactors.reduce((sum, risk) => {
-      return sum + (risk.impact === 'high' ? -3 : risk.impact === 'medium' ? -2 : -1);
+      return sum + (risk.impact === "high" ? -3 : risk.impact === "medium" ? -2 : -1);
     }, 0);
 
     return {
-      '6_month': Math.max(0, Math.min(100, currentScore + (riskPenalty * 0.5))),
-      '1_year': Math.max(0, Math.min(100, currentScore + riskPenalty)),
-      '2_year': Math.max(0, Math.min(100, currentScore + (riskPenalty * 1.5)))
+      "6_month": Math.max(0, Math.min(100, currentScore + riskPenalty * 0.5)),
+      "1_year": Math.max(0, Math.min(100, currentScore + riskPenalty)),
+      "2_year": Math.max(0, Math.min(100, currentScore + riskPenalty * 1.5)),
     };
   }
 
@@ -550,40 +568,51 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
   }
 
   // Placeholder methods for remaining functionality
-  private identifyGrowthDrivers(countryStats: CountryStats, economyData: EconomyData, historicalData: HistoricalDataPoint[]) {
+  private identifyGrowthDrivers(
+    countryStats: CountryStats,
+    economyData: EconomyData,
+    historicalData: HistoricalDataPoint[]
+  ) {
     return [
-      { driver: 'High-skilled workforce', strength: 75, trendDirection: 'increasing' as const },
-      { driver: 'Infrastructure investment', strength: 60, trendDirection: 'stable' as const },
-      { driver: 'Technology adoption', strength: 55, trendDirection: 'increasing' as const }
+      { driver: "High-skilled workforce", strength: 75, trendDirection: "increasing" as const },
+      { driver: "Infrastructure investment", strength: 60, trendDirection: "stable" as const },
+      { driver: "Technology adoption", strength: 55, trendDirection: "increasing" as const },
     ];
   }
 
-  private identifyCompetitiveAdvantages(countryStats: CountryStats, economyData: EconomyData): string[] {
+  private identifyCompetitiveAdvantages(
+    countryStats: CountryStats,
+    economyData: EconomyData
+  ): string[] {
     const advantages = [];
-    
-    if (countryStats.currentGdpPerCapita > 50000) advantages.push('High income economy');
-    if (economyData.labor.unemploymentRate < 5) advantages.push('Full employment');
-    if (economyData.fiscal.totalDebtGDPRatio < 60) advantages.push('Fiscal sustainability');
-    if (economyData.core.inflationRate < 0.04) advantages.push('Price stability');
-    
+
+    if (countryStats.currentGdpPerCapita > 50000) advantages.push("High income economy");
+    if (economyData.labor.unemploymentRate < 5) advantages.push("Full employment");
+    if (economyData.fiscal.totalDebtGDPRatio < 60) advantages.push("Fiscal sustainability");
+    if (economyData.core.inflationRate < 0.04) advantages.push("Price stability");
+
     return advantages;
   }
 
   private calculateLivingStandards(countryStats: CountryStats, economyData: EconomyData): number {
-    return Math.min(100, (countryStats.currentGdpPerCapita / 1000) + 30);
+    return Math.min(100, countryStats.currentGdpPerCapita / 1000 + 30);
   }
 
   private calculateHealthcareAccess(economyData: EconomyData): number {
-    const healthcareSpending = economyData.spending.spendingCategories
-      .find(cat => cat.category.toLowerCase().includes('healthcare'))?.percent || 0;
-    return Math.min(100, 40 + (healthcareSpending * 2));
+    const healthcareSpending =
+      economyData.spending.spendingCategories.find((cat) =>
+        cat.category.toLowerCase().includes("healthcare")
+      )?.percent || 0;
+    return Math.min(100, 40 + healthcareSpending * 2);
   }
 
   private calculateEducationOpportunity(economyData: EconomyData): number {
-    const educationSpending = economyData.spending.spendingCategories
-      .find(cat => cat.category.toLowerCase().includes('education'))?.percent || 0;
+    const educationSpending =
+      economyData.spending.spendingCategories.find((cat) =>
+        cat.category.toLowerCase().includes("education")
+      )?.percent || 0;
     const literacy = economyData.demographics.literacyRate;
-    return Math.min(100, (literacy * 0.6) + (educationSpending * 2));
+    return Math.min(100, literacy * 0.6 + educationSpending * 2);
   }
 
   private calculateSocialMobility(economyData: EconomyData): number {
@@ -595,33 +624,35 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
       giniCoefficient: economyData.income.incomeInequalityGini,
       wealthConcentration: {
         top10Percent: economyData.income.economicClasses[0]?.wealthPercent || 40,
-        bottom50Percent: economyData.income.economicClasses.slice(-2)
-          .reduce((sum, c) => sum + c.wealthPercent, 0)
+        bottom50Percent: economyData.income.economicClasses
+          .slice(-2)
+          .reduce((sum, c) => sum + c.wealthPercent, 0),
       },
-      regionalDisparities: economyData.demographics.regions.map(region => {
-        const totalPop = economyData.demographics.regions.reduce((sum, r) => sum + r.population, 0) || 10000000;
+      regionalDisparities: economyData.demographics.regions.map((region) => {
+        const totalPop =
+          economyData.demographics.regions.reduce((sum, r) => sum + r.population, 0) || 10000000;
         const expectedShare = 100 / (economyData.demographics.regions?.length || 1);
         const actualShare = (region.population / totalPop) * 100;
         const deviation = actualShare - expectedShare;
         return {
           region: region.name,
-          deviation: Math.max(-20, Math.min(20, deviation))
+          deviation: Math.max(-20, Math.min(20, deviation)),
         };
-      })
+      }),
     };
   }
 
   private analyzeSocialTrends(economyData: EconomyData) {
     return {
-      improving: ['Education access', 'Healthcare coverage'],
-      stable: ['Employment levels', 'Social mobility'],
-      concerning: ['Income inequality', 'Regional disparities']
+      improving: ["Education access", "Healthcare coverage"],
+      stable: ["Employment levels", "Social mobility"],
+      concerning: ["Income inequality", "Regional disparities"],
     };
   }
 
   private calculateExportDiversity(countryStats: CountryStats, economyData: EconomyData): number {
     // Placeholder - would need trade data
-    return Math.min(100, 40 + (countryStats.currentGdpPerCapita / 2000));
+    return Math.min(100, 40 + countryStats.currentGdpPerCapita / 2000);
   }
 
   private calculateValueChainIntegration(economyData: EconomyData): number {
@@ -631,7 +662,7 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
 
   private calculateFinancialSophistication(economyData: EconomyData): number {
     // Placeholder
-    return Math.min(100, 30 + (economyData.core.gdpPerCapita / 1500));
+    return Math.min(100, 30 + economyData.core.gdpPerCapita / 1500);
   }
 
   private calculateRegulatoryQuality(economyData: EconomyData): number {
@@ -643,27 +674,33 @@ export class EnhancedEconomicCalculator extends IxStatsCalculator {
     return {
       exportComplexityIndex: 0.5,
       importDependencyRatio: 0.3,
-      tradeBalanceTrend: 'stable' as const,
+      tradeBalanceTrend: "stable" as const,
       majorTradingPartners: [
-        { country: 'Major Economy A', shareOfTrade: 25, relationship: 'strategic' as const },
-        { country: 'Major Economy B', shareOfTrade: 18, relationship: 'transactional' as const }
-      ]
+        { country: "Major Economy A", shareOfTrade: 25, relationship: "strategic" as const },
+        { country: "Major Economy B", shareOfTrade: 18, relationship: "transactional" as const },
+      ],
     };
   }
 
-  private identifyFutureOpportunities(countryStats: CountryStats, economyData: EconomyData): string[] {
+  private identifyFutureOpportunities(
+    countryStats: CountryStats,
+    economyData: EconomyData
+  ): string[] {
     const opportunities = [];
-    
-    if (countryStats.populationTier === PopulationTier.TIER_2 || countryStats.populationTier === PopulationTier.TIER_3) {
-      opportunities.push('Demographic dividend from young population');
+
+    if (
+      countryStats.populationTier === PopulationTier.TIER_2 ||
+      countryStats.populationTier === PopulationTier.TIER_3
+    ) {
+      opportunities.push("Demographic dividend from young population");
     }
-    
+
     if (economyData.core.gdpPerCapita < 30000) {
-      opportunities.push('Catch-up growth potential');
+      opportunities.push("Catch-up growth potential");
     }
-    
-    opportunities.push('Digital economy development', 'Green energy transition');
-    
+
+    opportunities.push("Digital economy development", "Green energy transition");
+
     return opportunities;
   }
 }
@@ -677,15 +714,15 @@ export interface ComprehensiveEconomicAnalysis {
   complexity: EconomicComplexityMetrics;
   overallRating: {
     score: number;
-    grade: 'A+' | 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C+' | 'C' | 'C-' | 'D' | 'F';
+    grade: "A+" | "A" | "A-" | "B+" | "B" | "B-" | "C+" | "C" | "C-" | "D" | "F";
     description: string;
   };
   keyInsights: string[];
   priorityRecommendations: Array<{
     area: string;
     action: string;
-    impact: 'high' | 'medium' | 'low';
-    timeframe: 'immediate' | 'short_term' | 'medium_term' | 'long_term';
+    impact: "high" | "medium" | "low";
+    timeframe: "immediate" | "short_term" | "medium_term" | "long_term";
   }>;
 }
 
@@ -702,20 +739,37 @@ export class IntegratedEconomicAnalysis {
     historicalData: HistoricalDataPoint[] = []
   ): ComprehensiveEconomicAnalysis {
     // Calculate all four major indices
-    const resilience = this.calculator.calculateEconomicResilience(countryStats, economyData, historicalData);
-    const productivity = this.calculator.calculateProductivityInnovation(countryStats, economyData, historicalData);
+    const resilience = this.calculator.calculateEconomicResilience(
+      countryStats,
+      economyData,
+      historicalData
+    );
+    const productivity = this.calculator.calculateProductivityInnovation(
+      countryStats,
+      economyData,
+      historicalData
+    );
     const wellbeing = this.calculator.calculateSocialEconomicWellbeing(countryStats, economyData);
     const complexity = this.calculator.calculateEconomicComplexity(countryStats, economyData);
 
     // Calculate overall rating
-    const overallScore = (resilience.overallScore + productivity.overallScore + 
-                         wellbeing.overallScore + complexity.overallScore) / 4;
-    
+    const overallScore =
+      (resilience.overallScore +
+        productivity.overallScore +
+        wellbeing.overallScore +
+        complexity.overallScore) /
+      4;
+
     const overallRating = this.calculateOverallRating(overallScore);
-    
+
     // Generate insights and recommendations
     const keyInsights = this.generateKeyInsights(resilience, productivity, wellbeing, complexity);
-    const priorityRecommendations = this.generateRecommendations(resilience, productivity, wellbeing, complexity);
+    const priorityRecommendations = this.generateRecommendations(
+      resilience,
+      productivity,
+      wellbeing,
+      complexity
+    );
 
     return {
       resilience,
@@ -724,53 +778,53 @@ export class IntegratedEconomicAnalysis {
       complexity,
       overallRating,
       keyInsights,
-      priorityRecommendations
+      priorityRecommendations,
     };
   }
 
   private calculateOverallRating(score: number) {
-    let grade: ComprehensiveEconomicAnalysis['overallRating']['grade'];
+    let grade: ComprehensiveEconomicAnalysis["overallRating"]["grade"];
     let description: string;
 
     if (score >= 95) {
-      grade = 'A+';
-      description = 'Exceptional economic performance across all dimensions';
+      grade = "A+";
+      description = "Exceptional economic performance across all dimensions";
     } else if (score >= 90) {
-      grade = 'A';
-      description = 'Outstanding economic health with minor areas for improvement';
+      grade = "A";
+      description = "Outstanding economic health with minor areas for improvement";
     } else if (score >= 85) {
-      grade = 'A-';
-      description = 'Strong economic fundamentals with good growth prospects';
+      grade = "A-";
+      description = "Strong economic fundamentals with good growth prospects";
     } else if (score >= 80) {
-      grade = 'B+';
-      description = 'Above-average economic performance with solid foundations';
+      grade = "B+";
+      description = "Above-average economic performance with solid foundations";
     } else if (score >= 75) {
-      grade = 'B';
-      description = 'Good economic health with balanced strengths and challenges';
+      grade = "B";
+      description = "Good economic health with balanced strengths and challenges";
     } else if (score >= 70) {
-      grade = 'B-';
-      description = 'Adequate economic performance with room for improvement';
+      grade = "B-";
+      description = "Adequate economic performance with room for improvement";
     } else if (score >= 65) {
-      grade = 'C+';
-      description = 'Mixed economic indicators with notable challenges';
+      grade = "C+";
+      description = "Mixed economic indicators with notable challenges";
     } else if (score >= 60) {
-      grade = 'C';
-      description = 'Moderate economic health requiring strategic improvements';
+      grade = "C";
+      description = "Moderate economic health requiring strategic improvements";
     } else if (score >= 55) {
-      grade = 'C-';
-      description = 'Below-average performance with significant challenges';
+      grade = "C-";
+      description = "Below-average performance with significant challenges";
     } else if (score >= 50) {
-      grade = 'D';
-      description = 'Weak economic fundamentals requiring urgent attention';
+      grade = "D";
+      description = "Weak economic fundamentals requiring urgent attention";
     } else {
-      grade = 'F';
-      description = 'Critical economic challenges requiring comprehensive reform';
+      grade = "F";
+      description = "Critical economic challenges requiring comprehensive reform";
     }
 
     return {
       score: Math.round(score),
       grade,
-      description
+      description,
     };
   }
 
@@ -784,24 +838,35 @@ export class IntegratedEconomicAnalysis {
 
     // Resilience insights
     if (resilience.overallScore >= 80) {
-      insights.push(`Strong economic resilience (${resilience.overallScore}/100) indicates good shock absorption capacity`);
+      insights.push(
+        `Strong economic resilience (${resilience.overallScore}/100) indicates good shock absorption capacity`
+      );
     } else if (resilience.overallScore <= 50) {
-      insights.push(`Low economic resilience (${resilience.overallScore}/100) suggests vulnerability to economic shocks`);
+      insights.push(
+        `Low economic resilience (${resilience.overallScore}/100) suggests vulnerability to economic shocks`
+      );
     }
 
     // Productivity insights
-    const topProductivityComponent = Object.entries(productivity.components)
-      .sort(([,a], [,b]) => b - a)[0];
-    insights.push(`${topProductivityComponent[0].replace(/([A-Z])/g, ' $1').toLowerCase()} is the strongest productivity factor (${topProductivityComponent[1]}/100)`);
+    const topProductivityComponent = Object.entries(productivity.components).sort(
+      ([, a], [, b]) => b - a
+    )[0];
+    insights.push(
+      `${topProductivityComponent[0].replace(/([A-Z])/g, " $1").toLowerCase()} is the strongest productivity factor (${topProductivityComponent[1]}/100)`
+    );
 
     // Wellbeing insights
     if (wellbeing.inequalityFactors.giniCoefficient > 0.5) {
-      insights.push(`High income inequality (Gini: ${wellbeing.inequalityFactors.giniCoefficient.toFixed(2)}) may limit inclusive growth`);
+      insights.push(
+        `High income inequality (Gini: ${wellbeing.inequalityFactors.giniCoefficient.toFixed(2)}) may limit inclusive growth`
+      );
     }
 
     // Complexity insights
     if (complexity.overallScore >= 75) {
-      insights.push(`High economic complexity (${complexity.overallScore}/100) supports sustainable development`);
+      insights.push(
+        `High economic complexity (${complexity.overallScore}/100) supports sustainable development`
+      );
     }
 
     return insights;
@@ -818,40 +883,40 @@ export class IntegratedEconomicAnalysis {
     // Resilience-based recommendations
     if (resilience.components.fiscalStability < 60) {
       recommendations.push({
-        area: 'Fiscal Policy',
-        action: 'Implement debt reduction strategy and improve budget balance',
-        impact: 'high' as const,
-        timeframe: 'medium_term' as const
+        area: "Fiscal Policy",
+        action: "Implement debt reduction strategy and improve budget balance",
+        impact: "high" as const,
+        timeframe: "medium_term" as const,
       });
     }
 
     // Productivity-based recommendations
     if (productivity.components.laborProductivity < 60) {
       recommendations.push({
-        area: 'Human Capital',
-        action: 'Invest in education and skills training programs',
-        impact: 'high' as const,
-        timeframe: 'long_term' as const
+        area: "Human Capital",
+        action: "Invest in education and skills training programs",
+        impact: "high" as const,
+        timeframe: "long_term" as const,
       });
     }
 
     // Wellbeing-based recommendations
     if (wellbeing.components.socialMobility < 50) {
       recommendations.push({
-        area: 'Social Policy',
-        action: 'Develop programs to improve income mobility and reduce inequality',
-        impact: 'medium' as const,
-        timeframe: 'long_term' as const
+        area: "Social Policy",
+        action: "Develop programs to improve income mobility and reduce inequality",
+        impact: "medium" as const,
+        timeframe: "long_term" as const,
       });
     }
 
     // Complexity-based recommendations
     if (complexity.components.exportDiversity < 50) {
       recommendations.push({
-        area: 'Trade Policy',
-        action: 'Diversify export portfolio and develop new industries',
-        impact: 'high' as const,
-        timeframe: 'medium_term' as const
+        area: "Trade Policy",
+        action: "Diversify export portfolio and develop new industries",
+        impact: "high" as const,
+        timeframe: "medium_term" as const,
       });
     }
 
@@ -865,7 +930,8 @@ export class IntegratedEconomicAnalysis {
     // Placeholder calculation since the exact data structure varies
     // Use region population as a proxy for economic weight
     const regionPopulation = region.population || 1000000;
-    const totalPopulation = economyData.demographics.regions.reduce((sum, r) => sum + r.population, 0) || 10000000;
+    const totalPopulation =
+      economyData.demographics.regions.reduce((sum, r) => sum + r.population, 0) || 10000000;
 
     // Simple deviation based on population distribution
     const expectedShare = 100 / (economyData.demographics.regions?.length || 1);

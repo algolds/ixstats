@@ -8,10 +8,10 @@
  * - Real-time metrics and analytics
  */
 
-import { useState, useEffect } from 'react';
-import { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
-import { EconomicComponentType, TaxComponentType } from '@prisma/client';
-import { api } from '~/trpc/react';
+import { useState, useEffect } from "react";
+import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { EconomicComponentType, TaxComponentType } from "@prisma/client";
+import { api } from "~/trpc/react";
 
 export interface UseUnifiedAtomicComponentsProps {
   countryId?: string;
@@ -24,34 +24,35 @@ export function useUnifiedAtomicComponents({
   countryId,
   initialGovernmentComponents = [],
   initialEconomicComponents = [],
-  initialTaxComponents = []
+  initialTaxComponents = [],
 }: UseUnifiedAtomicComponentsProps) {
   // State
   const [isLoading, setIsLoading] = useState(false);
 
   // tRPC queries
   const getAllQuery = api.unifiedAtomic.getAll.useQuery(
-    { countryId: countryId || '' },
+    { countryId: countryId || "" },
     { enabled: !!countryId }
   );
 
   const detectSynergiesQuery = api.unifiedAtomic.detectSynergies.useQuery(
-    { countryId: countryId || '' },
+    { countryId: countryId || "" },
     { enabled: !!countryId }
   );
 
   const detectConflictsQuery = api.unifiedAtomic.detectConflicts.useQuery(
-    { countryId: countryId || '' },
+    { countryId: countryId || "" },
     { enabled: !!countryId }
   );
 
-  const calculateCombinedEffectivenessQuery = api.unifiedAtomic.calculateCombinedEffectiveness.useQuery(
-    { countryId: countryId || '' },
-    { enabled: !!countryId }
-  );
+  const calculateCombinedEffectivenessQuery =
+    api.unifiedAtomic.calculateCombinedEffectiveness.useQuery(
+      { countryId: countryId || "" },
+      { enabled: !!countryId }
+    );
 
   const getHistoricalChangesQuery = api.unifiedAtomic.getHistoricalChanges.useQuery(
-    { countryId: countryId || '' },
+    { countryId: countryId || "" },
     { enabled: !!countryId }
   );
 
@@ -70,9 +71,13 @@ export function useUnifiedAtomicComponents({
 
     setIsLoading(true);
     try {
-      const synergyData = synergies.map(synergy => ({
-        governmentComponents: synergy.governmentComponent ? [synergy.governmentComponent.componentType] : [],
-        economicComponents: synergy.economicComponent ? [synergy.economicComponent.componentType] : [],
+      const synergyData = synergies.map((synergy) => ({
+        governmentComponents: synergy.governmentComponent
+          ? [synergy.governmentComponent.componentType]
+          : [],
+        economicComponents: synergy.economicComponent
+          ? [synergy.economicComponent.componentType]
+          : [],
         taxComponents: synergy.taxComponent ? [synergy.taxComponent.componentType] : [],
         synergyType: synergy.type,
         effectivenessBonus: synergy.bonus,
@@ -84,34 +89,43 @@ export function useUnifiedAtomicComponents({
         synergies: synergyData,
       });
     } catch (error) {
-      console.error('Failed to save synergies:', error);
+      console.error("Failed to save synergies:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   // Get component effectiveness by type
-  const getEffectivenessByType = (type: 'government' | 'economic' | 'tax') => {
+  const getEffectivenessByType = (type: "government" | "economic" | "tax") => {
     switch (type) {
-      case 'government':
-        return (allComponents?.government?.reduce((sum, comp) => sum + comp.effectivenessScore, 0) ?? 0) / (allComponents?.government?.length || 1);
-      case 'economic':
-        return (allComponents?.economic?.reduce((sum, comp) => sum + comp.effectivenessScore, 0) ?? 0) / (allComponents?.economic?.length || 1);
-      case 'tax':
-        return (allComponents?.tax?.reduce((sum, comp) => sum + comp.effectivenessScore, 0) ?? 0) / (allComponents?.tax?.length || 1);
+      case "government":
+        return (
+          (allComponents?.government?.reduce((sum, comp) => sum + comp.effectivenessScore, 0) ??
+            0) / (allComponents?.government?.length || 1)
+        );
+      case "economic":
+        return (
+          (allComponents?.economic?.reduce((sum, comp) => sum + comp.effectivenessScore, 0) ?? 0) /
+          (allComponents?.economic?.length || 1)
+        );
+      case "tax":
+        return (
+          (allComponents?.tax?.reduce((sum, comp) => sum + comp.effectivenessScore, 0) ?? 0) /
+          (allComponents?.tax?.length || 1)
+        );
       default:
         return 0;
     }
   };
 
   // Get component count by type
-  const getComponentCountByType = (type: 'government' | 'economic' | 'tax') => {
+  const getComponentCountByType = (type: "government" | "economic" | "tax") => {
     switch (type) {
-      case 'government':
+      case "government":
         return allComponents?.government?.length || 0;
-      case 'economic':
+      case "economic":
         return allComponents?.economic?.length || 0;
-      case 'tax':
+      case "tax":
         return allComponents?.tax?.length || 0;
       default:
         return 0;
@@ -125,7 +139,7 @@ export function useUnifiedAtomicComponents({
 
   // Get changes by component type
   const getChangesByType = (componentType: string) => {
-    return historicalChanges.filter(change => change.componentType === componentType);
+    return historicalChanges.filter((change) => change.componentType === componentType);
   };
 
   return {
@@ -139,12 +153,12 @@ export function useUnifiedAtomicComponents({
 
     // Computed values
     totalComponentCount: allComponents?.totalCount || 0,
-    governmentEffectiveness: getEffectivenessByType('government'),
-    economicEffectiveness: getEffectivenessByType('economic'),
-    taxEffectiveness: getEffectivenessByType('tax'),
-    governmentCount: getComponentCountByType('government'),
-    economicCount: getComponentCountByType('economic'),
-    taxCount: getComponentCountByType('tax'),
+    governmentEffectiveness: getEffectivenessByType("government"),
+    economicEffectiveness: getEffectivenessByType("economic"),
+    taxEffectiveness: getEffectivenessByType("tax"),
+    governmentCount: getComponentCountByType("government"),
+    economicCount: getComponentCountByType("economic"),
+    taxCount: getComponentCountByType("tax"),
 
     // Actions
     saveSynergies,
@@ -157,4 +171,3 @@ export function useUnifiedAtomicComponents({
     isError: getAllQuery.isError,
   };
 }
-

@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import type { Transition } from 'framer-motion';
-import { motion, useAnimation } from 'framer-motion';
-import type { HTMLAttributes } from 'react';
-import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
-import { cn } from '~/lib/utils';
+import type { Transition } from "framer-motion";
+import { motion, useAnimation } from "framer-motion";
+import type { HTMLAttributes } from "react";
+import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
+import { cn } from "~/lib/utils";
 
 export interface LayersIconHandle {
   startAnimation: () => void;
@@ -16,7 +16,7 @@ interface LayersIconProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const defaultTransition: Transition = {
-  type: 'spring',
+  type: "spring",
   stiffness: 100,
   damping: 14,
   mass: 1,
@@ -32,18 +32,18 @@ const LayersIcon = forwardRef<LayersIconHandle, LayersIconProps>(
 
       return {
         startAnimation: async () => {
-          await controls.start('firstState');
-          await controls.start('secondState');
+          await controls.start("firstState");
+          await controls.start("secondState");
         },
-        stopAnimation: () => controls.start('normal'),
+        stopAnimation: () => controls.start("normal"),
       };
     });
 
     const handleMouseEnter = useCallback(
       async (e: React.MouseEvent<HTMLDivElement>) => {
         if (!isControlledRef.current) {
-          await controls.start('firstState');
-          await controls.start('secondState');
+          await controls.start("firstState");
+          await controls.start("secondState");
         } else {
           onMouseEnter?.(e);
         }
@@ -54,7 +54,7 @@ const LayersIcon = forwardRef<LayersIconHandle, LayersIconProps>(
     const handleMouseLeave = useCallback(
       (e: React.MouseEvent<HTMLDivElement>) => {
         if (!isControlledRef.current) {
-          controls.start('normal');
+          controls.start("normal");
         } else {
           onMouseLeave?.(e);
         }
@@ -107,6 +107,6 @@ const LayersIcon = forwardRef<LayersIconHandle, LayersIconProps>(
   }
 );
 
-LayersIcon.displayName = 'LayersIcon';
+LayersIcon.displayName = "LayersIcon";
 
 export { LayersIcon };

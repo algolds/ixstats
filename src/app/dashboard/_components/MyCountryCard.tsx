@@ -4,10 +4,26 @@ import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
-  Crown, Building2, Globe, Settings, TrendingUp,
-  Users, DollarSign, BarChart3, ChevronUp, ChevronDown,
-  Plus, ExternalLink, Briefcase, Brain, FileText,
-  Search, Calculator, Star, Shield, Building
+  Crown,
+  Building2,
+  Globe,
+  Settings,
+  TrendingUp,
+  Users,
+  DollarSign,
+  BarChart3,
+  ChevronUp,
+  ChevronDown,
+  Plus,
+  ExternalLink,
+  Briefcase,
+  Brain,
+  FileText,
+  Search,
+  Calculator,
+  Star,
+  Shield,
+  Building,
 } from "lucide-react";
 import { VitalityRings } from "~/components/mycountry/primitives/VitalityRings";
 import { HealthRing } from "~/components/ui/health-ring";
@@ -15,7 +31,12 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Progress } from "~/components/ui/progress";
 import { ThemedTabContent } from "~/components/ui/themed-tab-content";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "~/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "~/components/ui/dropdown-menu";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { AppleRippleEffect } from "~/components/ui/apple-ripple-effect";
 import { SimpleFlag } from "~/components/SimpleFlag";
@@ -66,7 +87,7 @@ export function MyCountryCard({
   setActivityPopoverOpen,
   isRippleActive,
   isGlobalCardSlid,
-  className
+  className,
 }: MyCountryCardProps) {
   // Optimized calculations - computed once and memoized
   const vitalityMetrics = useMemo(() => {
@@ -74,40 +95,98 @@ export function MyCountryCard({
 
     // Economic calculations
     const economicGrowthRate = countryData.adjustedGdpGrowth;
-    const economicTrendType = economicGrowthRate >= 0.02 ? 'positive' : economicGrowthRate >= 0 ? 'neutral' : 'negative';
-    const economicTrendColor = economicTrendType === 'positive' ? 'text-green-600' : economicTrendType === 'neutral' ? 'text-yellow-600' : 'text-red-600';
-    const economicTrendArrow = economicTrendType === 'positive' ? '↗' : economicTrendType === 'neutral' ? '→' : '↘';
+    const economicTrendType =
+      economicGrowthRate >= 0.02 ? "positive" : economicGrowthRate >= 0 ? "neutral" : "negative";
+    const economicTrendColor =
+      economicTrendType === "positive"
+        ? "text-green-600"
+        : economicTrendType === "neutral"
+          ? "text-yellow-600"
+          : "text-red-600";
+    const economicTrendArrow =
+      economicTrendType === "positive" ? "↗" : economicTrendType === "neutral" ? "→" : "↘";
 
     // Population calculations
     const populationGrowthRate = countryData.populationGrowthRate;
-    const populationTrendType = populationGrowthRate >= 0.015 ? 'positive' : populationGrowthRate >= 0.005 ? 'neutral' : 'negative';
-    const populationTrendColor = populationTrendType === 'positive' ? 'text-green-600' : populationTrendType === 'neutral' ? 'text-yellow-600' : 'text-red-600';
-    const populationTrendArrow = populationTrendType === 'positive' ? '↗' : populationTrendType === 'neutral' ? '→' : '↘';
+    const populationTrendType =
+      populationGrowthRate >= 0.015
+        ? "positive"
+        : populationGrowthRate >= 0.005
+          ? "neutral"
+          : "negative";
+    const populationTrendColor =
+      populationTrendType === "positive"
+        ? "text-green-600"
+        : populationTrendType === "neutral"
+          ? "text-yellow-600"
+          : "text-red-600";
+    const populationTrendArrow =
+      populationTrendType === "positive" ? "↗" : populationTrendType === "neutral" ? "→" : "↘";
 
     // Diplomatic calculations
     const diplomaticScore = activityRingsData.diplomaticStanding;
     const diplomaticAllies = Math.floor((diplomaticScore / 100) * 15 + 5);
-    const diplomaticReputation = diplomaticScore >= 75 ? 'Excellent' : diplomaticScore >= 60 ? 'Good Standing' : diplomaticScore >= 40 ? 'Neutral' : 'Declining';
+    const diplomaticReputation =
+      diplomaticScore >= 75
+        ? "Excellent"
+        : diplomaticScore >= 60
+          ? "Good Standing"
+          : diplomaticScore >= 40
+            ? "Neutral"
+            : "Declining";
     const diplomaticTreaties = Math.floor((diplomaticScore / 100) * 12 + 3);
-    const diplomaticTrendType = diplomaticScore >= 60 ? 'positive' : diplomaticScore >= 40 ? 'neutral' : 'negative';
-    const diplomaticTrendColor = diplomaticTrendType === 'positive' ? 'text-green-600' : diplomaticTrendType === 'neutral' ? 'text-yellow-600' : 'text-red-600';
-    const diplomaticTrendArrow = diplomaticTrendType === 'positive' ? '↗' : diplomaticTrendType === 'neutral' ? '→' : '↘';
+    const diplomaticTrendType =
+      diplomaticScore >= 60 ? "positive" : diplomaticScore >= 40 ? "neutral" : "negative";
+    const diplomaticTrendColor =
+      diplomaticTrendType === "positive"
+        ? "text-green-600"
+        : diplomaticTrendType === "neutral"
+          ? "text-yellow-600"
+          : "text-red-600";
+    const diplomaticTrendArrow =
+      diplomaticTrendType === "positive" ? "↗" : diplomaticTrendType === "neutral" ? "→" : "↘";
 
     // Government calculations
     const governmentScore = activityRingsData.governmentalEfficiency;
     const governmentApproval = Math.floor(governmentScore * 0.8 + 15);
-    const governmentEfficiency = governmentScore >= 80 ? 'Very High' : governmentScore >= 65 ? 'High' : governmentScore >= 50 ? 'Moderate' : governmentScore >= 35 ? 'Low' : 'Very Low';
-    const governmentStatus = governmentScore >= 70 ? 'Improving' : governmentScore >= 50 ? 'Stable' : governmentScore >= 30 ? 'Declining' : 'Critical';
-    const governmentTrendType = governmentScore >= 60 ? 'positive' : governmentScore >= 40 ? 'neutral' : 'negative';
-    const governmentTrendColor = governmentTrendType === 'positive' ? 'text-green-600' : governmentTrendType === 'neutral' ? 'text-yellow-600' : 'text-red-600';
-    const governmentTrendArrow = governmentTrendType === 'positive' ? '↗' : governmentTrendType === 'neutral' ? '→' : '↘';
+    const governmentEfficiency =
+      governmentScore >= 80
+        ? "Very High"
+        : governmentScore >= 65
+          ? "High"
+          : governmentScore >= 50
+            ? "Moderate"
+            : governmentScore >= 35
+              ? "Low"
+              : "Very Low";
+    const governmentStatus =
+      governmentScore >= 70
+        ? "Improving"
+        : governmentScore >= 50
+          ? "Stable"
+          : governmentScore >= 30
+            ? "Declining"
+            : "Critical";
+    const governmentTrendType =
+      governmentScore >= 60 ? "positive" : governmentScore >= 40 ? "neutral" : "negative";
+    const governmentTrendColor =
+      governmentTrendType === "positive"
+        ? "text-green-600"
+        : governmentTrendType === "neutral"
+          ? "text-yellow-600"
+          : "text-red-600";
+    const governmentTrendArrow =
+      governmentTrendType === "positive" ? "↗" : governmentTrendType === "neutral" ? "→" : "↘";
 
     // Performance assessments
     const getPerformanceAssessment = (score: number) =>
-      score >= 80 ? 'Excellent performance' :
-      score >= 60 ? 'Good performance' :
-      score >= 40 ? 'Needs attention' :
-      'Critical - immediate action required';
+      score >= 80
+        ? "Excellent performance"
+        : score >= 60
+          ? "Good performance"
+          : score >= 40
+            ? "Needs attention"
+            : "Critical - immediate action required";
 
     // Formatted display values
     const formattedGdpPerCapita = `$${(countryData.currentGdpPerCapita / 1000).toFixed(0)}k`;
@@ -116,16 +195,22 @@ export function MyCountryCard({
     const formattedPopulationGrowth = `${(populationGrowthRate * 100).toFixed(1)}% growth`;
 
     // National Vitality Index calculation (overall performance)
-    const nationalVitalityIndex = Math.round((
-      activityRingsData.economicVitality +
-      activityRingsData.populationWellbeing +
-      activityRingsData.diplomaticStanding +
-      activityRingsData.governmentalEfficiency
-    ) / 4);
+    const nationalVitalityIndex = Math.round(
+      (activityRingsData.economicVitality +
+        activityRingsData.populationWellbeing +
+        activityRingsData.diplomaticStanding +
+        activityRingsData.governmentalEfficiency) /
+        4
+    );
 
-    const vitalityIndexRating = nationalVitalityIndex >= 85 ? 'Excellent' :
-                               nationalVitalityIndex >= 75 ? 'Good' :
-                               nationalVitalityIndex >= 60 ? 'Satisfactory' : 'Needs Improvement';
+    const vitalityIndexRating =
+      nationalVitalityIndex >= 85
+        ? "Excellent"
+        : nationalVitalityIndex >= 75
+          ? "Good"
+          : nationalVitalityIndex >= 60
+            ? "Satisfactory"
+            : "Needs Improvement";
 
     return {
       economic: {
@@ -135,7 +220,7 @@ export function MyCountryCard({
         trendColor: economicTrendColor,
         trendArrow: economicTrendArrow,
         tier: countryData.economicTier,
-        assessment: getPerformanceAssessment(activityRingsData.economicVitality)
+        assessment: getPerformanceAssessment(activityRingsData.economicVitality),
       },
       population: {
         score: activityRingsData.populationWellbeing,
@@ -144,7 +229,7 @@ export function MyCountryCard({
         trendColor: populationTrendColor,
         trendArrow: populationTrendArrow,
         tier: countryData.populationTier,
-        assessment: getPerformanceAssessment(activityRingsData.populationWellbeing)
+        assessment: getPerformanceAssessment(activityRingsData.populationWellbeing),
       },
       diplomatic: {
         score: diplomaticScore,
@@ -153,7 +238,7 @@ export function MyCountryCard({
         trendColor: diplomaticTrendColor,
         trendArrow: diplomaticTrendArrow,
         treaties: `${diplomaticTreaties} treaties`,
-        assessment: getPerformanceAssessment(diplomaticScore)
+        assessment: getPerformanceAssessment(diplomaticScore),
       },
       government: {
         score: governmentScore,
@@ -162,147 +247,153 @@ export function MyCountryCard({
         trendColor: governmentTrendColor,
         trendArrow: governmentTrendArrow,
         status: governmentStatus,
-        assessment: getPerformanceAssessment(governmentScore)
+        assessment: getPerformanceAssessment(governmentScore),
       },
       nationalVitality: {
         index: nationalVitalityIndex,
-        rating: vitalityIndexRating
-      }
+        rating: vitalityIndexRating,
+      },
     };
   }, [activityRingsData, countryData]);
   return (
     <motion.div
       className={cn(className)}
-      style={{ 
-        willChange: isRippleActive || isGlobalCardSlid ? 'transform' : 'auto'
+      style={{
+        willChange: isRippleActive || isGlobalCardSlid ? "transform" : "auto",
       }}
       initial={false}
       animate={{
-        scale: isGlobalCardSlid ? [1, 1.02, 1] : 1
+        scale: isGlobalCardSlid ? [1, 1.02, 1] : 1,
       }}
-      transition={{ 
-        duration: 0.4, 
-        ease: [0.25, 0.1, 0.25, 1] 
+      transition={{
+        duration: 0.4,
+        ease: [0.25, 0.1, 0.25, 1],
       }}
     >
-      <AppleRippleEffect
-        isActive={isRippleActive}
-        direction="right"
-        className="rounded-xl"
-      >
+      <AppleRippleEffect isActive={isRippleActive} direction="right" className="rounded-xl">
         <motion.div
           className={cn(
-            "glass-hierarchy-parent relative overflow-hidden group",
-            "rounded-xl border border-neutral-200 dark:border-white/[0.2] p-5 transition-all duration-200",
-            "hover:shadow-xl hover:shadow-yellow-500/10 dark:hover:shadow-yellow-400/20 mycountry-card"
+            "glass-hierarchy-parent group relative overflow-hidden",
+            "rounded-xl border border-neutral-200 p-5 transition-all duration-200 dark:border-white/[0.2]",
+            "mycountry-card hover:shadow-xl hover:shadow-yellow-500/10 dark:hover:shadow-yellow-400/20"
           )}
           whileHover={{ y: -2 }}
           transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
           data-theme="executive"
-          style={{ willChange: 'transform' }}
+          style={{ willChange: "transform" }}
         >
           {/* Full Bento Flag Background with Realistic Ripple */}
           {countryData && (
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              <motion.div 
-                className="w-full h-full relative"
+            <div className="pointer-events-none absolute inset-0 overflow-hidden">
+              <motion.div
+                className="relative h-full w-full"
                 style={{
                   filter: "blur(8px)",
-                  opacity: 0.4
+                  opacity: 0.4,
                 }}
               >
                 <motion.div
-                  className="w-full h-full"
+                  className="h-full w-full"
                   animate={{
                     x: [0, 2, -1, 1, 0],
                     rotateY: [0, 1, -0.5, 0.5, 0],
-                    scaleX: [1, 1.01, 0.99, 1.005, 1]
+                    scaleX: [1, 1.01, 0.99, 1.005, 1],
                   }}
                   transition={{
                     duration: 6,
                     ease: "easeInOut",
                     repeat: Infinity,
-                    times: [0, 0.25, 0.5, 0.75, 1]
+                    times: [0, 0.25, 0.5, 0.75, 1],
                   }}
                 >
-                  <SimpleFlag 
+                  <SimpleFlag
                     countryName={countryData.name}
-                    className="w-full h-full object-cover"
+                    className="h-full w-full object-cover"
                     showPlaceholder={true}
                   />
                 </motion.div>
               </motion.div>
-              
+
               {/* Overlay to ensure readability */}
-              <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/50 to-background/80" />
+              <div className="from-background/70 via-background/50 to-background/80 absolute inset-0 bg-gradient-to-b" />
             </div>
           )}
 
           {/* MyCountry Themed Shimmer Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/20 via-yellow-500/10 to-orange-400/20 mycountry-gold-shimmer" />
-          <div className="absolute inset-0 tab-shimmer" />
+          <div className="mycountry-gold-shimmer absolute inset-0 bg-gradient-to-br from-yellow-400/20 via-yellow-500/10 to-orange-400/20" />
+          <div className="tab-shimmer absolute inset-0" />
 
           {/* Content Layout */}
-          <div className="relative z-10 h-full flex flex-col">
+          <div className="relative z-10 flex h-full flex-col">
             {/* Top Section - Country Info */}
-            <div className="flex items-center justify-between mb-5">
+            <div className="mb-5 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-8 rounded border border-white/30 overflow-hidden shadow-lg">
-                  {countryData && <SimpleFlag countryName={countryData.name} className="w-full h-full object-cover" />}
+                <div className="h-8 w-12 overflow-hidden rounded border border-white/30 shadow-lg">
+                  {countryData && (
+                    <SimpleFlag
+                      countryName={countryData.name}
+                      className="h-full w-full object-cover"
+                    />
+                  )}
                 </div>
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="mb-1 flex items-center gap-2">
                     <Crown className="h-5 w-5 text-yellow-400" />
-                    <h3 className="text-xl font-bold text-foreground drop-shadow-sm">MyCountry® Premium</h3>
+                    <h3 className="text-foreground text-xl font-bold drop-shadow-sm">
+                      MyCountry® Premium
+                    </h3>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-lg font-semibold text-foreground drop-shadow-sm">
-                      {countryData?.name || 'Configure Country'}
+                    <span className="text-foreground text-lg font-semibold drop-shadow-sm">
+                      {countryData?.name || "Configure Country"}
                     </span>
                     {countryData && (
-                      <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-800 dark:text-yellow-200 border-yellow-400/50">
+                      <Badge
+                        variant="secondary"
+                        className="border-yellow-400/50 bg-yellow-500/20 text-yellow-800 dark:text-yellow-200"
+                      >
                         {countryData.economicTier}
                       </Badge>
                     )}
                   </div>
                 </div>
               </div>
-              
+
               {/* Dropdown Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger>
-                  <div className="p-3 rounded-full glass-hierarchy-interactive glass-refraction transition-all duration-200 relative z-10 hover:scale-105 cursor-pointer">
-                    <Plus className="h-5 w-5 text-foreground" />
+                  <div className="glass-hierarchy-interactive glass-refraction relative z-10 cursor-pointer rounded-full p-3 transition-all duration-200 hover:scale-105">
+                    <Plus className="text-foreground h-5 w-5" />
                   </div>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56 glass-modal border-yellow-400/30">
+                <DropdownMenuContent className="glass-modal w-56 border-yellow-400/30">
                   <Link href="/mycountry">
-                    <DropdownMenuItem className="flex items-center gap-2 glass-hierarchy-interactive">
+                    <DropdownMenuItem className="glass-hierarchy-interactive flex items-center gap-2">
                       <Crown className="h-4 w-4 text-yellow-400" />
                       <span>MyCountry Profile</span>
-                      <ExternalLink className="h-3 w-3 ml-auto" />
+                      <ExternalLink className="ml-auto h-3 w-3" />
                     </DropdownMenuItem>
                   </Link>
                   <Link href="/mycountry#economy">
-                    <DropdownMenuItem className="flex items-center gap-2 glass-hierarchy-interactive">
+                    <DropdownMenuItem className="glass-hierarchy-interactive flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-green-400" />
                       <span>Economic Dashboard</span>
                     </DropdownMenuItem>
                   </Link>
                   <Link href="/mycountry#government">
-                    <DropdownMenuItem className="flex items-center gap-2 glass-hierarchy-interactive">
+                    <DropdownMenuItem className="glass-hierarchy-interactive flex items-center gap-2">
                       <Settings className="h-4 w-4 text-blue-400" />
                       <span>Policy Management</span>
                     </DropdownMenuItem>
                   </Link>
                   <Link href="/mycountry#demographics">
-                    <DropdownMenuItem className="flex items-center gap-2 glass-hierarchy-interactive">
+                    <DropdownMenuItem className="glass-hierarchy-interactive flex items-center gap-2">
                       <Users className="h-4 w-4 text-purple-400" />
                       <span>Demographics</span>
                     </DropdownMenuItem>
                   </Link>
                   <Link href="/mycountry#intelligence">
-                    <DropdownMenuItem className="flex items-center gap-2 glass-hierarchy-interactive">
+                    <DropdownMenuItem className="glass-hierarchy-interactive flex items-center gap-2">
                       <Brain className="h-4 w-4 text-indigo-400" />
                       <span>Intelligence Center</span>
                     </DropdownMenuItem>
@@ -315,14 +406,14 @@ export function MyCountryCard({
             {countryData && activityRingsData && (
               <ThemedTabContent theme="executive" className="tab-content-enter mb-5">
                 <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <h4 className="text-foreground mb-3 flex items-center gap-2 text-lg font-semibold">
                     <BarChart3 className="h-5 w-5 text-green-400" />
                     National Vitality Index
                   </h4>
 
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
                     {/* Economic Health Ring */}
-                    <div className="flex flex-col items-center text-center gap-3">
+                    <div className="flex flex-col items-center gap-3 text-center">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div>
@@ -334,17 +425,22 @@ export function MyCountryCard({
                             />
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent className="glass-hierarchy-child p-4 max-w-xs">
+                        <TooltipContent className="glass-hierarchy-child max-w-xs p-4">
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
-                              <DollarSign size={16} style={{ color: '#22c55e' }} />
+                              <DollarSign size={16} style={{ color: "#22c55e" }} />
                               <span className="font-semibold">Economic Vitality</span>
                             </div>
-                            <p className="text-sm text-muted-foreground">Overall economic health including GDP growth, trade balance, and economic stability</p>
+                            <p className="text-muted-foreground text-sm">
+                              Overall economic health including GDP growth, trade balance, and
+                              economic stability
+                            </p>
                             <div className="space-y-1">
                               <div className="flex justify-between text-sm">
                                 <span>Score:</span>
-                                <span className="font-medium">{Math.round(activityRingsData.economicVitality)}/100</span>
+                                <span className="font-medium">
+                                  {Math.round(activityRingsData.economicVitality)}/100
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -352,17 +448,17 @@ export function MyCountryCard({
                       </Tooltip>
                       <div className="space-y-1">
                         <div className="flex items-center justify-center gap-2">
-                          <DollarSign className="h-4 w-4" style={{ color: '#22c55e' }} />
-                          <span className="font-medium text-sm">Economic Health</span>
+                          <DollarSign className="h-4 w-4" style={{ color: "#22c55e" }} />
+                          <span className="text-sm font-medium">Economic Health</span>
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-muted-foreground text-xs">
                           {Math.round(activityRingsData.economicVitality)}% vitality
                         </div>
                       </div>
                     </div>
 
                     {/* Population Wellbeing Ring */}
-                    <div className="flex flex-col items-center text-center gap-3">
+                    <div className="flex flex-col items-center gap-3 text-center">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div>
@@ -374,17 +470,22 @@ export function MyCountryCard({
                             />
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent className="glass-hierarchy-child p-4 max-w-xs">
+                        <TooltipContent className="glass-hierarchy-child max-w-xs p-4">
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
-                              <Users size={16} style={{ color: '#3b82f6' }} />
+                              <Users size={16} style={{ color: "#3b82f6" }} />
                               <span className="font-semibold">Population Wellbeing</span>
                             </div>
-                            <p className="text-sm text-muted-foreground">Demographics health, quality of life, education, and social cohesion indicators</p>
+                            <p className="text-muted-foreground text-sm">
+                              Demographics health, quality of life, education, and social cohesion
+                              indicators
+                            </p>
                             <div className="space-y-1">
                               <div className="flex justify-between text-sm">
                                 <span>Score:</span>
-                                <span className="font-medium">{Math.round(activityRingsData.populationWellbeing)}/100</span>
+                                <span className="font-medium">
+                                  {Math.round(activityRingsData.populationWellbeing)}/100
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -392,17 +493,17 @@ export function MyCountryCard({
                       </Tooltip>
                       <div className="space-y-1">
                         <div className="flex items-center justify-center gap-2">
-                          <Users className="h-4 w-4" style={{ color: '#3b82f6' }} />
-                          <span className="font-medium text-sm">Population Wellbeing</span>
+                          <Users className="h-4 w-4" style={{ color: "#3b82f6" }} />
+                          <span className="text-sm font-medium">Population Wellbeing</span>
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-muted-foreground text-xs">
                           {Math.round(activityRingsData.populationWellbeing)}% vitality
                         </div>
                       </div>
                     </div>
 
                     {/* Diplomatic Standing Ring */}
-                    <div className="flex flex-col items-center text-center gap-3">
+                    <div className="flex flex-col items-center gap-3 text-center">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div>
@@ -414,17 +515,22 @@ export function MyCountryCard({
                             />
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent className="glass-hierarchy-child p-4 max-w-xs">
+                        <TooltipContent className="glass-hierarchy-child max-w-xs p-4">
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
-                              <Shield size={16} style={{ color: '#a855f7' }} />
+                              <Shield size={16} style={{ color: "#a855f7" }} />
                               <span className="font-semibold">Diplomatic Standing</span>
                             </div>
-                            <p className="text-sm text-muted-foreground">International relationships, treaties, trade partnerships, and global reputation</p>
+                            <p className="text-muted-foreground text-sm">
+                              International relationships, treaties, trade partnerships, and global
+                              reputation
+                            </p>
                             <div className="space-y-1">
                               <div className="flex justify-between text-sm">
                                 <span>Score:</span>
-                                <span className="font-medium">{Math.round(activityRingsData.diplomaticStanding)}/100</span>
+                                <span className="font-medium">
+                                  {Math.round(activityRingsData.diplomaticStanding)}/100
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -432,17 +538,17 @@ export function MyCountryCard({
                       </Tooltip>
                       <div className="space-y-1">
                         <div className="flex items-center justify-center gap-2">
-                          <Shield className="h-4 w-4" style={{ color: '#a855f7' }} />
-                          <span className="font-medium text-sm">Diplomatic Standing</span>
+                          <Shield className="h-4 w-4" style={{ color: "#a855f7" }} />
+                          <span className="text-sm font-medium">Diplomatic Standing</span>
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-muted-foreground text-xs">
                           {Math.round(activityRingsData.diplomaticStanding)}% vitality
                         </div>
                       </div>
                     </div>
 
                     {/* Government Efficiency Ring */}
-                    <div className="flex flex-col items-center text-center gap-3">
+                    <div className="flex flex-col items-center gap-3 text-center">
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div>
@@ -454,17 +560,22 @@ export function MyCountryCard({
                             />
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent className="glass-hierarchy-child p-4 max-w-xs">
+                        <TooltipContent className="glass-hierarchy-child max-w-xs p-4">
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
-                              <Building className="h-4 w-4" style={{ color: '#f97316' }} />
+                              <Building className="h-4 w-4" style={{ color: "#f97316" }} />
                               <span className="font-semibold">Government Efficiency</span>
                             </div>
-                            <p className="text-sm text-muted-foreground">Policy effectiveness, administrative efficiency, public approval, and governance quality</p>
+                            <p className="text-muted-foreground text-sm">
+                              Policy effectiveness, administrative efficiency, public approval, and
+                              governance quality
+                            </p>
                             <div className="space-y-1">
                               <div className="flex justify-between text-sm">
                                 <span>Score:</span>
-                                <span className="font-medium">{Math.round(activityRingsData.governmentalEfficiency)}/100</span>
+                                <span className="font-medium">
+                                  {Math.round(activityRingsData.governmentalEfficiency)}/100
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -472,37 +583,36 @@ export function MyCountryCard({
                       </Tooltip>
                       <div className="space-y-1">
                         <div className="flex items-center justify-center gap-2">
-                          <Building className="h-4 w-4" style={{ color: '#f97316' }} />
-                          <span className="font-medium text-sm">Government Efficiency</span>
+                          <Building className="h-4 w-4" style={{ color: "#f97316" }} />
+                          <span className="text-sm font-medium">Government Efficiency</span>
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-muted-foreground text-xs">
                           {Math.round(activityRingsData.governmentalEfficiency)}% vitality
                         </div>
                       </div>
                     </div>
                   </div>
-
                 </div>
               </ThemedTabContent>
             )}
 
             {/* Key Metrics Grid - Always visible */}
             {countryData && (
-              <div className="grid grid-cols-3 gap-3 mb-6">
-                <div className="glass-hierarchy-child p-2.5 rounded-lg text-center">
-                  <div className="text-xs text-muted-foreground mb-1">Population</div>
+              <div className="mb-6 grid grid-cols-3 gap-3">
+                <div className="glass-hierarchy-child rounded-lg p-2.5 text-center">
+                  <div className="text-muted-foreground mb-1 text-xs">Population</div>
                   <div className="text-sm font-bold text-blue-400">
                     {formatPopulation(countryData.currentPopulation || 0)}
                   </div>
                 </div>
-                <div className="glass-hierarchy-child p-2.5 rounded-lg text-center">
-                  <div className="text-xs text-muted-foreground mb-1">GDP per Capita</div>
+                <div className="glass-hierarchy-child rounded-lg p-2.5 text-center">
+                  <div className="text-muted-foreground mb-1 text-xs">GDP per Capita</div>
                   <div className="text-sm font-bold text-green-400">
                     {formatCurrency(countryData.currentGdpPerCapita || 0)}
                   </div>
                 </div>
-                <div className="glass-hierarchy-child p-2.5 rounded-lg text-center">
-                  <div className="text-xs text-muted-foreground mb-1">Total GDP</div>
+                <div className="glass-hierarchy-child rounded-lg p-2.5 text-center">
+                  <div className="text-muted-foreground mb-1 text-xs">Total GDP</div>
                   <div className="text-sm font-bold text-yellow-400">
                     {formatCurrency(countryData.currentTotalGdp || 0)}
                   </div>
@@ -512,7 +622,7 @@ export function MyCountryCard({
 
             {/* Expandable Content - Only shows when expanded */}
             <AnimatePresence>
-              {expandedCards.has('mycountry') && countryData && (
+              {expandedCards.has("mycountry") && countryData && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
@@ -523,114 +633,155 @@ export function MyCountryCard({
                   <div className="space-y-6">
                     {/* Location/Government/Leader/Religion Section */}
                     <div>
-                      <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                      <h4 className="text-foreground mb-3 flex items-center gap-2 text-lg font-semibold">
                         <Globe className="h-5 w-5 text-blue-400" />
                         Country Profile
                       </h4>
                       <div className="grid grid-cols-2 gap-3">
                         {/* Location */}
-                        <div className="glass-hierarchy-child p-2.5 rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
+                        <div className="glass-hierarchy-child rounded-lg p-2.5">
+                          <div className="mb-2 flex items-center gap-2">
                             <Globe className="h-4 w-4 text-blue-400" />
-                            <div className="text-xs text-muted-foreground">Location</div>
+                            <div className="text-muted-foreground text-xs">Location</div>
                           </div>
-                          <div className="text-sm font-medium text-foreground">
-                            {countryData.region ? `${countryData.region}, ${countryData.continent || 'Unknown'}` : (countryData.continent || 'Unknown Region')}
+                          <div className="text-foreground text-sm font-medium">
+                            {countryData.region
+                              ? `${countryData.region}, ${countryData.continent || "Unknown"}`
+                              : countryData.continent || "Unknown Region"}
                           </div>
                         </div>
-                        
+
                         {/* Government Type */}
-                        <div className="glass-hierarchy-child p-2.5 rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
+                        <div className="glass-hierarchy-child rounded-lg p-2.5">
+                          <div className="mb-2 flex items-center gap-2">
                             <Building2 className="h-4 w-4 text-purple-400" />
-                            <div className="text-xs text-muted-foreground">Government</div>
+                            <div className="text-muted-foreground text-xs">Government</div>
                           </div>
-                          <div className="text-sm font-medium text-foreground">
-                            {countryData.governmentType || 'Constitutional Democracy'}
+                          <div className="text-foreground text-sm font-medium">
+                            {countryData.governmentType || "Constitutional Democracy"}
                           </div>
                         </div>
-                        
+
                         {/* Leader */}
-                        <div className="glass-hierarchy-child p-2.5 rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
+                        <div className="glass-hierarchy-child rounded-lg p-2.5">
+                          <div className="mb-2 flex items-center gap-2">
                             <Crown className="h-4 w-4 text-yellow-400" />
-                            <div className="text-xs text-muted-foreground">Leader</div>
+                            <div className="text-muted-foreground text-xs">Leader</div>
                           </div>
-                          <div className="text-sm font-medium text-foreground">
-                            {countryData.leader || 'Prime Minister'}
+                          <div className="text-foreground text-sm font-medium">
+                            {countryData.leader || "Prime Minister"}
                           </div>
                         </div>
-                        
+
                         {/* Religion */}
-                        <div className="glass-hierarchy-child p-2.5 rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
+                        <div className="glass-hierarchy-child rounded-lg p-2.5">
+                          <div className="mb-2 flex items-center gap-2">
                             <Star className="h-4 w-4 text-indigo-400" />
-                            <div className="text-xs text-muted-foreground">Religion</div>
+                            <div className="text-muted-foreground text-xs">Religion</div>
                           </div>
-                          <div className="text-sm font-medium text-foreground">
-                            {countryData.religion || 'Secular Pluralism'}
+                          <div className="text-foreground text-sm font-medium">
+                            {countryData.religion || "Secular Pluralism"}
                           </div>
                         </div>
                       </div>
                     </div>
-                    
+
                     {/* Economic Health Indicators Section */}
                     <div>
-                      <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                      <h4 className="text-foreground mb-3 flex items-center gap-2 text-lg font-semibold">
                         <BarChart3 className="h-5 w-5 text-green-400" />
                         Economic Health Indicators
                       </h4>
                       <div className="space-y-3">
                         {/* Unemployment Rate */}
-                        <div className="glass-hierarchy-child p-2.5 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs text-muted-foreground">Unemployment Rate</span>
-                            <span className="text-xs text-muted-foreground">{(3.5 + ((countryData.adjustedGdpGrowth || 0) < 0 ? 2 : 0)).toFixed(1)}%</span>
+                        <div className="glass-hierarchy-child rounded-lg p-2.5">
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="text-muted-foreground text-xs">Unemployment Rate</span>
+                            <span className="text-muted-foreground text-xs">
+                              {(3.5 + ((countryData.adjustedGdpGrowth || 0) < 0 ? 2 : 0)).toFixed(
+                                1
+                              )}
+                              %
+                            </span>
                           </div>
-                          <Progress value={((3.5 + ((countryData.adjustedGdpGrowth || 0) < 0 ? 2 : 0)) / 25) * 100} className="h-2" />
-                          <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                          <Progress
+                            value={
+                              ((3.5 + ((countryData.adjustedGdpGrowth || 0) < 0 ? 2 : 0)) / 25) *
+                              100
+                            }
+                            className="h-2"
+                          />
+                          <div className="text-muted-foreground mt-1 flex justify-between text-xs">
                             <span>0%</span>
                             <span className="text-green-600">Optimal: 3-7%</span>
                             <span>25%</span>
                           </div>
                         </div>
-                        
+
                         {/* Labor Force Participation */}
-                        <div className="glass-hierarchy-child p-2.5 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs text-muted-foreground">Labor Force Participation</span>
-                            <span className="text-xs text-muted-foreground">{(68.5 + ((countryData.currentGdpPerCapita || 0) / 100000) * 5).toFixed(1)}%</span>
+                        <div className="glass-hierarchy-child rounded-lg p-2.5">
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="text-muted-foreground text-xs">
+                              Labor Force Participation
+                            </span>
+                            <span className="text-muted-foreground text-xs">
+                              {(
+                                68.5 +
+                                ((countryData.currentGdpPerCapita || 0) / 100000) * 5
+                              ).toFixed(1)}
+                              %
+                            </span>
                           </div>
-                          <Progress value={68.5 + ((countryData.currentGdpPerCapita || 0) / 100000) * 5} className="h-2" />
-                          <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                          <Progress
+                            value={68.5 + ((countryData.currentGdpPerCapita || 0) / 100000) * 5}
+                            className="h-2"
+                          />
+                          <div className="text-muted-foreground mt-1 flex justify-between text-xs">
                             <span>0%</span>
                             <span className="text-green-600">Optimal: 60-80%</span>
                             <span>100%</span>
                           </div>
                         </div>
-                        
+
                         {/* Economic Growth Health */}
-                        <div className="glass-hierarchy-child p-2.5 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs text-muted-foreground">Economic Growth Health</span>
-                            <span className="text-xs text-muted-foreground">{((countryData.adjustedGdpGrowth || 0) * 100).toFixed(1)}%</span>
+                        <div className="glass-hierarchy-child rounded-lg p-2.5">
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="text-muted-foreground text-xs">
+                              Economic Growth Health
+                            </span>
+                            <span className="text-muted-foreground text-xs">
+                              {((countryData.adjustedGdpGrowth || 0) * 100).toFixed(1)}%
+                            </span>
                           </div>
-                          <Progress value={Math.max(0, Math.min(100, ((countryData.adjustedGdpGrowth || 0) * 100 + 5) * 10))} className="h-2" />
-                          <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                          <Progress
+                            value={Math.max(
+                              0,
+                              Math.min(100, ((countryData.adjustedGdpGrowth || 0) * 100 + 5) * 10)
+                            )}
+                            className="h-2"
+                          />
+                          <div className="text-muted-foreground mt-1 flex justify-between text-xs">
                             <span>-5%</span>
                             <span className="text-green-600">Optimal: 2-5%</span>
                             <span>10%</span>
                           </div>
                         </div>
-                        
+
                         {/* Economic Stability Index */}
-                        <div className="glass-hierarchy-child p-2.5 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs text-muted-foreground">Economic Stability Index</span>
-                            <span className="text-xs text-muted-foreground">{activityRingsData?.economicVitality || 0}%</span>
+                        <div className="glass-hierarchy-child rounded-lg p-2.5">
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="text-muted-foreground text-xs">
+                              Economic Stability Index
+                            </span>
+                            <span className="text-muted-foreground text-xs">
+                              {activityRingsData?.economicVitality || 0}%
+                            </span>
                           </div>
-                          <Progress value={activityRingsData?.economicVitality || 0} className="h-2" />
-                          <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                          <Progress
+                            value={activityRingsData?.economicVitality || 0}
+                            className="h-2"
+                          />
+                          <div className="text-muted-foreground mt-1 flex justify-between text-xs">
                             <span>0%</span>
                             <span className="text-green-600">Target: 85%+</span>
                             <span>100%</span>
@@ -647,20 +798,20 @@ export function MyCountryCard({
             {countryData && (
               <div className="mt-auto">
                 {/* Expand/Collapse Button */}
-                <div className="flex justify-center mb-4">
+                <div className="mb-4 flex justify-center">
                   <button
                     onClick={() => {
                       const newExpanded = new Set(expandedCards);
-                      if (newExpanded.has('mycountry')) {
-                        newExpanded.delete('mycountry');
+                      if (newExpanded.has("mycountry")) {
+                        newExpanded.delete("mycountry");
                       } else {
-                        newExpanded.add('mycountry');
+                        newExpanded.add("mycountry");
                       }
                       setExpandedCards(newExpanded);
                     }}
-                    className="px-4 py-2 glass-hierarchy-interactive rounded-lg text-sm font-medium text-foreground hover:scale-105 transition-transform flex items-center gap-2"
+                    className="glass-hierarchy-interactive text-foreground flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-transform hover:scale-105"
                   >
-                    {expandedCards.has('mycountry') ? (
+                    {expandedCards.has("mycountry") ? (
                       <>
                         <ChevronUp className="h-4 w-4" />
                         Show Less
@@ -675,11 +826,11 @@ export function MyCountryCard({
                 </div>
 
                 {/* Icons - Always visible at bottom */}
-                <div className="flex flex-wrap gap-2 justify-center">
+                <div className="flex flex-wrap justify-center gap-2">
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Link href="/mycountry">
-                        <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                        <div className="glass-hierarchy-child cursor-pointer rounded-lg p-2 transition-transform hover:scale-105">
                           <FileText className="h-4 w-4 text-blue-400" />
                         </div>
                       </Link>
@@ -689,7 +840,7 @@ export function MyCountryCard({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Link href="/mycountry#executive">
-                        <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                        <div className="glass-hierarchy-child cursor-pointer rounded-lg p-2 transition-transform hover:scale-105">
                           <Crown className="h-4 w-4 text-yellow-400" />
                         </div>
                       </Link>
@@ -699,7 +850,7 @@ export function MyCountryCard({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Link href="/mycountry#economy">
-                        <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                        <div className="glass-hierarchy-child cursor-pointer rounded-lg p-2 transition-transform hover:scale-105">
                           <TrendingUp className="h-4 w-4 text-green-400" />
                         </div>
                       </Link>
@@ -709,7 +860,7 @@ export function MyCountryCard({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Link href="/mycountry#labor">
-                        <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                        <div className="glass-hierarchy-child cursor-pointer rounded-lg p-2 transition-transform hover:scale-105">
                           <Briefcase className="h-4 w-4 text-orange-400" />
                         </div>
                       </Link>
@@ -719,7 +870,7 @@ export function MyCountryCard({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Link href="/mycountry#government">
-                        <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                        <div className="glass-hierarchy-child cursor-pointer rounded-lg p-2 transition-transform hover:scale-105">
                           <Building2 className="h-4 w-4 text-purple-400" />
                         </div>
                       </Link>
@@ -729,7 +880,7 @@ export function MyCountryCard({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Link href="/mycountry#demographics">
-                        <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                        <div className="glass-hierarchy-child cursor-pointer rounded-lg p-2 transition-transform hover:scale-105">
                           <Users className="h-4 w-4 text-pink-400" />
                         </div>
                       </Link>
@@ -739,7 +890,7 @@ export function MyCountryCard({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Link href="/mycountry#intelligence">
-                        <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                        <div className="glass-hierarchy-child cursor-pointer rounded-lg p-2 transition-transform hover:scale-105">
                           <Brain className="h-4 w-4 text-indigo-400" />
                         </div>
                       </Link>
@@ -749,7 +900,7 @@ export function MyCountryCard({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Link href="/mycountry#analytics">
-                        <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                        <div className="glass-hierarchy-child cursor-pointer rounded-lg p-2 transition-transform hover:scale-105">
                           <Search className="h-4 w-4 text-teal-400" />
                         </div>
                       </Link>
@@ -759,7 +910,7 @@ export function MyCountryCard({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Link href="/mycountry#analytics">
-                        <div className="p-2 glass-hierarchy-child rounded-lg hover:scale-105 transition-transform cursor-pointer">
+                        <div className="glass-hierarchy-child cursor-pointer rounded-lg p-2 transition-transform hover:scale-105">
                           <Calculator className="h-4 w-4 text-cyan-400" />
                         </div>
                       </Link>
@@ -772,9 +923,11 @@ export function MyCountryCard({
 
             {/* No country data state */}
             {!countryData && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Crown className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-sm">Configure your country profile to access MyCountry® Premium</p>
+              <div className="text-muted-foreground py-8 text-center">
+                <Crown className="mx-auto mb-4 h-12 w-12 opacity-50" />
+                <p className="text-sm">
+                  Configure your country profile to access MyCountry® Premium
+                </p>
               </div>
             )}
           </div>

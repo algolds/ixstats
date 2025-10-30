@@ -7,20 +7,11 @@
  * @module useAnalyticsDashboard
  */
 
-import { useState, useMemo, useCallback } from 'react';
-import {
-  Activity,
-  TrendingUp,
-  Target,
-  Globe,
-  Zap,
-  Building,
-  Users,
-  FileText,
-} from 'lucide-react';
-import { api } from '~/trpc/react';
-import { exportDataToCSV, exportChartToPDF, exportDashboardReport } from '~/lib/export-utils';
-import { toast } from 'sonner';
+import { useState, useMemo, useCallback } from "react";
+import { Activity, TrendingUp, Target, Globe, Zap, Building, Users, FileText } from "lucide-react";
+import { api } from "~/trpc/react";
+import { exportDataToCSV, exportChartToPDF, exportDashboardReport } from "~/lib/export-utils";
+import { toast } from "sonner";
 import {
   transformEconomicChartData,
   generateSectorPerformanceData,
@@ -39,13 +30,13 @@ import {
   type HistoricalDataPoint,
   type AnalyticsTrends,
   type AnalyticsVolatility,
-} from '~/lib/analytics-data-transformers';
+} from "~/lib/analytics-data-transformers";
 
 // ===== TYPES =====
 
-export type DateRange = '6months' | '1year' | '2years' | '5years';
-export type Scenario = 'optimistic' | 'realistic' | 'pessimistic';
-export type ActiveSection = 'overview' | 'economic' | 'policy' | 'diplomatic' | 'forecasting';
+export type DateRange = "6months" | "1year" | "2years" | "5years";
+export type Scenario = "optimistic" | "realistic" | "pessimistic";
+export type ActiveSection = "overview" | "economic" | "policy" | "diplomatic" | "forecasting";
 
 type NormalizedAnalytics = {
   trends?: AnalyticsTrends;
@@ -60,20 +51,18 @@ interface UseAnalyticsDashboardProps {
 
 export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps) {
   // ===== STATE =====
-  const [activeSection, setActiveSection] = useState<ActiveSection>('overview');
-  const [dateRange, setDateRange] = useState<DateRange>('1year');
-  const [selectedScenarios, setSelectedScenarios] = useState<Scenario[]>(['realistic']);
+  const [activeSection, setActiveSection] = useState<ActiveSection>("overview");
+  const [dateRange, setDateRange] = useState<DateRange>("1year");
+  const [selectedScenarios, setSelectedScenarios] = useState<Scenario[]>(["realistic"]);
   const [showDataTable, setShowDataTable] = useState(false);
 
   // ===== API QUERIES =====
   const [analyticsError, setAnalyticsError] = useState(false);
-  const { data: historicalData, isLoading: historicalLoading } = api.countries.getHistoricalData.useQuery(
-    { countryId },
-    { enabled: !!countryId }
-  );
+  const { data: historicalData, isLoading: historicalLoading } =
+    api.countries.getHistoricalData.useQuery({ countryId }, { enabled: !!countryId });
 
   const { data: policyEffectiveness } = api.unifiedIntelligence.getPolicyEffectiveness.useQuery(
-    { countryId, category: 'all' },
+    { countryId, category: "all" },
     { enabled: !!countryId, retry: false, onError: () => setAnalyticsError(true) }
   );
 
@@ -85,8 +74,15 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
   const { data: predictiveModels } = api.unifiedIntelligence.getPredictiveModels.useQuery(
     {
       countryId,
-      timeframe: dateRange === '6months' ? '6_months' : dateRange === '2years' ? '2_years' : dateRange === '5years' ? '5_years' : '1_year',
-      scenarios: selectedScenarios
+      timeframe:
+        dateRange === "6months"
+          ? "6_months"
+          : dateRange === "2years"
+            ? "2_years"
+            : dateRange === "5years"
+              ? "5_years"
+              : "1_year",
+      scenarios: selectedScenarios,
     },
     { enabled: !!countryId, retry: false, onError: () => setAnalyticsError(true) }
   );
@@ -129,38 +125,40 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
 
     // Calculate date range filter
     const now = Date.now();
-    const dateRangeMs = {
-      '6months': 6 * 30 * 24 * 60 * 60 * 1000,
-      '1year': 365 * 24 * 60 * 60 * 1000,
-      '2years': 2 * 365 * 24 * 60 * 60 * 1000,
-      '5years': 5 * 365 * 24 * 60 * 60 * 1000
-    }[dateRange] || 365 * 24 * 60 * 60 * 1000;
+    const dateRangeMs =
+      {
+        "6months": 6 * 30 * 24 * 60 * 60 * 1000,
+        "1year": 365 * 24 * 60 * 60 * 1000,
+        "2years": 2 * 365 * 24 * 60 * 60 * 1000,
+        "5years": 5 * 365 * 24 * 60 * 60 * 1000,
+      }[dateRange] || 365 * 24 * 60 * 60 * 1000;
 
     const startTime = now - dateRangeMs;
 
     return historicalData
       .filter((point: any) => {
-        const pointTime = typeof point.ixTimeTimestamp === 'number' 
-          ? point.ixTimeTimestamp 
-          : new Date(point.ixTimeTimestamp).getTime();
+        const pointTime =
+          typeof point.ixTimeTimestamp === "number"
+            ? point.ixTimeTimestamp
+            : new Date(point.ixTimeTimestamp).getTime();
         return pointTime >= startTime;
       })
       .map((point: any) => ({
         ixTimeTimestamp:
-          typeof point.ixTimeTimestamp === 'number'
+          typeof point.ixTimeTimestamp === "number"
             ? new Date(point.ixTimeTimestamp).toISOString()
-            : point.ixTimeTimestamp ?? new Date().toISOString(),
+            : (point.ixTimeTimestamp ?? new Date().toISOString()),
         totalGdp: point.totalGdp ?? null,
         gdpPerCapita: point.gdpPerCapita ?? null,
         population: point.population ?? null,
       }));
   }, [historicalData, dateRange]);
 
-  const normalizeTrend = (value: unknown): NonNullable<AnalyticsTrends['gdp']> => {
-    if (value === 'growing' || value === 'declining' || value === 'stable') {
+  const normalizeTrend = (value: unknown): NonNullable<AnalyticsTrends["gdp"]> => {
+    if (value === "growing" || value === "declining" || value === "stable") {
       return value;
     }
-    return 'stable';
+    return "stable";
   };
 
   const normalizedAnalytics = useMemo<NormalizedAnalytics | null>(() => {
@@ -176,9 +174,9 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
         overall: normalizeTrend(trends.overall),
       },
       volatility: {
-        gdp: typeof volatility.gdp === 'number' ? volatility.gdp : 0,
-        population: typeof volatility.population === 'number' ? volatility.population : 0,
-        overall: typeof volatility.overall === 'number' ? volatility.overall : 0,
+        gdp: typeof volatility.gdp === "number" ? volatility.gdp : 0,
+        population: typeof volatility.population === "number" ? volatility.population : 0,
+        overall: typeof volatility.overall === "number" ? volatility.overall : 0,
       },
     };
   }, [analytics]);
@@ -196,7 +194,13 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
   );
 
   const economicHealthIndicators = useMemo(
-    () => calculateEconomicHealthIndicators(normalizedHistoricalData, economicProfile, laborMarket, country),
+    () =>
+      calculateEconomicHealthIndicators(
+        normalizedHistoricalData,
+        economicProfile,
+        laborMarket,
+        country
+      ),
     [normalizedHistoricalData, economicProfile, laborMarket, country]
   );
 
@@ -206,9 +210,10 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
   );
 
   const projectionData = useMemo(() => {
-    const baseValue = economicChartData.length > 0
-      ? economicChartData[economicChartData.length - 1]!.gdpPerCapita
-      : 50000;
+    const baseValue =
+      economicChartData.length > 0
+        ? economicChartData[economicChartData.length - 1]!.gdpPerCapita
+        : 50000;
 
     return calculateProjectionData(predictiveModels, dateRange, selectedScenarios, baseValue);
   }, [predictiveModels, dateRange, selectedScenarios, economicChartData]);
@@ -228,18 +233,16 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
     [policyDistributionData]
   );
 
-  const relationshipDistributionData = useMemo(
-    () => generateRelationshipDistributionData(),
-    []
-  );
+  const relationshipDistributionData = useMemo(() => generateRelationshipDistributionData(), []);
 
   const summaryMetrics = useMemo(
-    () => calculateSummaryMetrics(
-      normalizedAnalytics ?? undefined,
-      economicChartData,
-      policyDistributionData,
-      { Activity, TrendingUp, Target, Globe }
-    ),
+    () =>
+      calculateSummaryMetrics(
+        normalizedAnalytics ?? undefined,
+        economicChartData,
+        policyDistributionData,
+        { Activity, TrendingUp, Target, Globe }
+      ),
     [normalizedAnalytics, economicChartData, policyDistributionData]
   );
 
@@ -248,23 +251,14 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
     [normalizedAnalytics]
   );
 
-  const comparativeBenchmarkingData = useMemo(
-    () => generateComparativeBenchmarkingData(),
-    []
-  );
+  const comparativeBenchmarkingData = useMemo(() => generateComparativeBenchmarkingData(), []);
 
   const diplomaticNetworkStats = useMemo(
-    () => calculateDiplomaticNetworkStats(
-      diplomaticInfluence,
-      { Zap, Building, Users, FileText }
-    ),
+    () => calculateDiplomaticNetworkStats(diplomaticInfluence, { Zap, Building, Users, FileText }),
     [diplomaticInfluence]
   );
 
-  const missionSuccessData = useMemo(
-    () => generateMissionSuccessData(),
-    []
-  );
+  const missionSuccessData = useMemo(() => generateMissionSuccessData(), []);
 
   // ===== FORMAT HELPERS =====
 
@@ -279,38 +273,41 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
 
   // ===== EXPORT FUNCTIONS =====
 
-  const exportToCSV = useCallback((data: any[], filename: string, headerMap?: Record<string, string>) => {
-    try {
-      if (headerMap) {
-        const processedData = data.map((row: Record<string, any>) => {
-          const transformedRow: Record<string, any> = {};
-          Object.keys(row).forEach((key: string) => {
-            const newKey = headerMap[key] ?? key;
-            transformedRow[newKey] = row[key];
+  const exportToCSV = useCallback(
+    (data: any[], filename: string, headerMap?: Record<string, string>) => {
+      try {
+        if (headerMap) {
+          const processedData = data.map((row: Record<string, any>) => {
+            const transformedRow: Record<string, any> = {};
+            Object.keys(row).forEach((key: string) => {
+              const newKey = headerMap[key] ?? key;
+              transformedRow[newKey] = row[key];
+            });
+            return transformedRow;
           });
-          return transformedRow;
-        });
-        exportDataToCSV(processedData, filename);
-      } else {
-        exportDataToCSV(data, filename);
+          exportDataToCSV(processedData, filename);
+        } else {
+          exportDataToCSV(data, filename);
+        }
+        toast.success(`Exported ${filename}.csv successfully`);
+      } catch (error) {
+        console.error("Error exporting to CSV:", error);
+        toast.error("Failed to export CSV");
       }
-      toast.success(`Exported ${filename}.csv successfully`);
-    } catch (error) {
-      console.error('Error exporting to CSV:', error);
-      toast.error('Failed to export CSV');
-    }
-  }, []);
+    },
+    []
+  );
 
   const exportToPDF = useCallback(async (chartId: string, chartName: string) => {
     try {
       await exportChartToPDF(chartId, `analytics-${chartName}`, {
         title: chartName,
-        orientation: 'landscape',
+        orientation: "landscape",
       });
       toast.success(`Exported ${chartName} to PDF successfully`);
     } catch (error) {
-      console.error('Error exporting to PDF:', error);
-      toast.error('Failed to export PDF');
+      console.error("Error exporting to PDF:", error);
+      toast.error("Failed to export PDF");
     }
   }, []);
 
@@ -319,46 +316,80 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
       const charts: Array<{ id: string; title: string; description?: string }> = [];
 
       // Add charts based on active section
-      if (activeSection === 'overview') {
+      if (activeSection === "overview") {
         charts.push(
-          { id: 'gdp-trend-chart', title: 'GDP Per Capita Trend', description: 'Historical GDP per capita performance' },
-          { id: 'economic-health-chart', title: 'Economic Health Indicators', description: 'Multi-dimensional health metrics' }
+          {
+            id: "gdp-trend-chart",
+            title: "GDP Per Capita Trend",
+            description: "Historical GDP per capita performance",
+          },
+          {
+            id: "economic-health-chart",
+            title: "Economic Health Indicators",
+            description: "Multi-dimensional health metrics",
+          }
         );
-      } else if (activeSection === 'economic') {
+      } else if (activeSection === "economic") {
         charts.push(
-          { id: 'sector-performance-chart', title: 'Sector Performance Breakdown', description: 'GDP contribution by sector' },
-          { id: 'sector-growth-chart', title: 'Sector Growth Rates', description: 'Annual growth percentage by sector' }
+          {
+            id: "sector-performance-chart",
+            title: "Sector Performance Breakdown",
+            description: "GDP contribution by sector",
+          },
+          {
+            id: "sector-growth-chart",
+            title: "Sector Growth Rates",
+            description: "Annual growth percentage by sector",
+          }
         );
-      } else if (activeSection === 'policy') {
+      } else if (activeSection === "policy") {
         charts.push(
-          { id: 'policy-distribution-chart', title: 'Policy Category Distribution', description: 'Active policies by category' },
-          { id: 'budget-impact-chart', title: 'Budget Impact Analysis', description: 'Financial impact of policies' }
+          {
+            id: "policy-distribution-chart",
+            title: "Policy Category Distribution",
+            description: "Active policies by category",
+          },
+          {
+            id: "budget-impact-chart",
+            title: "Budget Impact Analysis",
+            description: "Financial impact of policies",
+          }
         );
-      } else if (activeSection === 'diplomatic') {
+      } else if (activeSection === "diplomatic") {
         charts.push(
-          { id: 'diplomatic-influence-chart', title: 'Diplomatic Influence Over Time', description: 'Global standing trends' },
-          { id: 'relationship-distribution-chart', title: 'Relationship Strength Distribution', description: 'Quality of relationships' }
+          {
+            id: "diplomatic-influence-chart",
+            title: "Diplomatic Influence Over Time",
+            description: "Global standing trends",
+          },
+          {
+            id: "relationship-distribution-chart",
+            title: "Relationship Strength Distribution",
+            description: "Quality of relationships",
+          }
         );
-      } else if (activeSection === 'forecasting') {
-        charts.push(
-          { id: 'gdp-projections-chart', title: 'GDP Per Capita Projections', description: `Projected growth over ${dateRange}` }
-        );
+      } else if (activeSection === "forecasting") {
+        charts.push({
+          id: "gdp-projections-chart",
+          title: "GDP Per Capita Projections",
+          description: `Projected growth over ${dateRange}`,
+        });
       }
 
       if (charts.length === 0) {
-        toast.error('No charts available to export');
+        toast.error("No charts available to export");
         return;
       }
 
       await exportDashboardReport(charts, `analytics-report-${activeSection}-${Date.now()}`, {
         reportTitle: `Analytics Dashboard Report - ${activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}`,
-        orientation: 'landscape',
+        orientation: "landscape",
       });
 
-      toast.success('Exported all charts to PDF successfully');
+      toast.success("Exported all charts to PDF successfully");
     } catch (error) {
-      console.error('Error exporting all charts:', error);
-      toast.error('Failed to export report');
+      console.error("Error exporting all charts:", error);
+      toast.error("Failed to export report");
     }
   }, [activeSection, dateRange]);
 
@@ -369,7 +400,7 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
   }, []);
 
   const handleShowDataTableToggle = useCallback(() => {
-    setShowDataTable(prev => !prev);
+    setShowDataTable((prev) => !prev);
   }, []);
 
   const handleSectionChange = useCallback((value: string) => {
@@ -377,10 +408,8 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
   }, []);
 
   const handleScenarioToggle = useCallback((scenario: Scenario) => {
-    setSelectedScenarios(prev =>
-      prev.includes(scenario)
-        ? prev.filter(s => s !== scenario)
-        : [...prev, scenario]
+    setSelectedScenarios((prev) =>
+      prev.includes(scenario) ? prev.filter((s) => s !== scenario) : [...prev, scenario]
     );
   }, []);
 

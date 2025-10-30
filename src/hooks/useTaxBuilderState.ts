@@ -75,15 +75,12 @@ export function useTaxBuilderState(options: UseTaxBuilderStateOptions = {}) {
   /**
    * Update tax brackets for a specific category
    */
-  const handleBracketsChange = useCallback(
-    (categoryIndex: string, brackets: TaxBracketInput[]) => {
-      setBuilderState((prev) => ({
-        ...prev,
-        brackets: { ...prev.brackets, [categoryIndex]: brackets },
-      }));
-    },
-    []
-  );
+  const handleBracketsChange = useCallback((categoryIndex: string, brackets: TaxBracketInput[]) => {
+    setBuilderState((prev) => ({
+      ...prev,
+      brackets: { ...prev.brackets, [categoryIndex]: brackets },
+    }));
+  }, []);
 
   /**
    * Update tax exemptions

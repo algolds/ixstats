@@ -16,31 +16,35 @@ interface SectionNavigationProps {
   onSectionChange: (section: SectionId) => void;
 }
 
-export function SectionNavigation({ sections, activeSection, onSectionChange }: SectionNavigationProps) {
+export function SectionNavigation({
+  sections,
+  activeSection,
+  onSectionChange,
+}: SectionNavigationProps) {
   return (
-    <div className="flex flex-wrap border-b border-[var(--color-border-primary)] mb-6">
+    <div className="mb-6 flex flex-wrap border-b border-[var(--color-border-primary)]">
       {sections.map((section) => {
         const Icon = section.icon;
         const isActive = activeSection === section.key;
-        
+
         return (
           <Popover key={section.key}>
-            <PopoverTrigger 
+            <PopoverTrigger
               onClick={() => onSectionChange(section.key)}
-              className={`flex items-center px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex items-center border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
                 isActive
-                  ? 'border-[var(--color-brand-primary)] text-[var(--color-brand-primary)]'
-                  : 'border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:border-[var(--color-border-secondary)]'
+                  ? "border-[var(--color-brand-primary)] text-[var(--color-brand-primary)]"
+                  : "border-transparent text-[var(--color-text-muted)] hover:border-[var(--color-border-secondary)] hover:text-[var(--color-text-primary)]"
               }`}
             >
-              <Icon className="h-4 w-4 mr-2" />
+              <Icon className="mr-2 h-4 w-4" />
               {section.label}
-              <HelpCircle className="h-3 w-3 ml-1 opacity-60" />
+              <HelpCircle className="ml-1 h-3 w-3 opacity-60" />
             </PopoverTrigger>
             <PopoverContent className="w-80 p-3">
               <div className="space-y-2">
-                <h4 className="font-medium text-[var(--color-text-primary)] flex items-center">
-                  <Icon className="h-4 w-4 mr-2" />
+                <h4 className="flex items-center font-medium text-[var(--color-text-primary)]">
+                  <Icon className="mr-2 h-4 w-4" />
                   {section.label}
                 </h4>
                 <p className="text-sm text-[var(--color-text-muted)]">{section.description}</p>

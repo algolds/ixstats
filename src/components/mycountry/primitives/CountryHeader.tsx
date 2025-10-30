@@ -1,10 +1,10 @@
 "use client";
 
-import { Crown, BarChart3, Edit, Sparkles } from 'lucide-react';
-import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
-import Link from 'next/link';
-import { createUrl } from '~/lib/url-utils';
+import { Crown, BarChart3, Edit, Sparkles } from "lucide-react";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import Link from "next/link";
+import { createUrl } from "~/lib/url-utils";
 
 interface CountryHeaderProps {
   countryName: string;
@@ -12,33 +12,33 @@ interface CountryHeaderProps {
   countrySlug?: string;
   economicTier?: string;
   populationTier?: string;
-  variant?: 'unified' | 'standard' | 'premium';
+  variant?: "unified" | "standard" | "premium";
 }
 
-export function CountryHeader({ 
-  countryName, 
+export function CountryHeader({
+  countryName,
   countryId,
   countrySlug,
-  economicTier, 
+  economicTier,
   populationTier,
-  variant = 'unified' 
+  variant = "unified",
 }: CountryHeaderProps) {
   const variantConfig = {
     unified: {
-      badge: 'UNIFIED',
-      colors: 'from-amber-500 to-yellow-500',
-      subtitle: 'Integrated Dashboard & Command Center'
+      badge: "UNIFIED",
+      colors: "from-amber-500 to-yellow-500",
+      subtitle: "Integrated Dashboard & Command Center",
     },
     standard: {
-      badge: 'STANDARD',
-      colors: 'from-blue-500 to-indigo-500',
-      subtitle: 'Standard Dashboard & Analytics'
+      badge: "STANDARD",
+      colors: "from-blue-500 to-indigo-500",
+      subtitle: "Standard Dashboard & Analytics",
     },
     premium: {
-      badge: 'PREMIUM',
-      colors: 'from-purple-500 to-blue-500',
-      subtitle: 'Executive Command Center & Intelligence Suite'
-    }
+      badge: "PREMIUM",
+      colors: "from-purple-500 to-blue-500",
+      subtitle: "Executive Command Center & Intelligence Suite",
+    },
   };
 
   const config = variantConfig[variant];
@@ -46,21 +46,21 @@ export function CountryHeader({
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-4">
-        <div className={`p-2 rounded-full bg-gradient-to-r ${config.colors}`}>
+        <div className={`rounded-full bg-gradient-to-r p-2 ${config.colors}`}>
           <Crown className="h-8 w-8 text-white" />
         </div>
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold">MyCountry: {countryName}</h1>
             <Badge className={`bg-gradient-to-r ${config.colors} text-white`}>
-              <Sparkles className="h-3 w-3 mr-1" />
+              <Sparkles className="mr-1 h-3 w-3" />
               {config.badge}
             </Badge>
           </div>
           <p className="text-muted-foreground">{config.subtitle}</p>
         </div>
       </div>
-      
+
       <div className="flex items-center gap-3">
         <Link href={createUrl(`/countries/${countrySlug || countryId}`)}>
           <Button variant="outline" className="flex items-center gap-2">

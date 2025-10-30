@@ -3,21 +3,24 @@
  * Addresses slow compilation and query performance issues
  */
 
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from "@prisma/client";
 
 // Global cache for expensive queries
-const queryCache = new Map<string, {
-  data: any;
-  timestamp: number;
-  ttl: number;
-}>();
+const queryCache = new Map<
+  string,
+  {
+    data: any;
+    timestamp: number;
+    ttl: number;
+  }
+>();
 
 // Cache configuration
 const CACHE_CONFIGS = {
-  globalStats: 60000,      // 1 minute
-  countryList: 30000,      // 30 seconds  
-  userProfile: 10000,      // 10 seconds
-  notifications: 5000,     // 5 seconds
+  globalStats: 60000, // 1 minute
+  countryList: 30000, // 30 seconds
+  userProfile: 10000, // 10 seconds
+  notifications: 5000, // 5 seconds
 } as const;
 
 // Cache utilities
@@ -40,35 +43,41 @@ export function setCachedResult<T>(key: string, data: T, ttlMs: number): void {
   queryCache.set(key, {
     data,
     timestamp: Date.now(),
-    ttl: ttlMs
+    ttl: ttlMs,
   });
 }
 
 // Cleanup expired cache entries every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, value] of queryCache.entries()) {
-    if (now - value.timestamp > value.ttl) {
-      queryCache.delete(key);
+setInterval(
+  () => {
+    const now = Date.now();
+    for (const [key, value] of queryCache.entries()) {
+      if (now - value.timestamp > value.ttl) {
+        queryCache.delete(key);
+      }
     }
-  }
-}, 5 * 60 * 1000);
+  },
+  5 * 60 * 1000
+);
 
 // Optimized query functions
-export async function getOptimizedCountryList(db: PrismaClient, params: {
-  limit?: number;
-  offset?: number;
-  search?: string;
-  continent?: string;
-  economicTier?: string;
-} = {}) {
-  const cacheKey = getCacheKey('countryList', params);
+export async function getOptimizedCountryList(
+  db: PrismaClient,
+  params: {
+    limit?: number;
+    offset?: number;
+    search?: string;
+    continent?: string;
+    economicTier?: string;
+  } = {}
+) {
+  const cacheKey = getCacheKey("countryList", params);
   const cached = getCachedResult(cacheKey);
   if (cached) return cached;
 
   const where: any = {};
   if (params.search) {
-    where.name = { contains: params.search, mode: 'insensitive' };
+    where.name = { contains: params.search, mode: "insensitive" };
   }
   if (params.continent) {
     where.continent = params.continent;
@@ -96,7 +105,7 @@ export async function getOptimizedCountryList(db: PrismaClient, params: {
       populationGrowthRate: true,
       lastCalculated: true,
     },
-    orderBy: { name: 'asc' },
+    orderBy: { name: "asc" },
     take: params.limit || 100,
     skip: params.offset || 0,
   });
@@ -106,12 +115,12 @@ export async function getOptimizedCountryList(db: PrismaClient, params: {
 }
 
 export async function getOptimizedGlobalStats(db: PrismaClient) {
-  const cacheKey = getCacheKey('globalStats');
+  const cacheKey = getCacheKey("globalStats");
   const cached = getCachedResult(cacheKey);
   if (cached) return cached;
 
   // Use a more efficient aggregation query
-  const result = await db.$queryRaw`
+  const result = (await db.$queryRaw`
     SELECT
       COUNT(*) as "totalCountries",
       COALESCE(SUM("currentPopulation"), 0) as "totalPopulation",
@@ -133,35 +142,38 @@ export async function getOptimizedGlobalStats(db: PrismaClient) {
       COUNT(CASE WHEN "populationTier" = '7' THEN 1 END) as "popTier7Count",
       COUNT(CASE WHEN "populationTier" = 'X' THEN 1 END) as "popTierXCount"
     FROM "Country"
-  ` as any[];
+  `) as any[];
 
   const stats = result[0];
   setCachedResult(cacheKey, stats, CACHE_CONFIGS.globalStats);
   return stats;
 }
 
-export async function getOptimizedUserNotifications(db: PrismaClient, params: {
-  userId: string;
-  countryId?: string;
-  limit?: number;
-  unreadOnly?: boolean;
-}) {
-  const cacheKey = getCacheKey('notifications', params);
+export async function getOptimizedUserNotifications(
+  db: PrismaClient,
+  params: {
+    userId: string;
+    countryId?: string;
+    limit?: number;
+    unreadOnly?: boolean;
+  }
+) {
+  const cacheKey = getCacheKey("notifications", params);
   const cached = getCachedResult(cacheKey);
   if (cached) return cached;
 
   // Build OR conditions - only include countryId if it's provided
   const orConditions: any[] = [
     { userId: params.userId },
-    { AND: [{ userId: null }, { countryId: null }] } // Global notifications
+    { AND: [{ userId: null }, { countryId: null }] }, // Global notifications
   ];
-  
+
   if (params.countryId) {
     orConditions.push({ countryId: params.countryId });
   }
 
   const where: any = {
-    OR: orConditions
+    OR: orConditions,
   };
 
   if (params.unreadOnly) {
@@ -170,7 +182,7 @@ export async function getOptimizedUserNotifications(db: PrismaClient, params: {
 
   const result = await db.notification.findMany({
     where,
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
     take: params.limit || 5,
     select: {
       id: true,
@@ -180,7 +192,7 @@ export async function getOptimizedUserNotifications(db: PrismaClient, params: {
       href: true,
       type: true,
       createdAt: true,
-    }
+    },
   });
 
   // Shorter cache for notifications
@@ -189,7 +201,7 @@ export async function getOptimizedUserNotifications(db: PrismaClient, params: {
 }
 
 export async function getOptimizedUserProfile(db: PrismaClient, userId: string) {
-  const cacheKey = getCacheKey('userProfile', { userId });
+  const cacheKey = getCacheKey("userProfile", { userId });
   const cached = getCachedResult(cacheKey);
   if (cached) return cached;
 
@@ -212,7 +224,7 @@ export async function getOptimizedUserProfile(db: PrismaClient, userId: string) 
           currentPopulation: true,
           economicTier: true,
           populationTier: true,
-        }
+        },
       },
       role: {
         select: {
@@ -220,9 +232,9 @@ export async function getOptimizedUserProfile(db: PrismaClient, userId: string) 
           name: true,
           displayName: true,
           level: true,
-        }
-      }
-    }
+        },
+      },
+    },
   });
 
   setCachedResult(cacheKey, result, CACHE_CONFIGS.userProfile);
@@ -232,14 +244,14 @@ export async function getOptimizedUserProfile(db: PrismaClient, userId: string) 
 // Batch query optimization
 export async function getOptimizedCountryBatch(db: PrismaClient, countryIds: string[]) {
   if (countryIds.length === 0) return [];
-  
-  const cacheKey = getCacheKey('countryBatch', { ids: countryIds.sort() });
+
+  const cacheKey = getCacheKey("countryBatch", { ids: countryIds.sort() });
   const cached = getCachedResult(cacheKey);
   if (cached) return cached;
 
   const result = await db.country.findMany({
     where: {
-      id: { in: countryIds }
+      id: { in: countryIds },
     },
     select: {
       id: true,
@@ -251,7 +263,7 @@ export async function getOptimizedCountryBatch(db: PrismaClient, countryIds: str
       currentTotalGdp: true,
       economicTier: true,
       adjustedGdpGrowth: true,
-    }
+    },
   });
 
   setCachedResult(cacheKey, result, 30000); // 30 second cache
@@ -260,14 +272,14 @@ export async function getOptimizedCountryBatch(db: PrismaClient, countryIds: str
 
 // Database index suggestions
 export const SUGGESTED_INDEXES = [
-  'CREATE INDEX IF NOT EXISTS idx_country_name_search ON Country(name)',
-  'CREATE INDEX IF NOT EXISTS idx_country_continent ON Country(continent)',
-  'CREATE INDEX IF NOT EXISTS idx_country_economic_tier ON Country(economicTier)',
-  'CREATE INDEX IF NOT EXISTS idx_country_population_tier ON Country(populationTier)',
-  'CREATE INDEX IF NOT EXISTS idx_notification_user_created ON Notification(userId, createdAt DESC)',
-  'CREATE INDEX IF NOT EXISTS idx_notification_country_created ON Notification(countryId, createdAt DESC)',
-  'CREATE INDEX IF NOT EXISTS idx_user_clerk_country ON User(clerkUserId, countryId)',
-  'CREATE INDEX IF NOT EXISTS idx_dm_inputs_active_country ON DmInputs(isActive, countryId, ixTimeTimestamp DESC)',
+  "CREATE INDEX IF NOT EXISTS idx_country_name_search ON Country(name)",
+  "CREATE INDEX IF NOT EXISTS idx_country_continent ON Country(continent)",
+  "CREATE INDEX IF NOT EXISTS idx_country_economic_tier ON Country(economicTier)",
+  "CREATE INDEX IF NOT EXISTS idx_country_population_tier ON Country(populationTier)",
+  "CREATE INDEX IF NOT EXISTS idx_notification_user_created ON Notification(userId, createdAt DESC)",
+  "CREATE INDEX IF NOT EXISTS idx_notification_country_created ON Notification(countryId, createdAt DESC)",
+  "CREATE INDEX IF NOT EXISTS idx_user_clerk_country ON User(clerkUserId, countryId)",
+  "CREATE INDEX IF NOT EXISTS idx_dm_inputs_active_country ON DmInputs(isActive, countryId, ixTimeTimestamp DESC)",
 ] as const;
 
 // Performance monitoring

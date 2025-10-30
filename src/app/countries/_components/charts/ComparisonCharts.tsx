@@ -35,13 +35,7 @@ import {
 } from "lucide-react";
 import { IxTime } from "~/lib/ixtime";
 import { useTheme } from "~/context/theme-context";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -84,12 +78,7 @@ interface ComparisonChartsProps {
   isLoading?: boolean;
 }
 
-type ComparisonChartType = 
-  | 'population'
-  | 'gdp'
-  | 'growth'
-  | 'scatter'
-  | 'radar';
+type ComparisonChartType = "population" | "gdp" | "growth" | "scatter" | "radar";
 
 export function ComparisonCharts({
   countries,
@@ -99,19 +88,19 @@ export function ComparisonCharts({
   isLoading = false,
 }: ComparisonChartsProps) {
   const { theme } = useTheme();
-  const [selectedChartType, setSelectedChartType] = useState<ComparisonChartType>('population');
+  const [selectedChartType, setSelectedChartType] = useState<ComparisonChartType>("population");
 
   // Chart theme
   const chartTheme = useMemo(() => {
-    const isDark = theme === 'dark';
+    const isDark = theme === "dark";
     return {
-      grid: isDark ? '#374151' : '#e5e7eb',
-      text: isDark ? '#9ca3af' : '#6b7280',
-      axis: isDark ? '#6b7280' : '#9ca3af',
+      grid: isDark ? "#374151" : "#e5e7eb",
+      text: isDark ? "#9ca3af" : "#6b7280",
+      axis: isDark ? "#6b7280" : "#9ca3af",
       tooltip: {
-        backgroundColor: isDark ? '#1f2937' : '#ffffff',
-        border: `1px solid ${isDark ? '#374151' : '#e5e7eb'}`,
-        color: isDark ? '#f9fafb' : '#111827',
+        backgroundColor: isDark ? "#1f2937" : "#ffffff",
+        border: `1px solid ${isDark ? "#374151" : "#e5e7eb"}`,
+        color: isDark ? "#f9fafb" : "#111827",
       },
     };
   }, [theme]);
@@ -119,7 +108,7 @@ export function ComparisonCharts({
   // Remove country from comparison
   const removeCountry = (countryId: string) => {
     const newCountries = countries
-      .filter(c => c.id !== countryId)
+      .filter((c) => c.id !== countryId)
       .map((country, index) => ({
         ...country,
         color: getChartColor(index),
@@ -130,9 +119,16 @@ export function ComparisonCharts({
   // Get chart color for index
   const getChartColor = (index: number) => {
     const colors = [
-      "#8b5cf6", "#06b6d4", "#84cc16", "#f97316", 
-      "#ec4899", "#14b8a6", "#f59e0b", "#ef4444",
-      "#8b5cf6", "#06b6d4"
+      "#8b5cf6",
+      "#06b6d4",
+      "#84cc16",
+      "#f97316",
+      "#ec4899",
+      "#14b8a6",
+      "#f59e0b",
+      "#ef4444",
+      "#8b5cf6",
+      "#06b6d4",
     ];
     return colors[index] || "#8b5cf6";
   };
@@ -140,31 +136,31 @@ export function ComparisonCharts({
   // Chart data processing
   const chartData = useMemo(() => {
     switch (selectedChartType) {
-      case 'population':
-        return countries.map(country => ({
+      case "population":
+        return countries.map((country) => ({
           name: country.name,
           value: country.currentPopulation / 1000000, // Convert to millions
           color: country.color,
         }));
-      
-      case 'gdp':
-        return countries.map(country => ({
+
+      case "gdp":
+        return countries.map((country) => ({
           name: country.name,
           gdpPerCapita: country.currentGdpPerCapita / 1000, // Convert to thousands
           totalGdp: country.currentTotalGdp / 1000000000, // Convert to billions
           color: country.color,
         }));
 
-      case 'growth':
-        return countries.map(country => ({
+      case "growth":
+        return countries.map((country) => ({
           name: country.name,
           populationGrowth: country.populationGrowthRate * 100,
           gdpGrowth: country.adjustedGdpGrowth * 100,
           color: country.color,
         }));
 
-      case 'radar':
-        return countries.map(country => ({
+      case "radar":
+        return countries.map((country) => ({
           name: country.name,
           population: Math.log10(country.currentPopulation / 1000000) * 20, // Scaled for radar
           gdpPerCapita: Math.min(country.currentGdpPerCapita / 1000, 100), // Capped for radar
@@ -174,8 +170,8 @@ export function ComparisonCharts({
           color: country.color,
         }));
 
-      case 'scatter':
-        return countries.map(country => ({
+      case "scatter":
+        return countries.map((country) => ({
           name: country.name,
           x: country.currentGdpPerCapita / 1000,
           y: country.currentPopulation / 1000000,
@@ -194,48 +190,43 @@ export function ComparisonCharts({
 
     const formatValue = (value: number, dataKey: string) => {
       switch (dataKey) {
-        case 'value':
+        case "value":
           return formatPopulation(value * 1000000); // Convert back from millions
-        case 'gdpPerCapita':
+        case "gdpPerCapita":
           return formatCurrency(value * 1000); // Convert back from thousands
-        case 'totalGdp':
+        case "totalGdp":
           return formatCurrency(value * 1000000000); // Convert back from billions
-        case 'populationGrowth':
-        case 'gdpGrowth':
+        case "populationGrowth":
+        case "gdpGrowth":
           return `${value.toFixed(2)}%`;
-        case 'x':
+        case "x":
           return formatCurrency(value * 1000); // GDP per capita
-        case 'y':
+        case "y":
           return formatPopulation(value * 1000000); // Population
-        case 'z':
+        case "z":
           return formatCurrency(value * 1000000000); // Total GDP
-        case 'population':
+        case "population":
           return `${value.toFixed(1)} (log scale)`;
-        case 'popGrowth':
-        case 'gdpGrowth':
+        case "popGrowth":
+        case "gdpGrowth":
           return `${value.toFixed(1)} (scaled)`;
-        case 'density':
+        case "density":
           return `${value.toFixed(1)}/km²`;
         default:
-          return typeof value === 'number' ? value.toFixed(2) : value;
+          return typeof value === "number" ? value.toFixed(2) : value;
       }
     };
 
     return (
-      <div 
-        className="p-3 rounded-lg border shadow-lg backdrop-blur-sm"
-        style={chartTheme.tooltip}
-      >
+      <div className="rounded-lg border p-3 shadow-lg backdrop-blur-sm" style={chartTheme.tooltip}>
         <div className="space-y-2">
           <div className="font-medium">{label}</div>
           {payload.map((entry: any) => (
-            <div key={entry.dataKey} className="flex justify-between items-center gap-4">
+            <div key={entry.dataKey} className="flex items-center justify-between gap-4">
               <span style={{ color: entry.color }} className="text-sm">
                 {entry.name}:
               </span>
-              <span className="font-medium text-sm">
-                {formatValue(entry.value, entry.dataKey)}
-              </span>
+              <span className="text-sm font-medium">{formatValue(entry.value, entry.dataKey)}</span>
             </div>
           ))}
         </div>
@@ -253,7 +244,10 @@ export function ComparisonCharts({
           <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
             <XAxis dataKey="name" tick={{ fontSize: 12, fill: chartTheme.text }} />
-            <YAxis tick={{ fontSize: 12, fill: chartTheme.text }} label={{ value: 'Population (M)', angle: -90 }} />
+            <YAxis
+              tick={{ fontSize: 12, fill: chartTheme.text }}
+              label={{ value: "Population (M)", angle: -90 }}
+            />
             <Tooltip content={<CustomTooltip />} />
             <Bar dataKey="value">
               {chartData.map((entry: any, index: number) => (
@@ -261,7 +255,7 @@ export function ComparisonCharts({
               ))}
             </Bar>
           </BarChart>
-        )
+        ),
       },
       gdp: {
         title: "Economic Comparison",
@@ -270,14 +264,24 @@ export function ComparisonCharts({
           <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
             <XAxis dataKey="name" tick={{ fontSize: 12, fill: chartTheme.text }} />
-            <YAxis yAxisId="left" orientation="left" tick={{ fontSize: 12, fill: chartTheme.text }} label={{ value: 'GDP per Capita ($K)', angle: -90 }} />
-            <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12, fill: chartTheme.text }} label={{ value: 'Total GDP ($B)', angle: 90 }} />
+            <YAxis
+              yAxisId="left"
+              orientation="left"
+              tick={{ fontSize: 12, fill: chartTheme.text }}
+              label={{ value: "GDP per Capita ($K)", angle: -90 }}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              tick={{ fontSize: 12, fill: chartTheme.text }}
+              label={{ value: "Total GDP ($B)", angle: 90 }}
+            />
             <Tooltip content={<CustomTooltip />} />
             <Legend />
             <Bar yAxisId="left" dataKey="gdpPerCapita" name="GDP per Capita" fill="#06b6d4" />
             <Bar yAxisId="right" dataKey="totalGdp" name="Total GDP" fill="#84cc16" />
           </BarChart>
-        )
+        ),
       },
       growth: {
         title: "Growth Rate Comparison",
@@ -286,13 +290,16 @@ export function ComparisonCharts({
           <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
             <XAxis dataKey="name" tick={{ fontSize: 12, fill: chartTheme.text }} />
-            <YAxis tick={{ fontSize: 12, fill: chartTheme.text }} label={{ value: 'Growth Rate (%)', angle: -90 }} />
+            <YAxis
+              tick={{ fontSize: 12, fill: chartTheme.text }}
+              label={{ value: "Growth Rate (%)", angle: -90 }}
+            />
             <Tooltip content={<CustomTooltip />} />
             <Legend />
             <Bar dataKey="populationGrowth" name="Population Growth" fill="#8b5cf6" />
             <Bar dataKey="gdpGrowth" name="GDP Growth" fill="#06b6d4" />
           </BarChart>
-        )
+        ),
       },
       scatter: {
         title: "GDP vs Population",
@@ -300,8 +307,16 @@ export function ComparisonCharts({
         component: (
           <ScatterChart data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
-            <XAxis dataKey="x" tick={{ fontSize: 12, fill: chartTheme.text }} label={{ value: 'GDP per Capita ($K)', position: 'insideBottom', offset: -5 }} />
-            <YAxis dataKey="y" tick={{ fontSize: 12, fill: chartTheme.text }} label={{ value: 'Population (M)', angle: -90, position: 'insideLeft' }} />
+            <XAxis
+              dataKey="x"
+              tick={{ fontSize: 12, fill: chartTheme.text }}
+              label={{ value: "GDP per Capita ($K)", position: "insideBottom", offset: -5 }}
+            />
+            <YAxis
+              dataKey="y"
+              tick={{ fontSize: 12, fill: chartTheme.text }}
+              label={{ value: "Population (M)", angle: -90, position: "insideLeft" }}
+            />
             <Tooltip content={<CustomTooltip />} />
             <Scatter dataKey="z" fill="#8b5cf6">
               {chartData.map((entry: any, index: number) => (
@@ -309,7 +324,7 @@ export function ComparisonCharts({
               ))}
             </Scatter>
           </ScatterChart>
-        )
+        ),
       },
       radar: {
         title: "Multi-Metric Radar",
@@ -356,7 +371,7 @@ export function ComparisonCharts({
               fillOpacity={0.1}
             />
           </RadarChart>
-        )
+        ),
       },
     };
 
@@ -370,12 +385,12 @@ export function ComparisonCharts({
       <Card>
         <CardHeader>
           <div className="animate-pulse space-y-2">
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/3"></div>
-            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+            <div className="h-6 w-1/3 rounded bg-gray-200 dark:bg-gray-700"></div>
+            <div className="h-4 w-1/2 rounded bg-gray-200 dark:bg-gray-700"></div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+          <div className="h-96 animate-pulse rounded bg-gray-200 dark:bg-gray-700"></div>
         </CardContent>
       </Card>
     );
@@ -384,10 +399,10 @@ export function ComparisonCharts({
   return (
     <Card className="w-full">
       <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              <Layers className="h-5 w-5 text-primary" />
+              <Layers className="text-primary h-5 w-5" />
               {currentConfig.title}
             </CardTitle>
             <CardDescription>{currentConfig.description}</CardDescription>
@@ -399,7 +414,7 @@ export function ComparisonCharts({
           {/* Country Selection */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium">Countries:</span>
-            
+
             {countries.map((country) => (
               <Badge
                 key={country.id}
@@ -407,15 +422,12 @@ export function ComparisonCharts({
                 className="flex items-center gap-1"
                 style={{ backgroundColor: `${country.color}20`, borderColor: country.color }}
               >
-                <div 
-                  className="w-2 h-2 rounded-full" 
-                  style={{ backgroundColor: country.color }}
-                />
+                <div className="h-2 w-2 rounded-full" style={{ backgroundColor: country.color }} />
                 {country.name}
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-4 w-4 p-0 ml-1"
+                  className="ml-1 h-4 w-4 p-0"
                   onClick={() => removeCountry(country.id)}
                 >
                   <Minus className="h-3 w-3" />
@@ -427,7 +439,10 @@ export function ComparisonCharts({
           {/* Chart Type Selection */}
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">Chart Type:</span>
-            <Select value={selectedChartType} onValueChange={(value) => setSelectedChartType(value as ComparisonChartType)}>
+            <Select
+              value={selectedChartType}
+              onValueChange={(value) => setSelectedChartType(value as ComparisonChartType)}
+            >
               <SelectTrigger className="w-48">
                 <SelectValue />
               </SelectTrigger>
@@ -470,9 +485,9 @@ export function ComparisonCharts({
 
       <CardContent>
         {countries.length === 0 ? (
-          <div className="h-96 flex items-center justify-center text-muted-foreground">
+          <div className="text-muted-foreground flex h-96 items-center justify-center">
             <div className="text-center">
-              <Layers className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <Layers className="mx-auto mb-4 h-12 w-12 opacity-50" />
               <p className="text-lg font-medium">No countries selected</p>
               <p className="text-sm">Add countries to start comparing metrics</p>
             </div>
@@ -487,28 +502,30 @@ export function ComparisonCharts({
 
         {/* Summary Statistics */}
         {countries.length > 0 && (
-          <div className="mt-6 pt-4 border-t">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+          <div className="mt-6 border-t pt-4">
+            <div className="grid grid-cols-2 gap-4 text-center sm:grid-cols-4">
               <div>
-                <p className="text-sm text-muted-foreground">Countries</p>
+                <p className="text-muted-foreground text-sm">Countries</p>
                 <p className="text-lg font-semibold">{countries.length}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Population</p>
+                <p className="text-muted-foreground text-sm">Total Population</p>
                 <p className="text-lg font-semibold">
                   {formatPopulation(countries.reduce((sum, c) => sum + c.currentPopulation, 0))}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total GDP</p>
+                <p className="text-muted-foreground text-sm">Total GDP</p>
                 <p className="text-lg font-semibold">
                   {formatCurrency(countries.reduce((sum, c) => sum + c.currentTotalGdp, 0))}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Avg GDP/Capita</p>
+                <p className="text-muted-foreground text-sm">Avg GDP/Capita</p>
                 <p className="text-lg font-semibold">
-                  {formatCurrency(countries.reduce((sum, c) => sum + c.currentGdpPerCapita, 0) / countries.length)}
+                  {formatCurrency(
+                    countries.reduce((sum, c) => sum + c.currentGdpPerCapita, 0) / countries.length
+                  )}
                 </p>
               </div>
             </div>

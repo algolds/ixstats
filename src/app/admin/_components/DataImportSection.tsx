@@ -17,42 +17,42 @@ export function DataImportSection({
   isUploading,
   isAnalyzing,
   analyzeError,
-  importError
+  importError,
 }: DataImportSectionProps) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-200 dark:border-gray-700">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-        <Database className="h-5 w-5 mr-2" />
+    <div className="mb-8 rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+      <h2 className="mb-4 flex items-center text-lg font-semibold text-gray-900 dark:text-white">
+        <Database className="mr-2 h-5 w-5" />
         Country Data Import
       </h2>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div>
-          <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-3">
+          <h3 className="text-md mb-3 font-medium text-gray-700 dark:text-gray-300">
             Import Roster Data with Preview
           </h3>
-          <FileUpload 
-            onFileSelect={onFileSelect} 
+          <FileUpload
+            onFileSelect={onFileSelect}
             isUploading={isUploading}
-            isAnalyzing={isAnalyzing} 
+            isAnalyzing={isAnalyzing}
           />
-          
+
           {/* Import Status Messages */}
           {analyzeError && (
-            <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+            <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
               <div className="flex">
-                <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+                <AlertCircle className="mr-2 h-5 w-5 text-red-400" />
                 <p className="text-sm text-red-800 dark:text-red-200">
                   Error analyzing file: {analyzeError}
                 </p>
               </div>
             </div>
           )}
-          
+
           {importError && (
-            <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+            <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
               <div className="flex">
-                <AlertCircle className="h-5 w-5 text-red-400 mr-2" />
+                <AlertCircle className="mr-2 h-5 w-5 text-red-400" />
                 <p className="text-sm text-red-800 dark:text-red-200">
                   Error importing file: {importError}
                 </p>
@@ -62,11 +62,11 @@ export function DataImportSection({
         </div>
 
         <div>
-          <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-3">
+          <h3 className="text-md mb-3 font-medium text-gray-700 dark:text-gray-300">
             Import Guidelines
           </h3>
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-            <ul className="text-sm text-gray-600 dark:text-gray-300 space-y-2">
+          <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
+            <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
               <li>• Supports Excel (.xlsx, .xls) formats only</li>
               <li>• Upload shows a preview of changes before importing</li>
               <li>• You can choose to update existing countries or skip them</li>

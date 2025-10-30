@@ -3,8 +3,8 @@
  * Handles real-time database connections, WebSocket integration, and data streaming
  */
 
-import { IxTime } from '~/lib/ixtime';
-import type { DataNotificationGenerators } from '../components/GlobalNotificationSystem';
+import { IxTime } from "~/lib/ixtime";
+import type { DataNotificationGenerators } from "../components/GlobalNotificationSystem";
 
 interface DatabaseConnectionConfig {
   endpoint: string;
@@ -19,13 +19,13 @@ interface DataStream {
   id: string;
   countryId: string;
   lastUpdate: number;
-  status: 'active' | 'paused' | 'error' | 'disconnected';
+  status: "active" | "paused" | "error" | "disconnected";
   metrics: string[];
   listeners: Set<(data: any) => void>;
 }
 
 interface DatabaseEvent {
-  type: 'update' | 'insert' | 'delete' | 'bulk_update';
+  type: "update" | "insert" | "delete" | "bulk_update";
   table: string;
   countryId?: string;
   data: any;
@@ -44,7 +44,7 @@ class DatabaseIntegrationService {
 
   constructor(config: Partial<DatabaseConnectionConfig> = {}) {
     this.config = {
-      endpoint: process.env.NEXT_PUBLIC_WS_ENDPOINT || '/api/ws',
+      endpoint: process.env.NEXT_PUBLIC_WS_ENDPOINT || "/api/ws",
       pollInterval: 30000,
       enableWebSocket: true,
       retryAttempts: 5,
@@ -52,7 +52,7 @@ class DatabaseIntegrationService {
       ...config,
     };
 
-    if (typeof window !== 'undefined' && this.config.enableWebSocket) {
+    if (typeof window !== "undefined" && this.config.enableWebSocket) {
       this.initializeWebSocket();
     }
   }
@@ -62,17 +62,17 @@ class DatabaseIntegrationService {
    */
   private initializeWebSocket() {
     try {
-      const wsUrl = this.config.endpoint.replace('http', 'ws');
+      const wsUrl = this.config.endpoint.replace("http", "ws");
       this.websocket = new WebSocket(wsUrl);
 
       this.websocket.onopen = () => {
         this.isConnected = true;
         this.processEventQueue();
-        
+
         // Subscribe to all active streams
         this.streams.forEach((stream, streamId) => {
           this.sendWebSocketMessage({
-            type: 'subscribe',
+            type: "subscribe",
             streamId,
             countryId: stream.countryId,
             metrics: stream.metrics,
@@ -85,7 +85,7 @@ class DatabaseIntegrationService {
           const data = JSON.parse(event.data);
           this.handleWebSocketMessage(data);
         } catch (error) {
-          console.error('[DatabaseIntegration] Failed to parse WebSocket message:', error);
+          console.error("[DatabaseIntegration] Failed to parse WebSocket message:", error);
         }
       };
 
@@ -95,12 +95,11 @@ class DatabaseIntegrationService {
       };
 
       this.websocket.onerror = (error) => {
-        console.error('[DatabaseIntegration] WebSocket error:', error);
+        console.error("[DatabaseIntegration] WebSocket error:", error);
         this.isConnected = false;
       };
-
     } catch (error) {
-      console.error('[DatabaseIntegration] Failed to initialize WebSocket:', error);
+      console.error("[DatabaseIntegration] Failed to initialize WebSocket:", error);
       this.fallbackToPolling();
     }
   }
@@ -110,28 +109,28 @@ class DatabaseIntegrationService {
    */
   private handleWebSocketMessage(message: any) {
     switch (message.type) {
-      case 'country_update':
+      case "country_update":
         this.handleCountryUpdate(message.data);
         break;
-      
-      case 'bulk_update':
+
+      case "bulk_update":
         this.handleBulkUpdate(message.data);
         break;
-      
-      case 'ixtime_change':
+
+      case "ixtime_change":
         this.handleIxTimeChange(message.data);
         break;
-      
-      case 'system_event':
+
+      case "system_event":
         this.handleSystemEvent(message.data);
         break;
-      
-      case 'ping':
-        this.sendWebSocketMessage({ type: 'pong' });
+
+      case "ping":
+        this.sendWebSocketMessage({ type: "pong" });
         break;
-      
+
       default:
-        console.log('[DatabaseIntegration] Unknown message type:', message.type);
+        console.log("[DatabaseIntegration] Unknown message type:", message.type);
     }
   }
 
@@ -144,8 +143,8 @@ class DatabaseIntegrationService {
     } else {
       // Queue message for later if not connected
       this.eventQueue.push({
-        type: 'update',
-        table: 'websocket_message',
+        type: "update",
+        table: "websocket_message",
         data: message,
         timestamp: Date.now(),
         ixTime: IxTime.getCurrentIxTime(),
@@ -158,17 +157,17 @@ class DatabaseIntegrationService {
    */
   private handleCountryUpdate(data: any) {
     const { countryId, changes, newData, timestamp } = data;
-    
+
     const stream = this.streams.get(countryId);
     if (stream) {
       stream.lastUpdate = timestamp;
-      stream.status = 'active';
-      
+      stream.status = "active";
+
       // Notify all listeners
-      stream.listeners.forEach(listener => {
+      stream.listeners.forEach((listener) => {
         try {
           listener({
-            type: 'country_update',
+            type: "country_update",
             countryId,
             changes,
             data: newData,
@@ -176,7 +175,7 @@ class DatabaseIntegrationService {
             ixTime: data.ixTime || IxTime.getCurrentIxTime(),
           });
         } catch (error) {
-          console.error('[DatabaseIntegration] Listener error:', error);
+          console.error("[DatabaseIntegration] Listener error:", error);
         }
       });
     }
@@ -187,16 +186,16 @@ class DatabaseIntegrationService {
    */
   private handleBulkUpdate(data: any) {
     const { updatedCountries, timestamp, summary } = data;
-    
+
     console.log(`[DatabaseIntegration] Bulk update: ${updatedCountries.length} countries updated`);
-    
+
     // Notify relevant streams
     updatedCountries.forEach((countryData: any) => {
       const stream = this.streams.get(countryData.id);
       if (stream) {
-        stream.listeners.forEach(listener => {
+        stream.listeners.forEach((listener) => {
           listener({
-            type: 'bulk_update',
+            type: "bulk_update",
             countryId: countryData.id,
             data: countryData,
             timestamp,
@@ -212,14 +211,16 @@ class DatabaseIntegrationService {
    */
   private handleIxTimeChange(data: any) {
     const { newIxTime, multiplier, isPaused } = data;
-    
-    console.log(`[DatabaseIntegration] IxTime changed: ${new Date(newIxTime).toISOString()}, multiplier: ${multiplier}`);
-    
+
+    console.log(
+      `[DatabaseIntegration] IxTime changed: ${new Date(newIxTime).toISOString()}, multiplier: ${multiplier}`
+    );
+
     // Notify all streams about time changes
-    this.streams.forEach(stream => {
-      stream.listeners.forEach(listener => {
+    this.streams.forEach((stream) => {
+      stream.listeners.forEach((listener) => {
         listener({
-          type: 'ixtime_change',
+          type: "ixtime_change",
           data: { newIxTime, multiplier, isPaused },
           timestamp: Date.now(),
           ixTime: newIxTime,
@@ -233,14 +234,14 @@ class DatabaseIntegrationService {
    */
   private handleSystemEvent(data: any) {
     const { eventType, message, severity } = data;
-    
+
     console.log(`[DatabaseIntegration] System event: ${eventType} - ${message}`);
-    
+
     // Broadcast to all streams
-    this.streams.forEach(stream => {
-      stream.listeners.forEach(listener => {
+    this.streams.forEach((stream) => {
+      stream.listeners.forEach((listener) => {
         listener({
-          type: 'system_event',
+          type: "system_event",
           eventType,
           message,
           severity,
@@ -260,9 +261,9 @@ class DatabaseIntegrationService {
 
     // Exponential backoff
     const delay = Math.min(1000 * Math.pow(2, this.config.retryAttempts), 30000);
-    
+
     this.reconnectTimeout = setTimeout(() => {
-      console.log('[DatabaseIntegration] Attempting to reconnect...');
+      console.log("[DatabaseIntegration] Attempting to reconnect...");
       this.initializeWebSocket();
     }, delay);
   }
@@ -275,7 +276,7 @@ class DatabaseIntegrationService {
       const event = this.eventQueue.shift();
       if (event) {
         // Reprocess queued events
-        if (event.table === 'websocket_message') {
+        if (event.table === "websocket_message") {
           this.sendWebSocketMessage(event.data);
         }
       }
@@ -286,16 +287,16 @@ class DatabaseIntegrationService {
    * Fallback to polling when WebSocket is not available
    */
   private fallbackToPolling() {
-    console.log('[DatabaseIntegration] Falling back to polling mode');
-    
+    console.log("[DatabaseIntegration] Falling back to polling mode");
+
     setInterval(() => {
       this.streams.forEach(async (stream, streamId) => {
-        if (stream.status === 'active') {
+        if (stream.status === "active") {
           try {
             await this.pollCountryData(stream.countryId, stream);
           } catch (error) {
             console.error(`[DatabaseIntegration] Polling error for ${stream.countryId}:`, error);
-            stream.status = 'error';
+            stream.status = "error";
           }
         }
       });
@@ -306,25 +307,28 @@ class DatabaseIntegrationService {
    * Poll country data via REST API
    */
   private async pollCountryData(countryId: string, stream: DataStream) {
-    const response = await fetch(`/api/countries/${countryId}?timestamp=${IxTime.getCurrentIxTime()}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(this.config.apiKey && { 'Authorization': `Bearer ${this.config.apiKey}` }),
-      },
-    });
+    const response = await fetch(
+      `/api/countries/${countryId}?timestamp=${IxTime.getCurrentIxTime()}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(this.config.apiKey && { Authorization: `Bearer ${this.config.apiKey}` }),
+        },
+      }
+    );
 
     if (response.ok) {
       const data = await response.json();
-      
+
       // Compare with last known data to detect changes
       const changes = this.detectChanges(data, stream);
-      
+
       if (changes.length > 0) {
         stream.lastUpdate = Date.now();
-        stream.listeners.forEach(listener => {
+        stream.listeners.forEach((listener) => {
           listener({
-            type: 'country_update',
+            type: "country_update",
             countryId,
             changes,
             data,
@@ -348,14 +352,14 @@ class DatabaseIntegrationService {
   /**
    * Create a new data stream for a country
    */
-  public createStream(countryId: string, metrics: string[] = ['*']): string {
+  public createStream(countryId: string, metrics: string[] = ["*"]): string {
     const streamId = `stream-${countryId}-${Date.now()}`;
-    
+
     const stream: DataStream = {
       id: streamId,
       countryId,
       lastUpdate: 0,
-      status: 'active',
+      status: "active",
       metrics,
       listeners: new Set(),
     };
@@ -365,7 +369,7 @@ class DatabaseIntegrationService {
     // Subscribe via WebSocket if connected
     if (this.isConnected && this.websocket) {
       this.sendWebSocketMessage({
-        type: 'subscribe',
+        type: "subscribe",
         streamId,
         countryId,
         metrics,
@@ -408,7 +412,7 @@ class DatabaseIntegrationService {
       // Unsubscribe via WebSocket
       if (this.isConnected && this.websocket) {
         this.sendWebSocketMessage({
-          type: 'unsubscribe',
+          type: "unsubscribe",
           streamId,
         });
       }
@@ -428,7 +432,7 @@ class DatabaseIntegrationService {
       activeStreams: this.streams.size,
       queuedEvents: this.eventQueue.length,
       websocketState: this.websocket?.readyState,
-      lastUpdate: Math.max(...Array.from(this.streams.values()).map(s => s.lastUpdate)),
+      lastUpdate: Math.max(...Array.from(this.streams.values()).map((s) => s.lastUpdate)),
     };
   }
 
@@ -436,10 +440,10 @@ class DatabaseIntegrationService {
    * Force refresh all streams
    */
   public async refreshAllStreams() {
-    const promises = Array.from(this.streams.values()).map(stream => 
+    const promises = Array.from(this.streams.values()).map((stream) =>
       this.pollCountryData(stream.countryId, stream)
     );
-    
+
     await Promise.allSettled(promises);
   }
 
@@ -450,11 +454,11 @@ class DatabaseIntegrationService {
     if (this.websocket) {
       this.websocket.close();
     }
-    
+
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
     }
-    
+
     this.streams.clear();
     this.eventQueue.length = 0;
   }
@@ -476,9 +480,9 @@ export function getDatabaseIntegrationService(): DatabaseIntegrationService {
 /**
  * Hook for easy React integration
  */
-export function useDatabaseIntegration(countryId: string, metrics: string[] = ['*']) {
+export function useDatabaseIntegration(countryId: string, metrics: string[] = ["*"]) {
   const service = getDatabaseIntegrationService();
-  
+
   return {
     service,
     createStream: () => service.createStream(countryId, metrics),

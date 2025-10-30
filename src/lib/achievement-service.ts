@@ -10,12 +10,12 @@
  *   await achievementService.checkAndUnlock(userId, countryId, db);
  */
 
-import { type PrismaClient } from '@prisma/client';
+import { type PrismaClient } from "@prisma/client";
 import {
   checkAchievements,
   getAchievementById,
   type ExtendedAchievementData,
-} from './achievement-definitions';
+} from "./achievement-definitions";
 
 /**
  * Achievement Service
@@ -29,11 +29,7 @@ export class AchievementService {
    * @param db Prisma database client
    * @returns Array of newly unlocked achievement IDs
    */
-  async checkAndUnlock(
-    userId: string,
-    countryId: string,
-    db: PrismaClient
-  ): Promise<string[]> {
+  async checkAndUnlock(userId: string, countryId: string, db: PrismaClient): Promise<string[]> {
     try {
       // Fetch country data
       const country = await db.country.findUnique({
@@ -58,11 +54,8 @@ export class AchievementService {
         // Count embassies (both hosted and owned)
         db.embassy.count({
           where: {
-            OR: [
-              { hostCountryId: countryId },
-              { guestCountryId: countryId },
-            ],
-            status: 'active',
+            OR: [{ hostCountryId: countryId }, { guestCountryId: countryId }],
+            status: "active",
           },
         }),
 
@@ -77,13 +70,15 @@ export class AchievementService {
         }),
 
         // Count ThinkPages by clerkUserId (via account relation)
-        db.thinkpagesPost.count({
-          where: {
-            account: {
-              clerkUserId: userId,
+        db.thinkpagesPost
+          .count({
+            where: {
+              account: {
+                clerkUserId: userId,
+              },
             },
-          },
-        }).catch(() => 0), // Gracefully handle if ThinkPages account doesn't exist
+          })
+          .catch(() => 0), // Gracefully handle if ThinkPages account doesn't exist
 
         // Count followers
         db.countryFollow.count({
@@ -132,9 +127,7 @@ export class AchievementService {
       );
 
       const militarySpendingPercent =
-        country.currentTotalGdp > 0
-          ? (totalMilitaryBudget / country.currentTotalGdp) * 100
-          : 0;
+        country.currentTotalGdp > 0 ? (totalMilitaryBudget / country.currentTotalGdp) * 100 : 0;
 
       // Get diplomatic counts (simplified - these models may not exist yet)
       const treatyCount = 0; // TODO: Implement treaty counting when model is available
@@ -176,7 +169,7 @@ export class AchievementService {
       };
 
       // Get already unlocked achievement IDs
-      const alreadyUnlocked = new Set<string>(existingAchievements.map(a => a.achievementId));
+      const alreadyUnlocked = new Set<string>(existingAchievements.map((a) => a.achievementId));
 
       // Check which achievements should be unlocked
       const toUnlock = checkAchievements(achievementData, alreadyUnlocked);
@@ -212,7 +205,7 @@ export class AchievementService {
           console.log(`[Achievement Service] Unlocked: ${definition.title} for user ${userId}`);
         } catch (error) {
           // Silently handle duplicates (user may have unlocked via manual trigger)
-          if (error instanceof Error && error.message.includes('Unique constraint')) {
+          if (error instanceof Error && error.message.includes("Unique constraint")) {
             continue;
           }
           console.error(`[Achievement Service] Failed to unlock ${achievementId}:`, error);
@@ -221,7 +214,7 @@ export class AchievementService {
 
       return unlocked;
     } catch (error) {
-      console.error('[Achievement Service] Error in checkAndUnlock:', error);
+      console.error("[Achievement Service] Error in checkAndUnlock:", error);
       return [];
     }
   }
@@ -239,7 +232,7 @@ export class AchievementService {
     userId: string,
     countryId: string,
     db: PrismaClient,
-    category: 'Economic' | 'Military' | 'Diplomatic' | 'Government' | 'Social' | 'General'
+    category: "Economic" | "Military" | "Diplomatic" | "Government" | "Social" | "General"
   ): Promise<string[]> {
     // For now, just run full check
     // Could be optimized to only check specific category
@@ -254,11 +247,7 @@ export class AchievementService {
    * @param db Prisma database client
    * @returns True if unlocked successfully
    */
-  async unlockSpecific(
-    userId: string,
-    achievementId: string,
-    db: PrismaClient
-  ): Promise<boolean> {
+  async unlockSpecific(userId: string, achievementId: string, db: PrismaClient): Promise<boolean> {
     try {
       const definition = getAchievementById(achievementId);
       if (!definition) {
@@ -297,7 +286,9 @@ export class AchievementService {
         },
       });
 
-      console.log(`[Achievement Service] Manually unlocked: ${definition.title} for user ${userId}`);
+      console.log(
+        `[Achievement Service] Manually unlocked: ${definition.title} for user ${userId}`
+      );
       return true;
     } catch (error) {
       console.error(`[Achievement Service] Failed to manually unlock ${achievementId}:`, error);
@@ -322,15 +313,21 @@ export class AchievementService {
         return sum + (metadata.points || 10);
       }, 0);
 
-      const byCategory = unlocked.reduce((acc, achievement) => {
-        acc[achievement.category] = (acc[achievement.category] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
+      const byCategory = unlocked.reduce(
+        (acc, achievement) => {
+          acc[achievement.category] = (acc[achievement.category] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
 
-      const byRarity = unlocked.reduce((acc, achievement) => {
-        acc[achievement.rarity] = (acc[achievement.rarity] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
+      const byRarity = unlocked.reduce(
+        (acc, achievement) => {
+          acc[achievement.rarity] = (acc[achievement.rarity] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
 
       return {
         totalUnlocked: unlocked.length,
@@ -340,7 +337,7 @@ export class AchievementService {
         recentUnlocks: unlocked
           .sort((a, b) => b.unlockedAt.getTime() - a.unlockedAt.getTime())
           .slice(0, 5)
-          .map(a => ({
+          .map((a) => ({
             id: a.achievementId,
             title: a.title,
             category: a.category,
@@ -349,7 +346,7 @@ export class AchievementService {
           })),
       };
     } catch (error) {
-      console.error('[Achievement Service] Error getting progress:', error);
+      console.error("[Achievement Service] Error getting progress:", error);
       return {
         totalUnlocked: 0,
         totalPoints: 0,

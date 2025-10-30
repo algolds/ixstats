@@ -48,13 +48,9 @@ export function ActivityFeedCard({
   countries,
   userCountry,
   isLoading = false,
-  className
+  className,
 }: ActivityFeedCardProps) {
   return (
-    <GlassActivityMarquee
-      countries={countries}
-      userCountry={userCountry}
-      isLoading={isLoading}
-    />
+    <GlassActivityMarquee countries={countries} userCountry={userCountry} isLoading={isLoading} />
   );
 }

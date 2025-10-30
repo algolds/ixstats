@@ -2,28 +2,28 @@
  * Tests for useBuilderActions Hook
  */
 
-import { renderHook, act } from '@testing-library/react';
-import { useBuilderActions } from '../../hooks/useBuilderActions';
-import type { BuilderState } from '../../hooks/useBuilderState';
+import { renderHook, act } from "@testing-library/react";
+import { useBuilderActions } from "../../hooks/useBuilderActions";
+import type { BuilderState } from "../../hooks/useBuilderState";
 
-describe('useBuilderActions', () => {
+describe("useBuilderActions", () => {
   const createMockState = (overrides?: Partial<BuilderState>): BuilderState => ({
-    step: 'foundation',
+    step: "foundation",
     selectedCountry: null,
     economicInputs: null,
     governmentComponents: [],
     taxSystemData: null,
     governmentStructure: null,
     completedSteps: [],
-    activeCoreTab: 'identity',
-    activeGovernmentTab: 'components',
-    activeEconomicsTab: 'economy',
+    activeCoreTab: "identity",
+    activeGovernmentTab: "components",
+    activeEconomicsTab: "economy",
     showAdvancedMode: false,
     ...overrides,
   });
 
-  describe('Initialization', () => {
-    it('provides all required action handlers', () => {
+  describe("Initialization", () => {
+    it("provides all required action handlers", () => {
       const mockSetState = jest.fn();
       const { result } = renderHook(() =>
         useBuilderActions({
@@ -32,14 +32,14 @@ describe('useBuilderActions', () => {
         })
       );
 
-      expect(typeof result.current.handleContinue).toBe('function');
-      expect(typeof result.current.handlePreviousStep).toBe('function');
-      expect(typeof result.current.handleStepClick).toBe('function');
-      expect(typeof result.current.handleTabChange).toBe('function');
-      expect(typeof result.current.canNavigateToStep).toBe('function');
+      expect(typeof result.current.handleContinue).toBe("function");
+      expect(typeof result.current.handlePreviousStep).toBe("function");
+      expect(typeof result.current.handleStepClick).toBe("function");
+      expect(typeof result.current.handleTabChange).toBe("function");
+      expect(typeof result.current.canNavigateToStep).toBe("function");
     });
 
-    it('calculates initial progress percentage', () => {
+    it("calculates initial progress percentage", () => {
       const mockSetState = jest.fn();
       const { result } = renderHook(() =>
         useBuilderActions({
@@ -48,18 +48,18 @@ describe('useBuilderActions', () => {
         })
       );
 
-      expect(typeof result.current.progressPercentage).toBe('number');
+      expect(typeof result.current.progressPercentage).toBe("number");
       expect(result.current.progressPercentage).toBeGreaterThanOrEqual(0);
       expect(result.current.progressPercentage).toBeLessThanOrEqual(100);
     });
   });
 
-  describe('handleContinue', () => {
-    it('advances from foundation to core when country selected', () => {
+  describe("handleContinue", () => {
+    it("advances from foundation to core when country selected", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
-        step: 'foundation',
-        selectedCountry: { name: 'Test Country' } as any,
+        step: "foundation",
+        selectedCountry: { name: "Test Country" } as any,
       });
 
       const { result } = renderHook(() =>
@@ -76,10 +76,10 @@ describe('useBuilderActions', () => {
       expect(mockSetState).toHaveBeenCalled();
     });
 
-    it('does not advance from foundation without country', () => {
+    it("does not advance from foundation without country", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
-        step: 'foundation',
+        step: "foundation",
         selectedCountry: null,
       });
 
@@ -99,11 +99,11 @@ describe('useBuilderActions', () => {
       expect(calls.length).toBe(0);
     });
 
-    it('advances core tabs sequentially', () => {
+    it("advances core tabs sequentially", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
-        step: 'core',
-        activeCoreTab: 'identity',
+        step: "core",
+        activeCoreTab: "identity",
       });
 
       const { result } = renderHook(() =>
@@ -120,11 +120,11 @@ describe('useBuilderActions', () => {
       expect(mockSetState).toHaveBeenCalled();
     });
 
-    it('advances from core to government after last tab', () => {
+    it("advances from core to government after last tab", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
-        step: 'core',
-        activeCoreTab: 'indicators',
+        step: "core",
+        activeCoreTab: "indicators",
       });
 
       const { result } = renderHook(() =>
@@ -141,11 +141,11 @@ describe('useBuilderActions', () => {
       expect(mockSetState).toHaveBeenCalled();
     });
 
-    it('advances government tabs sequentially', () => {
+    it("advances government tabs sequentially", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
-        step: 'government',
-        activeGovernmentTab: 'components',
+        step: "government",
+        activeGovernmentTab: "components",
       });
 
       const { result } = renderHook(() =>
@@ -162,10 +162,10 @@ describe('useBuilderActions', () => {
       expect(mockSetState).toHaveBeenCalled();
     });
 
-    it('advances from economics to preview', () => {
+    it("advances from economics to preview", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
-        step: 'economics',
+        step: "economics",
       });
 
       const { result } = renderHook(() =>
@@ -183,12 +183,12 @@ describe('useBuilderActions', () => {
     });
   });
 
-  describe('handlePreviousStep', () => {
-    it('navigates back to previous step', () => {
+  describe("handlePreviousStep", () => {
+    it("navigates back to previous step", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
-        step: 'core',
-        completedSteps: ['foundation'],
+        step: "core",
+        completedSteps: ["foundation"],
       });
 
       const { result } = renderHook(() =>
@@ -205,10 +205,10 @@ describe('useBuilderActions', () => {
       expect(mockSetState).toHaveBeenCalled();
     });
 
-    it('does not go back from foundation step', () => {
+    it("does not go back from foundation step", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
-        step: 'foundation',
+        step: "foundation",
       });
 
       const { result } = renderHook(() =>
@@ -227,12 +227,12 @@ describe('useBuilderActions', () => {
     });
   });
 
-  describe('handleStepClick', () => {
-    it('navigates to clicked step if accessible', () => {
+  describe("handleStepClick", () => {
+    it("navigates to clicked step if accessible", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
-        step: 'economics',
-        completedSteps: ['foundation', 'core', 'government'],
+        step: "economics",
+        completedSteps: ["foundation", "core", "government"],
       });
 
       const { result } = renderHook(() =>
@@ -243,16 +243,16 @@ describe('useBuilderActions', () => {
       );
 
       act(() => {
-        result.current.handleStepClick('core');
+        result.current.handleStepClick("core");
       });
 
       expect(mockSetState).toHaveBeenCalled();
     });
 
-    it('does not navigate to inaccessible step', () => {
+    it("does not navigate to inaccessible step", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
-        step: 'foundation',
+        step: "foundation",
         completedSteps: [],
       });
 
@@ -264,21 +264,21 @@ describe('useBuilderActions', () => {
       );
 
       act(() => {
-        result.current.handleStepClick('preview');
+        result.current.handleStepClick("preview");
       });
 
       // Should not allow jumping ahead
-      const accessible = result.current.canNavigateToStep('preview');
+      const accessible = result.current.canNavigateToStep("preview");
       expect(accessible).toBe(false);
     });
   });
 
-  describe('handleTabChange', () => {
-    it('changes core tab', () => {
+  describe("handleTabChange", () => {
+    it("changes core tab", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
-        step: 'core',
-        activeCoreTab: 'identity',
+        step: "core",
+        activeCoreTab: "identity",
       });
 
       const { result } = renderHook(() =>
@@ -289,17 +289,17 @@ describe('useBuilderActions', () => {
       );
 
       act(() => {
-        result.current.handleTabChange('core', 'indicators');
+        result.current.handleTabChange("core", "indicators");
       });
 
       expect(mockSetState).toHaveBeenCalled();
     });
 
-    it('changes government tab', () => {
+    it("changes government tab", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
-        step: 'government',
-        activeGovernmentTab: 'components',
+        step: "government",
+        activeGovernmentTab: "components",
       });
 
       const { result } = renderHook(() =>
@@ -310,17 +310,17 @@ describe('useBuilderActions', () => {
       );
 
       act(() => {
-        result.current.handleTabChange('government', 'structure');
+        result.current.handleTabChange("government", "structure");
       });
 
       expect(mockSetState).toHaveBeenCalled();
     });
 
-    it('changes economics tab', () => {
+    it("changes economics tab", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
-        step: 'economics',
-        activeEconomicsTab: 'economy',
+        step: "economics",
+        activeEconomicsTab: "economy",
       });
 
       const { result } = renderHook(() =>
@@ -331,18 +331,18 @@ describe('useBuilderActions', () => {
       );
 
       act(() => {
-        result.current.handleTabChange('economics', 'sectors');
+        result.current.handleTabChange("economics", "sectors");
       });
 
       expect(mockSetState).toHaveBeenCalled();
     });
   });
 
-  describe('canNavigateToStep', () => {
-    it('allows navigation to current step', () => {
+  describe("canNavigateToStep", () => {
+    it("allows navigation to current step", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
-        step: 'core',
+        step: "core",
       });
 
       const { result } = renderHook(() =>
@@ -352,14 +352,14 @@ describe('useBuilderActions', () => {
         })
       );
 
-      expect(result.current.canNavigateToStep('core')).toBe(true);
+      expect(result.current.canNavigateToStep("core")).toBe(true);
     });
 
-    it('allows navigation to completed steps', () => {
+    it("allows navigation to completed steps", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
-        step: 'government',
-        completedSteps: ['foundation', 'core'],
+        step: "government",
+        completedSteps: ["foundation", "core"],
       });
 
       const { result } = renderHook(() =>
@@ -369,14 +369,14 @@ describe('useBuilderActions', () => {
         })
       );
 
-      expect(result.current.canNavigateToStep('foundation')).toBe(true);
-      expect(result.current.canNavigateToStep('core')).toBe(true);
+      expect(result.current.canNavigateToStep("foundation")).toBe(true);
+      expect(result.current.canNavigateToStep("core")).toBe(true);
     });
 
-    it('prevents navigation to future steps', () => {
+    it("prevents navigation to future steps", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
-        step: 'foundation',
+        step: "foundation",
         completedSteps: [],
       });
 
@@ -387,16 +387,16 @@ describe('useBuilderActions', () => {
         })
       );
 
-      expect(result.current.canNavigateToStep('preview')).toBe(false);
+      expect(result.current.canNavigateToStep("preview")).toBe(false);
     });
   });
 
-  describe('Progress Calculation', () => {
-    it('calculates progress based on completed steps', () => {
+  describe("Progress Calculation", () => {
+    it("calculates progress based on completed steps", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
-        step: 'core',
-        completedSteps: ['foundation'],
+        step: "core",
+        completedSteps: ["foundation"],
       });
 
       const { result } = renderHook(() =>
@@ -410,10 +410,10 @@ describe('useBuilderActions', () => {
       expect(result.current.progressPercentage).toBeLessThan(100);
     });
 
-    it('shows 0% at start', () => {
+    it("shows 0% at start", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
-        step: 'foundation',
+        step: "foundation",
         completedSteps: [],
       });
 
@@ -427,11 +427,11 @@ describe('useBuilderActions', () => {
       expect(result.current.progressPercentage).toBeGreaterThanOrEqual(0);
     });
 
-    it('shows 100% when all steps completed', () => {
+    it("shows 100% when all steps completed", () => {
       const mockSetState = jest.fn();
       const state = createMockState({
-        step: 'preview',
-        completedSteps: ['foundation', 'core', 'government', 'economics', 'preview'],
+        step: "preview",
+        completedSteps: ["foundation", "core", "government", "economics", "preview"],
       });
 
       const { result } = renderHook(() =>

@@ -9,7 +9,7 @@ export default function ApiArticle() {
       icon={Code2}
     >
       <Section title="Structure">
-        <ul className="list-disc pl-6 space-y-2">
+        <ul className="list-disc space-y-2 pl-6">
           <li>Routers live in `src/server/api/routers` (35 total, 546 procedures).</li>
           <li>`src/server/api/trpc.ts` defines context, middleware, and shared helpers.</li>
           <li>Client hooks generated via `src/trpc/react.tsx` for use in React components.</li>
@@ -18,21 +18,27 @@ export default function ApiArticle() {
 
       <Section title="Creating Procedures">
         <InfoBox title="Steps">
-          <ol className="list-decimal pl-6 space-y-1">
+          <ol className="list-decimal space-y-1 pl-6">
             <li>Add your procedure with Zod validation and auth/role guards as needed.</li>
             <li>Register the router in `src/server/api/root.ts`.</li>
-                <li>
-                  Consume using <code>api.&lt;router&gt;.&lt;procedure&gt;</code> hooks.
-                </li>
+            <li>
+              Consume using <code>api.&lt;router&gt;.&lt;procedure&gt;</code> hooks.
+            </li>
             <li>Document changes in `docs/reference/api.md` and relevant help articles.</li>
           </ol>
         </InfoBox>
       </Section>
 
       <WarningBox title="Best Practices">
-        <ul className="list-disc pl-6 space-y-1">
-          <li><ShieldCheck className="inline h-4 w-4" /> Use `protectedProcedure`/role checks for sensitive operations.</li>
-          <li><Terminal className="inline h-4 w-4" /> Add Jest coverage in `src/server/api/routers/__tests__` for complex logic.</li>
+        <ul className="list-disc space-y-1 pl-6">
+          <li>
+            <ShieldCheck className="inline h-4 w-4" /> Use `protectedProcedure`/role checks for
+            sensitive operations.
+          </li>
+          <li>
+            <Terminal className="inline h-4 w-4" /> Add Jest coverage in
+            `src/server/api/routers/__tests__` for complex logic.
+          </li>
           <li>Run `npm run audit:wiring` to ensure new procedures are wired correctly.</li>
         </ul>
       </WarningBox>

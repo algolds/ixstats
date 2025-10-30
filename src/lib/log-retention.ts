@@ -72,23 +72,20 @@ class LogRetentionManager {
         });
       }
 
-      logger.info(
-        LogCategory.SYSTEM,
-        "Log retention policies initialized",
-        { metadata: { policyCount: DEFAULT_POLICIES.length } }
-      );
+      logger.info(LogCategory.SYSTEM, "Log retention policies initialized", {
+        metadata: { policyCount: DEFAULT_POLICIES.length },
+      });
     } catch (error) {
-      logger.error(
-        LogCategory.SYSTEM,
-        "Failed to initialize log retention policies",
-        {
-          error: error instanceof Error ? {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
-          } : undefined,
-        }
-      );
+      logger.error(LogCategory.SYSTEM, "Failed to initialize log retention policies", {
+        error:
+          error instanceof Error
+            ? {
+                name: error.name,
+                message: error.message,
+                stack: error.stack,
+              }
+            : undefined,
+      });
     }
   }
 
@@ -140,16 +137,15 @@ class LogRetentionManager {
           );
         } catch (error) {
           errors++;
-          logger.error(
-            LogCategory.SYSTEM,
-            `Failed to clean up ${policy.logLevel} logs`,
-            {
-              error: error instanceof Error ? {
-                name: error.name,
-                message: error.message,
-              } : undefined,
-            }
-          );
+          logger.error(LogCategory.SYSTEM, `Failed to clean up ${policy.logLevel} logs`, {
+            error:
+              error instanceof Error
+                ? {
+                    name: error.name,
+                    message: error.message,
+                  }
+                : undefined,
+          });
         }
       }
 
@@ -166,17 +162,16 @@ class LogRetentionManager {
 
       return { archived, deleted, errors };
     } catch (error) {
-      logger.error(
-        LogCategory.SYSTEM,
-        "Log cleanup failed",
-        {
-          error: error instanceof Error ? {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
-          } : undefined,
-        }
-      );
+      logger.error(LogCategory.SYSTEM, "Log cleanup failed", {
+        error:
+          error instanceof Error
+            ? {
+                name: error.name,
+                message: error.message,
+                stack: error.stack,
+              }
+            : undefined,
+      });
 
       throw error;
     }
@@ -270,16 +265,15 @@ class LogRetentionManager {
         topCountries,
       };
     } catch (error) {
-      logger.error(
-        LogCategory.SYSTEM,
-        "Failed to generate log summary",
-        {
-          error: error instanceof Error ? {
-            name: error.name,
-            message: error.message,
-          } : undefined,
-        }
-      );
+      logger.error(LogCategory.SYSTEM, "Failed to generate log summary", {
+        error:
+          error instanceof Error
+            ? {
+                name: error.name,
+                message: error.message,
+              }
+            : undefined,
+      });
 
       throw error;
     }

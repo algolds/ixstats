@@ -17,7 +17,7 @@ export const CharacterBlurReveal: React.FC<CharacterBlurRevealProps> = ({
   className,
   delay = 0,
   duration = 0.6,
-  stagger = 0.05
+  stagger = 0.05,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
 

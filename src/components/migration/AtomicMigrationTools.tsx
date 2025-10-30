@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { Progress } from '~/components/ui/progress';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { Separator } from '~/components/ui/separator';
-import { 
+import React, { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Progress } from "~/components/ui/progress";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Separator } from "~/components/ui/separator";
+import {
   ArrowRight,
   CheckCircle,
   AlertTriangle,
@@ -24,23 +24,24 @@ import {
   Shield,
   Copy,
   Save,
-  FileText
-} from 'lucide-react';
-import { motion } from 'framer-motion';
+  FileText,
+} from "lucide-react";
+import { motion } from "framer-motion";
 
-import type { ComponentType } from '~/types/government';
-import { 
-  calculateAtomicTaxEffectiveness, 
-  getAtomicTaxRecommendations 
-} from '~/lib/atomic-tax-integration';
-import { 
-  calculateAtomicEconomicEffectiveness, 
-  getAtomicEconomicRecommendations 
-} from '~/lib/atomic-economic-integration';
-import { 
-  calculateAtomicGovernmentStability 
-} from '~/lib/atomic-intelligence-integration';
-import { ATOMIC_COMPONENTS, ComponentType as AtomicComponentEnum } from '~/components/government/atoms/AtomicGovernmentComponents';
+import type { ComponentType } from "~/types/government";
+import {
+  calculateAtomicTaxEffectiveness,
+  getAtomicTaxRecommendations,
+} from "~/lib/atomic-tax-integration";
+import {
+  calculateAtomicEconomicEffectiveness,
+  getAtomicEconomicRecommendations,
+} from "~/lib/atomic-economic-integration";
+import { calculateAtomicGovernmentStability } from "~/lib/atomic-intelligence-integration";
+import {
+  ATOMIC_COMPONENTS,
+  ComponentType as AtomicComponentEnum,
+} from "~/components/government/atoms/AtomicGovernmentComponents";
 
 interface MigrationScenario {
   id: string;
@@ -48,9 +49,9 @@ interface MigrationScenario {
   description: string;
   fromComponents: ComponentType[];
   toComponents: ComponentType[];
-  category: 'optimization' | 'stability' | 'efficiency' | 'reform';
-  difficulty: 'easy' | 'medium' | 'hard';
-  timeframe: 'immediate' | 'short' | 'medium' | 'long';
+  category: "optimization" | "stability" | "efficiency" | "reform";
+  difficulty: "easy" | "medium" | "hard";
+  timeframe: "immediate" | "short" | "medium" | "long";
   risks: string[];
   benefits: string[];
 }
@@ -74,53 +75,77 @@ interface AtomicMigrationToolsProps {
 // Predefined migration scenarios
 const MIGRATION_SCENARIOS: MigrationScenario[] = [
   {
-    id: 'tech-optimization',
-    name: 'Technocratic Optimization',
-    description: 'Transition to technocratic governance for maximum efficiency',
+    id: "tech-optimization",
+    name: "Technocratic Optimization",
+    description: "Transition to technocratic governance for maximum efficiency",
     fromComponents: [],
-    toComponents: ['TECHNOCRATIC_PROCESS', 'PROFESSIONAL_BUREAUCRACY', 'TECHNOCRATIC_AGENCIES', 'RULE_OF_LAW'] as any,
-    category: 'efficiency',
-    difficulty: 'medium',
-    timeframe: 'medium',
-    risks: ['May reduce democratic legitimacy', 'Public resistance to technocratic rule'],
-    benefits: ['Maximum policy effectiveness', 'Evidence-based decision making', 'High implementation capacity']
+    toComponents: [
+      "TECHNOCRATIC_PROCESS",
+      "PROFESSIONAL_BUREAUCRACY",
+      "TECHNOCRATIC_AGENCIES",
+      "RULE_OF_LAW",
+    ] as any,
+    category: "efficiency",
+    difficulty: "medium",
+    timeframe: "medium",
+    risks: ["May reduce democratic legitimacy", "Public resistance to technocratic rule"],
+    benefits: [
+      "Maximum policy effectiveness",
+      "Evidence-based decision making",
+      "High implementation capacity",
+    ],
   },
   {
-    id: 'democratic-stabilization',
-    name: 'Democratic Stabilization',
-    description: 'Strengthen democratic institutions and legitimacy',
+    id: "democratic-stabilization",
+    name: "Democratic Stabilization",
+    description: "Strengthen democratic institutions and legitimacy",
     fromComponents: [],
-    toComponents: ['DEMOCRATIC_PROCESS', 'ELECTORAL_LEGITIMACY', 'INDEPENDENT_JUDICIARY', 'RULE_OF_LAW'] as any,
-    category: 'stability',
-    difficulty: 'hard',
-    timeframe: 'long',
-    risks: ['Slower decision making', 'Policy implementation challenges'],
-    benefits: ['High legitimacy', 'Sustainable governance', 'Public trust']
+    toComponents: [
+      "DEMOCRATIC_PROCESS",
+      "ELECTORAL_LEGITIMACY",
+      "INDEPENDENT_JUDICIARY",
+      "RULE_OF_LAW",
+    ] as any,
+    category: "stability",
+    difficulty: "hard",
+    timeframe: "long",
+    risks: ["Slower decision making", "Policy implementation challenges"],
+    benefits: ["High legitimacy", "Sustainable governance", "Public trust"],
   },
   {
-    id: 'efficiency-boost',
-    name: 'Administrative Efficiency',
-    description: 'Enhance bureaucratic capacity while maintaining legitimacy',
+    id: "efficiency-boost",
+    name: "Administrative Efficiency",
+    description: "Enhance bureaucratic capacity while maintaining legitimacy",
     fromComponents: [],
-    toComponents: ['PROFESSIONAL_BUREAUCRACY', 'PERFORMANCE_LEGITIMACY', 'TECHNOCRATIC_AGENCIES', 'UNITARY_SYSTEM'] as any,
-    category: 'efficiency',
-    difficulty: 'easy',
-    timeframe: 'short',
-    risks: ['Initial implementation costs'],
-    benefits: ['Improved service delivery', 'Better policy outcomes', 'Enhanced capacity']
+    toComponents: [
+      "PROFESSIONAL_BUREAUCRACY",
+      "PERFORMANCE_LEGITIMACY",
+      "TECHNOCRATIC_AGENCIES",
+      "UNITARY_SYSTEM",
+    ] as any,
+    category: "efficiency",
+    difficulty: "easy",
+    timeframe: "short",
+    risks: ["Initial implementation costs"],
+    benefits: ["Improved service delivery", "Better policy outcomes", "Enhanced capacity"],
   },
   {
-    id: 'stability-focus',
-    name: 'Stability Enhancement',
-    description: 'Prioritize long-term stability and predictability',
+    id: "stability-focus",
+    name: "Stability Enhancement",
+    description: "Prioritize long-term stability and predictability",
     fromComponents: [],
-    toComponents: ['TRADITIONAL_LEGITIMACY', 'RULE_OF_LAW', 'INDEPENDENT_JUDICIARY', 'CONSENSUS_PROCESS'] as any,
-    category: 'stability',
-    difficulty: 'medium',
-    timeframe: 'medium',
-    risks: ['Slower adaptation to change'],
-    benefits: ['High stability', 'Predictable governance', 'Reduced conflict']
-  }
+    toComponents: [
+      "TRADITIONAL_LEGITIMACY",
+      "RULE_OF_LAW",
+      "INDEPENDENT_JUDICIARY",
+      "CONSENSUS_PROCESS",
+    ] as any,
+    category: "stability",
+    difficulty: "medium",
+    timeframe: "medium",
+    risks: ["Slower adaptation to change"],
+    benefits: ["High stability", "Predictable governance", "Reduced conflict"],
+  },
 ];
 
 export function AtomicMigrationTools({
@@ -129,7 +154,7 @@ export function AtomicMigrationTools({
   taxData,
   countryName,
   onMigrationApply,
-  className
+  className,
 }: AtomicMigrationToolsProps) {
   const [selectedScenario, setSelectedScenario] = useState<MigrationScenario | null>(null);
   const [customComponents, setCustomComponents] = useState<ComponentType[]>(currentComponents);
@@ -140,43 +165,47 @@ export function AtomicMigrationTools({
     const tax = calculateAtomicTaxEffectiveness(currentComponents, taxData);
     const economic = calculateAtomicEconomicEffectiveness(currentComponents as any, economicData);
     const stability = calculateAtomicGovernmentStability(currentComponents);
-    
+
     return { tax, economic, stability };
   }, [currentComponents, economicData, taxData]);
 
   // Calculate projected metrics for comparison
   const projectedMetrics = useMemo(() => {
     const componentsToAnalyze = selectedScenario ? selectedScenario.toComponents : customComponents;
-    
+
     const tax = calculateAtomicTaxEffectiveness(componentsToAnalyze, taxData);
     const economic = calculateAtomicEconomicEffectiveness(componentsToAnalyze as any, economicData);
     const stability = calculateAtomicGovernmentStability(componentsToAnalyze);
-    
+
     return { tax, economic, stability };
   }, [selectedScenario, customComponents, economicData, taxData]);
 
   // Generate migration recommendations
   const migrationRecommendations = useMemo(() => {
     const recommendations: string[] = [];
-    
+
     if (currentMetrics.tax.effectivenessScore < 70) {
-      recommendations.push('Consider adding Professional Bureaucracy for improved tax administration');
+      recommendations.push(
+        "Consider adding Professional Bureaucracy for improved tax administration"
+      );
     }
-    
+
     if (currentMetrics.economic.overallScore < 60) {
-      recommendations.push('Technocratic Process could boost economic performance');
+      recommendations.push("Technocratic Process could boost economic performance");
     }
-    
+
     if (currentMetrics.stability.overallStability < 60) {
-      recommendations.push('Rule of Law and Independent Judiciary would enhance stability');
+      recommendations.push("Rule of Law and Independent Judiciary would enhance stability");
     }
-    
-    if (currentComponents.includes('PARTISAN_INSTITUTIONS' as any)) {
-      recommendations.push('Consider replacing Partisan Institutions with Professional Bureaucracy');
+
+    if (currentComponents.includes("PARTISAN_INSTITUTIONS" as any)) {
+      recommendations.push(
+        "Consider replacing Partisan Institutions with Professional Bureaucracy"
+      );
     }
-    
-    if (currentComponents.includes('OLIGARCHIC_PROCESS' as any)) {
-      recommendations.push('Transition from Oligarchic to Democratic or Technocratic Process');
+
+    if (currentComponents.includes("OLIGARCHIC_PROCESS" as any)) {
+      recommendations.push("Transition from Oligarchic to Democratic or Technocratic Process");
     }
 
     return recommendations;
@@ -184,33 +213,52 @@ export function AtomicMigrationTools({
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'easy': return 'text-green-600 bg-green-50';
-      case 'medium': return 'text-yellow-600 bg-yellow-50';
-      case 'hard': return 'text-red-600 bg-red-50';
-      default: return 'text-gray-600 bg-gray-50';
+      case "easy":
+        return "text-green-600 bg-green-50";
+      case "medium":
+        return "text-yellow-600 bg-yellow-50";
+      case "hard":
+        return "text-red-600 bg-red-50";
+      default:
+        return "text-gray-600 bg-gray-50";
     }
   };
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case 'optimization': return <Target className="h-4 w-4" />;
-      case 'stability': return <Shield className="h-4 w-4" />;
-      case 'efficiency': return <Zap className="h-4 w-4" />;
-      case 'reform': return <RefreshCw className="h-4 w-4" />;
-      default: return <Settings className="h-4 w-4" />;
+      case "optimization":
+        return <Target className="h-4 w-4" />;
+      case "stability":
+        return <Shield className="h-4 w-4" />;
+      case "efficiency":
+        return <Zap className="h-4 w-4" />;
+      case "reform":
+        return <RefreshCw className="h-4 w-4" />;
+      default:
+        return <Settings className="h-4 w-4" />;
     }
   };
 
   const formatComponentName = (component: ComponentType) => {
-    return component.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+    return component
+      .replace(/_/g, " ")
+      .toLowerCase()
+      .replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
   const getMetricDifference = (current: number, projected: number) => {
     const diff = projected - current;
     return {
       value: diff,
-      color: diff > 0 ? 'text-green-600' : diff < 0 ? 'text-red-600' : 'text-gray-600',
-      icon: diff > 0 ? <TrendingUp className="h-4 w-4" /> : diff < 0 ? <TrendingUp className="h-4 w-4 rotate-180" /> : <ArrowRight className="h-4 w-4" />
+      color: diff > 0 ? "text-green-600" : diff < 0 ? "text-red-600" : "text-gray-600",
+      icon:
+        diff > 0 ? (
+          <TrendingUp className="h-4 w-4" />
+        ) : diff < 0 ? (
+          <TrendingUp className="h-4 w-4 rotate-180" />
+        ) : (
+          <ArrowRight className="h-4 w-4" />
+        ),
     };
   };
 
@@ -221,10 +269,8 @@ export function AtomicMigrationTools({
   };
 
   const toggleCustomComponent = (component: ComponentType) => {
-    setCustomComponents(prev => 
-      prev.includes(component) 
-        ? prev.filter(c => c !== component)
-        : [...prev, component]
+    setCustomComponents((prev) =>
+      prev.includes(component) ? prev.filter((c) => c !== component) : [...prev, component]
     );
   };
 
@@ -253,12 +299,14 @@ export function AtomicMigrationTools({
 
         {/* Migration Scenarios Tab */}
         <TabsContent value="scenarios" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {MIGRATION_SCENARIOS.map((scenario) => (
-              <Card 
-                key={scenario.id} 
+              <Card
+                key={scenario.id}
                 className={`cursor-pointer transition-colors ${
-                  selectedScenario?.id === scenario.id ? 'ring-2 ring-blue-500 bg-blue-50/50' : 'hover:bg-gray-50'
+                  selectedScenario?.id === scenario.id
+                    ? "bg-blue-50/50 ring-2 ring-blue-500"
+                    : "hover:bg-gray-50"
                 }`}
                 onClick={() => {
                   setSelectedScenario(scenario);
@@ -275,48 +323,48 @@ export function AtomicMigrationTools({
                       {scenario.difficulty}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">{scenario.description}</p>
+                  <p className="text-muted-foreground text-sm">{scenario.description}</p>
                 </CardHeader>
-                
+
                 <CardContent className="space-y-4">
                   <div>
-                    <h4 className="text-sm font-medium mb-2">Target Components:</h4>
+                    <h4 className="mb-2 text-sm font-medium">Target Components:</h4>
                     <div className="flex flex-wrap gap-1">
-                      {scenario.toComponents.map(component => (
+                      {scenario.toComponents.map((component) => (
                         <Badge key={component} variant="outline" className="text-xs">
                           {formatComponentName(component)}
                         </Badge>
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <h5 className="font-medium text-green-600 mb-1">Benefits:</h5>
-                      <ul className="text-xs space-y-1">
+                      <h5 className="mb-1 font-medium text-green-600">Benefits:</h5>
+                      <ul className="space-y-1 text-xs">
                         {scenario.benefits.slice(0, 2).map((benefit, i) => (
                           <li key={i} className="flex items-start gap-1">
-                            <CheckCircle className="h-3 w-3 text-green-600 mt-0.5 flex-shrink-0" />
+                            <CheckCircle className="mt-0.5 h-3 w-3 flex-shrink-0 text-green-600" />
                             {benefit}
                           </li>
                         ))}
                       </ul>
                     </div>
-                    
+
                     <div>
-                      <h5 className="font-medium text-yellow-600 mb-1">Risks:</h5>
-                      <ul className="text-xs space-y-1">
+                      <h5 className="mb-1 font-medium text-yellow-600">Risks:</h5>
+                      <ul className="space-y-1 text-xs">
                         {scenario.risks.slice(0, 2).map((risk, i) => (
                           <li key={i} className="flex items-start gap-1">
-                            <AlertTriangle className="h-3 w-3 text-yellow-600 mt-0.5 flex-shrink-0" />
+                            <AlertTriangle className="mt-0.5 h-3 w-3 flex-shrink-0 text-yellow-600" />
                             {risk}
                           </li>
                         ))}
                       </ul>
                     </div>
                   </div>
-                  
-                  <div className="flex justify-between items-center pt-2 border-t">
+
+                  <div className="flex items-center justify-between border-t pt-2">
                     <Badge variant="secondary" className="text-xs">
                       {scenario.timeframe}-term
                     </Badge>
@@ -345,27 +393,54 @@ export function AtomicMigrationTools({
               <div className="space-y-6">
                 {/* Component Categories */}
                 {Object.entries({
-                  'Power Distribution': ['CENTRALIZED_POWER', 'FEDERAL_SYSTEM', 'CONFEDERATE_SYSTEM', 'UNITARY_SYSTEM'],
-                  'Decision Process': ['DEMOCRATIC_PROCESS', 'AUTOCRATIC_PROCESS', 'TECHNOCRATIC_PROCESS', 'CONSENSUS_PROCESS', 'OLIGARCHIC_PROCESS'],
-                  'Legitimacy Sources': ['ELECTORAL_LEGITIMACY', 'TRADITIONAL_LEGITIMACY', 'PERFORMANCE_LEGITIMACY', 'CHARISMATIC_LEGITIMACY', 'RELIGIOUS_LEGITIMACY'],
-                  'Institution Types': ['PROFESSIONAL_BUREAUCRACY', 'MILITARY_ADMINISTRATION', 'INDEPENDENT_JUDICIARY', 'PARTISAN_INSTITUTIONS', 'TECHNOCRATIC_AGENCIES'],
-                  'Control Mechanisms': ['RULE_OF_LAW', 'SURVEILLANCE_SYSTEM']
+                  "Power Distribution": [
+                    "CENTRALIZED_POWER",
+                    "FEDERAL_SYSTEM",
+                    "CONFEDERATE_SYSTEM",
+                    "UNITARY_SYSTEM",
+                  ],
+                  "Decision Process": [
+                    "DEMOCRATIC_PROCESS",
+                    "AUTOCRATIC_PROCESS",
+                    "TECHNOCRATIC_PROCESS",
+                    "CONSENSUS_PROCESS",
+                    "OLIGARCHIC_PROCESS",
+                  ],
+                  "Legitimacy Sources": [
+                    "ELECTORAL_LEGITIMACY",
+                    "TRADITIONAL_LEGITIMACY",
+                    "PERFORMANCE_LEGITIMACY",
+                    "CHARISMATIC_LEGITIMACY",
+                    "RELIGIOUS_LEGITIMACY",
+                  ],
+                  "Institution Types": [
+                    "PROFESSIONAL_BUREAUCRACY",
+                    "MILITARY_ADMINISTRATION",
+                    "INDEPENDENT_JUDICIARY",
+                    "PARTISAN_INSTITUTIONS",
+                    "TECHNOCRATIC_AGENCIES",
+                  ],
+                  "Control Mechanisms": ["RULE_OF_LAW", "SURVEILLANCE_SYSTEM"],
                 }).map(([category, components]) => (
                   <div key={category}>
-                    <h3 className="text-lg font-medium mb-3">{category}</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {components.map(component => (
+                    <h3 className="mb-3 text-lg font-medium">{category}</h3>
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
+                      {components.map((component) => (
                         <Button
                           key={component}
-                          variant={customComponents.includes(component as ComponentType) ? "default" : "outline"}
+                          variant={
+                            customComponents.includes(component as ComponentType)
+                              ? "default"
+                              : "outline"
+                          }
                           size="sm"
                           onClick={() => toggleCustomComponent(component as ComponentType)}
                           className="justify-start text-left"
                         >
                           <div className="flex items-center gap-2">
-                            {customComponents.includes(component as ComponentType) && 
+                            {customComponents.includes(component as ComponentType) && (
                               <CheckCircle className="h-4 w-4" />
-                            }
+                            )}
                             {formatComponentName(component as ComponentType)}
                           </div>
                         </Button>
@@ -389,37 +464,57 @@ export function AtomicMigrationTools({
                 </p>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                   {/* Tax Effectiveness */}
                   <div className="space-y-3">
-                    <h3 className="text-lg font-medium flex items-center gap-2">
+                    <h3 className="flex items-center gap-2 text-lg font-medium">
                       <Target className="h-5 w-5 text-blue-600" />
                       Tax Effectiveness
                     </h3>
-                    
+
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Current:</span>
-                        <span className="font-medium">{currentMetrics.tax.effectivenessScore}%</span>
+                        <span className="font-medium">
+                          {currentMetrics.tax.effectivenessScore}%
+                        </span>
                       </div>
                       <Progress value={currentMetrics.tax.effectivenessScore} className="h-2" />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Projected:</span>
-                        <span className="font-medium">{projectedMetrics.tax.effectivenessScore}%</span>
+                        <span className="font-medium">
+                          {projectedMetrics.tax.effectivenessScore}%
+                        </span>
                       </div>
                       <Progress value={projectedMetrics.tax.effectivenessScore} className="h-2" />
                     </div>
-                    
-                    <div className="flex items-center justify-between pt-2 border-t">
+
+                    <div className="flex items-center justify-between border-t pt-2">
                       <span className="text-sm font-medium">Change:</span>
-                      <div className={`flex items-center gap-1 ${getMetricDifference(currentMetrics.tax.effectivenessScore, projectedMetrics.tax.effectivenessScore).color}`}>
-                        {getMetricDifference(currentMetrics.tax.effectivenessScore, projectedMetrics.tax.effectivenessScore).icon}
+                      <div
+                        className={`flex items-center gap-1 ${getMetricDifference(currentMetrics.tax.effectivenessScore, projectedMetrics.tax.effectivenessScore).color}`}
+                      >
+                        {
+                          getMetricDifference(
+                            currentMetrics.tax.effectivenessScore,
+                            projectedMetrics.tax.effectivenessScore
+                          ).icon
+                        }
                         <span className="font-medium">
-                          {getMetricDifference(currentMetrics.tax.effectivenessScore, projectedMetrics.tax.effectivenessScore).value > 0 ? '+' : ''}
-                          {getMetricDifference(currentMetrics.tax.effectivenessScore, projectedMetrics.tax.effectivenessScore).value.toFixed(1)}%
+                          {getMetricDifference(
+                            currentMetrics.tax.effectivenessScore,
+                            projectedMetrics.tax.effectivenessScore
+                          ).value > 0
+                            ? "+"
+                            : ""}
+                          {getMetricDifference(
+                            currentMetrics.tax.effectivenessScore,
+                            projectedMetrics.tax.effectivenessScore
+                          ).value.toFixed(1)}
+                          %
                         </span>
                       </div>
                     </div>
@@ -427,11 +522,11 @@ export function AtomicMigrationTools({
 
                   {/* Economic Performance */}
                   <div className="space-y-3">
-                    <h3 className="text-lg font-medium flex items-center gap-2">
+                    <h3 className="flex items-center gap-2 text-lg font-medium">
                       <BarChart3 className="h-5 w-5 text-green-600" />
                       Economic Performance
                     </h3>
-                    
+
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Current:</span>
@@ -439,22 +534,40 @@ export function AtomicMigrationTools({
                       </div>
                       <Progress value={currentMetrics.economic.overallScore} className="h-2" />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Projected:</span>
-                        <span className="font-medium">{projectedMetrics.economic.overallScore}%</span>
+                        <span className="font-medium">
+                          {projectedMetrics.economic.overallScore}%
+                        </span>
                       </div>
                       <Progress value={projectedMetrics.economic.overallScore} className="h-2" />
                     </div>
-                    
-                    <div className="flex items-center justify-between pt-2 border-t">
+
+                    <div className="flex items-center justify-between border-t pt-2">
                       <span className="text-sm font-medium">Change:</span>
-                      <div className={`flex items-center gap-1 ${getMetricDifference(currentMetrics.economic.overallScore, projectedMetrics.economic.overallScore).color}`}>
-                        {getMetricDifference(currentMetrics.economic.overallScore, projectedMetrics.economic.overallScore).icon}
+                      <div
+                        className={`flex items-center gap-1 ${getMetricDifference(currentMetrics.economic.overallScore, projectedMetrics.economic.overallScore).color}`}
+                      >
+                        {
+                          getMetricDifference(
+                            currentMetrics.economic.overallScore,
+                            projectedMetrics.economic.overallScore
+                          ).icon
+                        }
                         <span className="font-medium">
-                          {getMetricDifference(currentMetrics.economic.overallScore, projectedMetrics.economic.overallScore).value > 0 ? '+' : ''}
-                          {getMetricDifference(currentMetrics.economic.overallScore, projectedMetrics.economic.overallScore).value.toFixed(1)}%
+                          {getMetricDifference(
+                            currentMetrics.economic.overallScore,
+                            projectedMetrics.economic.overallScore
+                          ).value > 0
+                            ? "+"
+                            : ""}
+                          {getMetricDifference(
+                            currentMetrics.economic.overallScore,
+                            projectedMetrics.economic.overallScore
+                          ).value.toFixed(1)}
+                          %
                         </span>
                       </div>
                     </div>
@@ -462,34 +575,57 @@ export function AtomicMigrationTools({
 
                   {/* Government Stability */}
                   <div className="space-y-3">
-                    <h3 className="text-lg font-medium flex items-center gap-2">
+                    <h3 className="flex items-center gap-2 text-lg font-medium">
                       <Shield className="h-5 w-5 text-purple-600" />
                       Government Stability
                     </h3>
-                    
+
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Current:</span>
-                        <span className="font-medium">{currentMetrics.stability.overallStability}%</span>
+                        <span className="font-medium">
+                          {currentMetrics.stability.overallStability}%
+                        </span>
                       </div>
                       <Progress value={currentMetrics.stability.overallStability} className="h-2" />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>Projected:</span>
-                        <span className="font-medium">{projectedMetrics.stability.overallStability}%</span>
-                      </div>
-                      <Progress value={projectedMetrics.stability.overallStability} className="h-2" />
-                    </div>
-                    
-                    <div className="flex items-center justify-between pt-2 border-t">
-                      <span className="text-sm font-medium">Change:</span>
-                      <div className={`flex items-center gap-1 ${getMetricDifference(currentMetrics.stability.overallStability, projectedMetrics.stability.overallStability).color}`}>
-                        {getMetricDifference(currentMetrics.stability.overallStability, projectedMetrics.stability.overallStability).icon}
                         <span className="font-medium">
-                          {getMetricDifference(currentMetrics.stability.overallStability, projectedMetrics.stability.overallStability).value > 0 ? '+' : ''}
-                          {getMetricDifference(currentMetrics.stability.overallStability, projectedMetrics.stability.overallStability).value.toFixed(1)}%
+                          {projectedMetrics.stability.overallStability}%
+                        </span>
+                      </div>
+                      <Progress
+                        value={projectedMetrics.stability.overallStability}
+                        className="h-2"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between border-t pt-2">
+                      <span className="text-sm font-medium">Change:</span>
+                      <div
+                        className={`flex items-center gap-1 ${getMetricDifference(currentMetrics.stability.overallStability, projectedMetrics.stability.overallStability).color}`}
+                      >
+                        {
+                          getMetricDifference(
+                            currentMetrics.stability.overallStability,
+                            projectedMetrics.stability.overallStability
+                          ).icon
+                        }
+                        <span className="font-medium">
+                          {getMetricDifference(
+                            currentMetrics.stability.overallStability,
+                            projectedMetrics.stability.overallStability
+                          ).value > 0
+                            ? "+"
+                            : ""}
+                          {getMetricDifference(
+                            currentMetrics.stability.overallStability,
+                            projectedMetrics.stability.overallStability
+                          ).value.toFixed(1)}
+                          %
                         </span>
                       </div>
                     </div>
@@ -498,7 +634,7 @@ export function AtomicMigrationTools({
               </CardContent>
             </Card>
           )}
-          
+
           {!showComparison && (
             <Alert>
               <AlertTriangle className="h-4 w-4" />
@@ -527,9 +663,9 @@ export function AtomicMigrationTools({
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.1 }}
-                      className="flex items-start gap-3 p-4 rounded-lg bg-blue-50 border border-blue-200"
+                      className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4"
                     >
-                      <Lightbulb className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <Lightbulb className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
                       <div className="flex-grow">
                         <p className="text-sm text-blue-800">{recommendation}</p>
                       </div>
@@ -540,10 +676,13 @@ export function AtomicMigrationTools({
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <CheckCircle className="h-12 w-12 mx-auto text-green-500 mb-4" />
-                  <h3 className="text-lg font-medium mb-2">System Optimally Configured</h3>
-                  <p className="text-sm">Your current government configuration appears to be performing well across all metrics.</p>
+                <div className="text-muted-foreground py-8 text-center">
+                  <CheckCircle className="mx-auto mb-4 h-12 w-12 text-green-500" />
+                  <h3 className="mb-2 text-lg font-medium">System Optimally Configured</h3>
+                  <p className="text-sm">
+                    Your current government configuration appears to be performing well across all
+                    metrics.
+                  </p>
                 </div>
               )}
             </CardContent>
@@ -555,34 +694,36 @@ export function AtomicMigrationTools({
               <CardTitle>Current System Analysis</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div>
-                  <h4 className="text-sm font-medium text-green-600 mb-2">Strengths:</h4>
+                  <h4 className="mb-2 text-sm font-medium text-green-600">Strengths:</h4>
                   {currentMetrics.stability.strengths.length > 0 ? (
                     <div className="space-y-1">
                       {currentMetrics.stability.strengths.map((strength, i) => (
-                        <div key={i} className="text-sm text-green-700 bg-green-50 p-2 rounded">
+                        <div key={i} className="rounded bg-green-50 p-2 text-sm text-green-700">
                           • {strength}
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">No specific strengths identified</p>
+                    <p className="text-muted-foreground text-sm">
+                      No specific strengths identified
+                    </p>
                   )}
                 </div>
-                
+
                 <div>
-                  <h4 className="text-sm font-medium text-red-600 mb-2">Areas for Improvement:</h4>
+                  <h4 className="mb-2 text-sm font-medium text-red-600">Areas for Improvement:</h4>
                   {currentMetrics.stability.riskFactors.length > 0 ? (
                     <div className="space-y-1">
                       {currentMetrics.stability.riskFactors.map((risk, i) => (
-                        <div key={i} className="text-sm text-red-700 bg-red-50 p-2 rounded">
+                        <div key={i} className="rounded bg-red-50 p-2 text-sm text-red-700">
                           ⚠ {risk}
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">No major issues identified</p>
+                    <p className="text-muted-foreground text-sm">No major issues identified</p>
                   )}
                 </div>
               </div>

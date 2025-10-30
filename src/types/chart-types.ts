@@ -15,9 +15,9 @@ export interface ChartData {
 }
 
 export interface ChartConfig {
-  theme?: 'default' | 'gold' | 'blue' | 'emerald' | 'purple';
-  depth?: 'base' | 'elevated' | 'modal';
-  blur?: 'light' | 'medium' | 'heavy';
+  theme?: "default" | "gold" | "blue" | "emerald" | "purple";
+  depth?: "base" | "elevated" | "modal";
+  blur?: "light" | "medium" | "heavy";
   height?: number | string;
   loading?: boolean;
   error?: string;
@@ -25,8 +25,8 @@ export interface ChartConfig {
 }
 
 export interface ControlConfig {
-  theme?: 'default' | 'gold' | 'blue' | 'emerald' | 'purple';
-  size?: 'sm' | 'md' | 'lg';
+  theme?: "default" | "gold" | "blue" | "emerald" | "purple";
+  size?: "sm" | "md" | "lg";
   className?: string;
 }
 
@@ -43,7 +43,7 @@ export interface SliderConfig extends ControlConfig {
   max?: number;
   step?: number;
   unit?: string;
-  orientation?: 'horizontal' | 'vertical';
+  orientation?: "horizontal" | "vertical";
   showTicks?: boolean;
   tickCount?: number;
 }

@@ -7,12 +7,12 @@
 /**
  * Status indicator for feedback metrics
  */
-export type FeedbackStatus = 'success' | 'warning' | 'danger' | 'info';
+export type FeedbackStatus = "success" | "warning" | "danger" | "info";
 
 /**
  * Trend indicator for metrics
  */
-export type FeedbackTrend = 'up' | 'down' | 'stable';
+export type FeedbackTrend = "up" | "down" | "stable";
 
 /**
  * Individual metric within a feedback section
@@ -91,7 +91,7 @@ export interface ValidationError {
   message: string;
 
   /** Error severity */
-  severity: 'error' | 'warning' | 'info';
+  severity: "error" | "warning" | "info";
 
   /** Optional suggestion for fixing */
   suggestion?: string;

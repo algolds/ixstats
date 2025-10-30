@@ -1,8 +1,8 @@
 // Performance Monitor - Phase 3 Performance Enhancement
 // Comprehensive query and application performance monitoring
 
-import React from 'react';
-import { IxTime } from '~/lib/ixtime';
+import React from "react";
+import { IxTime } from "~/lib/ixtime";
 
 interface QueryMetrics {
   queryKey: string;
@@ -50,8 +50,8 @@ interface ComponentMetric {
 }
 
 interface PerformanceAlert {
-  type: 'query' | 'memory' | 'render' | 'websocket';
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  type: "query" | "memory" | "render" | "websocket";
+  severity: "low" | "medium" | "high" | "critical";
   message: string;
   timestamp: number;
   data: any;
@@ -87,7 +87,7 @@ export class PerformanceMonitor {
     memoryWarning: 100 * 1024 * 1024, // 100MB
     memoryCritical: 250 * 1024 * 1024, // 250MB
     renderTimeWarning: 16, // 16ms (60fps)
-    renderTimeCritical: 33 // 33ms (30fps)
+    renderTimeCritical: 33, // 33ms (30fps)
   };
 
   private snapshotInterval?: NodeJS.Timeout;
@@ -103,12 +103,12 @@ export class PerformanceMonitor {
   /**
    * Record a query performance metric
    */
-  recordQuery(metrics: Omit<QueryMetrics, 'timestamp'>): void {
+  recordQuery(metrics: Omit<QueryMetrics, "timestamp">): void {
     if (!this.isEnabled) return;
 
     const queryMetric: QueryMetrics = {
       ...metrics,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     this.metrics.push(queryMetric);
@@ -123,14 +123,10 @@ export class PerformanceMonitor {
   /**
    * Record component render performance
    */
-  recordComponentRender(
-    componentName: string,
-    renderTime: number,
-    renderCount = 1
-  ): void {
+  recordComponentRender(componentName: string, renderTime: number, renderCount = 1): void {
     if (!this.isEnabled) return;
 
-    const existing = this.componentMetrics.find(m => m.name === componentName);
+    const existing = this.componentMetrics.find((m) => m.name === componentName);
     const now = Date.now();
 
     if (existing) {
@@ -144,7 +140,7 @@ export class PerformanceMonitor {
         renderTime,
         renderCount,
         reRenderRate: renderCount,
-        timestamp: now
+        timestamp: now,
       });
     }
 
@@ -165,43 +161,48 @@ export class PerformanceMonitor {
     renders: any;
     alerts: PerformanceAlert[];
   } {
-    const recentMetrics = this.metrics.filter(m => Date.now() - m.timestamp < 300000); // Last 5 minutes
+    const recentMetrics = this.metrics.filter((m) => Date.now() - m.timestamp < 300000); // Last 5 minutes
 
     const queries = {
       totalQueries: recentMetrics.length,
-      averageDuration: recentMetrics.length > 0 
-        ? recentMetrics.reduce((sum, m) => sum + m.duration, 0) / recentMetrics.length
-        : 0,
-      errorRate: recentMetrics.length > 0
-        ? recentMetrics.filter(m => !m.success).length / recentMetrics.length
-        : 0,
-      cacheHitRate: recentMetrics.length > 0
-        ? recentMetrics.filter(m => m.cacheHit).length / recentMetrics.length
-        : 0,
+      averageDuration:
+        recentMetrics.length > 0
+          ? recentMetrics.reduce((sum, m) => sum + m.duration, 0) / recentMetrics.length
+          : 0,
+      errorRate:
+        recentMetrics.length > 0
+          ? recentMetrics.filter((m) => !m.success).length / recentMetrics.length
+          : 0,
+      cacheHitRate:
+        recentMetrics.length > 0
+          ? recentMetrics.filter((m) => m.cacheHit).length / recentMetrics.length
+          : 0,
       slowQueries: recentMetrics
-        .filter(m => m.duration > this.thresholds.queryTimeWarning)
+        .filter((m) => m.duration > this.thresholds.queryTimeWarning)
         .sort((a, b) => b.duration - a.duration)
-        .slice(0, 10)
+        .slice(0, 10),
     };
 
     const memory = this.getMemoryUsage();
-    
+
     const renders = {
       components: this.componentMetrics.length,
-      averageRenderTime: this.componentMetrics.length > 0
-        ? this.componentMetrics.reduce((sum, m) => sum + m.renderTime, 0) / this.componentMetrics.length
-        : 0,
+      averageRenderTime:
+        this.componentMetrics.length > 0
+          ? this.componentMetrics.reduce((sum, m) => sum + m.renderTime, 0) /
+            this.componentMetrics.length
+          : 0,
       slowComponents: this.componentMetrics
-        .filter(m => m.renderTime > this.thresholds.renderTimeWarning)
+        .filter((m) => m.renderTime > this.thresholds.renderTimeWarning)
         .sort((a, b) => b.renderTime - a.renderTime)
-        .slice(0, 10)
+        .slice(0, 10),
     };
 
     return {
       queries,
       memory,
       renders,
-      alerts: this.alerts.slice(-20) // Last 20 alerts
+      alerts: this.alerts.slice(-20), // Last 20 alerts
     };
   }
 
@@ -214,30 +215,38 @@ export class PerformanceMonitor {
 
     // Query optimization suggestions
     if (stats.queries.cacheHitRate < 0.7) {
-      suggestions.push('Consider implementing more aggressive caching - current cache hit rate is low');
+      suggestions.push(
+        "Consider implementing more aggressive caching - current cache hit rate is low"
+      );
     }
 
     if (stats.queries.errorRate > this.thresholds.errorRateWarning) {
-      suggestions.push('High error rate detected - review query error handling and retry logic');
+      suggestions.push("High error rate detected - review query error handling and retry logic");
     }
 
     if (stats.queries.averageDuration > this.thresholds.queryTimeWarning) {
-      suggestions.push('Average query time is high - consider query batching or optimization');
+      suggestions.push("Average query time is high - consider query batching or optimization");
     }
 
     // Memory optimization suggestions
     if (stats.memory.heapUsed > this.thresholds.memoryWarning) {
-      suggestions.push('High memory usage detected - review component memoization and data structures');
+      suggestions.push(
+        "High memory usage detected - review component memoization and data structures"
+      );
     }
 
     // Render optimization suggestions
     if (stats.renders.averageRenderTime > this.thresholds.renderTimeWarning) {
-      suggestions.push('Slow component renders detected - implement React.memo and optimize render logic');
+      suggestions.push(
+        "Slow component renders detected - implement React.memo and optimize render logic"
+      );
     }
 
-    const frequentReRenders = this.componentMetrics.filter(m => m.reRenderRate > 10);
+    const frequentReRenders = this.componentMetrics.filter((m) => m.reRenderRate > 10);
     if (frequentReRenders.length > 0) {
-      suggestions.push(`Components with high re-render rates: ${frequentReRenders.map(m => m.name).join(', ')}`);
+      suggestions.push(
+        `Components with high re-render rates: ${frequentReRenders.map((m) => m.name).join(", ")}`
+      );
     }
 
     return suggestions;
@@ -249,7 +258,7 @@ export class PerformanceMonitor {
   private createSnapshot(): PerformanceSnapshot {
     const stats = this.getPerformanceStats();
     const memory = this.getMemoryUsage();
-    
+
     return {
       timestamp: Date.now(),
       queries: stats.queries,
@@ -258,8 +267,8 @@ export class PerformanceMonitor {
       websocket: {
         activeConnections: 0, // Would integrate with WebSocket monitor
         messagesPerSecond: 0,
-        averageLatency: 0
-      }
+        averageLatency: 0,
+      },
     };
   }
 
@@ -268,16 +277,28 @@ export class PerformanceMonitor {
    */
   private checkQueryThresholds(metric: QueryMetrics): void {
     if (metric.duration > this.thresholds.queryTimeCritical) {
-      this.createAlert('query', 'critical', 
-        `Extremely slow query detected: ${metric.queryKey} (${metric.duration}ms)`, metric);
+      this.createAlert(
+        "query",
+        "critical",
+        `Extremely slow query detected: ${metric.queryKey} (${metric.duration}ms)`,
+        metric
+      );
     } else if (metric.duration > this.thresholds.queryTimeWarning) {
-      this.createAlert('query', 'medium',
-        `Slow query detected: ${metric.queryKey} (${metric.duration}ms)`, metric);
+      this.createAlert(
+        "query",
+        "medium",
+        `Slow query detected: ${metric.queryKey} (${metric.duration}ms)`,
+        metric
+      );
     }
 
     if (!metric.success) {
-      this.createAlert('query', 'high',
-        `Query failed: ${metric.queryKey} - ${metric.error}`, metric);
+      this.createAlert(
+        "query",
+        "high",
+        `Query failed: ${metric.queryKey} - ${metric.error}`,
+        metric
+      );
     }
   }
 
@@ -286,11 +307,17 @@ export class PerformanceMonitor {
    */
   private checkRenderThresholds(componentName: string, renderTime: number): void {
     if (renderTime > this.thresholds.renderTimeCritical) {
-      this.createAlert('render', 'critical',
-        `Extremely slow render: ${componentName} (${renderTime}ms)`, { componentName, renderTime });
+      this.createAlert(
+        "render",
+        "critical",
+        `Extremely slow render: ${componentName} (${renderTime}ms)`,
+        { componentName, renderTime }
+      );
     } else if (renderTime > this.thresholds.renderTimeWarning) {
-      this.createAlert('render', 'medium',
-        `Slow render: ${componentName} (${renderTime}ms)`, { componentName, renderTime });
+      this.createAlert("render", "medium", `Slow render: ${componentName} (${renderTime}ms)`, {
+        componentName,
+        renderTime,
+      });
     }
   }
 
@@ -298,8 +325,8 @@ export class PerformanceMonitor {
    * Create a performance alert
    */
   private createAlert(
-    type: PerformanceAlert['type'],
-    severity: PerformanceAlert['severity'],
+    type: PerformanceAlert["type"],
+    severity: PerformanceAlert["severity"],
     message: string,
     data: any
   ): void {
@@ -308,7 +335,7 @@ export class PerformanceMonitor {
       severity,
       message,
       timestamp: Date.now(),
-      data
+      data,
     });
 
     // Keep only last 100 alerts
@@ -317,7 +344,7 @@ export class PerformanceMonitor {
     }
 
     // In a real implementation, you might want to send critical alerts to an external service
-    if (severity === 'critical') {
+    if (severity === "critical") {
       console.warn(`[Performance Critical Alert] ${message}`, data);
     }
   }
@@ -326,12 +353,12 @@ export class PerformanceMonitor {
    * Get memory usage information
    */
   private getMemoryUsage(): { heapUsed: number; heapTotal: number; external: number } {
-    if (typeof process !== 'undefined' && process.memoryUsage) {
+    if (typeof process !== "undefined" && process.memoryUsage) {
       const mem = process.memoryUsage();
       return {
         heapUsed: mem.heapUsed,
         heapTotal: mem.heapTotal,
-        external: mem.external
+        external: mem.external,
       };
     }
 
@@ -339,7 +366,7 @@ export class PerformanceMonitor {
     return {
       heapUsed: 0,
       heapTotal: 0,
-      external: 0
+      external: 0,
     };
   }
 
@@ -351,7 +378,7 @@ export class PerformanceMonitor {
     this.snapshotInterval = setInterval(() => {
       const snapshot = this.createSnapshot();
       this.performanceSnapshots.push(snapshot);
-      
+
       // Keep only last 60 snapshots (1 hour)
       if (this.performanceSnapshots.length > 60) {
         this.performanceSnapshots = this.performanceSnapshots.slice(-30);
@@ -361,8 +388,8 @@ export class PerformanceMonitor {
     // Cleanup old metrics every 5 minutes
     this.cleanupInterval = setInterval(() => {
       const fiveMinutesAgo = Date.now() - 300000;
-      this.metrics = this.metrics.filter(m => m.timestamp > fiveMinutesAgo);
-      this.alerts = this.alerts.filter(a => a.timestamp > fiveMinutesAgo);
+      this.metrics = this.metrics.filter((m) => m.timestamp > fiveMinutesAgo);
+      this.alerts = this.alerts.filter((a) => a.timestamp > fiveMinutesAgo);
     }, 300000);
   }
 
@@ -376,7 +403,7 @@ export class PerformanceMonitor {
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
     }
-    
+
     this.metrics = [];
     this.componentMetrics = [];
     this.performanceSnapshots = [];
@@ -396,14 +423,14 @@ export class PerformanceMonitor {
       metrics: [...this.metrics],
       components: [...this.componentMetrics],
       snapshots: [...this.performanceSnapshots],
-      alerts: [...this.alerts]
+      alerts: [...this.alerts],
     };
   }
 }
 
 // Global performance monitor instance
 export const performanceMonitor = new PerformanceMonitor(
-  process.env.NODE_ENV !== 'production' // Enable only in development by default
+  process.env.NODE_ENV !== "production" // Enable only in development by default
 );
 
 /**
@@ -418,9 +445,10 @@ export const PerformanceUtils = {
     componentName?: string
   ): React.FC<P> => {
     const TrackedComponent: React.FC<P> = (props) => {
-      const name = componentName || WrappedComponent.displayName || WrappedComponent.name || 'Component';
+      const name =
+        componentName || WrappedComponent.displayName || WrappedComponent.name || "Component";
       const startTime = performance.now();
-      
+
       React.useEffect(() => {
         const endTime = performance.now();
         performanceMonitor.recordComponentRender(name, endTime - startTime);
@@ -430,7 +458,7 @@ export const PerformanceUtils = {
     };
 
     TrackedComponent.displayName = `withPerformanceTracking(${
-      WrappedComponent.displayName || WrappedComponent.name || 'Component'
+      WrappedComponent.displayName || WrappedComponent.name || "Component"
     })`;
 
     return TrackedComponent;
@@ -441,11 +469,11 @@ export const PerformanceUtils = {
    */
   usePerformanceMetric: (metricName: string) => {
     const startTime = React.useRef<number | undefined>(undefined);
-    
+
     const startMeasurement = React.useCallback(() => {
       startTime.current = performance.now();
     }, []);
-    
+
     const endMeasurement = React.useCallback(() => {
       if (startTime.current) {
         const duration = performance.now() - startTime.current;
@@ -453,9 +481,9 @@ export const PerformanceUtils = {
         startTime.current = undefined;
       }
     }, [metricName]);
-    
+
     return { startMeasurement, endMeasurement };
-  }
+  },
 };
 
 // Performance monitoring for tRPC queries
@@ -464,11 +492,11 @@ export const createPerformanceTRPCMiddleware = () => {
     query: async (ctx: any) => {
       const startTime = performance.now();
       const queryKey = ctx.path;
-      
+
       try {
         const result = await ctx.next();
         const duration = performance.now() - startTime;
-        
+
         performanceMonitor.recordQuery({
           queryKey,
           duration,
@@ -476,25 +504,25 @@ export const createPerformanceTRPCMiddleware = () => {
           cacheHit: false, // Would need to be determined by your cache implementation
           dataSize: JSON.stringify(result).length,
           userId: ctx.meta?.userId,
-          countryId: ctx.meta?.countryId
+          countryId: ctx.meta?.countryId,
         });
-        
+
         return result;
       } catch (error) {
         const duration = performance.now() - startTime;
-        
+
         performanceMonitor.recordQuery({
           queryKey,
           duration,
           success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: error instanceof Error ? error.message : "Unknown error",
           cacheHit: false,
           userId: ctx.meta?.userId,
-          countryId: ctx.meta?.countryId
+          countryId: ctx.meta?.countryId,
         });
-        
+
         throw error;
       }
-    }
+    },
   };
 };

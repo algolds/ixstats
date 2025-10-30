@@ -21,14 +21,14 @@ export const EconomicHealthCard = React.memo(function EconomicHealthCard({
   return (
     <Card>
       <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-2">
+        <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-primary" />
+            <Activity className="text-primary h-4 w-4" />
             <span className="text-sm font-medium">Economic Trend</span>
           </div>
           <Tooltip>
             <TooltipTrigger>
-              <HelpCircle className="h-3 w-3 text-muted-foreground" />
+              <HelpCircle className="text-muted-foreground h-3 w-3" />
             </TooltipTrigger>
             <TooltipContent>
               <p>Recent economic performance trend</p>
@@ -36,17 +36,25 @@ export const EconomicHealthCard = React.memo(function EconomicHealthCard({
           </Tooltip>
         </div>
         <div className="space-y-1">
-          <div className={`text-2xl font-bold ${
-            economicHealthTrend.trend === 'improving' ? 'text-green-600' :
-            economicHealthTrend.trend === 'declining' ? 'text-red-600' : 'text-blue-600'
-          }`}>
-            {economicHealthTrend.trend === 'improving' ? '↗' :
-             economicHealthTrend.trend === 'declining' ? '↘' : '→'}
+          <div
+            className={`text-2xl font-bold ${
+              economicHealthTrend.trend === "improving"
+                ? "text-green-600"
+                : economicHealthTrend.trend === "declining"
+                  ? "text-red-600"
+                  : "text-blue-600"
+            }`}
+          >
+            {economicHealthTrend.trend === "improving"
+              ? "↗"
+              : economicHealthTrend.trend === "declining"
+                ? "↘"
+                : "→"}
           </div>
-          <div className="text-xs text-muted-foreground capitalize">
+          <div className="text-muted-foreground text-xs capitalize">
             {economicHealthTrend.trend}
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-muted-foreground text-xs">
             {Math.abs(economicHealthTrend.value).toFixed(1)}% change
           </div>
         </div>

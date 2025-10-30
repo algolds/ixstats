@@ -1,22 +1,26 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Factory } from 'lucide-react';
+import React, { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Factory } from "lucide-react";
 
 // Sub-components
 import {
   SectorTemplateSelector,
   SectorEditor,
   SectorMetrics,
-  SectorVisualizations
-} from './sectors';
+  SectorVisualizations,
+} from "./sectors";
 
 // Utils and types
-import { SECTOR_TEMPLATES, getSectorCategory, calculateSectorTotals } from './utils/sectorCalculations';
-import type { EconomyBuilderState, SectorConfiguration } from '~/types/economy-builder';
-import type { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
-import { ATOMIC_ECONOMIC_COMPONENTS } from '~/lib/atomic-economic-data';
+import {
+  SECTOR_TEMPLATES,
+  getSectorCategory,
+  calculateSectorTotals,
+} from "./utils/sectorCalculations";
+import type { EconomyBuilderState, SectorConfiguration } from "~/types/economy-builder";
+import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
 
 /**
  * Props for the EconomySectorsTab component
@@ -73,7 +77,7 @@ export function EconomySectorsTab({
   economyBuilder,
   onEconomyBuilderChange,
   selectedComponents,
-  showAdvanced = false
+  showAdvanced = false,
 }: EconomySectorsTabProps) {
   const [selectedSector, setSelectedSector] = useState<string | null>(null);
 
@@ -99,21 +103,21 @@ export function EconomySectorsTab({
 
   // Get the impact multiplier for a specific sector
   const getSectorImpact = (sectorId: string): number => {
-    const sectorType = sectorId.split('_')[0];
+    const sectorType = sectorId.split("_")[0];
     return sectorImpacts[sectorType] || 1.0;
   };
 
   // Get which components are affecting a specific sector
   const getAffectingComponents = (sectorId: string): Array<{ name: string; impact: number }> => {
-    const sectorType = sectorId.split('_')[0];
+    const sectorType = sectorId.split("_")[0];
     return selectedComponents
-      .map(compType => {
+      .map((compType) => {
         const component = ATOMIC_ECONOMIC_COMPONENTS[compType];
         const impact = component?.sectorImpact[sectorType];
         if (impact && impact !== 1.0) {
           return {
             name: component.name,
-            impact: impact
+            impact: impact,
           };
         }
         return null;
@@ -122,11 +126,7 @@ export function EconomySectorsTab({
   };
 
   // Handle sector field changes
-  const handleSectorChange = (
-    sectorId: string,
-    field: keyof SectorConfiguration,
-    value: any
-  ) => {
+  const handleSectorChange = (sectorId: string, field: keyof SectorConfiguration, value: any) => {
     const updatedSectors = economyBuilder.sectors.map((sector) => {
       if (sector.id === sectorId) {
         return { ...sector, [field]: value };
@@ -136,7 +136,7 @@ export function EconomySectorsTab({
 
     onEconomyBuilderChange({
       ...economyBuilder,
-      sectors: updatedSectors
+      sectors: updatedSectors,
     });
   };
 
@@ -157,13 +157,13 @@ export function EconomySectorsTab({
       return {
         ...sector,
         gdpContribution: normalizedContribution,
-        employmentShare: normalizedEmployment
+        employmentShare: normalizedEmployment,
       };
     });
 
     onEconomyBuilderChange({
       ...economyBuilder,
-      sectors: updatedSectors
+      sectors: updatedSectors,
     });
   };
 
@@ -187,20 +187,20 @@ export function EconomySectorsTab({
       employmentShare: baseEmployment, // Store base value, display will show effective value
       productivity: 75,
       growthRate: 2.0,
-      exports: sectorType === 'manufacturing' ? 30 : sectorType === 'agriculture' ? 20 : 10,
-      imports: sectorType === 'technology' ? 25 : 15,
-      technologyLevel: 'Modern',
+      exports: sectorType === "manufacturing" ? 30 : sectorType === "agriculture" ? 20 : 10,
+      imports: sectorType === "technology" ? 25 : 15,
+      technologyLevel: "Modern",
       automation: 20,
-      regulation: 'Moderate',
-      subsidy: sectorType === 'agriculture' ? 15 : 5,
+      regulation: "Moderate",
+      subsidy: sectorType === "agriculture" ? 15 : 5,
       innovation: 50,
       sustainability: 70,
-      competitiveness: 60
+      competitiveness: 60,
     };
 
     onEconomyBuilderChange({
       ...economyBuilder,
-      sectors: [...economyBuilder.sectors, newSector]
+      sectors: [...economyBuilder.sectors, newSector],
     });
   };
 
@@ -209,7 +209,7 @@ export function EconomySectorsTab({
     const updatedSectors = economyBuilder.sectors.filter((sector) => sector.id !== sectorId);
     onEconomyBuilderChange({
       ...economyBuilder,
-      sectors: updatedSectors
+      sectors: updatedSectors,
     });
   };
 
@@ -218,7 +218,7 @@ export function EconomySectorsTab({
       {/* Metrics Overview */}
       <SectorMetrics sectors={economyBuilder.sectors} onNormalize={normalizeSectors} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Sector Configuration */}
         <div className="space-y-6">
           <Card>
@@ -230,7 +230,7 @@ export function EconomySectorsTab({
             </CardHeader>
             <CardContent className="space-y-4">
               {economyBuilder.sectors.map((sector, index) => {
-                const sectorType = sector.id.split('_')[0] as keyof typeof SECTOR_TEMPLATES;
+                const sectorType = sector.id.split("_")[0] as keyof typeof SECTOR_TEMPLATES;
                 const impact = sectorImpacts[sectorType] || 1;
                 const affectingComponents = getAffectingComponents(sector.id);
                 const effectiveGDP = getEffectiveValue(sector.id, sector.gdpContribution);

@@ -11,7 +11,7 @@ export default function StrategicIntelligenceArticle() {
       icon={Radar}
     >
       <Section title="Strategic Products">
-        <ul className="list-disc pl-6 space-y-2">
+        <ul className="list-disc space-y-2 pl-6">
           <li>Quarterly assessments summarising economic, diplomatic, and defense outlooks.</li>
           <li>Scenario plans linking forecasts with recommended policy paths.</li>
           <li>Cross-domain alerts for potential cascading risks.</li>
@@ -20,16 +20,19 @@ export default function StrategicIntelligenceArticle() {
 
       <Section title="Where to Access">
         <InfoBox title="Locations">
-          <ul className="list-disc pl-6 space-y-1">
+          <ul className="list-disc space-y-1 pl-6">
             <li>MyCountry intelligence tab – "Strategic" section under executive briefings.</li>
             <li>ThinkPages collections curated for leadership briefings.</li>
-            <li>Exports via scripts (see `scripts/audit` for inspiration) when generating off-platform reports.</li>
+            <li>
+              Exports via scripts (see `scripts/audit` for inspiration) when generating off-platform
+              reports.
+            </li>
           </ul>
         </InfoBox>
       </Section>
 
       <Section title="Maintaining Strategic Feeds">
-        <ul className="list-disc pl-6 space-y-2">
+        <ul className="list-disc space-y-2 pl-6">
           <li>Ensure new data pipelines write into the unified router payloads.</li>
           <li>Tag strategic posts and docs so they appear in curated lists.</li>
           <li>Keep `/help/intelligence/dashboard` aligned with strategic card changes.</li>
@@ -37,9 +40,13 @@ export default function StrategicIntelligenceArticle() {
       </Section>
 
       <InfoBox title="Cross-References">
-        <ul className="list-disc pl-6 space-y-1">
-          <li><Globe className="inline h-4 w-4" /> `/help/diplomacy/embassies` – diplomacy factors.</li>
-          <li><Shield className="inline h-4 w-4" /> `/help/defense/overview` – defense readiness.</li>
+        <ul className="list-disc space-y-1 pl-6">
+          <li>
+            <Globe className="inline h-4 w-4" /> `/help/diplomacy/embassies` – diplomacy factors.
+          </li>
+          <li>
+            <Shield className="inline h-4 w-4" /> `/help/defense/overview` – defense readiness.
+          </li>
         </ul>
       </InfoBox>
     </ArticleLayout>

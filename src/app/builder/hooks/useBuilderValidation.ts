@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
-import type { BuilderState } from './useBuilderState';
-import type { BuilderStep } from '../components/enhanced/builderConfig';
+import { useMemo } from "react";
+import type { BuilderState } from "./useBuilderState";
+import type { BuilderStep } from "../components/enhanced/builderConfig";
 
 /**
  * Validation result structure containing validation status and messages.
@@ -133,7 +133,7 @@ export function useBuilderValidation({
     const warnings: string[] = [];
 
     if (!builderState.selectedCountry) {
-      errors.push('No foundation country selected');
+      errors.push("No foundation country selected");
     }
 
     return { isValid: errors.length === 0, errors, warnings };
@@ -145,26 +145,26 @@ export function useBuilderValidation({
     const warnings: string[] = [];
 
     if (!builderState.economicInputs) {
-      errors.push('Economic inputs not configured');
+      errors.push("Economic inputs not configured");
       return { isValid: false, errors, warnings };
     }
 
     const { nationalIdentity, coreIndicators } = builderState.economicInputs;
 
-    if (!nationalIdentity?.countryName || nationalIdentity.countryName.trim() === '') {
-      errors.push('Country name is required');
+    if (!nationalIdentity?.countryName || nationalIdentity.countryName.trim() === "") {
+      errors.push("Country name is required");
     }
 
-    if (!nationalIdentity?.capitalCity || nationalIdentity.capitalCity.trim() === '') {
-      warnings.push('Capital city not specified');
+    if (!nationalIdentity?.capitalCity || nationalIdentity.capitalCity.trim() === "") {
+      warnings.push("Capital city not specified");
     }
 
     if (coreIndicators?.nominalGDP <= 0) {
-      errors.push('Nominal GDP must be greater than 0');
+      errors.push("Nominal GDP must be greater than 0");
     }
 
     if (coreIndicators?.totalPopulation <= 0) {
-      errors.push('Population must be greater than 0');
+      errors.push("Population must be greater than 0");
     }
 
     return { isValid: errors.length === 0, errors, warnings };
@@ -176,19 +176,19 @@ export function useBuilderValidation({
     const warnings: string[] = [];
 
     if (builderState.governmentComponents.length === 0) {
-      warnings.push('No government components selected');
+      warnings.push("No government components selected");
     }
 
     if (builderState.governmentComponents.length < 3) {
-      warnings.push('At least 3 components recommended for a functional government');
+      warnings.push("At least 3 components recommended for a functional government");
     }
 
     if (builderState.governmentComponents.length > 15) {
-      warnings.push('More than 15 components may increase complexity significantly');
+      warnings.push("More than 15 components may increase complexity significantly");
     }
 
     if (!builderState.governmentStructure) {
-      warnings.push('Government structure not configured');
+      warnings.push("Government structure not configured");
     }
 
     return { isValid: errors.length === 0, errors, warnings };
@@ -200,26 +200,26 @@ export function useBuilderValidation({
     const warnings: string[] = [];
 
     if (!builderState.economicInputs) {
-      errors.push('Economic inputs not configured');
+      errors.push("Economic inputs not configured");
       return { isValid: false, errors, warnings };
     }
 
     const { fiscalSystem, governmentSpending, laborEmployment } = builderState.economicInputs;
 
     if (fiscalSystem.taxRevenueGDPPercent < 0 || fiscalSystem.taxRevenueGDPPercent > 100) {
-      errors.push('Tax revenue percentage must be between 0 and 100');
+      errors.push("Tax revenue percentage must be between 0 and 100");
     }
 
     if (governmentSpending.totalSpending < 0 || governmentSpending.totalSpending > 100) {
-      errors.push('Government spending percentage must be between 0 and 100');
+      errors.push("Government spending percentage must be between 0 and 100");
     }
 
     if (laborEmployment.unemploymentRate < 0 || laborEmployment.unemploymentRate > 100) {
-      errors.push('Unemployment rate must be between 0 and 100');
+      errors.push("Unemployment rate must be between 0 and 100");
     }
 
     if (governmentSpending.totalSpending > fiscalSystem.taxRevenueGDPPercent * 1.5) {
-      warnings.push('Government spending significantly exceeds tax revenue (potential deficit)');
+      warnings.push("Government spending significantly exceeds tax revenue (potential deficit)");
     }
 
     return { isValid: errors.length === 0, errors, warnings };
@@ -230,15 +230,15 @@ export function useBuilderValidation({
     () =>
       (step: BuilderStep): ValidationResult => {
         switch (step) {
-          case 'foundation':
+          case "foundation":
             return validateFoundation;
-          case 'core':
+          case "core":
             return validateCore;
-          case 'government':
+          case "government":
             return validateGovernment;
-          case 'economics':
+          case "economics":
             return validateEconomics;
-          case 'preview':
+          case "preview":
             return validateAll();
           default:
             return { isValid: true, errors: [], warnings: [] };
@@ -249,24 +249,23 @@ export function useBuilderValidation({
 
   // Validate all steps
   const validateAll = useMemo(
-    () =>
-      (): ValidationResult => {
-        const allErrors: string[] = [];
-        const allWarnings: string[] = [];
+    () => (): ValidationResult => {
+      const allErrors: string[] = [];
+      const allWarnings: string[] = [];
 
-        const steps: BuilderStep[] = ['foundation', 'core', 'government', 'economics'];
-        steps.forEach((step) => {
-          const result = validateStep(step);
-          allErrors.push(...result.errors);
-          allWarnings.push(...result.warnings);
-        });
+      const steps: BuilderStep[] = ["foundation", "core", "government", "economics"];
+      steps.forEach((step) => {
+        const result = validateStep(step);
+        allErrors.push(...result.errors);
+        allWarnings.push(...result.warnings);
+      });
 
-        return {
-          isValid: allErrors.length === 0,
-          errors: allErrors,
-          warnings: allWarnings,
-        };
-      },
+      return {
+        isValid: allErrors.length === 0,
+        errors: allErrors,
+        warnings: allWarnings,
+      };
+    },
     [validateStep]
   );
 

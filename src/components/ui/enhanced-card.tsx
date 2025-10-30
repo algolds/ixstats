@@ -3,47 +3,56 @@ import { cn } from "~/lib/utils";
 import React from "react";
 
 interface EnhancedCardProps extends React.ComponentProps<typeof Card> {
-  variant?: 'default' | 'glass' | 'diplomatic' | 'economic' | 'military' | 'cultural' | 'social' | 'security' | 'mycountry';
-  glow?: boolean | 'hover' | 'active';
-  hover?: 'none' | 'lift' | 'glow' | 'scale';
+  variant?:
+    | "default"
+    | "glass"
+    | "diplomatic"
+    | "economic"
+    | "military"
+    | "cultural"
+    | "social"
+    | "security"
+    | "mycountry";
+  glow?: boolean | "hover" | "active";
+  hover?: "none" | "lift" | "glow" | "scale";
 }
 
-export function EnhancedCard({ 
-  className, 
-  variant = 'default',
+export function EnhancedCard({
+  className,
+  variant = "default",
   glow = false,
-  hover = 'lift',
+  hover = "lift",
   children,
-  ...props 
+  ...props
 }: EnhancedCardProps) {
   const variantClasses = {
-    default: '',
-    glass: 'glass-card',
-    diplomatic: 'glass-card-diplomatic',
-    economic: 'glass-card-economic',
-    military: 'glass-card-military',
-    cultural: 'glass-card-cultural',
-    social: 'glass-card-social',
-    security: 'glass-card-security',
-    mycountry: 'glass-card-mycountry',
+    default: "",
+    glass: "glass-card",
+    diplomatic: "glass-card-diplomatic",
+    economic: "glass-card-economic",
+    military: "glass-card-military",
+    cultural: "glass-card-cultural",
+    social: "glass-card-social",
+    security: "glass-card-security",
+    mycountry: "glass-card-mycountry",
   };
-  
+
   const hoverClasses = {
-    none: '',
-    lift: 'hover:-translate-y-1 transition-all duration-300',
-    glow: 'hover:shadow-lg transition-all duration-300',
-    scale: 'hover:scale-[1.02] transition-all duration-300',
+    none: "",
+    lift: "hover:-translate-y-1 transition-all duration-300",
+    glow: "hover:shadow-lg transition-all duration-300",
+    scale: "hover:scale-[1.02] transition-all duration-300",
   };
-  
+
   const glowClasses = {
-    true: 'shadow-lg',
-    hover: 'hover:shadow-lg',
-    active: 'focus:shadow-lg',
-    false: '',
+    true: "shadow-lg",
+    hover: "hover:shadow-lg",
+    active: "focus:shadow-lg",
+    false: "",
   };
-  
+
   return (
-    <Card 
+    <Card
       className={cn(
         variantClasses[variant],
         hoverClasses[hover],
@@ -58,11 +67,11 @@ export function EnhancedCard({
 }
 
 // Export as GlassCard for convenience
-export { EnhancedCard as GlassCard }; 
+export { EnhancedCard as GlassCard };
 
 // Diplomatic SDI Typography Utility Classes
 // .diplomatic-header: Serif, uppercase, tracking-wide, bold, large size
 // .diplomatic-icon: Large, serif, color accent
 // .diplomatic-value: Monospace, bold, large
 // .diplomatic-label: Sans-serif, medium, tracking-wide
-// See globals.css for implementation details. 
+// See globals.css for implementation details.

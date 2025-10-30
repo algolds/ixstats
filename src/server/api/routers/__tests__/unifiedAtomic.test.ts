@@ -2,10 +2,10 @@
  * Tests for Unified Atomic API Router
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createTRPCMsw } from 'msw-trpc';
-import { appRouter } from '../../root';
-import { createInnerTRPCContext } from '../../trpc';
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { createTRPCMsw } from "msw-trpc";
+import { appRouter } from "../../root";
+import { createInnerTRPCContext } from "../../trpc";
 
 // Mock the database
 const mockDb = {
@@ -25,36 +25,36 @@ const mockDb = {
 
 // Mock the auth context
 const mockAuth = {
-  userId: 'test-user-id',
+  userId: "test-user-id",
 };
 
-describe('Unified Atomic API Router', () => {
+describe("Unified Atomic API Router", () => {
   let ctx: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     ctx = {
       db: mockDb,
       auth: mockAuth,
     };
   });
 
-  describe('getAll', () => {
-    it('should fetch all component types for a country', async () => {
+  describe("getAll", () => {
+    it("should fetch all component types for a country", async () => {
       const mockGovernmentComponents = [
-        { id: '1', componentType: 'DEMOCRACY', isActive: true },
-        { id: '2', componentType: 'CENTRAL_BANK', isActive: true },
+        { id: "1", componentType: "DEMOCRACY", isActive: true },
+        { id: "2", componentType: "CENTRAL_BANK", isActive: true },
       ];
-      
+
       const mockEconomicComponents = [
-        { id: '3', componentType: 'FREE_MARKET_SYSTEM', isActive: true },
-        { id: '4', componentType: 'PRIVATE_PROPERTY_RIGHTS', isActive: true },
+        { id: "3", componentType: "FREE_MARKET_SYSTEM", isActive: true },
+        { id: "4", componentType: "PRIVATE_PROPERTY_RIGHTS", isActive: true },
       ];
-      
+
       const mockTaxComponents = [
-        { id: '5', componentType: 'PROGRESSIVE_TAX', isActive: true },
-        { id: '6', componentType: 'CORPORATE_TAX', isActive: true },
+        { id: "5", componentType: "PROGRESSIVE_TAX", isActive: true },
+        { id: "6", componentType: "CORPORATE_TAX", isActive: true },
       ];
 
       mockDb.governmentComponent.findMany.mockResolvedValue(mockGovernmentComponents);
@@ -62,7 +62,7 @@ describe('Unified Atomic API Router', () => {
       mockDb.taxComponent.findMany.mockResolvedValue(mockTaxComponents);
 
       const caller = appRouter.createCaller(ctx);
-      const result = await caller.unifiedAtomic.getAll({ countryId: 'test-country-id' });
+      const result = await caller.unifiedAtomic.getAll({ countryId: "test-country-id" });
 
       expect(result).toEqual({
         government: mockGovernmentComponents,
@@ -71,23 +71,23 @@ describe('Unified Atomic API Router', () => {
       });
 
       expect(mockDb.governmentComponent.findMany).toHaveBeenCalledWith({
-        where: { countryId: 'test-country-id', isActive: true },
+        where: { countryId: "test-country-id", isActive: true },
       });
       expect(mockDb.economicComponent.findMany).toHaveBeenCalledWith({
-        where: { countryId: 'test-country-id', isActive: true },
+        where: { countryId: "test-country-id", isActive: true },
       });
       expect(mockDb.taxComponent.findMany).toHaveBeenCalledWith({
-        where: { countryId: 'test-country-id', isActive: true },
+        where: { countryId: "test-country-id", isActive: true },
       });
     });
 
-    it('should handle empty results', async () => {
+    it("should handle empty results", async () => {
       mockDb.governmentComponent.findMany.mockResolvedValue([]);
       mockDb.economicComponent.findMany.mockResolvedValue([]);
       mockDb.taxComponent.findMany.mockResolvedValue([]);
 
       const caller = appRouter.createCaller(ctx);
-      const result = await caller.unifiedAtomic.getAll({ countryId: 'test-country-id' });
+      const result = await caller.unifiedAtomic.getAll({ countryId: "test-country-id" });
 
       expect(result).toEqual({
         government: [],
@@ -97,20 +97,18 @@ describe('Unified Atomic API Router', () => {
     });
   });
 
-  describe('detectSynergies', () => {
-    it('should detect synergies and conflicts', async () => {
+  describe("detectSynergies", () => {
+    it("should detect synergies and conflicts", async () => {
       const mockGovernmentComponents = [
-        { id: '1', componentType: 'DEMOCRACY', isActive: true },
-        { id: '2', componentType: 'CENTRAL_BANK', isActive: true },
+        { id: "1", componentType: "DEMOCRACY", isActive: true },
+        { id: "2", componentType: "CENTRAL_BANK", isActive: true },
       ];
-      
+
       const mockEconomicComponents = [
-        { id: '3', componentType: 'FREE_MARKET_SYSTEM', isActive: true },
+        { id: "3", componentType: "FREE_MARKET_SYSTEM", isActive: true },
       ];
-      
-      const mockTaxComponents = [
-        { id: '5', componentType: 'PROGRESSIVE_TAX', isActive: true },
-      ];
+
+      const mockTaxComponents = [{ id: "5", componentType: "PROGRESSIVE_TAX", isActive: true }];
 
       mockDb.governmentComponent.findMany.mockResolvedValue(mockGovernmentComponents);
       mockDb.economicComponent.findMany.mockResolvedValue(mockEconomicComponents);
@@ -118,7 +116,7 @@ describe('Unified Atomic API Router', () => {
       mockDb.crossBuilderSynergy.findMany.mockResolvedValue([]);
 
       const caller = appRouter.createCaller(ctx);
-      const result = await caller.unifiedAtomic.detectSynergies({ countryId: 'test-country-id' });
+      const result = await caller.unifiedAtomic.detectSynergies({ countryId: "test-country-id" });
 
       expect(result).toBeDefined();
       expect(result.governmentSynergies).toBeDefined();
@@ -127,26 +125,24 @@ describe('Unified Atomic API Router', () => {
     });
   });
 
-  describe('calculateCombinedEffectiveness', () => {
-    it('should calculate combined effectiveness', async () => {
-      const mockGovernmentComponents = [
-        { id: '1', componentType: 'DEMOCRACY', isActive: true },
-      ];
-      
+  describe("calculateCombinedEffectiveness", () => {
+    it("should calculate combined effectiveness", async () => {
+      const mockGovernmentComponents = [{ id: "1", componentType: "DEMOCRACY", isActive: true }];
+
       const mockEconomicComponents = [
-        { id: '3', componentType: 'FREE_MARKET_SYSTEM', isActive: true },
+        { id: "3", componentType: "FREE_MARKET_SYSTEM", isActive: true },
       ];
-      
-      const mockTaxComponents = [
-        { id: '5', componentType: 'PROGRESSIVE_TAX', isActive: true },
-      ];
+
+      const mockTaxComponents = [{ id: "5", componentType: "PROGRESSIVE_TAX", isActive: true }];
 
       mockDb.governmentComponent.findMany.mockResolvedValue(mockGovernmentComponents);
       mockDb.economicComponent.findMany.mockResolvedValue(mockEconomicComponents);
       mockDb.taxComponent.findMany.mockResolvedValue(mockTaxComponents);
 
       const caller = appRouter.createCaller(ctx);
-      const result = await caller.unifiedAtomic.calculateCombinedEffectiveness({ countryId: 'test-country-id' });
+      const result = await caller.unifiedAtomic.calculateCombinedEffectiveness({
+        countryId: "test-country-id",
+      });
 
       expect(result).toBeDefined();
       expect(result.governmentEffectiveness).toBeDefined();
@@ -159,4 +155,3 @@ describe('Unified Atomic API Router', () => {
     });
   });
 });
-

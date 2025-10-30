@@ -16,14 +16,14 @@ import {
   RiFlaskLine,
   RiFireLine,
   RiCheckLine,
-  RiCloseLine
+  RiCloseLine,
 } from "react-icons/ri";
 import { useToast } from "~/components/ui/toast";
 
 interface AchievementNotificationProps {
   countryId: string;
   countryName: string;
-  position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'center';
+  position?: "top-right" | "top-left" | "bottom-right" | "bottom-left" | "center";
   maxNotifications?: number;
   autoHideDuration?: number;
   showParticleEffects?: boolean;
@@ -35,9 +35,17 @@ interface Achievement {
   id: string;
   title: string;
   description: string;
-  tier: 'bronze' | 'silver' | 'gold' | 'platinum' | 'legendary';
-  category: 'diplomatic' | 'economic' | 'cultural' | 'military' | 'scientific' | 'social' | 'environmental' | 'historical';
-  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  tier: "bronze" | "silver" | "gold" | "platinum" | "legendary";
+  category:
+    | "diplomatic"
+    | "economic"
+    | "cultural"
+    | "military"
+    | "scientific"
+    | "social"
+    | "environmental"
+    | "historical";
+  rarity: "common" | "uncommon" | "rare" | "epic" | "legendary";
   points: number;
   unlockedAt: string;
   previousProgress?: number;
@@ -58,42 +66,42 @@ const TIER_ICONS = {
   silver: RiAwardLine,
   gold: RiTrophyLine,
   platinum: RiShieldLine,
-  legendary: RiStarFill
+  legendary: RiStarFill,
 } as const;
 
 const TIER_COLORS = {
-  bronze: 'from-amber-600 to-amber-800',
-  silver: 'from-gray-400 to-gray-600',
-  gold: 'from-yellow-400 to-yellow-600',
-  platinum: 'from-blue-400 to-purple-600',
-  legendary: 'from-purple-500 to-pink-600'
+  bronze: "from-amber-600 to-amber-800",
+  silver: "from-gray-400 to-gray-600",
+  gold: "from-yellow-400 to-yellow-600",
+  platinum: "from-blue-400 to-purple-600",
+  legendary: "from-purple-500 to-pink-600",
 } as const;
 
 const RARITY_EFFECTS = {
-  common: 'shadow-md',
-  uncommon: 'shadow-lg shadow-green-500/20',
-  rare: 'shadow-xl shadow-blue-500/30',
-  epic: 'shadow-xl shadow-purple-500/40',
-  legendary: 'shadow-2xl shadow-pink-500/50'
+  common: "shadow-md",
+  uncommon: "shadow-lg shadow-green-500/20",
+  rare: "shadow-xl shadow-blue-500/30",
+  epic: "shadow-xl shadow-purple-500/40",
+  legendary: "shadow-2xl shadow-pink-500/50",
 } as const;
 
 const POSITION_CLASSES = {
-  'top-right': 'fixed top-4 right-4 z-50',
-  'top-left': 'fixed top-4 left-4 z-50',
-  'bottom-right': 'fixed bottom-4 right-4 z-50',
-  'bottom-left': 'fixed bottom-4 left-4 z-50',
-  'center': 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50'
+  "top-right": "fixed top-4 right-4 z-50",
+  "top-left": "fixed top-4 left-4 z-50",
+  "bottom-right": "fixed bottom-4 right-4 z-50",
+  "bottom-left": "fixed bottom-4 left-4 z-50",
+  center: "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50",
 } as const;
 
 const RealTimeAchievementNotificationsComponent: React.FC<AchievementNotificationProps> = ({
   countryId,
   countryName,
-  position = 'top-right',
+  position = "top-right",
   maxNotifications = 3,
   autoHideDuration = 5000,
   showParticleEffects = true,
   playSound = true,
-  className
+  className,
 }) => {
   const enableRealTime = false; // Disable real-time by default
   const { isConnected, recentEvents, actions } = useAchievementUpdates(countryId, enableRealTime);
@@ -114,7 +122,10 @@ const RealTimeAchievementNotificationsComponent: React.FC<AchievementNotificatio
   // Process new achievement events
   useEffect(() => {
     recentEvents.forEach((update: LiveIntelligenceUpdate) => {
-      if (update.type === 'achievement_notification' && update.event.type === 'achievement_unlocked') {
+      if (
+        update.type === "achievement_notification" &&
+        update.event.type === "achievement_unlocked"
+      ) {
         const achievementData = update.event.data as {
           achievementId: string;
           achievementTier: string;
@@ -128,13 +139,16 @@ const RealTimeAchievementNotificationsComponent: React.FC<AchievementNotificatio
         // Create achievement object from event data
         const achievement: Achievement = {
           id: achievementData.achievementId,
-          title: achievementData.achievementTitle || 'New Achievement Unlocked',
-          description: achievementData.achievementDescription || 'You have unlocked a new diplomatic achievement!',
-          tier: (achievementData.achievementTier as Achievement['tier']) || 'bronze',
-          category: (achievementData.achievementCategory as Achievement['category']) || 'diplomatic',
-          rarity: (achievementData.achievementRarity as Achievement['rarity']) || 'common',
+          title: achievementData.achievementTitle || "New Achievement Unlocked",
+          description:
+            achievementData.achievementDescription ||
+            "You have unlocked a new diplomatic achievement!",
+          tier: (achievementData.achievementTier as Achievement["tier"]) || "bronze",
+          category:
+            (achievementData.achievementCategory as Achievement["category"]) || "diplomatic",
+          rarity: (achievementData.achievementRarity as Achievement["rarity"]) || "common",
           points: achievementData.achievementPoints || 100,
-          unlockedAt: update.event.timestamp
+          unlockedAt: update.event.timestamp,
         };
 
         // Add new notification
@@ -143,91 +157,83 @@ const RealTimeAchievementNotificationsComponent: React.FC<AchievementNotificatio
           achievement,
           timestamp: Date.now(),
           isVisible: true,
-          isExpired: false
+          isExpired: false,
         };
 
-        setNotifications(prev => {
+        setNotifications((prev) => {
           // Remove oldest if at max capacity
           const filtered = prev.slice(0, maxNotifications - 1);
           return [newNotification, ...filtered];
         });
 
         // Play sound effect if enabled
-        if (playSound && typeof window !== 'undefined') {
+        if (playSound && typeof window !== "undefined") {
           playAchievementSound(achievement.tier);
         }
 
         // Auto-hide after duration
         setTimeout(() => {
-          setNotifications(prev => 
-            prev.map(n => 
-              n.id === newNotification.id 
-                ? { ...n, isExpired: true }
-                : n
-            )
+          setNotifications((prev) =>
+            prev.map((n) => (n.id === newNotification.id ? { ...n, isExpired: true } : n))
           );
         }, autoHideDuration);
 
         // Remove completely after animation
         setTimeout(() => {
-          setNotifications(prev => prev.filter(n => n.id !== newNotification.id));
+          setNotifications((prev) => prev.filter((n) => n.id !== newNotification.id));
         }, autoHideDuration + 1000);
       }
     });
   }, [recentEvents, maxNotifications, autoHideDuration, playSound]);
 
   // Play achievement unlock sound
-  const playAchievementSound = (tier: Achievement['tier']) => {
+  const playAchievementSound = (tier: Achievement["tier"]) => {
     try {
       // Create audio context for achievement sounds
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      
+
       // Different frequencies for different tiers
       const frequencies = {
         bronze: [440, 550],
         silver: [523, 659],
         gold: [659, 784],
         platinum: [784, 932],
-        legendary: [932, 1109]
+        legendary: [932, 1109],
       };
 
       const [freq1, freq2] = frequencies[tier];
-      
+
       // Create achievement unlock sound sequence
       [freq1, freq2].forEach((freq, index) => {
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
-        
+
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
-        
+
         oscillator.frequency.value = freq;
-        oscillator.type = 'sine';
-        
+        oscillator.type = "sine";
+
         const currentTime = audioContext.currentTime || 0;
         gainNode.gain.setValueAtTime(0.1, currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + 0.3);
-        
+
         oscillator.start(currentTime + index * 0.15);
         oscillator.stop(currentTime + 0.3 + index * 0.15);
       });
     } catch (error) {
-      console.warn('Could not play achievement sound:', error);
+      console.warn("Could not play achievement sound:", error);
     }
   };
 
   // Manually dismiss notification
   const dismissNotification = useCallback((notificationId: string) => {
-    setNotifications(prev =>
-      prev.map(n =>
-        n.id === notificationId
-          ? { ...n, isExpired: true }
-          : n
-      )
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notificationId ? { ...n, isExpired: true } : n))
     );
 
     setTimeout(() => {
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
     }, 300);
   }, []);
 
@@ -241,53 +247,53 @@ const RealTimeAchievementNotificationsComponent: React.FC<AchievementNotificatio
     return (
       <motion.div
         key={notification.id}
-        initial={{ opacity: 0, x: position.includes('right') ? 400 : -400, scale: 0.8 }}
-        animate={{ 
+        initial={{ opacity: 0, x: position.includes("right") ? 400 : -400, scale: 0.8 }}
+        animate={{
           opacity: notification.isExpired ? 0 : 1,
-          x: notification.isExpired ? (position.includes('right') ? 200 : -200) : 0,
-          scale: notification.isExpired ? 0.8 : 1
+          x: notification.isExpired ? (position.includes("right") ? 200 : -200) : 0,
+          scale: notification.isExpired ? 0.8 : 1,
         }}
-        exit={{ 
-          opacity: 0, 
-          x: position.includes('right') ? 400 : -400, 
-          scale: 0.8 
+        exit={{
+          opacity: 0,
+          x: position.includes("right") ? 400 : -400,
+          scale: 0.8,
         }}
-        transition={{ 
-          type: "spring", 
-          stiffness: 300, 
+        transition={{
+          type: "spring",
+          stiffness: 300,
           damping: 30,
-          opacity: { duration: 0.3 }
+          opacity: { duration: 0.3 },
         }}
         className={cn(
-          "relative w-80 p-4 rounded-xl border backdrop-blur-md",
+          "relative w-80 rounded-xl border p-4 backdrop-blur-md",
           "bg-gradient-to-r from-black/40 to-black/20",
           "border-[--intel-gold]/30",
           rarityEffect,
-          "overflow-hidden group"
+          "group overflow-hidden"
         )}
       >
         {/* Particle Effects Background */}
         {showParticleEffects && (
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
             {[...Array(8)].map((_, i) => (
               <motion.div
                 key={i}
-                className="absolute w-1 h-1 bg-[--intel-gold] rounded-full"
-                initial={{ 
-                  x: Math.random() * 300, 
+                className="absolute h-1 w-1 rounded-full bg-[--intel-gold]"
+                initial={{
+                  x: Math.random() * 300,
                   y: Math.random() * 100,
-                  opacity: 0
+                  opacity: 0,
                 }}
-                animate={{ 
+                animate={{
                   y: [null, -20, -40],
                   opacity: [0, 1, 0],
-                  scale: [1, 1.5, 0]
+                  scale: [1, 1.5, 0],
                 }}
-                transition={{ 
+                transition={{
                   duration: 2,
                   delay: i * 0.1,
                   repeat: Infinity,
-                  repeatDelay: 3
+                  repeatDelay: 3,
                 }}
               />
             ))}
@@ -295,67 +301,62 @@ const RealTimeAchievementNotificationsComponent: React.FC<AchievementNotificatio
         )}
 
         {/* Tier Gradient Background */}
-        <div className={cn(
-          "absolute inset-0 bg-gradient-to-br opacity-10",
-          tierColor
-        )} />
+        <div className={cn("absolute inset-0 bg-gradient-to-br opacity-10", tierColor)} />
 
         {/* Content */}
         <div className="relative z-10">
           {/* Header */}
-          <div className="flex items-start justify-between mb-3">
+          <div className="mb-3 flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <div className={cn(
-                "w-12 h-12 rounded-full flex items-center justify-center",
-                "bg-gradient-to-br shadow-lg",
-                tierColor
-              )}>
-                <TierIcon className="w-6 h-6 text-white" />
+              <div
+                className={cn(
+                  "flex h-12 w-12 items-center justify-center rounded-full",
+                  "bg-gradient-to-br shadow-lg",
+                  tierColor
+                )}
+              >
+                <TierIcon className="h-6 w-6 text-white" />
               </div>
-              
+
               <div>
                 <div className="flex items-center gap-2">
-                  <h4 className="text-white font-bold text-sm">
-                    Achievement Unlocked!
-                  </h4>
-                  <span className={cn(
-                    "px-2 py-1 rounded-full text-xs font-medium uppercase",
-                    "bg-[--intel-gold]/20 text-[--intel-gold]"
-                  )}>
+                  <h4 className="text-sm font-bold text-white">Achievement Unlocked!</h4>
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-1 text-xs font-medium uppercase",
+                      "bg-[--intel-gold]/20 text-[--intel-gold]"
+                    )}
+                  >
                     {achievement.tier}
                   </span>
                 </div>
-                <p className="text-[--intel-silver] text-xs">
-                  +{achievement.points} points
-                </p>
+                <p className="text-xs text-[--intel-silver]">+{achievement.points} points</p>
               </div>
             </div>
 
             <button
               onClick={() => dismissNotification(notification.id)}
-              className="p-1 text-[--intel-silver] hover:text-white transition-colors rounded"
+              className="rounded p-1 text-[--intel-silver] transition-colors hover:text-white"
             >
-              <RiCloseLine className="w-4 h-4" />
+              <RiCloseLine className="h-4 w-4" />
             </button>
           </div>
 
           {/* Achievement Details */}
           <div className="space-y-2">
-            <h5 className="text-white font-semibold text-base">
-              {achievement.title}
-            </h5>
-            <p className="text-[--intel-silver] text-sm leading-relaxed">
+            <h5 className="text-base font-semibold text-white">{achievement.title}</h5>
+            <p className="text-sm leading-relaxed text-[--intel-silver]">
               {achievement.description}
             </p>
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/10">
+          <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
             <div className="flex items-center gap-4 text-xs text-[--intel-silver]">
               <span className="capitalize">{achievement.category}</span>
               <span className="capitalize">{achievement.rarity}</span>
             </div>
-            
+
             <div className="text-xs text-[--intel-silver]">
               {new Date(achievement.unlockedAt).toLocaleTimeString()}
             </div>
@@ -364,7 +365,7 @@ const RealTimeAchievementNotificationsComponent: React.FC<AchievementNotificatio
 
         {/* Connection Status Indicator */}
         {!isConnected && (
-          <div className="absolute top-2 left-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+          <div className="absolute top-2 left-2 h-2 w-2 animate-pulse rounded-full bg-red-500" />
         )}
       </motion.div>
     );
@@ -373,14 +374,14 @@ const RealTimeAchievementNotificationsComponent: React.FC<AchievementNotificatio
   return (
     <div className={cn(POSITION_CLASSES[position], className)}>
       <div className="space-y-3">
-        <AnimatePresence mode="popLayout">
-          {notifications.map(renderNotification)}
-        </AnimatePresence>
+        <AnimatePresence mode="popLayout">{notifications.map(renderNotification)}</AnimatePresence>
       </div>
     </div>
   );
 };
 
-RealTimeAchievementNotificationsComponent.displayName = 'RealTimeAchievementNotifications';
+RealTimeAchievementNotificationsComponent.displayName = "RealTimeAchievementNotifications";
 
-export const RealTimeAchievementNotifications = React.memo(RealTimeAchievementNotificationsComponent);
+export const RealTimeAchievementNotifications = React.memo(
+  RealTimeAchievementNotificationsComponent
+);

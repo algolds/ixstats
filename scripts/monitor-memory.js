@@ -5,7 +5,7 @@
  * Monitors memory usage and triggers GC when needed
  */
 
-import { performance } from 'perf_hooks';
+import { performance } from "perf_hooks";
 
 class MemoryMonitor {
   constructor() {
@@ -26,18 +26,22 @@ class MemoryMonitor {
     const heapTotalMB = memUsage.heapTotal / 1024 / 1024;
     const usagePercent = heapUsedMB / heapTotalMB;
 
-    console.log(`[MemoryMonitor] Heap: ${heapUsedMB.toFixed(2)}MB / ${heapTotalMB.toFixed(2)}MB (${(usagePercent * 100).toFixed(1)}%)`);
+    console.log(
+      `[MemoryMonitor] Heap: ${heapUsedMB.toFixed(2)}MB / ${heapTotalMB.toFixed(2)}MB (${(usagePercent * 100).toFixed(1)}%)`
+    );
 
     if (usagePercent > this.threshold) {
-      console.warn(`[MemoryMonitor] High memory usage detected: ${(usagePercent * 100).toFixed(1)}%`);
-      
+      console.warn(
+        `[MemoryMonitor] High memory usage detected: ${(usagePercent * 100).toFixed(1)}%`
+      );
+
       if (global.gc) {
         const startTime = performance.now();
         global.gc();
         const duration = performance.now() - startTime;
         console.log(`[MemoryMonitor] Garbage collection triggered (${duration.toFixed(2)}ms)`);
       } else {
-        console.warn('[MemoryMonitor] Garbage collection not available');
+        console.warn("[MemoryMonitor] Garbage collection not available");
       }
     }
   }
@@ -46,4 +50,4 @@ class MemoryMonitor {
 // Start monitoring
 new MemoryMonitor();
 
-console.log('[MemoryMonitor] Started memory monitoring...');
+console.log("[MemoryMonitor] Started memory monitoring...");

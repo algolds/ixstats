@@ -35,7 +35,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
   onLoadMore,
   searchInput,
   filterBy,
-  onClearFilters
+  onClearFilters,
 }) => {
   const visibleCountries = countries.slice(0, visibleCount);
 
@@ -48,7 +48,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
   return (
     <div className="space-y-12">
       {/* Countries Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {visibleCountries.map((country, index) => (
           <motion.div
             key={country.id}
@@ -57,7 +57,7 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
             transition={{
               duration: 0.4,
               delay: index * 0.05,
-              ease: "easeOut"
+              ease: "easeOut",
             }}
           >
             <CountryFocusCard
@@ -77,18 +77,15 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
       {(isLoading || visibleCount < countries.length) && (
         <div className="mt-12">
           <ProgressiveBlur>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="h-60 md:h-80 animate-pulse glass-surface glass-refraction"
-                >
-                  <div className="p-6 space-y-4">
-                    <div className="h-6 bg-muted/30 rounded"></div>
-                    <div className="h-4 bg-muted/20 rounded w-2/3"></div>
-                    <div className="space-y-2 mt-4">
-                      <div className="h-3 bg-muted/20 rounded"></div>
-                      <div className="h-3 bg-muted/20 rounded w-3/4"></div>
+                <div key={i} className="glass-surface glass-refraction h-60 animate-pulse md:h-80">
+                  <div className="space-y-4 p-6">
+                    <div className="bg-muted/30 h-6 rounded"></div>
+                    <div className="bg-muted/20 h-4 w-2/3 rounded"></div>
+                    <div className="mt-4 space-y-2">
+                      <div className="bg-muted/20 h-3 rounded"></div>
+                      <div className="bg-muted/20 h-3 w-3/4 rounded"></div>
                     </div>
                   </div>
                 </div>
@@ -100,10 +97,10 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
 
       {/* Load More Button */}
       {!isLoading && visibleCount < countries.length && (
-        <div className="text-center mt-12">
+        <div className="mt-12 text-center">
           <button
             onClick={loadMore}
-            className="px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-lg transition-colors"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-8 py-3 font-medium transition-colors"
           >
             Load More Countries
           </button>
@@ -112,27 +109,25 @@ export const CountriesFocusGridModular: React.FC<CountriesFocusGridModularProps>
 
       {/* End Message */}
       {!isLoading && !hasMore && visibleCount >= countries.length && countries.length > 0 && (
-        <div className="text-center mt-12">
-          <div className="inline-block px-6 py-4 glass-floating glass-refraction">
-            <p className="text-muted-foreground">
-              You've viewed all {countries.length} countries
-            </p>
+        <div className="mt-12 text-center">
+          <div className="glass-floating glass-refraction inline-block px-6 py-4">
+            <p className="text-muted-foreground">You've viewed all {countries.length} countries</p>
           </div>
         </div>
       )}
 
       {/* Empty State */}
       {countries.length === 0 && !isLoading && (
-        <div className="text-center mt-12">
-          <div className="p-12 max-w-md mx-auto glass-floating glass-refraction">
-            <RiGlobalLine className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-            <h3 className="text-xl font-semibold mb-2">No Countries Found</h3>
+        <div className="mt-12 text-center">
+          <div className="glass-floating glass-refraction mx-auto max-w-md p-12">
+            <RiGlobalLine className="text-muted-foreground/50 mx-auto mb-4 h-16 w-16" />
+            <h3 className="mb-2 text-xl font-semibold">No Countries Found</h3>
             <p className="text-muted-foreground mb-4">
               Try adjusting your search or filter criteria
             </p>
             <button
               onClick={onClearFilters}
-              className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg px-4 py-2 transition-colors"
             >
               Clear Filters
             </button>

@@ -4,17 +4,17 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { 
-  ChevronDown, 
-  ChevronUp, 
-  Shield, 
-  MessageSquare, 
-  Users, 
+import {
+  ChevronDown,
+  ChevronUp,
+  Shield,
+  MessageSquare,
+  Users,
   Target,
   Globe,
   Zap,
   Activity,
-  Settings
+  Settings,
 } from "lucide-react";
 import { DiplomaticOperationsCard } from "./DiplomaticOperationsCard";
 import { StrategicCommunicationsCard } from "./StrategicCommunicationsCard";
@@ -24,7 +24,10 @@ interface StrategicOperationsSuiteProps {
   className?: string;
 }
 
-export function StrategicOperationsSuite({ userProfile, className = "" }: StrategicOperationsSuiteProps) {
+export function StrategicOperationsSuite({
+  userProfile,
+  className = "",
+}: StrategicOperationsSuiteProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const operations = [
@@ -34,7 +37,7 @@ export function StrategicOperationsSuite({ userProfile, className = "" }: Strate
       icon: Shield,
       color: "text-blue-500",
       status: "Active",
-      metrics: "12 active missions"
+      metrics: "12 active missions",
     },
     {
       id: "communications",
@@ -42,7 +45,7 @@ export function StrategicOperationsSuite({ userProfile, className = "" }: Strate
       icon: MessageSquare,
       color: "text-green-500",
       status: "Monitoring",
-      metrics: "3 campaigns running"
+      metrics: "3 campaigns running",
     },
     {
       id: "intelligence",
@@ -50,7 +53,7 @@ export function StrategicOperationsSuite({ userProfile, className = "" }: Strate
       icon: Target,
       color: "text-orange-500",
       status: "Standby",
-      metrics: "45 reports pending"
+      metrics: "45 reports pending",
     },
     {
       id: "network",
@@ -58,8 +61,8 @@ export function StrategicOperationsSuite({ userProfile, className = "" }: Strate
       icon: Globe,
       color: "text-purple-500",
       status: "Online",
-      metrics: "98.7% uptime"
-    }
+      metrics: "98.7% uptime",
+    },
   ];
 
   return (
@@ -67,8 +70,8 @@ export function StrategicOperationsSuite({ userProfile, className = "" }: Strate
       {/* Suite Header */}
       <Card className="glass-hierarchy-child mb-4">
         <CardHeader className="pb-3">
-          <div 
-            className="flex items-center justify-between cursor-pointer"
+          <div
+            className="flex cursor-pointer items-center justify-between"
             onClick={() => setIsExpanded(!isExpanded)}
           >
             <CardTitle className="flex items-center gap-2 text-lg font-semibold">
@@ -77,12 +80,12 @@ export function StrategicOperationsSuite({ userProfile, className = "" }: Strate
             </CardTitle>
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="text-xs">
-                {operations.filter(op => op.status === "Active").length} Active
+                {operations.filter((op) => op.status === "Active").length} Active
               </Badge>
               {isExpanded ? (
-                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                <ChevronUp className="text-muted-foreground h-4 w-4" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                <ChevronDown className="text-muted-foreground h-4 w-4" />
               )}
             </div>
           </div>
@@ -91,19 +94,19 @@ export function StrategicOperationsSuite({ userProfile, className = "" }: Strate
         {/* Collapsed Summary */}
         {!isExpanded && (
           <CardContent className="pt-0">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
               {operations.map((operation) => {
                 const IconComponent = operation.icon;
                 return (
                   <div
                     key={operation.id}
-                    className="glass-hierarchy-interactive rounded-lg p-3 text-center hover:scale-[1.02] transition-transform"
+                    className="glass-hierarchy-interactive rounded-lg p-3 text-center transition-transform hover:scale-[1.02]"
                   >
-                    <div className="flex items-center justify-center mb-2">
+                    <div className="mb-2 flex items-center justify-center">
                       <IconComponent className={`h-5 w-5 ${operation.color}`} />
                     </div>
-                    <div className="text-xs font-medium mb-1">{operation.name}</div>
-                    <Badge 
+                    <div className="mb-1 text-xs font-medium">{operation.name}</div>
+                    <Badge
                       variant={operation.status === "Active" ? "default" : "secondary"}
                       className="text-xs"
                     >
@@ -129,23 +132,23 @@ export function StrategicOperationsSuite({ userProfile, className = "" }: Strate
           >
             <div className="space-y-6">
               {/* Operations Overview Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {operations.map((operation) => {
                   const IconComponent = operation.icon;
                   return (
                     <Card key={operation.id} className="glass-hierarchy-interactive">
                       <CardContent className="p-4">
-                        <div className="flex items-center justify-between mb-3">
+                        <div className="mb-3 flex items-center justify-between">
                           <IconComponent className={`h-5 w-5 ${operation.color}`} />
-                          <Badge 
+                          <Badge
                             variant={operation.status === "Active" ? "default" : "secondary"}
                             className="text-xs"
                           >
                             {operation.status}
                           </Badge>
                         </div>
-                        <h3 className="font-medium text-sm mb-1">{operation.name}</h3>
-                        <p className="text-xs text-muted-foreground">{operation.metrics}</p>
+                        <h3 className="mb-1 text-sm font-medium">{operation.name}</h3>
+                        <p className="text-muted-foreground text-xs">{operation.metrics}</p>
                       </CardContent>
                     </Card>
                   );
@@ -153,13 +156,13 @@ export function StrategicOperationsSuite({ userProfile, className = "" }: Strate
               </div>
 
               {/* Detailed Operation Cards */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <DiplomaticOperationsCard userProfile={userProfile} />
                 <StrategicCommunicationsCard userProfile={userProfile} />
               </div>
 
               {/* Additional Operations */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {/* Intelligence Coordination */}
                 <Card className="glass-hierarchy-child">
                   <CardHeader className="pb-3">
@@ -180,7 +183,9 @@ export function StrategicOperationsSuite({ userProfile, className = "" }: Strate
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Threat Level</span>
-                        <Badge variant="outline" className="text-xs">Low</Badge>
+                        <Badge variant="outline" className="text-xs">
+                          Low
+                        </Badge>
                       </div>
                     </div>
                   </CardContent>
@@ -207,7 +212,7 @@ export function StrategicOperationsSuite({ userProfile, className = "" }: Strate
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">Security Status</span>
                         <Badge variant="default" className="text-xs">
-                          <Shield className="h-3 w-3 mr-1" />
+                          <Shield className="mr-1 h-3 w-3" />
                           Secure
                         </Badge>
                       </div>

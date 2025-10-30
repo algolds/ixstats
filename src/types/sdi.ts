@@ -1,19 +1,25 @@
 // src/types/sdi.ts
 // Sovereign Digital Interface Type Definitions
 
-// Re-export unified IntelligenceItem to maintain backward compatibility  
-export type { IntelligenceItem } from './intelligence-unified';
+// Re-export unified IntelligenceItem to maintain backward compatibility
+export type { IntelligenceItem } from "./intelligence-unified";
 
 export interface CrisisEvent {
   id: string;
-  type: 'natural_disaster' | 'economic_crisis' | 'political_crisis' | 'security_threat' | 'pandemic' | 'environmental';
+  type:
+    | "natural_disaster"
+    | "economic_crisis"
+    | "political_crisis"
+    | "security_threat"
+    | "pandemic"
+    | "environmental";
   title: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: "low" | "medium" | "high" | "critical";
   affectedCountries: string[];
   casualties: number;
   economicImpact: number;
-  status: 'coordinating' | 'monitoring' | 'deployed' | 'standby' | 'resolved';
-  responseStatus: 'coordinating' | 'monitoring' | 'deployed' | 'standby' | 'resolved';
+  status: "coordinating" | "monitoring" | "deployed" | "standby" | "resolved";
+  responseStatus: "coordinating" | "monitoring" | "deployed" | "standby" | "resolved";
   timestamp: Date;
   description: string;
   location?: string;
@@ -23,7 +29,7 @@ export interface CrisisEvent {
 export interface ResponseTeam {
   id: string;
   name: string;
-  status: 'deployed' | 'standby' | 'monitoring' | 'returning';
+  status: "deployed" | "standby" | "monitoring" | "returning";
   location: string;
   capabilities: string[];
   personnel: number;
@@ -45,16 +51,16 @@ export interface CommodityPrice {
   name: string;
   price: number;
   change: number;
-  trend: 'up' | 'down' | 'stable';
+  trend: "up" | "down" | "stable";
   unit: string;
   timestamp: Date;
 }
 
 export interface EconomicAlert {
   id: string;
-  type: 'market_volatility' | 'trade_disruption' | 'currency_crisis' | 'supply_chain' | 'sanctions';
+  type: "market_volatility" | "trade_disruption" | "currency_crisis" | "supply_chain" | "sanctions";
   title: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: "low" | "medium" | "high" | "critical";
   description: string;
   timestamp: Date;
   affectedRegions?: string[];
@@ -65,11 +71,11 @@ export interface DiplomaticRelation {
   id: string;
   country1: string;
   country2: string;
-  relationship: 'alliance' | 'neutral' | 'tension' | 'conflict' | 'partnership';
+  relationship: "alliance" | "neutral" | "tension" | "conflict" | "partnership";
   strength: number; // 0-100
   treaties: string[];
   lastContact: Date;
-  status: 'active' | 'monitoring' | 'dormant' | 'hostile';
+  status: "active" | "monitoring" | "dormant" | "hostile";
   diplomaticChannels: string[];
   tradeVolume?: number;
   culturalExchange?: boolean;
@@ -79,8 +85,8 @@ export interface Treaty {
   id: string;
   name: string;
   parties: string[];
-  type: 'economic' | 'military' | 'cultural' | 'environmental' | 'scientific' | 'security';
-  status: 'active' | 'pending' | 'expired' | 'suspended';
+  type: "economic" | "military" | "cultural" | "environmental" | "scientific" | "security";
+  status: "active" | "pending" | "expired" | "suspended";
   signedDate: Date;
   expiryDate: Date;
   description?: string;
@@ -90,11 +96,11 @@ export interface Treaty {
 
 export interface DiplomaticEvent {
   id: string;
-  type: 'summit' | 'negotiation' | 'signing' | 'protest' | 'mediation' | 'conference';
+  type: "summit" | "negotiation" | "signing" | "protest" | "mediation" | "conference";
   title: string;
   participants: string[];
   date: Date;
-  status: 'scheduled' | 'preparing' | 'ongoing' | 'completed' | 'cancelled';
+  status: "scheduled" | "preparing" | "ongoing" | "completed" | "cancelled";
   location?: string;
   agenda?: string[];
   outcomes?: string[];
@@ -114,10 +120,10 @@ export interface SDIModule {
 
 export interface SDIAlert {
   id: string;
-  type: 'intelligence' | 'crisis' | 'economic' | 'diplomatic' | 'security';
+  type: "intelligence" | "crisis" | "economic" | "diplomatic" | "security";
   title: string;
   message: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  priority: "low" | "medium" | "high" | "critical";
   timestamp: Date;
   isRead: boolean;
   actionRequired: boolean;
@@ -127,11 +133,11 @@ export interface SDIAlert {
 export interface SDIUser {
   id: string;
   username: string;
-  role: 'observer' | 'analyst' | 'coordinator' | 'administrator';
+  role: "observer" | "analyst" | "coordinator" | "administrator";
   permissions: string[];
   lastActive: Date;
   preferences: {
-    theme: 'light' | 'dark' | 'auto';
+    theme: "light" | "dark" | "auto";
     notifications: boolean;
     autoRefresh: boolean;
     defaultModule: string;
@@ -144,7 +150,7 @@ export interface SDISystemStatus {
   activeCrises: number;
   intelligenceItems: number;
   diplomaticEvents: number;
-  systemHealth: 'operational' | 'degraded' | 'maintenance';
+  systemHealth: "operational" | "degraded" | "maintenance";
   uptime: number;
   lastBackup: Date;
 }
@@ -163,7 +169,7 @@ export interface SDIConfiguration {
     desktopNotifications: boolean;
   };
   display: {
-    theme: 'light' | 'dark' | 'auto';
+    theme: "light" | "dark" | "auto";
     compactMode: boolean;
     showTimestamps: boolean;
     timezone: string;
@@ -172,10 +178,10 @@ export interface SDIConfiguration {
 
 // Utility types
 export type IntelligenceCategory = string; // IntelligenceItem['category'];
-export type CrisisType = CrisisEvent['type'];
-export type DiplomaticRelationshipType = DiplomaticRelation['relationship'];
-export type TreatyType = Treaty['type'];
-export type AlertPriority = 'low' | 'medium' | 'high' | 'critical';
+export type CrisisType = CrisisEvent["type"];
+export type DiplomaticRelationshipType = DiplomaticRelation["relationship"];
+export type TreatyType = Treaty["type"];
+export type AlertPriority = "low" | "medium" | "high" | "critical";
 
 // API Response types
 export interface SDIApiResponse<T> {
@@ -199,8 +205,8 @@ export interface SDIPaginatedResponse<T> {
 export type SDIUpdateData = any | CrisisEvent | DiplomaticRelation | Treaty | null; // IntelligenceItem
 
 export interface SDIRealTimeUpdate {
-  type: 'intelligence' | 'crisis' | 'economic' | 'diplomatic' | 'system';
-  action: 'create' | 'update' | 'delete';
+  type: "intelligence" | "crisis" | "economic" | "diplomatic" | "system";
+  action: "create" | "update" | "delete";
   data: SDIUpdateData;
   timestamp: Date;
   userId?: string;
@@ -223,6 +229,6 @@ export interface SDISearchOptions {
   query: string;
   filters: SDIFilterOptions;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
   limit?: number;
-} 
+}

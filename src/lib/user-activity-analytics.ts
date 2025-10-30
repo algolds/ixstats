@@ -1,6 +1,6 @@
 /**
  * User Activity Analytics Service
- * 
+ *
  * Provides comprehensive analytics and insights on user behavior,
  * activity patterns, and system usage for IxStats.
  */
@@ -11,42 +11,42 @@ import { ErrorLogger } from "./error-logger";
 
 export interface UserActivityMetrics {
   userId: string;
-  period: 'day' | 'week' | 'month' | 'quarter' | 'year';
+  period: "day" | "week" | "month" | "quarter" | "year";
   startDate: Date;
   endDate: Date;
-  
+
   // Activity metrics
   totalActions: number;
   uniqueSessions: number;
   averageSessionDuration: number;
   peakActivityHour: number;
   mostActiveDay: string;
-  
+
   // Category breakdown
   categoryBreakdown: Record<string, number>;
   topActions: Array<{ action: string; count: number; percentage: number }>;
-  
+
   // Error metrics
   errorRate: number;
   errorCount: number;
   topErrors: Array<{ error: string; count: number }>;
-  
+
   // Performance metrics
   averageResponseTime: number;
   slowestOperations: Array<{ operation: string; avgDuration: number }>;
-  
+
   // Security metrics
   securityEvents: number;
   suspiciousActivity: number;
   failedAuthAttempts: number;
-  
+
   // Engagement metrics
   dailyActiveMinutes: number;
   featureUsage: Record<string, number>;
   countryInteractions: string[];
-  
+
   // Trends
-  activityTrend: 'increasing' | 'decreasing' | 'stable';
+  activityTrend: "increasing" | "decreasing" | "stable";
   engagementScore: number; // 0-100
 }
 
@@ -64,11 +64,11 @@ export interface SystemActivityOverview {
 
 export interface UserBehaviorPattern {
   userId: string;
-  pattern: 'casual' | 'power' | 'admin' | 'explorer' | 'social' | 'economic';
+  pattern: "casual" | "power" | "admin" | "explorer" | "social" | "economic";
   confidence: number; // 0-100
   characteristics: string[];
   recommendations: string[];
-  riskLevel: 'low' | 'medium' | 'high';
+  riskLevel: "low" | "medium" | "high";
 }
 
 export class UserActivityAnalytics {
@@ -77,7 +77,7 @@ export class UserActivityAnalytics {
       return {};
     }
 
-    if (typeof metadata === 'string') {
+    if (typeof metadata === "string") {
       try {
         return JSON.parse(metadata);
       } catch {
@@ -85,7 +85,7 @@ export class UserActivityAnalytics {
       }
     }
 
-    if (typeof metadata === 'object') {
+    if (typeof metadata === "object") {
       return metadata as Record<string, any>;
     }
 
@@ -97,28 +97,28 @@ export class UserActivityAnalytics {
    */
   static async getUserActivityMetrics(
     userId: string,
-    period: 'day' | 'week' | 'month' | 'quarter' | 'year' = 'week'
+    period: "day" | "week" | "month" | "quarter" | "year" = "week"
   ): Promise<UserActivityMetrics> {
     try {
       const { startDate, endDate } = this.getPeriodDates(period);
-      
+
       // Get user logs for the period
       const logs = await db.systemLog.findMany({
         where: {
           userId,
           timestamp: {
             gte: startDate,
-            lte: endDate
+            lte: endDate,
           },
-          category: 'USER_ACTION'
+          category: "USER_ACTION",
         },
-        orderBy: { timestamp: 'asc' }
+        orderBy: { timestamp: "asc" },
       });
 
       // Calculate basic metrics
       const totalActions = logs.length;
-      const uniqueSessions = new Set(logs.map(l => l.requestId).filter(Boolean)).size;
-      const errorCount = logs.filter(l => l.level === 'ERROR').length;
+      const uniqueSessions = new Set(logs.map((l) => l.requestId).filter(Boolean)).size;
+      const errorCount = logs.filter((l) => l.level === "ERROR").length;
       const errorRate = totalActions > 0 ? (errorCount / totalActions) * 100 : 0;
 
       // Calculate category breakdown
@@ -128,18 +128,18 @@ export class UserActivityAnalytics {
       const durationSum: Record<string, number> = {};
       const durationCount: Record<string, number> = {};
 
-      logs.forEach(log => {
+      logs.forEach((log) => {
         const metadata = this.parseMetadata(log.metadata);
-        const category = metadata.category || 'UNKNOWN';
-        const action = metadata.action || 'UNKNOWN';
-        
+        const category = metadata.category || "UNKNOWN";
+        const action = metadata.action || "UNKNOWN";
+
         categoryBreakdown[category] = (categoryBreakdown[category] || 0) + 1;
         actionCounts[action] = (actionCounts[action] || 0) + 1;
-        
-        if (log.level === 'ERROR') {
+
+        if (log.level === "ERROR") {
           errorCounts[action] = (errorCounts[action] || 0) + 1;
         }
-        
+
         if (log.duration) {
           durationSum[action] = (durationSum[action] || 0) + log.duration;
           durationCount[action] = (durationCount[action] || 0) + 1;
@@ -151,7 +151,7 @@ export class UserActivityAnalytics {
         .map(([action, count]) => ({
           action,
           count,
-          percentage: (count / totalActions) * 100
+          percentage: (count / totalActions) * 100,
         }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 10);
@@ -163,11 +163,12 @@ export class UserActivityAnalytics {
         .slice(0, 5);
 
       // Calculate performance metrics
-      const averageResponseTime = logs.reduce((sum, log) => sum + (log.duration || 0), 0) / logs.length;
+      const averageResponseTime =
+        logs.reduce((sum, log) => sum + (log.duration || 0), 0) / logs.length;
       const slowestOperations = Object.entries(durationSum)
         .map(([operation, sum]) => ({
           operation,
-          avgDuration: sum / durationCount[operation]
+          avgDuration: sum / durationCount[operation],
         }))
         .sort((a, b) => b.avgDuration - a.avgDuration)
         .slice(0, 5);
@@ -175,20 +176,24 @@ export class UserActivityAnalytics {
       // Calculate activity patterns
       const hourCounts: Record<number, number> = {};
       const dayCounts: Record<string, number> = {};
-      
-      logs.forEach(log => {
+
+      logs.forEach((log) => {
         const hour = log.timestamp.getHours();
-        const day = log.timestamp.toISOString().split('T')[0];
-        
+        const day = log.timestamp.toISOString().split("T")[0];
+
         hourCounts[hour] = (hourCounts[hour] || 0) + 1;
         dayCounts[day] = (dayCounts[day] || 0) + 1;
       });
 
-      const peakActivityHour = Object.entries(hourCounts)
-        .reduce((max, [hour, count]) => count > hourCounts[max] ? parseInt(hour) : max, 0);
+      const peakActivityHour = Object.entries(hourCounts).reduce(
+        (max, [hour, count]) => (count > hourCounts[max] ? parseInt(hour) : max),
+        0
+      );
 
-      const mostActiveDay = Object.entries(dayCounts)
-        .reduce((max, [day, count]) => count > dayCounts[max] ? day : max, '');
+      const mostActiveDay = Object.entries(dayCounts).reduce(
+        (max, [day, count]) => (count > dayCounts[max] ? day : max),
+        ""
+      );
 
       // Calculate engagement score
       const engagementScore = this.calculateEngagementScore(logs, period);
@@ -197,19 +202,21 @@ export class UserActivityAnalytics {
       const activityTrend = await this.calculateActivityTrend(userId, period);
 
       // Get security metrics
-      const securityEvents = logs.filter(l => l.category === 'SECURITY').length;
+      const securityEvents = logs.filter((l) => l.category === "SECURITY").length;
       const suspiciousActivity = await this.detectSuspiciousActivity(userId, startDate, endDate);
-      const failedAuthAttempts = logs.filter(l => {
+      const failedAuthAttempts = logs.filter((l) => {
         const metadata = this.parseMetadata(l.metadata);
         const action = metadata.action;
-        return typeof action === 'string' && action.includes('LOGIN_FAILED');
+        return typeof action === "string" && action.includes("LOGIN_FAILED");
       }).length;
 
       // Calculate feature usage
       const featureUsage = this.calculateFeatureUsage(logs);
 
       // Get country interactions
-      const countryInteractions = Array.from(new Set(logs.map(l => l.countryId).filter(Boolean))) as string[];
+      const countryInteractions = Array.from(
+        new Set(logs.map((l) => l.countryId).filter(Boolean))
+      ) as string[];
 
       // Calculate session-based metrics
       const sessionMetrics = await this.calculateSessionMetrics(userId, startDate, endDate);
@@ -238,14 +245,13 @@ export class UserActivityAnalytics {
         featureUsage,
         countryInteractions,
         activityTrend,
-        engagementScore
+        engagementScore,
       };
-
     } catch (error) {
       ErrorLogger.logError(error as Error, {
-        component: 'UserActivityAnalytics',
-        action: 'GET_USER_ACTIVITY_METRICS',
-        userId
+        component: "UserActivityAnalytics",
+        action: "GET_USER_ACTIVITY_METRICS",
+        userId,
       });
       throw error;
     }
@@ -255,26 +261,26 @@ export class UserActivityAnalytics {
    * Get system-wide activity overview
    */
   static async getSystemActivityOverview(
-    period: 'day' | 'week' | 'month' = 'week'
+    period: "day" | "week" | "month" = "week"
   ): Promise<SystemActivityOverview> {
     try {
       const { startDate, endDate } = this.getPeriodDates(period);
-      
+
       // Get all user logs for the period
       const logs = await db.systemLog.findMany({
         where: {
           timestamp: {
             gte: startDate,
-            lte: endDate
+            lte: endDate,
           },
-          category: 'USER_ACTION'
-        }
+          category: "USER_ACTION",
+        },
       });
 
       // Calculate basic metrics
       const totalActions = logs.length;
-      const uniqueUsers = new Set(logs.map(l => l.userId).filter(Boolean)).size;
-      const errorCount = logs.filter(l => l.level === 'ERROR').length;
+      const uniqueUsers = new Set(logs.map((l) => l.userId).filter(Boolean)).size;
+      const errorCount = logs.filter((l) => l.level === "ERROR").length;
       const errorRate = totalActions > 0 ? (errorCount / totalActions) * 100 : 0;
 
       // Get total users from database
@@ -283,9 +289,9 @@ export class UserActivityAnalytics {
 
       // Calculate feature usage
       const featureUsage: Record<string, number> = {};
-      logs.forEach(log => {
+      logs.forEach((log) => {
         const metadata = this.parseMetadata(log.metadata);
-        const category = metadata.category || 'UNKNOWN';
+        const category = metadata.category || "UNKNOWN";
         featureUsage[category] = (featureUsage[category] || 0) + 1;
       });
 
@@ -296,7 +302,7 @@ export class UserActivityAnalytics {
 
       // Calculate peak hours
       const hourCounts: Record<number, number> = {};
-      logs.forEach(log => {
+      logs.forEach((log) => {
         const hour = log.timestamp.getHours();
         hourCounts[hour] = (hourCounts[hour] || 0) + 1;
       });
@@ -308,7 +314,7 @@ export class UserActivityAnalytics {
 
       // Get geographic distribution (from country interactions)
       const geographicDistribution: Record<string, number> = {};
-      logs.forEach(log => {
+      logs.forEach((log) => {
         if (log.countryId) {
           geographicDistribution[log.countryId] = (geographicDistribution[log.countryId] || 0) + 1;
         }
@@ -317,12 +323,12 @@ export class UserActivityAnalytics {
       // Get device and browser types (from user agent)
       const deviceTypes: Record<string, number> = {};
       const browserTypes: Record<string, number> = {};
-      
-      logs.forEach(log => {
+
+      logs.forEach((log) => {
         if (log.userAgent) {
           const deviceType = this.parseDeviceType(log.userAgent);
           const browserType = this.parseBrowserType(log.userAgent);
-          
+
           deviceTypes[deviceType] = (deviceTypes[deviceType] || 0) + 1;
           browserTypes[browserType] = (browserTypes[browserType] || 0) + 1;
         }
@@ -337,13 +343,12 @@ export class UserActivityAnalytics {
         peakHours,
         geographicDistribution,
         deviceTypes,
-        browserTypes
+        browserTypes,
       };
-
     } catch (error) {
       ErrorLogger.logError(error as Error, {
-        component: 'UserActivityAnalytics',
-        action: 'GET_SYSTEM_ACTIVITY_OVERVIEW'
+        component: "UserActivityAnalytics",
+        action: "GET_SYSTEM_ACTIVITY_OVERVIEW",
       });
       throw error;
     }
@@ -354,17 +359,17 @@ export class UserActivityAnalytics {
    */
   static async analyzeUserBehaviorPattern(userId: string): Promise<UserBehaviorPattern> {
     try {
-      const { startDate, endDate } = this.getPeriodDates('month');
-      
+      const { startDate, endDate } = this.getPeriodDates("month");
+
       const logs = await db.systemLog.findMany({
         where: {
           userId,
           timestamp: {
             gte: startDate,
-            lte: endDate
+            lte: endDate,
           },
-          category: 'USER_ACTION'
-        }
+          category: "USER_ACTION",
+        },
       });
 
       // Analyze patterns
@@ -378,14 +383,13 @@ export class UserActivityAnalytics {
         confidence: patterns.confidence,
         characteristics: patterns.characteristics,
         recommendations,
-        riskLevel
+        riskLevel,
       };
-
     } catch (error) {
       ErrorLogger.logError(error as Error, {
-        component: 'UserActivityAnalytics',
-        action: 'ANALYZE_USER_BEHAVIOR_PATTERN',
-        userId
+        component: "UserActivityAnalytics",
+        action: "ANALYZE_USER_BEHAVIOR_PATTERN",
+        userId,
       });
       throw error;
     }
@@ -406,16 +410,16 @@ export class UserActivityAnalytics {
           clerkUserId: userId,
           createdAt: {
             gte: startDate,
-            lte: endDate
-          }
+            lte: endDate,
+          },
         },
-        orderBy: { createdAt: 'asc' }
+        orderBy: { createdAt: "asc" },
       });
 
       if (sessions.length === 0) {
         return {
           averageSessionDuration: 0,
-          dailyActiveMinutes: 0
+          dailyActiveMinutes: 0,
         };
       }
 
@@ -430,7 +434,7 @@ export class UserActivityAnalytics {
         const lastActivityTime = session.lastActivity.getTime();
 
         // Use the earlier of expiresAt and lastActivity + 30 minutes as session end
-        const effectiveEnd = Math.min(sessionEnd, lastActivityTime + (30 * 60 * 1000));
+        const effectiveEnd = Math.min(sessionEnd, lastActivityTime + 30 * 60 * 1000);
         const duration = (effectiveEnd - sessionStart) / 1000 / 60; // Convert to minutes
 
         // Only count sessions that lasted at least 1 minute
@@ -438,15 +442,16 @@ export class UserActivityAnalytics {
           sessionDurations.push(duration);
 
           // Track daily active minutes
-          const dayKey = session.createdAt.toISOString().split('T')[0];
+          const dayKey = session.createdAt.toISOString().split("T")[0];
           dailyMinutes[dayKey] = (dailyMinutes[dayKey] || 0) + duration;
         }
       }
 
       // Calculate average session duration
-      const averageSessionDuration = sessionDurations.length > 0
-        ? sessionDurations.reduce((sum, d) => sum + d, 0) / sessionDurations.length
-        : 0;
+      const averageSessionDuration =
+        sessionDurations.length > 0
+          ? sessionDurations.reduce((sum, d) => sum + d, 0) / sessionDurations.length
+          : 0;
 
       // Calculate average daily active minutes
       const totalDays = Object.keys(dailyMinutes).length;
@@ -455,20 +460,19 @@ export class UserActivityAnalytics {
 
       return {
         averageSessionDuration: Math.round(averageSessionDuration),
-        dailyActiveMinutes: Math.round(dailyActiveMinutes)
+        dailyActiveMinutes: Math.round(dailyActiveMinutes),
       };
-
     } catch (error) {
       ErrorLogger.logError(error as Error, {
-        component: 'UserActivityAnalytics',
-        action: 'CALCULATE_SESSION_METRICS',
-        userId
+        component: "UserActivityAnalytics",
+        action: "CALCULATE_SESSION_METRICS",
+        userId,
       });
 
       // Return zeros on error
       return {
         averageSessionDuration: 0,
-        dailyActiveMinutes: 0
+        dailyActiveMinutes: 0,
       };
     }
   }
@@ -481,19 +485,19 @@ export class UserActivityAnalytics {
     const startDate = new Date();
 
     switch (period) {
-      case 'day':
+      case "day":
         startDate.setDate(endDate.getDate() - 1);
         break;
-      case 'week':
+      case "week":
         startDate.setDate(endDate.getDate() - 7);
         break;
-      case 'month':
+      case "month":
         startDate.setMonth(endDate.getMonth() - 1);
         break;
-      case 'quarter':
+      case "quarter":
         startDate.setMonth(endDate.getMonth() - 3);
         break;
-      case 'year':
+      case "year":
         startDate.setFullYear(endDate.getFullYear() - 1);
         break;
     }
@@ -506,21 +510,21 @@ export class UserActivityAnalytics {
    */
   private static calculateEngagementScore(logs: any[], period: string): number {
     const totalActions = logs.length;
-    const uniqueDays = new Set(logs.map(l => l.timestamp.toISOString().split('T')[0])).size;
-    const errorRate = logs.filter(l => l.level === 'ERROR').length / totalActions;
-    
+    const uniqueDays = new Set(logs.map((l) => l.timestamp.toISOString().split("T")[0])).size;
+    const errorRate = logs.filter((l) => l.level === "ERROR").length / totalActions;
+
     // Base score from activity volume
     let score = Math.min(totalActions / 100, 50); // Max 50 points for volume
-    
+
     // Bonus for consistency (daily activity)
-    const expectedDays = period === 'week' ? 7 : period === 'month' ? 30 : 1;
+    const expectedDays = period === "week" ? 7 : period === "month" ? 30 : 1;
     const consistencyBonus = (uniqueDays / expectedDays) * 30; // Max 30 points
     score += consistencyBonus;
-    
+
     // Penalty for errors
     const errorPenalty = errorRate * 20; // Max 20 point penalty
     score -= errorPenalty;
-    
+
     return Math.max(0, Math.min(100, Math.round(score)));
   }
 
@@ -530,37 +534,37 @@ export class UserActivityAnalytics {
   private static async calculateActivityTrend(
     userId: string,
     period: string
-  ): Promise<'increasing' | 'decreasing' | 'stable'> {
+  ): Promise<"increasing" | "decreasing" | "stable"> {
     const { startDate, endDate } = this.getPeriodDates(period);
     const midPoint = new Date(startDate.getTime() + (endDate.getTime() - startDate.getTime()) / 2);
-    
+
     const firstHalf = await db.systemLog.count({
       where: {
         userId,
         timestamp: {
           gte: startDate,
-          lt: midPoint
+          lt: midPoint,
         },
-        category: 'USER_ACTION'
-      }
+        category: "USER_ACTION",
+      },
     });
-    
+
     const secondHalf = await db.systemLog.count({
       where: {
         userId,
         timestamp: {
           gte: midPoint,
-          lte: endDate
+          lte: endDate,
         },
-        category: 'USER_ACTION'
-      }
+        category: "USER_ACTION",
+      },
     });
-    
+
     const change = (secondHalf - firstHalf) / firstHalf;
-    
-    if (change > 0.1) return 'increasing';
-    if (change < -0.1) return 'decreasing';
-    return 'stable';
+
+    if (change > 0.1) return "increasing";
+    if (change < -0.1) return "decreasing";
+    return "stable";
   }
 
   /**
@@ -577,30 +581,30 @@ export class UserActivityAnalytics {
         userId,
         timestamp: {
           gte: startDate,
-          lte: endDate
+          lte: endDate,
         },
-        category: 'USER_ACTION'
-      }
+        category: "USER_ACTION",
+      },
     });
 
     let suspiciousCount = 0;
-    
+
     // Check for rapid-fire actions (potential bot behavior)
     const timeWindows: Record<string, number> = {};
-    logs.forEach(log => {
+    logs.forEach((log) => {
       const window = Math.floor(log.timestamp.getTime() / (5 * 60 * 1000)); // 5-minute windows
       timeWindows[window] = (timeWindows[window] || 0) + 1;
     });
-    
+
     // If more than 50 actions in a 5-minute window, flag as suspicious
-    Object.values(timeWindows).forEach(count => {
+    Object.values(timeWindows).forEach((count) => {
       if (count > 50) suspiciousCount++;
     });
-    
+
     // Check for unusual error rates
-    const errorRate = logs.filter(l => l.level === 'ERROR').length / logs.length;
+    const errorRate = logs.filter((l) => l.level === "ERROR").length / logs.length;
     if (errorRate > 0.3) suspiciousCount++;
-    
+
     return suspiciousCount;
   }
 
@@ -609,13 +613,13 @@ export class UserActivityAnalytics {
    */
   private static calculateFeatureUsage(logs: any[]): Record<string, number> {
     const usage: Record<string, number> = {};
-    
-    logs.forEach(log => {
+
+    logs.forEach((log) => {
       const metadata = this.parseMetadata(log.metadata);
-      const category = metadata.category || 'UNKNOWN';
+      const category = metadata.category || "UNKNOWN";
       usage[category] = (usage[category] || 0) + 1;
     });
-    
+
     return usage;
   }
 
@@ -623,106 +627,103 @@ export class UserActivityAnalytics {
    * Parse device type from user agent
    */
   private static parseDeviceType(userAgent: string): string {
-    if (/mobile|android|iphone/i.test(userAgent)) return 'Mobile';
-    if (/tablet|ipad/i.test(userAgent)) return 'Tablet';
-    return 'Desktop';
+    if (/mobile|android|iphone/i.test(userAgent)) return "Mobile";
+    if (/tablet|ipad/i.test(userAgent)) return "Tablet";
+    return "Desktop";
   }
 
   /**
    * Parse browser type from user agent
    */
   private static parseBrowserType(userAgent: string): string {
-    if (/chrome/i.test(userAgent)) return 'Chrome';
-    if (/firefox/i.test(userAgent)) return 'Firefox';
-    if (/safari/i.test(userAgent)) return 'Safari';
-    if (/edge/i.test(userAgent)) return 'Edge';
-    return 'Other';
+    if (/chrome/i.test(userAgent)) return "Chrome";
+    if (/firefox/i.test(userAgent)) return "Firefox";
+    if (/safari/i.test(userAgent)) return "Safari";
+    if (/edge/i.test(userAgent)) return "Edge";
+    return "Other";
   }
 
   /**
    * Identify behavior patterns
    */
   private static identifyBehaviorPatterns(logs: any[]): {
-    primary: UserBehaviorPattern['pattern'];
+    primary: UserBehaviorPattern["pattern"];
     confidence: number;
     characteristics: string[];
   } {
     const categoryCounts: Record<string, number> = {};
     const actionCounts: Record<string, number> = {};
-    
-    logs.forEach(log => {
+
+    logs.forEach((log) => {
       const metadata = this.parseMetadata(log.metadata);
-      const category = metadata.category || 'UNKNOWN';
-      const action = metadata.action || 'UNKNOWN';
-      
+      const category = metadata.category || "UNKNOWN";
+      const action = metadata.action || "UNKNOWN";
+
       categoryCounts[category] = (categoryCounts[category] || 0) + 1;
       actionCounts[action] = (actionCounts[action] || 0) + 1;
     });
-    
+
     const totalActions = logs.length;
     const characteristics: string[] = [];
-    let primaryPattern: UserBehaviorPattern['pattern'] = 'casual';
+    let primaryPattern: UserBehaviorPattern["pattern"] = "casual";
     let confidence = 50;
-    
+
     // Analyze patterns
     if (categoryCounts.ADMIN > totalActions * 0.3) {
-      primaryPattern = 'admin';
+      primaryPattern = "admin";
       confidence = 90;
-      characteristics.push('High admin activity');
+      characteristics.push("High admin activity");
     } else if (categoryCounts.ECONOMIC > totalActions * 0.4) {
-      primaryPattern = 'economic';
+      primaryPattern = "economic";
       confidence = 80;
-      characteristics.push('Focuses on economic features');
+      characteristics.push("Focuses on economic features");
     } else if (categoryCounts.SOCIAL > totalActions * 0.3) {
-      primaryPattern = 'social';
+      primaryPattern = "social";
       confidence = 75;
-      characteristics.push('High social engagement');
+      characteristics.push("High social engagement");
     } else if (totalActions > 1000) {
-      primaryPattern = 'power';
+      primaryPattern = "power";
       confidence = 85;
-      characteristics.push('High activity level');
+      characteristics.push("High activity level");
     } else if (categoryCounts.DATA_ACCESS > totalActions * 0.5) {
-      primaryPattern = 'explorer';
+      primaryPattern = "explorer";
       confidence = 70;
-      characteristics.push('Explores data extensively');
+      characteristics.push("Explores data extensively");
     }
-    
+
     return { primary: primaryPattern, confidence, characteristics };
   }
 
   /**
    * Assess risk level
    */
-  private static assessRiskLevel(logs: any[]): 'low' | 'medium' | 'high' {
-    const errorRate = logs.filter(l => l.level === 'ERROR').length / logs.length;
-    const securityEvents = logs.filter(l => l.category === 'SECURITY').length;
-    
-    if (errorRate > 0.2 || securityEvents > 5) return 'high';
-    if (errorRate > 0.1 || securityEvents > 2) return 'medium';
-    return 'low';
+  private static assessRiskLevel(logs: any[]): "low" | "medium" | "high" {
+    const errorRate = logs.filter((l) => l.level === "ERROR").length / logs.length;
+    const securityEvents = logs.filter((l) => l.category === "SECURITY").length;
+
+    if (errorRate > 0.2 || securityEvents > 5) return "high";
+    if (errorRate > 0.1 || securityEvents > 2) return "medium";
+    return "low";
   }
 
   /**
    * Generate recommendations
    */
-  private static generateRecommendations(
-    patterns: any,
-    riskLevel: string
-  ): string[] {
+  private static generateRecommendations(patterns: any, riskLevel: string): string[] {
     const recommendations: string[] = [];
-    
-    if (riskLevel === 'high') {
-      recommendations.push('Review account for potential security issues');
+
+    if (riskLevel === "high") {
+      recommendations.push("Review account for potential security issues");
     }
-    
-    if (patterns.primary === 'casual') {
-      recommendations.push('Consider exploring more advanced features');
+
+    if (patterns.primary === "casual") {
+      recommendations.push("Consider exploring more advanced features");
     }
-    
-    if (patterns.primary === 'power') {
-      recommendations.push('Consider advanced user training');
+
+    if (patterns.primary === "power") {
+      recommendations.push("Consider advanced user training");
     }
-    
+
     return recommendations;
   }
 }

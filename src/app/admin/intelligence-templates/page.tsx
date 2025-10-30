@@ -20,17 +20,15 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
-import { useToast } from "~/components/ui/toast";
 import {
-  FileText,
-  Plus,
-  Pencil,
-  Trash2,
-  Eye,
-  ArrowLeft,
-  X
-} from "lucide-react";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { useToast } from "~/components/ui/toast";
+import { FileText, Plus, Pencil, Trash2, Eye, ArrowLeft, X } from "lucide-react";
 import Link from "next/link";
 
 interface IntelligenceTemplate {
@@ -47,15 +45,15 @@ interface IntelligenceTemplate {
 }
 
 const REPORT_TYPE_ICONS: Record<string, string> = {
-  economic: '📊',
-  political: '🏛️',
-  security: '🛡️'
+  economic: "📊",
+  political: "🏛️",
+  security: "🛡️",
 };
 
 const REPORT_TYPE_LABELS: Record<string, string> = {
-  economic: 'Economic Intelligence Report',
-  political: 'Political Intelligence Report',
-  security: 'Security Intelligence Report'
+  economic: "Economic Intelligence Report",
+  political: "Political Intelligence Report",
+  security: "Security Intelligence Report",
 };
 
 export default function IntelligenceTemplatesPage() {
@@ -70,12 +68,13 @@ export default function IntelligenceTemplatesPage() {
   const [previewTemplate, setPreviewTemplate] = useState<IntelligenceTemplate | null>(null);
 
   // Queries
-  const { data: templates, isLoading, refetch } = api.intelligence.getAllTemplates.useQuery(
-    undefined,
-    {
-      refetchOnWindowFocus: false,
-    }
-  );
+  const {
+    data: templates,
+    isLoading,
+    refetch,
+  } = api.intelligence.getAllTemplates.useQuery(undefined, {
+    refetchOnWindowFocus: false,
+  });
 
   // Mutations
   const createMutation = api.intelligence.createTemplate.useMutation({
@@ -83,7 +82,7 @@ export default function IntelligenceTemplatesPage() {
       toast({
         title: "Success",
         description: "Intelligence template created successfully",
-        type: "success"
+        type: "success",
       });
       setIsAddDialogOpen(false);
       refetch();
@@ -92,9 +91,9 @@ export default function IntelligenceTemplatesPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to create template",
-        type: "error"
+        type: "error",
       });
-    }
+    },
   });
 
   const updateMutation = api.intelligence.updateTemplate.useMutation({
@@ -102,7 +101,7 @@ export default function IntelligenceTemplatesPage() {
       toast({
         title: "Success",
         description: "Intelligence template updated successfully",
-        type: "success"
+        type: "success",
       });
       setEditingTemplate(null);
       refetch();
@@ -111,9 +110,9 @@ export default function IntelligenceTemplatesPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to update template",
-        type: "error"
+        type: "error",
       });
-    }
+    },
   });
 
   const deleteMutation = api.intelligence.deleteTemplate.useMutation({
@@ -121,7 +120,7 @@ export default function IntelligenceTemplatesPage() {
       toast({
         title: "Success",
         description: "Intelligence template deleted successfully",
-        type: "success"
+        type: "success",
       });
       refetch();
     },
@@ -129,9 +128,9 @@ export default function IntelligenceTemplatesPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to delete template",
-        type: "error"
+        type: "error",
       });
-    }
+    },
   });
 
   // Handlers
@@ -144,9 +143,9 @@ export default function IntelligenceTemplatesPage() {
   // Auth checks
   if (!isLoaded) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-indigo-600"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
@@ -155,7 +154,7 @@ export default function IntelligenceTemplatesPage() {
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
+      <div className="flex min-h-screen flex-col items-center justify-center">
         <SignInButton mode="modal" />
       </div>
     );
@@ -163,38 +162,41 @@ export default function IntelligenceTemplatesPage() {
 
   const allowedRoles = new Set(["admin", "owner", "staff"]);
   const isSystemOwnerUser = !!user && isSystemOwner(user.id);
-  const hasAdminRole = typeof user?.publicMetadata?.role === "string" && allowedRoles.has(user.publicMetadata.role);
+  const hasAdminRole =
+    typeof user?.publicMetadata?.role === "string" && allowedRoles.has(user.publicMetadata.role);
 
   if (!isSystemOwnerUser && !hasAdminRole) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center border border-gray-200 dark:border-gray-700">
-          <h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">Access Denied</h1>
-          <p className="text-gray-700 dark:text-gray-300 mb-6">You do not have permission to view this page.</p>
+      <div className="flex min-h-screen flex-col items-center justify-center">
+        <div className="rounded-lg border border-gray-200 bg-white p-8 text-center shadow-lg dark:border-gray-700 dark:bg-gray-800">
+          <h1 className="mb-4 text-2xl font-bold text-red-600 dark:text-red-400">Access Denied</h1>
+          <p className="mb-6 text-gray-700 dark:text-gray-300">
+            You do not have permission to view this page.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8">
-      <div className="max-w-5xl mx-auto">
+    <div className="bg-background text-foreground min-h-screen p-4 md:p-8">
+      <div className="mx-auto max-w-5xl">
         {/* Header */}
-        <div className="glass-card-parent p-6 rounded-xl border-2 border-[--intel-gold]/20 bg-gradient-to-br from-[--intel-gold]/5 via-transparent to-[--intel-gold]/10 mb-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="glass-card-parent mb-6 rounded-xl border-2 border-[--intel-gold]/20 bg-gradient-to-br from-[--intel-gold]/5 via-transparent to-[--intel-gold]/10 p-6">
+          <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/admin">
                 <Button variant="ghost" size="sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to Admin
                 </Button>
               </Link>
               <div className="flex items-center gap-3">
-                <div className="p-3 rounded-xl bg-[--intel-gold]/10 border border-[--intel-gold]/20">
+                <div className="rounded-xl border border-[--intel-gold]/20 bg-[--intel-gold]/10 p-3">
                   <FileText className="h-6 w-6 text-[--intel-gold]" />
                 </div>
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                  <h1 className="text-foreground text-2xl font-bold md:text-3xl">
                     Intelligence Templates
                   </h1>
                   <p className="text-sm text-[--intel-silver]">
@@ -205,9 +207,9 @@ export default function IntelligenceTemplatesPage() {
             </div>
             <Button
               onClick={() => setIsAddDialogOpen(true)}
-              className="bg-[--intel-gold]/20 hover:bg-[--intel-gold]/30 text-[--intel-gold] border border-[--intel-gold]/30"
+              className="border border-[--intel-gold]/30 bg-[--intel-gold]/20 text-[--intel-gold] hover:bg-[--intel-gold]/30"
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Add Template
             </Button>
           </div>
@@ -216,41 +218,46 @@ export default function IntelligenceTemplatesPage() {
         {/* Templates List */}
         <div className="space-y-4">
           {isLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[--intel-gold] mx-auto mb-4"></div>
+            <div className="py-12 text-center">
+              <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-[--intel-gold]"></div>
               <p className="text-[--intel-silver]">Loading templates...</p>
             </div>
           ) : templates && templates.length === 0 ? (
-            <Card className="glass-card-parent p-12 text-center border border-border/50">
-              <FileText className="h-12 w-12 text-[--intel-silver] mx-auto mb-4" />
-              <p className="text-[--intel-silver] mb-4">No intelligence templates found</p>
+            <Card className="glass-card-parent border-border/50 border p-12 text-center">
+              <FileText className="mx-auto mb-4 h-12 w-12 text-[--intel-silver]" />
+              <p className="mb-4 text-[--intel-silver]">No intelligence templates found</p>
               <Button onClick={() => setIsAddDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
+                <Plus className="mr-2 h-4 w-4" />
                 Add First Template
               </Button>
             </Card>
           ) : (
             templates?.map((template) => (
-              <Card key={template.id} className="glass-card-parent p-6 border border-border/50 hover:border-[--intel-gold]/50 transition-all">
+              <Card
+                key={template.id}
+                className="glass-card-parent border-border/50 border p-6 transition-all hover:border-[--intel-gold]/50"
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="mb-2 flex items-center gap-3">
                       <span className="text-2xl">
-                        {REPORT_TYPE_ICONS[template.reportType] || '📄'}
+                        {REPORT_TYPE_ICONS[template.reportType] || "📄"}
                       </span>
-                      <h3 className="font-semibold text-lg text-foreground">
+                      <h3 className="text-foreground text-lg font-semibold">
                         {REPORT_TYPE_LABELS[template.reportType] || `${template.reportType} Report`}
                       </h3>
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                        template.classification === 'PUBLIC'
-                          ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                          : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                      }`}>
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                          template.classification === "PUBLIC"
+                            ? "border border-green-500/30 bg-green-500/20 text-green-400"
+                            : "border border-red-500/30 bg-red-500/20 text-red-400"
+                        }`}
+                      >
                         {template.classification}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-4 mb-3 text-sm text-[--intel-silver]">
+                    <div className="mb-3 flex items-center gap-4 text-sm text-[--intel-silver]">
                       <span>Level: {template.minimumLevel}+</span>
                       <span>•</span>
                       <span>Confidence: {template.confidenceBase}%</span>
@@ -258,12 +265,12 @@ export default function IntelligenceTemplatesPage() {
                       <span>Findings: {JSON.parse(template.findingsTemplate).length} items</span>
                     </div>
 
-                    <p className="text-sm text-foreground line-clamp-2">
+                    <p className="text-foreground line-clamp-2 text-sm">
                       {template.summaryTemplate}
                     </p>
                   </div>
 
-                  <div className="flex gap-2 ml-4">
+                  <div className="ml-4 flex gap-2">
                     <Button
                       size="sm"
                       variant="outline"
@@ -296,20 +303,20 @@ export default function IntelligenceTemplatesPage() {
         </div>
 
         {/* Stats */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="glass-card-child p-4 border border-border/50">
-            <div className="text-2xl font-bold text-foreground">{templates?.length || 0}</div>
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <Card className="glass-card-child border-border/50 border p-4">
+            <div className="text-foreground text-2xl font-bold">{templates?.length || 0}</div>
             <div className="text-sm text-[--intel-silver]">Total Templates</div>
           </Card>
-          <Card className="glass-card-child p-4 border border-border/50">
+          <Card className="glass-card-child border-border/50 border p-4">
             <div className="text-2xl font-bold text-[--intel-gold]">
-              {templates?.filter(t => t.isActive).length || 0}
+              {templates?.filter((t) => t.isActive).length || 0}
             </div>
             <div className="text-sm text-[--intel-silver]">Active Templates</div>
           </Card>
-          <Card className="glass-card-child p-4 border border-border/50">
+          <Card className="glass-card-child border-border/50 border p-4">
             <div className="text-2xl font-bold text-green-400">
-              {templates?.filter(t => t.classification === 'PUBLIC').length || 0}
+              {templates?.filter((t) => t.classification === "PUBLIC").length || 0}
             </div>
             <div className="text-sm text-[--intel-silver]">Public Templates</div>
           </Card>
@@ -357,36 +364,36 @@ interface TemplateEditorDialogProps {
 
 function TemplateEditorDialog({ template, isOpen, onClose, onSave }: TemplateEditorDialogProps) {
   const [formData, setFormData] = useState({
-    reportType: template?.reportType || 'economic',
-    classification: template?.classification || 'PUBLIC',
-    summaryTemplate: template?.summaryTemplate || '',
+    reportType: template?.reportType || "economic",
+    classification: template?.classification || "PUBLIC",
+    summaryTemplate: template?.summaryTemplate || "",
     minimumLevel: template?.minimumLevel || 1,
-    confidenceBase: template?.confidenceBase || 70
+    confidenceBase: template?.confidenceBase || 70,
   });
 
   const [findings, setFindings] = useState<string[]>(
-    template ? JSON.parse(template.findingsTemplate) : ['']
+    template ? JSON.parse(template.findingsTemplate) : [""]
   );
 
   const handleSave = () => {
     if (!formData.summaryTemplate.trim()) {
-      alert('Summary template is required');
+      alert("Summary template is required");
       return;
     }
 
-    if (findings.filter(f => f.trim()).length === 0) {
-      alert('At least one finding is required');
+    if (findings.filter((f) => f.trim()).length === 0) {
+      alert("At least one finding is required");
       return;
     }
 
     onSave({
       ...formData,
-      findingsTemplate: JSON.stringify(findings.filter(f => f.trim()))
+      findingsTemplate: JSON.stringify(findings.filter((f) => f.trim())),
     });
   };
 
   const addFinding = () => {
-    setFindings([...findings, '']);
+    setFindings([...findings, ""]);
   };
 
   const removeFinding = (index: number) => {
@@ -401,10 +408,10 @@ function TemplateEditorDialog({ template, isOpen, onClose, onSave }: TemplateEdi
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-foreground">
-            {template?.id ? 'Edit' : 'Add'} Intelligence Template
+          <DialogTitle className="text-foreground text-xl font-bold">
+            {template?.id ? "Edit" : "Add"} Intelligence Template
           </DialogTitle>
           <DialogDescription className="text-[--intel-silver]">
             Configure intelligence report template for embassy data sharing
@@ -414,12 +421,10 @@ function TemplateEditorDialog({ template, isOpen, onClose, onSave }: TemplateEdi
         <div className="space-y-4 py-4">
           {/* Report Type */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Report Type *
-            </label>
+            <label className="text-foreground mb-2 block text-sm font-medium">Report Type *</label>
             <Select
               value={formData.reportType}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, reportType: value }))}
+              onValueChange={(value) => setFormData((prev) => ({ ...prev, reportType: value }))}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -434,12 +439,12 @@ function TemplateEditorDialog({ template, isOpen, onClose, onSave }: TemplateEdi
 
           {/* Classification */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
+            <label className="text-foreground mb-2 block text-sm font-medium">
               Classification *
             </label>
             <Select
               value={formData.classification}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, classification: value }))}
+              onValueChange={(value) => setFormData((prev) => ({ ...prev, classification: value }))}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -453,26 +458,26 @@ function TemplateEditorDialog({ template, isOpen, onClose, onSave }: TemplateEdi
 
           {/* Summary Template */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
+            <label className="text-foreground mb-2 block text-sm font-medium">
               Summary Template *
             </label>
             <Textarea
               value={formData.summaryTemplate}
-              onChange={(e) => setFormData(prev => ({ ...prev, summaryTemplate: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, summaryTemplate: e.target.value }))
+              }
               placeholder="Brief summary of the intelligence report..."
               rows={3}
               className="w-full"
             />
-            <p className="text-xs text-[--intel-silver] mt-1">
+            <p className="mt-1 text-xs text-[--intel-silver]">
               This will be shown as the report summary
             </p>
           </div>
 
           {/* Key Findings */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Key Findings *
-            </label>
+            <label className="text-foreground mb-2 block text-sm font-medium">Key Findings *</label>
             <div className="space-y-2">
               {findings.map((finding, index) => (
                 <div key={index} className="flex gap-2">
@@ -499,9 +504,9 @@ function TemplateEditorDialog({ template, isOpen, onClose, onSave }: TemplateEdi
               size="sm"
               variant="outline"
               onClick={addFinding}
-              className="mt-2 border-border/50"
+              className="border-border/50 mt-2"
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Add Finding
             </Button>
           </div>
@@ -509,7 +514,7 @@ function TemplateEditorDialog({ template, isOpen, onClose, onSave }: TemplateEdi
           {/* Minimum Level & Confidence */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <label className="text-foreground mb-2 block text-sm font-medium">
                 Minimum Embassy Level *
               </label>
               <Input
@@ -517,15 +522,17 @@ function TemplateEditorDialog({ template, isOpen, onClose, onSave }: TemplateEdi
                 min="1"
                 max="5"
                 value={formData.minimumLevel}
-                onChange={(e) => setFormData(prev => ({ ...prev, minimumLevel: parseInt(e.target.value) || 1 }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, minimumLevel: parseInt(e.target.value) || 1 }))
+                }
               />
-              <p className="text-xs text-[--intel-silver] mt-1">
+              <p className="mt-1 text-xs text-[--intel-silver]">
                 Minimum embassy level required (1-5)
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
+              <label className="text-foreground mb-2 block text-sm font-medium">
                 Base Confidence (%) *
               </label>
               <Input
@@ -533,11 +540,14 @@ function TemplateEditorDialog({ template, isOpen, onClose, onSave }: TemplateEdi
                 min="0"
                 max="100"
                 value={formData.confidenceBase}
-                onChange={(e) => setFormData(prev => ({ ...prev, confidenceBase: parseInt(e.target.value) || 70 }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    confidenceBase: parseInt(e.target.value) || 70,
+                  }))
+                }
               />
-              <p className="text-xs text-[--intel-silver] mt-1">
-                Base confidence score (0-100)
-              </p>
+              <p className="mt-1 text-xs text-[--intel-silver]">Base confidence score (0-100)</p>
             </div>
           </div>
         </div>
@@ -548,9 +558,9 @@ function TemplateEditorDialog({ template, isOpen, onClose, onSave }: TemplateEdi
           </Button>
           <Button
             onClick={handleSave}
-            className="bg-[--intel-gold]/20 hover:bg-[--intel-gold]/30 text-[--intel-gold] border border-[--intel-gold]/30"
+            className="border border-[--intel-gold]/30 bg-[--intel-gold]/20 text-[--intel-gold] hover:bg-[--intel-gold]/30"
           >
-            {template?.id ? 'Update' : 'Create'} Template
+            {template?.id ? "Update" : "Create"} Template
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -572,31 +582,29 @@ function TemplatePreviewDialog({ template, isOpen, onClose }: TemplatePreviewDia
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-foreground">
-            Template Preview
-          </DialogTitle>
+          <DialogTitle className="text-foreground text-xl font-bold">Template Preview</DialogTitle>
           <DialogDescription className="text-[--intel-silver]">
             How this template will render in intelligence reports
           </DialogDescription>
         </DialogHeader>
 
         <div className="py-4">
-          <Card className="glass-card-child p-6 border border-border/50">
+          <Card className="glass-card-child border-border/50 border p-6">
             {/* Header */}
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">
-                {REPORT_TYPE_ICONS[template.reportType] || '📄'}
-              </span>
+            <div className="mb-4 flex items-center gap-3">
+              <span className="text-3xl">{REPORT_TYPE_ICONS[template.reportType] || "📄"}</span>
               <div className="flex-1">
-                <h3 className="font-bold text-lg text-foreground">
+                <h3 className="text-foreground text-lg font-bold">
                   {REPORT_TYPE_LABELS[template.reportType] || `${template.reportType} Report`}
                 </h3>
-                <div className="flex items-center gap-3 mt-1 text-sm text-[--intel-silver]">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                    template.classification === 'PUBLIC'
-                      ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                      : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                  }`}>
+                <div className="mt-1 flex items-center gap-3 text-sm text-[--intel-silver]">
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                      template.classification === "PUBLIC"
+                        ? "border border-green-500/30 bg-green-500/20 text-green-400"
+                        : "border border-red-500/30 bg-red-500/20 text-red-400"
+                    }`}
+                  >
                     {template.classification}
                   </span>
                   <span>Level {template.minimumLevel}+</span>
@@ -608,17 +616,17 @@ function TemplatePreviewDialog({ template, isOpen, onClose }: TemplatePreviewDia
 
             {/* Summary */}
             <div className="mb-4">
-              <h4 className="text-sm font-semibold text-[--intel-silver] mb-2">Summary</h4>
+              <h4 className="mb-2 text-sm font-semibold text-[--intel-silver]">Summary</h4>
               <p className="text-foreground">{template.summaryTemplate}</p>
             </div>
 
             {/* Findings */}
             <div>
-              <h4 className="text-sm font-semibold text-[--intel-silver] mb-2">Key Findings</h4>
+              <h4 className="mb-2 text-sm font-semibold text-[--intel-silver]">Key Findings</h4>
               <ul className="space-y-2">
                 {findings.map((finding: string, index: number) => (
-                  <li key={index} className="flex items-start gap-2 text-foreground">
-                    <span className="text-[--intel-gold] mt-1">•</span>
+                  <li key={index} className="text-foreground flex items-start gap-2">
+                    <span className="mt-1 text-[--intel-gold]">•</span>
                     <span>{finding}</span>
                   </li>
                 ))}

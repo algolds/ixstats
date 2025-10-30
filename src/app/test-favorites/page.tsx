@@ -84,36 +84,28 @@ export default function TestFavoritesPage() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-6">
-              Click the star buttons to add/remove panels from your favorites.
-              Then check the Admin tab on the homepage to see your favorited panels.
+              Click the star buttons to add/remove panels from your favorites. Then check the Admin
+              tab on the homepage to see your favorited panels.
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {testPanels.map((panel) => {
                 const Icon = getIcon(panel.iconName);
 
                 return (
                   <Card key={panel.panelId} className="relative">
                     <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-3">
+                      <div className="mb-3 flex items-start justify-between">
                         <Icon className="h-8 w-8 text-purple-500" />
-                        <AdminFavoriteButton
-                          {...panel}
-                          size="lg"
-                          variant="ghost"
-                        />
+                        <AdminFavoriteButton {...panel} size="lg" variant="ghost" />
                       </div>
-                      <h4 className="font-semibold text-foreground mb-2">{panel.displayName}</h4>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {panel.description}
-                      </p>
+                      <h4 className="text-foreground mb-2 font-semibold">{panel.displayName}</h4>
+                      <p className="text-muted-foreground mb-3 text-sm">{panel.description}</p>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground capitalize">
+                        <span className="text-muted-foreground text-xs capitalize">
                           {panel.category}
                         </span>
-                        <span className="text-xs text-muted-foreground">
-                          {panel.url}
-                        </span>
+                        <span className="text-muted-foreground text-xs">{panel.url}</span>
                       </div>
                     </CardContent>
                   </Card>

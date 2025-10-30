@@ -5,16 +5,9 @@ export {
   GovernmentSection,
   DiplomaticSection,
   IntelligenceSection,
-  type SectionWrapperProps
-} from './SectionWrapper';
+  type SectionWrapperProps,
+} from "./SectionWrapper";
 
-export {
-  TabbedContent,
-  type Tab,
-  type TabbedContentProps
-} from './TabbedContent';
+export { TabbedContent, type Tab, type TabbedContentProps } from "./TabbedContent";
 
-export {
-  ExpandableCard,
-  type ExpandableCardProps
-} from './ExpandableCard';
+export { ExpandableCard, type ExpandableCardProps } from "./ExpandableCard";

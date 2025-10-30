@@ -5,15 +5,11 @@
  * Clean design with purple accents and section header.
  */
 
-'use client';
+"use client";
 
-import React from 'react';
-import { formatNumberWithDecimals } from '~/lib/format-utils';
-import {
-  RiMapLine,
-  RiRulerLine,
-  RiCompass3Line,
-} from 'react-icons/ri';
+import React from "react";
+import { formatNumberWithDecimals } from "~/lib/format-utils";
+import { RiMapLine, RiRulerLine, RiCompass3Line } from "react-icons/ri";
 
 interface GeographicStatsSectionProps {
   landArea?: number | null;
@@ -33,16 +29,16 @@ export const GeographicStatsSection = React.memo(function GeographicStatsSection
   }
 
   const formatNumber = (num: number | null | undefined): string => {
-    if (num === null || num === undefined) return 'N/A';
+    if (num === null || num === undefined) return "N/A";
     return formatNumberWithDecimals(num, 0);
   };
 
   return (
-    <div className="space-y-3 pt-3 border-t border-gray-100">
+    <div className="space-y-3 border-t border-gray-100 pt-3">
       {/* Section Header */}
       <div className="flex items-center gap-2">
-        <RiMapLine className="w-4 h-4 text-purple-500" />
-        <span className="text-xs font-semibold text-gray-900 uppercase tracking-wide">
+        <RiMapLine className="h-4 w-4 text-purple-500" />
+        <span className="text-xs font-semibold tracking-wide text-gray-900 uppercase">
           Geographic Data
         </span>
       </div>
@@ -50,11 +46,11 @@ export const GeographicStatsSection = React.memo(function GeographicStatsSection
       {/* Content */}
       <div className="space-y-2">
         {landArea && (
-          <div className="flex items-start gap-3 p-2 rounded hover:bg-purple-50/50 transition-colors">
-            <RiRulerLine className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0 flex items-baseline justify-between gap-2">
+          <div className="flex items-start gap-3 rounded p-2 transition-colors hover:bg-purple-50/50">
+            <RiRulerLine className="mt-0.5 h-4 w-4 flex-shrink-0 text-purple-600" />
+            <div className="flex min-w-0 flex-1 items-baseline justify-between gap-2">
               <span className="text-xs text-gray-500">Land Area</span>
-              <span className="text-sm text-gray-900 font-medium">
+              <span className="text-sm font-medium text-gray-900">
                 {formatNumber(landArea)} km²
               </span>
             </div>
@@ -62,11 +58,11 @@ export const GeographicStatsSection = React.memo(function GeographicStatsSection
         )}
 
         {areaSqMi && (
-          <div className="flex items-start gap-3 p-2 rounded hover:bg-purple-50/50 transition-colors">
-            <RiRulerLine className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0 flex items-baseline justify-between gap-2">
+          <div className="flex items-start gap-3 rounded p-2 transition-colors hover:bg-purple-50/50">
+            <RiRulerLine className="mt-0.5 h-4 w-4 flex-shrink-0 text-purple-600" />
+            <div className="flex min-w-0 flex-1 items-baseline justify-between gap-2">
               <span className="text-xs text-gray-500">Area</span>
-              <span className="text-sm text-gray-900 font-medium">
+              <span className="text-sm font-medium text-gray-900">
                 {formatNumber(areaSqMi)} sq mi
               </span>
             </div>
@@ -74,11 +70,11 @@ export const GeographicStatsSection = React.memo(function GeographicStatsSection
         )}
 
         {coastlineKm && (
-          <div className="flex items-start gap-3 p-2 rounded hover:bg-purple-50/50 transition-colors">
-            <RiCompass3Line className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0 flex items-baseline justify-between gap-2">
+          <div className="flex items-start gap-3 rounded p-2 transition-colors hover:bg-purple-50/50">
+            <RiCompass3Line className="mt-0.5 h-4 w-4 flex-shrink-0 text-purple-600" />
+            <div className="flex min-w-0 flex-1 items-baseline justify-between gap-2">
               <span className="text-xs text-gray-500">Coastline</span>
-              <span className="text-sm text-gray-900 font-medium">
+              <span className="text-sm font-medium text-gray-900">
                 {formatNumber(coastlineKm)} km
               </span>
             </div>

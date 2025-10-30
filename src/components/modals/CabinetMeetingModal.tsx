@@ -36,7 +36,7 @@ import {
   AlertCircle,
   FileText,
   Tag,
-  Sparkles
+  Sparkles,
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "~/lib/utils";
@@ -52,12 +52,12 @@ interface CabinetMeetingModalProps {
 export function CabinetMeetingModal({
   children,
   mode = "create",
-  meetingId
+  meetingId,
 }: CabinetMeetingModalProps) {
   const { user } = useUser();
   const [open, setOpen] = useState(false);
   const [scheduledIxTime, setScheduledIxTime] = useState(
-    IxTime.getCurrentIxTime() + (24 * 60 * 60 * 1000) // +1 day in IxTime
+    IxTime.getCurrentIxTime() + 24 * 60 * 60 * 1000 // +1 day in IxTime
   );
   const [formData, setFormData] = useState({
     title: "",
@@ -69,14 +69,15 @@ export function CabinetMeetingModal({
   const [showAgendaSelector, setShowAgendaSelector] = useState(false);
 
   // Get user profile for countryId
-  const { data: userProfile } = api.users.getProfile.useQuery(
-    undefined,
-    { enabled: !!user?.id }
-  );
+  const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
 
   // Get existing meetings for context
-  const { data: meetings, isLoading: meetingsLoading, refetch } = api.unifiedIntelligence.getCabinetMeetings.useQuery(
-    { countryId: userProfile?.countryId || '' },
+  const {
+    data: meetings,
+    isLoading: meetingsLoading,
+    refetch,
+  } = api.unifiedIntelligence.getCabinetMeetings.useQuery(
+    { countryId: userProfile?.countryId || "" },
     { enabled: !!userProfile?.countryId && open }
   );
 
@@ -96,10 +97,14 @@ export function CabinetMeetingModal({
   // Meeting statistics
   const meetingStats = {
     totalMeetings: meetings?.length || 0,
-    upcomingMeetings: meetings?.filter((m: any) => new Date(m.scheduledDate) > new Date()).length || 0,
-    completedMeetings: meetings?.filter((m: any) => m.status === 'completed').length || 0,
-    averageAttendance: (meetings?.length ?? 0) > 0 ? 
-      (meetings ?? []).reduce((sum: number, m: any) => sum + (m.attendees?.length || 0), 0) / (meetings?.length ?? 1) : 0
+    upcomingMeetings:
+      meetings?.filter((m: any) => new Date(m.scheduledDate) > new Date()).length || 0,
+    completedMeetings: meetings?.filter((m: any) => m.status === "completed").length || 0,
+    averageAttendance:
+      (meetings?.length ?? 0) > 0
+        ? (meetings ?? []).reduce((sum: number, m: any) => sum + (m.attendees?.length || 0), 0) /
+          (meetings?.length ?? 1)
+        : 0,
   };
 
   const resetForm = () => {
@@ -109,33 +114,33 @@ export function CabinetMeetingModal({
       attendees: [],
       agenda: [],
     });
-    setScheduledIxTime(IxTime.getCurrentIxTime() + (24 * 60 * 60 * 1000)); // +1 day in IxTime
+    setScheduledIxTime(IxTime.getCurrentIxTime() + 24 * 60 * 60 * 1000); // +1 day in IxTime
     setNewAttendee("");
   };
 
   const addAttendee = () => {
     if (newAttendee.trim() && !formData.attendees.includes(newAttendee.trim())) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        attendees: [...prev.attendees, newAttendee.trim()]
+        attendees: [...prev.attendees, newAttendee.trim()],
       }));
       setNewAttendee("");
     }
   };
 
   const removeAttendee = (attendee: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      attendees: prev.attendees.filter(a => a !== attendee)
+      attendees: prev.attendees.filter((a) => a !== attendee),
     }));
   };
 
   const addAgendaItem = (item: AgendaItemTemplate) => {
     // Check if item already exists
-    if (!formData.agenda.some(a => a.id === item.id)) {
-      setFormData(prev => ({
+    if (!formData.agenda.some((a) => a.id === item.id)) {
+      setFormData((prev) => ({
         ...prev,
-        agenda: [...prev.agenda, item]
+        agenda: [...prev.agenda, item],
       }));
       toast.success(`Added "${item.label}" to agenda`);
     } else {
@@ -144,9 +149,9 @@ export function CabinetMeetingModal({
   };
 
   const removeAgendaItem = (itemId: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      agenda: prev.agenda.filter(a => a.id !== itemId)
+      agenda: prev.agenda.filter((a) => a.id !== itemId),
     }));
   };
 
@@ -159,39 +164,53 @@ export function CabinetMeetingModal({
     }
 
     createMeeting.mutate({
-      countryId: userProfile?.countryId || '',
+      countryId: userProfile?.countryId || "",
       title: formData.title,
       description: formData.description,
       scheduledDate: new Date(scheduledIxTime).toISOString(), // IxTime date as ISO string for tRPC
       attendees: formData.attendees,
-      agenda: formData.agenda.map(item => item.label) // Convert to string array for backend
+      agenda: formData.agenda.map((item) => item.label), // Convert to string array for backend
     });
   };
 
-  const upcomingMeetings = meetings?.filter((meeting: any) => 
-    new Date(meeting.scheduledDate) > new Date() && meeting.status === 'scheduled'
-  ).slice(0, 3) || [];
+  const upcomingMeetings =
+    meetings
+      ?.filter(
+        (meeting: any) =>
+          new Date(meeting.scheduledDate) > new Date() && meeting.status === "scheduled"
+      )
+      .slice(0, 3) || [];
 
-  const recentMeetings = meetings?.filter((meeting: any) => 
-    meeting.status === 'completed'
-  ).slice(0, 3) || [];
+  const recentMeetings =
+    meetings?.filter((meeting: any) => meeting.status === "completed").slice(0, 3) || [];
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
-      <DialogContent style={{ width: '100vw', maxWidth: '100vw', height: '100vh', maxHeight: '100vh', padding: '24px', margin: '0px', overflowY: 'auto' }} onEscapeKeyDown={(e) => { e.preventDefault(); setOpen(false); }}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent
+        style={{
+          width: "100vw",
+          maxWidth: "100vw",
+          height: "100vh",
+          maxHeight: "100vh",
+          padding: "24px",
+          margin: "0px",
+          overflowY: "auto",
+        }}
+        onEscapeKeyDown={(e) => {
+          e.preventDefault();
+          setOpen(false);
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CalendarIcon className="h-5 w-5 text-blue-500" />
             {mode === "create" ? "Schedule Cabinet Meeting" : "Cabinet Meeting Details"}
           </DialogTitle>
           <DialogDescription>
-            {mode === "create" 
+            {mode === "create"
               ? "Schedule a new cabinet meeting with your ministers and government officials."
-              : "View and manage cabinet meeting details."
-            }
+              : "View and manage cabinet meeting details."}
           </DialogDescription>
         </DialogHeader>
 
@@ -212,7 +231,7 @@ export function CabinetMeetingModal({
                     id="title"
                     placeholder="e.g., Weekly Cabinet Meeting"
                     value={formData.title}
-                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                     required
                   />
                 </div>
@@ -223,7 +242,9 @@ export function CabinetMeetingModal({
                     id="description"
                     placeholder="What do you want to accomplish in this meeting? List key objectives..."
                     value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, description: e.target.value }))
+                    }
                     rows={3}
                   />
                 </div>
@@ -252,16 +273,20 @@ export function CabinetMeetingModal({
                       placeholder="Add attendee (name or role)"
                       value={newAttendee}
                       onChange={(e) => setNewAttendee(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addAttendee())}
+                      onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addAttendee())}
                     />
                     <Button type="button" size="icon" onClick={addAttendee}>
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
                   {formData.attendees.length > 0 && (
-                    <div className="flex flex-wrap gap-2 p-3 bg-muted/30 rounded-lg border">
+                    <div className="bg-muted/30 flex flex-wrap gap-2 rounded-lg border p-3">
                       {formData.attendees.map((attendee) => (
-                        <Badge key={attendee} variant="secondary" className="flex items-center gap-1">
+                        <Badge
+                          key={attendee}
+                          variant="secondary"
+                          className="flex items-center gap-1"
+                        >
                           {attendee}
                           <X
                             className="h-3 w-3 cursor-pointer"
@@ -283,8 +308,9 @@ export function CabinetMeetingModal({
                     <FileText className="h-5 w-5" />
                     Actionable Agenda Items ({formData.agenda.length} items) *
                   </Label>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Select specific topics from our standardized library. Each item maps to your country's economic and government systems.
+                  <p className="text-muted-foreground mt-1 text-sm">
+                    Select specific topics from our standardized library. Each item maps to your
+                    country's economic and government systems.
                   </p>
                 </div>
 
@@ -294,46 +320,52 @@ export function CabinetMeetingModal({
                     {formData.agenda.map((item, index) => {
                       const getCategoryColor = (category: string) => {
                         const colors: Record<string, string> = {
-                          economic: 'bg-blue-500/10 text-blue-700 dark:text-blue-400',
-                          social: 'bg-green-500/10 text-green-700 dark:text-green-400',
-                          infrastructure: 'bg-orange-500/10 text-orange-700 dark:text-orange-400',
-                          diplomatic: 'bg-purple-500/10 text-purple-700 dark:text-purple-400',
-                          governance: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400',
-                          security: 'bg-red-500/10 text-red-700 dark:text-red-400',
+                          economic: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+                          social: "bg-green-500/10 text-green-700 dark:text-green-400",
+                          infrastructure: "bg-orange-500/10 text-orange-700 dark:text-orange-400",
+                          diplomatic: "bg-purple-500/10 text-purple-700 dark:text-purple-400",
+                          governance: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400",
+                          security: "bg-red-500/10 text-red-700 dark:text-red-400",
                         };
-                        return colors[category] || 'bg-gray-500/10 text-gray-700 dark:text-gray-400';
+                        return (
+                          colors[category] || "bg-gray-500/10 text-gray-700 dark:text-gray-400"
+                        );
                       };
 
                       return (
                         <div
                           key={item.id}
-                          className="flex items-start gap-3 p-3 bg-card border rounded-lg hover:border-primary/50 transition-colors group"
+                          className="bg-card hover:border-primary/50 group flex items-start gap-3 rounded-lg border p-3 transition-colors"
                         >
-                          <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 text-primary font-semibold text-sm flex-shrink-0 mt-0.5">
+                          <div className="bg-primary/10 text-primary mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold">
                             {index + 1}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
+                          <div className="min-w-0 flex-1">
+                            <div className="mb-1 flex items-center gap-2">
                               <p className="text-sm font-medium">{item.label}</p>
-                              <Badge variant="outline" className={cn("text-xs", getCategoryColor(item.category))}>
+                              <Badge
+                                variant="outline"
+                                className={cn("text-xs", getCategoryColor(item.category))}
+                              >
                                 {item.category}
                               </Badge>
                             </div>
-                            <p className="text-xs text-muted-foreground mb-1">{item.description}</p>
+                            <p className="text-muted-foreground mb-1 text-xs">{item.description}</p>
                             {item.tags && item.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {item.tags.slice(0, 3).map(tag => (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {item.tags.slice(0, 3).map((tag) => (
                                   <Badge key={tag} variant="secondary" className="text-xs">
-                                    <Tag className="h-2 w-2 mr-1" />
+                                    <Tag className="mr-1 h-2 w-2" />
                                     {tag}
                                   </Badge>
                                 ))}
                               </div>
                             )}
                             {item.relatedMetrics && item.relatedMetrics.length > 0 && (
-                              <div className="text-xs text-muted-foreground mt-1">
-                                Affects: {item.relatedMetrics.slice(0, 2).join(', ')}
-                                {item.relatedMetrics.length > 2 && ` +${item.relatedMetrics.length - 2} more`}
+                              <div className="text-muted-foreground mt-1 text-xs">
+                                Affects: {item.relatedMetrics.slice(0, 2).join(", ")}
+                                {item.relatedMetrics.length > 2 &&
+                                  ` +${item.relatedMetrics.length - 2} more`}
                               </div>
                             )}
                           </div>
@@ -342,7 +374,7 @@ export function CabinetMeetingModal({
                             variant="ghost"
                             size="sm"
                             onClick={() => removeAgendaItem(item.id)}
-                            className="h-6 w-6 p-0 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="h-6 w-6 flex-shrink-0 p-0 opacity-0 transition-opacity group-hover:opacity-100"
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -357,14 +389,14 @@ export function CabinetMeetingModal({
                   type="button"
                   variant="outline"
                   onClick={() => setShowAgendaSelector(true)}
-                  className="w-full h-16 border-2 border-dashed hover:border-primary/50 hover:bg-primary/5"
+                  className="hover:border-primary/50 hover:bg-primary/5 h-16 w-full border-2 border-dashed"
                 >
                   <div className="flex flex-col items-center gap-1">
                     <div className="flex items-center gap-2">
                       <Sparkles className="h-4 w-4" />
                       <span className="font-medium">Browse Agenda Library</span>
                     </div>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       Select from policy, budget, infrastructure, and more
                     </span>
                   </div>
@@ -374,7 +406,8 @@ export function CabinetMeetingModal({
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  After the meeting, you'll be able to record decisions and action items for each agenda topic.
+                  After the meeting, you'll be able to record decisions and action items for each
+                  agenda topic.
                 </AlertDescription>
               </Alert>
 
@@ -384,7 +417,9 @@ export function CabinetMeetingModal({
                 </Button>
                 <Button
                   type="submit"
-                  disabled={createMeeting.isPending || !formData.title || formData.agenda.length === 0}
+                  disabled={
+                    createMeeting.isPending || !formData.title || formData.agenda.length === 0
+                  }
                 >
                   {createMeeting.isPending ? "Scheduling..." : "Schedule Meeting"}
                 </Button>
@@ -405,30 +440,30 @@ export function CabinetMeetingModal({
                   {/* Upcoming Meetings */}
                   <GlassCard variant="diplomatic">
                     <div className="p-6 pb-4">
-                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <h3 className="flex items-center gap-2 text-lg font-semibold">
                         <Clock className="h-5 w-5 text-blue-500" />
                         Upcoming Meetings
                       </h3>
-                      <p className="text-sm text-muted-foreground mt-1">Your scheduled cabinet meetings</p>
+                      <p className="text-muted-foreground mt-1 text-sm">
+                        Your scheduled cabinet meetings
+                      </p>
                     </div>
                     <div className="p-6">
                       {upcomingMeetings.length > 0 ? (
                         <div className="space-y-3">
                           {upcomingMeetings.map((meeting: any) => (
-                            <div key={meeting.id} className="p-4 border rounded-lg">
-                              <div className="flex justify-between items-start mb-2">
+                            <div key={meeting.id} className="rounded-lg border p-4">
+                              <div className="mb-2 flex items-start justify-between">
                                 <h4 className="font-semibold">{meeting.title}</h4>
-                                <Badge variant="outline">
-                                  {meeting.status}
-                                </Badge>
+                                <Badge variant="outline">{meeting.status}</Badge>
                               </div>
-                              <div className="text-sm text-muted-foreground mb-2">
+                              <div className="text-muted-foreground mb-2 text-sm">
                                 <div className="flex items-center gap-2">
                                   <CalendarIcon className="h-4 w-4" />
                                   {format(new Date(meeting.scheduledDate), "PPP 'at' p")}
                                 </div>
                                 {meeting.attendees && meeting.attendees.length > 0 && (
-                                  <div className="flex items-center gap-2 mt-1">
+                                  <div className="mt-1 flex items-center gap-2">
                                     <Users className="h-4 w-4" />
                                     {meeting.attendees.length} attendees
                                   </div>
@@ -443,8 +478,8 @@ export function CabinetMeetingModal({
                           ))}
                         </div>
                       ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <div className="text-muted-foreground py-8 text-center">
+                          <CalendarIcon className="mx-auto mb-4 h-12 w-12 opacity-50" />
                           <p>No upcoming meetings scheduled</p>
                         </div>
                       )}
@@ -452,13 +487,13 @@ export function CabinetMeetingModal({
                   </GlassCard>
 
                   {/* Meeting Statistics */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <GlassCard variant="diplomatic">
                       <div className="p-4 text-center">
                         <div className="text-2xl font-bold text-blue-600">
                           {upcomingMeetings.length}
                         </div>
-                        <div className="text-sm text-muted-foreground">Upcoming</div>
+                        <div className="text-muted-foreground text-sm">Upcoming</div>
                       </div>
                     </GlassCard>
                     <GlassCard variant="diplomatic">
@@ -466,7 +501,7 @@ export function CabinetMeetingModal({
                         <div className="text-2xl font-bold text-green-600">
                           {recentMeetings.length}
                         </div>
-                        <div className="text-sm text-muted-foreground">Completed</div>
+                        <div className="text-muted-foreground text-sm">Completed</div>
                       </div>
                     </GlassCard>
                     <GlassCard variant="diplomatic">
@@ -474,7 +509,7 @@ export function CabinetMeetingModal({
                         <div className="text-2xl font-bold text-purple-600">
                           {meetings?.length || 0}
                         </div>
-                        <div className="text-sm text-muted-foreground">Total</div>
+                        <div className="text-muted-foreground text-sm">Total</div>
                       </div>
                     </GlassCard>
                   </div>
@@ -486,11 +521,13 @@ export function CabinetMeetingModal({
           <TabsContent value="history" className="mt-6">
             <GlassCard variant="diplomatic">
               <div className="p-6 pb-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
+                <h3 className="flex items-center gap-2 text-lg font-semibold">
                   <FileText className="h-5 w-5 text-green-500" />
                   Meeting History
                 </h3>
-                <p className="text-sm text-muted-foreground mt-1">All cabinet meetings and their status</p>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  All cabinet meetings and their status
+                </p>
               </div>
               <div className="p-6">
                 {meetingsLoading ? (
@@ -502,47 +539,47 @@ export function CabinetMeetingModal({
                 ) : meetings && meetings.length > 0 ? (
                   <div className="space-y-3">
                     {meetings.map((meeting: any) => (
-                      <div key={meeting.id} className="p-4 border rounded-lg">
-                        <div className="flex justify-between items-start mb-2">
+                      <div key={meeting.id} className="rounded-lg border p-4">
+                        <div className="mb-2 flex items-start justify-between">
                           <h4 className="font-semibold">{meeting.title}</h4>
                           <div className="flex items-center gap-2">
-                            <Badge 
+                            <Badge
                               variant={
-                                meeting.status === 'completed' ? 'default' :
-                                meeting.status === 'in_progress' ? 'secondary' :
-                                meeting.status === 'cancelled' ? 'destructive' : 'outline'
+                                meeting.status === "completed"
+                                  ? "default"
+                                  : meeting.status === "in_progress"
+                                    ? "secondary"
+                                    : meeting.status === "cancelled"
+                                      ? "destructive"
+                                      : "outline"
                               }
                             >
                               {meeting.status}
                             </Badge>
-                            {meeting.status === 'completed' && (
+                            {meeting.status === "completed" && (
                               <CheckCircle className="h-4 w-4 text-green-500" />
                             )}
-                            {meeting.status === 'cancelled' && (
+                            {meeting.status === "cancelled" && (
                               <AlertCircle className="h-4 w-4 text-red-500" />
                             )}
                           </div>
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-muted-foreground text-sm">
                           {format(new Date(meeting.scheduledDate), "PPP 'at' p")}
                         </div>
                         {meeting.description && (
-                          <p className="text-sm mt-2">{meeting.description}</p>
+                          <p className="mt-2 text-sm">{meeting.description}</p>
                         )}
-                        <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                          {meeting.attendees && (
-                            <span>{meeting.attendees.length} attendees</span>
-                          )}
-                          {meeting.agenda && (
-                            <span>{meeting.agenda.length} agenda items</span>
-                          )}
+                        <div className="text-muted-foreground mt-2 flex gap-4 text-xs">
+                          {meeting.attendees && <span>{meeting.attendees.length} attendees</span>}
+                          {meeting.agenda && <span>{meeting.agenda.length} agenda items</span>}
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <div className="text-muted-foreground py-8 text-center">
+                    <FileText className="mx-auto mb-4 h-12 w-12 opacity-50" />
                     <p>No meeting history available</p>
                     <p className="text-sm">Schedule your first cabinet meeting to get started</p>
                   </div>

@@ -1,12 +1,12 @@
 "use client";
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Progress } from '~/components/ui/progress';
-import { GlassBarChart, GlassPieChart } from '~/components/charts/RechartsIntegration';
-import { DEFAULT_CHART_COLORS } from '~/lib/chart-colors';
-import { PieChart, BarChart3, GraduationCap, MapPin, Gauge } from 'lucide-react';
-import type { DemographicsConfiguration } from '~/types/economy-builder';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Progress } from "~/components/ui/progress";
+import { GlassBarChart, GlassPieChart } from "~/components/charts/RechartsIntegration";
+import { DEFAULT_CHART_COLORS } from "~/lib/chart-colors";
+import { PieChart, BarChart3, GraduationCap, MapPin, Gauge } from "lucide-react";
+import type { DemographicsConfiguration } from "~/types/economy-builder";
 
 interface DemographicsVisualizationsProps {
   demographics: DemographicsConfiguration;
@@ -21,7 +21,7 @@ export function DemographicsVisualizations({
   ageDistributionData,
   urbanRuralData,
   educationLevelData,
-  regionData
+  regionData,
 }: DemographicsVisualizationsProps) {
   return (
     <div className="space-y-6">
@@ -132,7 +132,9 @@ export function DemographicsVisualizations({
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Urbanization</span>
-                <span className="font-medium">{demographics.urbanRuralSplit.urban.toFixed(1)}%</span>
+                <span className="font-medium">
+                  {demographics.urbanRuralSplit.urban.toFixed(1)}%
+                </span>
               </div>
               <Progress value={demographics.urbanRuralSplit.urban} className="h-2" />
             </div>
@@ -140,7 +142,9 @@ export function DemographicsVisualizations({
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Working Age Share</span>
-                <span className="font-medium">{demographics.ageDistribution.age15to64.toFixed(1)}%</span>
+                <span className="font-medium">
+                  {demographics.ageDistribution.age15to64.toFixed(1)}%
+                </span>
               </div>
               <Progress value={demographics.ageDistribution.age15to64} className="h-2" />
             </div>

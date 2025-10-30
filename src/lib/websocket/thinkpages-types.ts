@@ -4,7 +4,7 @@
 export interface PresenceUpdate {
   id: string;
   accountId: string;
-  status: 'online' | 'away' | 'busy' | 'offline';
+  status: "online" | "away" | "busy" | "offline";
   lastSeen: number;
   activity?: string;
 }
@@ -21,7 +21,7 @@ export interface TypingIndicator {
 export interface MessageUpdate {
   documentId: string | undefined;
   id: string;
-  type: 'message:new' | 'message:updated' | 'message:deleted' | 'message:read';
+  type: "message:new" | "message:updated" | "message:deleted" | "message:read";
   conversationId?: string;
   groupId?: string;
   messageId: string;
@@ -33,7 +33,7 @@ export interface MessageUpdate {
 
 export interface GroupUpdate {
   id: string;
-  type: 'group:created' | 'group:updated' | 'group:deleted' | 'member:joined' | 'member:left';
+  type: "group:created" | "group:updated" | "group:deleted" | "member:joined" | "member:left";
   groupId: string;
   accountId?: string;
   data: any;
@@ -42,7 +42,7 @@ export interface GroupUpdate {
 
 export interface ConversationUpdate {
   id: string;
-  type: 'conversation:created' | 'conversation:updated' | 'conversation:deleted';
+  type: "conversation:created" | "conversation:updated" | "conversation:deleted";
   conversationId: string;
   participants: string[];
   data: any;
@@ -59,15 +59,27 @@ export interface ReadReceipt {
 }
 
 export interface ThinkPagesWebSocketEvent {
-  type: 'presence:update' | 'typing:update' | 'message:update' | 'group:update' | 'conversation:update' | 'read:receipt';
-  data: PresenceUpdate | TypingIndicator | MessageUpdate | GroupUpdate | ConversationUpdate | ReadReceipt;
+  type:
+    | "presence:update"
+    | "typing:update"
+    | "message:update"
+    | "group:update"
+    | "conversation:update"
+    | "read:receipt";
+  data:
+    | PresenceUpdate
+    | TypingIndicator
+    | MessageUpdate
+    | GroupUpdate
+    | ConversationUpdate
+    | ReadReceipt;
   timestamp: number;
   channel: string;
   accountId?: string;
 }
 
 export interface ThinkPagesSubscription {
-  type: 'presence' | 'conversations' | 'groups' | 'account';
+  type: "presence" | "conversations" | "groups" | "account";
   channel: string;
   accountId?: string;
   conversationId?: string;
@@ -79,7 +91,7 @@ export interface ThinkPagesClientState {
   authenticated: boolean;
   accountId?: string;
   subscriptions: Set<string>;
-  presenceStatus: 'online' | 'away' | 'busy' | 'offline';
+  presenceStatus: "online" | "away" | "busy" | "offline";
   activeConversations: Set<string>;
   activeGroups: Set<string>;
   typingIndicators: Map<string, TypingIndicator>;

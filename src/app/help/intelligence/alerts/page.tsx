@@ -11,17 +11,26 @@ export default function IntelligenceAlertsArticle() {
       icon={BellRing}
     >
       <Section title="Alert Types">
-        <ul className="list-disc pl-6 space-y-2">
-          <li><strong>Intelligence:</strong> Vitality drops, risk spikes, forecast deviations.</li>
-          <li><strong>Diplomatic:</strong> Mission status changes, relation strength updates, treaty deadlines.</li>
-          <li><strong>Defense:</strong> Incident reports, readiness downgrades, crisis escalation.</li>
-          <li><strong>Compliance:</strong> Overdue tasks, policy review reminders.</li>
+        <ul className="list-disc space-y-2 pl-6">
+          <li>
+            <strong>Intelligence:</strong> Vitality drops, risk spikes, forecast deviations.
+          </li>
+          <li>
+            <strong>Diplomatic:</strong> Mission status changes, relation strength updates, treaty
+            deadlines.
+          </li>
+          <li>
+            <strong>Defense:</strong> Incident reports, readiness downgrades, crisis escalation.
+          </li>
+          <li>
+            <strong>Compliance:</strong> Overdue tasks, policy review reminders.
+          </li>
         </ul>
       </Section>
 
       <Section title="Where Alerts Surface">
         <InfoBox title="Channels">
-          <ul className="list-disc pl-6 space-y-1">
+          <ul className="list-disc space-y-1 pl-6">
             <li>MyCountry intelligence feed and compliance modal.</li>
             <li>Notifications center (`src/components/notifications`).</li>
             <li>Discord webhooks (production) for critical incidents.</li>
@@ -30,17 +39,25 @@ export default function IntelligenceAlertsArticle() {
       </Section>
 
       <Section title="Workflow">
-        <ol className="list-decimal pl-6 space-y-2">
+        <ol className="list-decimal space-y-2 pl-6">
           <li>Open the alert card to view context and recommended actions.</li>
-          <li>Take action (quick action, policy draft, mission orders) or acknowledge when resolved.</li>
+          <li>
+            Take action (quick action, policy draft, mission orders) or acknowledge when resolved.
+          </li>
           <li>Archive alerts once documentation (ThinkPages/compliance notes) is complete.</li>
         </ol>
       </Section>
 
       <WarningBox title="Tips">
-        <ul className="list-disc pl-6 space-y-1">
-          <li><Inbox className="inline h-4 w-4" /> Clear resolved alerts to keep compliance manageable.</li>
-          <li><ShieldAlert className="inline h-4 w-4" /> Confirm Discord webhook config in `docs/operations/monitoring.md`.</li>
+        <ul className="list-disc space-y-1 pl-6">
+          <li>
+            <Inbox className="inline h-4 w-4" /> Clear resolved alerts to keep compliance
+            manageable.
+          </li>
+          <li>
+            <ShieldAlert className="inline h-4 w-4" /> Confirm Discord webhook config in
+            `docs/operations/monitoring.md`.
+          </li>
         </ul>
       </WarningBox>
     </ArticleLayout>

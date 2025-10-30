@@ -17,20 +17,12 @@ export interface ClassificationBadgeProps {
 
 export const ClassificationBadge: React.FC<ClassificationBadgeProps> = ({
   classification,
-  className
+  className,
 }) => {
   const style = CLASSIFICATION_STYLES[classification];
 
   return (
-    <Badge
-      variant="outline"
-      className={cn(
-        "border-2",
-        style.color,
-        style.border,
-        className
-      )}
-    >
+    <Badge variant="outline" className={cn("border-2", style.color, style.border, className)}>
       {style.label}
     </Badge>
   );
@@ -42,22 +34,11 @@ export interface StatusBadgeProps {
   className?: string;
 }
 
-export const StatusBadge: React.FC<StatusBadgeProps> = ({
-  status,
-  label,
-  className
-}) => {
+export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, label, className }) => {
   const style = STATUS_STYLES[status];
 
   return (
-    <Badge
-      className={cn(
-        "text-xs",
-        style.bg,
-        style.color,
-        className
-      )}
-    >
+    <Badge className={cn("text-xs", style.bg, style.color, className)}>
       {label || status.toUpperCase()}
     </Badge>
   );
@@ -74,7 +55,7 @@ export const TrendIndicator: React.FC<TrendIndicatorProps> = ({
   trend,
   value,
   period,
-  className
+  className,
 }) => {
   const TrendIcon = getTrendIcon(trend);
   const trendColor = getTrendColor(trend);
@@ -83,15 +64,9 @@ export const TrendIndicator: React.FC<TrendIndicatorProps> = ({
     <div className={cn("flex items-center gap-1", className)}>
       <TrendIcon className={cn("h-4 w-4", trendColor)} />
       {value !== undefined && (
-        <span className={cn("text-sm font-medium", trendColor)}>
-          {value.toFixed(2)}%
-        </span>
+        <span className={cn("text-sm font-medium", trendColor)}>{value.toFixed(2)}%</span>
       )}
-      {period && (
-        <span className="text-xs text-muted-foreground">
-          {period}
-        </span>
-      )}
+      {period && <span className="text-muted-foreground text-xs">{period}</span>}
     </div>
   );
 };
@@ -107,7 +82,7 @@ export const StabilityIndicator: React.FC<StabilityIndicatorProps> = ({
   stable = true,
   label = "STABLE",
   icon: Icon,
-  className
+  className,
 }) => {
   const IconComponent = Icon as React.ComponentType<{ className?: string }> | undefined;
 
@@ -115,12 +90,12 @@ export const StabilityIndicator: React.FC<StabilityIndicatorProps> = ({
     <Badge
       variant="outline"
       className={cn(
-        "border-green-500/30 text-green-400 bg-green-500/10",
-        !stable && "border-red-500/30 text-red-400 bg-red-500/10",
+        "border-green-500/30 bg-green-500/10 text-green-400",
+        !stable && "border-red-500/30 bg-red-500/10 text-red-400",
         className
       )}
     >
-      {IconComponent && <IconComponent className="h-3 w-3 mr-1" />}
+      {IconComponent && <IconComponent className="mr-1 h-3 w-3" />}
       {label}
     </Badge>
   );

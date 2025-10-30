@@ -5,9 +5,9 @@ import type {
   IntelligenceUpdate,
   WebSocketClientState,
   WebSocketIntelligenceEvent,
-  IntelligenceWebSocketHookOptions
-} from './types';
-import { BASE_PATH } from '~/lib/base-path';
+  IntelligenceWebSocketHookOptions,
+} from "./types";
+import { BASE_PATH } from "~/lib/base-path";
 
 // Dynamic import for socket.io-client to avoid SSR issues
 let io: any = null;
@@ -18,7 +18,7 @@ export class IntelligenceWebSocketClient {
     connected: false,
     authenticated: false,
     subscriptions: new Set(),
-    lastHeartbeat: 0
+    lastHeartbeat: 0,
   };
   private options: Required<IntelligenceWebSocketHookOptions>;
   private reconnectTimeout: NodeJS.Timeout | null = null;
@@ -28,7 +28,7 @@ export class IntelligenceWebSocketClient {
 
   constructor(options: IntelligenceWebSocketHookOptions = {}) {
     this.options = {
-      countryId: options.countryId || '',
+      countryId: options.countryId || "",
       autoReconnect: options.autoReconnect ?? true,
       heartbeatInterval: options.heartbeatInterval || 30000,
       subscribeToGlobal: options.subscribeToGlobal ?? true,
@@ -37,7 +37,7 @@ export class IntelligenceWebSocketClient {
       onAlert: options.onAlert || (() => {}),
       onConnect: options.onConnect || (() => {}),
       onDisconnect: options.onDisconnect || (() => {}),
-      onError: options.onError || (() => {})
+      onError: options.onError || (() => {}),
     };
   }
 
@@ -46,22 +46,22 @@ export class IntelligenceWebSocketClient {
    */
   public async connect(userId: string, countryId?: string): Promise<void> {
     // Ensure we're in browser environment
-    if (typeof window === 'undefined') {
-      throw new Error('WebSocket client can only run in browser environment');
+    if (typeof window === "undefined") {
+      throw new Error("WebSocket client can only run in browser environment");
     }
 
     // Check if WebSocket should be enabled based on environment
-    const isProduction = process.env.NODE_ENV === 'production';
-    const websocketEnabled = process.env.NEXT_PUBLIC_ENABLE_WEBSOCKET === 'true';
-    
+    const isProduction = process.env.NODE_ENV === "production";
+    const websocketEnabled = process.env.NEXT_PUBLIC_ENABLE_WEBSOCKET === "true";
+
     if (!isProduction && !websocketEnabled) {
-      console.log('[IntelligenceWebSocketClient] WebSocket disabled in development mode');
+      console.log("[IntelligenceWebSocketClient] WebSocket disabled in development mode");
       return;
     }
 
     // Wait for socket.io-client to load
     if (!io) {
-      const module = await import('socket.io-client');
+      const module = await import("socket.io-client");
       io = module.default || module;
     }
 
@@ -74,14 +74,14 @@ export class IntelligenceWebSocketClient {
       const serverUrl = this.getServerUrl();
 
       this.socket = io(serverUrl, {
-        transports: ['websocket', 'polling'],
+        transports: ["websocket", "polling"],
         timeout: 10000,
         forceNew: true,
-        upgrade: true
+        upgrade: true,
       });
 
       // Connection established
-      this.socket.on('connect', () => {
+      this.socket.on("connect", () => {
         this.state.connected = true;
         this.state.connectionId = this.socket?.id;
         this.connectionAttempts = 0;
@@ -97,26 +97,26 @@ export class IntelligenceWebSocketClient {
       });
 
       // Connection error
-      this.socket.on('connect_error', (error: any) => {
-        console.error('Intelligence WebSocket connection error:', error);
+      this.socket.on("connect_error", (error: any) => {
+        console.error("Intelligence WebSocket connection error:", error);
         this.state.connected = false;
         this.options.onError(error);
-        
+
         if (this.connectionAttempts === 0) {
           reject(error);
         }
-        
+
         this.handleReconnection();
       });
 
       // Disconnection
-      this.socket.on('disconnect', (reason: any) => {
+      this.socket.on("disconnect", (reason: any) => {
         this.state.connected = false;
         this.state.authenticated = false;
         this.stopHeartbeat();
         this.options.onDisconnect();
-        
-        if (reason !== 'io client disconnect') {
+
+        if (reason !== "io client disconnect") {
           this.handleReconnection();
         }
       });
@@ -130,13 +130,13 @@ export class IntelligenceWebSocketClient {
    * Get WebSocket server URL based on environment
    */
   private getServerUrl(): string {
-    if (typeof window !== 'undefined') {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const basePath = BASE_PATH || '';
+    if (typeof window !== "undefined") {
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const basePath = BASE_PATH || "";
       return `${protocol}//${window.location.host}${basePath}`;
     }
     // Use the same port as Next.js server (3000 dev, 3550 prod)
-    return process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3000';
+    return process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:3000";
   }
 
   /**
@@ -145,31 +145,31 @@ export class IntelligenceWebSocketClient {
   private authenticate(userId: string, countryId?: string): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.socket) {
-        reject(new Error('Socket not connected'));
+        reject(new Error("Socket not connected"));
         return;
       }
 
-      this.socket.emit('authenticate', { userId, countryId });
+      this.socket.emit("authenticate", { userId, countryId });
 
-      this.socket.once('authenticated', (response: any) => {
+      this.socket.once("authenticated", (response: any) => {
         if (response.success) {
           this.state.authenticated = true;
           this.state.userId = userId;
           this.state.countryId = countryId;
-          
-          console.log('Intelligence WebSocket authenticated for country:', countryId);
-          
+
+          console.log("Intelligence WebSocket authenticated for country:", countryId);
+
           // Set up subscriptions
           this.setupSubscriptions();
           resolve();
         } else {
-          reject(new Error('Authentication failed'));
+          reject(new Error("Authentication failed"));
         }
       });
 
       // Timeout authentication
       setTimeout(() => {
-        reject(new Error('Authentication timeout'));
+        reject(new Error("Authentication timeout"));
       }, 5000);
     });
   }
@@ -181,40 +181,40 @@ export class IntelligenceWebSocketClient {
     if (!this.socket) return;
 
     // Intelligence updates
-    this.socket.on('intelligence:update', (event: WebSocketIntelligenceEvent) => {
+    this.socket.on("intelligence:update", (event: WebSocketIntelligenceEvent) => {
       this.options.onUpdate(event.data);
     });
 
     // Intelligence alerts
-    this.socket.on('intelligence:alert', (event: WebSocketIntelligenceEvent) => {
-      console.log('Received intelligence alert:', event.data);
+    this.socket.on("intelligence:alert", (event: WebSocketIntelligenceEvent) => {
+      console.log("Received intelligence alert:", event.data);
       this.options.onAlert(event.data);
     });
 
     // Initial intelligence state
-    this.socket.on('intelligence:initial', (event: WebSocketIntelligenceEvent) => {
-      console.log('Received initial intelligence:', event.type, event.data);
+    this.socket.on("intelligence:initial", (event: WebSocketIntelligenceEvent) => {
+      console.log("Received initial intelligence:", event.type, event.data);
       this.options.onUpdate(event.data);
     });
 
     // Vitality updates
-    this.socket.on('vitality:update', (event: WebSocketIntelligenceEvent) => {
-      console.log('Received vitality update:', event.data);
+    this.socket.on("vitality:update", (event: WebSocketIntelligenceEvent) => {
+      console.log("Received vitality update:", event.data);
       this.options.onUpdate({
         ...event.data,
-        type: 'vitality_update',
-        timestamp: event.timestamp
+        type: "vitality_update",
+        timestamp: event.timestamp,
       });
     });
 
     // Heartbeat acknowledgment
-    this.socket.on('heartbeat_ack', (data: any) => {
+    this.socket.on("heartbeat_ack", (data: any) => {
       this.state.lastHeartbeat = data.timestamp;
     });
 
     // Server shutdown notification
-    this.socket.on('server:shutdown', (data: any) => {
-      console.warn('Server shutting down:', data.message);
+    this.socket.on("server:shutdown", (data: any) => {
+      console.warn("Server shutting down:", data.message);
       this.disconnect();
     });
   }
@@ -246,15 +246,15 @@ export class IntelligenceWebSocketClient {
    */
   public subscribeToCountry(countryId: string): void {
     if (!this.socket || !this.state.authenticated) {
-      console.warn('Cannot subscribe to country: not authenticated');
+      console.warn("Cannot subscribe to country: not authenticated");
       return;
     }
 
-    this.socket.emit('subscribe:country', countryId);
+    this.socket.emit("subscribe:country", countryId);
     this.state.subscriptions.add(`country:${countryId}`);
     this.options.countryId = countryId;
-    
-    console.log('Subscribed to country intelligence:', countryId);
+
+    console.log("Subscribed to country intelligence:", countryId);
   }
 
   /**
@@ -262,14 +262,14 @@ export class IntelligenceWebSocketClient {
    */
   public subscribeToGlobal(): void {
     if (!this.socket || !this.state.authenticated) {
-      console.warn('Cannot subscribe to global: not authenticated');
+      console.warn("Cannot subscribe to global: not authenticated");
       return;
     }
 
-    this.socket.emit('subscribe:global');
-    this.state.subscriptions.add('global:intelligence');
-    
-    console.log('Subscribed to global intelligence');
+    this.socket.emit("subscribe:global");
+    this.state.subscriptions.add("global:intelligence");
+
+    console.log("Subscribed to global intelligence");
   }
 
   /**
@@ -277,14 +277,14 @@ export class IntelligenceWebSocketClient {
    */
   public subscribeToAlerts(): void {
     if (!this.socket || !this.state.authenticated) {
-      console.warn('Cannot subscribe to alerts: not authenticated');
+      console.warn("Cannot subscribe to alerts: not authenticated");
       return;
     }
 
-    this.socket.emit('subscribe:alerts');
-    this.state.subscriptions.add('intelligence:alerts');
-    
-    console.log('Subscribed to intelligence alerts');
+    this.socket.emit("subscribe:alerts");
+    this.state.subscriptions.add("intelligence:alerts");
+
+    console.log("Subscribed to intelligence alerts");
   }
 
   /**
@@ -293,8 +293,8 @@ export class IntelligenceWebSocketClient {
   public subscribeToEconomic(): void {
     if (!this.socket || !this.state.authenticated) return;
 
-    this.socket.emit('subscribe:economic');
-    this.state.subscriptions.add('intelligence:economic');
+    this.socket.emit("subscribe:economic");
+    this.state.subscriptions.add("intelligence:economic");
   }
 
   /**
@@ -303,10 +303,10 @@ export class IntelligenceWebSocketClient {
   public unsubscribe(channel: string): void {
     if (!this.socket) return;
 
-    this.socket.emit('unsubscribe', channel);
+    this.socket.emit("unsubscribe", channel);
     this.state.subscriptions.delete(channel);
-    
-    console.log('Unsubscribed from:', channel);
+
+    console.log("Unsubscribed from:", channel);
   }
 
   /**
@@ -314,10 +314,10 @@ export class IntelligenceWebSocketClient {
    */
   private startHeartbeat(): void {
     this.stopHeartbeat();
-    
+
     this.heartbeatInterval = setInterval(() => {
       if (this.socket?.connected) {
-        this.socket.emit('heartbeat');
+        this.socket.emit("heartbeat");
       }
     }, this.options.heartbeatInterval);
   }
@@ -337,7 +337,7 @@ export class IntelligenceWebSocketClient {
    */
   private handleReconnection(): void {
     if (!this.options.autoReconnect || this.connectionAttempts >= this.maxReconnectAttempts) {
-      console.warn('Max reconnection attempts reached or auto-reconnect disabled');
+      console.warn("Max reconnection attempts reached or auto-reconnect disabled");
       return;
     }
 
@@ -347,13 +347,15 @@ export class IntelligenceWebSocketClient {
 
     this.connectionAttempts++;
     const delay = Math.min(1000 * Math.pow(2, this.connectionAttempts - 1), 30000);
-    
-    console.log(`Attempting reconnection ${this.connectionAttempts}/${this.maxReconnectAttempts} in ${delay}ms`);
+
+    console.log(
+      `Attempting reconnection ${this.connectionAttempts}/${this.maxReconnectAttempts} in ${delay}ms`
+    );
 
     this.reconnectTimeout = setTimeout(() => {
       if (this.state.userId) {
         this.connect(this.state.userId, this.state.countryId).catch((error) => {
-          console.error('Reconnection failed:', error);
+          console.error("Reconnection failed:", error);
         });
       }
     }, delay);
@@ -364,9 +366,9 @@ export class IntelligenceWebSocketClient {
    */
   public updateOptions(newOptions: Partial<IntelligenceWebSocketHookOptions>): void {
     const oldCountryId = this.options.countryId;
-    
+
     this.options = { ...this.options, ...newOptions };
-    
+
     // Handle country change
     if (newOptions.countryId && newOptions.countryId !== oldCountryId) {
       if (oldCountryId) {
@@ -398,19 +400,18 @@ export class IntelligenceWebSocketClient {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
-    
+
     this.stopHeartbeat();
-    
+
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
     }
-    
+
     this.state.connected = false;
     this.state.authenticated = false;
     this.state.subscriptions.clear();
     this.connectionAttempts = 0;
-    
   }
 
   /**

@@ -20,8 +20,8 @@
  * ```
  */
 
-import { db } from '~/server/db';
-import { emitNotificationEvent } from '~/server/api/routers/notifications';
+import { db } from "~/server/db";
+import { emitNotificationEvent } from "~/server/api/routers/notifications";
 import { withBasePath } from "./base-path";
 
 function resolveHref(href?: string | null): string | null {
@@ -33,30 +33,24 @@ function resolveHref(href?: string | null): string | null {
   return withBasePath(href);
 }
 
-export type NotificationPriority = 'critical' | 'high' | 'medium' | 'low';
+export type NotificationPriority = "critical" | "high" | "medium" | "low";
 export type NotificationCategory =
-  | 'economic'
-  | 'diplomatic'
-  | 'governance'
-  | 'social'
-  | 'security'
-  | 'system'
-  | 'achievement'
-  | 'crisis'
-  | 'opportunity'
-  | 'policy'
-  | 'intelligence'
-  | 'global'
-  | 'military';
-export type NotificationType =
-  | 'info'
-  | 'success'
-  | 'warning'
-  | 'error'
-  | 'alert'
-  | 'update';
-export type NotificationSeverity = 'urgent' | 'important' | 'informational';
-export type DeliveryMethod = 'toast' | 'dynamic-island' | 'modal' | 'command-palette';
+  | "economic"
+  | "diplomatic"
+  | "governance"
+  | "social"
+  | "security"
+  | "system"
+  | "achievement"
+  | "crisis"
+  | "opportunity"
+  | "policy"
+  | "intelligence"
+  | "global"
+  | "military";
+export type NotificationType = "info" | "success" | "warning" | "error" | "alert" | "update";
+export type NotificationSeverity = "urgent" | "important" | "informational";
+export type DeliveryMethod = "toast" | "dynamic-island" | "modal" | "command-palette";
 
 export interface CreateNotificationInput {
   // Required fields
@@ -84,7 +78,7 @@ export interface NotificationTriggerOptions {
   thinkpage?: {
     id: string;
     title: string;
-    action: 'created' | 'updated' | 'commented' | 'liked' | 'shared';
+    action: "created" | "updated" | "commented" | "liked" | "shared";
     authorId: string;
     targetUserId?: string;
   };
@@ -100,7 +94,7 @@ export interface NotificationTriggerOptions {
 
   // Diplomatic notifications
   diplomatic?: {
-    eventType: 'treaty' | 'agreement' | 'mission' | 'conflict' | 'resolution';
+    eventType: "treaty" | "agreement" | "mission" | "conflict" | "resolution";
     countries: string[];
     title?: string;
   };
@@ -111,7 +105,7 @@ export interface NotificationTriggerOptions {
     title: string;
     scheduledTime: Date;
     participants: string[];
-    action: 'scheduled' | 'starting' | 'ended' | 'cancelled';
+    action: "scheduled" | "starting" | "ended" | "cancelled";
   };
 
   // Achievement notifications
@@ -125,7 +119,7 @@ export interface NotificationTriggerOptions {
   // Crisis notifications
   crisis?: {
     type: string;
-    severity: 'low' | 'medium' | 'high' | 'critical';
+    severity: "low" | "medium" | "high" | "critical";
     countryId: string;
     description: string;
   };
@@ -148,11 +142,11 @@ class NotificationAPIService {
           userId: input.userId ?? null,
           countryId: input.countryId ?? null,
           category: input.category ?? null,
-          type: input.type ?? 'info',
-          priority: input.priority ?? 'medium',
-          severity: input.severity ?? 'informational',
+          type: input.type ?? "info",
+          priority: input.priority ?? "medium",
+          severity: input.severity ?? "informational",
           href: resolveHref(input.href),
-          source: input.source ?? 'system',
+          source: input.source ?? "system",
           actionable: input.actionable ?? false,
           deliveryMethod: input.deliveryMethod ?? null,
           metadata: input.metadata ? JSON.stringify(input.metadata) : null,
@@ -163,10 +157,15 @@ class NotificationAPIService {
       // Emit real-time event
       emitNotificationEvent(notification);
 
-      console.log('[NotificationAPI] Created notification:', notification.id, '-', notification.title);
+      console.log(
+        "[NotificationAPI] Created notification:",
+        notification.id,
+        "-",
+        notification.title
+      );
       return notification.id;
     } catch (error) {
-      console.error('[NotificationAPI] Failed to create notification:', error);
+      console.error("[NotificationAPI] Failed to create notification:", error);
       throw error;
     }
   }
@@ -177,18 +176,18 @@ class NotificationAPIService {
   async createMany(inputs: CreateNotificationInput[]): Promise<string[]> {
     try {
       const notifications = await db.notification.createMany({
-        data: inputs.map(input => ({
+        data: inputs.map((input) => ({
           title: input.title,
           message: input.message ?? null,
           description: input.description ?? null,
           userId: input.userId ?? null,
           countryId: input.countryId ?? null,
           category: input.category ?? null,
-          type: input.type ?? 'info',
-          priority: input.priority ?? 'medium',
-          severity: input.severity ?? 'informational',
+          type: input.type ?? "info",
+          priority: input.priority ?? "medium",
+          severity: input.severity ?? "informational",
           href: resolveHref(input.href),
-          source: input.source ?? 'system',
+          source: input.source ?? "system",
           actionable: input.actionable ?? false,
           deliveryMethod: input.deliveryMethod ?? null,
           metadata: input.metadata ? JSON.stringify(input.metadata) : null,
@@ -196,13 +195,13 @@ class NotificationAPIService {
         })),
       });
 
-      console.log('[NotificationAPI] Created', notifications.count, 'notifications');
+      console.log("[NotificationAPI] Created", notifications.count, "notifications");
 
       // Note: We can't easily get IDs from createMany, so we return empty array
       // For detailed tracking, use multiple create() calls instead
       return [];
     } catch (error) {
-      console.error('[NotificationAPI] Failed to create bulk notifications:', error);
+      console.error("[NotificationAPI] Failed to create bulk notifications:", error);
       throw error;
     }
   }
@@ -216,22 +215,22 @@ class NotificationAPIService {
       const { id, title, action, authorId, targetUserId } = options.thinkpage;
 
       const actionMessages: Record<typeof action, string> = {
-        created: 'created a new ThinkPage',
-        updated: 'updated their ThinkPage',
-        commented: 'commented on your ThinkPage',
-        liked: 'liked your ThinkPage',
-        shared: 'shared your ThinkPage',
+        created: "created a new ThinkPage",
+        updated: "updated their ThinkPage",
+        commented: "commented on your ThinkPage",
+        liked: "liked your ThinkPage",
+        shared: "shared your ThinkPage",
       };
 
       return this.create({
         title: `ThinkPage ${action}`,
         message: `${actionMessages[action]}: "${title}"`,
         userId: targetUserId ?? null,
-        category: 'social',
-        type: action === 'created' ? 'success' : 'info',
-        priority: action === 'commented' ? 'medium' : 'low',
+        category: "social",
+        type: action === "created" ? "success" : "info",
+        priority: action === "commented" ? "medium" : "low",
         href: withBasePath(`/thinkpages/${id}`),
-        source: 'thinkpages',
+        source: "thinkpages",
         actionable: true,
         metadata: { thinkpageId: id, authorId, action },
       });
@@ -245,14 +244,14 @@ class NotificationAPIService {
 
       return this.create({
         title: `Economic Alert: ${metric}`,
-        message: `${metric} ${changePercent > 0 ? 'increased' : 'decreased'} by ${Math.abs(changePercent).toFixed(2)}% to ${value.toLocaleString()}`,
+        message: `${metric} ${changePercent > 0 ? "increased" : "decreased"} by ${Math.abs(changePercent).toFixed(2)}% to ${value.toLocaleString()}`,
         countryId,
-        category: 'economic',
-        type: 'alert',
-        priority: isSignificant ? 'high' : 'medium',
-        severity: isSignificant ? 'important' : 'informational',
-        href: withBasePath('/mycountry/new?tab=economy'),
-        source: 'economic-system',
+        category: "economic",
+        type: "alert",
+        priority: isSignificant ? "high" : "medium",
+        severity: isSignificant ? "important" : "informational",
+        href: withBasePath("/mycountry/new?tab=economy"),
+        source: "economic-system",
         actionable: true,
         metadata: { metric, value, change: changePercent },
       });
@@ -263,21 +262,21 @@ class NotificationAPIService {
       const { eventType, countries, title } = options.diplomatic;
 
       const eventTitles: Record<typeof eventType, string> = {
-        treaty: 'Treaty Signed',
-        agreement: 'Agreement Reached',
-        mission: 'Diplomatic Mission',
-        conflict: 'Diplomatic Conflict',
-        resolution: 'Conflict Resolved',
+        treaty: "Treaty Signed",
+        agreement: "Agreement Reached",
+        mission: "Diplomatic Mission",
+        conflict: "Diplomatic Conflict",
+        resolution: "Conflict Resolved",
       };
 
       return this.create({
         title: title ?? eventTitles[eventType],
         message: `Diplomatic ${eventType} involving ${countries.length} countries`,
-        category: 'diplomatic',
-        type: eventType === 'conflict' ? 'warning' : 'info',
-        priority: eventType === 'conflict' ? 'high' : 'medium',
-        href: withBasePath('/diplomatic'),
-        source: 'diplomatic-system',
+        category: "diplomatic",
+        type: eventType === "conflict" ? "warning" : "info",
+        priority: eventType === "conflict" ? "high" : "medium",
+        href: withBasePath("/diplomatic"),
+        source: "diplomatic-system",
         actionable: true,
         metadata: { eventType, countries },
       });
@@ -288,37 +287,37 @@ class NotificationAPIService {
       const { id, title, scheduledTime, participants, action } = options.meeting;
 
       const actionMessages: Record<typeof action, string> = {
-        scheduled: 'Meeting scheduled',
-        starting: 'Meeting starting now',
-        ended: 'Meeting has ended',
-        cancelled: 'Meeting cancelled',
+        scheduled: "Meeting scheduled",
+        starting: "Meeting starting now",
+        ended: "Meeting has ended",
+        cancelled: "Meeting cancelled",
       };
 
       const actionPriorities: Record<typeof action, NotificationPriority> = {
-        scheduled: 'low',
-        starting: 'high',
-        ended: 'low',
-        cancelled: 'medium',
+        scheduled: "low",
+        starting: "high",
+        ended: "low",
+        cancelled: "medium",
       };
 
       // Notify all participants
-      const notificationPromises = participants.map(userId =>
+      const notificationPromises = participants.map((userId) =>
         this.create({
           title: `${actionMessages[action]}: ${title}`,
-          message: `Meeting ${action === 'starting' ? 'is about to start' : actionMessages[action]}`,
+          message: `Meeting ${action === "starting" ? "is about to start" : actionMessages[action]}`,
           userId,
-          category: 'governance',
-          type: action === 'cancelled' ? 'warning' : 'info',
+          category: "governance",
+          type: action === "cancelled" ? "warning" : "info",
           priority: actionPriorities[action],
           href: withBasePath(`/meetings/${id}`),
-          source: 'meeting-system',
-          actionable: action === 'starting',
+          source: "meeting-system",
+          actionable: action === "starting",
           metadata: { meetingId: id, scheduledTime: scheduledTime.toISOString(), action },
         })
       );
 
       await Promise.all(notificationPromises);
-      return notificationPromises.length > 0 ? 'bulk-created' : null;
+      return notificationPromises.length > 0 ? "bulk-created" : null;
     }
 
     // Achievement notifications
@@ -329,11 +328,11 @@ class NotificationAPIService {
         title: `🏆 Achievement Unlocked: ${name}`,
         message: description,
         userId,
-        category: 'achievement',
-        type: 'success',
-        priority: 'low',
-        href: withBasePath('/achievements'),
-        source: 'achievement-system',
+        category: "achievement",
+        type: "success",
+        priority: "low",
+        href: withBasePath("/achievements"),
+        source: "achievement-system",
         actionable: true,
         metadata: { achievementName: name, achievementCategory: category },
       });
@@ -347,14 +346,14 @@ class NotificationAPIService {
         title: `🚨 Crisis Alert: ${type}`,
         message: description,
         countryId,
-        category: 'crisis',
-        type: 'error',
+        category: "crisis",
+        type: "error",
         priority: severity,
-        severity: severity === 'critical' ? 'urgent' : 'important',
-        href: withBasePath('/crisis-management'),
-        source: 'crisis-system',
+        severity: severity === "critical" ? "urgent" : "important",
+        href: withBasePath("/crisis-management"),
+        source: "crisis-system",
         actionable: true,
-        deliveryMethod: severity === 'critical' ? 'modal' : 'dynamic-island',
+        deliveryMethod: severity === "critical" ? "modal" : "dynamic-island",
         metadata: { crisisType: type, severity },
       });
     }
@@ -396,7 +395,7 @@ class NotificationAPIService {
   async notifyThinkPageActivity(params: {
     thinkpageId: string;
     title: string;
-    action: 'created' | 'updated' | 'commented' | 'liked' | 'shared';
+    action: "created" | "updated" | "commented" | "liked" | "shared";
     authorId: string;
     targetUserId?: string;
   }): Promise<string> {
@@ -419,7 +418,7 @@ class NotificationAPIService {
     title: string;
     scheduledTime: Date;
     participants: string[];
-    action: 'scheduled' | 'starting' | 'ended' | 'cancelled';
+    action: "scheduled" | "starting" | "ended" | "cancelled";
   }): Promise<void> {
     await this.trigger({
       meeting: {
@@ -446,9 +445,9 @@ class NotificationAPIService {
       title: params.title,
       message: params.message,
       countryId: params.countryId,
-      category: params.category ?? 'governance',
-      priority: params.priority ?? 'medium',
-      source: 'country-system',
+      category: params.category ?? "governance",
+      priority: params.priority ?? "medium",
+      source: "country-system",
     });
   }
 
@@ -466,9 +465,9 @@ class NotificationAPIService {
       message: params.message,
       userId: null,
       countryId: null,
-      category: params.category ?? 'system',
-      priority: params.priority ?? 'medium',
-      source: 'system',
+      category: params.category ?? "system",
+      priority: params.priority ?? "medium",
+      source: "system",
     });
   }
 
@@ -489,12 +488,12 @@ class NotificationAPIService {
         : `Milestone achieved: ${params.milestone}`,
       userId: params.userId ?? null,
       countryId: params.countryId,
-      category: 'economic',
-      type: 'success',
-      priority: 'high',
-      severity: 'important',
-      href: withBasePath('/mycountry/new?tab=economy'),
-      source: 'economic-system',
+      category: "economic",
+      type: "success",
+      priority: "high",
+      severity: "important",
+      href: withBasePath("/mycountry/new?tab=economy"),
+      source: "economic-system",
       actionable: true,
       metadata: {
         milestone: params.milestone,
@@ -518,15 +517,15 @@ class NotificationAPIService {
     const isImprovement = change > 0;
 
     return this.create({
-      title: `Vitality ${isImprovement ? 'Improved' : 'Declined'}: ${params.dimension}`,
-      message: `${params.dimension} ${isImprovement ? 'increased' : 'decreased'} by ${Math.abs(change).toFixed(1)} points`,
+      title: `Vitality ${isImprovement ? "Improved" : "Declined"}: ${params.dimension}`,
+      message: `${params.dimension} ${isImprovement ? "increased" : "decreased"} by ${Math.abs(change).toFixed(1)} points`,
       userId: params.userId ?? null,
       countryId: params.countryId,
-      category: 'governance',
-      type: isImprovement ? 'success' : 'warning',
-      priority: Math.abs(change) > 15 ? 'high' : 'medium',
-      href: withBasePath('/mycountry/new?tab=vitality'),
-      source: 'vitality-system',
+      category: "governance",
+      type: isImprovement ? "success" : "warning",
+      priority: Math.abs(change) > 15 ? "high" : "medium",
+      href: withBasePath("/mycountry/new?tab=vitality"),
+      source: "vitality-system",
       actionable: true,
       metadata: {
         dimension: params.dimension,
@@ -551,11 +550,11 @@ class NotificationAPIService {
       title: `ThinkTank: ${params.groupName}`,
       message: params.message,
       userId: params.userId,
-      category: 'social',
-      type: 'info',
-      priority: 'low',
+      category: "social",
+      type: "info",
+      priority: "low",
       href: `/thinkpages/thinktanks?group=${params.groupId}`,
-      source: 'thinktank',
+      source: "thinktank",
       actionable: true,
       metadata: {
         groupId: params.groupId,
@@ -571,25 +570,25 @@ class NotificationAPIService {
     userId?: string;
     countryId: string;
     actionName: string;
-    status: 'success' | 'failure' | 'scheduled';
+    status: "success" | "failure" | "scheduled";
     details?: string;
   }): Promise<string> {
     const statusTitles = {
-      success: 'Action Completed',
-      failure: 'Action Failed',
-      scheduled: 'Action Scheduled',
+      success: "Action Completed",
+      failure: "Action Failed",
+      scheduled: "Action Scheduled",
     };
 
     const statusTypes = {
-      success: 'success' as const,
-      failure: 'error' as const,
-      scheduled: 'info' as const,
+      success: "success" as const,
+      failure: "error" as const,
+      scheduled: "info" as const,
     };
 
     const priorities = {
-      success: 'medium' as const,
-      failure: 'high' as const,
-      scheduled: 'low' as const,
+      success: "medium" as const,
+      failure: "high" as const,
+      scheduled: "low" as const,
     };
 
     return this.create({
@@ -597,12 +596,12 @@ class NotificationAPIService {
       message: params.details ?? statusTitles[params.status],
       userId: params.userId ?? null,
       countryId: params.countryId,
-      category: 'governance',
+      category: "governance",
       type: statusTypes[params.status],
       priority: priorities[params.status],
-      href: withBasePath('/mycountry/quickactions'),
-      source: 'quickactions',
-      actionable: params.status === 'failure',
+      href: withBasePath("/mycountry/quickactions"),
+      source: "quickactions",
+      actionable: params.status === "failure",
       metadata: {
         actionName: params.actionName,
         status: params.status,
@@ -618,20 +617,20 @@ class NotificationAPIService {
     countryId?: string;
     title: string;
     message: string;
-    severity: 'urgent' | 'important' | 'informational';
+    severity: "urgent" | "important" | "informational";
     adminId: string;
     adminName?: string;
   }): Promise<string> {
     const priorityMap = {
-      urgent: 'critical' as const,
-      important: 'high' as const,
-      informational: 'medium' as const,
+      urgent: "critical" as const,
+      important: "high" as const,
+      informational: "medium" as const,
     };
 
     const deliveryMap = {
-      urgent: 'modal' as const,
-      important: 'dynamic-island' as const,
-      informational: 'toast' as const,
+      urgent: "modal" as const,
+      important: "dynamic-island" as const,
+      informational: "toast" as const,
     };
 
     return this.create({
@@ -639,12 +638,12 @@ class NotificationAPIService {
       message: params.message,
       userId: params.userId ?? null,
       countryId: params.countryId ?? null,
-      category: 'system',
-      type: 'alert',
+      category: "system",
+      type: "alert",
       priority: priorityMap[params.severity],
       severity: params.severity,
       deliveryMethod: deliveryMap[params.severity],
-      source: 'admin',
+      source: "admin",
       actionable: true,
       metadata: {
         adminId: params.adminId,

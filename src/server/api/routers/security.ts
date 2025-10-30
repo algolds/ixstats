@@ -4,7 +4,14 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { calculateStabilityMetrics, type EconomicData, type GovernmentData, type DemographicData, type PoliticalData, type RecentPolicy } from "~/lib/stability-formulas";
+import {
+  calculateStabilityMetrics,
+  type EconomicData,
+  type GovernmentData,
+  type DemographicData,
+  type PoliticalData,
+  type RecentPolicy,
+} from "~/lib/stability-formulas";
 import {
   createIntelligenceFromThreat,
   syncDefenseBudgetToGovernment,
@@ -21,8 +28,14 @@ import { notificationAPI } from "~/lib/notification-api";
 // Base schema with all fields
 const militaryBranchBaseSchema = z.object({
   branchType: z.enum([
-    'army', 'navy', 'air_force', 'space_force', 'marines',
-    'coast_guard', 'cyber_command', 'special_forces'
+    "army",
+    "navy",
+    "air_force",
+    "space_force",
+    "marines",
+    "coast_guard",
+    "cyber_command",
+    "special_forces",
   ]),
   name: z.string().min(1, "Branch name is required"),
   description: z.string().optional(),
@@ -63,13 +76,13 @@ const militaryUnitInputSchema = z.object({
 });
 
 const militaryAssetInputSchema = z.object({
-  assetType: z.enum(['aircraft', 'ship', 'vehicle', 'weapon_system', 'installation']),
+  assetType: z.enum(["aircraft", "ship", "vehicle", "weapon_system", "installation"]),
   category: z.string(),
   name: z.string().min(1),
   quantity: z.number().int().positive().default(1),
   operational: z.number().int().nonnegative().default(1),
   capability: z.string().optional(),
-  status: z.enum(['operational', 'maintenance', 'reserve', 'retired']).default('operational'),
+  status: z.enum(["operational", "maintenance", "reserve", "retired"]).default("operational"),
   modernizationLevel: z.number().min(0).max(100).default(50),
   acquisitionCost: z.number().nonnegative().default(0),
   maintenanceCost: z.number().nonnegative().default(0),
@@ -79,15 +92,21 @@ const militaryAssetInputSchema = z.object({
 const securityThreatInputSchema = z.object({
   threatName: z.string().min(1),
   threatType: z.enum([
-    'military', 'terrorism', 'insurgency', 'cyber',
-    'organized_crime', 'espionage', 'nuclear', 'biological',
-    'natural_disaster'
+    "military",
+    "terrorism",
+    "insurgency",
+    "cyber",
+    "organized_crime",
+    "espionage",
+    "nuclear",
+    "biological",
+    "natural_disaster",
   ]),
   description: z.string().min(10),
-  severity: z.enum(['existential', 'critical', 'high', 'moderate', 'low']),
+  severity: z.enum(["existential", "critical", "high", "moderate", "low"]),
   likelihood: z.number().min(0).max(100).default(50),
-  urgency: z.enum(['low', 'medium', 'high', 'immediate']).default('medium'),
-  actorType: z.enum(['state', 'non-state', 'terrorist', 'criminal', 'unknown']).optional(),
+  urgency: z.enum(["low", "medium", "high", "immediate"]).default("medium"),
+  actorType: z.enum(["state", "non-state", "terrorist", "criminal", "unknown"]).optional(),
   actorName: z.string().optional(),
   actorLocation: z.string().optional(),
   actorCapability: z.number().min(0).max(100).default(50),
@@ -95,7 +114,7 @@ const securityThreatInputSchema = z.object({
   economicImpact: z.number().nonnegative().default(0),
   politicalImpact: z.string().optional(),
   infrastructureRisk: z.number().min(0).max(100).default(0),
-  responseLevel: z.enum(['minimal', 'standard', 'elevated', 'maximum']).default('standard'),
+  responseLevel: z.enum(["minimal", "standard", "elevated", "maximum"]).default("standard"),
   intelligenceSource: z.string().optional(),
   confidenceLevel: z.number().min(0).max(100).default(50),
   estimatedTimeline: z.string().optional(),
@@ -105,16 +124,18 @@ const securityThreatInputSchema = z.object({
 const neighborThreatInputSchema = z.object({
   neighborName: z.string().min(1),
   neighborCountryId: z.string().optional(),
-  borderType: z.enum(['land', 'maritime', 'both']),
+  borderType: z.enum(["land", "maritime", "both"]),
   borderLength: z.number().nonnegative().optional(),
-  threatLevel: z.enum(['minimal', 'low', 'moderate', 'high', 'critical']).default('low'),
+  threatLevel: z.enum(["minimal", "low", "moderate", "high", "critical"]).default("low"),
   threatScore: z.number().min(0).max(100).default(20),
   militaryThreat: z.number().min(0).max(100).default(10),
   terrorismRisk: z.number().min(0).max(100).default(15),
   smugglingRisk: z.number().min(0).max(100).default(25),
   refugeeFlow: z.number().min(0).max(100).default(20),
   politicalStability: z.number().min(0).max(100).default(60),
-  diplomaticRelations: z.enum(['hostile', 'tense', 'neutral', 'friendly', 'allied']).default('neutral'),
+  diplomaticRelations: z
+    .enum(["hostile", "tense", "neutral", "friendly", "allied"])
+    .default("neutral"),
   tradeVolume: z.number().nonnegative().default(0),
   treatyStatus: z.string().optional(),
   notes: z.string().optional(),
@@ -125,7 +146,6 @@ const neighborThreatInputSchema = z.object({
 // ===========================
 
 export const securityRouter = createTRPCRouter({
-
   // ===========================
   // Security Assessment Endpoints
   // ===========================
@@ -143,8 +163,8 @@ export const securityRouter = createTRPCRouter({
           data: {
             countryId: input.countryId,
             overallSecurityScore: 60,
-            securityLevel: 'moderate',
-            securityTrend: 'stable',
+            securityLevel: "moderate",
+            securityTrend: "stable",
             militaryStrength: 60,
             internalStability: 60,
             borderSecurity: 60,
@@ -158,32 +178,28 @@ export const securityRouter = createTRPCRouter({
       }
 
       // Get related data
-      const [
-        internalStability,
-        borderSecurity,
-        activeThreats,
-        militaryBranches
-      ] = await Promise.all([
-        ctx.db.internalStabilityMetrics.findUnique({
-          where: { countryId: input.countryId }
-        }),
-        ctx.db.borderSecurity.findUnique({
-          where: { countryId: input.countryId },
-          include: { neighborThreats: true }
-        }),
-        ctx.db.securityThreat.findMany({
-          where: {
-            countryId: input.countryId,
-            isActive: true
-          }
-        }),
-        ctx.db.militaryBranch.findMany({
-          where: {
-            countryId: input.countryId,
-            isActive: true
-          }
-        })
-      ]);
+      const [internalStability, borderSecurity, activeThreats, militaryBranches] =
+        await Promise.all([
+          ctx.db.internalStabilityMetrics.findUnique({
+            where: { countryId: input.countryId },
+          }),
+          ctx.db.borderSecurity.findUnique({
+            where: { countryId: input.countryId },
+            include: { neighborThreats: true },
+          }),
+          ctx.db.securityThreat.findMany({
+            where: {
+              countryId: input.countryId,
+              isActive: true,
+            },
+          }),
+          ctx.db.militaryBranch.findMany({
+            where: {
+              countryId: input.countryId,
+              isActive: true,
+            },
+          }),
+        ]);
 
       return {
         ...assessment,
@@ -195,57 +211,55 @@ export const securityRouter = createTRPCRouter({
     }),
 
   updateSecurityAssessment: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Validate ownership
       if (ctx.user?.countryId !== input.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Cannot modify other countries\' security assessments',
+          code: "FORBIDDEN",
+          message: "Cannot modify other countries' security assessments",
         });
       }
 
       // Calculate security score based on components
-      const [
-        internalStability,
-        borderSecurity,
-        threats,
-        militaryBranches
-      ] = await Promise.all([
+      const [internalStability, borderSecurity, threats, militaryBranches] = await Promise.all([
         ctx.db.internalStabilityMetrics.findUnique({
-          where: { countryId: input.countryId }
+          where: { countryId: input.countryId },
         }),
         ctx.db.borderSecurity.findUnique({
-          where: { countryId: input.countryId }
+          where: { countryId: input.countryId },
         }),
         ctx.db.securityThreat.findMany({
-          where: { countryId: input.countryId, isActive: true }
+          where: { countryId: input.countryId, isActive: true },
         }),
         ctx.db.militaryBranch.findMany({
-          where: { countryId: input.countryId, isActive: true }
-        })
+          where: { countryId: input.countryId, isActive: true },
+        }),
       ]);
 
       const stabilityScore = internalStability?.stabilityScore ?? 60;
       const borderScore = borderSecurity?.overallSecurityLevel ?? 60;
-      const militaryScore = militaryBranches.length > 0
-        ? militaryBranches.reduce((sum, b) => sum + b.readinessLevel, 0) / militaryBranches.length
-        : 60;
+      const militaryScore =
+        militaryBranches.length > 0
+          ? militaryBranches.reduce((sum, b) => sum + b.readinessLevel, 0) / militaryBranches.length
+          : 60;
 
-      const highSeverityThreats = threats.filter(t =>
-        t.severity === 'critical' || t.severity === 'existential'
+      const highSeverityThreats = threats.filter(
+        (t) => t.severity === "critical" || t.severity === "existential"
       ).length;
 
-      const overallScore = (stabilityScore * 0.3 + borderScore * 0.3 + militaryScore * 0.4);
+      const overallScore = stabilityScore * 0.3 + borderScore * 0.3 + militaryScore * 0.4;
 
-      let securityLevel = 'moderate';
-      if (overallScore >= 80) securityLevel = 'very_secure';
-      else if (overallScore >= 65) securityLevel = 'secure';
-      else if (overallScore >= 40) securityLevel = 'moderate';
-      else if (overallScore >= 25) securityLevel = 'high_risk';
-      else securityLevel = 'critical';
+      let securityLevel = "moderate";
+      if (overallScore >= 80) securityLevel = "very_secure";
+      else if (overallScore >= 65) securityLevel = "secure";
+      else if (overallScore >= 40) securityLevel = "moderate";
+      else if (overallScore >= 25) securityLevel = "high_risk";
+      else securityLevel = "critical";
 
       return ctx.db.securityAssessment.upsert({
         where: { countryId: input.countryId },
@@ -290,15 +304,17 @@ export const securityRouter = createTRPCRouter({
           units: true,
           assets: true,
         },
-        orderBy: { createdAt: 'asc' },
+        orderBy: { createdAt: "asc" },
       });
     }),
 
   createMilitaryBranch: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-      branch: militaryBranchCreateSchema,
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        branch: militaryBranchCreateSchema,
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify user owns this country
       const userProfile = await ctx.db.user.findUnique({
@@ -308,8 +324,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== input.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only create military branches for your own country',
+          code: "FORBIDDEN",
+          message: "You can only create military branches for your own country",
         });
       }
 
@@ -322,10 +338,12 @@ export const securityRouter = createTRPCRouter({
     }),
 
   updateMilitaryBranch: protectedProcedure
-    .input(z.object({
-      id: z.string(),
-      branch: militaryBranchUpdateSchema,
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        branch: militaryBranchUpdateSchema,
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify user owns the branch's country
       const branch = await ctx.db.militaryBranch.findUnique({
@@ -335,8 +353,8 @@ export const securityRouter = createTRPCRouter({
 
       if (!branch) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Military branch not found',
+          code: "NOT_FOUND",
+          message: "Military branch not found",
         });
       }
 
@@ -347,8 +365,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== branch.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only update your own military branches',
+          code: "FORBIDDEN",
+          message: "You can only update your own military branches",
         });
       }
 
@@ -369,8 +387,8 @@ export const securityRouter = createTRPCRouter({
 
       if (!branch) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Military branch not found',
+          code: "NOT_FOUND",
+          message: "Military branch not found",
         });
       }
 
@@ -381,8 +399,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== branch.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only delete your own military branches',
+          code: "FORBIDDEN",
+          message: "You can only delete your own military branches",
         });
       }
 
@@ -397,10 +415,12 @@ export const securityRouter = createTRPCRouter({
   // ===========================
 
   createMilitaryUnit: protectedProcedure
-    .input(z.object({
-      branchId: z.string(),
-      unit: militaryUnitInputSchema,
-    }))
+    .input(
+      z.object({
+        branchId: z.string(),
+        unit: militaryUnitInputSchema,
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify user owns the branch
       const branch = await ctx.db.militaryBranch.findUnique({
@@ -410,8 +430,8 @@ export const securityRouter = createTRPCRouter({
 
       if (!branch) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Military branch not found',
+          code: "NOT_FOUND",
+          message: "Military branch not found",
         });
       }
 
@@ -422,8 +442,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== branch.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only create units for your own military branches',
+          code: "FORBIDDEN",
+          message: "You can only create units for your own military branches",
         });
       }
 
@@ -436,10 +456,12 @@ export const securityRouter = createTRPCRouter({
     }),
 
   updateMilitaryUnit: protectedProcedure
-    .input(z.object({
-      id: z.string(),
-      unit: militaryUnitInputSchema.partial(),
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        unit: militaryUnitInputSchema.partial(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify ownership through branch
       const unit = await ctx.db.militaryUnit.findUnique({
@@ -449,8 +471,8 @@ export const securityRouter = createTRPCRouter({
 
       if (!unit) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Military unit not found',
+          code: "NOT_FOUND",
+          message: "Military unit not found",
         });
       }
 
@@ -461,8 +483,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== unit.branch.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only update your own military units',
+          code: "FORBIDDEN",
+          message: "You can only update your own military units",
         });
       }
 
@@ -483,8 +505,8 @@ export const securityRouter = createTRPCRouter({
 
       if (!unit) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Military unit not found',
+          code: "NOT_FOUND",
+          message: "Military unit not found",
         });
       }
 
@@ -495,8 +517,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== unit.branch.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only delete your own military units',
+          code: "FORBIDDEN",
+          message: "You can only delete your own military units",
         });
       }
 
@@ -510,10 +532,12 @@ export const securityRouter = createTRPCRouter({
   // ===========================
 
   createMilitaryAsset: protectedProcedure
-    .input(z.object({
-      branchId: z.string(),
-      asset: militaryAssetInputSchema,
-    }))
+    .input(
+      z.object({
+        branchId: z.string(),
+        asset: militaryAssetInputSchema,
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify user owns the branch
       const branch = await ctx.db.militaryBranch.findUnique({
@@ -523,8 +547,8 @@ export const securityRouter = createTRPCRouter({
 
       if (!branch) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Military branch not found',
+          code: "NOT_FOUND",
+          message: "Military branch not found",
         });
       }
 
@@ -535,8 +559,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== branch.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only create assets for your own military branches',
+          code: "FORBIDDEN",
+          message: "You can only create assets for your own military branches",
         });
       }
 
@@ -549,10 +573,12 @@ export const securityRouter = createTRPCRouter({
     }),
 
   updateMilitaryAsset: protectedProcedure
-    .input(z.object({
-      id: z.string(),
-      asset: militaryAssetInputSchema.partial(),
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        asset: militaryAssetInputSchema.partial(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify ownership through branch
       const asset = await ctx.db.militaryAsset.findUnique({
@@ -562,8 +588,8 @@ export const securityRouter = createTRPCRouter({
 
       if (!asset) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Military asset not found',
+          code: "NOT_FOUND",
+          message: "Military asset not found",
         });
       }
 
@@ -574,8 +600,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== asset.branch.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only update your own military assets',
+          code: "FORBIDDEN",
+          message: "You can only update your own military assets",
         });
       }
 
@@ -596,8 +622,8 @@ export const securityRouter = createTRPCRouter({
 
       if (!asset) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Military asset not found',
+          code: "NOT_FOUND",
+          message: "Military asset not found",
         });
       }
 
@@ -608,8 +634,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== asset.branch.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only delete your own military assets',
+          code: "FORBIDDEN",
+          message: "You can only delete your own military assets",
         });
       }
 
@@ -623,10 +649,12 @@ export const securityRouter = createTRPCRouter({
   // ===========================
 
   getDefenseBudget: publicProcedure
-    .input(z.object({
-      countryId: z.string(),
-      fiscalYear: z.number().optional(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        fiscalYear: z.number().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const year = input.fiscalYear ?? new Date().getFullYear();
 
@@ -639,17 +667,19 @@ export const securityRouter = createTRPCRouter({
     }),
 
   updateDefenseBudget: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-      fiscalYear: z.number(),
-      totalBudget: z.number().nonnegative(),
-      gdpPercent: z.number().min(0).max(100),
-      personnelCosts: z.number().nonnegative().default(0),
-      operationsMaintenance: z.number().nonnegative().default(0),
-      procurement: z.number().nonnegative().default(0),
-      rdteCosts: z.number().nonnegative().default(0),
-      militaryConstruction: z.number().nonnegative().default(0),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        fiscalYear: z.number(),
+        totalBudget: z.number().nonnegative(),
+        gdpPercent: z.number().min(0).max(100),
+        personnelCosts: z.number().nonnegative().default(0),
+        operationsMaintenance: z.number().nonnegative().default(0),
+        procurement: z.number().nonnegative().default(0),
+        rdteCosts: z.number().nonnegative().default(0),
+        militaryConstruction: z.number().nonnegative().default(0),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify user owns this country
       const userProfile = await ctx.db.user.findUnique({
@@ -659,8 +689,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== input.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only update your own country\'s defense budget',
+          code: "FORBIDDEN",
+          message: "You can only update your own country's defense budget",
         });
       }
 
@@ -695,19 +725,19 @@ export const securityRouter = createTRPCRouter({
       try {
         const isSignificant = input.gdpPercent >= 5; // 5% or more of GDP is significant
         await notificationAPI.create({
-          title: '🛡️ Defense Budget Updated',
+          title: "🛡️ Defense Budget Updated",
           message: `Defense spending set to ${input.gdpPercent.toFixed(1)}% of GDP ($${(input.totalBudget / 1e9).toFixed(2)}B) for FY${fiscalYear}`,
           countryId,
-          category: 'military',
-          priority: isSignificant ? 'high' : 'medium',
-          type: 'info',
-          href: '/mycountry/security',
-          source: 'security-system',
+          category: "military",
+          priority: isSignificant ? "high" : "medium",
+          type: "info",
+          href: "/mycountry/security",
+          source: "security-system",
           actionable: false,
           metadata: { fiscalYear, totalBudget: input.totalBudget, gdpPercent: input.gdpPercent },
         });
       } catch (error) {
-        console.error('[Security] Failed to send defense budget notification:', error);
+        console.error("[Security] Failed to send defense budget notification:", error);
       }
 
       return result;
@@ -727,8 +757,8 @@ export const securityRouter = createTRPCRouter({
 
       if (!country) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Country not found',
+          code: "NOT_FOUND",
+          message: "Country not found",
         });
       }
 
@@ -859,36 +889,38 @@ export const securityRouter = createTRPCRouter({
       const activeEvents = await ctx.db.securityEvent.findMany({
         where: {
           countryId: input.countryId,
-          status: 'active',
+          status: "active",
         },
-        orderBy: { startDate: 'desc' },
+        orderBy: { startDate: "desc" },
       });
 
       return { metrics, activeEvents };
     }),
 
   updateInternalStability: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-      metrics: z.object({
-        stabilityScore: z.number().min(0).max(100).optional(),
-        crimeRate: z.number().nonnegative().optional(),
-        violentCrimeRate: z.number().nonnegative().optional(),
-        propertyCrimeRate: z.number().nonnegative().optional(),
-        organizedCrimeLevel: z.number().min(0).max(100).optional(),
-        protestFrequency: z.number().nonnegative().optional(),
-        riotRisk: z.number().min(0).max(100).optional(),
-        civilDisobedience: z.number().min(0).max(100).optional(),
-        socialCohesion: z.number().min(0).max(100).optional(),
-        ethnicTension: z.number().min(0).max(100).optional(),
-        politicalPolarization: z.number().min(0).max(100).optional(),
-        policingEffectiveness: z.number().min(0).max(100).optional(),
-        justiceSystemEfficiency: z.number().min(0).max(100).optional(),
-        trustInGovernment: z.number().min(0).max(100).optional(),
-        trustInPolice: z.number().min(0).max(100).optional(),
-        fearOfCrime: z.number().min(0).max(100).optional(),
-      }),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        metrics: z.object({
+          stabilityScore: z.number().min(0).max(100).optional(),
+          crimeRate: z.number().nonnegative().optional(),
+          violentCrimeRate: z.number().nonnegative().optional(),
+          propertyCrimeRate: z.number().nonnegative().optional(),
+          organizedCrimeLevel: z.number().min(0).max(100).optional(),
+          protestFrequency: z.number().nonnegative().optional(),
+          riotRisk: z.number().min(0).max(100).optional(),
+          civilDisobedience: z.number().min(0).max(100).optional(),
+          socialCohesion: z.number().min(0).max(100).optional(),
+          ethnicTension: z.number().min(0).max(100).optional(),
+          politicalPolarization: z.number().min(0).max(100).optional(),
+          policingEffectiveness: z.number().min(0).max(100).optional(),
+          justiceSystemEfficiency: z.number().min(0).max(100).optional(),
+          trustInGovernment: z.number().min(0).max(100).optional(),
+          trustInPolice: z.number().min(0).max(100).optional(),
+          fearOfCrime: z.number().min(0).max(100).optional(),
+        }),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify user owns this country
       const userProfile = await ctx.db.user.findUnique({
@@ -898,8 +930,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== input.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only update your own country\'s stability metrics',
+          code: "FORBIDDEN",
+          message: "You can only update your own country's stability metrics",
         });
       }
 
@@ -927,8 +959,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== input.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only generate events for your own country',
+          code: "FORBIDDEN",
+          message: "You can only generate events for your own country",
         });
       }
 
@@ -940,17 +972,17 @@ export const securityRouter = createTRPCRouter({
 
       if (!country || !stability) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Country or stability metrics not found',
+          code: "NOT_FOUND",
+          message: "Country or stability metrics not found",
         });
       }
 
       // Generate basic event (simplified for now)
-      const eventTypes = ['protest', 'crime_wave', 'riot', 'civil_unrest'];
-      const severities = ['low', 'moderate', 'high', 'critical'];
-      
-      const eventType = eventTypes[Math.floor(Math.random() * eventTypes.length)] ?? 'protest';
-      const severity = severities[Math.floor(Math.random() * severities.length)] ?? 'moderate';
+      const eventTypes = ["protest", "crime_wave", "riot", "civil_unrest"];
+      const severities = ["low", "moderate", "high", "critical"];
+
+      const eventType = eventTypes[Math.floor(Math.random() * eventTypes.length)] ?? "protest";
+      const severity = severities[Math.floor(Math.random() * severities.length)] ?? "moderate";
 
       return ctx.db.securityEvent.create({
         data: {
@@ -968,23 +1000,27 @@ export const securityRouter = createTRPCRouter({
     }),
 
   getSecurityEvents: publicProcedure
-    .input(z.object({
-      countryId: z.string(),
-      limit: z.number().optional(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        limit: z.number().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       return ctx.db.securityEvent.findMany({
         where: { countryId: input.countryId },
-        orderBy: { startDate: 'desc' },
+        orderBy: { startDate: "desc" },
         take: input.limit ?? 20,
       });
     }),
 
   resolveSecurityEvent: protectedProcedure
-    .input(z.object({
-      id: z.string(),
-      resolutionNotes: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        resolutionNotes: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify ownership
       const event = await ctx.db.securityEvent.findUnique({
@@ -994,8 +1030,8 @@ export const securityRouter = createTRPCRouter({
 
       if (!event) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Security event not found',
+          code: "NOT_FOUND",
+          message: "Security event not found",
         });
       }
 
@@ -1006,15 +1042,15 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== event.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only resolve your own country\'s security events',
+          code: "FORBIDDEN",
+          message: "You can only resolve your own country's security events",
         });
       }
 
       return ctx.db.securityEvent.update({
         where: { id: input.id },
         data: {
-          status: 'resolved',
+          status: "resolved",
           endDate: new Date(),
           resolutionNotes: input.resolutionNotes,
         },
@@ -1050,27 +1086,29 @@ export const securityRouter = createTRPCRouter({
     }),
 
   updateBorderSecurity: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-      data: z.object({
-        overallSecurityLevel: z.number().min(0).max(100).optional(),
-        securityStatus: z.enum(['weak', 'moderate', 'strong', 'maximum']).optional(),
-        borderLength: z.number().nonnegative().optional(),
-        landBorders: z.number().int().nonnegative().optional(),
-        maritimeBorders: z.number().int().nonnegative().optional(),
-        borderAgents: z.number().int().nonnegative().optional(),
-        checkpoints: z.number().int().nonnegative().optional(),
-        surveillanceSystems: z.number().int().nonnegative().optional(),
-        interceptionRate: z.number().min(0).max(100).optional(),
-        processingEfficiency: z.number().min(0).max(100).optional(),
-        illegalCrossings: z.number().int().nonnegative().optional(),
-        smugglingActivity: z.number().min(0).max(100).optional(),
-        traffickingRisk: z.number().min(0).max(100).optional(),
-        refugeePresure: z.number().min(0).max(100).optional(),
-        technologyLevel: z.number().min(0).max(100).optional(),
-        infrastructureQuality: z.number().min(0).max(100).optional(),
-      }),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        data: z.object({
+          overallSecurityLevel: z.number().min(0).max(100).optional(),
+          securityStatus: z.enum(["weak", "moderate", "strong", "maximum"]).optional(),
+          borderLength: z.number().nonnegative().optional(),
+          landBorders: z.number().int().nonnegative().optional(),
+          maritimeBorders: z.number().int().nonnegative().optional(),
+          borderAgents: z.number().int().nonnegative().optional(),
+          checkpoints: z.number().int().nonnegative().optional(),
+          surveillanceSystems: z.number().int().nonnegative().optional(),
+          interceptionRate: z.number().min(0).max(100).optional(),
+          processingEfficiency: z.number().min(0).max(100).optional(),
+          illegalCrossings: z.number().int().nonnegative().optional(),
+          smugglingActivity: z.number().min(0).max(100).optional(),
+          traffickingRisk: z.number().min(0).max(100).optional(),
+          refugeePresure: z.number().min(0).max(100).optional(),
+          technologyLevel: z.number().min(0).max(100).optional(),
+          infrastructureQuality: z.number().min(0).max(100).optional(),
+        }),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify user owns this country
       const userProfile = await ctx.db.user.findUnique({
@@ -1080,8 +1118,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== input.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only update your own country\'s border security',
+          code: "FORBIDDEN",
+          message: "You can only update your own country's border security",
         });
       }
 
@@ -1099,10 +1137,12 @@ export const securityRouter = createTRPCRouter({
     }),
 
   createNeighborThreat: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-      threat: neighborThreatInputSchema,
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        threat: neighborThreatInputSchema,
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify user owns this country
       const userProfile = await ctx.db.user.findUnique({
@@ -1112,8 +1152,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== input.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only create neighbor threats for your own country',
+          code: "FORBIDDEN",
+          message: "You can only create neighbor threats for your own country",
         });
       }
 
@@ -1123,8 +1163,8 @@ export const securityRouter = createTRPCRouter({
 
       if (!borderSecurity) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Border security record not found',
+          code: "NOT_FOUND",
+          message: "Border security record not found",
         });
       }
 
@@ -1137,10 +1177,12 @@ export const securityRouter = createTRPCRouter({
     }),
 
   updateNeighborThreat: protectedProcedure
-    .input(z.object({
-      id: z.string(),
-      threat: neighborThreatInputSchema.partial(),
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        threat: neighborThreatInputSchema.partial(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify ownership through border security
       const threat = await ctx.db.neighborThreatAssessment.findUnique({
@@ -1150,8 +1192,8 @@ export const securityRouter = createTRPCRouter({
 
       if (!threat) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Neighbor threat not found',
+          code: "NOT_FOUND",
+          message: "Neighbor threat not found",
         });
       }
 
@@ -1162,8 +1204,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== threat.borderSecurity.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only update your own neighbor threats',
+          code: "FORBIDDEN",
+          message: "You can only update your own neighbor threats",
         });
       }
 
@@ -1187,8 +1229,8 @@ export const securityRouter = createTRPCRouter({
 
       if (!threat) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Neighbor threat not found',
+          code: "NOT_FOUND",
+          message: "Neighbor threat not found",
         });
       }
 
@@ -1199,8 +1241,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== threat.borderSecurity.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only delete your own neighbor threats',
+          code: "FORBIDDEN",
+          message: "You can only delete your own neighbor threats",
         });
       }
 
@@ -1214,10 +1256,12 @@ export const securityRouter = createTRPCRouter({
   // ===========================
 
   getSecurityThreats: publicProcedure
-    .input(z.object({
-      countryId: z.string(),
-      activeOnly: z.boolean().optional(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        activeOnly: z.boolean().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       return ctx.db.securityThreat.findMany({
         where: {
@@ -1226,23 +1270,22 @@ export const securityRouter = createTRPCRouter({
         },
         include: {
           incidents: {
-            orderBy: { occurredAt: 'desc' },
+            orderBy: { occurredAt: "desc" },
             take: 5,
           },
         },
-        orderBy: [
-          { severity: 'desc' },
-          { likelihood: 'desc' },
-        ],
+        orderBy: [{ severity: "desc" }, { likelihood: "desc" }],
       });
     }),
 
   createSecurityThreat: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-      userId: z.string(),
-      threat: securityThreatInputSchema,
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        userId: z.string(),
+        threat: securityThreatInputSchema,
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify user owns this country
       const userProfile = await ctx.db.user.findUnique({
@@ -1252,8 +1295,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== input.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only create threats for your own country',
+          code: "FORBIDDEN",
+          message: "You can only create threats for your own country",
         });
       }
 
@@ -1270,42 +1313,51 @@ export const securityRouter = createTRPCRouter({
 
       // 🔔 Notify country about new security threat
       try {
-        const priorityMap: Record<string, 'high' | 'medium' | 'low'> = {
-          'existential': 'high',
-          'critical': 'high',
-          'high': 'high',
-          'moderate': 'medium',
-          'low': 'low'
+        const priorityMap: Record<string, "high" | "medium" | "low"> = {
+          existential: "high",
+          critical: "high",
+          high: "high",
+          moderate: "medium",
+          low: "low",
         };
 
         await notificationAPI.create({
-          title: '🚨 Security Threat Detected',
+          title: "🚨 Security Threat Detected",
           message: `${input.threat.severity.toUpperCase()} threat: ${input.threat.threatName} (${input.threat.threatType})`,
           countryId: input.countryId,
-          category: 'security',
-          priority: priorityMap[input.threat.severity] || 'high',
-          type: input.threat.severity === 'existential' || input.threat.severity === 'critical' ? 'error' : 'warning',
-          href: '/mycountry/security',
-          source: 'security-system',
+          category: "security",
+          priority: priorityMap[input.threat.severity] || "high",
+          type:
+            input.threat.severity === "existential" || input.threat.severity === "critical"
+              ? "error"
+              : "warning",
+          href: "/mycountry/security",
+          source: "security-system",
           actionable: true,
-          metadata: { threatId: threat.id, severity: input.threat.severity, threatType: input.threat.threatType },
+          metadata: {
+            threatId: threat.id,
+            severity: input.threat.severity,
+            threatType: input.threat.threatType,
+          },
         });
       } catch (error) {
-        console.error('[Security] Failed to send threat notification:', error);
+        console.error("[Security] Failed to send threat notification:", error);
       }
 
       return threat;
     }),
 
   updateSecurityThreat: protectedProcedure
-    .input(z.object({
-      id: z.string(),
-      threat: securityThreatInputSchema.partial().extend({
-        status: z.enum(['monitoring', 'responding', 'contained', 'resolved']).optional(),
-        mitigationActions: z.array(z.string()).optional(),
-        resourcesAllocated: z.number().nonnegative().optional(),
-      }),
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        threat: securityThreatInputSchema.partial().extend({
+          status: z.enum(["monitoring", "responding", "contained", "resolved"]).optional(),
+          mitigationActions: z.array(z.string()).optional(),
+          resourcesAllocated: z.number().nonnegative().optional(),
+        }),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify ownership
       const threat = await ctx.db.securityThreat.findUnique({
@@ -1315,8 +1367,8 @@ export const securityRouter = createTRPCRouter({
 
       if (!threat) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Security threat not found',
+          code: "NOT_FOUND",
+          message: "Security threat not found",
         });
       }
 
@@ -1327,8 +1379,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== threat.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only update your own security threats',
+          code: "FORBIDDEN",
+          message: "You can only update your own security threats",
         });
       }
 
@@ -1356,8 +1408,8 @@ export const securityRouter = createTRPCRouter({
 
       if (!threat) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Security threat not found',
+          code: "NOT_FOUND",
+          message: "Security threat not found",
         });
       }
 
@@ -1368,8 +1420,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== threat.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only delete your own security threats',
+          code: "FORBIDDEN",
+          message: "You can only delete your own security threats",
         });
       }
 
@@ -1380,17 +1432,19 @@ export const securityRouter = createTRPCRouter({
     }),
 
   createThreatIncident: protectedProcedure
-    .input(z.object({
-      threatId: z.string(),
-      title: z.string().min(1),
-      description: z.string(),
-      incidentType: z.enum(['attack', 'attempt', 'intelligence', 'warning', 'activity']),
-      casualties: z.number().int().nonnegative().default(0),
-      damage: z.number().nonnegative().default(0),
-      location: z.string().optional(),
-      responseActions: z.array(z.string()).optional(),
-      effectiveness: z.number().min(0).max(100).optional(),
-    }))
+    .input(
+      z.object({
+        threatId: z.string(),
+        title: z.string().min(1),
+        description: z.string(),
+        incidentType: z.enum(["attack", "attempt", "intelligence", "warning", "activity"]),
+        casualties: z.number().int().nonnegative().default(0),
+        damage: z.number().nonnegative().default(0),
+        location: z.string().optional(),
+        responseActions: z.array(z.string()).optional(),
+        effectiveness: z.number().min(0).max(100).optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify ownership of threat
       const threat = await ctx.db.securityThreat.findUnique({
@@ -1400,8 +1454,8 @@ export const securityRouter = createTRPCRouter({
 
       if (!threat) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Security threat not found',
+          code: "NOT_FOUND",
+          message: "Security threat not found",
         });
       }
 
@@ -1412,8 +1466,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== threat.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only create incidents for your own threats',
+          code: "FORBIDDEN",
+          message: "You can only create incidents for your own threats",
         });
       }
 
@@ -1428,21 +1482,28 @@ export const securityRouter = createTRPCRouter({
 
       // 🔔 Notify country about threat incident
       try {
-        const isCritical = input.incidentType === 'attack' || (input.casualties > 0 || input.damage > 1000000);
+        const isCritical =
+          input.incidentType === "attack" || input.casualties > 0 || input.damage > 1000000;
         await notificationAPI.create({
           title: `⚠️ Threat Incident: ${input.title}`,
-          message: `${input.incidentType.toUpperCase()} reported${input.casualties > 0 ? ` - ${input.casualties} casualties` : ''}${input.damage > 0 ? ` - $${(input.damage / 1e6).toFixed(1)}M damage` : ''}`,
+          message: `${input.incidentType.toUpperCase()} reported${input.casualties > 0 ? ` - ${input.casualties} casualties` : ""}${input.damage > 0 ? ` - $${(input.damage / 1e6).toFixed(1)}M damage` : ""}`,
           countryId: threat.countryId,
-          category: 'security',
-          priority: isCritical ? 'high' : 'medium',
-          type: isCritical ? 'error' : 'warning',
-          href: '/mycountry/security',
-          source: 'security-system',
+          category: "security",
+          priority: isCritical ? "high" : "medium",
+          type: isCritical ? "error" : "warning",
+          href: "/mycountry/security",
+          source: "security-system",
           actionable: true,
-          metadata: { incidentId: incident.id, threatId: input.threatId, incidentType: input.incidentType, casualties: input.casualties, damage: input.damage },
+          metadata: {
+            incidentId: incident.id,
+            threatId: input.threatId,
+            incidentType: input.incidentType,
+            casualties: input.casualties,
+            damage: input.damage,
+          },
         });
       } catch (error) {
-        console.error('[Security] Failed to send incident notification:', error);
+        console.error("[Security] Failed to send incident notification:", error);
       }
 
       return incident;
@@ -1466,8 +1527,8 @@ export const securityRouter = createTRPCRouter({
 
       if (!isAdmin && userProfile?.countryId !== input.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Cannot view other countries\' defense overview',
+          code: "FORBIDDEN",
+          message: "Cannot view other countries' defense overview",
         });
       }
 
@@ -1488,8 +1549,8 @@ export const securityRouter = createTRPCRouter({
 
       if (!isAdmin && userProfile?.countryId !== input.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Cannot view other countries\' defense intelligence metrics',
+          code: "FORBIDDEN",
+          message: "Cannot view other countries' defense intelligence metrics",
         });
       }
 
@@ -1497,16 +1558,18 @@ export const securityRouter = createTRPCRouter({
     }),
 
   syncDefenseBudget: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-      totalBudget: z.number().nonnegative(),
-      personnelCosts: z.number().nonnegative(),
-      operationsMaintenance: z.number().nonnegative(),
-      procurement: z.number().nonnegative(),
-      rdteCosts: z.number().nonnegative(),
-      militaryConstruction: z.number().nonnegative(),
-      fiscalYear: z.number().int(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        totalBudget: z.number().nonnegative(),
+        personnelCosts: z.number().nonnegative(),
+        operationsMaintenance: z.number().nonnegative(),
+        procurement: z.number().nonnegative(),
+        rdteCosts: z.number().nonnegative(),
+        militaryConstruction: z.number().nonnegative(),
+        fiscalYear: z.number().int(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify user owns this country
       const userProfile = await ctx.db.user.findUnique({
@@ -1516,8 +1579,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== input.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only sync defense budget for your own country',
+          code: "FORBIDDEN",
+          message: "You can only sync defense budget for your own country",
         });
       }
 
@@ -1525,13 +1588,15 @@ export const securityRouter = createTRPCRouter({
     }),
 
   createThreatIntelligence: protectedProcedure
-    .input(z.object({
-      threatId: z.string(),
-      countryId: z.string(),
-      title: z.string(),
-      content: z.string(),
-      priority: z.enum(['low', 'medium', 'high', 'critical']),
-    }))
+    .input(
+      z.object({
+        threatId: z.string(),
+        countryId: z.string(),
+        title: z.string(),
+        content: z.string(),
+        priority: z.enum(["low", "medium", "high", "critical"]),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify ownership
       const userProfile = await ctx.db.user.findUnique({
@@ -1541,8 +1606,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== input.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only create intelligence for your own country',
+          code: "FORBIDDEN",
+          message: "You can only create intelligence for your own country",
         });
       }
 
@@ -1550,11 +1615,13 @@ export const securityRouter = createTRPCRouter({
     }),
 
   notifyBranchUpdate: protectedProcedure
-    .input(z.object({
-      branchId: z.string(),
-      changeType: z.enum(['created', 'readiness_change', 'budget_change', 'deployment']),
-      details: z.string(),
-    }))
+    .input(
+      z.object({
+        branchId: z.string(),
+        changeType: z.enum(["created", "readiness_change", "budget_change", "deployment"]),
+        details: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify ownership
       const branch = await ctx.db.militaryBranch.findUnique({
@@ -1564,8 +1631,8 @@ export const securityRouter = createTRPCRouter({
 
       if (!branch) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Military branch not found',
+          code: "NOT_FOUND",
+          message: "Military branch not found",
         });
       }
 
@@ -1576,8 +1643,8 @@ export const securityRouter = createTRPCRouter({
 
       if (userProfile?.countryId !== branch.countryId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only notify updates for your own branches',
+          code: "FORBIDDEN",
+          message: "You can only notify updates for your own branches",
         });
       }
 

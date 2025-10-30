@@ -39,36 +39,36 @@ export function FlagGridPattern({
   // Initialize random flag mapping with fixed 5x5 grid
   useEffect(() => {
     if (countries.length === 0) return;
-    
+
     const mapping: Record<number, CountryData> = {};
     const totalSquares = 25; // Fixed 5x5 grid
-    
+
     for (let i = 0; i < totalSquares; i++) {
       // Fill about 60% of squares with flags for better coverage
       if (Math.random() < 0.6) {
         mapping[i] = countries[Math.floor(Math.random() * countries.length)];
       }
     }
-    
+
     setFlagMapping(mapping);
   }, [countries]);
 
   // Replace one flag at a time with subtle animation
   useEffect(() => {
     if (countries.length === 0) return;
-    
+
     const interval = setInterval(() => {
-      setFlagMapping(prev => {
+      setFlagMapping((prev) => {
         const newMapping = { ...prev };
         const allSquares = Array.from({ length: 25 }, (_, i) => i);
-        
+
         // Pick one random square to update
         const randomIndex = Math.floor(Math.random() * allSquares.length);
         const targetSquare = allSquares[randomIndex];
-        
+
         // Start animation
         setAnimatingSquare(targetSquare);
-        
+
         // Replace with new country or remove existing
         if (Math.random() < 0.7) {
           // Replace with new country
@@ -80,14 +80,14 @@ export function FlagGridPattern({
           // Add new flag to empty square
           newMapping[targetSquare] = countries[Math.floor(Math.random() * countries.length)];
         }
-        
+
         // Clear animation after transition
         setTimeout(() => setAnimatingSquare(null), 800);
-        
+
         return newMapping;
       });
     }, 4000); // Slower, more subtle updates
-    
+
     return () => clearInterval(interval);
   }, [countries]);
 
@@ -96,19 +96,19 @@ export function FlagGridPattern({
   return (
     <div
       className={cn(
-        "absolute inset-0 h-full w-full pointer-events-none",
+        "pointer-events-none absolute inset-0 h-full w-full",
         "glass-hierarchy-parent backdrop-blur-xl",
-        className,
+        className
       )}
       style={{
-        display: 'grid',
+        display: "grid",
         gridTemplateColumns: `repeat(${horizontal}, ${width}px)`,
         gridTemplateRows: `repeat(${vertical}, ${height}px)`,
-        gap: '2px',
-        justifyContent: 'center',
-        alignContent: 'center',
-        filter: 'blur(2px)',
-        opacity: 0.4
+        gap: "2px",
+        justifyContent: "center",
+        alignContent: "center",
+        filter: "blur(2px)",
+        opacity: 0.4,
       }}
       {...props}
     >
@@ -116,53 +116,54 @@ export function FlagGridPattern({
         const hasFlag = flagMapping[index];
         const isHovered = hoveredSquare === index;
         const isAnimating = animatingSquare === index;
-        
+
         return (
           <div
             key={index}
             className={cn(
-              "border border-white/10 transition-all duration-800 ease-in-out relative overflow-hidden rounded-sm",
+              "relative overflow-hidden rounded-sm border border-white/10 transition-all duration-800 ease-in-out",
               "glass-hierarchy-child glass-refraction",
-              isHovered ? "border-blue-400/40 shadow-sm scale-105" : "",
+              isHovered ? "scale-105 border-blue-400/40 shadow-sm" : "",
               isAnimating ? "scale-110 border-yellow-400/60" : "",
               hasFlag ? "opacity-80" : "opacity-30",
-              squaresClassName,
+              squaresClassName
             )}
             onMouseEnter={() => setHoveredSquare(index)}
             onMouseLeave={() => setHoveredSquare(null)}
             style={{
-              backgroundColor: hasFlag ? 'transparent' : 'rgba(255, 255, 255, 0.05)',
-              backdropFilter: 'blur(8px) saturate(120%)',
-              WebkitBackdropFilter: 'blur(8px) saturate(120%)',
-              transform: isAnimating ? 'scale(1.1) rotateZ(2deg)' : 'scale(1)',
-              transition: 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)'
+              backgroundColor: hasFlag ? "transparent" : "rgba(255, 255, 255, 0.05)",
+              backdropFilter: "blur(8px) saturate(120%)",
+              WebkitBackdropFilter: "blur(8px) saturate(120%)",
+              transform: isAnimating ? "scale(1.1) rotateZ(2deg)" : "scale(1)",
+              transition: "all 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
             }}
           >
             {hasFlag && (
               <div className="absolute inset-0">
                 <SimpleFlag
                   countryName={hasFlag.name}
-                  className="w-full h-full object-cover"
+                  className="h-full w-full object-cover"
                   showPlaceholder={true}
                 />
                 {/* Glass refraction overlay */}
-                <div 
-                  className="absolute inset-0 glass-refraction"
+                <div
+                  className="glass-refraction absolute inset-0"
                   style={{
                     background: `linear-gradient(135deg, 
                       rgba(255, 255, 255, 0.2) 0%, 
                       rgba(255, 255, 255, 0.05) 50%,
                       rgba(0, 0, 0, 0.1) 100%)`,
-                    mixBlendMode: 'overlay',
+                    mixBlendMode: "overlay",
                     opacity: isHovered ? 0.3 : 0.6,
-                    transition: 'opacity 0.3s ease'
+                    transition: "opacity 0.3s ease",
                   }}
                 />
                 {/* Depth shadow for glass effect */}
-                <div 
+                <div
                   className="absolute inset-0"
                   style={{
-                    boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(255, 255, 255, 0.1)',
+                    boxShadow:
+                      "inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(255, 255, 255, 0.1)",
                   }}
                 />
               </div>

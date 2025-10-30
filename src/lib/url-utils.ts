@@ -6,7 +6,7 @@
  */
 
 // Get base path from environment (must match next.config.js)
-const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || '';
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "";
 
 /**
  * Creates a properly prefixed URL for the current environment

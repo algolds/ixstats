@@ -37,7 +37,7 @@ import {
   Award,
   Clock,
   Filter,
-  Search
+  Search,
 } from "lucide-react";
 
 // Utils
@@ -51,13 +51,13 @@ interface TrendingTopic {
   title: string;
   category: string;
   participants: number;
-  trend: 'up' | 'down' | 'stable';
+  trend: "up" | "down" | "stable";
 }
 
 interface ActivityFeedItem {
   id: string;
-  type: 'achievement' | 'milestone' | 'social' | 'diplomatic' | 'economic' | 'meta';
-  category: 'game' | 'platform' | 'social';
+  type: "achievement" | "milestone" | "social" | "diplomatic" | "economic" | "meta";
+  category: "game" | "platform" | "social";
   user: {
     id: string;
     name: string;
@@ -77,11 +77,11 @@ interface ActivityFeedItem {
     views?: number;
   };
   timestamp: Date;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  visibility: 'public' | 'followers' | 'friends';
+  priority: "low" | "medium" | "high" | "critical";
+  visibility: "public" | "followers" | "friends";
   relatedCountries?: string[];
   attachments?: {
-    type: 'image' | 'chart' | 'document';
+    type: "image" | "chart" | "document";
     url: string;
     caption?: string;
   }[];
@@ -103,9 +103,11 @@ interface PlatformActivityFeedProps {
 
 export function PlatformActivityFeed({ userProfile, className }: PlatformActivityFeedProps) {
   const { user } = useUser();
-  const [activeTab, setActiveTab] = useState<'all' | 'following' | 'friends' | 'achievements'>('all');
-  const [filterType, setFilterType] = useState<'all' | 'game' | 'platform' | 'social'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<"all" | "following" | "friends" | "achievements">(
+    "all"
+  );
+  const [filterType, setFilterType] = useState<"all" | "game" | "platform" | "social">("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [flagUrls, setFlagUrls] = useState<Record<string, string>>({});
   const [showTrending, setShowTrending] = useState(false);
   const [showComments, setShowComments] = useState<Record<string, boolean>>({});
@@ -113,36 +115,44 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
   const [comments, setComments] = useState<Record<string, any[]>>({});
 
   // tRPC mutations for engagement
-  type EngageWithActivityMutation = ReturnType<typeof api.activities.engageWithActivity.useMutation>;
-  const engageWithActivityMutation: EngageWithActivityMutation = api.activities.engageWithActivity.useMutation();
+  type EngageWithActivityMutation = ReturnType<
+    typeof api.activities.engageWithActivity.useMutation
+  >;
+  const engageWithActivityMutation: EngageWithActivityMutation =
+    api.activities.engageWithActivity.useMutation();
   const addCommentMutation = api.activities.addComment.useMutation();
   const testMutation = api.activities.testMutation.useMutation();
 
   // Fetch live data from tRPC APIs
-  const { data: activitiesData, isLoading: activitiesLoading, refetch: refetchActivities } = api.activities.getGlobalFeed.useQuery({
+  const {
+    data: activitiesData,
+    isLoading: activitiesLoading,
+    refetch: refetchActivities,
+  } = api.activities.getGlobalFeed.useQuery({
     limit: 20,
-    filter: activeTab === 'achievements' ? 'achievements' : 'all',
+    filter: activeTab === "achievements" ? "achievements" : "all",
     category: filterType,
   });
 
   // Fetch ThinkPages posts to integrate into activity feed
   const { data: thinkpagesFeed, isLoading: thinkpagesLoading } = api.thinkpages.getFeed.useQuery({
-    filter: 'recent',
-    limit: 10
+    filter: "recent",
+    limit: 10,
   });
 
-  const { data: trendingData, isLoading: trendingLoading } = api.activities.getTrendingTopics.useQuery({
-    limit: 6,
-    timeRange: '24h',
-  });
+  const { data: trendingData, isLoading: trendingLoading } =
+    api.activities.getTrendingTopics.useQuery({
+      limit: 6,
+      timeRange: "24h",
+    });
 
   const utils = api.useUtils();
 
   const { data: userCountry } = api.countries.getByIdAtTime.useQuery(
-    { id: userProfile?.countryId || '' },
-    { 
-      enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== '',
-      retry: false
+    { id: userProfile?.countryId || "" },
+    {
+      enabled: !!userProfile?.countryId && userProfile.countryId.trim() !== "",
+      retry: false,
     }
   );
 
@@ -151,9 +161,9 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
   const { data: userEngagement } = api.activities.getUserEngagement.useQuery(
     {
       activityIds,
-      userId: user?.id || 'placeholder-disabled',
+      userId: user?.id || "placeholder-disabled",
     },
-    { 
+    {
       enabled: !!user?.id && activityIds.length > 0,
       refetchOnWindowFocus: false,
     }
@@ -162,7 +172,7 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
   // Transform trending data
   const trendingTopics: TrendingTopic[] = useMemo(() => {
     if (!trendingData) return [];
-    return trendingData.map((topic: RouterOutputs['activities']['getTrendingTopics'][number]) => ({
+    return trendingData.map((topic: RouterOutputs["activities"]["getTrendingTopics"][number]) => ({
       id: topic.id,
       title: topic.title,
       category: topic.category,
@@ -173,71 +183,86 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
 
   // Transform activity feed data
   const activityFeed = useMemo((): ActivityFeedItem[] => {
-    type ActivityAPIItem = RouterOutputs['activities']['getGlobalFeed']['activities'][number];
-    const regularActivities: ActivityFeedItem[] = activitiesData?.activities ? activitiesData.activities.map((activity: ActivityAPIItem) => ({
-      id: activity.id,
-      type: activity.type as ActivityFeedItem['type'],
-      category: activity.category as ActivityFeedItem['category'],
-      user: {
-        id: activity.user.id,
-        name: activity.category === 'platform' || activity.type === 'meta' ? 'SYSTEM' : activity.user.name,
-        avatar: undefined, // No placeholder avatars - only real user avatars
-        countryName: activity.category === 'platform' || activity.type === 'meta' ? 'System' : activity.user.countryName,
-        countryFlag: activity.category === 'platform' || activity.type === 'meta' ? undefined : (activity.user.countryName ? flagUrls[activity.user.countryName] : undefined),
-      },
-      content: {
-        title: activity.content.title,
-        description: activity.content.description,
-        metadata: activity.content.metadata,
-      },
-      engagement: {
-        likes: activity.engagement.likes,
-        comments: activity.engagement.comments,
-        reshares: activity.engagement.shares, // Map shares to reshares for backend compatibility
-        views: activity.engagement.views || 0,
-      },
-      timestamp: new Date(activity.timestamp),
-      priority: activity.priority as ActivityFeedItem['priority'],
-      visibility: activity.visibility as ActivityFeedItem['visibility'],
-      relatedCountries: activity.relatedCountries || [],
-    })) : [];
+    type ActivityAPIItem = RouterOutputs["activities"]["getGlobalFeed"]["activities"][number];
+    const regularActivities: ActivityFeedItem[] = activitiesData?.activities
+      ? activitiesData.activities.map((activity: ActivityAPIItem) => ({
+          id: activity.id,
+          type: activity.type as ActivityFeedItem["type"],
+          category: activity.category as ActivityFeedItem["category"],
+          user: {
+            id: activity.user.id,
+            name:
+              activity.category === "platform" || activity.type === "meta"
+                ? "SYSTEM"
+                : activity.user.name,
+            avatar: undefined, // No placeholder avatars - only real user avatars
+            countryName:
+              activity.category === "platform" || activity.type === "meta"
+                ? "System"
+                : activity.user.countryName,
+            countryFlag:
+              activity.category === "platform" || activity.type === "meta"
+                ? undefined
+                : activity.user.countryName
+                  ? flagUrls[activity.user.countryName]
+                  : undefined,
+          },
+          content: {
+            title: activity.content.title,
+            description: activity.content.description,
+            metadata: activity.content.metadata,
+          },
+          engagement: {
+            likes: activity.engagement.likes,
+            comments: activity.engagement.comments,
+            reshares: activity.engagement.shares, // Map shares to reshares for backend compatibility
+            views: activity.engagement.views || 0,
+          },
+          timestamp: new Date(activity.timestamp),
+          priority: activity.priority as ActivityFeedItem["priority"],
+          visibility: activity.visibility as ActivityFeedItem["visibility"],
+          relatedCountries: activity.relatedCountries || [],
+        }))
+      : [];
 
     // Add ThinkPages posts as social activities
-    type ThinkpagesFeedPostItem = RouterOutputs['thinkpages']['getFeed']['posts'][number];
-    const thinkpagesActivities: ActivityFeedItem[] = thinkpagesFeed?.posts ? thinkpagesFeed.posts.map((post: ThinkpagesFeedPostItem) => ({
-      id: `thinkpages-${post.id}`,
-      type: 'social' as const,
-      category: 'social' as const,
-      user: {
-        id: post.account?.id || post.accountId,
-        name: post.account?.displayName || 'ThinkPages User',
-        avatar: post.account?.profileImageUrl ? post.account.profileImageUrl : undefined,
-        countryName: post.account?.username, // Use username for @ display
-        countryFlag: undefined,
-      },
-      content: {
-        title: 'Posted on ThinkPages',
-        description: post.content,
-        metadata: {
-          postId: post.id,
-          hashtags: post.hashtags,
-        },
-      },
-      engagement: {
-        likes: post.reactions.length,
-        comments: post._count.replies,
-        reshares: post._count.reposts || 0,
-        views: 0, // View tracking not implemented yet
-      },
-      timestamp: new Date(post.createdAt),
-      priority: 'low' as const,
-      visibility: 'public' as const,
-      relatedCountries: [],
-    })) : [];
+    type ThinkpagesFeedPostItem = RouterOutputs["thinkpages"]["getFeed"]["posts"][number];
+    const thinkpagesActivities: ActivityFeedItem[] = thinkpagesFeed?.posts
+      ? thinkpagesFeed.posts.map((post: ThinkpagesFeedPostItem) => ({
+          id: `thinkpages-${post.id}`,
+          type: "social" as const,
+          category: "social" as const,
+          user: {
+            id: post.account?.id || post.accountId,
+            name: post.account?.displayName || "ThinkPages User",
+            avatar: post.account?.profileImageUrl ? post.account.profileImageUrl : undefined,
+            countryName: post.account?.username, // Use username for @ display
+            countryFlag: undefined,
+          },
+          content: {
+            title: "Posted on ThinkPages",
+            description: post.content,
+            metadata: {
+              postId: post.id,
+              hashtags: post.hashtags,
+            },
+          },
+          engagement: {
+            likes: post.reactions.length,
+            comments: post._count.replies,
+            reshares: post._count.reposts || 0,
+            views: 0, // View tracking not implemented yet
+          },
+          timestamp: new Date(post.createdAt),
+          priority: "low" as const,
+          visibility: "public" as const,
+          relatedCountries: [],
+        }))
+      : [];
 
     // Merge and sort by timestamp
-    return [...regularActivities, ...thinkpagesActivities].sort((a, b) => 
-      b.timestamp.getTime() - a.timestamp.getTime()
+    return [...regularActivities, ...thinkpagesActivities].sort(
+      (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
     );
   }, [activitiesData, thinkpagesFeed, flagUrls]);
 
@@ -245,13 +270,13 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
   useEffect(() => {
     if (activitiesData?.activities) {
       const countryNames = new Set<string>();
-      
-      activitiesData.activities.forEach(activity => {
+
+      activitiesData.activities.forEach((activity) => {
         if (activity.user.countryName) {
           countryNames.add(activity.user.countryName);
         }
       });
-      
+
       if (countryNames.size > 0) {
         unifiedFlagService.batchGetFlags(Array.from(countryNames)).then((flags) => {
           const filteredFlags: Record<string, string> = {};
@@ -266,36 +291,54 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
     }
   }, [activitiesData]);
 
-  const getActivityIcon = (type: ActivityFeedItem['type']) => {
+  const getActivityIcon = (type: ActivityFeedItem["type"]) => {
     switch (type) {
-      case 'achievement': return Trophy;
-      case 'milestone': return Target;
-      case 'social': return Users;
-      case 'diplomatic': return Handshake;
-      case 'economic': return TrendingUp;
-      case 'meta': return Zap;
-      default: return Activity;
+      case "achievement":
+        return Trophy;
+      case "milestone":
+        return Target;
+      case "social":
+        return Users;
+      case "diplomatic":
+        return Handshake;
+      case "economic":
+        return TrendingUp;
+      case "meta":
+        return Zap;
+      default:
+        return Activity;
     }
   };
 
-  const getActivityColor = (type: ActivityFeedItem['type']) => {
+  const getActivityColor = (type: ActivityFeedItem["type"]) => {
     switch (type) {
-      case 'achievement': return 'text-yellow-500';
-      case 'milestone': return 'text-blue-500';
-      case 'social': return 'text-green-500';
-      case 'diplomatic': return 'text-purple-500';
-      case 'economic': return 'text-emerald-500';
-      case 'meta': return 'text-orange-500';
-      default: return 'text-gray-500';
+      case "achievement":
+        return "text-yellow-500";
+      case "milestone":
+        return "text-blue-500";
+      case "social":
+        return "text-green-500";
+      case "diplomatic":
+        return "text-purple-500";
+      case "economic":
+        return "text-emerald-500";
+      case "meta":
+        return "text-orange-500";
+      default:
+        return "text-gray-500";
     }
   };
 
-  const getPriorityBorder = (priority: ActivityFeedItem['priority']) => {
+  const getPriorityBorder = (priority: ActivityFeedItem["priority"]) => {
     switch (priority) {
-      case 'critical': return 'border-l-4 border-l-red-500';
-      case 'high': return 'border-l-4 border-l-yellow-500';
-      case 'medium': return 'border-l-2 border-l-blue-500';
-      default: return 'border-l border-l-gray-300';
+      case "critical":
+        return "border-l-4 border-l-red-500";
+      case "high":
+        return "border-l-4 border-l-yellow-500";
+      case "medium":
+        return "border-l-2 border-l-blue-500";
+      default:
+        return "border-l border-l-gray-300";
     }
   };
 
@@ -306,31 +349,34 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
 
-    if (minutes < 1) return 'Just now';
+    if (minutes < 1) return "Just now";
     if (minutes < 60) return `${minutes}m ago`;
     if (hours < 24) return `${hours}h ago`;
     if (days < 7) return `${days}d ago`;
     return date.toLocaleDateString();
   };
 
-  const handleEngagement = async (activityId: string, action: 'like' | 'unlike' | 'reshare' | 'view') => {
+  const handleEngagement = async (
+    activityId: string,
+    action: "like" | "unlike" | "reshare" | "view"
+  ) => {
     if (!user?.id || !activityId) {
-      console.error('Missing user ID or activity ID', { userId: user?.id, activityId });
+      console.error("Missing user ID or activity ID", { userId: user?.id, activityId });
       return;
     }
-    
+
     const mutationInput = {
       activityId,
       action,
       userId: user.id,
     };
-    
-    console.log('Engaging with activity:', mutationInput);
-    console.log('Mutation input JSON:', JSON.stringify(mutationInput));
-    
+
+    console.log("Engaging with activity:", mutationInput);
+    console.log("Mutation input JSON:", JSON.stringify(mutationInput));
+
     try {
       const result = await engageWithActivityMutation.mutateAsync(mutationInput);
-      
+
       if (result.success) {
         // Refetch the activities and user engagement to show updated state
         await Promise.all([
@@ -339,7 +385,7 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
         ]);
       }
     } catch (error) {
-      console.error('Error engaging with activity:', error);
+      console.error("Error engaging with activity:", error);
     }
   };
 
@@ -354,29 +400,31 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
       });
 
       // Clear the comment input
-      setNewComment(prev => ({ ...prev, [activityId]: '' }));
+      setNewComment((prev) => ({ ...prev, [activityId]: "" }));
 
       // Refresh comments and activities
       await Promise.all([
         refetchActivities(),
         // Refresh comments if they're currently shown
-        showComments[activityId] ? (async () => {
-          const commentsData = await utils.activities.getComments.fetch({ activityId });
-          setComments(prev => ({
-            ...prev,
-            [activityId]: commentsData.comments,
-          }));
-        })() : Promise.resolve(),
+        showComments[activityId]
+          ? (async () => {
+              const commentsData = await utils.activities.getComments.fetch({ activityId });
+              setComments((prev) => ({
+                ...prev,
+                [activityId]: commentsData.comments,
+              }));
+            })()
+          : Promise.resolve(),
       ]);
     } catch (error) {
-      console.error('Error adding comment:', error);
+      console.error("Error adding comment:", error);
     }
   };
 
   const toggleComments = async (activityId: string) => {
     const isShowing = showComments[activityId];
 
-    setShowComments(prev => ({
+    setShowComments((prev) => ({
       ...prev,
       [activityId]: !prev[activityId],
     }));
@@ -385,39 +433,41 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
     if (!isShowing && !comments[activityId]) {
       try {
         const commentsData = await utils.activities.getComments.fetch({ activityId });
-        setComments(prev => ({
+        setComments((prev) => ({
           ...prev,
           [activityId]: commentsData.comments,
         }));
       } catch (error) {
-        console.error('Error fetching comments:', error);
+        console.error("Error fetching comments:", error);
       }
     }
   };
 
   const testMutationCall = async () => {
-    console.log('Testing mutation with simple params...');
+    console.log("Testing mutation with simple params...");
     try {
       const result = await testMutation.mutateAsync({
-        testId: 'test-123',
-        testAction: 'test-action',
+        testId: "test-123",
+        testAction: "test-action",
       });
-      console.log('Test mutation result:', result);
+      console.log("Test mutation result:", result);
     } catch (error) {
-      console.error('Test mutation error:', error);
+      console.error("Test mutation error:", error);
     }
   };
 
-  const filteredActivities = activityFeed.filter(activity => {
-    const matchesTab = activeTab === 'all' || 
-      (activeTab === 'following' && userProfile?.followingCountries?.some(id => 
-        activity.relatedCountries?.includes(id))) ||
-      (activeTab === 'friends' && userProfile?.friends?.includes(activity.user.id)) ||
-      (activeTab === 'achievements' && activity.type === 'achievement');
+  const filteredActivities = activityFeed.filter((activity) => {
+    const matchesTab =
+      activeTab === "all" ||
+      (activeTab === "following" &&
+        userProfile?.followingCountries?.some((id) => activity.relatedCountries?.includes(id))) ||
+      (activeTab === "friends" && userProfile?.friends?.includes(activity.user.id)) ||
+      (activeTab === "achievements" && activity.type === "achievement");
 
-    const matchesFilter = filterType === 'all' || activity.category === filterType;
+    const matchesFilter = filterType === "all" || activity.category === filterType;
 
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch =
+      searchQuery === "" ||
       activity.content.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       activity.content.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       activity.user.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -439,7 +489,7 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
         <CardContent>
           <div className="space-y-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="flex gap-4 p-4 glass-hierarchy-child rounded-xl">
+              <div key={i} className="glass-hierarchy-child flex gap-4 rounded-xl p-4">
                 <Skeleton className="h-12 w-12 rounded-full" />
                 <div className="flex-1 space-y-2">
                   <Skeleton className="h-4 w-3/4" />
@@ -455,25 +505,27 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
   }
 
   return (
-    <Card className={cn("w-full glass-hierarchy-parent", className)}>
+    <Card className={cn("glass-hierarchy-parent w-full", className)}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-blue-500" />
-             Activity Feed
-            <Badge variant="secondary" className="ml-2">Live</Badge>
+            Activity Feed
+            <Badge variant="secondary" className="ml-2">
+              Live
+            </Badge>
           </CardTitle>
-          
+
           {/* Search & Filter */}
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
               <input
                 type="text"
                 placeholder="Search activity..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-4 py-2 text-sm glass-hierarchy-interactive rounded-lg w-48"
+                className="glass-hierarchy-interactive w-48 rounded-lg py-2 pr-4 pl-9 text-sm"
               />
             </div>
             <Button
@@ -485,7 +537,6 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
               <TrendingUp className="h-4 w-4" />
               Trending
             </Button>
-           
           </div>
         </div>
 
@@ -518,36 +569,41 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
           {showTrending && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
+              animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
               className="mb-6"
             >
               <div className="glass-hierarchy-child rounded-xl p-4">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                   <TrendingUp className="h-5 w-5 text-green-500" />
                   Trending Topics
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   {trendingTopics.map((topic) => (
-                    <div 
-                      key={topic.id} 
-                      className="flex items-center justify-between p-3 glass-hierarchy-interactive rounded-lg hover:scale-[1.01] transition-transform cursor-pointer"
+                    <div
+                      key={topic.id}
+                      className="glass-hierarchy-interactive flex cursor-pointer items-center justify-between rounded-lg p-3 transition-transform hover:scale-[1.01]"
                     >
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-foreground text-sm truncate">
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-foreground truncate text-sm font-medium">
                           {topic.title}
                         </h4>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-muted-foreground text-xs">
                           {topic.category} • {topic.participants} participants
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <TrendingUp className={cn(
-                          "h-4 w-4",
-                          topic.trend === 'up' ? 'text-green-500' : 
-                          topic.trend === 'down' ? 'text-red-500' : 'text-gray-500'
-                        )} />
+                        <TrendingUp
+                          className={cn(
+                            "h-4 w-4",
+                            topic.trend === "up"
+                              ? "text-green-500"
+                              : topic.trend === "down"
+                                ? "text-red-500"
+                                : "text-gray-500"
+                          )}
+                        />
                       </div>
                     </div>
                   ))}
@@ -572,19 +628,19 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
                   className={cn(
-                    "glass-hierarchy-child rounded-xl p-4 hover:scale-[1.01] transition-all duration-200 group relative overflow-hidden",
+                    "glass-hierarchy-child group relative overflow-hidden rounded-xl p-4 transition-all duration-200 hover:scale-[1.01]",
                     priorityBorder
                   )}
                 >
                   {/* Background Flag Blur */}
                   {activity.user.countryFlag && (
-                    <div 
+                    <div
                       className="absolute inset-0 bg-cover bg-center opacity-10 blur-md"
                       style={{ backgroundImage: `url(${activity.user.countryFlag})` }}
                     />
                   )}
-                  
-                  <div className="flex gap-4 relative z-10">
+
+                  <div className="relative z-10 flex gap-4">
                     {/* User Avatar */}
                     <div className="flex-shrink-0">
                       <Avatar className="h-12 w-12">
@@ -594,46 +650,46 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
                           <AvatarImage src={activity.user.avatar} />
                         )}
                         <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                          {activity.user.countryName ? activity.user.countryName.charAt(0).toUpperCase() : 'U'}
+                          {activity.user.countryName
+                            ? activity.user.countryName.charAt(0).toUpperCase()
+                            : "U"}
                         </AvatarFallback>
                       </Avatar>
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-2 flex items-start justify-between">
                         <div className="flex items-center gap-2">
                           <Link href="/thinkpages" className="hover:underline">
-                            <h4 className="font-semibold text-foreground">
-                              @{activity.user.countryName || 'Unknown'}
+                            <h4 className="text-foreground font-semibold">
+                              @{activity.user.countryName || "Unknown"}
                             </h4>
                           </Link>
                           <IconComponent className={cn("h-4 w-4", iconColor)} />
                         </div>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-muted-foreground text-xs">
                           {formatTimeAgo(activity.timestamp)}
                         </span>
                       </div>
 
-                      <h5 className="font-medium text-foreground mb-1">
-                        {activity.content.title}
-                      </h5>
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                      <h5 className="text-foreground mb-1 font-medium">{activity.content.title}</h5>
+                      <p className="text-muted-foreground mb-3 line-clamp-2 text-sm">
                         {activity.content.description}
                       </p>
 
                       {/* Metadata Display */}
                       {activity.content.metadata && (
-                        <div className="flex flex-wrap gap-2 mb-3">
+                        <div className="mb-3 flex flex-wrap gap-2">
                           {Object.entries(activity.content.metadata).map(([key, value]) => {
-                            if (key === 'gdp' && typeof value === 'number') {
+                            if (key === "gdp" && typeof value === "number") {
                               return (
                                 <Badge key={key} variant="secondary" className="text-xs">
                                   GDP: {formatCurrency(value)}
                                 </Badge>
                               );
                             }
-                            if (key === 'tier' && typeof value === 'string') {
+                            if (key === "tier" && typeof value === "string") {
                               return (
                                 <Badge key={key} variant="secondary" className="text-xs">
                                   {value}
@@ -646,7 +702,7 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
                       )}
 
                       {/* Engagement Actions - LIVE DATA */}
-                      <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                      <div className="text-muted-foreground flex items-center gap-6 text-sm">
                         {/* Like Button */}
                         <button
                           className={cn(
@@ -658,34 +714,36 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
                           )}
                           onClick={() => {
                             if (!user?.id) {
-                              console.warn('User not authenticated - cannot engage with activity');
+                              console.warn("User not authenticated - cannot engage with activity");
                               return;
                             }
                             if (!activity?.id) {
-                              console.error('Activity ID missing:', activity);
+                              console.error("Activity ID missing:", activity);
                               return;
                             }
-                            console.log('Button clicked for activity:', activity);
-                            console.log('Activity ID:', activity.id);
-                            console.log('User ID:', user.id);
+                            console.log("Button clicked for activity:", activity);
+                            console.log("Activity ID:", activity.id);
+                            console.log("User ID:", user.id);
                             handleEngagement(
                               activity.id,
-                              userEngagement?.[activity.id]?.liked ? 'unlike' : 'like'
+                              userEngagement?.[activity.id]?.liked ? "unlike" : "like"
                             );
                           }}
                           disabled={engageWithActivityMutation.isPending || !user?.id}
                           title={!user?.id ? "Please sign in to like posts" : ""}
                         >
-                          <Heart className={cn(
-                            "h-4 w-4",
-                            userEngagement?.[activity.id]?.liked && "fill-current"
-                          )} />
+                          <Heart
+                            className={cn(
+                              "h-4 w-4",
+                              userEngagement?.[activity.id]?.liked && "fill-current"
+                            )}
+                          />
                           {activity.engagement.likes}
                         </button>
 
                         {/* Comment Button */}
-                        <button 
-                          className="flex items-center gap-1 hover:text-blue-500 transition-colors"
+                        <button
+                          className="flex items-center gap-1 transition-colors hover:text-blue-500"
                           onClick={() => toggleComments(activity.id)}
                         >
                           <MessageSquare className="h-4 w-4" />
@@ -703,17 +761,21 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
                           )}
                           onClick={() => {
                             if (!user?.id) {
-                              console.warn('User not authenticated - cannot reshare activity');
+                              console.warn("User not authenticated - cannot reshare activity");
                               return;
                             }
                             if (!activity?.id) {
-                              console.error('Activity ID missing:', activity);
+                              console.error("Activity ID missing:", activity);
                               return;
                             }
-                            handleEngagement(activity.id, 'reshare');
+                            handleEngagement(activity.id, "reshare");
                           }}
                           disabled={engageWithActivityMutation.isPending || !user?.id}
-                          title={!user?.id ? "Please sign in to reshare posts" : "Reshare to your profile"}
+                          title={
+                            !user?.id
+                              ? "Please sign in to reshare posts"
+                              : "Reshare to your profile"
+                          }
                         >
                           <Repeat className="h-4 w-4" />
                           {activity.engagement.reshares}
@@ -722,41 +784,47 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
 
                       {/* Comment Section */}
                       {showComments[activity.id] && (
-                        <div className="mt-4 pt-4 border-t border-border/50">
+                        <div className="border-border/50 mt-4 border-t pt-4">
                           {/* Add Comment */}
                           {user?.id ? (
-                            <div className="flex gap-3 mb-4">
+                            <div className="mb-4 flex gap-3">
                               <Avatar className="h-8 w-8">
                                 <AvatarImage src={user?.imageUrl} />
-                                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm">
-                                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-sm text-white">
+                                  {user?.firstName?.[0]}
+                                  {user?.lastName?.[0]}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1">
                                 <textarea
-                                  value={newComment[activity.id] || ''}
-                                  onChange={(e) => setNewComment(prev => ({
-                                    ...prev,
-                                    [activity.id]: e.target.value
-                                  }))}
+                                  value={newComment[activity.id] || ""}
+                                  onChange={(e) =>
+                                    setNewComment((prev) => ({
+                                      ...prev,
+                                      [activity.id]: e.target.value,
+                                    }))
+                                  }
                                   placeholder="Write a comment..."
-                                  className="w-full p-3 glass-hierarchy-interactive rounded-lg resize-none text-sm"
+                                  className="glass-hierarchy-interactive w-full resize-none rounded-lg p-3 text-sm"
                                   rows={2}
                                 />
-                                <div className="flex justify-end mt-2">
+                                <div className="mt-2 flex justify-end">
                                   <Button
                                     size="sm"
                                     onClick={() => handleComment(activity.id)}
-                                    disabled={addCommentMutation.isPending || !newComment[activity.id]?.trim()}
+                                    disabled={
+                                      addCommentMutation.isPending ||
+                                      !newComment[activity.id]?.trim()
+                                    }
                                   >
-                                    {addCommentMutation.isPending ? 'Posting...' : 'Comment'}
+                                    {addCommentMutation.isPending ? "Posting..." : "Comment"}
                                   </Button>
                                 </div>
                               </div>
                             </div>
                           ) : (
-                            <div className="text-center py-4 glass-hierarchy-child rounded-lg">
-                              <p className="text-sm text-muted-foreground mb-2">
+                            <div className="glass-hierarchy-child rounded-lg py-4 text-center">
+                              <p className="text-muted-foreground mb-2 text-sm">
                                 Please sign in to comment
                               </p>
                               <Button size="sm" variant="outline">
@@ -764,32 +832,36 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
                               </Button>
                             </div>
                           )}
-                          
+
                           {/* Comments List */}
                           <div className="space-y-3">
                             {comments[activity.id]?.map((comment) => (
                               <div key={comment.id} className="flex gap-3">
                                 <Avatar className="h-6 w-6">
-                                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 text-white text-xs">
+                                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-600 text-xs text-white">
                                     U
                                   </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1">
                                   <div className="glass-hierarchy-interactive rounded-lg p-3">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="text-sm font-medium text-foreground">User</span>
-                                      <span className="text-xs text-muted-foreground">
+                                    <div className="mb-1 flex items-center gap-2">
+                                      <span className="text-foreground text-sm font-medium">
+                                        User
+                                      </span>
+                                      <span className="text-muted-foreground text-xs">
                                         {formatTimeAgo(new Date(comment.createdAt))}
                                       </span>
                                     </div>
-                                    <p className="text-sm text-muted-foreground">{comment.content}</p>
+                                    <p className="text-muted-foreground text-sm">
+                                      {comment.content}
+                                    </p>
                                   </div>
                                 </div>
                               </div>
                             ))}
 
                             {(!comments[activity.id] || comments[activity.id].length === 0) && (
-                              <div className="text-sm text-muted-foreground text-center py-4">
+                              <div className="text-muted-foreground py-4 text-center text-sm">
                                 No comments yet. Be the first to comment!
                               </div>
                             )}
@@ -804,18 +876,20 @@ export function PlatformActivityFeed({ userProfile, className }: PlatformActivit
           </AnimatePresence>
 
           {filteredActivities.length === 0 && (
-            <div className="text-center py-12">
-              <Activity className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">No Activity Found</h3>
+            <div className="py-12 text-center">
+              <Activity className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+              <h3 className="text-foreground mb-2 text-lg font-medium">No Activity Found</h3>
               <p className="text-muted-foreground">
-                {searchQuery ? 'Try adjusting your search terms' : 'Activity will appear here as it happens'}
+                {searchQuery
+                  ? "Try adjusting your search terms"
+                  : "Activity will appear here as it happens"}
               </p>
             </div>
           )}
 
           {/* Load More */}
           {filteredActivities.length > 0 && (
-            <div className="text-center pt-6">
+            <div className="pt-6 text-center">
               <Button variant="outline" className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
                 Load More Activity

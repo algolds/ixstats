@@ -5,13 +5,13 @@
 
 "use client";
 
-import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
-import { Skeleton } from '~/components/ui/skeleton';
-import { 
+import React, { useMemo } from "react";
+import { motion } from "framer-motion";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
+import {
   MapPin,
   Users,
   Crown,
@@ -20,13 +20,13 @@ import {
   ExternalLink,
   Info,
   Flag,
-  Building
-} from 'lucide-react';
-import { formatPopulation } from '~/lib/chart-utils';
-import { getFlagColors } from '~/lib/flag-color-extractor';
-import { UnifiedCountryFlag } from '~/components/UnifiedCountryFlag';
-import { cn } from '~/lib/utils';
-import { api } from '~/trpc/react';
+  Building,
+} from "lucide-react";
+import { formatPopulation } from "~/lib/chart-utils";
+import { getFlagColors } from "~/lib/flag-color-extractor";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import { cn } from "~/lib/utils";
+import { api } from "~/trpc/react";
 
 interface CountryData {
   id: string;
@@ -82,7 +82,7 @@ interface CountryProfileInfoBoxProps {
 
 export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
   country,
-  className
+  className,
 }) => {
   const flagColors = getFlagColors(country.name);
 
@@ -91,20 +91,29 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
     { enabled: Boolean(country?.name) }
   );
 
-  const wikiData: (WikiInfoBoxData & { flagUrl?: string; coatOfArmsUrl?: string; infobox?: Record<string, unknown> }) | null = useMemo(() => {
+  const wikiData:
+    | (WikiInfoBoxData & {
+        flagUrl?: string;
+        coatOfArmsUrl?: string;
+        infobox?: Record<string, unknown>;
+      })
+    | null = useMemo(() => {
     if (!wikiDataRaw) return null;
     const infobox = (wikiDataRaw as any).infobox || {};
 
     const normalizeList = (value: unknown): string | null => {
       if (!value) return null;
       if (Array.isArray(value)) {
-        return value.map(v => (typeof v === 'string' ? v : String(v))).filter(Boolean).join(', ');
-      }
-      if (typeof value === 'string') {
         return value
-          .replace(/<br\s*\/?>(\s*)/gi, ', ')
-          .replace(/\s+/g, ' ')
-          .replace(/\s*,\s*,/g, ',')
+          .map((v) => (typeof v === "string" ? v : String(v)))
+          .filter(Boolean)
+          .join(", ");
+      }
+      if (typeof value === "string") {
+        return value
+          .replace(/<br\s*\/?>(\s*)/gi, ", ")
+          .replace(/\s+/g, " ")
+          .replace(/\s*,\s*,/g, ",")
           .trim();
       }
       return null;
@@ -117,12 +126,20 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
 
     return {
       flag: wikiDataRaw.flag || infobox.image_flag || infobox.flag || undefined,
-      coat_of_arms: wikiDataRaw.coatOfArms || infobox.image_coat || infobox.coat_of_arms || undefined,
-      flagUrl: wikiDataRaw.flagUrl || fallbackImage(wikiDataRaw.flag || infobox.image_flag || infobox.flag),
-      coatOfArmsUrl: wikiDataRaw.coatOfArmsUrl || fallbackImage(wikiDataRaw.coatOfArms || infobox.image_coat || infobox.coat_of_arms),
+      coat_of_arms:
+        wikiDataRaw.coatOfArms || infobox.image_coat || infobox.coat_of_arms || undefined,
+      flagUrl:
+        wikiDataRaw.flagUrl ||
+        fallbackImage(wikiDataRaw.flag || infobox.image_flag || infobox.flag),
+      coatOfArmsUrl:
+        wikiDataRaw.coatOfArmsUrl ||
+        fallbackImage(wikiDataRaw.coatOfArms || infobox.image_coat || infobox.coat_of_arms),
       capital: wikiDataRaw.capital || infobox.capital || null,
       largest_city: infobox.largest_city || null,
-      official_languages: normalizeList(wikiDataRaw.languages || infobox.official_languages || infobox.official_language) || undefined,
+      official_languages:
+        normalizeList(
+          wikiDataRaw.languages || infobox.official_languages || infobox.official_language
+        ) || undefined,
       ethnic_groups: normalizeList(infobox.ethnic_groups || infobox.ethnicity) || undefined,
       currency: infobox.currency || wikiDataRaw.currency || null,
       time_zone: normalizeList(infobox.time_zone) || undefined,
@@ -130,13 +147,15 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
       iso_code: infobox.iso_code || infobox.iso || null,
       established: infobox.established || null,
       independence: infobox.independence || null,
-      government_type: wikiDataRaw.government || infobox.government_type || infobox.government || null,
+      government_type:
+        wikiDataRaw.government || infobox.government_type || infobox.government || null,
       head_of_state: infobox.head_of_state || null,
       head_of_government: infobox.head_of_government || null,
       legislature: infobox.legislature || null,
       area_total: infobox.area_total || null,
       area_water: infobox.area_water || null,
-      population_total: infobox.population_total || wikiDataRaw.population?.toLocaleString() || null,
+      population_total:
+        infobox.population_total || wikiDataRaw.population?.toLocaleString() || null,
       population_density: infobox.population_density || null,
       gdp_nominal: infobox.GDP_nominal || null,
       gdp_ppp: infobox.GDP_PPP || null,
@@ -145,56 +164,66 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
       drives_on: infobox.drives_on || infobox.drives || null,
       internet_tld: normalizeList(infobox.internet_tld || infobox.tld) || undefined,
       infobox,
-    } as WikiInfoBoxData & { flagUrl?: string; coatOfArmsUrl?: string; infobox?: Record<string, unknown> };
+    } as WikiInfoBoxData & {
+      flagUrl?: string;
+      coatOfArmsUrl?: string;
+      infobox?: Record<string, unknown>;
+    };
   }, [wikiDataRaw]);
 
   const infoSections = [
     {
-      title: 'Basic Information',
+      title: "Basic Information",
       icon: Info,
       items: [
-        { label: 'Population', value: formatPopulation(country.currentPopulation), icon: Users },
-        { label: 'Economic Tier', value: country.economicTier, icon: Crown },
-        { label: 'Population Tier', value: country.populationTier || 'Standard', icon: Users },
-        { label: 'Continent', value: country.continent, icon: Globe },
-        { label: 'Region', value: country.region, icon: MapPin }
-      ].filter(item => item.value)
+        { label: "Population", value: formatPopulation(country.currentPopulation), icon: Users },
+        { label: "Economic Tier", value: country.economicTier, icon: Crown },
+        { label: "Population Tier", value: country.populationTier || "Standard", icon: Users },
+        { label: "Continent", value: country.continent, icon: Globe },
+        { label: "Region", value: country.region, icon: MapPin },
+      ].filter((item) => item.value),
     },
     {
-      title: 'Geography',
+      title: "Geography",
       icon: MapPin,
       items: [
-        { label: 'Land Area', value: country.landArea ? `${country.landArea.toLocaleString()} km²` : null },
-        { label: 'Population Density', value: country.populationDensity ? `${country.populationDensity.toFixed(1)}/km²` : null },
-        { label: 'Capital', value: wikiData?.capital },
-        { label: 'Largest City', value: wikiData?.largest_city },
-        { label: 'Climate', value: wikiData?.climate }
-      ].filter(item => item.value)
+        {
+          label: "Land Area",
+          value: country.landArea ? `${country.landArea.toLocaleString()} km²` : null,
+        },
+        {
+          label: "Population Density",
+          value: country.populationDensity ? `${country.populationDensity.toFixed(1)}/km²` : null,
+        },
+        { label: "Capital", value: wikiData?.capital },
+        { label: "Largest City", value: wikiData?.largest_city },
+        { label: "Climate", value: wikiData?.climate },
+      ].filter((item) => item.value),
     },
     {
-      title: 'Government',
+      title: "Government",
       icon: Building,
       items: [
-        { label: 'Government Type', value: country.governmentType || wikiData?.government_type },
-        { label: 'Head of State', value: wikiData?.head_of_state },
-        { label: 'Head of Government', value: wikiData?.head_of_government || country.leader },
-        { label: 'Legislature', value: wikiData?.legislature },
-        { label: 'Independence', value: wikiData?.independence },
-        { label: 'Established', value: wikiData?.established }
-      ].filter(item => item.value)
+        { label: "Government Type", value: country.governmentType || wikiData?.government_type },
+        { label: "Head of State", value: wikiData?.head_of_state },
+        { label: "Head of Government", value: wikiData?.head_of_government || country.leader },
+        { label: "Legislature", value: wikiData?.legislature },
+        { label: "Independence", value: wikiData?.independence },
+        { label: "Established", value: wikiData?.established },
+      ].filter((item) => item.value),
     },
     {
-      title: 'Culture & Society',
+      title: "Culture & Society",
       icon: Globe,
       items: [
-        { label: 'Official Languages', value: wikiData?.official_languages || undefined },
-        { label: 'Primary Religion', value: country.religion },
-        { label: 'Ethnic Groups', value: wikiData?.ethnic_groups || undefined },
-        { label: 'Currency', value: wikiData?.currency },
-        { label: 'Time Zone', value: wikiData?.time_zone },
-        { label: 'Calling Code', value: wikiData?.calling_code }
-      ].filter(item => item.value)
-    }
+        { label: "Official Languages", value: wikiData?.official_languages || undefined },
+        { label: "Primary Religion", value: country.religion },
+        { label: "Ethnic Groups", value: wikiData?.ethnic_groups || undefined },
+        { label: "Currency", value: wikiData?.currency },
+        { label: "Time Zone", value: wikiData?.time_zone },
+        { label: "Calling Code", value: wikiData?.calling_code },
+      ].filter((item) => item.value),
+    },
   ];
 
   return (
@@ -211,7 +240,7 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
           {/* Country Flag */}
           <div className="mb-4 flex justify-center">
             <motion.div
-              className="relative rounded-lg overflow-hidden shadow-lg border-2 glass-hierarchy-child"
+              className="glass-hierarchy-child relative overflow-hidden rounded-lg border-2 shadow-lg"
               style={{ borderColor: flagColors.primary }}
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -219,36 +248,36 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
               <UnifiedCountryFlag
                 countryName={country.name}
                 size="xl"
-                className="w-32 h-20"
+                className="h-20 w-32"
                 rounded={true}
                 shadow={false}
                 border={false}
                 showPlaceholder={true}
               />
-              
+
               {/* Flag overlay effect */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition-opacity duration-200 hover:opacity-100" />
             </motion.div>
           </div>
 
           {/* Tier Badges */}
-          <div className="flex flex-wrap justify-center gap-2 mb-4">
-            <Badge 
-              style={{ 
-                backgroundColor: `${flagColors.primary}20`, 
+          <div className="mb-4 flex flex-wrap justify-center gap-2">
+            <Badge
+              style={{
+                backgroundColor: `${flagColors.primary}20`,
                 borderColor: flagColors.primary,
-                color: flagColors.primary 
+                color: flagColors.primary,
               }}
               className="border"
             >
               {country.economicTier}
             </Badge>
             {country.populationTier && (
-              <Badge 
+              <Badge
                 variant="outline"
-                style={{ 
+                style={{
                   borderColor: flagColors.secondary,
-                  color: flagColors.secondary 
+                  color: flagColors.secondary,
                 }}
               >
                 {country.populationTier}
@@ -258,15 +287,15 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
 
           {/* Quick Stats */}
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="text-center p-2 rounded glass-hierarchy-child">
-              <Users className="h-4 w-4 mx-auto mb-1" style={{ color: flagColors.primary }} />
+            <div className="glass-hierarchy-child rounded p-2 text-center">
+              <Users className="mx-auto mb-1 h-4 w-4" style={{ color: flagColors.primary }} />
               <div className="font-semibold">{formatPopulation(country.currentPopulation)}</div>
-              <div className="text-xs text-muted-foreground">Population</div>
+              <div className="text-muted-foreground text-xs">Population</div>
             </div>
-            <div className="text-center p-2 rounded glass-hierarchy-child">
-              <MapPin className="h-4 w-4 mx-auto mb-1" style={{ color: flagColors.secondary }} />
-              <div className="font-semibold">{country.continent || 'Unknown'}</div>
-              <div className="text-xs text-muted-foreground">Continent</div>
+            <div className="glass-hierarchy-child rounded p-2 text-center">
+              <MapPin className="mx-auto mb-1 h-4 w-4" style={{ color: flagColors.secondary }} />
+              <div className="font-semibold">{country.continent || "Unknown"}</div>
+              <div className="text-muted-foreground text-xs">Continent</div>
             </div>
           </div>
         </CardContent>
@@ -275,7 +304,7 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
       {/* Detailed Information Sections */}
       {infoSections.map((section, index) => {
         if (section.items.length === 0) return null;
-        
+
         return (
           <motion.div
             key={section.title}
@@ -293,14 +322,17 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
               <CardContent>
                 <div className="space-y-3">
                   {section.items.map((item, itemIndex) => (
-                    <div key={itemIndex} className="flex justify-between items-start gap-3">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        {(item as any).icon && 
-                          React.createElement((item as any).icon, { className: "h-3 w-3 flex-shrink-0 text-muted-foreground" })
-                        }
-                        <span className="text-sm text-muted-foreground truncate">{item.label}:</span>
+                    <div key={itemIndex} className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 flex-1 items-center gap-2">
+                        {(item as any).icon &&
+                          React.createElement((item as any).icon, {
+                            className: "h-3 w-3 flex-shrink-0 text-muted-foreground",
+                          })}
+                        <span className="text-muted-foreground truncate text-sm">
+                          {item.label}:
+                        </span>
                       </div>
-                      <span className="text-sm font-medium text-right">{item.value}</span>
+                      <span className="text-right text-sm font-medium">{item.value}</span>
                     </div>
                   ))}
                 </div>
@@ -346,14 +378,14 @@ export const CountryProfileInfoBox: React.FC<CountryProfileInfoBoxProps> = ({
                 </div>
               )}
             </div>
-            
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full mt-4 text-xs"
-              onClick={() => window.open(`https://ixwiki.com/wiki/${country.name}`, '_blank')}
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-4 w-full text-xs"
+              onClick={() => window.open(`https://ixwiki.com/wiki/${country.name}`, "_blank")}
             >
-              <ExternalLink className="h-3 w-3 mr-1" />
+              <ExternalLink className="mr-1 h-3 w-3" />
               View Full Wiki Page
             </Button>
           </CardContent>

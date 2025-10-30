@@ -1,23 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  BookOpen, 
-  Zap,
-  Upload,
-  Rocket
-} from 'lucide-react';
-import { Button } from '~/components/ui/button';
-import { GlassCard, GlassCardContent, GlassCardHeader } from './glass/GlassCard';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { BookOpen, Zap, Upload, Rocket } from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { GlassCard, GlassCardContent, GlassCardHeader } from "./glass/GlassCard";
 import { InteractiveGridPattern } from "~/components/magicui/interactive-grid-pattern";
 import { BorderBeam } from "~/components/magicui/border-beam";
 import { PathGlareCard } from "~/components/ui/path-glare-card";
-import { MyCountryLogo } from '~/components/ui/mycountry-logo';
-import { SectionHelpIcon } from '~/components/ui/help-icon';
-import { safeSetItemSync, safeGetItemSync } from '~/lib/localStorageMutex';
+import { MyCountryLogo } from "~/components/ui/mycountry-logo";
+import { SectionHelpIcon } from "~/components/ui/help-icon";
+import { safeSetItemSync, safeGetItemSync } from "~/lib/localStorageMutex";
 
-type OnboardingFlow = 'welcome' | 'tutorial' | 'quick-start' | 'import-guide' | 'advanced';
+type OnboardingFlow = "welcome" | "tutorial" | "quick-start" | "import-guide" | "advanced";
 
 interface BuilderOnboardingWizardProps {
   onStartBuilding: () => void;
@@ -27,79 +22,83 @@ interface BuilderOnboardingWizardProps {
 // Path options for the Choose Your Path section
 const pathOptions = [
   {
-    id: 'tutorial',
-    title: 'Complete Tutorial',
-    description: 'Comprehensive walkthrough covering all major systems, features, and advanced capabilities with detailed tips',
-    duration: '8 steps • 5-8 minutes',
+    id: "tutorial",
+    title: "Complete Tutorial",
+    description:
+      "Comprehensive walkthrough covering all major systems, features, and advanced capabilities with detailed tips",
+    duration: "8 steps • 5-8 minutes",
     icon: BookOpen,
-    color: 'blue',
-    gradient: 'from-blue-500/20 to-purple-600/20 hover:from-blue-500/30 hover:to-purple-600/30',
-    border: 'border-blue-400/30',
-    iconColor: 'text-blue-400',
-    recommended: true
+    color: "blue",
+    gradient: "from-blue-500/20 to-purple-600/20 hover:from-blue-500/30 hover:to-purple-600/30",
+    border: "border-blue-400/30",
+    iconColor: "text-blue-400",
+    recommended: true,
   },
   {
-    id: 'quick-start',
-    title: 'Quick Start',
-    description: 'Essential guide covering the basics with key tips to get you building quickly',
-    duration: '4 steps • 2-4 minutes • Starts at National Identity',
+    id: "quick-start",
+    title: "Quick Start",
+    description: "Essential guide covering the basics with key tips to get you building quickly",
+    duration: "4 steps • 2-4 minutes • Starts at National Identity",
     icon: Zap,
-    color: 'emerald',
-    gradient: 'from-emerald-500/20 to-teal-600/20 hover:from-emerald-500/30 hover:to-teal-600/30',
-    border: 'border-emerald-400/30',
-    iconColor: 'text-emerald-400'
+    color: "emerald",
+    gradient: "from-emerald-500/20 to-teal-600/20 hover:from-emerald-500/30 hover:to-teal-600/30",
+    border: "border-emerald-400/30",
+    iconColor: "text-emerald-400",
   },
   {
-    id: 'import',
-    title: 'Import Country',
-    description: 'Import existing country data from IIWiki',
-    duration: '3 steps • 2-5 minutes',
+    id: "import",
+    title: "Import Country",
+    description: "Import existing country data from IIWiki",
+    duration: "3 steps • 2-5 minutes",
     icon: Upload,
-    color: 'amber',
-    gradient: 'from-amber-500/20 to-orange-600/20 hover:from-amber-500/30 hover:to-orange-600/30',
-    border: 'border-amber-400/30',
-    iconColor: 'text-white-400'
+    color: "amber",
+    gradient: "from-amber-500/20 to-orange-600/20 hover:from-amber-500/30 hover:to-orange-600/30",
+    border: "border-amber-400/30",
+    iconColor: "text-white-400",
   },
   {
-    id: 'skip',
-    title: 'Jump In',
-    description: 'Start building from scratch without any tutorial',
-    duration: 'Begin at National Identity section',
+    id: "skip",
+    title: "Jump In",
+    description: "Start building from scratch without any tutorial",
+    duration: "Begin at National Identity section",
     icon: Rocket,
-    color: 'purple',
-    gradient: 'from-purple-500/60 to-pink-600/60 hover:from-purple-600/70 hover:to-pink-700/70',
-    border: 'border-purple-400/40',
-    iconColor: 'text-white',
-    primary: true
-  }
+    color: "purple",
+    gradient: "from-purple-500/60 to-pink-600/60 hover:from-purple-600/70 hover:to-pink-700/70",
+    border: "border-purple-400/40",
+    iconColor: "text-white",
+    primary: true,
+  },
 ];
 
-export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: BuilderOnboardingWizardProps) => {
-  const [currentFlow, setCurrentFlow] = useState<OnboardingFlow>('welcome');
+export const BuilderOnboardingWizard = ({
+  onStartBuilding,
+  onSkipToImport,
+}: BuilderOnboardingWizardProps) => {
+  const [currentFlow, setCurrentFlow] = useState<OnboardingFlow>("welcome");
 
   // Check if user has seen onboarding before
   useEffect(() => {
-    const hasSeenOnboarding = safeGetItemSync('builder_onboarding_completed');
+    const hasSeenOnboarding = safeGetItemSync("builder_onboarding_completed");
     if (hasSeenOnboarding) {
       // Skip to building for returning users, but still show welcome
-      setCurrentFlow('welcome');
+      setCurrentFlow("welcome");
     }
   }, []);
 
   const handleStartTutorial = () => {
     // Set tutorial flag and navigate to builder - Intro Disclosure will show there
     // Complete Tutorial starts at Foundation step
-    safeSetItemSync('builder_tutorial_mode', 'full');
-    safeSetItemSync('builder_onboarding_completed', 'true');
+    safeSetItemSync("builder_tutorial_mode", "full");
+    safeSetItemSync("builder_onboarding_completed", "true");
     onStartBuilding();
   };
 
   const handleStartQuickStart = () => {
     // Set quick start flag and navigate to builder - Intro Disclosure will show there
     // Quick Start starts at National Identity tab (bypasses foundation)
-    safeSetItemSync('builder_tutorial_mode', 'quick');
-    safeSetItemSync('builder_quick_start_section', 'core');
-    safeSetItemSync('builder_onboarding_completed', 'true');
+    safeSetItemSync("builder_tutorial_mode", "quick");
+    safeSetItemSync("builder_quick_start_section", "core");
+    safeSetItemSync("builder_onboarding_completed", "true");
     onStartBuilding();
   };
 
@@ -112,10 +111,10 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
 
   const handleSkipOnboarding = () => {
     // Skip all tutorials and go straight to builder
-    safeSetItemSync('builder_onboarding_completed', 'true');
+    safeSetItemSync("builder_onboarding_completed", "true");
     // Jump In starts at National Identity tab (bypasses foundation)
-    safeSetItemSync('builder_quick_start_section', 'core');
-    safeSetItemSync('builder_tutorial_mode', ''); // Clear tutorial mode
+    safeSetItemSync("builder_quick_start_section", "core");
+    safeSetItemSync("builder_tutorial_mode", ""); // Clear tutorial mode
     onStartBuilding();
   };
 
@@ -124,24 +123,24 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
   // Handle path selection
   const handlePathSelect = (pathId: string) => {
     switch (pathId) {
-      case 'tutorial':
+      case "tutorial":
         handleStartTutorial();
         break;
-      case 'quick-start':
+      case "quick-start":
         handleStartQuickStart();
         break;
-      case 'import':
+      case "import":
         handleStartImportGuide();
         break;
-      case 'skip':
+      case "skip":
         handleSkipOnboarding();
         break;
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[10010] bg-background">
-      <div className="relative min-h-screen bg-background">
+    <div className="bg-background fixed inset-0 z-[10010]">
+      <div className="bg-background relative min-h-screen">
         {/* Interactive Grid Pattern Background */}
         <InteractiveGridPattern
           width={40}
@@ -152,30 +151,29 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
         />
 
         <AnimatePresence mode="wait">
-          {currentFlow === 'welcome' && (
+          {currentFlow === "welcome" && (
             <motion.div
               key="welcome"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.8, ease: 'easeInOut' }}
+              transition={{ duration: 0.8, ease: "easeInOut" }}
               className="relative z-[10010]"
             >
-              <div className="w-full min-h-screen flex flex-col items-center justify-center px-4 py-8">
+              <div className="flex min-h-screen w-full flex-col items-center justify-center px-4 py-8">
                 {/* Header Section */}
-                <div className="flex items-center justify-center gap-4 mb-6">
+                <div className="mb-6 flex items-center justify-center gap-4">
                   <MyCountryLogo size="xxl" animated />
-                
-                    </div>
+                </div>
 
                 {/* Choose Your Path Section */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, ease: 'easeInOut', delay: 0.3 }}
-                  className="w-full max-w-4xl mx-auto"
+                  transition={{ duration: 0.8, ease: "easeInOut", delay: 0.3 }}
+                  className="mx-auto w-full max-w-4xl"
                 >
-                  <GlassCard depth="elevated" blur="medium" className="p-8 relative z-[10010]">
+                  <GlassCard depth="elevated" blur="medium" className="relative z-[10010] p-8">
                     {/* Border Beam Effects */}
                     <BorderBeam
                       size={120}
@@ -188,7 +186,7 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
                         stiffness: 10,
                         damping: 40,
                         repeat: Infinity,
-                        ease: "easeInOut"
+                        ease: "easeInOut",
                       }}
                     />
                     <BorderBeam
@@ -203,12 +201,12 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
                         stiffness: 15,
                         damping: 50,
                         repeat: Infinity,
-                        ease: "easeInOut"
+                        ease: "easeInOut",
                       }}
                     />
                     <GlassCardHeader>
                       <div className="text-center">
-                        <h2 className="text-2xl font-bold text-foreground mb-2 flex items-center justify-center gap-2">
+                        <h2 className="text-foreground mb-2 flex items-center justify-center gap-2 text-2xl font-bold">
                           Choose Your Path
                           <SectionHelpIcon
                             title="Builder Modes"
@@ -221,7 +219,7 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
                       </div>
                     </GlassCardHeader>
                     <GlassCardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
                         {pathOptions.map((option) => (
                           <motion.div
                             key={option.id}
@@ -231,7 +229,7 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
                           >
                             {option.recommended && (
                               <div className="absolute -top-2 -right-2 z-10">
-                                <span className="bg-gradient-to-r from-amber-400 to-yellow-500 text-black text-xs px-2 py-1 rounded-full font-medium shadow-lg border border-amber-300">
+                                <span className="rounded-full border border-amber-300 bg-gradient-to-r from-amber-400 to-yellow-500 px-2 py-1 text-xs font-medium text-black shadow-lg">
                                   Recommended
                                 </span>
                               </div>
@@ -241,16 +239,20 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
                                 <Button
                                   variant="outline"
                                   size="lg"
-                                  className={`w-full h-auto flex flex-col items-start p-6 bg-gradient-to-br ${option.gradient} ${option.border} text-white dark:text-white text-left relative overflow-hidden border-none pointer-events-none`}
+                                  className={`flex h-auto w-full flex-col items-start bg-gradient-to-br p-6 ${option.gradient} ${option.border} pointer-events-none relative overflow-hidden border-none text-left text-white dark:text-white`}
                                 >
-                                  <div className="flex items-center gap-3 mb-3 w-full">
+                                  <div className="mb-3 flex w-full items-center gap-3">
                                     <option.icon className={`h-6 w-6 ${option.iconColor}`} />
                                     <div className="flex-1">
-                                      <span className="font-semibold block text-slate-900 dark:text-white">{option.title}</span>
-                                      <span className="text-xs text-slate-800 dark:text-white block font-medium opacity-90">{option.duration}</span>
+                                      <span className="block font-semibold text-slate-900 dark:text-white">
+                                        {option.title}
+                                      </span>
+                                      <span className="block text-xs font-medium text-slate-800 opacity-90 dark:text-white">
+                                        {option.duration}
+                                      </span>
                                     </div>
                                   </div>
-                                  <p className="text-sm text-slate-800 dark:text-white leading-relaxed font-medium opacity-95">
+                                  <p className="text-sm leading-relaxed font-medium text-slate-800 opacity-95 dark:text-white">
                                     {option.description}
                                   </p>
                                 </Button>
@@ -263,7 +265,8 @@ export const BuilderOnboardingWizard = ({ onStartBuilding, onSkipToImport }: Bui
                       {/* Help Text */}
                       <div className="mt-6 text-center">
                         <p className="text-muted-foreground text-sm">
-                          First time here? We recommend starting with the Complete Tutorial to learn all major systems and features with detailed tips and explanations.
+                          First time here? We recommend starting with the Complete Tutorial to learn
+                          all major systems and features with detailed tips and explanations.
                         </p>
                       </div>
                     </GlassCardContent>

@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { api } from "~/trpc/react";
-import { 
+import {
   Database,
   Table,
   Search,
@@ -16,13 +16,19 @@ import {
   RefreshCw,
   AlertTriangle,
   CheckCircle,
-  BarChart3
+  BarChart3,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Separator } from "~/components/ui/separator";
@@ -68,7 +74,7 @@ export function DatabaseExplorer() {
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
   const [queryError, setQueryError] = useState<string | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
-  
+
   // Mock database tables
   const [tables, setTables] = useState<DatabaseTable[]>([
     {
@@ -77,87 +83,213 @@ export function DatabaseExplorer() {
       columns: [
         { name: "id", type: "String", nullable: false, isPrimaryKey: true, isForeignKey: false },
         { name: "name", type: "String", nullable: false, isPrimaryKey: false, isForeignKey: false },
-        { name: "population", type: "Int", nullable: false, isPrimaryKey: false, isForeignKey: false },
-        { name: "gdpPerCapita", type: "Float", nullable: false, isPrimaryKey: false, isForeignKey: false },
-        { name: "currentTotalGdp", type: "Float", nullable: true, isPrimaryKey: false, isForeignKey: false },
-        { name: "flagUrl", type: "String", nullable: true, isPrimaryKey: false, isForeignKey: false },
-        { name: "createdAt", type: "DateTime", nullable: false, isPrimaryKey: false, isForeignKey: false },
-        { name: "updatedAt", type: "DateTime", nullable: false, isPrimaryKey: false, isForeignKey: false }
+        {
+          name: "population",
+          type: "Int",
+          nullable: false,
+          isPrimaryKey: false,
+          isForeignKey: false,
+        },
+        {
+          name: "gdpPerCapita",
+          type: "Float",
+          nullable: false,
+          isPrimaryKey: false,
+          isForeignKey: false,
+        },
+        {
+          name: "currentTotalGdp",
+          type: "Float",
+          nullable: true,
+          isPrimaryKey: false,
+          isForeignKey: false,
+        },
+        {
+          name: "flagUrl",
+          type: "String",
+          nullable: true,
+          isPrimaryKey: false,
+          isForeignKey: false,
+        },
+        {
+          name: "createdAt",
+          type: "DateTime",
+          nullable: false,
+          isPrimaryKey: false,
+          isForeignKey: false,
+        },
+        {
+          name: "updatedAt",
+          type: "DateTime",
+          nullable: false,
+          isPrimaryKey: false,
+          isForeignKey: false,
+        },
       ],
       indexes: ["name", "population", "gdpPerCapita"],
       foreignKeys: [],
       primaryKey: ["id"],
       lastModified: new Date(),
-      diskSize: "2.4 MB"
+      diskSize: "2.4 MB",
     },
     {
       name: "User",
       rowCount: 47,
       columns: [
         { name: "id", type: "String", nullable: false, isPrimaryKey: true, isForeignKey: false },
-        { name: "email", type: "String", nullable: false, isPrimaryKey: false, isForeignKey: false },
-        { name: "username", type: "String", nullable: true, isPrimaryKey: false, isForeignKey: false },
-        { name: "countryId", type: "String", nullable: true, isPrimaryKey: false, isForeignKey: true },
+        {
+          name: "email",
+          type: "String",
+          nullable: false,
+          isPrimaryKey: false,
+          isForeignKey: false,
+        },
+        {
+          name: "username",
+          type: "String",
+          nullable: true,
+          isPrimaryKey: false,
+          isForeignKey: false,
+        },
+        {
+          name: "countryId",
+          type: "String",
+          nullable: true,
+          isPrimaryKey: false,
+          isForeignKey: true,
+        },
         { name: "role", type: "Role", nullable: false, isPrimaryKey: false, isForeignKey: false },
-        { name: "createdAt", type: "DateTime", nullable: false, isPrimaryKey: false, isForeignKey: false }
+        {
+          name: "createdAt",
+          type: "DateTime",
+          nullable: false,
+          isPrimaryKey: false,
+          isForeignKey: false,
+        },
       ],
       indexes: ["email", "username", "countryId"],
       foreignKeys: [
-        { columnName: "countryId", referencedTable: "Country", referencedColumn: "id" }
+        { columnName: "countryId", referencedTable: "Country", referencedColumn: "id" },
       ],
       primaryKey: ["id"],
       lastModified: new Date(Date.now() - 3600000),
-      diskSize: "156 KB"
+      diskSize: "156 KB",
     },
     {
       name: "DmInput",
       rowCount: 23,
       columns: [
         { name: "id", type: "String", nullable: false, isPrimaryKey: true, isForeignKey: false },
-        { name: "countryId", type: "String", nullable: true, isPrimaryKey: false, isForeignKey: true },
-        { name: "inputType", type: "String", nullable: false, isPrimaryKey: false, isForeignKey: false },
+        {
+          name: "countryId",
+          type: "String",
+          nullable: true,
+          isPrimaryKey: false,
+          isForeignKey: true,
+        },
+        {
+          name: "inputType",
+          type: "String",
+          nullable: false,
+          isPrimaryKey: false,
+          isForeignKey: false,
+        },
         { name: "value", type: "Float", nullable: false, isPrimaryKey: false, isForeignKey: false },
-        { name: "description", type: "String", nullable: true, isPrimaryKey: false, isForeignKey: false },
-        { name: "duration", type: "Float", nullable: true, isPrimaryKey: false, isForeignKey: false },
-        { name: "isActive", type: "Boolean", nullable: false, isPrimaryKey: false, isForeignKey: false },
-        { name: "ixTimeTimestamp", type: "DateTime", nullable: false, isPrimaryKey: false, isForeignKey: false }
+        {
+          name: "description",
+          type: "String",
+          nullable: true,
+          isPrimaryKey: false,
+          isForeignKey: false,
+        },
+        {
+          name: "duration",
+          type: "Float",
+          nullable: true,
+          isPrimaryKey: false,
+          isForeignKey: false,
+        },
+        {
+          name: "isActive",
+          type: "Boolean",
+          nullable: false,
+          isPrimaryKey: false,
+          isForeignKey: false,
+        },
+        {
+          name: "ixTimeTimestamp",
+          type: "DateTime",
+          nullable: false,
+          isPrimaryKey: false,
+          isForeignKey: false,
+        },
       ],
       indexes: ["countryId", "inputType", "isActive"],
       foreignKeys: [
-        { columnName: "countryId", referencedTable: "Country", referencedColumn: "id" }
+        { columnName: "countryId", referencedTable: "Country", referencedColumn: "id" },
       ],
       primaryKey: ["id"],
       lastModified: new Date(Date.now() - 7200000),
-      diskSize: "45 KB"
+      diskSize: "45 KB",
     },
     {
       name: "GovernmentComponent",
       rowCount: 156,
       columns: [
         { name: "id", type: "String", nullable: false, isPrimaryKey: true, isForeignKey: false },
-        { name: "countryId", type: "String", nullable: false, isPrimaryKey: false, isForeignKey: true },
-        { name: "componentType", type: "ComponentType", nullable: false, isPrimaryKey: false, isForeignKey: false },
-        { name: "effectivenessScore", type: "Float", nullable: false, isPrimaryKey: false, isForeignKey: false },
-        { name: "isActive", type: "Boolean", nullable: false, isPrimaryKey: false, isForeignKey: false },
-        { name: "implementationDate", type: "DateTime", nullable: false, isPrimaryKey: false, isForeignKey: false }
+        {
+          name: "countryId",
+          type: "String",
+          nullable: false,
+          isPrimaryKey: false,
+          isForeignKey: true,
+        },
+        {
+          name: "componentType",
+          type: "ComponentType",
+          nullable: false,
+          isPrimaryKey: false,
+          isForeignKey: false,
+        },
+        {
+          name: "effectivenessScore",
+          type: "Float",
+          nullable: false,
+          isPrimaryKey: false,
+          isForeignKey: false,
+        },
+        {
+          name: "isActive",
+          type: "Boolean",
+          nullable: false,
+          isPrimaryKey: false,
+          isForeignKey: false,
+        },
+        {
+          name: "implementationDate",
+          type: "DateTime",
+          nullable: false,
+          isPrimaryKey: false,
+          isForeignKey: false,
+        },
       ],
       indexes: ["countryId", "componentType", "isActive"],
       foreignKeys: [
-        { columnName: "countryId", referencedTable: "Country", referencedColumn: "id" }
+        { columnName: "countryId", referencedTable: "Country", referencedColumn: "id" },
       ],
       primaryKey: ["id"],
       lastModified: new Date(Date.now() - 10800000),
-      diskSize: "78 KB"
-    }
+      diskSize: "78 KB",
+    },
   ]);
 
   // Fetch real data from API for query execution
   const { data: countriesData } = api.countries.getAll.useQuery(undefined, {
-    enabled: false // Only fetch when needed
+    enabled: false, // Only fetch when needed
   });
 
   const { refetch: fetchCountries } = api.countries.getAll.useQuery(undefined, {
-    enabled: false
+    enabled: false,
   });
 
   const executeQuery = async () => {
@@ -170,27 +302,36 @@ export function DatabaseExplorer() {
       // Parse the query to determine what data to fetch
       const queryLower = sqlQuery.toLowerCase();
 
-      if (queryLower.includes('select') && queryLower.includes('country')) {
+      if (queryLower.includes("select") && queryLower.includes("country")) {
         // Fetch real country data
         const result = await fetchCountries();
 
-        if (result.data && 'countries' in result.data) {
+        if (result.data && "countries" in result.data) {
           const countries = result.data.countries;
           const queryResult: QueryResult = {
-            columns: ["id", "name", "population", "gdpPerCapita", "economicTier", "diplomaticStanding"],
-            rows: countries.slice(0, 10).map((country: any) => [
-              country.id,
-              country.name,
-              country.currentPopulation,
-              country.currentGdpPerCapita,
-              country.economicTier,
-              country.diplomaticStanding
-            ]),
-            executionTime: Date.now() - startTime
+            columns: [
+              "id",
+              "name",
+              "population",
+              "gdpPerCapita",
+              "economicTier",
+              "diplomaticStanding",
+            ],
+            rows: countries
+              .slice(0, 10)
+              .map((country: any) => [
+                country.id,
+                country.name,
+                country.currentPopulation,
+                country.currentGdpPerCapita,
+                country.economicTier,
+                country.diplomaticStanding,
+              ]),
+            executionTime: Date.now() - startTime,
           };
           setQueryResult(queryResult);
         }
-      } else if (queryLower.includes('select')) {
+      } else if (queryLower.includes("select")) {
         // For other SELECT queries, return schema information
         const queryResult: QueryResult = {
           columns: ["table_name", "column_name", "data_type", "is_nullable"],
@@ -201,9 +342,9 @@ export function DatabaseExplorer() {
             ["Country", "currentGdpPerCapita", "Float", "NO"],
             ["User", "id", "String", "NO"],
             ["User", "clerkUserId", "String", "YES"],
-            ["User", "email", "String", "YES"]
+            ["User", "email", "String", "YES"],
           ],
-          executionTime: Date.now() - startTime
+          executionTime: Date.now() - startTime,
         };
         setQueryResult(queryResult);
       } else {
@@ -213,7 +354,7 @@ export function DatabaseExplorer() {
           rows: [],
           executionTime: Date.now() - startTime,
           affectedRows: 0,
-          message: "Read-only mode: Write operations are disabled in this interface"
+          message: "Read-only mode: Write operations are disabled in this interface",
         };
         setQueryResult(queryResult);
       }
@@ -224,20 +365,26 @@ export function DatabaseExplorer() {
     }
   };
 
-  const filteredTables = tables.filter(table =>
+  const filteredTables = tables.filter((table) =>
     table.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const selectedTableData = selectedTable ? tables.find(t => t.name === selectedTable) : null;
+  const selectedTableData = selectedTable ? tables.find((t) => t.name === selectedTable) : null;
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case "String": return "text-blue-600 dark:text-blue-400";
-      case "Int": return "text-green-600 dark:text-green-400";
-      case "Float": return "text-purple-600 dark:text-purple-400";
-      case "Boolean": return "text-orange-600 dark:text-orange-400";
-      case "DateTime": return "text-red-600 dark:text-red-400";
-      default: return "text-gray-600 dark:text-gray-400";
+      case "String":
+        return "text-blue-600 dark:text-blue-400";
+      case "Int":
+        return "text-green-600 dark:text-green-400";
+      case "Float":
+        return "text-purple-600 dark:text-purple-400";
+      case "Boolean":
+        return "text-orange-600 dark:text-orange-400";
+      case "DateTime":
+        return "text-red-600 dark:text-red-400";
+      default:
+        return "text-gray-600 dark:text-gray-400";
     }
   };
 
@@ -260,7 +407,7 @@ export function DatabaseExplorer() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Tables List */}
         <div className="lg:col-span-1">
           <Card>
@@ -270,7 +417,7 @@ export function DatabaseExplorer() {
                 Database Tables
               </CardTitle>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
                 <Input
                   placeholder="Search tables..."
                   value={searchQuery}
@@ -285,10 +432,10 @@ export function DatabaseExplorer() {
                   <div
                     key={table.name}
                     onClick={() => setSelectedTable(table.name)}
-                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                    className={`cursor-pointer rounded-lg border p-3 transition-colors ${
                       selectedTable === table.name
-                        ? 'bg-primary/10 border-primary'
-                        : 'hover:bg-muted'
+                        ? "bg-primary/10 border-primary"
+                        : "hover:bg-muted"
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -300,7 +447,7 @@ export function DatabaseExplorer() {
                         {table.rowCount.toLocaleString()}
                       </Badge>
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1">
+                    <div className="text-muted-foreground mt-1 text-xs">
                       {table.columns.length} columns • {table.diskSize}
                     </div>
                   </div>
@@ -324,7 +471,7 @@ export function DatabaseExplorer() {
                 <Card>
                   <CardHeader>
                     <CardTitle>{selectedTableData.name} Table Structure</CardTitle>
-                    <div className="flex gap-4 text-sm text-muted-foreground">
+                    <div className="text-muted-foreground flex gap-4 text-sm">
                       <span>{selectedTableData.rowCount.toLocaleString()} rows</span>
                       <span>{selectedTableData.columns.length} columns</span>
                       <span>{selectedTableData.diskSize}</span>
@@ -332,28 +479,37 @@ export function DatabaseExplorer() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <h4 className="font-medium mb-3">Columns</h4>
+                      <h4 className="mb-3 font-medium">Columns</h4>
                       <div className="space-y-2">
                         {selectedTableData.columns.map((column) => (
-                          <div key={column.name} className="flex items-center justify-between p-2 bg-muted rounded">
+                          <div
+                            key={column.name}
+                            className="bg-muted flex items-center justify-between rounded p-2"
+                          >
                             <div className="flex items-center gap-3">
                               <span className="font-mono text-sm font-medium">{column.name}</span>
                               <span className={`text-sm ${getTypeColor(column.type)}`}>
                                 {column.type}
                               </span>
                               {column.isPrimaryKey && (
-                                <Badge variant="outline" className="text-xs">PK</Badge>
+                                <Badge variant="outline" className="text-xs">
+                                  PK
+                                </Badge>
                               )}
                               {column.isForeignKey && (
-                                <Badge variant="outline" className="text-xs">FK</Badge>
+                                <Badge variant="outline" className="text-xs">
+                                  FK
+                                </Badge>
                               )}
                             </div>
                             <div className="flex items-center gap-2">
                               {!column.nullable && (
-                                <Badge variant="secondary" className="text-xs">NOT NULL</Badge>
+                                <Badge variant="secondary" className="text-xs">
+                                  NOT NULL
+                                </Badge>
                               )}
                               {column.defaultValue && (
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-muted-foreground text-xs">
                                   Default: {column.defaultValue}
                                 </span>
                               )}
@@ -365,13 +521,15 @@ export function DatabaseExplorer() {
 
                     {selectedTableData.foreignKeys.length > 0 && (
                       <div>
-                        <h4 className="font-medium mb-3">Foreign Keys</h4>
+                        <h4 className="mb-3 font-medium">Foreign Keys</h4>
                         <div className="space-y-2">
                           {selectedTableData.foreignKeys.map((fk, index) => (
-                            <div key={index} className="p-2 bg-muted rounded text-sm">
+                            <div key={index} className="bg-muted rounded p-2 text-sm">
                               <span className="font-mono">{fk.columnName}</span>
                               <span className="text-muted-foreground"> → </span>
-                              <span className="font-mono">{fk.referencedTable}.{fk.referencedColumn}</span>
+                              <span className="font-mono">
+                                {fk.referencedTable}.{fk.referencedColumn}
+                              </span>
                             </div>
                           ))}
                         </div>
@@ -379,7 +537,7 @@ export function DatabaseExplorer() {
                     )}
 
                     <div>
-                      <h4 className="font-medium mb-3">Indexes</h4>
+                      <h4 className="mb-3 font-medium">Indexes</h4>
                       <div className="flex flex-wrap gap-2">
                         {selectedTableData.indexes.map((index) => (
                           <Badge key={index} variant="outline" className="font-mono">
@@ -392,9 +550,9 @@ export function DatabaseExplorer() {
                 </Card>
               ) : (
                 <Card>
-                  <CardContent className="flex items-center justify-center h-64">
+                  <CardContent className="flex h-64 items-center justify-center">
                     <div className="text-center">
-                      <Table className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
+                      <Table className="text-muted-foreground mx-auto mb-2 h-12 w-12" />
                       <p className="text-muted-foreground">Select a table to view its structure</p>
                     </div>
                   </CardContent>
@@ -406,15 +564,18 @@ export function DatabaseExplorer() {
               <Card>
                 <CardHeader>
                   <CardTitle>Table Data</CardTitle>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Browse and filter table data with pagination
                   </p>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {/* Table selection and controls */}
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Select value={selectedTable || ""} onValueChange={(value) => setSelectedTable(value || null)}>
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <Select
+                        value={selectedTable || ""}
+                        onValueChange={(value) => setSelectedTable(value || null)}
+                      >
                         <SelectTrigger className="flex-1">
                           <SelectValue placeholder="Select a table to browse" />
                         </SelectTrigger>
@@ -426,14 +587,14 @@ export function DatabaseExplorer() {
                           ))}
                         </SelectContent>
                       </Select>
-                      <Input 
+                      <Input
                         placeholder="Filter records..."
                         className="flex-1 sm:max-w-xs"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                       />
                       <Button variant="outline" size="sm">
-                        <Search className="h-4 w-4 mr-2" />
+                        <Search className="mr-2 h-4 w-4" />
                         Search
                       </Button>
                     </div>
@@ -441,13 +602,16 @@ export function DatabaseExplorer() {
                     {selectedTable && selectedTableData && (
                       <div className="glass-card-child rounded-lg border">
                         {/* Table header */}
-                        <div className="p-4 border-b">
+                        <div className="border-b p-4">
                           <div className="flex items-center justify-between">
                             <h4 className="font-semibold">Table: {selectedTable}</h4>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <span>Showing 1-10 of {selectedTableData.rowCount.toLocaleString()} records</span>
+                            <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                              <span>
+                                Showing 1-10 of {selectedTableData.rowCount.toLocaleString()}{" "}
+                                records
+                              </span>
                               <Button variant="ghost" size="sm">
-                                <Download className="h-4 w-4 mr-1" />
+                                <Download className="mr-1 h-4 w-4" />
                                 Export
                               </Button>
                             </div>
@@ -457,37 +621,52 @@ export function DatabaseExplorer() {
                         {/* Table content */}
                         <div className="overflow-x-auto">
                           <table className="w-full">
-                            <thead className="border-b bg-muted/30">
+                            <thead className="bg-muted/30 border-b">
                               <tr>
                                 {selectedTableData.columns.slice(0, 6).map((column) => (
-                                  <th key={column.name} className="text-left p-3 font-medium">
+                                  <th key={column.name} className="p-3 text-left font-medium">
                                     {column.name}
                                     {column.isPrimaryKey && (
-                                      <Badge variant="outline" className="ml-1 text-xs">PK</Badge>
+                                      <Badge variant="outline" className="ml-1 text-xs">
+                                        PK
+                                      </Badge>
                                     )}
                                     {column.isForeignKey && (
-                                      <Badge variant="secondary" className="ml-1 text-xs">FK</Badge>
+                                      <Badge variant="secondary" className="ml-1 text-xs">
+                                        FK
+                                      </Badge>
                                     )}
                                   </th>
                                 ))}
-                                <th className="text-left p-3 font-medium">Actions</th>
+                                <th className="p-3 text-left font-medium">Actions</th>
                               </tr>
                             </thead>
                             <tbody>
-                              {[1,2,3,4,5,6,7,8,9,10].map((i) => (
-                                <tr key={i} className="border-b hover:bg-muted/20">
+                              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => (
+                                <tr key={i} className="hover:bg-muted/20 border-b">
                                   {selectedTableData.columns.slice(0, 6).map((column) => (
                                     <td key={column.name} className="p-3 text-sm">
-                                      {column.name === 'id' ? (
-                                        <span className="font-mono text-xs">{selectedTable}_{i}</span>
-                                      ) : column.type.toLowerCase().includes('boolean') ? (
-                                        <div className={`w-2 h-2 rounded-full ${Math.random() > 0.5 ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                                      ) : column.type.toLowerCase().includes('date') ? (
-                                        <span className="text-muted-foreground">2025-01-{String(i).padStart(2, '0')}</span>
-                                      ) : column.type.toLowerCase().includes('number') || column.type.toLowerCase().includes('int') ? (
-                                        <span className="font-medium">{(Math.random() * 10000).toFixed(0)}</span>
+                                      {column.name === "id" ? (
+                                        <span className="font-mono text-xs">
+                                          {selectedTable}_{i}
+                                        </span>
+                                      ) : column.type.toLowerCase().includes("boolean") ? (
+                                        <div
+                                          className={`h-2 w-2 rounded-full ${Math.random() > 0.5 ? "bg-green-500" : "bg-gray-400"}`}
+                                        ></div>
+                                      ) : column.type.toLowerCase().includes("date") ? (
+                                        <span className="text-muted-foreground">
+                                          2025-01-{String(i).padStart(2, "0")}
+                                        </span>
+                                      ) : column.type.toLowerCase().includes("number") ||
+                                        column.type.toLowerCase().includes("int") ? (
+                                        <span className="font-medium">
+                                          {(Math.random() * 10000).toFixed(0)}
+                                        </span>
                                       ) : (
-                                        <span>Sample {column.name} {i}</span>
+                                        <span>
+                                          Sample {column.name} {i}
+                                        </span>
                                       )}
                                     </td>
                                   ))}
@@ -508,8 +687,8 @@ export function DatabaseExplorer() {
                         </div>
 
                         {/* Pagination */}
-                        <div className="p-4 border-t flex items-center justify-between">
-                          <div className="text-sm text-muted-foreground">
+                        <div className="flex items-center justify-between border-t p-4">
+                          <div className="text-muted-foreground text-sm">
                             Page 1 of {Math.ceil(selectedTableData.rowCount / 10)}
                           </div>
                           <div className="flex gap-2">
@@ -525,8 +704,8 @@ export function DatabaseExplorer() {
                     )}
 
                     {!selectedTable && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Database className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <div className="text-muted-foreground py-8 text-center">
+                        <Database className="mx-auto mb-3 h-12 w-12 opacity-50" />
                         <p>Select a table above to browse its data</p>
                       </div>
                     )}
@@ -539,7 +718,7 @@ export function DatabaseExplorer() {
               <Card>
                 <CardHeader>
                   <CardTitle>SQL Query Console</CardTitle>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Execute custom SQL queries (SELECT only for security)
                   </p>
                 </CardHeader>
@@ -548,16 +727,16 @@ export function DatabaseExplorer() {
                     <textarea
                       value={sqlQuery}
                       onChange={(e) => setSqlQuery(e.target.value)}
-                      className="w-full h-32 p-3 border rounded-md font-mono text-sm resize-none"
+                      className="h-32 w-full resize-none rounded-md border p-3 font-mono text-sm"
                       placeholder="Enter your SQL query..."
                     />
                   </div>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center justify-between">
+                    <div className="text-muted-foreground flex items-center gap-2 text-sm">
                       <AlertTriangle className="h-4 w-4" />
                       Only SELECT queries are allowed for security
                     </div>
-                    <Button 
+                    <Button
                       onClick={executeQuery}
                       disabled={isExecuting || !sqlQuery.trim()}
                       className="flex items-center gap-2"
@@ -583,7 +762,7 @@ export function DatabaseExplorer() {
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <CardTitle>Query Results</CardTitle>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <div className="text-muted-foreground flex items-center gap-4 text-sm">
                             <span>Execution time: {queryResult.executionTime.toFixed(2)}ms</span>
                             {queryResult.affectedRows !== undefined && (
                               <span>{queryResult.affectedRows} rows affected</span>
@@ -594,11 +773,14 @@ export function DatabaseExplorer() {
                       <CardContent>
                         {queryResult.rows.length > 0 ? (
                           <div className="overflow-x-auto">
-                            <table className="w-full border-collapse border border-border">
+                            <table className="border-border w-full border-collapse border">
                               <thead>
                                 <tr className="bg-muted">
                                   {queryResult.columns.map((column) => (
-                                    <th key={column} className="border border-border px-3 py-2 text-left font-medium">
+                                    <th
+                                      key={column}
+                                      className="border-border border px-3 py-2 text-left font-medium"
+                                    >
                                       {column}
                                     </th>
                                   ))}
@@ -608,7 +790,10 @@ export function DatabaseExplorer() {
                                 {queryResult.rows.map((row, index) => (
                                   <tr key={index} className="hover:bg-muted/50">
                                     {row.map((cell, cellIndex) => (
-                                      <td key={cellIndex} className="border border-border px-3 py-2 font-mono text-sm">
+                                      <td
+                                        key={cellIndex}
+                                        className="border-border border px-3 py-2 font-mono text-sm"
+                                      >
                                         {cell?.toString() || "NULL"}
                                       </td>
                                     ))}
@@ -618,9 +803,10 @@ export function DatabaseExplorer() {
                             </table>
                           </div>
                         ) : (
-                          <div className="text-center py-4 text-muted-foreground">
+                          <div className="text-muted-foreground py-4 text-center">
                             Query executed successfully
-                            {queryResult.affectedRows !== undefined && ` - ${queryResult.affectedRows} rows affected`}
+                            {queryResult.affectedRows !== undefined &&
+                              ` - ${queryResult.affectedRows} rows affected`}
                           </div>
                         )}
                       </CardContent>

@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, type FC } from 'react';
-import { motion } from 'framer-motion';
-import { Heart, Smile, Angry, ThumbsUp, ThumbsDown, Flame, Plus, Sparkles } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { api } from '~/trpc/react';
+import React, { useState, type FC } from "react";
+import { motion } from "framer-motion";
+import { Heart, Smile, Angry, ThumbsUp, ThumbsDown, Flame, Plus, Sparkles } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { api } from "~/trpc/react";
 
 const REACTION_ICONS: { [key: string]: FC<{ className?: string }> } = {
   like: Heart,
@@ -17,9 +17,21 @@ const REACTION_ICONS: { [key: string]: FC<{ className?: string }> } = {
 
 // Common Discord emoji reactions including ixnay
 const DISCORD_EMOJI_REACTIONS = [
-  { name: 'ixnay', url: 'https://cdn.discordapp.com/emojis/559232409451888640.png', id: '559232409451888640' },
-  { name: 'heky_boi', url: 'https://cdn.discordapp.com/emojis/580813300733157376.png', id: '580813300733157376' },
-  { name: 'pog', url: 'https://cdn.discordapp.com/emojis/739969522139209748.png', id: '739969522139209748' },
+  {
+    name: "ixnay",
+    url: "https://cdn.discordapp.com/emojis/559232409451888640.png",
+    id: "559232409451888640",
+  },
+  {
+    name: "heky_boi",
+    url: "https://cdn.discordapp.com/emojis/580813300733157376.png",
+    id: "580813300733157376",
+  },
+  {
+    name: "pog",
+    url: "https://cdn.discordapp.com/emojis/739969522139209748.png",
+    id: "739969522139209748",
+  },
 ];
 
 interface DiscordEmoji {
@@ -34,23 +46,33 @@ interface ReactionPopupProps {
 }
 
 export function ReactionPopup({ onSelectReaction, postReactionCounts }: ReactionPopupProps) {
-  console.log('🎭 ReactionPopup component rendered:', { onSelectReaction: !!onSelectReaction, postReactionCounts });
-  
-  const [showMoreEmojis, setShowMoreEmojis] = useState(false);
-  const [activeTab, setActiveTab] = useState<'reactions' | 'discord'>('reactions');
-  const [discordError, setDiscordError] = useState<string | null>(null);
-  
-  // Always load Discord emojis since they're prominently featured
-  const { data: discordEmojis, isLoading, error } = api.thinkpages.getDiscordEmojis.useQuery({}, {
-    retry: 1,
-    retryDelay: 1000
+  console.log("🎭 ReactionPopup component rendered:", {
+    onSelectReaction: !!onSelectReaction,
+    postReactionCounts,
   });
+
+  const [showMoreEmojis, setShowMoreEmojis] = useState(false);
+  const [activeTab, setActiveTab] = useState<"reactions" | "discord">("reactions");
+  const [discordError, setDiscordError] = useState<string | null>(null);
+
+  // Always load Discord emojis since they're prominently featured
+  const {
+    data: discordEmojis,
+    isLoading,
+    error,
+  } = api.thinkpages.getDiscordEmojis.useQuery(
+    {},
+    {
+      retry: 1,
+      retryDelay: 1000,
+    }
+  );
 
   // Handle error state
   React.useEffect(() => {
     if (error) {
-      console.warn('Discord emojis failed to load:', error);
-      setDiscordError('Discord emojis unavailable');
+      console.warn("Discord emojis failed to load:", error);
+      setDiscordError("Discord emojis unavailable");
     }
   }, [error]);
 
@@ -61,20 +83,24 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
       initial={{ opacity: 0, y: 10, scale: 0.9 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 10, scale: 0.9 }}
-      className="p-2 bg-background border border-border rounded-lg shadow-lg min-w-[280px]"
+      className="bg-background border-border min-w-[280px] rounded-lg border p-2 shadow-lg"
     >
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'reactions' | 'discord')} className="w-full">
-        <TabsList className="w-full grid grid-cols-2 mb-2 bg-muted">
-          <TabsTrigger value="reactions" className="text-xs flex items-center gap-1">
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as "reactions" | "discord")}
+        className="w-full"
+      >
+        <TabsList className="bg-muted mb-2 grid w-full grid-cols-2">
+          <TabsTrigger value="reactions" className="flex items-center gap-1 text-xs">
             <Heart className="h-3 w-3" />
             <span>Built-in</span>
           </TabsTrigger>
-          <TabsTrigger value="discord" className="text-xs flex items-center gap-1">
+          <TabsTrigger value="discord" className="flex items-center gap-1 text-xs">
             <Sparkles className="h-3 w-3" />
             <span>Discord</span>
           </TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="reactions" className="mt-2">
           <div className="flex gap-1">
             {availableReactions.map((type) => {
@@ -84,7 +110,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
                 <button
                   key={type}
                   onClick={() => onSelectReaction(type)}
-                  className="p-2 rounded-full hover:bg-accent transition-colors"
+                  className="hover:bg-accent rounded-full p-2 transition-colors"
                   title={type}
                 >
                   <Icon className="h-5 w-5" />
@@ -93,7 +119,7 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
             })}
           </div>
         </TabsContent>
-        
+
         <TabsContent value="discord" className="mt-2">
           <div className="flex flex-wrap gap-1">
             {/* Featured Discord Emojis (including ixnay) */}
@@ -101,62 +127,66 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
               <button
                 key={emoji.id}
                 onClick={() => onSelectReaction(`discord:${emoji.name}`)}
-                className="p-1 rounded hover:bg-accent transition-colors"
+                className="hover:bg-accent rounded p-1 transition-colors"
                 title={`:${emoji.name}:`}
               >
-                <img 
-                  src={emoji.url} 
-                  alt={`:${emoji.name}:`}
-                  className="h-5 w-5"
-                />
+                <img src={emoji.url} alt={`:${emoji.name}:`} className="h-5 w-5" />
               </button>
             ))}
-            
+
             {/* All Discord Emojis */}
             {isLoading ? (
               <div className="flex items-center justify-center p-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                <span className="ml-2 text-xs text-muted-foreground">Loading...</span>
+                <div className="border-primary h-4 w-4 animate-spin rounded-full border-b-2"></div>
+                <span className="text-muted-foreground ml-2 text-xs">Loading...</span>
               </div>
             ) : error || discordError ? (
-              <div className="text-xs text-muted-foreground p-2 text-center">
-                <div className="mb-1">{discordError || 'Discord emojis unavailable'}</div>
+              <div className="text-muted-foreground p-2 text-center text-xs">
+                <div className="mb-1">{discordError || "Discord emojis unavailable"}</div>
                 <div className="text-xs opacity-75">Using built-in reactions</div>
               </div>
             ) : discordEmojis?.emojis ? (
               <>
-                {discordEmojis.emojis.slice(0, showMoreEmojis ? discordEmojis.emojis.length : 16).map((emoji: DiscordEmoji) => (
-                  <button
-                    key={emoji.id}
-                    onClick={() => onSelectReaction(`discord:${emoji.name}`)}
-                    className="p-1 rounded hover:bg-accent transition-colors"
-                    title={`:${emoji.name}:`}
-                  >
-                    <img 
-                      src={emoji.url} 
-                      alt={`:${emoji.name}:`}
-                      className="h-5 w-5"
-                      onError={(e) => {
-                        console.warn('Discord emoji failed to load:', emoji.name);
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  </button>
-                ))}
-                
+                {discordEmojis.emojis
+                  .slice(0, showMoreEmojis ? discordEmojis.emojis.length : 16)
+                  .map((emoji: DiscordEmoji) => (
+                    <button
+                      key={emoji.id}
+                      onClick={() => onSelectReaction(`discord:${emoji.name}`)}
+                      className="hover:bg-accent rounded p-1 transition-colors"
+                      title={`:${emoji.name}:`}
+                    >
+                      <img
+                        src={emoji.url}
+                        alt={`:${emoji.name}:`}
+                        className="h-5 w-5"
+                        onError={(e) => {
+                          console.warn("Discord emoji failed to load:", emoji.name);
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    </button>
+                  ))}
+
                 {/* Show More/Less Button */}
                 {discordEmojis.emojis.length > 16 && (
                   <button
                     onClick={() => setShowMoreEmojis(!showMoreEmojis)}
-                    className="p-1 rounded hover:bg-accent transition-colors border border-dashed border-muted-foreground/30"
-                    title={showMoreEmojis ? "Show less" : `Show all ${discordEmojis.emojis.length} emojis`}
+                    className="hover:bg-accent border-muted-foreground/30 rounded border border-dashed p-1 transition-colors"
+                    title={
+                      showMoreEmojis
+                        ? "Show less"
+                        : `Show all ${discordEmojis.emojis.length} emojis`
+                    }
                   >
-                    <Plus className={`h-5 w-5 transition-transform ${showMoreEmojis ? 'rotate-45' : ''}`} />
+                    <Plus
+                      className={`h-5 w-5 transition-transform ${showMoreEmojis ? "rotate-45" : ""}`}
+                    />
                   </button>
                 )}
               </>
             ) : (
-              <div className="text-xs text-muted-foreground p-2">No Discord emojis available</div>
+              <div className="text-muted-foreground p-2 text-xs">No Discord emojis available</div>
             )}
           </div>
         </TabsContent>
@@ -164,20 +194,22 @@ export function ReactionPopup({ onSelectReaction, postReactionCounts }: Reaction
 
       {/* Current Reaction Counts */}
       {postReactionCounts && Object.keys(postReactionCounts).length > 0 && (
-        <div className="border-t border-border pt-2 mt-2">
-          <div className="text-xs text-muted-foreground mb-1">Current reactions:</div>
+        <div className="border-border mt-2 border-t pt-2">
+          <div className="text-muted-foreground mb-1 text-xs">Current reactions:</div>
           <div className="flex flex-wrap gap-1 text-xs">
             {Object.entries(postReactionCounts).map(([type, count]) => {
               if ((count as number) === 0) return null;
-              
+
               const Icon = REACTION_ICONS[type];
-              const isDiscordEmoji = type.startsWith('discord:');
-              
+              const isDiscordEmoji = type.startsWith("discord:");
+
               return (
-                <div key={type} className="flex items-center gap-1 bg-muted px-2 py-1 rounded">
+                <div key={type} className="bg-muted flex items-center gap-1 rounded px-2 py-1">
                   {isDiscordEmoji ? (
-                    <img 
-                      src={DISCORD_EMOJI_REACTIONS.find(e => type === `discord:${e.name}`)?.url || ''} 
+                    <img
+                      src={
+                        DISCORD_EMOJI_REACTIONS.find((e) => type === `discord:${e.name}`)?.url || ""
+                      }
                       alt={type}
                       className="h-3 w-3"
                     />

@@ -44,8 +44,8 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
 
     // If no auth from request, try to get it from authorization header (for API routes)
     if (!auth?.userId) {
-      const authHeader = opts.headers.get('authorization');
-      if (authHeader?.startsWith('Bearer ')) {
+      const authHeader = opts.headers.get("authorization");
+      if (authHeader?.startsWith("Bearer ")) {
         const token = authHeader.substring(7);
         try {
           const verifiedToken = await verifyToken(token, {
@@ -55,33 +55,35 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
             auth = { userId: verifiedToken.sub };
           }
         } catch (tokenError) {
-          console.error('[TRPC Context] Token verification failed:', tokenError);
+          console.error("[TRPC Context] Token verification failed:", tokenError);
           // Reject invalid tokens explicitly instead of silent continuation
-          throw new Error('UNAUTHORIZED: Invalid or expired authentication token');
+          throw new Error("UNAUTHORIZED: Invalid or expired authentication token");
         }
       }
     }
 
     // Get user from database if we have a userId
-      if (auth?.userId) {
-        try {
-          // ALWAYS use centralized user management service to ensure correct role
-          console.log(`[TRPC Context] Using centralized service for user: ${auth.userId}`);
-          const userService = new UserManagementService(db);
-          user = await userService.getOrCreateUser(auth.userId);
+    if (auth?.userId) {
+      try {
+        // ALWAYS use centralized user management service to ensure correct role
+        console.log(`[TRPC Context] Using centralized service for user: ${auth.userId}`);
+        const userService = new UserManagementService(db);
+        user = await userService.getOrCreateUser(auth.userId);
 
-          if (user) {
-            console.log(`[TRPC Context] User loaded: ${auth.userId}, role: ${(user as any).role?.name || 'NO_ROLE'}, roleId: ${(user as any).roleId || 'NULL'}, roleLevel: ${(user as any).role?.level ?? 'NULL'}`);
-          } else {
-            console.error(`[TRPC Context] Failed to get/create user: ${auth.userId}`);
-          }
-        } catch (dbError) {
-          console.error('[TRPC Context] Database user lookup failed:', dbError);
-          // Continue without user rather than failing - auth is still valid
+        if (user) {
+          console.log(
+            `[TRPC Context] User loaded: ${auth.userId}, role: ${(user as any).role?.name || "NO_ROLE"}, roleId: ${(user as any).roleId || "NULL"}, roleLevel: ${(user as any).role?.level ?? "NULL"}`
+          );
+        } else {
+          console.error(`[TRPC Context] Failed to get/create user: ${auth.userId}`);
         }
+      } catch (dbError) {
+        console.error("[TRPC Context] Database user lookup failed:", dbError);
+        // Continue without user rather than failing - auth is still valid
       }
+    }
   } catch (error) {
-    console.warn('[TRPC Context] Auth extraction failed:', error);
+    console.warn("[TRPC Context] Auth extraction failed:", error);
     // Continue without auth rather than failing
   }
 
@@ -108,36 +110,33 @@ const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
   errorFormatter({ shape, error, path, ctx }) {
     // Log all tRPC errors in production (except validation errors)
-    if (process.env.NODE_ENV === 'production' && error.code !== 'BAD_REQUEST') {
+    if (process.env.NODE_ENV === "production" && error.code !== "BAD_REQUEST") {
       // Import ErrorLogger dynamically to avoid circular dependencies
-      import('~/lib/error-logger').then(({ ErrorLogger }) => {
-        ErrorLogger.logAPIError(
-          path || 'unknown',
-          error as Error,
-          {
+      import("~/lib/error-logger")
+        .then(({ ErrorLogger }) => {
+          ErrorLogger.logAPIError(path || "unknown", error as Error, {
             userId: ctx?.auth?.userId ?? undefined,
             countryId: ctx?.user?.countryId ?? undefined,
-            path: path || 'unknown',
-            action: 'TRPC_ERROR',
+            path: path || "unknown",
+            action: "TRPC_ERROR",
             metadata: {
               code: error.code,
               httpStatus: shape.data.httpStatus,
-            }
-          }
-        ).catch(logError => {
-          console.error('[TRPC] Failed to log error:', logError);
+            },
+          }).catch((logError) => {
+            console.error("[TRPC] Failed to log error:", logError);
+          });
+        })
+        .catch(() => {
+          // Silent fail if ErrorLogger import fails
         });
-      }).catch(() => {
-        // Silent fail if ErrorLogger import fails
-      });
     }
 
     return {
       ...shape,
       data: {
         ...shape.data,
-        zodError:
-          error.cause instanceof ZodError ? error.cause.flatten() : null,
+        zodError: error.cause instanceof ZodError ? error.cause.flatten() : null,
       },
     };
   },
@@ -201,12 +200,12 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 const authMiddleware = t.middleware(async ({ ctx, next }) => {
   // Check if user is authenticated via Clerk
   if (!ctx.auth?.userId) {
-    throw new Error('UNAUTHORIZED: Authentication required');
+    throw new Error("UNAUTHORIZED: Authentication required");
   }
 
   // Ensure user exists in our database
   if (!ctx.user) {
-    throw new Error('UNAUTHORIZED: User not found in system');
+    throw new Error("UNAUTHORIZED: User not found in system");
   }
 
   return next({
@@ -214,7 +213,7 @@ const authMiddleware = t.middleware(async ({ ctx, next }) => {
       ...ctx,
       auth: ctx.auth,
       user: ctx.user,
-    }
+    },
   });
 });
 
@@ -224,7 +223,7 @@ const authMiddleware = t.middleware(async ({ ctx, next }) => {
 const countryOwnerMiddleware = t.middleware(async ({ ctx, next }) => {
   // First ensure user is authenticated
   if (!ctx.auth?.userId || !ctx.user) {
-    throw new Error('UNAUTHORIZED: Authentication required');
+    throw new Error("UNAUTHORIZED: Authentication required");
   }
 
   // System owners can access any country, bypass country ownership check
@@ -235,18 +234,18 @@ const countryOwnerMiddleware = t.middleware(async ({ ctx, next }) => {
         auth: ctx.auth,
         user: ctx.user,
         country: null, // System owners bypass country check
-      }
+      },
     });
   }
 
   // Check if user has a linked country
   if (!ctx.user.countryId) {
-    throw new Error('FORBIDDEN: Country ownership required');
+    throw new Error("FORBIDDEN: Country ownership required");
   }
 
   // Fetch country data since it's not included in UserWithRole type
   const country = await ctx.db.country.findUnique({
-    where: { id: ctx.user.countryId }
+    where: { id: ctx.user.countryId },
   });
 
   return next({
@@ -255,7 +254,7 @@ const countryOwnerMiddleware = t.middleware(async ({ ctx, next }) => {
       auth: ctx.auth,
       user: ctx.user,
       country,
-    }
+    },
   });
 });
 
@@ -279,7 +278,7 @@ const createRateLimitMiddleware = (options: RateLimitOptions) => {
 
     // Use rate limit identifier from context (set by middleware)
     const identifier = ctx.rateLimitIdentifier;
-    const namespace = options.namespace || 'default';
+    const namespace = options.namespace || "default";
 
     // Create custom rate limiter for this specific configuration
     const now = Date.now();
@@ -289,7 +288,9 @@ const createRateLimitMiddleware = (options: RateLimitOptions) => {
     const result = await rateLimiter.check(identifier, namespace);
 
     if (!result.success) {
-      console.warn(`[RATE_LIMIT] ${identifier} exceeded ${options.max} requests per ${options.windowMs}ms limit for ${path} (namespace: ${namespace})`);
+      console.warn(
+        `[RATE_LIMIT] ${identifier} exceeded ${options.max} requests per ${options.windowMs}ms limit for ${path} (namespace: ${namespace})`
+      );
       throw new Error(
         `RATE_LIMITED: Too many requests. Maximum ${options.max} requests per ${options.windowMs / 1000} seconds. Try again at ${result.resetAt.toISOString()}`
       );
@@ -314,7 +315,7 @@ const createRateLimitMiddleware = (options: RateLimitOptions) => {
 const rateLimitMiddleware = createRateLimitMiddleware({
   max: 100,
   windowMs: 60000,
-  namespace: 'default'
+  namespace: "default",
 });
 
 /**
@@ -324,7 +325,7 @@ const auditLogMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
   const startTime = Date.now();
   let result;
   let error = null;
-  
+
   try {
     result = await next();
   } catch (err) {
@@ -332,43 +333,46 @@ const auditLogMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
     throw err; // Re-throw to maintain error handling
   } finally {
     const endTime = Date.now();
-    
+
     // Determine if this operation should be audited
-    const shouldAudit = 
-      path.includes('execute') || 
-      path.includes('Action') || 
-      path.includes('executive') ||
-      path.includes('Intelligence') ||
-      path.includes('sensitive') ||
+    const shouldAudit =
+      path.includes("execute") ||
+      path.includes("Action") ||
+      path.includes("executive") ||
+      path.includes("Intelligence") ||
+      path.includes("sensitive") ||
       error; // Always audit errors
-    
+
     if (shouldAudit) {
       const auditEntry = {
         timestamp: new Date().toISOString(),
-        userId: ctx.auth?.userId || 'anonymous',
+        userId: ctx.auth?.userId || "anonymous",
         action: path,
-        method: 'tRPC',
+        method: "tRPC",
         success: !error,
         duration: endTime - startTime,
         errorMessage: error?.message || null,
         countryId: (input as any)?.countryId || ctx.user?.countryId || null,
-        userAgent: ctx.headers?.get('user-agent')?.slice(0, 200) || null,
-        ip: ctx.headers?.get('x-forwarded-for') || ctx.headers?.get('x-real-ip') || null,
-        inputSummary: input ? Object.keys(input as object).join(',') : null,
+        userAgent: ctx.headers?.get("user-agent")?.slice(0, 200) || null,
+        ip: ctx.headers?.get("x-forwarded-for") || ctx.headers?.get("x-real-ip") || null,
+        inputSummary: input ? Object.keys(input as object).join(",") : null,
         // Security classification
-        securityLevel: path.includes('execute') ? 'HIGH' : 
-                      path.includes('Intelligence') ? 'MEDIUM' : 'LOW',
+        securityLevel: path.includes("execute")
+          ? "HIGH"
+          : path.includes("Intelligence")
+            ? "MEDIUM"
+            : "LOW",
       };
-      
+
       // Log based on security level
-      if (auditEntry.securityLevel === 'HIGH' || error) {
-        console.error('[SECURITY_AUDIT]', auditEntry);
+      if (auditEntry.securityLevel === "HIGH" || error) {
+        console.error("[SECURITY_AUDIT]", auditEntry);
 
         // Persist high-security events to database
         try {
           await ctx.db.auditLog.create({
             data: {
-              userId: auditEntry.userId || 'anonymous',
+              userId: auditEntry.userId || "anonymous",
               action: auditEntry.action,
               details: JSON.stringify({
                 method: auditEntry.method,
@@ -376,24 +380,24 @@ const auditLogMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
                 securityLevel: auditEntry.securityLevel,
                 ip: auditEntry.ip,
                 userAgent: auditEntry.userAgent,
-                inputSummary: auditEntry.inputSummary
+                inputSummary: auditEntry.inputSummary,
               }),
               success: auditEntry.success,
               error: auditEntry.errorMessage,
-              timestamp: new Date()
-            }
+              timestamp: new Date(),
+            },
           });
         } catch (dbError) {
           // Don't fail the request if audit logging fails
-          console.error('[AUDIT_DB] Failed to persist audit log:', dbError);
+          console.error("[AUDIT_DB] Failed to persist audit log:", dbError);
         }
-      } else if (process.env.NODE_ENV === 'development') {
+      } else if (process.env.NODE_ENV === "development") {
         // Development: Log all actions to console for debugging
-        console.log('[AUDIT]', auditEntry);
+        console.log("[AUDIT]", auditEntry);
       }
     }
   }
-  
+
   return result;
 });
 
@@ -403,16 +407,18 @@ const auditLogMiddleware = t.middleware(async ({ ctx, next, path, input }) => {
 const premiumMiddleware = t.middleware(async ({ ctx, next }) => {
   // First ensure user is authenticated
   if (!ctx.auth?.userId || !ctx.user) {
-    throw new Error('UNAUTHORIZED: Authentication required');
+    throw new Error("UNAUTHORIZED: Authentication required");
   }
 
   // Check membership tier
-  const membershipTier = (ctx.user as any).membershipTier || 'basic';
-  const isPremium = membershipTier === 'mycountry_premium';
+  const membershipTier = (ctx.user as any).membershipTier || "basic";
+  const isPremium = membershipTier === "mycountry_premium";
 
   if (!isPremium) {
-    console.warn(`[PREMIUM_ACCESS_DENIED] User ${ctx.auth.userId} (tier: ${membershipTier}) attempted premium content access`);
-    throw new Error('FORBIDDEN: MyCountry Premium membership required');
+    console.warn(
+      `[PREMIUM_ACCESS_DENIED] User ${ctx.auth.userId} (tier: ${membershipTier}) attempted premium content access`
+    );
+    throw new Error("FORBIDDEN: MyCountry Premium membership required");
   }
 
   console.log(`[PREMIUM_ACCESS] Premium user ${ctx.auth.userId} accessing premium content`);
@@ -423,7 +429,7 @@ const premiumMiddleware = t.middleware(async ({ ctx, next }) => {
       auth: ctx.auth,
       user: ctx.user,
       isPremium: true,
-    }
+    },
   });
 });
 
@@ -433,7 +439,7 @@ const premiumMiddleware = t.middleware(async ({ ctx, next }) => {
 const adminMiddleware = t.middleware(async ({ ctx, next }) => {
   // First ensure user is authenticated
   if (!ctx.auth?.userId) {
-    throw new Error('UNAUTHORIZED: Authentication required');
+    throw new Error("UNAUTHORIZED: Authentication required");
   }
 
   // If user wasn't loaded in context, try to load it here
@@ -449,48 +455,59 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
             include: {
               rolePermissions: {
                 include: {
-                  permission: true
-                }
-              }
-            }
-          }
-        }
+                  permission: true,
+                },
+              },
+            },
+          },
+        },
       });
     } catch (error) {
       console.error(`[ADMIN_MIDDLEWARE] Failed to load user:`, error);
-      throw new Error('UNAUTHORIZED: Failed to load user');
+      throw new Error("UNAUTHORIZED: Failed to load user");
     }
   }
 
   if (!user) {
     console.error(`[ADMIN_MIDDLEWARE] User ${ctx.auth.userId} not found in database`);
-    throw new Error('UNAUTHORIZED: User not found');
+    throw new Error("UNAUTHORIZED: User not found");
   }
 
   // SECURITY: Check if user has admin role - NEVER auto-assign roles in middleware
   // Role assignment must ONLY happen through UserManagementService to prevent privilege escalation
   if (!(user as any).role) {
-    console.error(`[ADMIN_MIDDLEWARE] User ${ctx.auth.userId} has no role assigned (roleId: ${(user as any).roleId})`);
-    throw new Error('FORBIDDEN: User has no assigned role. Contact system administrator for role assignment.');
+    console.error(
+      `[ADMIN_MIDDLEWARE] User ${ctx.auth.userId} has no role assigned (roleId: ${(user as any).roleId})`
+    );
+    throw new Error(
+      "FORBIDDEN: User has no assigned role. Contact system administrator for role assignment."
+    );
   }
 
   // Use centralized system owner constants
   const isSystemOwnerUser = isSystemOwner(ctx.auth.userId);
 
   // Check for admin roles (level 0-20 are considered admin levels)
-  const adminRoles = ['owner', 'admin', 'staff'];
+  const adminRoles = ["owner", "admin", "staff"];
   const roleLevel = (user as any).role?.level ?? 999;
-  const isAdmin = isSystemOwnerUser || adminRoles.includes((user as any).role?.name) || roleLevel <= 20;
+  const isAdmin =
+    isSystemOwnerUser || adminRoles.includes((user as any).role?.name) || roleLevel <= 20;
 
   if (!isAdmin) {
-    console.warn(`[ADMIN_ACCESS_DENIED] User ${ctx.auth.userId} (role: ${(user as any).role?.name || 'NO_ROLE'}, level: ${roleLevel}) attempted admin access`);
-    throw new Error('FORBIDDEN: Admin privileges required');
+    console.warn(
+      `[ADMIN_ACCESS_DENIED] User ${ctx.auth.userId} (role: ${(user as any).role?.name || "NO_ROLE"}, level: ${roleLevel}) attempted admin access`
+    );
+    throw new Error("FORBIDDEN: Admin privileges required");
   }
 
   if (isSystemOwnerUser) {
-    console.log(`[ADMIN_ACCESS] System owner ${ctx.auth.userId} accessing admin functions (hardcoded override)`);
+    console.log(
+      `[ADMIN_ACCESS] System owner ${ctx.auth.userId} accessing admin functions (hardcoded override)`
+    );
   } else {
-    console.log(`[ADMIN_ACCESS] Admin ${ctx.auth.userId} (role: ${(user as any).role?.name || 'NO_ROLE'}, level: ${roleLevel}) accessing admin functions`);
+    console.log(
+      `[ADMIN_ACCESS] Admin ${ctx.auth.userId} (role: ${(user as any).role?.name || "NO_ROLE"}, level: ${roleLevel}) accessing admin functions`
+    );
   }
 
   return next({
@@ -499,7 +516,7 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
       auth: ctx.auth,
       user: user,
       isAdmin: true,
-    }
+    },
   });
 });
 
@@ -508,16 +525,18 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
  */
 const dataPrivacyMiddleware = t.middleware(async ({ ctx, next, path }) => {
   const result = await next();
-  
+
   // For intelligence feeds and executive data, ensure sensitive info is filtered
-  if (path.includes('Intelligence') || path.includes('executive')) {
+  if (path.includes("Intelligence") || path.includes("executive")) {
     // Log data access for privacy compliance
-    console.log(`[DATA_PRIVACY] User ${ctx.auth?.userId} accessed ${path} at ${new Date().toISOString()}`);
-    
+    console.log(
+      `[DATA_PRIVACY] User ${ctx.auth?.userId} accessed ${path} at ${new Date().toISOString()}`
+    );
+
     // Data sanitization based on user permissions handled by individual routers
     // Each router implements appropriate data filtering for public vs authenticated access
   }
-  
+
   return result;
 });
 
@@ -526,10 +545,10 @@ const dataPrivacyMiddleware = t.middleware(async ({ ctx, next, path }) => {
  */
 const inputValidationMiddleware = t.middleware(async ({ ctx, next, input, path }) => {
   // Enhanced validation for sensitive endpoints
-  if (path.includes('execute') || path.includes('Action')) {
+  if (path.includes("execute") || path.includes("Action")) {
     // Validate input doesn't contain potential security risks
     const inputStr = JSON.stringify(input);
-    
+
     // Check for potential injection attempts
     const suspiciousPatterns = [
       /<script/i, // XSS
@@ -539,20 +558,22 @@ const inputValidationMiddleware = t.middleware(async ({ ctx, next, input, path }
       /drop\s+table/i, // SQL injection
       /exec\s*\(/i, // Code execution
     ];
-    
+
     for (const pattern of suspiciousPatterns) {
       if (pattern.test(inputStr)) {
-        console.error(`[SECURITY] Suspicious input detected from user ${ctx.auth?.userId}: ${pattern}`);
-        throw new Error('SECURITY_VIOLATION: Invalid input detected');
+        console.error(
+          `[SECURITY] Suspicious input detected from user ${ctx.auth?.userId}: ${pattern}`
+        );
+        throw new Error("SECURITY_VIOLATION: Invalid input detected");
       }
     }
-    
+
     // Check input size limits
     if (inputStr.length > 10000) {
-      throw new Error('VALIDATION_ERROR: Input too large');
+      throw new Error("VALIDATION_ERROR: Input too large");
     }
   }
-  
+
   return next();
 });
 
@@ -560,36 +581,41 @@ const inputValidationMiddleware = t.middleware(async ({ ctx, next, input, path }
 const heavyMutationRateLimit = createRateLimitMiddleware({
   max: 10,
   windowMs: 60000,
-  namespace: 'heavy_mutations'
+  namespace: "heavy_mutations",
 });
 
 const standardMutationRateLimit = createRateLimitMiddleware({
   max: 60,
   windowMs: 60000,
-  namespace: 'mutations'
+  namespace: "mutations",
 });
 
 const lightMutationRateLimit = createRateLimitMiddleware({
   max: 100,
   windowMs: 60000,
-  namespace: 'light_mutations'
+  namespace: "light_mutations",
 });
 
 const readOnlyRateLimit = createRateLimitMiddleware({
   max: 120,
   windowMs: 60000,
-  namespace: 'queries'
+  namespace: "queries",
 });
 
 const publicRateLimit = createRateLimitMiddleware({
   max: 30,
   windowMs: 60000,
-  namespace: 'public'
+  namespace: "public",
 });
 
 // Export all procedure types with appropriate security layers
-export const publicProcedure = t.procedure.use(timingMiddleware).use(userLoggingMiddleware.standard);
-export const protectedProcedure = t.procedure.use(timingMiddleware).use(authMiddleware).use(userLoggingMiddleware.standard);
+export const publicProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(userLoggingMiddleware.standard);
+export const protectedProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(authMiddleware)
+  .use(userLoggingMiddleware.standard);
 export const premiumProcedure = t.procedure
   .use(timingMiddleware)
   .use(authMiddleware)
@@ -668,19 +694,14 @@ export const standardMutationPremiumProcedure = premiumProcedure
   .use(inputValidationMiddleware);
 
 // Light mutation procedures (100 req/min) - for lightweight mutations
-export const lightMutationProcedure = protectedProcedure
-  .use(lightMutationRateLimit);
+export const lightMutationProcedure = protectedProcedure.use(lightMutationRateLimit);
 
-export const lightMutationCountryOwnerProcedure = countryOwnerProcedure
-  .use(lightMutationRateLimit);
+export const lightMutationCountryOwnerProcedure = countryOwnerProcedure.use(lightMutationRateLimit);
 
 // Read-only procedures (120 req/min) - for read-heavy operations
-export const readOnlyProcedure = protectedProcedure
-  .use(readOnlyRateLimit);
+export const readOnlyProcedure = protectedProcedure.use(readOnlyRateLimit);
 
-export const readOnlyPublicProcedure = publicProcedure
-  .use(readOnlyRateLimit);
+export const readOnlyPublicProcedure = publicProcedure.use(readOnlyRateLimit);
 
 // Public rate-limited procedures (30 req/min)
-export const rateLimitedPublicProcedure = publicProcedure
-  .use(publicRateLimit);
+export const rateLimitedPublicProcedure = publicProcedure.use(publicRateLimit);

@@ -13,23 +13,29 @@
  * generateSlug("São Tomé and Príncipe") // "sao-tome-and-principe"
  */
 export function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    // Replace accented characters with ASCII equivalents
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    // Replace spaces and special characters with hyphens
-    .replace(/[^a-z0-9]+/g, '-')
-    // Remove leading/trailing hyphens
-    .replace(/^-+|-+$/g, '');
+  return (
+    name
+      .toLowerCase()
+      .trim()
+      // Replace accented characters with ASCII equivalents
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      // Replace spaces and special characters with hyphens
+      .replace(/[^a-z0-9]+/g, "-")
+      // Remove leading/trailing hyphens
+      .replace(/^-+|-+$/g, "")
+  );
 }
 
 /**
  * Get the display URL path for a country
  * Uses pretty /countries/ URLs with slug
  */
-export function getCountryPath(country: { slug?: string | null; id: string; name?: string }): string {
+export function getCountryPath(country: {
+  slug?: string | null;
+  id: string;
+  name?: string;
+}): string {
   // Always prefer slug
   if (country.slug) {
     return `/countries/${country.slug}`;

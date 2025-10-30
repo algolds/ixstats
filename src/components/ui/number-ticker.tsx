@@ -10,23 +10,23 @@ interface NumberTickerProps {
   suffix?: string;
   decimalPlaces?: number;
   duration?: number;
-  format?: 'default' | 'currency' | 'population' | 'percentage';
-  trend?: 'up' | 'down' | 'stable';
+  format?: "default" | "currency" | "population" | "percentage";
+  trend?: "up" | "down" | "stable";
 }
 
 /**
  * NumberTicker component - now uses NumberFlow under the hood
  * @deprecated Use NumberFlowDisplay directly for new components
  */
-export function NumberTicker({ 
-  value, 
-  className, 
-  prefix = '', 
-  suffix = '', 
+export function NumberTicker({
+  value,
+  className,
+  prefix = "",
+  suffix = "",
   decimalPlaces = 0,
   duration = 1000,
-  format = 'default',
-  trend
+  format = "default",
+  trend,
 }: NumberTickerProps) {
   return (
     <NumberFlowDisplay

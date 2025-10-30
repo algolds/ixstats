@@ -8,9 +8,5 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  return (
-    <AdminErrorBoundary>
-      {children}
-    </AdminErrorBoundary>
-  );
+  return <AdminErrorBoundary>{children}</AdminErrorBoundary>;
 }

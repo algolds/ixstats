@@ -23,13 +23,7 @@ import {
   TrendingDown,
   AlertTriangle,
 } from "lucide-react";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "~/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
@@ -54,7 +48,7 @@ import {
   Legend,
   RadialBarChart,
   RadialBar,
-} from 'recharts';
+} from "recharts";
 import { formatPopulation, formatPercentage } from "./utils";
 import type { DemographicsData } from "~/types/economics";
 
@@ -76,7 +70,16 @@ interface DemographicsProps {
   showComparison?: boolean;
 }
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6b7280', '#ec4899', '#14b8a6'];
+const COLORS = [
+  "#3b82f6",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#6b7280",
+  "#ec4899",
+  "#14b8a6",
+];
 
 export function Demographics({
   demographicData,
@@ -91,21 +94,14 @@ export function Demographics({
   const [activeDetailTab, setActiveDetailTab] = useState("age");
 
   // Handler functions following Labor module pattern
-  function handleField<K extends keyof DemographicsData>(
-    field: K,
-    value: number | any
-  ) {
+  function handleField<K extends keyof DemographicsData>(field: K, value: number | any) {
     const next = { ...demographicData, [field]: value };
     onDemographicDataChangeAction(next);
   }
 
-  function handleNestedField(
-    section: keyof DemographicsData,
-    field: string,
-    value: number
-  ) {
+  function handleNestedField(section: keyof DemographicsData, field: string, value: number) {
     const next = { ...demographicData };
-    if (typeof next[section] === 'object' && next[section] !== null) {
+    if (typeof next[section] === "object" && next[section] !== null) {
       (next[section] as any)[field] = value;
     }
     onDemographicDataChangeAction(next);
@@ -131,12 +127,12 @@ export function Demographics({
       const total = newAgeDistribution.reduce((sum, group) => sum + group.percent, 0);
       if (total !== 100 && total > 0) {
         const factor = 100 / total;
-        newAgeDistribution.forEach(group => {
+        newAgeDistribution.forEach((group) => {
           group.percent = group.percent * factor;
         });
       }
 
-      handleField('ageDistribution', newAgeDistribution);
+      handleField("ageDistribution", newAgeDistribution);
     }
   }
 
@@ -144,36 +140,43 @@ export function Demographics({
     const newEducationLevels = [...(demographicData.educationLevels ?? [])];
     if (newEducationLevels[index]) {
       newEducationLevels[index] = { ...newEducationLevels[index], percent };
-      
+
       // Normalize percentages
       const total = newEducationLevels.reduce((sum, level) => sum + level.percent, 0);
       if (total !== 100 && total > 0) {
         const factor = 100 / total;
-        newEducationLevels.forEach(level => {
+        newEducationLevels.forEach((level) => {
           level.percent = level.percent * factor;
         });
       }
-      
-      handleField('educationLevels', newEducationLevels);
+
+      handleField("educationLevels", newEducationLevels);
     }
   }
 
   // Health assessment functions
   function getUrbanizationHealth() {
     const urbanPercent = demographicData.urbanRuralSplit?.urban ?? 0;
-    if (urbanPercent >= 80) return { label: "Highly Urbanized", color: "text-purple-600", variant: "default" as const };
-    if (urbanPercent >= 60) return { label: "Urbanized", color: "text-blue-600", variant: "secondary" as const };
-    if (urbanPercent >= 40) return { label: "Moderately Urban", color: "text-green-600", variant: "default" as const };
-    if (urbanPercent >= 20) return { label: "Rural Majority", color: "text-yellow-600", variant: "destructive" as const };
+    if (urbanPercent >= 80)
+      return { label: "Highly Urbanized", color: "text-purple-600", variant: "default" as const };
+    if (urbanPercent >= 60)
+      return { label: "Urbanized", color: "text-blue-600", variant: "secondary" as const };
+    if (urbanPercent >= 40)
+      return { label: "Moderately Urban", color: "text-green-600", variant: "default" as const };
+    if (urbanPercent >= 20)
+      return { label: "Rural Majority", color: "text-yellow-600", variant: "destructive" as const };
     return { label: "Highly Rural", color: "text-orange-600", variant: "destructive" as const };
   }
 
   function getLiteracyHealth() {
     const rate = demographicData.literacyRate ?? 0;
-    if (rate >= 99) return { label: "Universal", color: "text-green-600", variant: "default" as const };
-    if (rate >= 90) return { label: "Very High", color: "text-blue-600", variant: "secondary" as const };
+    if (rate >= 99)
+      return { label: "Universal", color: "text-green-600", variant: "default" as const };
+    if (rate >= 90)
+      return { label: "Very High", color: "text-blue-600", variant: "secondary" as const };
     if (rate >= 70) return { label: "High", color: "text-yellow-600", variant: "default" as const };
-    if (rate >= 50) return { label: "Moderate", color: "text-orange-600", variant: "destructive" as const };
+    if (rate >= 50)
+      return { label: "Moderate", color: "text-orange-600", variant: "destructive" as const };
     return { label: "Low", color: "text-red-600", variant: "destructive" as const };
   }
 
@@ -202,19 +205,32 @@ export function Demographics({
     else if (literacyRate < 70) score -= 10;
 
     // Age distribution balance
-    const workingAge = demographicData.ageDistribution?.find(g => g.group.includes('16-64') || g.group.includes('15-64'))?.percent || 0;
+    const workingAge =
+      demographicData.ageDistribution?.find(
+        (g) => g.group.includes("16-64") || g.group.includes("15-64")
+      )?.percent || 0;
     if (workingAge >= 60 && workingAge <= 70) score += 5;
     else if (workingAge < 50 || workingAge > 75) score -= 5;
 
     // Education factor
-    const higherEd = demographicData.educationLevels?.find(l => l.level.toLowerCase().includes('higher'))?.percent || 0;
+    const higherEd =
+      demographicData.educationLevels?.find((l) => l.level.toLowerCase().includes("higher"))
+        ?.percent || 0;
     if (higherEd >= 30) score += 5;
     else if (higherEd < 15) score -= 5;
 
     return {
       score: Math.max(0, Math.min(100, Math.round(score))),
-      label: score >= 85 ? "Excellent" : score >= 70 ? "Good" : score >= 55 ? "Fair" : "Needs Attention",
-      color: score >= 85 ? "text-green-600" : score >= 70 ? "text-blue-600" : score >= 55 ? "text-yellow-600" : "text-red-600"
+      label:
+        score >= 85 ? "Excellent" : score >= 70 ? "Good" : score >= 55 ? "Fair" : "Needs Attention",
+      color:
+        score >= 85
+          ? "text-green-600"
+          : score >= 70
+            ? "text-blue-600"
+            : score >= 55
+              ? "text-yellow-600"
+              : "text-red-600",
     };
   }
 
@@ -237,8 +253,8 @@ export function Demographics({
   }));
 
   const urbanRuralData = [
-    { name: 'Urban', value: demographicData.urbanRuralSplit?.urban ?? 0, color: '#3b82f6' },
-    { name: 'Rural', value: demographicData.urbanRuralSplit?.rural ?? 0, color: '#10b981' },
+    { name: "Urban", value: demographicData.urbanRuralSplit?.urban ?? 0, color: "#3b82f6" },
+    { name: "Rural", value: demographicData.urbanRuralSplit?.rural ?? 0, color: "#10b981" },
   ];
 
   const educationData = (demographicData.educationLevels ?? []).map((level, index) => ({
@@ -264,7 +280,7 @@ export function Demographics({
       reverse: false,
       description: "Average life span in years",
       icon: Heart,
-      format: (v: number | null) => v != null ? `${v.toFixed(1)} years` : 'N/A',
+      format: (v: number | null) => (v != null ? `${v.toFixed(1)} years` : "N/A"),
     },
     {
       label: "Literacy Rate",
@@ -274,7 +290,7 @@ export function Demographics({
       reverse: false,
       description: "% of population that can read/write",
       icon: GraduationCap,
-      format: (v: number | null) => v != null ? formatPercentage(v) : 'N/A',
+      format: (v: number | null) => (v != null ? formatPercentage(v) : "N/A"),
     },
     {
       label: "Urbanization",
@@ -284,7 +300,7 @@ export function Demographics({
       reverse: false,
       description: "% living in urban areas",
       icon: Building2,
-      format: (v: number | null) => v != null ? formatPercentage(v) : 'N/A',
+      format: (v: number | null) => (v != null ? formatPercentage(v) : "N/A"),
     },
   ];
 
@@ -292,13 +308,13 @@ export function Demographics({
     <TooltipProvider>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Users className="h-5 w-5 text-primary" />
+            <h3 className="flex items-center gap-2 text-lg font-semibold">
+              <Users className="text-primary h-5 w-5" />
               Demographics
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Population structure, education, and regional distribution
             </p>
           </div>
@@ -309,12 +325,12 @@ export function Demographics({
                 size="sm"
                 onClick={() => setEditMode(!editMode)}
               >
-                {editMode ? <Eye className="h-4 w-4 mr-1" /> : <Pencil className="h-4 w-4 mr-1" />}
+                {editMode ? <Eye className="mr-1 h-4 w-4" /> : <Pencil className="mr-1 h-4 w-4" />}
                 {editMode ? "View" : "Edit"}
               </Button>
             )}
             <Tabs value={view} onValueChange={(v) => setView(v as any)}>
-              <TabsList className="grid grid-cols-2 w-[200px]">
+              <TabsList className="grid w-[200px] grid-cols-2">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="detailed">Detailed</TabsTrigger>
               </TabsList>
@@ -323,15 +339,27 @@ export function Demographics({
         </div>
 
         {/* Health Status */}
-        <Alert className={`border-l-4 ${healthScore.color === 'text-green-600' ? 'border-l-green-500' : 
-                                      healthScore.color === 'text-blue-600' ? 'border-l-blue-500' :
-                                      healthScore.color === 'text-yellow-600' ? 'border-l-yellow-500' : 'border-l-red-500'}`}>
+        <Alert
+          className={`border-l-4 ${
+            healthScore.color === "text-green-600"
+              ? "border-l-green-500"
+              : healthScore.color === "text-blue-600"
+                ? "border-l-blue-500"
+                : healthScore.color === "text-yellow-600"
+                  ? "border-l-yellow-500"
+                  : "border-l-red-500"
+          }`}
+        >
           <Users className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
             <span>
-              Demographic Health: <span className={`font-semibold ${healthScore.color}`}>{healthScore.label}</span>
+              Demographic Health:{" "}
+              <span className={`font-semibold ${healthScore.color}`}>{healthScore.label}</span>
               <span className="ml-4">
-                Life Expectancy: <span className={`font-semibold ${lifeExpectancyHealth.color}`}>{lifeExpectancyHealth.label}</span>
+                Life Expectancy:{" "}
+                <span className={`font-semibold ${lifeExpectancyHealth.color}`}>
+                  {lifeExpectancyHealth.label}
+                </span>
               </span>
             </span>
             <Badge variant={literacyHealth.variant}>
@@ -344,28 +372,34 @@ export function Demographics({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-primary" />
+              <BarChart3 className="text-primary h-4 w-4" />
               Population Overview
             </CardTitle>
             <CardDescription>Key demographic indicators and population structure</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center space-y-1">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="space-y-1 text-center">
                 <div className="text-2xl font-bold">{formatPopulation(totalPopulation)}</div>
-                <div className="text-xs text-muted-foreground">Total Population</div>
+                <div className="text-muted-foreground text-xs">Total Population</div>
               </div>
-              <div className="text-center space-y-1">
-                <div className="text-2xl font-bold text-red-600">{demographicData.lifeExpectancy?.toFixed(1) ?? 'N/A'}</div>
-                <div className="text-xs text-muted-foreground">Life Expectancy</div>
+              <div className="space-y-1 text-center">
+                <div className="text-2xl font-bold text-red-600">
+                  {demographicData.lifeExpectancy?.toFixed(1) ?? "N/A"}
+                </div>
+                <div className="text-muted-foreground text-xs">Life Expectancy</div>
               </div>
-              <div className="text-center space-y-1">
-                <div className="text-2xl font-bold text-green-600">{demographicData.literacyRate?.toFixed(1) ?? 'N/A'}%</div>
-                <div className="text-xs text-muted-foreground">Literacy Rate</div>
+              <div className="space-y-1 text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {demographicData.literacyRate?.toFixed(1) ?? "N/A"}%
+                </div>
+                <div className="text-muted-foreground text-xs">Literacy Rate</div>
               </div>
-              <div className="text-center space-y-1">
-                <div className="text-2xl font-bold text-purple-600">{demographicData.urbanRuralSplit?.urban?.toFixed(0) ?? 'N/A'}%</div>
-                <div className="text-xs text-muted-foreground">Urban Population</div>
+              <div className="space-y-1 text-center">
+                <div className="text-2xl font-bold text-purple-600">
+                  {demographicData.urbanRuralSplit?.urban?.toFixed(0) ?? "N/A"}%
+                </div>
+                <div className="text-muted-foreground text-xs">Urban Population</div>
               </div>
             </div>
           </CardContent>
@@ -375,7 +409,7 @@ export function Demographics({
         {view === "overview" && (
           <div className="space-y-6">
             {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {basicMetrics.map((metric) => {
                 const Icon = metric.icon;
                 const metricValue = metric.value ?? 0;
@@ -386,14 +420,14 @@ export function Demographics({
                 return (
                   <Card key={metric.field}>
                     <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="mb-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Icon className="h-4 w-4 text-primary" />
+                          <Icon className="text-primary h-4 w-4" />
                           <span className="text-sm font-medium">{metric.label}</span>
                         </div>
                         <Tooltip>
                           <TooltipTrigger>
-                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                            <HelpCircle className="text-muted-foreground h-3 w-3" />
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>{metric.description}</p>
@@ -402,9 +436,7 @@ export function Demographics({
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-2xl font-bold">
-                            {metric.format(metric.value)}
-                          </span>
+                          <span className="text-2xl font-bold">{metric.format(metric.value)}</span>
                           {editMode ? (
                             <Input
                               type="number"
@@ -416,19 +448,27 @@ export function Demographics({
                                   handleField(metric.field, parseFloat(e.target.value) || 0);
                                 }
                               }}
-                              className="w-20 h-8 text-right"
+                              className="h-8 w-20 text-right"
                               step={metric.field === "lifeExpectancy" ? "0.1" : "1"}
                               min="0"
                               max={metric.field === "lifeExpectancy" ? "120" : "100"}
                             />
                           ) : (
-                            <Badge variant={progress >= 80 ? "default" : progress >= 60 ? "secondary" : "destructive"}>
+                            <Badge
+                              variant={
+                                progress >= 80
+                                  ? "default"
+                                  : progress >= 60
+                                    ? "secondary"
+                                    : "destructive"
+                              }
+                            >
                               {progress >= 80 ? "Good" : progress >= 60 ? "Fair" : "Poor"}
                             </Badge>
                           )}
                         </div>
                         <Progress value={progress} className="h-2" />
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-muted-foreground text-xs">
                           Target: {metric.format(metric.target)}
                         </div>
                       </div>
@@ -439,7 +479,7 @@ export function Demographics({
             </div>
 
             {/* Distribution Charts */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {/* Age Distribution */}
               <Card>
                 <CardHeader>
@@ -458,7 +498,9 @@ export function Demographics({
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="value"
-                          label={({ group, percent }: any) => `${group}: ${percent ? percent.toFixed(1) : '0'}%`}
+                          label={({ group, percent }: any) =>
+                            `${group}: ${percent ? percent.toFixed(1) : "0"}%`
+                          }
                         >
                           {ageData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -489,7 +531,9 @@ export function Demographics({
                           outerRadius={80}
                           fill="#8884d8"
                           dataKey="value"
-                          label={({ name, value }: any) => `${name}: ${value ? value.toFixed(0) : '0'}%`}
+                          label={({ name, value }: any) =>
+                            `${name}: ${value ? value.toFixed(0) : "0"}%`
+                          }
                         >
                           {urbanRuralData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -513,33 +557,57 @@ export function Demographics({
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <div className="text-3xl font-bold">{healthScore.score}/100</div>
-                    <div className="text-sm text-muted-foreground">{healthScore.label}</div>
+                    <div className="text-muted-foreground text-sm">{healthScore.label}</div>
                   </div>
                   <div className="h-32 w-32">
                     <ResponsiveContainer width="100%" height="100%">
-                      <RadialBarChart cx="50%" cy="50%" innerRadius="60%" outerRadius="100%" data={[{ value: healthScore.score, fill: healthScore.score >= 70 ? '#10b981' : '#f59e0b' }]}>
+                      <RadialBarChart
+                        cx="50%"
+                        cy="50%"
+                        innerRadius="60%"
+                        outerRadius="100%"
+                        data={[
+                          {
+                            value: healthScore.score,
+                            fill: healthScore.score >= 70 ? "#10b981" : "#f59e0b",
+                          },
+                        ]}
+                      >
                         <RadialBar dataKey="value" cornerRadius={10} fill="#8884d8" />
                       </RadialBarChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-2 gap-4 text-sm mt-4">
+
+                <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Life Expectancy:</span>
-                    <span className="font-medium">{(demographicData.lifeExpectancy ?? 0) >= 70 ? "✓" : "✗"} Good</span>
+                    <span className="font-medium">
+                      {(demographicData.lifeExpectancy ?? 0) >= 70 ? "✓" : "✗"} Good
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Literacy Rate:</span>
-                    <span className="font-medium">{(demographicData.literacyRate ?? 0) >= 85 ? "✓" : "✗"} High</span>
+                    <span className="font-medium">
+                      {(demographicData.literacyRate ?? 0) >= 85 ? "✓" : "✗"} High
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Working Age Pop:</span>
-                    <span className="font-medium">{ageData.find(a => a.group.includes('64'))?.percent || 0 >= 60 ? "✓" : "✗"} Balanced</span>
+                    <span className="font-medium">
+                      {ageData.find((a) => a.group.includes("64"))?.percent || 0 >= 60 ? "✓" : "✗"}{" "}
+                      Balanced
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Higher Education:</span>
-                    <span className="font-medium">{educationData.find(e => e.level.toLowerCase().includes('higher'))?.percent || 0 >= 20 ? "✓" : "✗"} Adequate</span>
+                    <span className="font-medium">
+                      {educationData.find((e) => e.level.toLowerCase().includes("higher"))
+                        ?.percent || 0 >= 20
+                        ? "✓"
+                        : "✗"}{" "}
+                      Adequate
+                    </span>
                   </div>
                 </div>
               </CardContent>
@@ -554,36 +622,63 @@ export function Demographics({
                 <CardContent>
                   <div className="space-y-3">
                     {referenceCountry.lifeExpectancy && (
-                      <div className="flex justify-between items-center text-sm">
+                      <div className="flex items-center justify-between text-sm">
                         <span>Life Expectancy:</span>
                         <div className="space-x-2">
-                          <Badge variant="outline">{referenceCountry.lifeExpectancy?.toFixed(1) ?? 'N/A'} years</Badge>
+                          <Badge variant="outline">
+                            {referenceCountry.lifeExpectancy?.toFixed(1) ?? "N/A"} years
+                          </Badge>
                           <span>vs</span>
-                          <Badge variant={(demographicData.lifeExpectancy ?? 0) >= (referenceCountry.lifeExpectancy ?? 0) ? "default" : "secondary"}>
-                            {demographicData.lifeExpectancy?.toFixed(1) ?? 'N/A'} years
+                          <Badge
+                            variant={
+                              (demographicData.lifeExpectancy ?? 0) >=
+                              (referenceCountry.lifeExpectancy ?? 0)
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
+                            {demographicData.lifeExpectancy?.toFixed(1) ?? "N/A"} years
                           </Badge>
                         </div>
                       </div>
                     )}
                     {referenceCountry.literacyRate && (
-                      <div className="flex justify-between items-center text-sm">
+                      <div className="flex items-center justify-between text-sm">
                         <span>Literacy Rate:</span>
                         <div className="space-x-2">
-                          <Badge variant="outline">{formatPercentage(referenceCountry.literacyRate)}</Badge>
+                          <Badge variant="outline">
+                            {formatPercentage(referenceCountry.literacyRate)}
+                          </Badge>
                           <span>vs</span>
-                          <Badge variant={(demographicData.literacyRate ?? 0) >= (referenceCountry.literacyRate ?? 0) ? "default" : "secondary"}>
+                          <Badge
+                            variant={
+                              (demographicData.literacyRate ?? 0) >=
+                              (referenceCountry.literacyRate ?? 0)
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
                             {formatPercentage(demographicData.literacyRate ?? 0)}
                           </Badge>
                         </div>
                       </div>
                     )}
                     {referenceCountry.urbanizationRate && (
-                      <div className="flex justify-between items-center text-sm">
+                      <div className="flex items-center justify-between text-sm">
                         <span>Urbanization Rate:</span>
                         <div className="space-x-2">
-                          <Badge variant="outline">{formatPercentage(referenceCountry.urbanizationRate)}</Badge>
+                          <Badge variant="outline">
+                            {formatPercentage(referenceCountry.urbanizationRate)}
+                          </Badge>
                           <span>vs</span>
-                          <Badge variant={(demographicData.urbanRuralSplit?.urban ?? 0) >= (referenceCountry.urbanizationRate ?? 0) ? "default" : "secondary"}>
+                          <Badge
+                            variant={
+                              (demographicData.urbanRuralSplit?.urban ?? 0) >=
+                              (referenceCountry.urbanizationRate ?? 0)
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
                             {formatPercentage(demographicData.urbanRuralSplit?.urban ?? 0)}
                           </Badge>
                         </div>
@@ -600,7 +695,7 @@ export function Demographics({
         {view === "detailed" && (
           <div className="space-y-6">
             <Tabs value={activeDetailTab} onValueChange={setActiveDetailTab}>
-              <TabsList className="grid grid-cols-4 w-full">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="age">Age Structure</TabsTrigger>
                 <TabsTrigger value="education">Education</TabsTrigger>
                 <TabsTrigger value="geographic">Geographic</TabsTrigger>
@@ -612,7 +707,9 @@ export function Demographics({
                 <Card>
                   <CardHeader>
                     <CardTitle>Age Structure Analysis</CardTitle>
-                    <CardDescription>Detailed breakdown of population by age groups</CardDescription>
+                    <CardDescription>
+                      Detailed breakdown of population by age groups
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
@@ -620,22 +717,29 @@ export function Demographics({
                         <div key={group.group} className="space-y-2">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: group.color }} />
+                              <div
+                                className="h-4 w-4 rounded-full"
+                                style={{ backgroundColor: group.color }}
+                              />
                               <Label className="text-sm font-medium">{group.group} years</Label>
                             </div>
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-muted-foreground text-sm">
                               {formatPopulation(group.population)} people
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
                             <Progress value={group.percent} className="flex-1" />
-                            <span className="text-sm font-medium w-12 text-right">{group.percent.toFixed(1)}%</span>
+                            <span className="w-12 text-right text-sm font-medium">
+                              {group.percent.toFixed(1)}%
+                            </span>
                           </div>
                           {editMode && (
                             <Input
                               type="number"
                               value={group.percent}
-                              onChange={(e) => handleAgeDistributionChange(index, parseFloat(e.target.value) || 0)}
+                              onChange={(e) =>
+                                handleAgeDistributionChange(index, parseFloat(e.target.value) || 0)
+                              }
                               step="0.1"
                               min="0"
                               max="100"
@@ -647,22 +751,35 @@ export function Demographics({
                     </div>
 
                     {/* Dependency Ratios */}
-                    <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-                      <h5 className="text-sm font-semibold mb-3">Dependency Ratios</h5>
+                    <div className="bg-muted/50 mt-6 rounded-lg p-4">
+                      <h5 className="mb-3 text-sm font-semibold">Dependency Ratios</h5>
                       <div className="grid grid-cols-3 gap-4 text-sm">
                         <div>
                           <div className="text-muted-foreground">Youth Dependency</div>
-                          <div className="font-medium">{(ageData.find(g => g.group.includes('0-15'))?.percent || 0).toFixed(1)}%</div>
+                          <div className="font-medium">
+                            {(ageData.find((g) => g.group.includes("0-15"))?.percent || 0).toFixed(
+                              1
+                            )}
+                            %
+                          </div>
                         </div>
                         <div>
                           <div className="text-muted-foreground">Elderly Dependency</div>
-                          <div className="font-medium">{(ageData.find(g => g.group.includes('65+'))?.percent || 0).toFixed(1)}%</div>
+                          <div className="font-medium">
+                            {(ageData.find((g) => g.group.includes("65+"))?.percent || 0).toFixed(
+                              1
+                            )}
+                            %
+                          </div>
                         </div>
                         <div>
                           <div className="text-muted-foreground">Total Dependency</div>
                           <div className="font-medium">
-                            {((ageData.find(g => g.group.includes('0-15'))?.percent || 0) + 
-                              (ageData.find(g => g.group.includes('65+'))?.percent || 0)).toFixed(1)}%
+                            {(
+                              (ageData.find((g) => g.group.includes("0-15"))?.percent || 0) +
+                              (ageData.find((g) => g.group.includes("65+"))?.percent || 0)
+                            ).toFixed(1)}
+                            %
                           </div>
                         </div>
                       </div>
@@ -680,8 +797,12 @@ export function Demographics({
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="text-3xl font-bold">{demographicData.lifeExpectancy?.toFixed(1) ?? 'N/A'} years</div>
-                          <div className="text-sm text-muted-foreground">Average life expectancy</div>
+                          <div className="text-3xl font-bold">
+                            {demographicData.lifeExpectancy?.toFixed(1) ?? "N/A"} years
+                          </div>
+                          <div className="text-muted-foreground text-sm">
+                            Average life expectancy
+                          </div>
                         </div>
                         <Heart className="h-12 w-12 text-red-500 opacity-20" />
                       </div>
@@ -692,7 +813,9 @@ export function Demographics({
                           <Input
                             type="number"
                             value={demographicData.lifeExpectancy ?? 0}
-                            onChange={(e) => handleField('lifeExpectancy', parseFloat(e.target.value) || 0)}
+                            onChange={(e) =>
+                              handleField("lifeExpectancy", parseFloat(e.target.value) || 0)
+                            }
                             step="0.1"
                             min="40"
                             max="100"
@@ -703,11 +826,16 @@ export function Demographics({
                       <Alert>
                         <Info className="h-4 w-4" />
                         <AlertDescription>
-                          Life expectancy of {demographicData.lifeExpectancy?.toFixed(1) ?? 'N/A'} years indicates a
-                          {(demographicData.lifeExpectancy ?? 0) >= 80 ? " highly developed healthcare system" :
-                           (demographicData.lifeExpectancy ?? 0) >= 70 ? " moderately developed healthcare system" :
-                           (demographicData.lifeExpectancy ?? 0) >= 60 ? " developing healthcare system" :
-                           " healthcare system that needs significant investment"}.
+                          Life expectancy of {demographicData.lifeExpectancy?.toFixed(1) ?? "N/A"}{" "}
+                          years indicates a
+                          {(demographicData.lifeExpectancy ?? 0) >= 80
+                            ? " highly developed healthcare system"
+                            : (demographicData.lifeExpectancy ?? 0) >= 70
+                              ? " moderately developed healthcare system"
+                              : (demographicData.lifeExpectancy ?? 0) >= 60
+                                ? " developing healthcare system"
+                                : " healthcare system that needs significant investment"}
+                          .
                         </AlertDescription>
                       </Alert>
                     </div>
@@ -720,7 +848,9 @@ export function Demographics({
                 <Card>
                   <CardHeader>
                     <CardTitle>Education Levels</CardTitle>
-                    <CardDescription>Population distribution by educational attainment</CardDescription>
+                    <CardDescription>
+                      Population distribution by educational attainment
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="h-64">
@@ -734,7 +864,9 @@ export function Demographics({
                             outerRadius={80}
                             fill="#8884d8"
                             dataKey="value"
-                            label={({ level, percent }: any) => `${level}: ${percent ? percent.toFixed(1) : '0'}%`}
+                            label={({ level, percent }: any) =>
+                              `${level}: ${percent ? percent.toFixed(1) : "0"}%`
+                            }
                           >
                             {educationData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
@@ -747,22 +879,29 @@ export function Demographics({
 
                     <div className="mt-4 space-y-3">
                       {educationData.map((level, index) => (
-                        <div key={level.level} className="p-2 rounded bg-muted/30">
-                          <div className="flex items-center justify-between mb-2">
+                        <div key={level.level} className="bg-muted/30 rounded p-2">
+                          <div className="mb-2 flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: level.color }} />
+                              <div
+                                className="h-3 w-3 rounded-full"
+                                style={{ backgroundColor: level.color }}
+                              />
                               <span className="text-sm">{level.level}</span>
                             </div>
                             <div className="text-sm">
                               <span className="font-medium">{level.percent.toFixed(1)}%</span>
-                              <span className="text-muted-foreground ml-2">({formatPopulation(level.population)})</span>
+                              <span className="text-muted-foreground ml-2">
+                                ({formatPopulation(level.population)})
+                              </span>
                             </div>
                           </div>
                           {editMode && (
                             <Input
                               type="number"
                               value={level.percent}
-                              onChange={(e) => handleEducationLevelChange(index, parseFloat(e.target.value) || 0)}
+                              onChange={(e) =>
+                                handleEducationLevelChange(index, parseFloat(e.target.value) || 0)
+                              }
                               step="0.1"
                               min="0"
                               max="100"
@@ -782,14 +921,16 @@ export function Demographics({
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="mb-2 flex items-center justify-between">
                         <Label>Literacy Rate</Label>
                         <Badge className={literacyHealth.color}>{literacyHealth.label}</Badge>
                       </div>
                       <Progress value={demographicData.literacyRate ?? 0} className="h-3" />
-                      <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                      <div className="text-muted-foreground mt-1 flex justify-between text-xs">
                         <span>0%</span>
-                        <span className="font-medium">{demographicData.literacyRate?.toFixed(1) ?? 'N/A'}%</span>
+                        <span className="font-medium">
+                          {demographicData.literacyRate?.toFixed(1) ?? "N/A"}%
+                        </span>
                         <span>100%</span>
                       </div>
                     </div>
@@ -800,7 +941,9 @@ export function Demographics({
                         <Input
                           type="number"
                           value={demographicData.literacyRate ?? 0}
-                          onChange={(e) => handleField('literacyRate', parseFloat(e.target.value) || 0)}
+                          onChange={(e) =>
+                            handleField("literacyRate", parseFloat(e.target.value) || 0)
+                          }
                           step="0.1"
                           min="0"
                           max="100"
@@ -814,10 +957,10 @@ export function Demographics({
                         {(demographicData.literacyRate ?? 0) >= 95
                           ? "Near-universal literacy indicates excellent educational infrastructure."
                           : (demographicData.literacyRate ?? 0) >= 85
-                          ? "High literacy rate shows good educational access for most citizens."
-                          : (demographicData.literacyRate ?? 0) >= 70
-                          ? "Moderate literacy suggests room for educational improvement."
-                          : "Low literacy rate indicates significant educational challenges."}
+                            ? "High literacy rate shows good educational access for most citizens."
+                            : (demographicData.literacyRate ?? 0) >= 70
+                              ? "Moderate literacy suggests room for educational improvement."
+                              : "Low literacy rate indicates significant educational challenges."}
                       </AlertDescription>
                     </Alert>
                   </CardContent>
@@ -849,11 +992,11 @@ export function Demographics({
                 </Card>
 
                 {/* Regional Details */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {regionData.map((region, index) => (
                     <Card key={region.name}>
                       <CardHeader className="pb-3">
-                        <CardTitle className="text-base flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-base">
                           <MapPin className="h-4 w-4" style={{ color: region.color }} />
                           {region.name}
                         </CardTitle>
@@ -869,9 +1012,13 @@ export function Demographics({
                             <div className="font-medium">{region.urbanPercent.toFixed(0)}%</div>
                           </div>
                         </div>
-                        <Progress value={(region.population / totalPopulation) * 100} className="h-2" />
-                        <div className="text-xs text-muted-foreground">
-                          {((region.population / totalPopulation) * 100).toFixed(1)}% of total population
+                        <Progress
+                          value={(region.population / totalPopulation) * 100}
+                          className="h-2"
+                        />
+                        <div className="text-muted-foreground text-xs">
+                          {((region.population / totalPopulation) * 100).toFixed(1)}% of total
+                          population
                         </div>
                       </CardContent>
                     </Card>
@@ -897,7 +1044,7 @@ export function Demographics({
                               className="flex-1"
                             />
                             <span className="w-16 text-right font-medium">
-                              {demographicData.urbanRuralSplit?.urban?.toFixed(0) ?? 'N/A'}%
+                              {demographicData.urbanRuralSplit?.urban?.toFixed(0) ?? "N/A"}%
                             </span>
                           </div>
                         </div>
@@ -912,15 +1059,20 @@ export function Demographics({
                 <Card>
                   <CardHeader>
                     <CardTitle>Citizenship Status</CardTitle>
-                    <CardDescription>Population by citizenship and residency status</CardDescription>
+                    <CardDescription>
+                      Population by citizenship and residency status
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
                       {demographicData.citizenshipStatuses.map((status, index) => (
-                        <div key={status.status} className="p-3 border rounded-lg">
+                        <div key={status.status} className="rounded-lg border p-3">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <UserCheck className="h-4 w-4" style={{ color: status.color || COLORS[index % COLORS.length] }} />
+                              <UserCheck
+                                className="h-4 w-4"
+                                style={{ color: status.color || COLORS[index % COLORS.length] }}
+                              />
                               <span className="font-medium">{status.status}</span>
                             </div>
                             <div className="text-sm">
@@ -945,15 +1097,18 @@ export function Demographics({
           <Info className="h-4 w-4" />
           <AlertDescription>
             <div className="font-medium">Demographic Summary</div>
-            <p className="text-sm mt-1">
-              Population of {formatPopulation(totalPopulation)} with {demographicData.lifeExpectancy?.toFixed(1) ?? 'N/A'} year life expectancy.
+            <p className="mt-1 text-sm">
+              Population of {formatPopulation(totalPopulation)} with{" "}
+              {demographicData.lifeExpectancy?.toFixed(1) ?? "N/A"} year life expectancy.
               {(demographicData.urbanRuralSplit?.urban ?? 0) > 70
                 ? " Highly urbanized society"
                 : (demographicData.urbanRuralSplit?.urban ?? 0) > 50
-                ? " Moderately urban society"
-                : " Predominantly rural society"}
-              with {demographicData.literacyRate?.toFixed(1) ?? 'N/A'}% literacy rate.
-              {(demographicData.educationLevels?.find(l => l.level.toLowerCase().includes('higher'))?.percent || 0) > 25
+                  ? " Moderately urban society"
+                  : " Predominantly rural society"}
+              with {demographicData.literacyRate?.toFixed(1) ?? "N/A"}% literacy rate.
+              {(demographicData.educationLevels?.find((l) =>
+                l.level.toLowerCase().includes("higher")
+              )?.percent || 0) > 25
                 ? " Well-educated population."
                 : " Educational development opportunities exist."}
             </p>

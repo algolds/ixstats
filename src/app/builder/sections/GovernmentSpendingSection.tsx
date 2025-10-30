@@ -7,28 +7,28 @@
 
 "use client";
 
-import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { Settings, Eye, TrendingUp } from 'lucide-react';
-import type { EconomicInputs } from '../lib/economy-data-service';
-import type { SectionContentProps } from '../types/builder';
-import type { GovernmentBuilderState } from '~/types/government';
-import { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
-import { GovernmentBuilderError } from '../components/GovernmentBuilderError';
-import { AtomicIntegrationFeedback } from '../components/AtomicIntegrationFeedback';
+import React, { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Settings, Eye, TrendingUp } from "lucide-react";
+import type { EconomicInputs } from "../lib/economy-data-service";
+import type { SectionContentProps } from "../types/builder";
+import type { GovernmentBuilderState } from "~/types/government";
+import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { GovernmentBuilderError } from "../components/GovernmentBuilderError";
+import { AtomicIntegrationFeedback } from "../components/AtomicIntegrationFeedback";
 
 // Modular components
-import { PolicySelector } from '../components/spending/PolicySelector';
-import { SpendingValidationPanel } from '../components/spending/SpendingValidationPanel';
-import { PolicyAnalysis } from '../components/spending/PolicyAnalysis';
-import { PolicyPresetSelector } from '../components/spending/PolicyPresetSelector';
+import { PolicySelector } from "../components/spending/PolicySelector";
+import { SpendingValidationPanel } from "../components/spending/SpendingValidationPanel";
+import { PolicyAnalysis } from "../components/spending/PolicyAnalysis";
+import { PolicyPresetSelector } from "../components/spending/PolicyPresetSelector";
 
 // Custom hook for state management
-import { useGovernmentSpending } from '../hooks/useGovernmentSpending';
-import { createAbsoluteUrl } from '~/lib/url-utils';
+import { useGovernmentSpending } from "../hooks/useGovernmentSpending";
+import { createAbsoluteUrl } from "~/lib/url-utils";
 
 // Help System
-import { GovernmentSpendingHelpSystem } from '../components/help/GovernmentHelpSystem';
+import { GovernmentSpendingHelpSystem } from "../components/help/GovernmentHelpSystem";
 
 interface GovernmentSpendingSectionProps extends SectionContentProps {
   inputs: EconomicInputs;
@@ -36,8 +36,8 @@ interface GovernmentSpendingSectionProps extends SectionContentProps {
   selectedAtomicComponents?: ComponentType[];
   governmentBuilderData?: GovernmentBuilderState | null;
   countryId?: string;
-  mode?: 'create' | 'edit';
-  fieldLocks?: Record<string, import('../components/enhanced/builderConfig').FieldLockConfig>;
+  mode?: "create" | "edit";
+  fieldLocks?: Record<string, import("../components/enhanced/builderConfig").FieldLockConfig>;
 }
 
 /**
@@ -50,11 +50,11 @@ export function GovernmentSpendingSection({
   selectedAtomicComponents = [],
   governmentBuilderData = null,
   countryId,
-  mode = 'create',
-  fieldLocks
+  mode = "create",
+  fieldLocks,
 }: GovernmentSpendingSectionProps) {
-  const isEditMode = mode === 'edit';
-  const { EDIT_MODE_FIELD_LOCKS } = require('../components/enhanced/builderConfig');
+  const isEditMode = mode === "edit";
+  const { EDIT_MODE_FIELD_LOCKS } = require("../components/enhanced/builderConfig");
   const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
 
   // Guard against null inputs
@@ -62,7 +62,7 @@ export function GovernmentSpendingSection({
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
           <p className="text-muted-foreground">Loading government spending data...</p>
         </div>
       </div>
@@ -83,17 +83,17 @@ export function GovernmentSpendingSection({
     spendingData,
     togglePolicy,
     applyPolicyPreset,
-    handleAtomicComponentUpdate
+    handleAtomicComponentUpdate,
   } = useGovernmentSpending({
     inputs,
     onInputsChange,
     selectedAtomicComponents,
     governmentBuilderData,
-    countryId
+    countryId,
   });
 
   // Local UI state
-  const [activeTab, setActiveTab] = useState('policies');
+  const [activeTab, setActiveTab] = useState("policies");
   const [showAtomicFeedback, setShowAtomicFeedback] = useState(true);
 
   // Show error if no government builder data and no atomic components
@@ -102,9 +102,9 @@ export function GovernmentSpendingSection({
       <GovernmentBuilderError
         validation={validation}
         onNavigateToBuilder={() => {
-          window.location.href = createAbsoluteUrl('/builder?section=government');
+          window.location.href = createAbsoluteUrl("/builder?section=government");
         }}
-        className="max-w-4xl mx-auto"
+        className="mx-auto max-w-4xl"
       />
     );
   }
@@ -127,7 +127,7 @@ export function GovernmentSpendingSection({
         <div className="flex items-center gap-2">
           <div>
             <h3 className="text-lg font-semibold">Government Policies</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Select policies that align with your government structure and atomic components
             </p>
           </div>
@@ -152,11 +152,11 @@ export function GovernmentSpendingSection({
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="policies">
-            <Settings className="h-4 w-4 mr-2" />
+            <Settings className="mr-2 h-4 w-4" />
             Policies
           </TabsTrigger>
           <TabsTrigger value="visualization">
-            <TrendingUp className="h-4 w-4 mr-2" />
+            <TrendingUp className="mr-2 h-4 w-4" />
             Policy Analysis
           </TabsTrigger>
         </TabsList>

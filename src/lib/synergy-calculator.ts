@@ -60,36 +60,36 @@ export const COMPONENT_CATEGORIES: Record<string, string[]> = {
     "CENTRALIZED_POWER",
     "FEDERAL_SYSTEM",
     "CONFEDERATE_SYSTEM",
-    "UNITARY_SYSTEM"
+    "UNITARY_SYSTEM",
   ],
   "Decision Making": [
     "DEMOCRATIC_PROCESS",
     "AUTOCRATIC_PROCESS",
     "TECHNOCRATIC_PROCESS",
     "CONSENSUS_PROCESS",
-    "OLIGARCHIC_PROCESS"
+    "OLIGARCHIC_PROCESS",
   ],
-  "Legitimacy": [
+  Legitimacy: [
     "ELECTORAL_LEGITIMACY",
     "TRADITIONAL_LEGITIMACY",
     "PERFORMANCE_LEGITIMACY",
     "CHARISMATIC_LEGITIMACY",
-    "RELIGIOUS_LEGITIMACY"
+    "RELIGIOUS_LEGITIMACY",
   ],
-  "Institutions": [
+  Institutions: [
     "PROFESSIONAL_BUREAUCRACY",
     "MILITARY_ADMINISTRATION",
     "INDEPENDENT_JUDICIARY",
     "PARTISAN_INSTITUTIONS",
-    "TECHNOCRATIC_AGENCIES"
+    "TECHNOCRATIC_AGENCIES",
   ],
-  "Control": [
+  Control: [
     "RULE_OF_LAW",
     "SURVEILLANCE_SYSTEM",
     "PROPAGANDA_APPARATUS",
     "SECURITY_FORCES",
-    "CIVIL_SOCIETY"
-  ]
+    "CIVIL_SOCIETY",
+  ],
 };
 
 /**
@@ -132,16 +132,15 @@ export function calculateAtomicSynergies(
   // Calculate synergies for each component category
   Object.entries(COMPONENT_CATEGORIES).forEach(([categoryName, categoryComponents]) => {
     // Find viewer's components that match this category
-    const myMatchingComponents = myComponents.filter(c =>
+    const myMatchingComponents = myComponents.filter((c) =>
       categoryComponents.includes(c.componentType)
     );
 
     if (myMatchingComponents.length > 0) {
       // Calculate average effectiveness of matching components
-      const avgEffectiveness = myMatchingComponents.reduce(
-        (sum, c) => sum + c.effectivenessScore,
-        0
-      ) / myMatchingComponents.length;
+      const avgEffectiveness =
+        myMatchingComponents.reduce((sum, c) => sum + c.effectivenessScore, 0) /
+        myMatchingComponents.length;
 
       // Calculate match score (0-100) based on component effectiveness and embassy strength
       // Higher embassy strength and component effectiveness = higher synergy
@@ -153,18 +152,18 @@ export function calculateAtomicSynergies(
           category: categoryName,
           matchScore,
           // Format component names for display (SNAKE_CASE -> Title Case)
-          sharedComponents: myMatchingComponents.map(c =>
+          sharedComponents: myMatchingComponents.map((c) =>
             c.componentType
-              .replace(/_/g, ' ')
+              .replace(/_/g, " ")
               .toLowerCase()
-              .replace(/\b\w/g, l => l.toUpperCase())
+              .replace(/\b\w/g, (l) => l.toUpperCase())
           ),
           // Calculate benefits as percentages based on match score
           benefits: {
-            economic: matchScore * 0.04,    // 4% per 100 match points
-            diplomatic: matchScore * 0.06,   // 6% per 100 match points
-            cultural: matchScore * 0.03      // 3% per 100 match points
-          }
+            economic: matchScore * 0.04, // 4% per 100 match points
+            diplomatic: matchScore * 0.06, // 6% per 100 match points
+            cultural: matchScore * 0.03, // 3% per 100 match points
+          },
         });
       }
     }
@@ -179,7 +178,7 @@ export function calculateAtomicSynergies(
 export interface DatabaseSynergy {
   component1: ComponentType;
   component2: ComponentType;
-  synergyType: 'STRONG' | 'MODERATE' | 'WEAK' | 'CONFLICT';
+  synergyType: "STRONG" | "MODERATE" | "WEAK" | "CONFLICT";
   bonusPercent: number;
   description?: string;
 }
@@ -213,40 +212,40 @@ export function getSynergiesFromDatabase(
   // Use database synergies if available
   if (dbSynergies && dbSynergies.length > 0) {
     return dbSynergies.filter(
-      synergy =>
-        synergy.component1 === componentType ||
-        synergy.component2 === componentType
+      (synergy) => synergy.component1 === componentType || synergy.component2 === componentType
     );
   }
 
   // Fallback to hardcoded ATOMIC_COMPONENTS data
   const component = ATOMIC_COMPONENTS[componentType];
   if (!component) {
-    console.warn(`[getSynergiesFromDatabase] Component ${componentType} not found in ATOMIC_COMPONENTS`);
+    console.warn(
+      `[getSynergiesFromDatabase] Component ${componentType} not found in ATOMIC_COMPONENTS`
+    );
     return [];
   }
 
   const fallbackSynergies: DatabaseSynergy[] = [];
 
   // Extract positive synergies
-  component.synergies.forEach(synergyType => {
+  component.synergies.forEach((synergyType) => {
     fallbackSynergies.push({
       component1: componentType,
       component2: synergyType,
-      synergyType: 'STRONG',
+      synergyType: "STRONG",
       bonusPercent: 15,
-      description: `Strong synergy between ${component.name} and ${ATOMIC_COMPONENTS[synergyType]?.name || synergyType}`
+      description: `Strong synergy between ${component.name} and ${ATOMIC_COMPONENTS[synergyType]?.name || synergyType}`,
     });
   });
 
   // Extract conflicts
-  component.conflicts.forEach(conflictType => {
+  component.conflicts.forEach((conflictType) => {
     fallbackSynergies.push({
       component1: componentType,
       component2: conflictType,
-      synergyType: 'CONFLICT',
+      synergyType: "CONFLICT",
       bonusPercent: -20,
-      description: `Conflict between ${component.name} and ${ATOMIC_COMPONENTS[conflictType]?.name || conflictType}`
+      description: `Conflict between ${component.name} and ${ATOMIC_COMPONENTS[conflictType]?.name || conflictType}`,
     });
   });
 
@@ -267,16 +266,16 @@ export function calculateSynergyBonus(
   let totalBonus = 0;
   const processedPairs = new Set<string>();
 
-  selectedComponents.forEach(comp1 => {
+  selectedComponents.forEach((comp1) => {
     const synergies = getSynergiesFromDatabase(comp1, dbSynergies);
 
-    synergies.forEach(synergy => {
+    synergies.forEach((synergy) => {
       // Only count if both components are selected
       const hasComp2 = selectedComponents.includes(synergy.component2);
       if (!hasComp2) return;
 
       // Avoid counting the same pair twice (A->B and B->A)
-      const pairKey = [comp1, synergy.component2].sort().join('|');
+      const pairKey = [comp1, synergy.component2].sort().join("|");
       if (processedPairs.has(pairKey)) return;
 
       processedPairs.add(pairKey);

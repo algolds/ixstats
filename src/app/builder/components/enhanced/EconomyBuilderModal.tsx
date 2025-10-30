@@ -1,20 +1,20 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/components/ui/dialog';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { Progress } from '~/components/ui/progress';
-import { 
-  Building2, 
-  Factory, 
-  Users, 
-  TrendingUp, 
-  Target, 
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Progress } from "~/components/ui/progress";
+import {
+  Building2,
+  Factory,
+  Users,
+  TrendingUp,
+  Target,
   Settings,
   AlertTriangle,
   CheckCircle,
@@ -31,36 +31,34 @@ import {
   DollarSign,
   PieChart,
   Gauge,
-  Activity
-} from 'lucide-react';
-import { toast } from 'sonner';
+  Activity,
+} from "lucide-react";
+import { toast } from "sonner";
 
 // Economy Builder Components
-import { AtomicEconomicComponentSelector } from '~/components/economy/atoms/AtomicEconomicComponents';
-import { 
-  EconomicEffectiveness,
-  EconomicImpactPreview
-} from '~/components/economy/atoms/AtomicEconomicUI';
+import { AtomicEconomicComponentSelector } from "~/components/economy/atoms/AtomicEconomicComponents";
 import {
-  EconomicComponentType
-} from '~/components/economy/atoms/AtomicEconomicComponents';
-import { ATOMIC_ECONOMIC_COMPONENTS } from '~/lib/atomic-economic-data';
+  EconomicEffectiveness,
+  EconomicImpactPreview,
+} from "~/components/economy/atoms/AtomicEconomicUI";
+import { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
 
 // Types and Services
-import type { 
-  EconomyBuilderState, 
+import type {
+  EconomyBuilderState,
   EconomyBuilderTab,
   EconomicHealthMetrics,
-  CrossBuilderIntegration
-} from '~/types/economy-builder';
-import type { EconomicInputs } from '../../lib/economy-data-service';
-import { economyIntegrationService } from '../../services/EconomyIntegrationService';
+  CrossBuilderIntegration,
+} from "~/types/economy-builder";
+import type { EconomicInputs } from "../../lib/economy-data-service";
+import { economyIntegrationService } from "../../services/EconomyIntegrationService";
 
 // Tab Components
-import { EconomySectorsTab } from './tabs/EconomySectorsTab';
-import { LaborEmploymentTab } from './tabs/LaborEmploymentTab';
-import { DemographicsPopulationTab } from './tabs/DemographicsPopulationTab';
-import { EconomyPreviewTab } from './tabs/EconomyPreviewTab';
+import { EconomySectorsTab } from "./tabs/EconomySectorsTab";
+import { LaborEmploymentTab } from "./tabs/LaborEmploymentTab";
+import { DemographicsPopulationTab } from "./tabs/DemographicsPopulationTab";
+import { EconomyPreviewTab } from "./tabs/EconomyPreviewTab";
 
 interface EconomyBuilderModalProps {
   isOpen: boolean;
@@ -79,9 +77,9 @@ export function EconomyBuilderModal({
   initialData,
   economicInputs,
   countryId,
-  className = ""
+  className = "",
 }: EconomyBuilderModalProps) {
-  const [activeTab, setActiveTab] = useState<EconomyBuilderTab>('atomicComponents');
+  const [activeTab, setActiveTab] = useState<EconomyBuilderTab>("atomicComponents");
   const [economyBuilder, setEconomyBuilder] = useState<EconomyBuilderState | null>(null);
   const [selectedComponents, setSelectedComponents] = useState<EconomicComponentType[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -94,18 +92,18 @@ export function EconomyBuilderModal({
       if (initialData?.selectedAtomicComponents) {
         setSelectedComponents(initialData.selectedAtomicComponents);
       }
-      
+
       if (initialData) {
         setEconomyBuilder({
           structure: initialData.structure || {
-            economicModel: 'Mixed Economy',
+            economicModel: "Mixed Economy",
             primarySectors: [],
             secondarySectors: [],
             tertiarySectors: [],
             totalGDP: economicInputs.coreIndicators.nominalGDP,
-            gdpCurrency: 'USD',
-            economicTier: 'Developed',
-            growthStrategy: 'Balanced'
+            gdpCurrency: "USD",
+            economicTier: "Developed",
+            growthStrategy: "Balanced",
           },
           sectors: initialData.sectors || [],
           laborMarket: initialData.laborMarket || generateDefaultLaborMarket(),
@@ -114,7 +112,7 @@ export function EconomyBuilderModal({
           isValid: true,
           errors: {},
           lastUpdated: new Date(),
-          version: '1.0.0'
+          version: "1.0.0",
         });
       } else {
         // Generate from economic inputs
@@ -144,23 +142,29 @@ export function EconomyBuilderModal({
   // Consolidated effect for updating service with guards
   useEffect(() => {
     // Update components if changed
-    if (selectedComponents.length > 0 && 
-        JSON.stringify(selectedComponents) !== JSON.stringify(lastSentComponentsRef.current)) {
+    if (
+      selectedComponents.length > 0 &&
+      JSON.stringify(selectedComponents) !== JSON.stringify(lastSentComponentsRef.current)
+    ) {
       lastSentComponentsRef.current = [...selectedComponents];
       economyIntegrationService.updateEconomicComponents(selectedComponents);
     }
 
     // Update builder if changed
-    if (economyBuilder && 
-        economyBuilder !== initialData && 
-        JSON.stringify(economyBuilder) !== JSON.stringify(lastSentBuilderRef.current)) {
+    if (
+      economyBuilder &&
+      economyBuilder !== initialData &&
+      JSON.stringify(economyBuilder) !== JSON.stringify(lastSentBuilderRef.current)
+    ) {
       lastSentBuilderRef.current = economyBuilder;
       economyIntegrationService.updateEconomyBuilder(economyBuilder);
     }
 
     // Update inputs if changed
-    if (economicInputs && 
-        JSON.stringify(economicInputs) !== JSON.stringify(lastSentInputsRef.current)) {
+    if (
+      economicInputs &&
+      JSON.stringify(economicInputs) !== JSON.stringify(lastSentInputsRef.current)
+    ) {
       lastSentInputsRef.current = economicInputs;
       economyIntegrationService.updateEconomicInputs(economicInputs);
     }
@@ -171,14 +175,14 @@ export function EconomyBuilderModal({
       const defaultComponents: EconomicComponentType[] = [
         EconomicComponentType.MIXED_ECONOMY,
         EconomicComponentType.SERVICE_BASED,
-        EconomicComponentType.BALANCED_TRADE
+        EconomicComponentType.BALANCED_TRADE,
       ];
-      
+
       setSelectedComponents(defaultComponents);
       await economyIntegrationService.updateEconomicComponents(defaultComponents);
     } catch (error) {
-      console.error('Failed to generate initial economy builder:', error);
-      toast.error('Failed to initialize economy builder');
+      console.error("Failed to generate initial economy builder:", error);
+      toast.error("Failed to initialize economy builder");
     }
   };
 
@@ -208,7 +212,7 @@ export function EconomyBuilderModal({
       healthcare: 14.0,
       hospitality: 7.5,
       government: 15.0,
-      other: 6.5
+      other: 6.5,
     },
     employmentType: {
       fullTime: 72.0,
@@ -217,7 +221,7 @@ export function EconomyBuilderModal({
       seasonal: 2.0,
       selfEmployed: 9.5,
       gig: 5.5,
-      informal: 3.0
+      informal: 3.0,
     },
     averageAnnualIncome: 45000,
     averageWorkweekHours: 38.5,
@@ -227,7 +231,7 @@ export function EconomyBuilderModal({
     parentalLeaveWeeks: 12,
     unionizationRate: 12.5,
     collectiveBargainingCoverage: 18.0,
-    minimumWageHourly: 12.50,
+    minimumWageHourly: 12.5,
     livingWageHourly: 18.75,
     workplaceSafetyIndex: 72,
     laborRightsScore: 68,
@@ -236,8 +240,8 @@ export function EconomyBuilderModal({
       wageProtection: 70,
       healthSafety: 75,
       discriminationProtection: 80,
-      collectiveRights: 60
-    }
+      collectiveRights: 60,
+    },
   });
 
   const generateDefaultDemographics = () => ({
@@ -246,37 +250,37 @@ export function EconomyBuilderModal({
     ageDistribution: {
       under15: 18,
       age15to64: 65,
-      over65: 17
+      over65: 17,
     },
     urbanRuralSplit: {
       urban: 75,
-      rural: 25
+      rural: 25,
     },
     regions: [
       {
-        name: 'Capital Region',
+        name: "Capital Region",
         population: Math.round(economicInputs.coreIndicators.totalPopulation * 0.3),
         populationPercent: 30,
         urbanPercent: 90,
         economicActivity: 40,
-        developmentLevel: 'Advanced' as const
+        developmentLevel: "Advanced" as const,
       },
       {
-        name: 'Industrial Region',
+        name: "Industrial Region",
         population: Math.round(economicInputs.coreIndicators.totalPopulation * 0.25),
         populationPercent: 25,
         urbanPercent: 80,
         economicActivity: 30,
-        developmentLevel: 'Developed' as const
+        developmentLevel: "Developed" as const,
       },
       {
-        name: 'Agricultural Region',
+        name: "Agricultural Region",
         population: Math.round(economicInputs.coreIndicators.totalPopulation * 0.45),
         populationPercent: 45,
         urbanPercent: 60,
         economicActivity: 30,
-        developmentLevel: 'Developing' as const
-      }
+        developmentLevel: "Developing" as const,
+      },
     ],
     lifeExpectancy: 78,
     literacyRate: 95,
@@ -284,7 +288,7 @@ export function EconomyBuilderModal({
       noEducation: 2,
       primary: 25,
       secondary: 45,
-      tertiary: 28
+      tertiary: 28,
     },
     netMigrationRate: 2.5,
     immigrationRate: 5.0,
@@ -294,25 +298,26 @@ export function EconomyBuilderModal({
     healthExpenditureGDP: 8.5,
     youthDependencyRatio: 28,
     elderlyDependencyRatio: 26,
-    totalDependencyRatio: 54
+    totalDependencyRatio: 54,
   });
 
   // Calculate overall effectiveness
   const overallEffectiveness = useMemo(() => {
     if (selectedComponents.length === 0) return 0;
-    
+
     const totalEffectiveness = selectedComponents.reduce(
-      (sum, comp) => sum + (ATOMIC_ECONOMIC_COMPONENTS[comp]?.effectiveness || 0), 0
+      (sum, comp) => sum + (ATOMIC_ECONOMIC_COMPONENTS[comp]?.effectiveness || 0),
+      0
     );
-    
+
     const baseEffectiveness = totalEffectiveness / selectedComponents.length;
-    
+
     // Calculate synergy bonuses and conflict penalties
     let synergyBonus = 0;
     let conflictPenalty = 0;
-    
-    selectedComponents.forEach(comp1 => {
-      selectedComponents.forEach(comp2 => {
+
+    selectedComponents.forEach((comp1) => {
+      selectedComponents.forEach((comp2) => {
         if (comp1 !== comp2) {
           const component1 = ATOMIC_ECONOMIC_COMPONENTS[comp1];
           if (component1?.synergies.includes(comp2)) {
@@ -324,7 +329,7 @@ export function EconomyBuilderModal({
         }
       });
     });
-    
+
     return Math.max(0, Math.min(100, baseEffectiveness + synergyBonus - conflictPenalty));
   }, [selectedComponents]);
 
@@ -346,18 +351,26 @@ export function EconomyBuilderModal({
         unemploymentRate: 5,
         innovationIndex: 50,
         productivityIndex: 50,
-        economicRiskLevel: 'Medium' as const,
+        economicRiskLevel: "Medium" as const,
         externalVulnerability: 50,
         domesticVulnerability: 50,
-        systemicRisk: 50
+        systemicRisk: 50,
       };
     }
 
     // Calculate based on components and configuration
     const baseScore = overallEffectiveness;
-    const sustainabilityBonus = selectedComponents.includes(EconomicComponentType.SUSTAINABLE_DEVELOPMENT) ? 15 : 0;
-    const innovationBonus = selectedComponents.includes(EconomicComponentType.INNOVATION_ECONOMY) ? 20 : 0;
-    const resilienceBonus = selectedComponents.includes(EconomicComponentType.MIXED_ECONOMY) ? 10 : 0;
+    const sustainabilityBonus = selectedComponents.includes(
+      EconomicComponentType.SUSTAINABLE_DEVELOPMENT
+    )
+      ? 15
+      : 0;
+    const innovationBonus = selectedComponents.includes(EconomicComponentType.INNOVATION_ECONOMY)
+      ? 20
+      : 0;
+    const resilienceBonus = selectedComponents.includes(EconomicComponentType.MIXED_ECONOMY)
+      ? 10
+      : 0;
 
     return {
       economicHealthScore: Math.min(100, baseScore + sustainabilityBonus + innovationBonus),
@@ -365,7 +378,7 @@ export function EconomyBuilderModal({
       resilienceScore: 65 + resilienceBonus,
       competitivenessScore: baseScore + innovationBonus,
       gdpGrowthRate: economicInputs.coreIndicators.realGDPGrowthRate,
-      potentialGrowthRate: economicInputs.coreIndicators.realGDPGrowthRate + (innovationBonus / 10),
+      potentialGrowthRate: economicInputs.coreIndicators.realGDPGrowthRate + innovationBonus / 10,
       growthSustainability: 75 + sustainabilityBonus,
       inflationRate: economicInputs.coreIndicators.inflationRate,
       inflationVolatility: 2,
@@ -373,15 +386,15 @@ export function EconomyBuilderModal({
       fiscalStability: 70,
       unemploymentRate: 5,
       innovationIndex: 50 + innovationBonus,
-      productivityIndex: 60 + (innovationBonus / 2),
+      productivityIndex: 60 + innovationBonus / 2,
       economicRiskLevel: (() => {
-        if (baseScore > 80) return 'Low' as const;
-        if (baseScore > 60) return 'Medium' as const;
-        return 'High' as const;
+        if (baseScore > 80) return "Low" as const;
+        if (baseScore > 60) return "Medium" as const;
+        return "High" as const;
       })(),
       externalVulnerability: 50,
       domesticVulnerability: 50,
-      systemicRisk: 50
+      systemicRisk: 50,
     };
   }, [economyBuilder, selectedComponents, overallEffectiveness, economicInputs]);
 
@@ -395,7 +408,7 @@ export function EconomyBuilderModal({
 
   const handleSave = async () => {
     if (!economyBuilder || !isValid) {
-      toast.error('Please fix validation errors before saving');
+      toast.error("Please fix validation errors before saving");
       return;
     }
 
@@ -405,15 +418,15 @@ export function EconomyBuilderModal({
         ...economyBuilder,
         selectedAtomicComponents: selectedComponents,
         lastUpdated: new Date(),
-        isValid: true
+        isValid: true,
       };
-      
+
       await onSave(updatedBuilder);
-      toast.success('Economy configuration saved successfully!');
+      toast.success("Economy configuration saved successfully!");
       onClose();
     } catch (error) {
-      console.error('Save failed:', error);
-      toast.error('Failed to save economy configuration');
+      console.error("Save failed:", error);
+      toast.error("Failed to save economy configuration");
     } finally {
       setIsSaving(false);
     }
@@ -425,33 +438,45 @@ export function EconomyBuilderModal({
 
   const getTabIcon = (tab: EconomyBuilderTab) => {
     switch (tab) {
-      case 'atomicComponents': return Zap;
-      case 'sectors': return Factory;
-      case 'labor': return Users;
-      case 'demographics': return BarChart3;
-      case 'preview': return Target;
-      default: return Settings;
+      case "atomicComponents":
+        return Zap;
+      case "sectors":
+        return Factory;
+      case "labor":
+        return Users;
+      case "demographics":
+        return BarChart3;
+      case "preview":
+        return Target;
+      default:
+        return Settings;
     }
   };
 
   const getTabLabel = (tab: EconomyBuilderTab) => {
     switch (tab) {
-      case 'atomicComponents': return 'Atomic Components';
-      case 'sectors': return 'Sectors';
-      case 'labor': return 'Labor & Employment';
-      case 'demographics': return 'Demographics';
-      case 'preview': return 'Preview';
-      default: return 'Unknown';
+      case "atomicComponents":
+        return "Atomic Components";
+      case "sectors":
+        return "Sectors";
+      case "labor":
+        return "Labor & Employment";
+      case "demographics":
+        return "Demographics";
+      case "preview":
+        return "Preview";
+      default:
+        return "Unknown";
     }
   };
 
   if (!economyBuilder) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
-          <div className="flex items-center justify-center h-64">
+        <DialogContent className="max-h-[90vh] max-w-6xl overflow-hidden">
+          <div className="flex h-64 items-center justify-center">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
               <p className="text-muted-foreground">Initializing economy builder...</p>
             </div>
           </div>
@@ -462,23 +487,23 @@ export function EconomyBuilderModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden p-0">
-        <div className="flex flex-col h-full">
+      <DialogContent className="max-h-[95vh] max-w-7xl overflow-hidden p-0">
+        <div className="flex h-full flex-col">
           {/* Header */}
-          <DialogHeader className="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+          <DialogHeader className="border-b bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 dark:from-blue-900/20 dark:to-indigo-900/20">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/20">
+                <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-900/20">
                   <Building2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
                   <DialogTitle className="text-xl font-semibold">Economy Builder</DialogTitle>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Configure your economic system with atomic components
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-4">
                 {/* Effectiveness Display */}
                 <div className="flex items-center space-x-2">
@@ -486,10 +511,10 @@ export function EconomyBuilderModal({
                     <div className="text-lg font-bold text-green-600 dark:text-green-400">
                       {overallEffectiveness.toFixed(0)}%
                     </div>
-                    <div className="text-xs text-muted-foreground">Effectiveness</div>
+                    <div className="text-muted-foreground text-xs">Effectiveness</div>
                   </div>
-                  <div className="w-12 h-12 relative">
-                    <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 100 100">
+                  <div className="relative h-12 w-12">
+                    <svg className="h-12 w-12 -rotate-90 transform" viewBox="0 0 100 100">
                       <circle
                         cx="50"
                         cy="50"
@@ -507,7 +532,7 @@ export function EconomyBuilderModal({
                         strokeWidth="8"
                         fill="none"
                         strokeDasharray={`${overallEffectiveness * 2.51} 251`}
-                        className="text-green-600 dark:text-green-400 transition-all duration-500"
+                        className="text-green-600 transition-all duration-500 dark:text-green-400"
                         strokeLinecap="round"
                       />
                     </svg>
@@ -517,18 +542,18 @@ export function EconomyBuilderModal({
                 {/* Action Buttons */}
                 <div className="flex items-center space-x-2">
                   <Button variant="outline" onClick={onClose}>
-                    <X className="h-4 w-4 mr-2" />
+                    <X className="mr-2 h-4 w-4" />
                     Cancel
                   </Button>
-                  <Button 
-                    onClick={handleSave} 
+                  <Button
+                    onClick={handleSave}
                     disabled={!isValid || isSaving}
                     className="bg-blue-600 hover:bg-blue-700"
                   >
                     {isSaving ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
                     ) : (
-                      <Save className="h-4 w-4 mr-2" />
+                      <Save className="mr-2 h-4 w-4" />
                     )}
                     Save Economy
                   </Button>
@@ -539,13 +564,15 @@ export function EconomyBuilderModal({
 
           {/* Validation Errors */}
           {validationErrors.length > 0 && (
-            <div className="px-6 py-2 bg-red-50 dark:bg-red-900/20 border-b">
+            <div className="border-b bg-red-50 px-6 py-2 dark:bg-red-900/20">
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   <div className="space-y-1">
                     {validationErrors.map((error, index) => (
-                      <div key={index} className="text-sm">{error}</div>
+                      <div key={index} className="text-sm">
+                        {error}
+                      </div>
                     ))}
                   </div>
                 </AlertDescription>
@@ -555,11 +582,23 @@ export function EconomyBuilderModal({
 
           {/* Main Content */}
           <div className="flex-1 overflow-hidden">
-            <Tabs value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
+            <Tabs
+              value={activeTab}
+              onValueChange={handleTabChange}
+              className="flex h-full flex-col"
+            >
               {/* Tab Navigation */}
-              <div className="px-6 py-3 border-b bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
+              <div className="border-b bg-white/50 px-6 py-3 backdrop-blur-sm dark:bg-slate-800/50">
                 <TabsList className="grid w-full grid-cols-5">
-                  {(['atomicComponents', 'sectors', 'labor', 'demographics', 'preview'] as EconomyBuilderTab[]).map((tab) => {
+                  {(
+                    [
+                      "atomicComponents",
+                      "sectors",
+                      "labor",
+                      "demographics",
+                      "preview",
+                    ] as EconomyBuilderTab[]
+                  ).map((tab) => {
                     const Icon = getTabIcon(tab);
                     return (
                       <TabsTrigger key={tab} value={tab} className="flex items-center space-x-2">
@@ -573,8 +612,8 @@ export function EconomyBuilderModal({
 
               {/* Tab Content */}
               <div className="flex-1 overflow-auto">
-                <TabsContent value="atomicComponents" className="h-full m-0 p-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+                <TabsContent value="atomicComponents" className="m-0 h-full p-6">
+                  <div className="grid h-full grid-cols-1 gap-6 lg:grid-cols-3">
                     {/* Component Selector */}
                     <div className="lg:col-span-2">
                       <Card className="h-full">
@@ -600,15 +639,13 @@ export function EconomyBuilderModal({
                         selectedComponents={selectedComponents}
                         maxComponents={12}
                       />
-                      
-                      <EconomicImpactPreview
-                        selectedComponents={selectedComponents}
-                      />
+
+                      <EconomicImpactPreview selectedComponents={selectedComponents} />
                     </div>
                   </div>
                 </TabsContent>
 
-                <TabsContent value="sectors" className="h-full m-0 p-6">
+                <TabsContent value="sectors" className="m-0 h-full p-6">
                   <EconomySectorsTab
                     economyBuilder={economyBuilder}
                     onEconomyBuilderChange={handleEconomyBuilderChange}
@@ -616,7 +653,7 @@ export function EconomyBuilderModal({
                   />
                 </TabsContent>
 
-                <TabsContent value="labor" className="h-full m-0 p-6">
+                <TabsContent value="labor" className="m-0 h-full p-6">
                   <LaborEmploymentTab
                     economyBuilder={economyBuilder}
                     onEconomyBuilderChange={handleEconomyBuilderChange}
@@ -624,7 +661,7 @@ export function EconomyBuilderModal({
                   />
                 </TabsContent>
 
-                <TabsContent value="demographics" className="h-full m-0 p-6">
+                <TabsContent value="demographics" className="m-0 h-full p-6">
                   <DemographicsPopulationTab
                     economyBuilder={economyBuilder}
                     onEconomyBuilderChange={handleEconomyBuilderChange}
@@ -632,7 +669,7 @@ export function EconomyBuilderModal({
                   />
                 </TabsContent>
 
-                <TabsContent value="preview" className="h-full m-0 p-6">
+                <TabsContent value="preview" className="m-0 h-full p-6">
                   <EconomyPreviewTab
                     economyBuilder={economyBuilder}
                     economicHealthMetrics={economicHealthMetrics}

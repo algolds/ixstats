@@ -13,22 +13,24 @@ export const atomicGovernmentRouter = createTRPCRouter({
           isActive: true,
         },
         orderBy: {
-          effectivenessScore: 'desc',
+          effectivenessScore: "desc",
         },
       });
     }),
 
   // Create a new government component
   createComponent: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-      componentType: z.nativeEnum(ComponentType),
-      effectivenessScore: z.number().min(0).max(100).default(50),
-      implementationCost: z.number().default(0),
-      maintenanceCost: z.number().default(0),
-      requiredCapacity: z.number().min(0).max(100).default(50),
-      notes: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        componentType: z.nativeEnum(ComponentType),
+        effectivenessScore: z.number().min(0).max(100).default(50),
+        implementationCost: z.number().default(0),
+        maintenanceCost: z.number().default(0),
+        requiredCapacity: z.number().min(0).max(100).default(50),
+        notes: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Check if component already exists for this country
       const existing = await ctx.db.governmentComponent.findFirst({
@@ -58,18 +60,20 @@ export const atomicGovernmentRouter = createTRPCRouter({
 
   // Update government component
   updateComponent: protectedProcedure
-    .input(z.object({
-      id: z.string(),
-      effectivenessScore: z.number().min(0).max(100).optional(),
-      implementationCost: z.number().optional(),
-      maintenanceCost: z.number().optional(),
-      requiredCapacity: z.number().min(0).max(100).optional(),
-      notes: z.string().optional(),
-      isActive: z.boolean().optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        effectivenessScore: z.number().min(0).max(100).optional(),
+        implementationCost: z.number().optional(),
+        maintenanceCost: z.number().optional(),
+        requiredCapacity: z.number().min(0).max(100).optional(),
+        notes: z.string().optional(),
+        isActive: z.boolean().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input;
-      
+
       return ctx.db.governmentComponent.update({
         where: { id },
         data: updateData,
@@ -103,14 +107,16 @@ export const atomicGovernmentRouter = createTRPCRouter({
 
   // Create component synergy
   createSynergy: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-      primaryComponentId: z.string(),
-      secondaryComponentId: z.string(),
-      synergyType: z.enum(['MULTIPLICATIVE', 'ADDITIVE', 'CONFLICTING']),
-      effectMultiplier: z.number().default(1.0),
-      description: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        primaryComponentId: z.string(),
+        secondaryComponentId: z.string(),
+        synergyType: z.enum(["MULTIPLICATIVE", "ADDITIVE", "CONFLICTING"]),
+        effectMultiplier: z.number().default(1.0),
+        description: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Check if synergy already exists
       const existing = await ctx.db.componentSynergy.findFirst({
@@ -129,7 +135,7 @@ export const atomicGovernmentRouter = createTRPCRouter({
       });
 
       if (existing) {
-        throw new Error('Synergy relationship already exists between these components');
+        throw new Error("Synergy relationship already exists between these components");
       }
 
       return ctx.db.componentSynergy.create({
@@ -168,18 +174,17 @@ export const atomicGovernmentRouter = createTRPCRouter({
       });
 
       // Calculate overall effectiveness with synergies
-      const baseEffectiveness = components.reduce(
-        (sum, c) => sum + c.effectivenessScore, 0
-      ) / components.length;
+      const baseEffectiveness =
+        components.reduce((sum, c) => sum + c.effectivenessScore, 0) / components.length;
 
       // Apply synergy modifiers
       let synergyBonus = 0;
-      synergies.forEach(synergy => {
-        if (synergy.synergyType === 'MULTIPLICATIVE') {
+      synergies.forEach((synergy) => {
+        if (synergy.synergyType === "MULTIPLICATIVE") {
           synergyBonus += (synergy.effectMultiplier - 1) * 10;
-        } else if (synergy.synergyType === 'ADDITIVE') {
+        } else if (synergy.synergyType === "ADDITIVE") {
           synergyBonus += synergy.effectMultiplier * 5;
-        } else if (synergy.synergyType === 'CONFLICTING') {
+        } else if (synergy.synergyType === "CONFLICTING") {
           synergyBonus -= synergy.effectMultiplier * 10;
         }
       });
@@ -188,9 +193,9 @@ export const atomicGovernmentRouter = createTRPCRouter({
 
       // Category breakdown
       const categoryBreakdown: Record<string, { count: number; avgEffectiveness: number }> = {};
-      
-      components.forEach(component => {
-        const category = component.componentType.split('_')[0]; // Get first part as category
+
+      components.forEach((component) => {
+        const category = component.componentType.split("_")[0]; // Get first part as category
         if (!categoryBreakdown[category]) {
           categoryBreakdown[category] = { count: 0, avgEffectiveness: 0 };
         }
@@ -198,28 +203,31 @@ export const atomicGovernmentRouter = createTRPCRouter({
         categoryBreakdown[category].avgEffectiveness += component.effectivenessScore;
       });
 
-      Object.keys(categoryBreakdown).forEach(category => {
-        categoryBreakdown[category]!.avgEffectiveness = 
+      Object.keys(categoryBreakdown).forEach((category) => {
+        categoryBreakdown[category]!.avgEffectiveness =
           categoryBreakdown[category]!.avgEffectiveness / categoryBreakdown[category]!.count;
       });
 
       // Generate recommendations
       const recommendations: string[] = [];
-      
+
       if (overallEffectiveness < 70) {
-        recommendations.push('Consider adding more high-effectiveness components');
-      }
-      
-      if (synergies.filter(s => s.synergyType === 'CONFLICTING').length > 0) {
-        recommendations.push('Review conflicting components to improve system harmony');
-      }
-      
-      if (components.length < 5) {
-        recommendations.push('Expand government structure with additional specialized components');
+        recommendations.push("Consider adding more high-effectiveness components");
       }
 
-      const totalCost = components.reduce((sum, c) => sum + c.implementationCost + c.maintenanceCost, 0);
-      
+      if (synergies.filter((s) => s.synergyType === "CONFLICTING").length > 0) {
+        recommendations.push("Review conflicting components to improve system harmony");
+      }
+
+      if (components.length < 5) {
+        recommendations.push("Expand government structure with additional specialized components");
+      }
+
+      const totalCost = components.reduce(
+        (sum, c) => sum + c.implementationCost + c.maintenanceCost,
+        0
+      );
+
       return {
         overallEffectiveness: Math.round(overallEffectiveness),
         totalComponents: components.length,
@@ -227,7 +235,7 @@ export const atomicGovernmentRouter = createTRPCRouter({
         categoryBreakdown,
         recommendations,
         synergyCount: synergies.length,
-        conflictCount: synergies.filter(s => s.synergyType === 'CONFLICTING').length,
+        conflictCount: synergies.filter((s) => s.synergyType === "CONFLICTING").length,
       };
     }),
 
@@ -244,30 +252,34 @@ export const atomicGovernmentRouter = createTRPCRouter({
           categories: true,
         },
         orderBy: {
-          createdAt: 'desc',
+          createdAt: "desc",
         },
       });
     }),
 
   // Create budget scenario
   createBudgetScenario: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-      name: z.string(),
-      description: z.string().optional(),
-      totalBudget: z.number(),
-      assumptions: z.string().optional(),
-      riskLevel: z.enum(['low', 'medium', 'high']),
-      feasibility: z.number().min(0).max(100).default(50),
-      categories: z.array(z.object({
-        categoryName: z.string(),
-        allocatedAmount: z.number(),
-        allocatedPercent: z.number(),
-        priority: z.enum(['critical', 'high', 'medium', 'low']),
-        efficiency: z.number().min(0).max(100).default(50),
-        performance: z.number().min(0).max(100).default(50),
-      })),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        name: z.string(),
+        description: z.string().optional(),
+        totalBudget: z.number(),
+        assumptions: z.string().optional(),
+        riskLevel: z.enum(["low", "medium", "high"]),
+        feasibility: z.number().min(0).max(100).default(50),
+        categories: z.array(
+          z.object({
+            categoryName: z.string(),
+            allocatedAmount: z.number(),
+            allocatedPercent: z.number(),
+            priority: z.enum(["critical", "high", "medium", "low"]),
+            efficiency: z.number().min(0).max(100).default(50),
+            performance: z.number().min(0).max(100).default(50),
+          })
+        ),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { categories, ...scenarioData } = input;
 
@@ -277,7 +289,7 @@ export const atomicGovernmentRouter = createTRPCRouter({
 
       // Create scenario categories
       await ctx.db.budgetScenarioCategory.createMany({
-        data: categories.map(category => ({
+        data: categories.map((category) => ({
           ...category,
           scenarioId: scenario.id,
         })),
@@ -296,25 +308,27 @@ export const atomicGovernmentRouter = createTRPCRouter({
           isActive: true,
         },
         orderBy: {
-          createdAt: 'desc',
+          createdAt: "desc",
         },
       });
     }),
 
   // Create fiscal policy
   createFiscalPolicy: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-      name: z.string(),
-      policyType: z.enum(['TAX_POLICY', 'SPENDING_POLICY', 'DEBT_POLICY']),
-      impact: z.number(),
-      implementation: z.enum(['IMMEDIATE', 'SHORT_TERM', 'LONG_TERM']),
-      cost: z.number(),
-      benefits: z.number(),
-      description: z.string().optional(),
-      appliedDate: z.date().optional(),
-      expiryDate: z.date().optional(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        name: z.string(),
+        policyType: z.enum(["TAX_POLICY", "SPENDING_POLICY", "DEBT_POLICY"]),
+        impact: z.number(),
+        implementation: z.enum(["IMMEDIATE", "SHORT_TERM", "LONG_TERM"]),
+        cost: z.number(),
+        benefits: z.number(),
+        description: z.string().optional(),
+        appliedDate: z.date().optional(),
+        expiryDate: z.date().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       return ctx.db.fiscalPolicy.create({
         data: input,
@@ -323,10 +337,12 @@ export const atomicGovernmentRouter = createTRPCRouter({
 
   // Apply fiscal policy
   applyFiscalPolicy: protectedProcedure
-    .input(z.object({ 
-      policyId: z.string(),
-      measuredImpact: z.number().optional(),
-    }))
+    .input(
+      z.object({
+        policyId: z.string(),
+        measuredImpact: z.number().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       return ctx.db.fiscalPolicy.update({
         where: { id: input.policyId },

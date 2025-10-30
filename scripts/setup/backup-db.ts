@@ -28,7 +28,7 @@ async function backupDatabase() {
     console.log("   pg_dump $DATABASE_URL > backup_$(date +%Y%m%d_%H%M%S).sql");
     process.exit(1);
 
-    const backupDir = './prisma/backups';
+    const backupDir = "./prisma/backups";
 
     // Create backup directory if it doesn't exist
     if (!existsSync(backupDir)) {
@@ -36,9 +36,8 @@ async function backupDatabase() {
     }
 
     // Generate timestamp
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
     const backupPath = join(backupDir, `backup_${timestamp}.sql`);
-    
   } catch (error) {
     console.error("❌ Database backup failed:", error);
     process.exit(1);

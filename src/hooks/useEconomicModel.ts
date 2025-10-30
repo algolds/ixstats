@@ -76,7 +76,7 @@ const initialSectorData: SectorData = {
   totalGDP: 0,
 };
 
-const initialPolicyData: Omit<PolicyData, 'id' | 'economicModelId'> = {
+const initialPolicyData: Omit<PolicyData, "id" | "economicModelId"> = {
   name: "New Policy",
   description: "Details about the policy",
   gdpEffectPercentage: 0,
@@ -207,37 +207,36 @@ export function useEconomicModel(
   }, [parameters]);
 
   // Action: Update Parameter
-  const updateParameter = useCallback(<K extends keyof ModelParameters>(
-    field: K,
-    value: number
-  ) => {
-    setParameters((prev) => ({ ...prev, [field]: value }));
-  }, []);
+  const updateParameter = useCallback(
+    <K extends keyof ModelParameters>(field: K, value: number) => {
+      setParameters((prev) => ({ ...prev, [field]: value }));
+    },
+    []
+  );
 
   // Action: Update Sectoral Output
-  const updateSectoralOutput = useCallback((
-    index: number,
-    field: keyof SectorData,
-    value: string | number
-  ) => {
-    const updatedOutputs = [...sectoralOutputs];
-    const numericValue = typeof value === "string" ? parseFloat(value) : value;
+  const updateSectoralOutput = useCallback(
+    (index: number, field: keyof SectorData, value: string | number) => {
+      const updatedOutputs = [...sectoralOutputs];
+      const numericValue = typeof value === "string" ? parseFloat(value) : value;
 
-    if (!isNaN(numericValue) && updatedOutputs[index]) {
-      (updatedOutputs[index] as any)[field] = numericValue;
+      if (!isNaN(numericValue) && updatedOutputs[index]) {
+        (updatedOutputs[index] as any)[field] = numericValue;
 
-      // Recalculate totalGDP for the changed sector
-      if (field !== "year" && field !== "totalGDP") {
-        updatedOutputs[index]!.totalGDP =
-          (updatedOutputs[index]?.agriculture ?? 0) +
-          (updatedOutputs[index]?.industry ?? 0) +
-          (updatedOutputs[index]?.services ?? 0) +
-          (updatedOutputs[index]?.government ?? 0);
+        // Recalculate totalGDP for the changed sector
+        if (field !== "year" && field !== "totalGDP") {
+          updatedOutputs[index]!.totalGDP =
+            (updatedOutputs[index]?.agriculture ?? 0) +
+            (updatedOutputs[index]?.industry ?? 0) +
+            (updatedOutputs[index]?.services ?? 0) +
+            (updatedOutputs[index]?.government ?? 0);
+        }
+
+        setSectoralOutputs(updatedOutputs);
       }
-
-      setSectoralOutputs(updatedOutputs);
-    }
-  }, [sectoralOutputs]);
+    },
+    [sectoralOutputs]
+  );
 
   // Action: Add Sectoral Output Year
   const addSectoralOutputYear = useCallback(() => {
@@ -247,32 +246,39 @@ export function useEconomicModel(
   }, [sectoralOutputs, parameters.baseYear]);
 
   // Action: Remove Sectoral Output Year
-  const removeSectoralOutputYear = useCallback((index: number) => {
-    if (sectoralOutputs.length > 1) {
-      const updatedOutputs = sectoralOutputs.filter((_, i) => i !== index);
-      setSectoralOutputs(updatedOutputs);
-    } else {
-      toast.error("Cannot remove the last sectoral output year.");
-    }
-  }, [sectoralOutputs]);
+  const removeSectoralOutputYear = useCallback(
+    (index: number) => {
+      if (sectoralOutputs.length > 1) {
+        const updatedOutputs = sectoralOutputs.filter((_, i) => i !== index);
+        setSectoralOutputs(updatedOutputs);
+      } else {
+        toast.error("Cannot remove the last sectoral output year.");
+      }
+    },
+    [sectoralOutputs]
+  );
 
   // Action: Update Policy Effect
-  const updatePolicyEffect = useCallback((
-    index: number,
-    field: keyof PolicyData,
-    value: string | number
-  ) => {
-    const updatedPolicies = [...policyEffects];
-    if (field === "name" || field === "description" || field === "id" || field === "economicModelId") {
-      (updatedPolicies[index] as any)[field] = value as string;
-    } else {
-      const numericValue = typeof value === "string" ? parseFloat(value) : value;
-      if (!isNaN(numericValue)) {
-        (updatedPolicies[index] as any)[field] = numericValue;
+  const updatePolicyEffect = useCallback(
+    (index: number, field: keyof PolicyData, value: string | number) => {
+      const updatedPolicies = [...policyEffects];
+      if (
+        field === "name" ||
+        field === "description" ||
+        field === "id" ||
+        field === "economicModelId"
+      ) {
+        (updatedPolicies[index] as any)[field] = value as string;
+      } else {
+        const numericValue = typeof value === "string" ? parseFloat(value) : value;
+        if (!isNaN(numericValue)) {
+          (updatedPolicies[index] as any)[field] = numericValue;
+        }
       }
-    }
-    setPolicyEffects(updatedPolicies);
-  }, [policyEffects]);
+      setPolicyEffects(updatedPolicies);
+    },
+    [policyEffects]
+  );
 
   // Use a deterministic counter for temp IDs
   const tempIdRef = useRef(0);
@@ -290,10 +296,13 @@ export function useEconomicModel(
   }, [policyEffects, country.economicModel?.id]);
 
   // Action: Remove Policy Effect
-  const removePolicyEffect = useCallback((index: number) => {
-    const updatedPolicies = policyEffects.filter((_, i) => i !== index);
-    setPolicyEffects(updatedPolicies);
-  }, [policyEffects]);
+  const removePolicyEffect = useCallback(
+    (index: number) => {
+      const updatedPolicies = policyEffects.filter((_, i) => i !== index);
+      setPolicyEffects(updatedPolicies);
+    },
+    [policyEffects]
+  );
 
   // Action: Reset Parameters
   const resetParameters = useCallback(() => {
@@ -360,8 +369,7 @@ export function useEconomicModel(
         socialMobilityIndex: 60,
         totalGovernmentSpending: (totalGDP * (parameters.fiscalBalance + 2)) / 100,
         spendingGDPPercent: parameters.fiscalBalance + 2,
-        spendingPerCapita:
-          (totalGDP * (parameters.fiscalBalance + 2)) / 100 / (population || 1),
+        spendingPerCapita: (totalGDP * (parameters.fiscalBalance + 2)) / 100 / (population || 1),
         lifeExpectancy: 75,
         urbanPopulationPercent: 60,
         ruralPopulationPercent: 40,

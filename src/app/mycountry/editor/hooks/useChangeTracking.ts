@@ -36,12 +36,8 @@ export function useChangeTracking(
 
   // Calculate derived state
   const hasChanges = changes.length > 0;
-  const hasHighImpactChanges = changes.some(
-    (c) => c.impact?.impactLevel === "high"
-  );
-  const hasMediumImpactChanges = changes.some(
-    (c) => c.impact?.impactLevel === "medium"
-  );
+  const hasHighImpactChanges = changes.some((c) => c.impact?.impactLevel === "high");
+  const hasMediumImpactChanges = changes.some((c) => c.impact?.impactLevel === "medium");
 
   /**
    * Track a single field change
@@ -249,7 +245,10 @@ export const FIELD_METADATA: Record<
   populationTier: { label: "Population Tier", category: "Core Economics" },
 
   // Labor & Employment
-  laborForceParticipationRate: { label: "Labor Force Participation Rate", category: "Labor & Employment" },
+  laborForceParticipationRate: {
+    label: "Labor Force Participation Rate",
+    category: "Labor & Employment",
+  },
   employmentRate: { label: "Employment Rate", category: "Labor & Employment" },
   unemploymentRate: { label: "Unemployment Rate", category: "Labor & Employment" },
   totalWorkforce: { label: "Total Workforce", category: "Labor & Employment" },
@@ -282,8 +281,10 @@ export const FIELD_METADATA: Record<
  * Helper to get field metadata
  */
 export function getFieldMetadata(fieldPath: string) {
-  return FIELD_METADATA[fieldPath] || {
-    label: fieldPath,
-    category: "Other",
-  };
+  return (
+    FIELD_METADATA[fieldPath] || {
+      label: fieldPath,
+      category: "Other",
+    }
+  );
 }

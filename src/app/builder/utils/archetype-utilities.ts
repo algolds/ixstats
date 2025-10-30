@@ -5,9 +5,9 @@
  * Extracted from EconomicArchetypeService for better code organization and reusability.
  */
 
-import type { EconomicArchetype, ArchetypeComparison } from '../data/archetype-types';
-import type { EconomyBuilderState } from '~/types/economy-builder';
-import { EconomicComponentType } from '~/lib/atomic-economic-data';
+import type { EconomicArchetype, ArchetypeComparison } from "../data/archetype-types";
+import type { EconomyBuilderState } from "~/types/economy-builder";
+import { EconomicComponentType } from "~/lib/atomic-economic-data";
 
 /**
  * Calculate how well an archetype fits a given economic state
@@ -31,13 +31,14 @@ export function calculateArchetypeFit(
   const currentComponents = new Set(currentState.selectedAtomicComponents);
   const archetypeComponents = new Set(archetype.economicComponents);
 
-  const matchingComponents = archetype.economicComponents.filter(c =>
+  const matchingComponents = archetype.economicComponents.filter((c) =>
     currentComponents.has(c)
   ).length;
 
-  const componentScore = archetypeComponents.size > 0
-    ? (matchingComponents / archetypeComponents.size) * componentMatchWeight
-    : 0;
+  const componentScore =
+    archetypeComponents.size > 0
+      ? (matchingComponents / archetypeComponents.size) * componentMatchWeight
+      : 0;
 
   score += componentScore;
   maxScore += componentMatchWeight;
@@ -113,7 +114,7 @@ export function findBestArchetype(
 
   return {
     archetype: bestArchetype,
-    fitScore: bestScore
+    fitScore: bestScore,
   };
 }
 
@@ -136,7 +137,7 @@ export function getArchetypeRecommendations(
     stabilityFocus?: boolean;
     innovationFocus?: boolean;
     equityFocus?: boolean;
-    complexity?: 'low' | 'medium' | 'high';
+    complexity?: "low" | "medium" | "high";
     minFitScore?: number;
   }
 ): Array<{ archetype: EconomicArchetype; fitScore: number; reasons: string[] }> {
@@ -144,22 +145,20 @@ export function getArchetypeRecommendations(
   let filteredArchetypes = archetypes;
   if (preferences?.complexity) {
     filteredArchetypes = archetypes.filter(
-      a => a.implementationComplexity === preferences.complexity
+      (a) => a.implementationComplexity === preferences.complexity
     );
   }
 
   // Calculate fitness scores for all archetypes
-  const scoredArchetypes = filteredArchetypes.map(archetype => ({
+  const scoredArchetypes = filteredArchetypes.map((archetype) => ({
     archetype,
     fitScore: calculateArchetypeFit(archetype, currentState),
-    preferenceScore: calculatePreferenceScore(archetype, preferences)
+    preferenceScore: calculatePreferenceScore(archetype, preferences),
   }));
 
   // Filter by minimum fit score if specified
   const minScore = preferences?.minFitScore ?? 0;
-  const qualifyingArchetypes = scoredArchetypes.filter(
-    item => item.fitScore >= minScore
-  );
+  const qualifyingArchetypes = scoredArchetypes.filter((item) => item.fitScore >= minScore);
 
   // Sort by combined score (fit + preferences)
   qualifyingArchetypes.sort((a, b) => {
@@ -169,10 +168,10 @@ export function getArchetypeRecommendations(
   });
 
   // Generate reasons for each recommendation
-  return qualifyingArchetypes.map(item => ({
+  return qualifyingArchetypes.map((item) => ({
     archetype: item.archetype,
     fitScore: item.fitScore,
-    reasons: generateRecommendationReasons(item.archetype, currentState, preferences)
+    reasons: generateRecommendationReasons(item.archetype, currentState, preferences),
   }));
 }
 
@@ -187,17 +186,17 @@ export function getArchetypeRecommendations(
  */
 export function compareArchetypes(archetypes: EconomicArchetype[]): ArchetypeComparison {
   const comparisonMetrics = {
-    gdpGrowth: extractMetric(archetypes, 'growthMetrics.gdpGrowth'),
-    innovationIndex: extractMetric(archetypes, 'growthMetrics.innovationIndex'),
-    competitiveness: extractMetric(archetypes, 'growthMetrics.competitiveness'),
-    stability: extractMetric(archetypes, 'growthMetrics.stability'),
-    taxEfficiency: extractMetric(archetypes, 'taxProfile.revenueEfficiency')
+    gdpGrowth: extractMetric(archetypes, "growthMetrics.gdpGrowth"),
+    innovationIndex: extractMetric(archetypes, "growthMetrics.innovationIndex"),
+    competitiveness: extractMetric(archetypes, "growthMetrics.competitiveness"),
+    stability: extractMetric(archetypes, "growthMetrics.stability"),
+    taxEfficiency: extractMetric(archetypes, "taxProfile.revenueEfficiency"),
   };
 
   return {
     archetypes,
     comparisonMetrics,
-    recommendations: generateComparisonRecommendations(archetypes)
+    recommendations: generateComparisonRecommendations(archetypes),
   };
 }
 
@@ -225,7 +224,7 @@ export function generateTransitionPlan(
     successMetrics: string[];
   }>;
   totalDuration: string;
-  complexity: 'low' | 'medium' | 'high';
+  complexity: "low" | "medium" | "high";
   considerations: string[];
   resources: string[];
 } {
@@ -234,105 +233,93 @@ export function generateTransitionPlan(
   const targetComponents = new Set(targetArchetype.economicComponents);
 
   const componentsToAdd = targetArchetype.economicComponents.filter(
-    c => !currentComponents.has(c)
+    (c) => !currentComponents.has(c)
   );
-  const componentsToRemove = Array.from(currentComponents).filter(
-    c => !targetComponents.has(c)
-  );
+  const componentsToRemove = Array.from(currentComponents).filter((c) => !targetComponents.has(c));
 
   // Phase 1: Foundation and preparation
   steps.push({
     phase: 1,
-    title: 'Foundation and Preparation',
-    description: 'Establish prerequisites and build institutional capacity',
-    duration: '6-12 months',
+    title: "Foundation and Preparation",
+    description: "Establish prerequisites and build institutional capacity",
+    duration: "6-12 months",
     actions: [
-      'Conduct comprehensive economic assessment',
-      'Build stakeholder consensus and political support',
-      'Develop regulatory framework for new economic components',
-      'Train workforce and build institutional capacity'
+      "Conduct comprehensive economic assessment",
+      "Build stakeholder consensus and political support",
+      "Develop regulatory framework for new economic components",
+      "Train workforce and build institutional capacity",
     ],
     risks: [
-      'Political resistance to change',
-      'Insufficient stakeholder buy-in',
-      'Lack of technical expertise'
+      "Political resistance to change",
+      "Insufficient stakeholder buy-in",
+      "Lack of technical expertise",
     ],
     successMetrics: [
-      'Stakeholder agreement achieved',
-      'Regulatory framework approved',
-      'Training programs launched'
-    ]
+      "Stakeholder agreement achieved",
+      "Regulatory framework approved",
+      "Training programs launched",
+    ],
   });
 
   // Phase 2: Component integration
   if (componentsToAdd.length > 0) {
     steps.push({
       phase: 2,
-      title: 'Economic Component Integration',
-      description: 'Gradually introduce new economic components',
-      duration: '12-24 months',
-      actions: componentsToAdd.slice(0, 5).map(c =>
-        `Implement ${getComponentName(c)}`
-      ),
-      risks: [
-        'Implementation challenges',
-        'Market disruption',
-        'Resource constraints'
-      ],
+      title: "Economic Component Integration",
+      description: "Gradually introduce new economic components",
+      duration: "12-24 months",
+      actions: componentsToAdd.slice(0, 5).map((c) => `Implement ${getComponentName(c)}`),
+      risks: ["Implementation challenges", "Market disruption", "Resource constraints"],
       successMetrics: [
-        'Components operational',
-        'Performance metrics met',
-        'Market stability maintained'
-      ]
+        "Components operational",
+        "Performance metrics met",
+        "Market stability maintained",
+      ],
     });
   }
 
   // Phase 3: Structural adjustment
   steps.push({
     phase: 3,
-    title: 'Structural Economic Adjustment',
-    description: 'Align economic structure with target archetype',
-    duration: '18-36 months',
+    title: "Structural Economic Adjustment",
+    description: "Align economic structure with target archetype",
+    duration: "18-36 months",
     actions: [
       `Adjust sector focus to match ${targetArchetype.name} profile`,
-      'Implement tax system reforms',
-      'Modernize labor market policies',
-      'Develop innovation and R&D infrastructure'
+      "Implement tax system reforms",
+      "Modernize labor market policies",
+      "Develop innovation and R&D infrastructure",
     ],
     risks: [
-      'Economic disruption during transition',
-      'Job displacement in declining sectors',
-      'Investment uncertainty'
+      "Economic disruption during transition",
+      "Job displacement in declining sectors",
+      "Investment uncertainty",
     ],
     successMetrics: [
-      'Sector alignment achieved',
-      'Tax efficiency improved',
-      'Labor market indicators trending positive'
-    ]
+      "Sector alignment achieved",
+      "Tax efficiency improved",
+      "Labor market indicators trending positive",
+    ],
   });
 
   // Phase 4: Optimization and refinement
   steps.push({
     phase: 4,
-    title: 'Optimization and Refinement',
-    description: 'Fine-tune systems and achieve target performance',
-    duration: '12-18 months',
+    title: "Optimization and Refinement",
+    description: "Fine-tune systems and achieve target performance",
+    duration: "12-18 months",
     actions: [
-      'Optimize economic performance metrics',
-      'Address remaining gaps and challenges',
-      'Build resilience and sustainability',
-      'Establish monitoring and evaluation systems'
+      "Optimize economic performance metrics",
+      "Address remaining gaps and challenges",
+      "Build resilience and sustainability",
+      "Establish monitoring and evaluation systems",
     ],
-    risks: [
-      'Performance gaps',
-      'Sustainability challenges',
-      'External economic shocks'
-    ],
+    risks: ["Performance gaps", "Sustainability challenges", "External economic shocks"],
     successMetrics: [
-      'Target metrics achieved',
-      'System stability confirmed',
-      'Sustainability goals met'
-    ]
+      "Target metrics achieved",
+      "System stability confirmed",
+      "Sustainability goals met",
+    ],
   });
 
   // Determine overall complexity
@@ -345,22 +332,22 @@ export function generateTransitionPlan(
 
   return {
     steps,
-    totalDuration: '3-5 years',
+    totalDuration: "3-5 years",
     complexity,
     considerations: [
-      ...targetArchetype.culturalFactors.map(f => `Cultural consideration: ${f}`),
-      ...targetArchetype.challenges.map(c => `Challenge: ${c}`),
-      'Ensure gradual transition to minimize economic disruption',
-      'Maintain social safety nets during structural changes',
-      'Build consensus across political and economic stakeholders'
+      ...targetArchetype.culturalFactors.map((f) => `Cultural consideration: ${f}`),
+      ...targetArchetype.challenges.map((c) => `Challenge: ${c}`),
+      "Ensure gradual transition to minimize economic disruption",
+      "Maintain social safety nets during structural changes",
+      "Build consensus across political and economic stakeholders",
     ],
     resources: [
-      'Technical advisory support for implementation',
-      'Training and capacity building programs',
-      'Financial resources for infrastructure development',
-      'International partnerships and knowledge transfer',
-      'Monitoring and evaluation frameworks'
-    ]
+      "Technical advisory support for implementation",
+      "Training and capacity building programs",
+      "Financial resources for infrastructure development",
+      "International partnerships and knowledge transfer",
+      "Monitoring and evaluation frameworks",
+    ],
   };
 }
 
@@ -377,15 +364,15 @@ function extractMetric(
 ): Record<string, number> {
   const result: Record<string, number> = {};
 
-  archetypes.forEach(archetype => {
-    const keys = metricPath.split('.');
+  archetypes.forEach((archetype) => {
+    const keys = metricPath.split(".");
     let value: any = archetype;
 
     for (const key of keys) {
       value = value?.[key];
     }
 
-    result[archetype.id] = typeof value === 'number' ? value : 0;
+    result[archetype.id] = typeof value === "number" ? value : 0;
   });
 
   return result;
@@ -401,24 +388,27 @@ function generateComparisonRecommendations(archetypes: EconomicArchetype[]): str
     return recommendations;
   }
 
-  const avgGrowth = archetypes.reduce((sum, a) => sum + a.growthMetrics.gdpGrowth, 0) / archetypes.length;
-  const avgInnovation = archetypes.reduce((sum, a) => sum + a.growthMetrics.innovationIndex, 0) / archetypes.length;
-  const avgStability = archetypes.reduce((sum, a) => sum + a.growthMetrics.stability, 0) / archetypes.length;
+  const avgGrowth =
+    archetypes.reduce((sum, a) => sum + a.growthMetrics.gdpGrowth, 0) / archetypes.length;
+  const avgInnovation =
+    archetypes.reduce((sum, a) => sum + a.growthMetrics.innovationIndex, 0) / archetypes.length;
+  const avgStability =
+    archetypes.reduce((sum, a) => sum + a.growthMetrics.stability, 0) / archetypes.length;
 
   if (avgGrowth > 4) {
-    recommendations.push('Focus on high-growth archetypes for rapid economic development');
+    recommendations.push("Focus on high-growth archetypes for rapid economic development");
   }
 
   if (avgInnovation > 90) {
-    recommendations.push('Prioritize innovation-driven models for technological advancement');
+    recommendations.push("Prioritize innovation-driven models for technological advancement");
   }
 
   if (avgStability > 90) {
-    recommendations.push('Emphasize stability-focused approaches for sustainable development');
+    recommendations.push("Emphasize stability-focused approaches for sustainable development");
   }
 
-  recommendations.push('Consider hybrid approaches combining strengths from multiple archetypes');
-  recommendations.push('Adapt archetype elements to local cultural and institutional context');
+  recommendations.push("Consider hybrid approaches combining strengths from multiple archetypes");
+  recommendations.push("Adapt archetype elements to local cultural and institutional context");
 
   return recommendations;
 }
@@ -431,13 +421,13 @@ function determineExpectedTier(archetype: EconomicArchetype): string {
   const competitiveness = archetype.growthMetrics.competitiveness;
 
   if (innovationIndex >= 90 && competitiveness >= 90) {
-    return 'Advanced';
+    return "Advanced";
   } else if (innovationIndex >= 75 && competitiveness >= 75) {
-    return 'Developed';
+    return "Developed";
   } else if (innovationIndex >= 50) {
-    return 'Emerging';
+    return "Emerging";
   }
-  return 'Developing';
+  return "Developing";
 }
 
 /**
@@ -445,18 +435,18 @@ function determineExpectedTier(archetype: EconomicArchetype): string {
  */
 function determineExpectedStrategy(archetype: EconomicArchetype): string {
   if (archetype.economicComponents.includes(EconomicComponentType.INNOVATION_ECONOMY)) {
-    return 'Innovation-Driven';
+    return "Innovation-Driven";
   } else if (archetype.economicComponents.includes(EconomicComponentType.EXPORT_ORIENTED)) {
-    return 'Export-Led';
+    return "Export-Led";
   }
-  return 'Balanced';
+  return "Balanced";
 }
 
 /**
  * Check if two economic tiers are adjacent
  */
 function isAdjacentTier(tier1: string, tier2: string): boolean {
-  const tierOrder = ['Developing', 'Emerging', 'Developed', 'Advanced'];
+  const tierOrder = ["Developing", "Emerging", "Developed", "Advanced"];
   const index1 = tierOrder.indexOf(tier1);
   const index2 = tierOrder.indexOf(tier2);
 
@@ -469,14 +459,15 @@ function isAdjacentTier(tier1: string, tier2: string): boolean {
  */
 function isCompatibleStrategy(strategy1: string, strategy2: string): boolean {
   const compatiblePairs = [
-    ['Export-Led', 'Innovation-Driven'],
-    ['Balanced', 'Export-Led'],
-    ['Balanced', 'Innovation-Driven']
+    ["Export-Led", "Innovation-Driven"],
+    ["Balanced", "Export-Led"],
+    ["Balanced", "Innovation-Driven"],
   ];
 
-  return compatiblePairs.some(pair =>
-    (pair[0] === strategy1 && pair[1] === strategy2) ||
-    (pair[0] === strategy2 && pair[1] === strategy1)
+  return compatiblePairs.some(
+    (pair) =>
+      (pair[0] === strategy1 && pair[1] === strategy2) ||
+      (pair[0] === strategy2 && pair[1] === strategy1)
   );
 }
 
@@ -484,8 +475,8 @@ function isCompatibleStrategy(strategy1: string, strategy2: string): boolean {
  * Calculate labor market similarity score (0-1)
  */
 function calculateLaborSimilarity(
-  archetypeProfile: EconomicArchetype['employmentProfile'],
-  currentLabor: EconomyBuilderState['laborMarket']
+  archetypeProfile: EconomicArchetype["employmentProfile"],
+  currentLabor: EconomyBuilderState["laborMarket"]
 ): number {
   let score = 0;
   let factors = 0;
@@ -554,14 +545,10 @@ function generateRecommendationReasons(
 
   // Check component overlap
   const currentComponents = new Set(currentState.selectedAtomicComponents);
-  const matchingComponents = archetype.economicComponents.filter(c =>
-    currentComponents.has(c)
-  );
+  const matchingComponents = archetype.economicComponents.filter((c) => currentComponents.has(c));
 
   if (matchingComponents.length > 0) {
-    reasons.push(
-      `Shares ${matchingComponents.length} economic components with your current setup`
-    );
+    reasons.push(`Shares ${matchingComponents.length} economic components with your current setup`);
   }
 
   // Check preferences alignment
@@ -570,11 +557,11 @@ function generateRecommendationReasons(
   }
 
   if (preferences?.innovationFocus && archetype.growthMetrics.innovationIndex > 85) {
-    reasons.push('Strong innovation capabilities');
+    reasons.push("Strong innovation capabilities");
   }
 
   if (preferences?.stabilityFocus && archetype.growthMetrics.stability > 85) {
-    reasons.push('High economic stability');
+    reasons.push("High economic stability");
   }
 
   // Add archetype-specific strengths
@@ -593,15 +580,15 @@ function determineTransitionComplexity(
   targetArchetype: EconomicArchetype,
   componentsToAdd: number,
   componentsToRemove: number
-): 'low' | 'medium' | 'high' {
+): "low" | "medium" | "high" {
   const totalChanges = componentsToAdd + componentsToRemove;
 
-  if (totalChanges > 10 || targetArchetype.implementationComplexity === 'high') {
-    return 'high';
-  } else if (totalChanges > 5 || targetArchetype.implementationComplexity === 'medium') {
-    return 'medium';
+  if (totalChanges > 10 || targetArchetype.implementationComplexity === "high") {
+    return "high";
+  } else if (totalChanges > 5 || targetArchetype.implementationComplexity === "medium") {
+    return "medium";
   }
-  return 'low';
+  return "low";
 }
 
 /**
@@ -609,7 +596,7 @@ function determineTransitionComplexity(
  */
 function getComponentName(component: EconomicComponentType): string {
   return component
-    .split('_')
-    .map(word => word.charAt(0) + word.slice(1).toLowerCase())
-    .join(' ');
+    .split("_")
+    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+    .join(" ");
 }

@@ -1,7 +1,7 @@
-import { currentUser } from '@clerk/nextjs/server';
-import { db } from '~/server/db';
+import { currentUser } from "@clerk/nextjs/server";
+import { db } from "~/server/db";
 
-export type MembershipTier = 'basic' | 'mycountry_premium';
+export type MembershipTier = "basic" | "mycountry_premium";
 
 export interface PremiumFeatures {
   sdi: boolean;
@@ -24,7 +24,7 @@ export async function getUserMembership(clerkUserId?: string): Promise<{
     const user = await currentUser();
     if (!user) {
       return {
-        tier: 'basic',
+        tier: "basic",
         isPremium: false,
         features: {
           sdi: false,
@@ -44,8 +44,8 @@ export async function getUserMembership(clerkUserId?: string): Promise<{
       select: { membershipTier: true },
     });
 
-    const tier = (dbUser?.membershipTier as MembershipTier) ?? 'basic';
-    const isPremium = tier === 'mycountry_premium';
+    const tier = (dbUser?.membershipTier as MembershipTier) ?? "basic";
+    const isPremium = tier === "mycountry_premium";
 
     return {
       tier,
@@ -58,9 +58,9 @@ export async function getUserMembership(clerkUserId?: string): Promise<{
       },
     };
   } catch (error) {
-    console.error('Error fetching user membership:', error);
+    console.error("Error fetching user membership:", error);
     return {
-      tier: 'basic',
+      tier: "basic",
       isPremium: false,
       features: {
         sdi: false,

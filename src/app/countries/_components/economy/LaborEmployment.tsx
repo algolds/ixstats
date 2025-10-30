@@ -21,13 +21,7 @@ import {
   AlertTriangle,
   HelpCircle,
 } from "lucide-react";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "~/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
@@ -38,7 +32,17 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from "recharts";
 import { formatPopulation, formatPercentage, formatCurrency } from "./utils";
 import type { LaborEmploymentData } from "~/types/economics";
 
@@ -69,10 +73,7 @@ export function LaborEmployment({
   const [editMode, setEditMode] = useState(false);
   const [activeDetailTab, setActiveDetailTab] = useState("sectors");
 
-  function handleField<K extends keyof LaborEmploymentData>(
-    field: K,
-    value: number | any
-  ) {
+  function handleField<K extends keyof LaborEmploymentData>(field: K, value: number | any) {
     const next = { ...laborData, [field]: value };
     if (field === "laborForceParticipationRate") {
       const wap = totalPopulation * 0.65;
@@ -85,13 +86,9 @@ export function LaborEmployment({
     onLaborDataChangeAction(next);
   }
 
-  function handleNestedField(
-    section: keyof LaborEmploymentData,
-    field: string,
-    value: number
-  ) {
+  function handleNestedField(section: keyof LaborEmploymentData, field: string, value: number) {
     const next = { ...laborData };
-    if (typeof next[section] === 'object' && next[section] !== null) {
+    if (typeof next[section] === "object" && next[section] !== null) {
       (next[section] as any)[field] = value;
     }
     onLaborDataChangeAction(next);
@@ -114,7 +111,11 @@ export function LaborEmployment({
       return { label: "Healthy", color: "text-blue-600", variant: "secondary" as const };
     }
     if (laborData.unemploymentRate <= 12) {
-      return { label: "Moderate Concern", color: "text-yellow-600", variant: "destructive" as const };
+      return {
+        label: "Moderate Concern",
+        color: "text-yellow-600",
+        variant: "destructive" as const,
+      };
     }
     return { label: "High Unemployment", color: "text-red-600", variant: "destructive" as const };
   }
@@ -131,34 +132,40 @@ export function LaborEmployment({
   const productivityHealth = getLaborProductivityHealth();
 
   // Chart data
-  const sectorData = laborData.employmentBySector ? [
-    { name: "Agriculture", value: laborData.employmentBySector.agriculture, fill: "#10b981" },
-    { name: "Industry", value: laborData.employmentBySector.industry, fill: "#3b82f6" },
-    { name: "Services", value: laborData.employmentBySector.services, fill: "#8b5cf6" },
-  ] : [];
+  const sectorData = laborData.employmentBySector
+    ? [
+        { name: "Agriculture", value: laborData.employmentBySector.agriculture, fill: "#10b981" },
+        { name: "Industry", value: laborData.employmentBySector.industry, fill: "#3b82f6" },
+        { name: "Services", value: laborData.employmentBySector.services, fill: "#8b5cf6" },
+      ]
+    : [];
 
-  const employmentTypeData = laborData.employmentByType ? [
-    { name: "Full-time", value: laborData.employmentByType.fullTime, fill: "#059669" },
-    { name: "Part-time", value: laborData.employmentByType.partTime, fill: "#0891b2" },
-    { name: "Temporary", value: laborData.employmentByType.temporary, fill: "#7c3aed" },
-    { name: "Self-employed", value: laborData.employmentByType.selfEmployed, fill: "#dc2626" },
-    { name: "Informal", value: laborData.employmentByType.informal, fill: "#ea580c" },
-  ] : [];
+  const employmentTypeData = laborData.employmentByType
+    ? [
+        { name: "Full-time", value: laborData.employmentByType.fullTime, fill: "#059669" },
+        { name: "Part-time", value: laborData.employmentByType.partTime, fill: "#0891b2" },
+        { name: "Temporary", value: laborData.employmentByType.temporary, fill: "#7c3aed" },
+        { name: "Self-employed", value: laborData.employmentByType.selfEmployed, fill: "#dc2626" },
+        { name: "Informal", value: laborData.employmentByType.informal, fill: "#ea580c" },
+      ]
+    : [];
 
-  const regionalComparisonData = laborData.regionalEmployment ? [
-    {
-      region: "Urban",
-      participation: laborData.regionalEmployment.urban.participationRate,
-      unemployment: laborData.regionalEmployment.urban.unemploymentRate,
-      income: laborData.regionalEmployment.urban.averageIncome / 1000,
-    },
-    {
-      region: "Rural", 
-      participation: laborData.regionalEmployment.rural.participationRate,
-      unemployment: laborData.regionalEmployment.rural.unemploymentRate,
-      income: laborData.regionalEmployment.rural.averageIncome / 1000,
-    },
-  ] : [];
+  const regionalComparisonData = laborData.regionalEmployment
+    ? [
+        {
+          region: "Urban",
+          participation: laborData.regionalEmployment.urban.participationRate,
+          unemployment: laborData.regionalEmployment.urban.unemploymentRate,
+          income: laborData.regionalEmployment.urban.averageIncome / 1000,
+        },
+        {
+          region: "Rural",
+          participation: laborData.regionalEmployment.rural.participationRate,
+          unemployment: laborData.regionalEmployment.rural.unemploymentRate,
+          income: laborData.regionalEmployment.rural.averageIncome / 1000,
+        },
+      ]
+    : [];
 
   const basicMetrics = [
     {
@@ -194,13 +201,13 @@ export function LaborEmployment({
     <TooltipProvider>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Briefcase className="h-5 w-5 text-primary" />
+            <h3 className="flex items-center gap-2 text-lg font-semibold">
+              <Briefcase className="text-primary h-5 w-5" />
               Labor & Employment
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Comprehensive workforce and employment analytics
             </p>
           </div>
@@ -211,12 +218,12 @@ export function LaborEmployment({
                 size="sm"
                 onClick={() => setEditMode(!editMode)}
               >
-                {editMode ? <Eye className="h-4 w-4 mr-1" /> : <Pencil className="h-4 w-4 mr-1" />}
+                {editMode ? <Eye className="mr-1 h-4 w-4" /> : <Pencil className="mr-1 h-4 w-4" />}
                 {editMode ? "View" : "Edit"}
               </Button>
             )}
             <Tabs value={view} onValueChange={(v) => setView(v as any)}>
-              <TabsList className="grid grid-cols-2 w-[200px]">
+              <TabsList className="grid w-[200px] grid-cols-2">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="detailed">Detailed</TabsTrigger>
               </TabsList>
@@ -225,23 +232,35 @@ export function LaborEmployment({
         </div>
 
         {/* Health Status */}
-        <Alert className={`border-l-4 ${health.color === 'text-green-600' ? 'border-l-green-500' : 
-                                      health.color === 'text-blue-600' ? 'border-l-blue-500' :
-                                      health.color === 'text-yellow-600' ? 'border-l-yellow-500' : 'border-l-red-500'}`}>
+        <Alert
+          className={`border-l-4 ${
+            health.color === "text-green-600"
+              ? "border-l-green-500"
+              : health.color === "text-blue-600"
+                ? "border-l-blue-500"
+                : health.color === "text-yellow-600"
+                  ? "border-l-yellow-500"
+                  : "border-l-red-500"
+          }`}
+        >
           <Briefcase className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
             <span>
-              Labor Market Health: <span className={`font-semibold ${health.color}`}>{health.label}</span>
+              Labor Market Health:{" "}
+              <span className={`font-semibold ${health.color}`}>{health.label}</span>
               {laborData.skillsAndProductivity && (
                 <span className="ml-4">
-                  Productivity: <span className={`font-semibold ${productivityHealth.color}`}>{productivityHealth.label}</span>
+                  Productivity:{" "}
+                  <span className={`font-semibold ${productivityHealth.color}`}>
+                    {productivityHealth.label}
+                  </span>
                 </span>
               )}
             </span>
             <Badge variant={health.variant}>
               {laborData.unemploymentRate !== null && laborData.unemploymentRate !== undefined
                 ? `${formatPercentage(laborData.unemploymentRate)} Unemployed`
-                : 'Missing data'}
+                : "Missing data"}
             </Badge>
           </AlertDescription>
         </Alert>
@@ -250,30 +269,24 @@ export function LaborEmployment({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BarChart2 className="h-4 w-4 text-primary" />
+              <BarChart2 className="text-primary h-4 w-4" />
               Labor Force Breakdown
             </CardTitle>
             <CardDescription>Population and workforce distribution</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 text-center gap-4">
+            <div className="grid grid-cols-2 gap-4 text-center md:grid-cols-4">
               <div className="space-y-1">
-                <div className="text-2xl font-bold">
-                  {formatPopulation(totalPopulation)}
-                </div>
-                <div className="text-xs text-muted-foreground">Total Population</div>
+                <div className="text-2xl font-bold">{formatPopulation(totalPopulation)}</div>
+                <div className="text-muted-foreground text-xs">Total Population</div>
               </div>
               <div className="space-y-1">
-                <div className="text-2xl font-bold text-blue-600">
-                  {formatPopulation(wap)}
-                </div>
-                <div className="text-xs text-muted-foreground">Working Age (65%)</div>
+                <div className="text-2xl font-bold text-blue-600">{formatPopulation(wap)}</div>
+                <div className="text-muted-foreground text-xs">Working Age (65%)</div>
               </div>
               <div className="space-y-1">
-                <div className="text-2xl font-bold text-primary">
-                  {formatPopulation(lf)}
-                </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-primary text-2xl font-bold">{formatPopulation(lf)}</div>
+                <div className="text-muted-foreground text-xs">
                   Labor Force ({formatPercentage(laborData.laborForceParticipationRate)})
                 </div>
               </div>
@@ -282,13 +295,13 @@ export function LaborEmployment({
                   <div className="text-lg font-bold text-green-600">
                     {formatPopulation(employed)}
                   </div>
-                  <div className="text-xs text-muted-foreground">Employed</div>
+                  <div className="text-muted-foreground text-xs">Employed</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-lg font-bold text-red-600">
                     {formatPopulation(unemployed)}
                   </div>
-                  <div className="text-xs text-muted-foreground">Unemployed</div>
+                  <div className="text-muted-foreground text-xs">Unemployed</div>
                 </div>
               </div>
             </div>
@@ -299,24 +312,24 @@ export function LaborEmployment({
         {view === "overview" && (
           <div className="space-y-6">
             {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {basicMetrics.map((metric) => {
                 const Icon = metric.icon;
                 const progress = metric.reverse
                   ? Math.max(0, 100 - (metric.value / metric.target) * 100)
                   : Math.min(100, (metric.value / metric.target) * 100);
-                
+
                 return (
                   <Card key={metric.field}>
                     <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="mb-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Icon className="h-4 w-4 text-primary" />
+                          <Icon className="text-primary h-4 w-4" />
                           <span className="text-sm font-medium">{metric.label}</span>
                         </div>
                         <Tooltip>
                           <TooltipTrigger>
-                            <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                            <HelpCircle className="text-muted-foreground h-3 w-3" />
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>{metric.description}</p>
@@ -332,20 +345,30 @@ export function LaborEmployment({
                             <Input
                               type="number"
                               value={metric.value}
-                              onChange={(e) => handleField(metric.field, parseFloat(e.target.value) || 0)}
-                              className="w-20 h-8 text-right"
+                              onChange={(e) =>
+                                handleField(metric.field, parseFloat(e.target.value) || 0)
+                              }
+                              className="h-8 w-20 text-right"
                               step="0.1"
                               min="0"
                               max="100"
                             />
                           ) : (
-                            <Badge variant={progress >= 80 ? "default" : progress >= 60 ? "secondary" : "destructive"}>
+                            <Badge
+                              variant={
+                                progress >= 80
+                                  ? "default"
+                                  : progress >= 60
+                                    ? "secondary"
+                                    : "destructive"
+                              }
+                            >
                               {progress >= 80 ? "Good" : progress >= 60 ? "Fair" : "Poor"}
                             </Badge>
                           )}
                         </div>
                         <Progress value={progress} className="h-2" />
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-muted-foreground text-xs">
                           Target: {formatPercentage(metric.target)}
                         </div>
                       </div>
@@ -356,41 +379,37 @@ export function LaborEmployment({
             </div>
 
             {/* Additional Key Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               <Card>
                 <CardContent className="p-4 text-center">
-                  <Clock className="h-6 w-6 text-primary mx-auto mb-2" />
-                  <div className="text-lg font-bold">
-                    {laborData.averageWorkweekHours}h
-                  </div>
-                  <div className="text-xs text-muted-foreground">Avg Work Week</div>
+                  <Clock className="text-primary mx-auto mb-2 h-6 w-6" />
+                  <div className="text-lg font-bold">{laborData.averageWorkweekHours}h</div>
+                  <div className="text-muted-foreground text-xs">Avg Work Week</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
-                  <TrendingUp className="h-6 w-6 text-green-600 mx-auto mb-2" />
-                  <div className="text-lg font-bold">
-                    {formatCurrency(laborData.minimumWage)}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Minimum Wage</div>
+                  <TrendingUp className="mx-auto mb-2 h-6 w-6 text-green-600" />
+                  <div className="text-lg font-bold">{formatCurrency(laborData.minimumWage)}</div>
+                  <div className="text-muted-foreground text-xs">Minimum Wage</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
-                  <TrendingUp className="h-6 w-6 text-blue-600 mx-auto mb-2" />
+                  <TrendingUp className="mx-auto mb-2 h-6 w-6 text-blue-600" />
                   <div className="text-lg font-bold">
                     {formatCurrency(laborData.averageAnnualIncome)}
                   </div>
-                  <div className="text-xs text-muted-foreground">Avg Annual Income</div>
+                  <div className="text-muted-foreground text-xs">Avg Annual Income</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
-                  <Users className="h-6 w-6 text-purple-600 mx-auto mb-2" />
+                  <Users className="mx-auto mb-2 h-6 w-6 text-purple-600" />
                   <div className="text-lg font-bold">
                     {formatPopulation(laborData.totalWorkforce)}
                   </div>
-                  <div className="text-xs text-muted-foreground">Total Workforce</div>
+                  <div className="text-muted-foreground text-xs">Total Workforce</div>
                 </CardContent>
               </Card>
             </div>
@@ -406,9 +425,10 @@ export function LaborEmployment({
                       <span>Unemployment Rate:</span>
                       <div className="space-x-2">
                         <span className="font-medium">
-                          {laborData.unemploymentRate !== null && laborData.unemploymentRate !== undefined
+                          {laborData.unemploymentRate !== null &&
+                          laborData.unemploymentRate !== undefined
                             ? formatPercentage(laborData.unemploymentRate)
-                            : 'Missing data'}
+                            : "Missing data"}
                         </span>
                         {referenceCountry && (
                           <>
@@ -428,7 +448,7 @@ export function LaborEmployment({
         {/* Detailed Tab */}
         {view === "detailed" && (
           <Tabs value={activeDetailTab} onValueChange={setActiveDetailTab}>
-            <TabsList className="grid grid-cols-2 md:grid-cols-6 w-full">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-6">
               <TabsTrigger value="sectors">Sectors</TabsTrigger>
               <TabsTrigger value="types">Employment</TabsTrigger>
               <TabsTrigger value="skills">Skills</TabsTrigger>
@@ -442,7 +462,7 @@ export function LaborEmployment({
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Factory className="h-5 w-5 text-primary" />
+                    <Factory className="text-primary h-5 w-5" />
                     Employment by Economic Sector
                   </CardTitle>
                   <CardDescription>
@@ -450,40 +470,54 @@ export function LaborEmployment({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div className="space-y-4">
-                      {sectorData.length > 0 && sectorData.map((sector, idx) => (
-                        <div key={sector.name} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              {sector.name === "Agriculture" && <Wheat className="h-4 w-4 text-green-600" />}
-                              {sector.name === "Industry" && <Factory className="h-4 w-4 text-blue-600" />}
-                              {sector.name === "Services" && <Building2 className="h-4 w-4 text-purple-600" />}
-                              <span className="text-sm font-medium">{sector.name}</span>
+                      {sectorData.length > 0 &&
+                        sectorData.map((sector, idx) => (
+                          <div key={sector.name} className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                {sector.name === "Agriculture" && (
+                                  <Wheat className="h-4 w-4 text-green-600" />
+                                )}
+                                {sector.name === "Industry" && (
+                                  <Factory className="h-4 w-4 text-blue-600" />
+                                )}
+                                {sector.name === "Services" && (
+                                  <Building2 className="h-4 w-4 text-purple-600" />
+                                )}
+                                <span className="text-sm font-medium">{sector.name}</span>
+                              </div>
+                              {editMode ? (
+                                <Input
+                                  type="number"
+                                  value={sector.value}
+                                  onChange={(e) => {
+                                    const field =
+                                      sector.name.toLowerCase() as keyof typeof laborData.employmentBySector;
+                                    handleNestedField(
+                                      "employmentBySector",
+                                      field,
+                                      parseFloat(e.target.value) || 0
+                                    );
+                                  }}
+                                  className="h-8 w-20 text-right"
+                                  step="0.1"
+                                  min="0"
+                                  max="100"
+                                />
+                              ) : (
+                                <span className="text-sm font-bold">
+                                  {formatPercentage(sector.value)}
+                                </span>
+                              )}
                             </div>
-                            {editMode ? (
-                              <Input
-                                type="number"
-                                value={sector.value}
-                                onChange={(e) => {
-                                  const field = sector.name.toLowerCase() as keyof typeof laborData.employmentBySector;
-                                  handleNestedField('employmentBySector', field, parseFloat(e.target.value) || 0);
-                                }}
-                                className="w-20 h-8 text-right"
-                                step="0.1"
-                                min="0"
-                                max="100"
-                              />
-                            ) : (
-                              <span className="text-sm font-bold">{formatPercentage(sector.value)}</span>
-                            )}
+                            <Progress value={sector.value} className="h-2" />
+                            <div className="text-muted-foreground text-xs">
+                              {formatPopulation((sector.value / 100) * employed)} workers
+                            </div>
                           </div>
-                          <Progress value={sector.value} className="h-2" />
-                          <div className="text-xs text-muted-foreground">
-                            {formatPopulation((sector.value / 100) * employed)} workers
-                          </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                     {sectorData.length > 0 && (
                       <div className="h-64">
@@ -515,7 +549,7 @@ export function LaborEmployment({
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Briefcase className="h-5 w-5 text-primary" />
+                    <Briefcase className="text-primary h-5 w-5" />
                     Employment Types
                   </CardTitle>
                   <CardDescription>
@@ -523,32 +557,41 @@ export function LaborEmployment({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div className="space-y-4">
-                      {employmentTypeData.length > 0 && employmentTypeData.map((type) => (
-                        <div key={type.name} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">{type.name}</span>
-                            {editMode ? (
-                              <Input
-                                type="number"
-                                value={type.value}
-                                onChange={(e) => {
-                                  const field = type.name.toLowerCase().replace('-', '') as keyof typeof laborData.employmentByType;
-                                  handleNestedField('employmentByType', field, parseFloat(e.target.value) || 0);
-                                }}
-                                className="w-20 h-8 text-right"
-                                step="0.1"
-                                min="0"
-                                max="100"
-                              />
-                            ) : (
-                              <span className="text-sm font-bold">{formatPercentage(type.value)}</span>
-                            )}
+                      {employmentTypeData.length > 0 &&
+                        employmentTypeData.map((type) => (
+                          <div key={type.name} className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">{type.name}</span>
+                              {editMode ? (
+                                <Input
+                                  type="number"
+                                  value={type.value}
+                                  onChange={(e) => {
+                                    const field = type.name
+                                      .toLowerCase()
+                                      .replace("-", "") as keyof typeof laborData.employmentByType;
+                                    handleNestedField(
+                                      "employmentByType",
+                                      field,
+                                      parseFloat(e.target.value) || 0
+                                    );
+                                  }}
+                                  className="h-8 w-20 text-right"
+                                  step="0.1"
+                                  min="0"
+                                  max="100"
+                                />
+                              ) : (
+                                <span className="text-sm font-bold">
+                                  {formatPercentage(type.value)}
+                                </span>
+                              )}
+                            </div>
+                            <Progress value={type.value} className="h-2" />
                           </div>
-                          <Progress value={type.value} className="h-2" />
-                        </div>
-                      ))}
+                        ))}
                     </div>
                     {employmentTypeData.length > 0 && (
                       <div className="h-64">
@@ -580,7 +623,7 @@ export function LaborEmployment({
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <GraduationCap className="h-5 w-5 text-primary" />
+                    <GraduationCap className="text-primary h-5 w-5" />
                     Skills & Productivity
                   </CardTitle>
                   <CardDescription>
@@ -589,7 +632,7 @@ export function LaborEmployment({
                 </CardHeader>
                 <CardContent>
                   {laborData.skillsAndProductivity && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                       <div className="space-y-2">
                         <Label>Average Education Years</Label>
                         <div className="text-2xl font-bold">
@@ -613,21 +656,24 @@ export function LaborEmployment({
                         <div className="text-2xl font-bold">
                           {laborData.skillsAndProductivity.skillsGapIndex}/100
                         </div>
-                        <Progress value={laborData.skillsAndProductivity.skillsGapIndex} className="h-2" />
+                        <Progress
+                          value={laborData.skillsAndProductivity.skillsGapIndex}
+                          className="h-2"
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Labor Productivity Index</Label>
                         <div className="text-2xl font-bold">
                           {laborData.skillsAndProductivity.laborProductivityIndex}
                         </div>
-                        <div className="text-xs text-muted-foreground">Base: 100</div>
+                        <div className="text-muted-foreground text-xs">Base: 100</div>
                       </div>
                       <div className="space-y-2">
                         <Label>Productivity Growth</Label>
                         <div className="text-2xl font-bold">
                           {formatPercentage(laborData.skillsAndProductivity.productivityGrowthRate)}
                         </div>
-                        <div className="text-xs text-muted-foreground">Annual</div>
+                        <div className="text-muted-foreground text-xs">Annual</div>
                       </div>
                     </div>
                   )}
@@ -640,26 +686,28 @@ export function LaborEmployment({
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-primary" />
+                    <Users className="text-primary h-5 w-5" />
                     Demographics & Working Conditions
                   </CardTitle>
-                  <CardDescription>
-                    Workforce demographics and workplace conditions
-                  </CardDescription>
+                  <CardDescription>Workforce demographics and workplace conditions</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {laborData.demographicsAndConditions && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                       <div className="space-y-2">
                         <Label>Youth Unemployment (15-24)</Label>
                         <div className="text-2xl font-bold text-red-600">
-                          {formatPercentage(laborData.demographicsAndConditions.youthUnemploymentRate)}
+                          {formatPercentage(
+                            laborData.demographicsAndConditions.youthUnemploymentRate
+                          )}
                         </div>
                       </div>
                       <div className="space-y-2">
                         <Label>Female Participation Rate</Label>
                         <div className="text-2xl font-bold">
-                          {formatPercentage(laborData.demographicsAndConditions.femaleParticipationRate)}
+                          {formatPercentage(
+                            laborData.demographicsAndConditions.femaleParticipationRate
+                          )}
                         </div>
                       </div>
                       <div className="space-y-2">
@@ -679,7 +727,10 @@ export function LaborEmployment({
                         <div className="text-2xl font-bold">
                           {laborData.demographicsAndConditions.workplaceSafetyIndex}/100
                         </div>
-                        <Progress value={laborData.demographicsAndConditions.workplaceSafetyIndex} className="h-2" />
+                        <Progress
+                          value={laborData.demographicsAndConditions.workplaceSafetyIndex}
+                          className="h-2"
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label>Avg Commuting Time</Label>
@@ -698,7 +749,7 @@ export function LaborEmployment({
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-primary" />
+                    <MapPin className="text-primary h-5 w-5" />
                     Regional Employment Analysis
                   </CardTitle>
                   <CardDescription>
@@ -714,12 +765,16 @@ export function LaborEmployment({
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="region" />
                             <YAxis />
-                            <Bar dataKey="participation" name="Participation Rate %" fill="#3b82f6" />
+                            <Bar
+                              dataKey="participation"
+                              name="Participation Rate %"
+                              fill="#3b82f6"
+                            />
                             <Bar dataKey="unemployment" name="Unemployment Rate %" fill="#ef4444" />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                         <Card>
                           <CardHeader>
                             <CardTitle className="text-base">Urban Employment</CardTitle>
@@ -728,13 +783,17 @@ export function LaborEmployment({
                             <div className="flex justify-between">
                               <span>Participation Rate:</span>
                               <span className="font-bold">
-                                {formatPercentage(laborData.regionalEmployment.urban.participationRate)}
+                                {formatPercentage(
+                                  laborData.regionalEmployment.urban.participationRate
+                                )}
                               </span>
                             </div>
                             <div className="flex justify-between">
                               <span>Unemployment Rate:</span>
                               <span className="font-bold">
-                                {formatPercentage(laborData.regionalEmployment.urban.unemploymentRate)}
+                                {formatPercentage(
+                                  laborData.regionalEmployment.urban.unemploymentRate
+                                )}
                               </span>
                             </div>
                             <div className="flex justify-between">
@@ -753,13 +812,17 @@ export function LaborEmployment({
                             <div className="flex justify-between">
                               <span>Participation Rate:</span>
                               <span className="font-bold">
-                                {formatPercentage(laborData.regionalEmployment.rural.participationRate)}
+                                {formatPercentage(
+                                  laborData.regionalEmployment.rural.participationRate
+                                )}
                               </span>
                             </div>
                             <div className="flex justify-between">
                               <span>Unemployment Rate:</span>
                               <span className="font-bold">
-                                {formatPercentage(laborData.regionalEmployment.rural.unemploymentRate)}
+                                {formatPercentage(
+                                  laborData.regionalEmployment.rural.unemploymentRate
+                                )}
                               </span>
                             </div>
                             <div className="flex justify-between">
@@ -782,7 +845,7 @@ export function LaborEmployment({
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-primary" />
+                    <ShieldCheck className="text-primary h-5 w-5" />
                     Social Protection & Benefits
                   </CardTitle>
                   <CardDescription>
@@ -791,48 +854,48 @@ export function LaborEmployment({
                 </CardHeader>
                 <CardContent>
                   {laborData.socialProtection && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                       <div className="space-y-2">
                         <Label>Unemployment Benefit Coverage</Label>
                         <div className="text-2xl font-bold">
                           {formatPercentage(laborData.socialProtection.unemploymentBenefitCoverage)}
                         </div>
-                        <div className="text-xs text-muted-foreground">of unemployed</div>
+                        <div className="text-muted-foreground text-xs">of unemployed</div>
                       </div>
                       <div className="space-y-2">
                         <Label>Pension Coverage</Label>
                         <div className="text-2xl font-bold">
                           {formatPercentage(laborData.socialProtection.pensionCoverage)}
                         </div>
-                        <div className="text-xs text-muted-foreground">of workforce</div>
+                        <div className="text-muted-foreground text-xs">of workforce</div>
                       </div>
                       <div className="space-y-2">
                         <Label>Health Insurance Coverage</Label>
                         <div className="text-2xl font-bold">
                           {formatPercentage(laborData.socialProtection.healthInsuranceCoverage)}
                         </div>
-                        <div className="text-xs text-muted-foreground">of workforce</div>
+                        <div className="text-muted-foreground text-xs">of workforce</div>
                       </div>
                       <div className="space-y-2">
                         <Label>Paid Sick Leave</Label>
                         <div className="text-2xl font-bold">
                           {laborData.socialProtection.paidSickLeaveDays} days
                         </div>
-                        <div className="text-xs text-muted-foreground">average per year</div>
+                        <div className="text-muted-foreground text-xs">average per year</div>
                       </div>
                       <div className="space-y-2">
                         <Label>Paid Vacation</Label>
                         <div className="text-2xl font-bold">
                           {laborData.socialProtection.paidVacationDays} days
                         </div>
-                        <div className="text-xs text-muted-foreground">average per year</div>
+                        <div className="text-muted-foreground text-xs">average per year</div>
                       </div>
                       <div className="space-y-2">
                         <Label>Parental Leave</Label>
                         <div className="text-2xl font-bold">
                           {laborData.socialProtection.parentalLeaveWeeks} weeks
                         </div>
-                        <div className="text-xs text-muted-foreground">available</div>
+                        <div className="text-muted-foreground text-xs">available</div>
                       </div>
                     </div>
                   )}

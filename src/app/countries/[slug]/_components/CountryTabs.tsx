@@ -14,45 +14,45 @@ interface CountryTabsProps {
 
 export function CountryTabs({ activeTab, onTabChange }: CountryTabsProps) {
   return (
-    <div className="glass-hierarchy-child rounded-lg p-1 flex gap-1 overflow-x-auto">
+    <div className="glass-hierarchy-child flex gap-1 overflow-x-auto rounded-lg p-1">
       <Button
         variant={activeTab === "overview" ? "default" : "ghost"}
         onClick={() => onTabChange("overview")}
-        className="flex-1 min-w-[120px]"
+        className="min-w-[120px] flex-1"
       >
-        <Eye className="h-4 w-4 mr-2" />
+        <Eye className="mr-2 h-4 w-4" />
         Overview
       </Button>
       <Button
         variant={activeTab === "mycountry" ? "default" : "ghost"}
         onClick={() => onTabChange("mycountry")}
-        className="flex-1 min-w-[120px]"
+        className="min-w-[120px] flex-1"
       >
-        <Crown className="h-4 w-4 mr-2" />
+        <Crown className="mr-2 h-4 w-4" />
         MyCountry
       </Button>
       <Button
         variant={activeTab === "lore" ? "default" : "ghost"}
         onClick={() => onTabChange("lore")}
-        className="flex-1 min-w-[120px]"
+        className="min-w-[120px] flex-1"
       >
-        <BookOpen className="h-4 w-4 mr-2" />
+        <BookOpen className="mr-2 h-4 w-4" />
         Lore & History
       </Button>
       <Button
         variant={activeTab === "diplomatic" ? "default" : "ghost"}
         onClick={() => onTabChange("diplomatic")}
-        className="flex-1 min-w-[120px]"
+        className="min-w-[120px] flex-1"
       >
-        <Rss className="h-4 w-4 mr-2" />
+        <Rss className="mr-2 h-4 w-4" />
         ThinkPages
       </Button>
       <Button
         variant={activeTab === "diplomacy" ? "default" : "ghost"}
         onClick={() => onTabChange("diplomacy")}
-        className="flex-1 min-w-[120px]"
+        className="min-w-[120px] flex-1"
       >
-        <Building className="h-4 w-4 mr-2" />
+        <Building className="mr-2 h-4 w-4" />
         Diplomacy
       </Button>
     </div>

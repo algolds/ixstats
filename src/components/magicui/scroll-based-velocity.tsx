@@ -25,9 +25,7 @@ export const wrap = (min: number, max: number, v: number) => {
   return ((((v - min) % rangeSize) + rangeSize) % rangeSize) + min;
 };
 
-const ScrollVelocityContext = React.createContext<MotionValue<number> | null>(
-  null,
-);
+const ScrollVelocityContext = React.createContext<MotionValue<number> | null>(null);
 
 export function ScrollVelocityContainer({
   children,
@@ -58,9 +56,7 @@ export function ScrollVelocityContainer({
 export function ScrollVelocityRow(props: ScrollVelocityRowProps) {
   const sharedVelocityFactor = useContext(ScrollVelocityContext);
   if (sharedVelocityFactor) {
-    return (
-      <ScrollVelocityRowImpl {...props} velocityFactor={sharedVelocityFactor} />
-    );
+    return <ScrollVelocityRowImpl {...props} velocityFactor={sharedVelocityFactor} />;
   }
   return <ScrollVelocityRowLocal {...props} />;
 }
@@ -158,8 +154,7 @@ function ScrollVelocityRowImpl({
     const bw = unitWidth.get() || 0;
     if (bw <= 0) return;
     const pixelsPerSecond = (bw * baseVelocity) / 100;
-    const moveBy =
-      currentDirectionRef.current * pixelsPerSecond * speedMultiplier * dt;
+    const moveBy = currentDirectionRef.current * pixelsPerSecond * speedMultiplier * dt;
     baseX.set(baseX.get() + moveBy);
   });
 
@@ -170,7 +165,7 @@ function ScrollVelocityRowImpl({
       {...props}
     >
       <motion.div
-        className="inline-flex items-center will-change-transform transform-gpu select-none"
+        className="inline-flex transform-gpu items-center will-change-transform select-none"
         style={{ x }}
       >
         {Array.from({ length: numCopies }).map((_, i) => (
@@ -200,7 +195,5 @@ function ScrollVelocityRowLocal(props: ScrollVelocityRowProps) {
     const magnitude = Math.min(5, (Math.abs(v) / 1000) * 5);
     return sign * magnitude;
   });
-  return (
-    <ScrollVelocityRowImpl {...props} velocityFactor={localVelocityFactor} />
-  );
+  return <ScrollVelocityRowImpl {...props} velocityFactor={localVelocityFactor} />;
 }

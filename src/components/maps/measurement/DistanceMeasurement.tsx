@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * Distance & Area Measurement Component
@@ -12,8 +12,8 @@
  * - Supports both imperial and metric units
  */
 
-import { useEffect, useRef, useCallback, useState } from 'react';
-import type { Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
+import { useEffect, useRef, useCallback, useState } from "react";
+import type { Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
 import {
   calculatePolylineDistance,
   calculatePolygonArea,
@@ -24,7 +24,7 @@ import {
   coordsToPolygon,
   coordsToPoints,
   KM_TO_MILES,
-} from '~/lib/maps/measurement-utils';
+} from "~/lib/maps/measurement-utils";
 
 interface DistanceMeasurementProps {
   map: MapLibreMap | null;
@@ -33,7 +33,7 @@ interface DistanceMeasurementProps {
 }
 
 export interface MeasurementResult {
-  type: 'distance' | 'area';
+  type: "distance" | "area";
   distanceKm?: number;
   distanceMi?: number;
   areaKm2?: number;
@@ -41,11 +41,7 @@ export interface MeasurementResult {
   points: Array<[number, number]>;
 }
 
-export default function DistanceMeasurement({
-  map,
-  active,
-  onComplete,
-}: DistanceMeasurementProps) {
+export default function DistanceMeasurement({ map, active, onComplete }: DistanceMeasurementProps) {
   const [points, setPoints] = useState<Array<[number, number]>>([]);
   const [isPolygon, setIsPolygon] = useState(false);
   const pointsRef = useRef<Array<[number, number]>>([]);
@@ -66,34 +62,34 @@ export default function DistanceMeasurement({
 
     try {
       // Remove layers
-      if (map.getLayer('measurement-line')) {
-        map.removeLayer('measurement-line');
+      if (map.getLayer("measurement-line")) {
+        map.removeLayer("measurement-line");
       }
-      if (map.getLayer('measurement-polygon')) {
-        map.removeLayer('measurement-polygon');
+      if (map.getLayer("measurement-polygon")) {
+        map.removeLayer("measurement-polygon");
       }
-      if (map.getLayer('measurement-polygon-outline')) {
-        map.removeLayer('measurement-polygon-outline');
+      if (map.getLayer("measurement-polygon-outline")) {
+        map.removeLayer("measurement-polygon-outline");
       }
-      if (map.getLayer('measurement-points')) {
-        map.removeLayer('measurement-points');
+      if (map.getLayer("measurement-points")) {
+        map.removeLayer("measurement-points");
       }
-      if (map.getLayer('measurement-labels')) {
-        map.removeLayer('measurement-labels');
+      if (map.getLayer("measurement-labels")) {
+        map.removeLayer("measurement-labels");
       }
 
       // Remove sources
-      if (map.getSource('measurement-line')) {
-        map.removeSource('measurement-line');
+      if (map.getSource("measurement-line")) {
+        map.removeSource("measurement-line");
       }
-      if (map.getSource('measurement-polygon')) {
-        map.removeSource('measurement-polygon');
+      if (map.getSource("measurement-polygon")) {
+        map.removeSource("measurement-polygon");
       }
-      if (map.getSource('measurement-points')) {
-        map.removeSource('measurement-points');
+      if (map.getSource("measurement-points")) {
+        map.removeSource("measurement-points");
       }
-      if (map.getSource('measurement-labels')) {
-        map.removeSource('measurement-labels');
+      if (map.getSource("measurement-labels")) {
+        map.removeSource("measurement-labels");
       }
     } catch (e) {
       // Ignore errors if layers/sources don't exist
@@ -111,23 +107,23 @@ export default function DistanceMeasurement({
       const pointFeatures = coordsToPoints(currentPoints);
 
       // Add points source and layer
-      map.addSource('measurement-points', {
-        type: 'geojson',
+      map.addSource("measurement-points", {
+        type: "geojson",
         data: {
-          type: 'FeatureCollection',
+          type: "FeatureCollection",
           features: pointFeatures,
         },
       });
 
       map.addLayer({
-        id: 'measurement-points',
-        type: 'circle',
-        source: 'measurement-points',
+        id: "measurement-points",
+        type: "circle",
+        source: "measurement-points",
         paint: {
-          'circle-radius': 6,
-          'circle-color': '#FFFFFF',
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#FF4500',
+          "circle-radius": 6,
+          "circle-color": "#FFFFFF",
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#FF4500",
         },
       });
 
@@ -136,50 +132,50 @@ export default function DistanceMeasurement({
           // Create polygon
           const polygonFeature = coordsToPolygon(currentPoints);
 
-          map.addSource('measurement-polygon', {
-            type: 'geojson',
+          map.addSource("measurement-polygon", {
+            type: "geojson",
             data: polygonFeature,
           });
 
           // Polygon fill
           map.addLayer({
-            id: 'measurement-polygon',
-            type: 'fill',
-            source: 'measurement-polygon',
+            id: "measurement-polygon",
+            type: "fill",
+            source: "measurement-polygon",
             paint: {
-              'fill-color': '#FF4500',
-              'fill-opacity': 0.15,
+              "fill-color": "#FF4500",
+              "fill-opacity": 0.15,
             },
           });
 
           // Polygon outline
           map.addLayer({
-            id: 'measurement-polygon-outline',
-            type: 'line',
-            source: 'measurement-polygon',
+            id: "measurement-polygon-outline",
+            type: "line",
+            source: "measurement-polygon",
             paint: {
-              'line-color': '#FF4500',
-              'line-width': 3,
-              'line-dasharray': [2, 2],
+              "line-color": "#FF4500",
+              "line-width": 3,
+              "line-dasharray": [2, 2],
             },
           });
         } else {
           // Create line
           const lineFeature = coordsToLineString(currentPoints);
 
-          map.addSource('measurement-line', {
-            type: 'geojson',
+          map.addSource("measurement-line", {
+            type: "geojson",
             data: lineFeature,
           });
 
           map.addLayer({
-            id: 'measurement-line',
-            type: 'line',
-            source: 'measurement-line',
+            id: "measurement-line",
+            type: "line",
+            source: "measurement-line",
             paint: {
-              'line-color': '#FF4500',
-              'line-width': 3,
-              'line-dasharray': [2, 2],
+              "line-color": "#FF4500",
+              "line-width": 3,
+              "line-dasharray": [2, 2],
             },
           });
         }
@@ -193,7 +189,7 @@ export default function DistanceMeasurement({
           // Calculate segment distance
           const segmentKm = calculateDistanceFromLngLat(
             { lng: lng1, lat: lat1 },
-            { lng: lng2, lat: lat2 },
+            { lng: lng2, lat: lat2 }
           );
 
           // Calculate midpoint
@@ -201,12 +197,12 @@ export default function DistanceMeasurement({
           const midLat = (lat1 + lat2) / 2;
 
           labelFeatures.push({
-            type: 'Feature',
+            type: "Feature",
             properties: {
               text: formatDistance(segmentKm, true),
             },
             geometry: {
-              type: 'Point',
+              type: "Point",
               coordinates: [midLng, midLat],
             },
           });
@@ -224,7 +220,6 @@ export default function DistanceMeasurement({
           //     features: labelFeatures,
           //   },
           // });
-
           // map.addLayer({
           //   id: 'measurement-labels',
           //   type: 'symbol',
@@ -245,7 +240,7 @@ export default function DistanceMeasurement({
         }
       }
     },
-    [map, clearLayers],
+    [map, clearLayers]
   );
 
   // Handle map clicks
@@ -287,7 +282,7 @@ export default function DistanceMeasurement({
 
         if (onComplete) {
           onComplete({
-            type: 'area',
+            type: "area",
             distanceKm: perimeterKm,
             distanceMi: perimeterMi,
             areaKm2,
@@ -306,7 +301,7 @@ export default function DistanceMeasurement({
 
         if (onComplete) {
           onComplete({
-            type: 'distance',
+            type: "distance",
             distanceKm,
             distanceMi,
             points: currentPoints,
@@ -315,17 +310,17 @@ export default function DistanceMeasurement({
       }
     };
 
-    map.on('click', handleClick);
-    map.on('dblclick', handleDblClick);
+    map.on("click", handleClick);
+    map.on("dblclick", handleDblClick);
 
     // Set crosshair cursor
     const canvas = map.getCanvas();
-    canvas.style.cursor = 'crosshair';
+    canvas.style.cursor = "crosshair";
 
     return () => {
-      map.off('click', handleClick);
-      map.off('dblclick', handleDblClick);
-      canvas.style.cursor = '';
+      map.off("click", handleClick);
+      map.off("dblclick", handleDblClick);
+      canvas.style.cursor = "";
     };
   }, [map, active, onComplete, updateVisualization]);
 
@@ -334,15 +329,15 @@ export default function DistanceMeasurement({
     if (!active) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         clearLayers();
         setPoints([]);
         setIsPolygon(false);
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [active, clearLayers]);
 
   // Clear when deactivated
@@ -355,49 +350,47 @@ export default function DistanceMeasurement({
   }, [active, clearLayers]);
 
   // Calculate current measurements
-  const currentDistance = points.length >= 2
-    ? calculatePolylineDistance(points.map(([lng, lat]) => ({ lng, lat })))
-    : 0;
+  const currentDistance =
+    points.length >= 2 ? calculatePolylineDistance(points.map(([lng, lat]) => ({ lng, lat }))) : 0;
 
-  const currentArea = isPolygon && points.length >= 3
-    ? calculatePolygonArea(points.map(([lng, lat]) => ({ lng, lat })))
-    : 0;
+  const currentArea =
+    isPolygon && points.length >= 3
+      ? calculatePolygonArea(points.map(([lng, lat]) => ({ lng, lat })))
+      : 0;
 
   if (!active || points.length === 0) return null;
 
   return (
-    <div className="absolute top-20 left-4 z-[10000] glass-hierarchy-interactive px-4 py-3 rounded-lg backdrop-blur-xl shadow-lg shadow-orange-500/30 border border-orange-500/50 min-w-[250px] pointer-events-auto">
-      <div className="flex items-center gap-2 mb-2">
-        <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
-        <div className="text-xs font-bold text-orange-400 uppercase tracking-wide">
-          {isPolygon ? 'Area Measurement' : 'Distance Measurement'}
+    <div className="glass-hierarchy-interactive pointer-events-auto absolute top-20 left-4 z-[10000] min-w-[250px] rounded-lg border border-orange-500/50 px-4 py-3 shadow-lg shadow-orange-500/30 backdrop-blur-xl">
+      <div className="mb-2 flex items-center gap-2">
+        <div className="h-2 w-2 animate-pulse rounded-full bg-orange-500"></div>
+        <div className="text-xs font-bold tracking-wide text-orange-400 uppercase">
+          {isPolygon ? "Area Measurement" : "Distance Measurement"}
         </div>
       </div>
 
       <div className="space-y-1">
         {points.length >= 2 && (
-          <div className="text-sm text-foreground font-medium">
-            {isPolygon ? 'Perimeter' : 'Distance'}: {formatDistance(currentDistance, true)}
+          <div className="text-foreground text-sm font-medium">
+            {isPolygon ? "Perimeter" : "Distance"}: {formatDistance(currentDistance, true)}
           </div>
         )}
 
         {isPolygon && currentArea > 0 && (
-          <div className="text-sm text-foreground font-medium">
+          <div className="text-foreground text-sm font-medium">
             Area: {formatArea(currentArea, true)}
           </div>
         )}
 
-        <div className="text-xs text-[--intel-silver] mt-2 pt-2 border-t border-orange-500/30">
-          {points.length === 0 && 'Click to start measuring'}
-          {points.length === 1 && 'Click to add points'}
-          {points.length >= 2 && points.length < 3 && 'Double-click to finish'}
-          {points.length >= 3 && !isPolygon && 'Double-click to close polygon & measure area'}
-          {isPolygon && 'Polygon complete'}
+        <div className="mt-2 border-t border-orange-500/30 pt-2 text-xs text-[--intel-silver]">
+          {points.length === 0 && "Click to start measuring"}
+          {points.length === 1 && "Click to add points"}
+          {points.length >= 2 && points.length < 3 && "Double-click to finish"}
+          {points.length >= 3 && !isPolygon && "Double-click to close polygon & measure area"}
+          {isPolygon && "Polygon complete"}
         </div>
 
-        <div className="text-xs text-[--intel-silver]">
-          Press Esc to cancel
-        </div>
+        <div className="text-xs text-[--intel-silver]">Press Esc to cancel</div>
       </div>
     </div>
   );

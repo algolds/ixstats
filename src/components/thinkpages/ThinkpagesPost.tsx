@@ -1,20 +1,20 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '~/lib/utils';
-import { useRelativeTime } from '~/hooks/useRelativeTime';
-import { 
-  MoreHorizontal, 
-  Pin, 
-  Bookmark, 
-  Flag, 
-  Verified, 
-  Smile, 
-  Angry, 
-  ThumbsUp, 
-  ThumbsDown, 
-  Flame, 
+import React, { useState, useCallback, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "~/lib/utils";
+import { useRelativeTime } from "~/hooks/useRelativeTime";
+import {
+  MoreHorizontal,
+  Pin,
+  Bookmark,
+  Flag,
+  Verified,
+  Smile,
+  Angry,
+  ThumbsUp,
+  ThumbsDown,
+  Flame,
   Heart,
   Edit,
   Trash2,
@@ -22,19 +22,19 @@ import {
   Newspaper,
   Users,
   Repeat2,
-  MessageCircle
-} from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
-import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
-import { Card } from '~/components/ui/card';
-import { Textarea } from '~/components/ui/textarea';
-import { PostActions } from './primitives/PostActions';
-import { AccountIndicator } from './primitives/AccountIndicator';
-import { ReactionsDialog } from './ReactionsDialog';
-import { api } from '~/trpc/react';
-import { toast } from 'sonner';
-import { formatContentEnhanced, extractHashtags, extractMentions } from '~/lib/text-formatter';
+  MessageCircle,
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
+import { Textarea } from "~/components/ui/textarea";
+import { PostActions } from "./primitives/PostActions";
+import { AccountIndicator } from "./primitives/AccountIndicator";
+import { ReactionsDialog } from "./ReactionsDialog";
+import { api } from "~/trpc/react";
+import { toast } from "sonner";
+import { formatContentEnhanced, extractHashtags, extractMentions } from "~/lib/text-formatter";
 
 interface ThinkpagesPostProps {
   post: any;
@@ -60,10 +60,10 @@ function RelativeTimestamp({ timestamp }: { timestamp: Date | string | number })
   const date = new Date(timestamp);
   const now = new Date();
   const hoursDiff = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-  
+
   return (
-    <span 
-      className="text-muted-foreground text-sm cursor-help"
+    <span
+      className="text-muted-foreground cursor-help text-sm"
       title={`IxTime: ${date.toLocaleString()}`}
     >
       {hoursDiff > 24 ? date.toLocaleDateString() : relativeTime}
@@ -74,13 +74,13 @@ function RelativeTimestamp({ timestamp }: { timestamp: Date | string | number })
 const ACCOUNT_TYPE_ICONS = {
   government: Crown,
   media: Newspaper,
-  citizen: Users
+  citizen: Users,
 };
 
 const ACCOUNT_TYPE_COLORS = {
-  government: 'text-amber-500 bg-amber-500/20',
-  media: 'text-blue-500 bg-blue-500/20',
-  citizen: 'text-green-500 bg-green-500/20'
+  government: "text-amber-500 bg-amber-500/20",
+  media: "text-blue-500 bg-blue-500/20",
+  citizen: "text-green-500 bg-green-500/20",
 };
 
 const REACTION_ICONS: { [key: string]: React.ElementType } = {
@@ -89,14 +89,14 @@ const REACTION_ICONS: { [key: string]: React.ElementType } = {
   angry: Angry,
   fire: Flame,
   thumbsup: ThumbsUp,
-  thumbsdown: ThumbsDown
+  thumbsdown: ThumbsDown,
 };
 
 const ThinkpagesPostComponent = ({
   post,
-  currentUserAccountId = '',
+  currentUserAccountId = "",
   accounts = [],
-  countryId = '',
+  countryId = "",
   isOwner = false,
   onAccountSelect,
   onAccountSettings,
@@ -108,17 +108,17 @@ const ThinkpagesPostComponent = ({
   onReaction,
   onAccountClick,
   compact = false,
-  showThread = false
+  showThread = false,
 }: ThinkpagesPostProps) => {
   const [showReplies, setShowReplies] = useState(false);
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [showReplyComposer, setShowReplyComposer] = useState(false);
-  const [replyText, setReplyText] = useState('');
+  const [replyText, setReplyText] = useState("");
   const [showEditComposer, setShowEditComposer] = useState(false);
-  const [editText, setEditText] = useState('');
+  const [editText, setEditText] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showFlagDialog, setShowFlagDialog] = useState(false);
-  const [flagReason, setFlagReason] = useState('');
+  const [flagReason, setFlagReason] = useState("");
   const [showReactionsDialog, setShowReactionsDialog] = useState(false);
 
   // Close more options when clicking outside
@@ -130,8 +130,8 @@ const ThinkpagesPostComponent = ({
     };
 
     if (showMoreOptions) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
+      document.addEventListener("click", handleClickOutside);
+      return () => document.removeEventListener("click", handleClickOutside);
     }
   }, [showMoreOptions]);
 
@@ -144,18 +144,17 @@ const ThinkpagesPostComponent = ({
   const bookmarkPostMutation = api.thinkpages.bookmarkPost.useMutation();
   const flagPostMutation = api.thinkpages.flagPost.useMutation();
 
-
   const handlePin = useCallback(async () => {
     if (!currentUserAccountId) return;
     try {
       await pinPostMutation.mutateAsync({
         postId: post.id,
         accountId: currentUserAccountId,
-        pinned: !post.pinned
+        pinned: !post.pinned,
       });
-      toast.success(post.pinned ? 'Post unpinned' : 'Post pinned');
+      toast.success(post.pinned ? "Post unpinned" : "Post pinned");
     } catch (error: any) {
-      toast.error(error.message || 'Failed to pin post');
+      toast.error(error.message || "Failed to pin post");
     }
   }, [pinPostMutation, post.id, post.pinned, currentUserAccountId]);
 
@@ -165,11 +164,11 @@ const ThinkpagesPostComponent = ({
       await bookmarkPostMutation.mutateAsync({
         postId: post.id,
         userId: currentUserAccountId,
-        bookmarked: true
+        bookmarked: true,
       });
-      toast.success('Post bookmarked');
+      toast.success("Post bookmarked");
     } catch (error: any) {
-      toast.error(error.message || 'Failed to bookmark post');
+      toast.error(error.message || "Failed to bookmark post");
     }
   }, [bookmarkPostMutation, post.id, currentUserAccountId]);
 
@@ -181,18 +180,18 @@ const ThinkpagesPostComponent = ({
 
   const handleSubmitFlag = useCallback(async () => {
     if (!flagReason.trim()) return;
-    
+
     try {
       await flagPostMutation.mutateAsync({
         postId: post.id,
         userId: currentUserAccountId,
-        reason: flagReason
+        reason: flagReason,
       });
-      toast.success('Post flagged');
+      toast.success("Post flagged");
       setShowFlagDialog(false);
-      setFlagReason('');
+      setFlagReason("");
     } catch (error: any) {
-      toast.error(error.message || 'Failed to flag post');
+      toast.error(error.message || "Failed to flag post");
     }
   }, [flagPostMutation, post.id, currentUserAccountId, flagReason]);
 
@@ -208,17 +207,17 @@ const ThinkpagesPostComponent = ({
       setShowEditComposer(false);
       return;
     }
-    
+
     try {
       await updatePostMutation.mutateAsync({
         postId: post.id,
         accountId: currentUserAccountId,
-        content: editText
+        content: editText,
       });
-      toast.success('Post updated');
+      toast.success("Post updated");
       setShowEditComposer(false);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update post');
+      toast.error(error.message || "Failed to update post");
     }
   }, [updatePostMutation, post.id, editText, post.content, currentUserAccountId]);
 
@@ -232,12 +231,12 @@ const ThinkpagesPostComponent = ({
     try {
       await deletePostMutation.mutateAsync({
         postId: post.id,
-        accountId: currentUserAccountId
+        accountId: currentUserAccountId,
       });
-      toast.success('Post deleted');
+      toast.success("Post deleted");
       setShowDeleteConfirm(false);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to delete post');
+      toast.error(error.message || "Failed to delete post");
     }
   }, [deletePostMutation, post.id, currentUserAccountId]);
 
@@ -249,7 +248,7 @@ const ThinkpagesPostComponent = ({
       setReplyText(mentionText);
       // Auto-focus the reply input after a short delay
       setTimeout(() => {
-        const replyInput = document.querySelector('[data-reply-input]') as HTMLTextAreaElement;
+        const replyInput = document.querySelector("[data-reply-input]") as HTMLTextAreaElement;
         if (replyInput) {
           replyInput.focus();
           replyInput.setSelectionRange(mentionText.length, mentionText.length);
@@ -260,74 +259,77 @@ const ThinkpagesPostComponent = ({
 
   const handleSubmitReply = useCallback(async () => {
     if (!replyText.trim() || !currentUserAccountId) return;
-    
+
     try {
       // Enhanced reply with hashtag and mention extraction
       await createPostMutation.mutateAsync({
         accountId: currentUserAccountId,
         content: replyText,
         parentPostId: post.id,
-        visibility: 'public',
+        visibility: "public",
         hashtags: extractHashtags(replyText),
-        mentions: extractMentions(replyText)
+        mentions: extractMentions(replyText),
       });
-      toast.success('Reply posted!');
-      setReplyText('');
+      toast.success("Reply posted!");
+      setReplyText("");
       setShowReplyComposer(false);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to post reply');
+      toast.error(error.message || "Failed to post reply");
     }
   }, [createPostMutation, replyText, currentUserAccountId, post.id]);
-
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg transition-all hover:bg-white/10",
+        "rounded-lg border border-white/10 bg-white/5 backdrop-blur-sm transition-all hover:bg-white/10",
         compact ? "p-3" : "p-4",
         post.pinned && "border-amber-500/30 bg-amber-500/5"
       )}
     >
       {post.pinned && (
-        <div className="flex items-center gap-2 mb-3 text-amber-500 text-sm">
+        <div className="mb-3 flex items-center gap-2 text-sm text-amber-500">
           <Pin className="h-4 w-4" />
           <span>Pinned Post</span>
         </div>
       )}
 
-      {post.postType === 'repost' && (
-        <div className="flex items-center gap-2 mb-3 text-green-500 text-sm">
+      {post.postType === "repost" && (
+        <div className="mb-3 flex items-center gap-2 text-sm text-green-500">
           <Repeat2 className="h-4 w-4" />
           <span>@{post.account.username} reposted</span>
         </div>
       )}
 
-      {post.postType === 'reply' && post.parentPost && (
+      {post.postType === "reply" && post.parentPost && (
         <div className="mb-3">
-          <div className="flex items-center gap-2 mb-2 text-blue-500 text-sm">
+          <div className="mb-2 flex items-center gap-2 text-sm text-blue-500">
             <MessageCircle className="h-4 w-4" />
             <span>Replying to @{post.parentPost.account.username}</span>
           </div>
           {/* Twitter-style parent post context */}
-          <div className="ml-4 pl-4 border-l-2 border-blue-500/30 space-y-2">
+          <div className="ml-4 space-y-2 border-l-2 border-blue-500/30 pl-4">
             <div className="flex items-center gap-2">
               <Avatar className="h-6 w-6">
                 <AvatarImage src={post.parentPost.account.profileImageUrl} />
-                <AvatarFallback className={`text-xs font-semibold ${ACCOUNT_TYPE_COLORS[post.parentPost.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || 'text-gray-500 bg-gray-500/20'}`}>
-                  {post.parentPost.account.displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                <AvatarFallback
+                  className={`text-xs font-semibold ${ACCOUNT_TYPE_COLORS[post.parentPost.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"}`}
+                >
+                  {post.parentPost.account.displayName
+                    .split(" ")
+                    .map((n: string) => n[0])
+                    .join("")
+                    .toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <span className="font-semibold text-sm">
-                {post.parentPost.account.displayName}
-              </span>
+              <span className="text-sm font-semibold">{post.parentPost.account.displayName}</span>
               <span className="text-muted-foreground text-xs">
                 @{post.parentPost.account.username}
               </span>
             </div>
             <div
-              className="text-sm text-muted-foreground line-clamp-3"
+              className="text-muted-foreground line-clamp-3 text-sm"
               // SECURITY: formatContentEnhanced now includes sanitizeUserContent to prevent XSS
               dangerouslySetInnerHTML={{ __html: formatContentEnhanced(post.parentPost.content) }}
             />
@@ -336,45 +338,50 @@ const ThinkpagesPostComponent = ({
       )}
 
       <div className="flex gap-3">
-        <button
-          onClick={() => onAccountClick?.(post.account.id)}
-          className="flex-shrink-0"
-        >
+        <button onClick={() => onAccountClick?.(post.account.id)} className="flex-shrink-0">
           <Avatar className={compact ? "h-8 w-8" : "h-10 w-10"}>
             <AvatarImage src={post.account.profileImageUrl} />
-            <AvatarFallback className={`font-semibold ${ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || 'text-gray-500 bg-gray-500/20'}`}>
-              {post.account.displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+            <AvatarFallback
+              className={`font-semibold ${ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"}`}
+            >
+              {post.account.displayName
+                .split(" ")
+                .map((n: string) => n[0])
+                .join("")
+                .toUpperCase()}
             </AvatarFallback>
           </Avatar>
         </button>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex items-center gap-2">
             <button
               onClick={() => onAccountClick?.(post.account.id)}
               className="font-semibold hover:underline"
             >
               {post.account.displayName}
             </button>
-            
-            {post.account.verified && (
-              <Verified className="h-4 w-4 text-blue-500 fill-current" />
-            )}
-            
-            <div className={`p-1 rounded ${ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || 'text-gray-500 bg-gray-500/20'}`}>
-              {React.createElement(ACCOUNT_TYPE_ICONS[post.account.accountType as keyof typeof ACCOUNT_TYPE_ICONS] || Users, { className: "h-3 w-3" })}
+
+            {post.account.verified && <Verified className="h-4 w-4 fill-current text-blue-500" />}
+
+            <div
+              className={`rounded p-1 ${ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"}`}
+            >
+              {React.createElement(
+                ACCOUNT_TYPE_ICONS[post.account.accountType as keyof typeof ACCOUNT_TYPE_ICONS] ||
+                  Users,
+                { className: "h-3 w-3" }
+              )}
             </div>
-            
-            <span className="text-muted-foreground text-sm">
-              @{post.account.username}
-            </span>
-            
+
+            <span className="text-muted-foreground text-sm">@{post.account.username}</span>
+
             <span className="text-muted-foreground text-sm">·</span>
-            
+
             <RelativeTimestamp timestamp={post.timestamp} />
 
             {post.trending && (
-              <Badge variant="secondary" className="text-xs bg-orange-500/20 text-orange-400">
+              <Badge variant="secondary" className="bg-orange-500/20 text-xs text-orange-400">
                 Trending
               </Badge>
             )}
@@ -382,19 +389,27 @@ const ThinkpagesPostComponent = ({
 
           <div className={cn("mb-3", compact ? "text-sm" : "text-base")}>
             {post.repostOf ? (
-              <Card className="border-green-500/30 bg-green-500/10 p-3 rounded-lg">
-                <div className="flex items-center gap-2 mb-2">
+              <Card className="rounded-lg border-green-500/30 bg-green-500/10 p-3">
+                <div className="mb-2 flex items-center gap-2">
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={post.repostOf.account.profileImageUrl} />
                     <AvatarFallback className="text-xs font-semibold">
-                      {post.repostOf.account.displayName?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || '?'}
+                      {post.repostOf.account.displayName
+                        ?.split(" ")
+                        .map((n: string) => n[0])
+                        .join("")
+                        .toUpperCase() || "?"}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="font-semibold text-sm">{post.repostOf.account.displayName}</span>
-                  <span className="text-muted-foreground text-xs">@{post.repostOf.account.username}</span>
+                  <span className="text-sm font-semibold">{post.repostOf.account.displayName}</span>
+                  <span className="text-muted-foreground text-xs">
+                    @{post.repostOf.account.username}
+                  </span>
                 </div>
                 {/* SECURITY: formatContentEnhanced now includes sanitizeUserContent to prevent XSS */}
-                <div dangerouslySetInnerHTML={{ __html: formatContentEnhanced(post.repostOf.content) }} />
+                <div
+                  dangerouslySetInnerHTML={{ __html: formatContentEnhanced(post.repostOf.content) }}
+                />
               </Card>
             ) : (
               /* SECURITY: formatContentEnhanced now includes sanitizeUserContent to prevent XSS */
@@ -404,31 +419,35 @@ const ThinkpagesPostComponent = ({
 
           {/* Media Attachments */}
           {post.mediaAttachments && post.mediaAttachments.length > 0 && (
-            <div className={cn(
-              "mt-3 rounded-lg overflow-hidden",
-              post.mediaAttachments.length === 1 && "max-w-md",
-              post.mediaAttachments.length === 2 && "grid grid-cols-2 gap-1",
-              post.mediaAttachments.length === 3 && "grid grid-cols-2 gap-1",
-              post.mediaAttachments.length === 4 && "grid grid-cols-2 gap-1"
-            )}>
+            <div
+              className={cn(
+                "mt-3 overflow-hidden rounded-lg",
+                post.mediaAttachments.length === 1 && "max-w-md",
+                post.mediaAttachments.length === 2 && "grid grid-cols-2 gap-1",
+                post.mediaAttachments.length === 3 && "grid grid-cols-2 gap-1",
+                post.mediaAttachments.length === 4 && "grid grid-cols-2 gap-1"
+              )}
+            >
               {post.mediaAttachments.map((media: any, index: number) => (
                 <div
                   key={media.id}
                   className={cn(
-                    "relative bg-muted rounded-lg overflow-hidden",
+                    "bg-muted relative overflow-hidden rounded-lg",
                     post.mediaAttachments.length === 1 && "aspect-video",
                     post.mediaAttachments.length === 2 && "aspect-square",
-                    post.mediaAttachments.length === 3 && index === 0 ? "col-span-2 aspect-video" : "aspect-square",
+                    post.mediaAttachments.length === 3 && index === 0
+                      ? "col-span-2 aspect-video"
+                      : "aspect-square",
                     post.mediaAttachments.length === 4 && "aspect-square"
                   )}
                 >
                   <img
                     src={media.url}
                     alt={media.filename || `Image ${index + 1}`}
-                    className="w-full h-full object-cover hover:opacity-90 transition-opacity cursor-pointer"
+                    className="h-full w-full cursor-pointer object-cover transition-opacity hover:opacity-90"
                     onClick={() => {
                       // Open image in new tab
-                      window.open(media.url, '_blank');
+                      window.open(media.url, "_blank");
                     }}
                   />
                 </div>
@@ -437,12 +456,9 @@ const ThinkpagesPostComponent = ({
           )}
 
           {post.hashtags && post.hashtags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-3">
+            <div className="mb-3 flex flex-wrap gap-1">
               {post.hashtags.map((hashtag: string, index: number) => (
-                <button
-                  key={index}
-                  className="text-blue-500 hover:underline text-sm"
-                >
+                <button key={index} className="text-sm text-blue-500 hover:underline">
                   #{hashtag}
                 </button>
               ))}
@@ -451,20 +467,22 @@ const ThinkpagesPostComponent = ({
 
           {/* Debug PostActions props */}
           {(() => {
-            const isLikedValue = post.reactions?.some((r: any) => r.accountId === currentUserAccountId && r.reactionType === 'like');
+            const isLikedValue = post.reactions?.some(
+              (r: any) => r.accountId === currentUserAccountId && r.reactionType === "like"
+            );
             const reactionCountsValue = (() => {
               try {
-                if (typeof post.reactionCounts === 'string') {
+                if (typeof post.reactionCounts === "string") {
                   return JSON.parse(post.reactionCounts);
                 }
                 return post.reactionCounts || {};
               } catch (error) {
-                console.warn('Failed to parse reactionCounts:', error);
+                console.warn("Failed to parse reactionCounts:", error);
                 return {};
               }
             })();
-            
-            console.log('📤 ThinkpagesPost passing props to PostActions:', {
+
+            console.log("📤 ThinkpagesPost passing props to PostActions:", {
               postId: post.id,
               currentUserAccountId,
               isLiked: isLikedValue,
@@ -475,9 +493,9 @@ const ThinkpagesPostComponent = ({
               hasOnLike: !!onLike,
               hasOnReaction: !!onReaction,
               postAccountId: post.account?.id,
-              postAccountUsername: post.account?.username
+              postAccountUsername: post.account?.username,
             });
-            
+
             return null;
           })()}
 
@@ -491,7 +509,9 @@ const ThinkpagesPostComponent = ({
             onAccountSelect={onAccountSelect}
             onAccountSettings={onAccountSettings}
             onCreateAccount={onCreateAccount}
-            isLiked={post.reactions?.some((r: any) => r.accountId === currentUserAccountId && r.reactionType === 'like')}
+            isLiked={post.reactions?.some(
+              (r: any) => r.accountId === currentUserAccountId && r.reactionType === "like"
+            )}
             isReposted={false} // TODO: Track repost status
             likeCount={post.likeCount}
             repostCount={post.repostCount}
@@ -499,12 +519,12 @@ const ThinkpagesPostComponent = ({
             reactions={post.reactions || []}
             reactionCounts={(() => {
               try {
-                if (typeof post.reactionCounts === 'string') {
+                if (typeof post.reactionCounts === "string") {
                   return JSON.parse(post.reactionCounts);
                 }
                 return post.reactionCounts || {};
               } catch (error) {
-                console.warn('Failed to parse reactionCounts:', error);
+                console.warn("Failed to parse reactionCounts:", error);
                 return {};
               }
             })()}
@@ -514,18 +534,20 @@ const ThinkpagesPostComponent = ({
             onShare={() => {
               const postUrl = `${window.location.origin}/thinkpages/post/${post.id}`;
               if (navigator.share) {
-                navigator.share({
-                  title: `Post by @${post.account.username}`,
-                  text: post.content.substring(0, 100),
-                  url: postUrl
-                }).catch(() => {
-                  // Fallback to clipboard if share fails
-                  navigator.clipboard.writeText(postUrl);
-                  toast.success('Post link copied to clipboard!');
-                });
+                navigator
+                  .share({
+                    title: `Post by @${post.account.username}`,
+                    text: post.content.substring(0, 100),
+                    url: postUrl,
+                  })
+                  .catch(() => {
+                    // Fallback to clipboard if share fails
+                    navigator.clipboard.writeText(postUrl);
+                    toast.success("Post link copied to clipboard!");
+                  });
               } else {
                 navigator.clipboard.writeText(postUrl);
-                toast.success('Post link copied to clipboard!');
+                toast.success("Post link copied to clipboard!");
               }
               onShare?.(post.id);
             }}
@@ -536,45 +558,60 @@ const ThinkpagesPostComponent = ({
 
           <div className="flex items-center justify-end">
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setShowMoreOptions(!showMoreOptions)}
-                className="p-2 text-muted-foreground hover:text-foreground hover:bg-white/10 rounded-full transition-colors"
+                className="text-muted-foreground hover:text-foreground rounded-full p-2 transition-colors hover:bg-white/10"
               >
                 <MoreHorizontal className="h-4 w-4" />
               </button>
               <AnimatePresence>
                 {showMoreOptions && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, scale: 0.9, y: -10 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: -10 }}
-                    className="absolute right-0 mt-2 w-48 bg-background border border-border rounded-lg shadow-lg z-[60] backdrop-blur-sm"
+                    className="bg-background border-border absolute right-0 z-[60] mt-2 w-48 rounded-lg border shadow-lg backdrop-blur-sm"
                     style={{ zIndex: 60 }}
                   >
                     {currentUserAccountId === post.account.id && (
                       <>
-                        <button onClick={handlePin} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted"> 
-                          <Pin className="h-4 w-4" /> 
-                          {post.pinned ? 'Unpin' : 'Pin'}
+                        <button
+                          onClick={handlePin}
+                          className="hover:bg-muted flex w-full items-center gap-2 px-4 py-2 text-left text-sm"
+                        >
+                          <Pin className="h-4 w-4" />
+                          {post.pinned ? "Unpin" : "Pin"}
                         </button>
-                        <button onClick={handleEdit} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted"> 
-                          <Edit className="h-4 w-4" /> 
-                          Edit 
+                        <button
+                          onClick={handleEdit}
+                          className="hover:bg-muted flex w-full items-center gap-2 px-4 py-2 text-left text-sm"
+                        >
+                          <Edit className="h-4 w-4" />
+                          Edit
                         </button>
-                        <button onClick={handleDelete} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted text-destructive"> 
-                          <Trash2 className="h-4 w-4" /> 
-                          Delete 
+                        <button
+                          onClick={handleDelete}
+                          className="hover:bg-muted text-destructive flex w-full items-center gap-2 px-4 py-2 text-left text-sm"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete
                         </button>
-                        <div className="border-t border-border my-1"></div>
+                        <div className="border-border my-1 border-t"></div>
                       </>
                     )}
-                    <button onClick={handleBookmark} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted"> 
-                      <Bookmark className="h-4 w-4" /> 
-                      Bookmark 
+                    <button
+                      onClick={handleBookmark}
+                      className="hover:bg-muted flex w-full items-center gap-2 px-4 py-2 text-left text-sm"
+                    >
+                      <Bookmark className="h-4 w-4" />
+                      Bookmark
                     </button>
-                    <button onClick={handleFlag} className="flex items-center gap-2 w-full px-4 py-2 text-left text-sm hover:bg-muted"> 
-                      <Flag className="h-4 w-4" /> 
-                      Flag 
+                    <button
+                      onClick={handleFlag}
+                      className="hover:bg-muted flex w-full items-center gap-2 px-4 py-2 text-left text-sm"
+                    >
+                      <Flag className="h-4 w-4" />
+                      Flag
                     </button>
                   </motion.div>
                 )}
@@ -584,23 +621,27 @@ const ThinkpagesPostComponent = ({
 
           {(() => {
             try {
-              const reactionCounts = typeof post.reactionCounts === 'string' 
-                ? JSON.parse(post.reactionCounts) 
-                : (post.reactionCounts || {});
-              
+              const reactionCounts =
+                typeof post.reactionCounts === "string"
+                  ? JSON.parse(post.reactionCounts)
+                  : post.reactionCounts || {};
+
               if (reactionCounts && Object.keys(reactionCounts).length > 0) {
                 return (
                   <button
                     onClick={() => setShowReactionsDialog(true)}
-                    className="flex items-center gap-2 mt-2 pt-2 border-t border-white/10 hover:bg-muted/30 w-full rounded px-2 py-1 transition-colors"
+                    className="hover:bg-muted/30 mt-2 flex w-full items-center gap-2 rounded border-t border-white/10 px-2 py-1 pt-2 transition-colors"
                   >
                     {Object.entries(reactionCounts).map(([type, count]) => {
                       const Icon = REACTION_ICONS[type];
                       if (!Icon || (count as number) === 0) return null;
                       return (
-                        <div key={type} className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <div
+                          key={type}
+                          className="text-muted-foreground flex items-center gap-1 text-sm"
+                        >
                           {React.createElement(Icon, { className: "h-4 w-4" })}
-                          <span>{typeof count === 'number' ? count : 0}</span>
+                          <span>{typeof count === "number" ? count : 0}</span>
                         </div>
                       );
                     })}
@@ -609,7 +650,7 @@ const ThinkpagesPostComponent = ({
               }
               return null;
             } catch (error) {
-              console.warn('Failed to display reaction counts:', error);
+              console.warn("Failed to display reaction counts:", error);
               return null;
             }
           })()}
@@ -619,19 +660,25 @@ const ThinkpagesPostComponent = ({
             {showEditComposer && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
+                animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mt-3 p-3 border border-amber-500/50 rounded-lg bg-amber-500/5"
+                className="mt-3 rounded-lg border border-amber-500/50 bg-amber-500/5 p-3"
               >
                 <div className="flex gap-3">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={post.account.profileImageUrl} />
-                    <AvatarFallback className={`font-semibold ${ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || 'text-gray-500 bg-gray-500/20'}`}>
-                      {post.account.displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+                    <AvatarFallback
+                      className={`font-semibold ${ACCOUNT_TYPE_COLORS[post.account.accountType as keyof typeof ACCOUNT_TYPE_COLORS] || "bg-gray-500/20 text-gray-500"}`}
+                    >
+                      {post.account.displayName
+                        .split(" ")
+                        .map((n: string) => n[0])
+                        .join("")
+                        .toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2 mb-2 text-amber-600">
+                    <div className="mb-2 flex items-center gap-2 text-amber-600">
                       <Edit className="h-4 w-4" />
                       <span className="text-sm font-medium">Editing post</span>
                     </div>
@@ -641,31 +688,31 @@ const ThinkpagesPostComponent = ({
                       placeholder="Edit your post..."
                       className="min-h-[80px] resize-none"
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                           e.preventDefault();
                           handleSubmitEdit();
                         }
-                        if (e.key === 'Escape') {
+                        if (e.key === "Escape") {
                           setShowEditComposer(false);
                         }
                       }}
                       autoFocus
                     />
                     <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowEditComposer(false)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => setShowEditComposer(false)}>
                         Cancel
                       </Button>
                       <Button
                         size="sm"
                         onClick={handleSubmitEdit}
-                        disabled={!editText.trim() || editText === post.content || updatePostMutation.isPending}
+                        disabled={
+                          !editText.trim() ||
+                          editText === post.content ||
+                          updatePostMutation.isPending
+                        }
                         className="bg-amber-600 hover:bg-amber-700"
                       >
-                        {updatePostMutation.isPending ? 'Saving...' : 'Save Changes'}
+                        {updatePostMutation.isPending ? "Saving..." : "Save Changes"}
                       </Button>
                     </div>
                   </div>
@@ -679,9 +726,9 @@ const ThinkpagesPostComponent = ({
             {showReplyComposer && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
+                animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mt-3 p-3 border border-border rounded-lg bg-muted/30"
+                className="border-border bg-muted/30 mt-3 rounded-lg border p-3"
               >
                 <div className="flex gap-3">
                   <Avatar className="h-8 w-8">
@@ -695,18 +742,14 @@ const ThinkpagesPostComponent = ({
                       placeholder={`Reply to @${post.account.username}`}
                       className="min-h-[60px] resize-none"
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                           e.preventDefault();
                           handleSubmitReply();
                         }
                       }}
                     />
                     <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowReplyComposer(false)}
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => setShowReplyComposer(false)}>
                         Cancel
                       </Button>
                       <Button
@@ -714,7 +757,7 @@ const ThinkpagesPostComponent = ({
                         onClick={handleSubmitReply}
                         disabled={!replyText.trim() || createPostMutation.isPending}
                       >
-                        {createPostMutation.isPending ? 'Replying...' : 'Reply'}
+                        {createPostMutation.isPending ? "Replying..." : "Reply"}
                       </Button>
                     </div>
                   </div>
@@ -726,9 +769,10 @@ const ThinkpagesPostComponent = ({
           {showThread && post.replyCount > 0 && (
             <button
               onClick={() => setShowReplies(!showReplies)}
-              className="text-blue-500 hover:underline text-sm mt-2"
+              className="mt-2 text-sm text-blue-500 hover:underline"
             >
-              {showReplies ? 'Hide' : 'Show'} {post.replyCount} {post.replyCount === 1 ? 'reply' : 'replies'}
+              {showReplies ? "Hide" : "Show"} {post.replyCount}{" "}
+              {post.replyCount === 1 ? "reply" : "replies"}
             </button>
           )}
 
@@ -739,31 +783,27 @@ const ThinkpagesPostComponent = ({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] flex items-center justify-center"
+                className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm"
                 onClick={() => setShowDeleteConfirm(false)}
               >
                 <motion.div
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.9, opacity: 0 }}
-                  className="bg-background border border-border rounded-lg p-6 max-w-md mx-4"
+                  className="bg-background border-border mx-4 max-w-md rounded-lg border p-6"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-red-500/20 rounded-full">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="rounded-full bg-red-500/20 p-2">
                       <Trash2 className="h-5 w-5 text-red-500" />
                     </div>
                     <div>
                       <h3 className="font-semibold">Delete Post</h3>
-                      <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
+                      <p className="text-muted-foreground text-sm">This action cannot be undone.</p>
                     </div>
                   </div>
                   <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowDeleteConfirm(false)}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => setShowDeleteConfirm(false)}>
                       Cancel
                     </Button>
                     <Button
@@ -772,7 +812,7 @@ const ThinkpagesPostComponent = ({
                       onClick={handleConfirmDelete}
                       disabled={deletePostMutation.isPending}
                     >
-                      {deletePostMutation.isPending ? 'Deleting...' : 'Delete'}
+                      {deletePostMutation.isPending ? "Deleting..." : "Delete"}
                     </Button>
                   </div>
                 </motion.div>
@@ -787,23 +827,25 @@ const ThinkpagesPostComponent = ({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] flex items-center justify-center"
+                className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm"
                 onClick={() => setShowFlagDialog(false)}
               >
                 <motion.div
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.9, opacity: 0 }}
-                  className="bg-background border border-border rounded-lg p-6 max-w-md mx-4"
+                  className="bg-background border-border mx-4 max-w-md rounded-lg border p-6"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 bg-orange-500/20 rounded-full">
+                  <div className="mb-4 flex items-center gap-3">
+                    <div className="rounded-full bg-orange-500/20 p-2">
                       <Flag className="h-5 w-5 text-orange-500" />
                     </div>
                     <div>
                       <h3 className="font-semibold">Flag Post</h3>
-                      <p className="text-sm text-muted-foreground">Help us understand what's wrong.</p>
+                      <p className="text-muted-foreground text-sm">
+                        Help us understand what's wrong.
+                      </p>
                     </div>
                   </div>
                   <Textarea
@@ -819,7 +861,7 @@ const ThinkpagesPostComponent = ({
                       size="sm"
                       onClick={() => {
                         setShowFlagDialog(false);
-                        setFlagReason('');
+                        setFlagReason("");
                       }}
                     >
                       Cancel
@@ -830,7 +872,7 @@ const ThinkpagesPostComponent = ({
                       disabled={!flagReason.trim() || flagPostMutation.isPending}
                       className="bg-orange-600 hover:bg-orange-700"
                     >
-                      {flagPostMutation.isPending ? 'Flagging...' : 'Flag Post'}
+                      {flagPostMutation.isPending ? "Flagging..." : "Flag Post"}
                     </Button>
                   </div>
                 </motion.div>
@@ -858,9 +900,10 @@ export const ThinkpagesPost = React.memo(ThinkpagesPostComponent, (prevProps, ne
     prevProps.post.id === nextProps.post.id &&
     prevProps.currentUserAccountId === nextProps.currentUserAccountId &&
     prevProps.post.updatedAt === nextProps.post.updatedAt &&
-    JSON.stringify(prevProps.post.reactionCounts) === JSON.stringify(nextProps.post.reactionCounts) &&
+    JSON.stringify(prevProps.post.reactionCounts) ===
+      JSON.stringify(nextProps.post.reactionCounts) &&
     prevProps.post._count?.replies === nextProps.post._count?.replies
   );
 });
 
-ThinkpagesPost.displayName = 'ThinkpagesPost';
+ThinkpagesPost.displayName = "ThinkpagesPost";

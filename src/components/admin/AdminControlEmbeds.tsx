@@ -9,7 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
 // Icons
@@ -36,7 +42,7 @@ import {
   AlertTriangle,
   TrendingUp,
   Server,
-  Zap
+  Zap,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
@@ -58,22 +64,35 @@ interface AdminControlEmbedProps {
 
 const getIcon = (iconName: string) => {
   const iconMap: Record<string, React.ComponentType<any>> = {
-    Shield, Users, Database, BarChart3, FileText, Settings, Monitor, Wrench,
-    Activity, Crown, CheckCircle, AlertTriangle, TrendingUp, Server, Zap
+    Shield,
+    Users,
+    Database,
+    BarChart3,
+    FileText,
+    Settings,
+    Monitor,
+    Wrench,
+    Activity,
+    Crown,
+    CheckCircle,
+    AlertTriangle,
+    TrendingUp,
+    Server,
+    Zap,
   };
   return iconMap[iconName] || Settings;
 };
 
 // Main Dashboard Control Embed
 function DashboardControlEmbed({ favorite }: AdminControlEmbedProps) {
-  const Icon = getIcon(favorite.iconName || 'Shield');
+  const Icon = getIcon(favorite.iconName || "Shield");
 
   // Mock system stats - in real implementation, these would come from APIs
   const systemStats = {
     uptime: "99.8%",
     activeUsers: 127,
     totalCountries: 45,
-    systemLoad: "2.3"
+    systemLoad: "2.3",
   };
 
   return (
@@ -95,7 +114,9 @@ function DashboardControlEmbed({ favorite }: AdminControlEmbedProps) {
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Uptime</span>
-            <Badge variant="outline" className="text-green-600">{systemStats.uptime}</Badge>
+            <Badge variant="outline" className="text-green-600">
+              {systemStats.uptime}
+            </Badge>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Users</span>
@@ -112,11 +133,11 @@ function DashboardControlEmbed({ favorite }: AdminControlEmbedProps) {
         </div>
         <div className="flex gap-1">
           <Button variant="outline" size="sm" className="flex-1 text-xs">
-            <RefreshCw className="h-3 w-3 mr-1" />
+            <RefreshCw className="mr-1 h-3 w-3" />
             Refresh
           </Button>
           <Button variant="outline" size="sm" className="flex-1 text-xs">
-            <Eye className="h-3 w-3 mr-1" />
+            <Eye className="mr-1 h-3 w-3" />
             Monitor
           </Button>
         </div>
@@ -127,7 +148,7 @@ function DashboardControlEmbed({ favorite }: AdminControlEmbedProps) {
 
 // User Management Control Embed
 function UserManagementControlEmbed({ favorite }: AdminControlEmbedProps) {
-  const Icon = getIcon(favorite.iconName || 'Users');
+  const Icon = getIcon(favorite.iconName || "Users");
   const [searchTerm, setSearchTerm] = useState("");
 
   return (
@@ -151,29 +172,29 @@ function UserManagementControlEmbed({ favorite }: AdminControlEmbedProps) {
             placeholder="Search users..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="text-xs h-7"
+            className="h-7 text-xs"
           />
           <Button variant="outline" size="sm" className="px-2">
             <Search className="h-3 w-3" />
           </Button>
         </div>
         <div className="space-y-1 text-xs">
-          <div className="flex items-center justify-between p-2 rounded bg-muted/30">
+          <div className="bg-muted/30 flex items-center justify-between rounded p-2">
             <span>Active Users</span>
             <Badge variant="outline">127</Badge>
           </div>
-          <div className="flex items-center justify-between p-2 rounded bg-muted/30">
+          <div className="bg-muted/30 flex items-center justify-between rounded p-2">
             <span>System Owners</span>
             <Badge variant="outline">3</Badge>
           </div>
         </div>
         <div className="flex gap-1">
           <Button variant="outline" size="sm" className="flex-1 text-xs">
-            <Plus className="h-3 w-3 mr-1" />
+            <Plus className="mr-1 h-3 w-3" />
             Add User
           </Button>
           <Button variant="outline" size="sm" className="flex-1 text-xs">
-            <Crown className="h-3 w-3 mr-1" />
+            <Crown className="mr-1 h-3 w-3" />
             Roles
           </Button>
         </div>
@@ -184,7 +205,7 @@ function UserManagementControlEmbed({ favorite }: AdminControlEmbedProps) {
 
 // Database Admin Control Embed
 function DatabaseAdminControlEmbed({ favorite }: AdminControlEmbedProps) {
-  const Icon = getIcon(favorite.iconName || 'Database');
+  const Icon = getIcon(favorite.iconName || "Database");
 
   return (
     <Card className="glass-hierarchy-interactive h-full">
@@ -213,7 +234,9 @@ function DatabaseAdminControlEmbed({ favorite }: AdminControlEmbedProps) {
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">Connections</span>
-            <Badge variant="outline" className="text-green-600">Active</Badge>
+            <Badge variant="outline" className="text-green-600">
+              Active
+            </Badge>
           </div>
         </div>
         <Select>
@@ -228,11 +251,11 @@ function DatabaseAdminControlEmbed({ favorite }: AdminControlEmbedProps) {
         </Select>
         <div className="flex gap-1">
           <Button variant="outline" size="sm" className="flex-1 text-xs">
-            <Activity className="h-3 w-3 mr-1" />
+            <Activity className="mr-1 h-3 w-3" />
             Monitor
           </Button>
           <Button variant="outline" size="sm" className="flex-1 text-xs">
-            <Server className="h-3 w-3 mr-1" />
+            <Server className="mr-1 h-3 w-3" />
             Studio
           </Button>
         </div>
@@ -243,7 +266,7 @@ function DatabaseAdminControlEmbed({ favorite }: AdminControlEmbedProps) {
 
 // System Analytics Control Embed
 function SystemAnalyticsControlEmbed({ favorite }: AdminControlEmbedProps) {
-  const Icon = getIcon(favorite.iconName || 'BarChart3');
+  const Icon = getIcon(favorite.iconName || "BarChart3");
 
   return (
     <Card className="glass-hierarchy-interactive h-full">
@@ -262,11 +285,15 @@ function SystemAnalyticsControlEmbed({ favorite }: AdminControlEmbedProps) {
       </CardHeader>
       <CardContent className="space-y-3">
         <Tabs defaultValue="performance" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 h-6">
-            <TabsTrigger value="performance" className="text-xs">Performance</TabsTrigger>
-            <TabsTrigger value="usage" className="text-xs">Usage</TabsTrigger>
+          <TabsList className="grid h-6 w-full grid-cols-2">
+            <TabsTrigger value="performance" className="text-xs">
+              Performance
+            </TabsTrigger>
+            <TabsTrigger value="usage" className="text-xs">
+              Usage
+            </TabsTrigger>
           </TabsList>
-          <TabsContent value="performance" className="space-y-2 mt-2">
+          <TabsContent value="performance" className="mt-2 space-y-2">
             <div className="space-y-1 text-xs">
               <div className="flex items-center justify-between">
                 <span>CPU Usage</span>
@@ -278,11 +305,13 @@ function SystemAnalyticsControlEmbed({ favorite }: AdminControlEmbedProps) {
               </div>
               <div className="flex items-center justify-between">
                 <span>Response Time</span>
-                <Badge variant="outline" className="text-green-600">145ms</Badge>
+                <Badge variant="outline" className="text-green-600">
+                  145ms
+                </Badge>
               </div>
             </div>
           </TabsContent>
-          <TabsContent value="usage" className="space-y-2 mt-2">
+          <TabsContent value="usage" className="mt-2 space-y-2">
             <div className="space-y-1 text-xs">
               <div className="flex items-center justify-between">
                 <span>Page Views</span>
@@ -294,13 +323,15 @@ function SystemAnalyticsControlEmbed({ favorite }: AdminControlEmbedProps) {
               </div>
               <div className="flex items-center justify-between">
                 <span>Error Rate</span>
-                <Badge variant="outline" className="text-green-600">0.02%</Badge>
+                <Badge variant="outline" className="text-green-600">
+                  0.02%
+                </Badge>
               </div>
             </div>
           </TabsContent>
         </Tabs>
         <Button variant="outline" size="sm" className="w-full text-xs">
-          <TrendingUp className="h-3 w-3 mr-1" />
+          <TrendingUp className="mr-1 h-3 w-3" />
           View Detailed Analytics
         </Button>
       </CardContent>
@@ -310,7 +341,7 @@ function SystemAnalyticsControlEmbed({ favorite }: AdminControlEmbedProps) {
 
 // Content Management Control Embed
 function ContentManagementControlEmbed({ favorite }: AdminControlEmbedProps) {
-  const Icon = getIcon(favorite.iconName || 'FileText');
+  const Icon = getIcon(favorite.iconName || "FileText");
 
   return (
     <Card className="glass-hierarchy-interactive h-full">
@@ -329,11 +360,11 @@ function ContentManagementControlEmbed({ favorite }: AdminControlEmbedProps) {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="text-center p-2 rounded bg-muted/30">
+          <div className="bg-muted/30 rounded p-2 text-center">
             <div className="font-medium">45</div>
             <div className="text-muted-foreground">Countries</div>
           </div>
-          <div className="text-center p-2 rounded bg-muted/30">
+          <div className="bg-muted/30 rounded p-2 text-center">
             <div className="font-medium">127</div>
             <div className="text-muted-foreground">Posts</div>
           </div>
@@ -350,11 +381,11 @@ function ContentManagementControlEmbed({ favorite }: AdminControlEmbedProps) {
         </div>
         <div className="flex gap-1">
           <Button variant="outline" size="sm" className="flex-1 text-xs">
-            <Plus className="h-3 w-3 mr-1" />
+            <Plus className="mr-1 h-3 w-3" />
             New Post
           </Button>
           <Button variant="outline" size="sm" className="flex-1 text-xs">
-            <Edit className="h-3 w-3 mr-1" />
+            <Edit className="mr-1 h-3 w-3" />
             Review
           </Button>
         </div>
@@ -365,7 +396,7 @@ function ContentManagementControlEmbed({ favorite }: AdminControlEmbedProps) {
 
 // Generic Control Embed (fallback)
 function GenericControlEmbed({ favorite }: AdminControlEmbedProps) {
-  const Icon = getIcon(favorite.iconName || 'Settings');
+  const Icon = getIcon(favorite.iconName || "Settings");
 
   return (
     <Card className="glass-hierarchy-interactive h-full">
@@ -384,9 +415,7 @@ function GenericControlEmbed({ favorite }: AdminControlEmbedProps) {
       </CardHeader>
       <CardContent className="space-y-3">
         {favorite.description && (
-          <p className="text-xs text-muted-foreground line-clamp-2">
-            {favorite.description}
-          </p>
+          <p className="text-muted-foreground line-clamp-2 text-xs">{favorite.description}</p>
         )}
         <div className="flex items-center justify-between text-xs">
           <Badge variant="outline" className="capitalize">
@@ -395,7 +424,7 @@ function GenericControlEmbed({ favorite }: AdminControlEmbedProps) {
           <span className="text-muted-foreground">Quick Access</span>
         </div>
         <Button variant="outline" size="sm" className="w-full text-xs">
-          <Zap className="h-3 w-3 mr-1" />
+          <Zap className="mr-1 h-3 w-3" />
           Open Panel
         </Button>
       </CardContent>
@@ -406,15 +435,15 @@ function GenericControlEmbed({ favorite }: AdminControlEmbedProps) {
 // Main Control Embed Router
 export function AdminControlEmbed({ favorite }: AdminControlEmbedProps) {
   switch (favorite.panelType) {
-    case 'dashboard':
+    case "dashboard":
       return <DashboardControlEmbed favorite={favorite} />;
-    case 'users':
+    case "users":
       return <UserManagementControlEmbed favorite={favorite} />;
-    case 'database':
+    case "database":
       return <DatabaseAdminControlEmbed favorite={favorite} />;
-    case 'analytics':
+    case "analytics":
       return <SystemAnalyticsControlEmbed favorite={favorite} />;
-    case 'content':
+    case "content":
       return <ContentManagementControlEmbed favorite={favorite} />;
     default:
       return <GenericControlEmbed favorite={favorite} />;

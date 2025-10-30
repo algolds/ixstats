@@ -1,6 +1,6 @@
-import { useCallback } from 'react';
-import { safeGetItemSync, safeSetItemSync, safeRemoveItemSync } from '~/lib/localStorageMutex';
-import type { BuilderState } from './useBuilderState';
+import { useCallback } from "react";
+import { safeGetItemSync, safeSetItemSync, safeRemoveItemSync } from "~/lib/localStorageMutex";
+import type { BuilderState } from "./useBuilderState";
 
 /**
  * Return value interface for useBuilderSaveLoad hook.
@@ -104,41 +104,41 @@ export interface UseBuilderSaveLoadReturn {
 export function useBuilderSaveLoad(): UseBuilderSaveLoadReturn {
   const saveState = useCallback((state: BuilderState) => {
     try {
-      safeSetItemSync('builder_state', JSON.stringify(state));
-      safeSetItemSync('builder_last_saved', new Date().toISOString());
+      safeSetItemSync("builder_state", JSON.stringify(state));
+      safeSetItemSync("builder_last_saved", new Date().toISOString());
     } catch (error) {
-      console.error('[BuilderSaveLoad] Failed to save state:', error);
+      console.error("[BuilderSaveLoad] Failed to save state:", error);
     }
   }, []);
 
   const loadState = useCallback((): BuilderState | null => {
     try {
-      const savedState = safeGetItemSync('builder_state');
+      const savedState = safeGetItemSync("builder_state");
       if (savedState) {
         return JSON.parse(savedState) as BuilderState;
       }
       return null;
     } catch (error) {
-      console.error('[BuilderSaveLoad] Failed to load state:', error);
+      console.error("[BuilderSaveLoad] Failed to load state:", error);
       return null;
     }
   }, []);
 
   const clearState = useCallback(() => {
     try {
-      safeRemoveItemSync('builder_state');
-      safeRemoveItemSync('builder_last_saved');
+      safeRemoveItemSync("builder_state");
+      safeRemoveItemSync("builder_last_saved");
     } catch (error) {
-      console.error('[BuilderSaveLoad] Failed to clear state:', error);
+      console.error("[BuilderSaveLoad] Failed to clear state:", error);
     }
   }, []);
 
   const loadLastSavedTime = useCallback((): Date | null => {
     try {
-      const savedTime = safeGetItemSync('builder_last_saved');
+      const savedTime = safeGetItemSync("builder_last_saved");
       return savedTime ? new Date(savedTime) : null;
     } catch (error) {
-      console.error('[BuilderSaveLoad] Failed to load last saved time:', error);
+      console.error("[BuilderSaveLoad] Failed to load last saved time:", error);
       return null;
     }
   }, []);

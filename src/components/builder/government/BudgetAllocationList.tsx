@@ -4,15 +4,15 @@
  * List of budget allocations for each department
  */
 
-import React from 'react';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { Button } from '~/components/ui/button';
-import { AlertTriangle, CheckCircle, ChevronDown, ChevronRight } from 'lucide-react';
-import { BudgetAllocationForm } from '~/components/government/atoms/BudgetAllocationForm';
-import { BudgetMeter } from './BudgetMeter';
-import type { DepartmentInput, BudgetAllocationInput } from '~/types/government';
-import type { BudgetSummary } from '~/lib/government-builder-validation';
-import { IxTime } from '~/lib/ixtime';
+import React from "react";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Button } from "~/components/ui/button";
+import { AlertTriangle, CheckCircle, ChevronDown, ChevronRight } from "lucide-react";
+import { BudgetAllocationForm } from "~/components/government/atoms/BudgetAllocationForm";
+import { BudgetMeter } from "./BudgetMeter";
+import type { DepartmentInput, BudgetAllocationInput } from "~/types/government";
+import type { BudgetSummary } from "~/lib/government-builder-validation";
+import { IxTime } from "~/lib/ixtime";
 
 export interface BudgetAllocationListProps {
   departments: DepartmentInput[];
@@ -47,11 +47,13 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold text-foreground">Budget Allocation</h2>
+          <h2 className="text-foreground text-2xl font-semibold">Budget Allocation</h2>
         </div>
         <Alert>
           <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>Add departments first before setting up budget allocations.</AlertDescription>
+          <AlertDescription>
+            Add departments first before setting up budget allocations.
+          </AlertDescription>
         </Alert>
       </div>
     );
@@ -60,24 +62,14 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-foreground">Budget Allocation</h2>
+        <h2 className="text-foreground text-2xl font-semibold">Budget Allocation</h2>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onExpandAll}
-            className="text-xs"
-          >
-            <ChevronDown className="h-3 w-3 mr-1" />
+          <Button variant="outline" size="sm" onClick={onExpandAll} className="text-xs">
+            <ChevronDown className="mr-1 h-3 w-3" />
             Expand All
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onCollapseAll}
-            className="text-xs"
-          >
-            <ChevronRight className="h-3 w-3 mr-1" />
+          <Button variant="outline" size="sm" onClick={onCollapseAll} className="text-xs">
+            <ChevronRight className="mr-1 h-3 w-3" />
             Collapse All
           </Button>
           <Button
@@ -86,7 +78,7 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
             onClick={onFixAllocations}
             className="text-xs text-blue-600 hover:text-blue-700"
           >
-            <CheckCircle className="h-3 w-3 mr-1" />
+            <CheckCircle className="mr-1 h-3 w-3" />
             Fix Allocations
           </Button>
         </div>
@@ -104,7 +96,7 @@ export const BudgetAllocationList = React.memo(function BudgetAllocationList({
             budgetYear: new Date(IxTime.getCurrentIxTime()).getFullYear(),
             allocatedAmount: 0,
             allocatedPercent: 0,
-            notes: '',
+            notes: "",
           };
 
           return (

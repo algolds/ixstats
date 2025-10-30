@@ -1,9 +1,9 @@
 // src/components/defense/UnitManager.tsx
 "use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { api } from '~/trpc/react';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { api } from "~/trpc/react";
 import {
   Plus,
   Edit,
@@ -14,19 +14,32 @@ import {
   Star,
   Activity,
   CheckCircle2,
-} from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog';
-import { Button } from '~/components/ui/button';
-import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
-import { Slider } from '~/components/ui/slider';
-import { Badge } from '~/components/ui/badge';
-import { Progress } from '~/components/ui/progress';
-import { NumberFlowDisplay } from '~/components/ui/number-flow';
-import { toast } from 'sonner';
-import { UNIT_TEMPLATES } from '~/lib/military-equipment';
-import { InlineHelpIcon } from '~/components/ui/help-icon';
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Slider } from "~/components/ui/slider";
+import { Badge } from "~/components/ui/badge";
+import { Progress } from "~/components/ui/progress";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
+import { toast } from "sonner";
+import { UNIT_TEMPLATES } from "~/lib/military-equipment";
+import { InlineHelpIcon } from "~/components/ui/help-icon";
 
 interface UnitManagerProps {
   branchId: string;
@@ -36,33 +49,33 @@ interface UnitManagerProps {
 }
 
 const UNIT_TYPES = {
-  army: ['division', 'brigade', 'regiment', 'battalion'],
-  navy: ['fleet', 'squadron', 'division'],
-  air_force: ['wing', 'squadron', 'group'],
-  marines: ['division', 'regiment', 'battalion'],
-  space_force: ['squadron', 'delta', 'garrison'],
-  cyber_command: ['group', 'squadron', 'team'],
-  special_forces: ['regiment', 'battalion', 'squadron'],
-  coast_guard: ['district', 'sector', 'station'],
+  army: ["division", "brigade", "regiment", "battalion"],
+  navy: ["fleet", "squadron", "division"],
+  air_force: ["wing", "squadron", "group"],
+  marines: ["division", "regiment", "battalion"],
+  space_force: ["squadron", "delta", "garrison"],
+  cyber_command: ["group", "squadron", "team"],
+  special_forces: ["regiment", "battalion", "squadron"],
+  coast_guard: ["district", "sector", "station"],
 } as const;
 
 const SPECIALIZATIONS = {
-  army: ['infantry', 'armor', 'artillery', 'airborne', 'special_ops', 'engineer'],
-  navy: ['surface_warfare', 'submarine', 'aviation', 'amphibious', 'special_warfare'],
-  air_force: ['fighter', 'bomber', 'transport', 'reconnaissance', 'special_ops'],
-  marines: ['infantry', 'aviation', 'logistics', 'reconnaissance'],
-  space_force: ['satellite_ops', 'missile_warning', 'space_control'],
-  cyber_command: ['offensive', 'defensive', 'intelligence', 'electronic_warfare'],
-  special_forces: ['direct_action', 'special_reconnaissance', 'unconventional_warfare'],
-  coast_guard: ['law_enforcement', 'search_rescue', 'maritime_security'],
+  army: ["infantry", "armor", "artillery", "airborne", "special_ops", "engineer"],
+  navy: ["surface_warfare", "submarine", "aviation", "amphibious", "special_warfare"],
+  air_force: ["fighter", "bomber", "transport", "reconnaissance", "special_ops"],
+  marines: ["infantry", "aviation", "logistics", "reconnaissance"],
+  space_force: ["satellite_ops", "missile_warning", "space_control"],
+  cyber_command: ["offensive", "defensive", "intelligence", "electronic_warfare"],
+  special_forces: ["direct_action", "special_reconnaissance", "unconventional_warfare"],
+  coast_guard: ["law_enforcement", "search_rescue", "maritime_security"],
 } as const;
 
 const DEPLOYMENT_STATUS_CONFIG = {
-  garrison: { label: 'Garrison', color: 'bg-gray-500' },
-  training: { label: 'Training', color: 'bg-blue-500' },
-  deployed: { label: 'Deployed', color: 'bg-yellow-500' },
-  combat: { label: 'Combat', color: 'bg-red-500' },
-  reserve: { label: 'Reserve', color: 'bg-green-500' },
+  garrison: { label: "Garrison", color: "bg-gray-500" },
+  training: { label: "Training", color: "bg-blue-500" },
+  deployed: { label: "Deployed", color: "bg-yellow-500" },
+  combat: { label: "Combat", color: "bg-red-500" },
+  reserve: { label: "Reserve", color: "bg-green-500" },
 } as const;
 
 export function UnitManager({ branchId, branchType, units, onRefetch }: UnitManagerProps) {
@@ -71,7 +84,7 @@ export function UnitManager({ branchId, branchType, units, onRefetch }: UnitMana
 
   const createUnit = api.security.createMilitaryUnit.useMutation({
     onSuccess: () => {
-      toast.success('Unit created successfully');
+      toast.success("Unit created successfully");
       setShowDialog(false);
       setEditingUnit(null);
       onRefetch();
@@ -83,7 +96,7 @@ export function UnitManager({ branchId, branchType, units, onRefetch }: UnitMana
 
   const updateUnit = api.security.updateMilitaryUnit.useMutation({
     onSuccess: () => {
-      toast.success('Unit updated successfully');
+      toast.success("Unit updated successfully");
       setShowDialog(false);
       setEditingUnit(null);
       onRefetch();
@@ -95,7 +108,7 @@ export function UnitManager({ branchId, branchType, units, onRefetch }: UnitMana
 
   const deleteUnit = api.security.deleteMilitaryUnit.useMutation({
     onSuccess: () => {
-      toast.success('Unit deleted successfully');
+      toast.success("Unit deleted successfully");
       onRefetch();
     },
     onError: (error) => {
@@ -114,7 +127,7 @@ export function UnitManager({ branchId, branchType, units, onRefetch }: UnitMana
   };
 
   const handleDelete = (unitId: string) => {
-    if (confirm('Are you sure you want to delete this unit?')) {
+    if (confirm("Are you sure you want to delete this unit?")) {
       deleteUnit.mutate({ id: unitId });
     }
   };
@@ -122,7 +135,7 @@ export function UnitManager({ branchId, branchType, units, onRefetch }: UnitMana
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h4 className="font-semibold text-sm flex items-center gap-2">
+        <h4 className="flex items-center gap-2 text-sm font-semibold">
           <Shield className="h-4 w-4" />
           Units ({units.length})
           <InlineHelpIcon
@@ -131,7 +144,7 @@ export function UnitManager({ branchId, branchType, units, onRefetch }: UnitMana
           />
         </h4>
         <Button size="sm" onClick={handleCreate}>
-          <Plus className="h-3 w-3 mr-1" />
+          <Plus className="mr-1 h-3 w-3" />
           Add Unit
         </Button>
       </div>
@@ -143,29 +156,41 @@ export function UnitManager({ branchId, branchType, units, onRefetch }: UnitMana
               key={unit.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+              className="bg-card hover:bg-accent/50 rounded-lg border p-3 transition-colors"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h5 className="font-medium text-sm">{unit.name}</h5>
+                  <div className="mb-1 flex items-center gap-2">
+                    <h5 className="text-sm font-medium">{unit.name}</h5>
                     <Badge variant="outline" className="text-xs">
                       {unit.unitType}
                     </Badge>
                     {unit.specialization && (
                       <Badge variant="secondary" className="text-xs">
-                        {unit.specialization.replace('_', ' ')}
+                        {unit.specialization.replace("_", " ")}
                       </Badge>
                     )}
-                    <Badge className={DEPLOYMENT_STATUS_CONFIG[unit.deploymentStatus as keyof typeof DEPLOYMENT_STATUS_CONFIG]?.color}>
-                      {DEPLOYMENT_STATUS_CONFIG[unit.deploymentStatus as keyof typeof DEPLOYMENT_STATUS_CONFIG]?.label}
+                    <Badge
+                      className={
+                        DEPLOYMENT_STATUS_CONFIG[
+                          unit.deploymentStatus as keyof typeof DEPLOYMENT_STATUS_CONFIG
+                        ]?.color
+                      }
+                    >
+                      {
+                        DEPLOYMENT_STATUS_CONFIG[
+                          unit.deploymentStatus as keyof typeof DEPLOYMENT_STATUS_CONFIG
+                        ]?.label
+                      }
                     </Badge>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 mt-2 text-xs text-muted-foreground">
+                  <div className="text-muted-foreground mt-2 grid grid-cols-2 gap-2 text-xs">
                     <div className="flex items-center gap-1">
                       <Users className="h-3 w-3" />
-                      <span><NumberFlowDisplay value={unit.personnel} /> personnel</span>
+                      <span>
+                        <NumberFlowDisplay value={unit.personnel} /> personnel
+                      </span>
                     </div>
                     {unit.homeBase && (
                       <div className="flex items-center gap-1">
@@ -176,21 +201,23 @@ export function UnitManager({ branchId, branchType, units, onRefetch }: UnitMana
                     {unit.commanderName && (
                       <div className="flex items-center gap-1">
                         <Star className="h-3 w-3" />
-                        <span>{unit.commanderRank} {unit.commanderName}</span>
+                        <span>
+                          {unit.commanderRank} {unit.commanderName}
+                        </span>
                       </div>
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 mt-3">
+                  <div className="mt-3 grid grid-cols-2 gap-2">
                     <div>
-                      <div className="flex items-center justify-between text-xs mb-1">
+                      <div className="mb-1 flex items-center justify-between text-xs">
                         <span className="text-muted-foreground">Readiness</span>
                         <span className="font-medium">{unit.readiness}%</span>
                       </div>
                       <Progress value={unit.readiness} className="h-1" />
                     </div>
                     <div>
-                      <div className="flex items-center justify-between text-xs mb-1">
+                      <div className="mb-1 flex items-center justify-between text-xs">
                         <span className="text-muted-foreground">Effectiveness</span>
                         <span className="font-medium">{unit.effectiveness}%</span>
                       </div>
@@ -199,7 +226,7 @@ export function UnitManager({ branchId, branchType, units, onRefetch }: UnitMana
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 ml-2">
+                <div className="ml-2 flex items-center gap-1">
                   <Button size="sm" variant="ghost" onClick={() => handleEdit(unit)}>
                     <Edit className="h-3 w-3" />
                   </Button>
@@ -212,7 +239,7 @@ export function UnitManager({ branchId, branchType, units, onRefetch }: UnitMana
           ))}
         </div>
       ) : (
-        <div className="text-center py-6 text-muted-foreground text-sm border rounded-lg border-dashed">
+        <div className="text-muted-foreground rounded-lg border border-dashed py-6 text-center text-sm">
           No units yet. Create your first unit to get started.
         </div>
       )}
@@ -240,17 +267,25 @@ interface UnitDialogProps {
   onUpdate: (id: string, data: any) => void;
 }
 
-function UnitDialog({ open, onOpenChange, unit, branchId, branchType, onCreate, onUpdate }: UnitDialogProps) {
+function UnitDialog({
+  open,
+  onOpenChange,
+  unit,
+  branchId,
+  branchType,
+  onCreate,
+  onUpdate,
+}: UnitDialogProps) {
   const [formData, setFormData] = useState({
-    name: unit?.name ?? '',
-    unitType: unit?.unitType ?? 'division',
-    specialization: unit?.specialization ?? '',
+    name: unit?.name ?? "",
+    unitType: unit?.unitType ?? "division",
+    specialization: unit?.specialization ?? "",
     personnel: unit?.personnel ?? 0,
-    commanderName: unit?.commanderName ?? '',
-    commanderRank: unit?.commanderRank ?? '',
-    homeBase: unit?.homeBase ?? '',
-    currentLocation: unit?.currentLocation ?? '',
-    deploymentStatus: unit?.deploymentStatus ?? 'garrison',
+    commanderName: unit?.commanderName ?? "",
+    commanderRank: unit?.commanderRank ?? "",
+    homeBase: unit?.homeBase ?? "",
+    currentLocation: unit?.currentLocation ?? "",
+    deploymentStatus: unit?.deploymentStatus ?? "garrison",
     readiness: unit?.readiness ?? 50,
     effectiveness: unit?.effectiveness ?? 50,
   });
@@ -260,15 +295,15 @@ function UnitDialog({ open, onOpenChange, unit, branchId, branchType, onCreate, 
       setFormData(unit);
     } else {
       setFormData({
-        name: '',
-        unitType: 'division',
-        specialization: '',
+        name: "",
+        unitType: "division",
+        specialization: "",
         personnel: 0,
-        commanderName: '',
-        commanderRank: '',
-        homeBase: '',
-        currentLocation: '',
-        deploymentStatus: 'garrison',
+        commanderName: "",
+        commanderRank: "",
+        homeBase: "",
+        currentLocation: "",
+        deploymentStatus: "garrison",
         readiness: 50,
         effectiveness: 50,
       });
@@ -277,7 +312,7 @@ function UnitDialog({ open, onOpenChange, unit, branchId, branchType, onCreate, 
 
   const handleSubmit = () => {
     if (!formData.name.trim()) {
-      toast.error('Unit name is required');
+      toast.error("Unit name is required");
       return;
     }
 
@@ -289,9 +324,7 @@ function UnitDialog({ open, onOpenChange, unit, branchId, branchType, onCreate, 
   };
 
   // Get templates for this branch type
-  const templates = Object.values(UNIT_TEMPLATES).filter(
-    (t) => t.branch === branchType
-  );
+  const templates = Object.values(UNIT_TEMPLATES).filter((t) => t.branch === branchType);
 
   const loadTemplate = (template: any) => {
     setFormData({
@@ -300,17 +333,17 @@ function UnitDialog({ open, onOpenChange, unit, branchId, branchType, onCreate, 
       unitType: template.type,
       personnel: template.personnel,
     });
-    toast.success('Template loaded');
+    toast.success("Template loaded");
   };
 
-  const unitTypes = UNIT_TYPES[branchType as keyof typeof UNIT_TYPES] ?? ['division'];
+  const unitTypes = UNIT_TYPES[branchType as keyof typeof UNIT_TYPES] ?? ["division"];
   const specializations = SPECIALIZATIONS[branchType as keyof typeof SPECIALIZATIONS] ?? [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{unit ? 'Edit Unit' : 'Create New Unit'}</DialogTitle>
+          <DialogTitle>{unit ? "Edit Unit" : "Create New Unit"}</DialogTitle>
           <DialogDescription>
             Configure unit details, personnel, and readiness levels
           </DialogDescription>
@@ -348,7 +381,10 @@ function UnitDialog({ open, onOpenChange, unit, branchId, branchType, onCreate, 
             </div>
             <div className="space-y-2">
               <Label>Unit Type</Label>
-              <Select value={formData.unitType} onValueChange={(value) => setFormData({ ...formData, unitType: value })}>
+              <Select
+                value={formData.unitType}
+                onValueChange={(value) => setFormData({ ...formData, unitType: value })}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -377,7 +413,7 @@ function UnitDialog({ open, onOpenChange, unit, branchId, branchType, onCreate, 
                 <SelectContent>
                   {specializations.map((spec) => (
                     <SelectItem key={spec} value={spec}>
-                      {spec.replace('_', ' ').toUpperCase()}
+                      {spec.replace("_", " ").toUpperCase()}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -388,7 +424,9 @@ function UnitDialog({ open, onOpenChange, unit, branchId, branchType, onCreate, 
               <Input
                 type="number"
                 value={formData.personnel}
-                onChange={(e) => setFormData({ ...formData, personnel: parseInt(e.target.value) || 0 })}
+                onChange={(e) =>
+                  setFormData({ ...formData, personnel: parseInt(e.target.value) || 0 })
+                }
               />
             </div>
           </div>
@@ -454,8 +492,8 @@ function UnitDialog({ open, onOpenChange, unit, branchId, branchType, onCreate, 
           </div>
 
           {/* Readiness Metrics */}
-          <div className="space-y-4 p-4 rounded-lg border">
-            <h4 className="font-medium text-sm">Readiness Metrics</h4>
+          <div className="space-y-4 rounded-lg border p-4">
+            <h4 className="text-sm font-medium">Readiness Metrics</h4>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -490,8 +528,8 @@ function UnitDialog({ open, onOpenChange, unit, branchId, branchType, onCreate, 
             Cancel
           </Button>
           <Button onClick={handleSubmit}>
-            <CheckCircle2 className="h-4 w-4 mr-2" />
-            {unit ? 'Update Unit' : 'Create Unit'}
+            <CheckCircle2 className="mr-2 h-4 w-4" />
+            {unit ? "Update Unit" : "Create Unit"}
           </Button>
         </DialogFooter>
       </DialogContent>

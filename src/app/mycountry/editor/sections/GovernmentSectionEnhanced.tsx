@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { Badge } from '~/components/ui/badge';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { Button } from '~/components/ui/button';
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Badge } from "~/components/ui/badge";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Button } from "~/components/ui/button";
 import {
   Settings,
   TrendingUp,
@@ -14,12 +14,19 @@ import {
   CheckCircle,
   Zap,
   XCircle,
-  Loader2
-} from 'lucide-react';
-import { AtomicComponentSelector, ATOMIC_COMPONENTS, ComponentType, calculateGovernmentEffectiveness, checkGovernmentSynergy, checkGovernmentConflict } from '~/components/government/atoms/AtomicGovernmentComponents';
-import { api } from '~/trpc/react';
+  Loader2,
+} from "lucide-react";
+import {
+  AtomicComponentSelector,
+  ATOMIC_COMPONENTS,
+  ComponentType,
+  calculateGovernmentEffectiveness,
+  checkGovernmentSynergy,
+  checkGovernmentConflict,
+} from "~/components/government/atoms/AtomicGovernmentComponents";
+import { api } from "~/trpc/react";
 import { usePendingLocks } from "../hooks/usePendingLocks";
-import type { EconomicInputs } from '~/app/builder/lib/economy-data-service';
+import type { EconomicInputs } from "~/app/builder/lib/economy-data-service";
 
 interface GovernmentSectionEnhancedProps {
   inputs: EconomicInputs;
@@ -34,30 +41,35 @@ export function GovernmentSectionEnhanced({
   onInputsChange,
   showAdvanced = false,
   countryId,
-  onGovernmentChange
+  onGovernmentChange,
 }: GovernmentSectionEnhancedProps) {
-  const [activeTab, setActiveTab] = useState('components');
+  const [activeTab, setActiveTab] = useState("components");
   const [selectedComponents, setSelectedComponents] = useState<ComponentType[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
   const { isLocked } = usePendingLocks();
 
   // Fetch existing government components
-  const { data: existingComponents, isLoading: componentsLoading, refetch: refetchComponents } = api.atomicGovernment.getComponents.useQuery(
-    { countryId: countryId || 'placeholder' },
+  const {
+    data: existingComponents,
+    isLoading: componentsLoading,
+    refetch: refetchComponents,
+  } = api.atomicGovernment.getComponents.useQuery(
+    { countryId: countryId || "placeholder" },
     {
       enabled: !!countryId && countryId.length > 0,
-      retry: false
+      retry: false,
     }
   );
 
   // Fetch effectiveness analysis
-  const { data: effectivenessData, refetch: refetchEffectiveness } = api.atomicGovernment.getEffectivenessAnalysis.useQuery(
-    { countryId: countryId || 'placeholder' },
-    {
-      enabled: !!countryId && countryId.length > 0,
-      retry: false
-    }
-  );
+  const { data: effectivenessData, refetch: refetchEffectiveness } =
+    api.atomicGovernment.getEffectivenessAnalysis.useQuery(
+      { countryId: countryId || "placeholder" },
+      {
+        enabled: !!countryId && countryId.length > 0,
+        retry: false,
+      }
+    );
 
   // Mutations
   const createComponentMutation = api.atomicGovernment.createComponent.useMutation();
@@ -110,11 +122,15 @@ export function GovernmentSectionEnhanced({
 
     try {
       // Get existing component IDs to compare
-      const existingComponentTypes = new Set((existingComponents || []).map(c => c.componentType));
+      const existingComponentTypes = new Set(
+        (existingComponents || []).map((c) => c.componentType)
+      );
       const selectedComponentTypes = new Set(selectedComponents);
 
       // Find components to add (in selected but not in existing)
-      const componentsToAdd = selectedComponents.filter(type => !existingComponentTypes.has(type));
+      const componentsToAdd = selectedComponents.filter(
+        (type) => !existingComponentTypes.has(type)
+      );
 
       // Find components to remove (in existing but not in selected)
       const componentsToRemove = (existingComponents || [])
@@ -147,16 +163,16 @@ export function GovernmentSectionEnhanced({
 
       setHasChanges(false);
     } catch (error) {
-      console.error('Failed to save government components:', error);
+      console.error("Failed to save government components:", error);
     }
   };
 
   // Get effectiveness status
   const getEffectivenessStatus = (score: number) => {
-    if (score >= 85) return { color: 'green', label: 'Excellent', variant: 'default' as const };
-    if (score >= 70) return { color: 'blue', label: 'Good', variant: 'default' as const };
-    if (score >= 55) return { color: 'amber', label: 'Fair', variant: 'default' as const };
-    return { color: 'red', label: 'Poor', variant: 'destructive' as const };
+    if (score >= 85) return { color: "green", label: "Excellent", variant: "default" as const };
+    if (score >= 70) return { color: "blue", label: "Good", variant: "default" as const };
+    if (score >= 55) return { color: "amber", label: "Fair", variant: "default" as const };
+    return { color: "red", label: "Poor", variant: "destructive" as const };
   };
 
   const effectivenessStatus = getEffectivenessStatus(effectivenessMetrics.totalEffectiveness);
@@ -166,19 +182,16 @@ export function GovernmentSectionEnhanced({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold flex items-center gap-2">
+          <h3 className="flex items-center gap-2 text-lg font-semibold">
             <Settings className="h-5 w-5" />
             Atomic Government Structure
           </h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Build your government from modular atomic components with synergy effects
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge
-            variant={effectivenessStatus.variant}
-            className="px-3 py-1"
-          >
+          <Badge variant={effectivenessStatus.variant} className="px-3 py-1">
             {effectivenessStatus.label}: {effectivenessMetrics.totalEffectiveness.toFixed(0)}%
           </Badge>
           {hasChanges && (
@@ -187,13 +200,13 @@ export function GovernmentSectionEnhanced({
               disabled={createComponentMutation.isPending || removeComponentMutation.isPending}
               size="sm"
             >
-              {(createComponentMutation.isPending || removeComponentMutation.isPending) ? (
+              {createComponentMutation.isPending || removeComponentMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving...
                 </>
               ) : (
-                'Save Changes'
+                "Save Changes"
               )}
             </Button>
           )}
@@ -201,16 +214,16 @@ export function GovernmentSectionEnhanced({
       </div>
 
       {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card className="glass-surface">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+              <div className="rounded-lg bg-purple-100 p-2 dark:bg-purple-900/30">
                 <Settings className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{selectedComponents.length}</p>
-                <p className="text-xs text-muted-foreground">Active Components</p>
+                <p className="text-muted-foreground text-xs">Active Components</p>
               </div>
             </div>
           </CardContent>
@@ -219,13 +232,15 @@ export function GovernmentSectionEnhanced({
         <Card className="glass-surface">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
+              <div className="rounded-lg bg-green-100 p-2 dark:bg-green-900/30">
                 <Zap className="h-5 w-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{synergies.length}</p>
-                <p className="text-xs text-muted-foreground">Synergies</p>
-                <p className="text-xs text-green-600 dark:text-green-400">+{effectivenessMetrics.synergyBonus.toFixed(0)}%</p>
+                <p className="text-muted-foreground text-xs">Synergies</p>
+                <p className="text-xs text-green-600 dark:text-green-400">
+                  +{effectivenessMetrics.synergyBonus.toFixed(0)}%
+                </p>
               </div>
             </div>
           </CardContent>
@@ -234,13 +249,15 @@ export function GovernmentSectionEnhanced({
         <Card className="glass-surface">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30">
+              <div className="rounded-lg bg-red-100 p-2 dark:bg-red-900/30">
                 <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{conflicts.length}</p>
-                <p className="text-xs text-muted-foreground">Conflicts</p>
-                <p className="text-xs text-red-600 dark:text-red-400">-{effectivenessMetrics.conflictPenalty.toFixed(0)}%</p>
+                <p className="text-muted-foreground text-xs">Conflicts</p>
+                <p className="text-xs text-red-600 dark:text-red-400">
+                  -{effectivenessMetrics.conflictPenalty.toFixed(0)}%
+                </p>
               </div>
             </div>
           </CardContent>
@@ -249,13 +266,19 @@ export function GovernmentSectionEnhanced({
         <Card className="glass-surface">
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg bg-${effectivenessStatus.color}-100 dark:bg-${effectivenessStatus.color}-900/30`}>
-                <TrendingUp className={`h-5 w-5 text-${effectivenessStatus.color}-600 dark:text-${effectivenessStatus.color}-400`} />
+              <div
+                className={`rounded-lg p-2 bg-${effectivenessStatus.color}-100 dark:bg-${effectivenessStatus.color}-900/30`}
+              >
+                <TrendingUp
+                  className={`h-5 w-5 text-${effectivenessStatus.color}-600 dark:text-${effectivenessStatus.color}-400`}
+                />
               </div>
               <div>
-                <p className="text-2xl font-bold">{effectivenessMetrics.totalEffectiveness.toFixed(0)}%</p>
-                <p className="text-xs text-muted-foreground">Effectiveness</p>
-                <p className="text-xs text-muted-foreground">{effectivenessStatus.label}</p>
+                <p className="text-2xl font-bold">
+                  {effectivenessMetrics.totalEffectiveness.toFixed(0)}%
+                </p>
+                <p className="text-muted-foreground text-xs">Effectiveness</p>
+                <p className="text-muted-foreground text-xs">{effectivenessStatus.label}</p>
               </div>
             </div>
           </CardContent>
@@ -271,28 +294,29 @@ export function GovernmentSectionEnhanced({
         </TabsList>
 
         {/* Components Tab */}
-        <TabsContent value="components" className="space-y-6 mt-6">
+        <TabsContent value="components" className="mt-6 space-y-6">
           <Card className="glass-surface">
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-base">
                 <Settings className="h-5 w-5" />
                 Select Government Components
               </CardTitle>
               <CardDescription>
-                Choose 3-10 atomic components to build your government structure. Each component has unique effects, costs, and interactions.
+                Choose 3-10 atomic components to build your government structure. Each component has
+                unique effects, costs, and interactions.
               </CardDescription>
             </CardHeader>
             <CardContent>
               {componentsLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
                 </div>
               ) : (
                 <AtomicComponentSelector
                   initialComponents={selectedComponents}
                   onChange={handleComponentChange}
                   maxComponents={10}
-                  isReadOnly={isLocked('governmentComponents')}
+                  isReadOnly={isLocked("governmentComponents")}
                 />
               )}
             </CardContent>
@@ -300,10 +324,10 @@ export function GovernmentSectionEnhanced({
         </TabsContent>
 
         {/* Synergies & Conflicts Tab */}
-        <TabsContent value="synergies" className="space-y-6 mt-6">
+        <TabsContent value="synergies" className="mt-6 space-y-6">
           <Card className="glass-surface">
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-base">
                 <Zap className="h-5 w-5 text-green-600" />
                 Synergies
               </CardTitle>
@@ -316,7 +340,8 @@ export function GovernmentSectionEnhanced({
                 <Alert>
                   <Info className="h-4 w-4" />
                   <AlertDescription>
-                    No synergies detected. Select complementary components to unlock synergy bonuses.
+                    No synergies detected. Select complementary components to unlock synergy
+                    bonuses.
                   </AlertDescription>
                 </Alert>
               ) : (
@@ -325,8 +350,11 @@ export function GovernmentSectionEnhanced({
                     const comp1Data = ATOMIC_COMPONENTS[synergy.comp1];
                     const comp2Data = ATOMIC_COMPONENTS[synergy.comp2];
                     return (
-                      <div key={idx} className="flex items-center gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                        <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                      <div
+                        key={idx}
+                        className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20"
+                      >
+                        <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-600 dark:text-green-400" />
                         <div className="flex-1">
                           <p className="text-sm font-medium text-slate-900 dark:text-white">
                             {comp1Data?.name} + {comp2Data?.name}
@@ -348,7 +376,7 @@ export function GovernmentSectionEnhanced({
 
           <Card className="glass-surface">
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-base">
                 <XCircle className="h-5 w-5 text-red-600" />
                 Conflicts
               </CardTitle>
@@ -370,8 +398,11 @@ export function GovernmentSectionEnhanced({
                     const comp1Data = ATOMIC_COMPONENTS[conflict.comp1];
                     const comp2Data = ATOMIC_COMPONENTS[conflict.comp2];
                     return (
-                      <div key={idx} className="flex items-center gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-                        <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                      <div
+                        key={idx}
+                        className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20"
+                      >
+                        <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-600 dark:text-red-400" />
                         <div className="flex-1">
                           <p className="text-sm font-medium text-slate-900 dark:text-white">
                             {comp1Data?.name} + {comp2Data?.name}
@@ -380,9 +411,7 @@ export function GovernmentSectionEnhanced({
                             These components have conflicting implementation approaches
                           </p>
                         </div>
-                        <Badge variant="destructive">
-                          -15
-                        </Badge>
+                        <Badge variant="destructive">-15</Badge>
                       </div>
                     );
                   })}
@@ -393,7 +422,7 @@ export function GovernmentSectionEnhanced({
         </TabsContent>
 
         {/* Analysis Tab */}
-        <TabsContent value="analysis" className="space-y-6 mt-6">
+        <TabsContent value="analysis" className="mt-6 space-y-6">
           <Card className="glass-surface">
             <CardHeader>
               <CardTitle className="text-base">Government Effectiveness Analysis</CardTitle>
@@ -402,38 +431,50 @@ export function GovernmentSectionEnhanced({
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Base Effectiveness</p>
-                  <p className="text-2xl font-bold">{effectivenessMetrics.baseEffectiveness.toFixed(1)}%</p>
+                  <p className="text-muted-foreground text-sm">Base Effectiveness</p>
+                  <p className="text-2xl font-bold">
+                    {effectivenessMetrics.baseEffectiveness.toFixed(1)}%
+                  </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Effectiveness</p>
-                  <p className="text-2xl font-bold">{effectivenessMetrics.totalEffectiveness.toFixed(1)}%</p>
+                  <p className="text-muted-foreground text-sm">Total Effectiveness</p>
+                  <p className="text-2xl font-bold">
+                    {effectivenessMetrics.totalEffectiveness.toFixed(1)}%
+                  </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Synergy Bonus</p>
-                  <p className="text-2xl font-bold text-green-600">+{effectivenessMetrics.synergyBonus.toFixed(1)}%</p>
+                  <p className="text-muted-foreground text-sm">Synergy Bonus</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    +{effectivenessMetrics.synergyBonus.toFixed(1)}%
+                  </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Conflict Penalty</p>
-                  <p className="text-2xl font-bold text-red-600">-{effectivenessMetrics.conflictPenalty.toFixed(1)}%</p>
+                  <p className="text-muted-foreground text-sm">Conflict Penalty</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    -{effectivenessMetrics.conflictPenalty.toFixed(1)}%
+                  </p>
                 </div>
               </div>
 
               {effectivenessData && (
                 <>
-                  <div className="pt-4 border-t">
-                    <p className="text-sm font-medium mb-2">Total Costs</p>
-                    <p className="text-xl">${effectivenessData.totalCost?.toLocaleString() ?? '0'}</p>
+                  <div className="border-t pt-4">
+                    <p className="mb-2 text-sm font-medium">Total Costs</p>
+                    <p className="text-xl">
+                      ${effectivenessData.totalCost?.toLocaleString() ?? "0"}
+                    </p>
                   </div>
 
                   {effectivenessData.recommendations.length > 0 && (
-                    <div className="pt-4 border-t">
-                      <p className="text-sm font-medium mb-2">Recommendations</p>
+                    <div className="border-t pt-4">
+                      <p className="mb-2 text-sm font-medium">Recommendations</p>
                       <ul className="space-y-2">
                         {effectivenessData.recommendations.map((rec, idx) => (
                           <li key={idx} className="flex items-start gap-2">
-                            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                            <span className="text-sm text-slate-700 dark:text-slate-300">{rec}</span>
+                            <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+                            <span className="text-sm text-slate-700 dark:text-slate-300">
+                              {rec}
+                            </span>
                           </li>
                         ))}
                       </ul>
@@ -444,30 +485,38 @@ export function GovernmentSectionEnhanced({
             </CardContent>
           </Card>
 
-          {effectivenessData?.categoryBreakdown && Object.keys(effectivenessData.categoryBreakdown).length > 0 && (
-            <Card className="glass-surface">
-              <CardHeader>
-                <CardTitle className="text-base">Category Breakdown</CardTitle>
-                <CardDescription>Component distribution across categories</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {Object.entries(effectivenessData.categoryBreakdown).map(([category, data]: [string, any]) => (
-                    <div key={category} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-900/50">
-                      <div>
-                        <p className="text-sm font-medium">{category}</p>
-                        <p className="text-xs text-muted-foreground">{data.count} component{data.count !== 1 ? 's' : ''}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold">{data.avgEffectiveness.toFixed(0)}%</p>
-                        <p className="text-xs text-muted-foreground">Avg. Effectiveness</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {effectivenessData?.categoryBreakdown &&
+            Object.keys(effectivenessData.categoryBreakdown).length > 0 && (
+              <Card className="glass-surface">
+                <CardHeader>
+                  <CardTitle className="text-base">Category Breakdown</CardTitle>
+                  <CardDescription>Component distribution across categories</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {Object.entries(effectivenessData.categoryBreakdown).map(
+                      ([category, data]: [string, any]) => (
+                        <div
+                          key={category}
+                          className="flex items-center justify-between rounded-lg bg-slate-50 p-3 dark:bg-slate-900/50"
+                        >
+                          <div>
+                            <p className="text-sm font-medium">{category}</p>
+                            <p className="text-muted-foreground text-xs">
+                              {data.count} component{data.count !== 1 ? "s" : ""}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-bold">{data.avgEffectiveness.toFixed(0)}%</p>
+                            <p className="text-muted-foreground text-xs">Avg. Effectiveness</p>
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
         </TabsContent>
       </Tabs>
     </div>

@@ -26,7 +26,7 @@ export interface BaseImageResult {
  */
 export interface UnsplashImageResult extends BaseImageResult {
   /** Unsplash-specific metadata */
-  source: 'unsplash';
+  source: "unsplash";
 
   /** Thumbnail URL for preview */
   thumbnailUrl?: string;
@@ -47,7 +47,7 @@ export interface UnsplashImageResult extends BaseImageResult {
  */
 export interface WikiCommonsImageResult extends BaseImageResult {
   /** WikiCommons-specific metadata */
-  source: 'wikicommons';
+  source: "wikicommons";
 
   /** License information */
   license?: string;

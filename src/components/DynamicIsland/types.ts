@@ -31,7 +31,7 @@ export interface SearchResult {
 // View modes
 export type ViewMode = "compact" | "search" | "notifications" | "settings" | "cycling";
 export type SearchFilter = "all" | "countries" | "commands" | "features";
-export type TimeDisplayMode = 'time' | 'date' | 'both';
+export type TimeDisplayMode = "time" | "date" | "both";
 
 // Current time state interface
 export interface CurrentTimeState {
@@ -42,7 +42,7 @@ export interface CurrentTimeState {
 }
 
 // Setup status type
-export type SetupStatus = 'loading' | 'unauthenticated' | 'needs-setup' | 'complete';
+export type SetupStatus = "loading" | "unauthenticated" | "needs-setup" | "complete";
 
 // Component prop interfaces
 export interface CompactViewProps {

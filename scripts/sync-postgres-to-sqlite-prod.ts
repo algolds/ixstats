@@ -9,22 +9,22 @@
  * - Preserves all existing data while updating geographic fields
  */
 
-import { PrismaClient } from '@prisma/client';
-import Database from 'better-sqlite3';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { PrismaClient } from "@prisma/client";
+import Database from "better-sqlite3";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Create SQLite connection using better-sqlite3
-const sqlitePath = join(__dirname, '../prisma/prod.db');
+const sqlitePath = join(__dirname, "../prisma/prod.db");
 const sqlite = new Database(sqlitePath, { readonly: false });
 
 // Create PostgreSQL client
 const postgres = new PrismaClient({
-  datasourceUrl: 'postgresql://postgres:postgres@localhost:5433/ixstats',
+  datasourceUrl: "postgresql://postgres:postgres@localhost:5433/ixstats",
 });
 
 // Sync statistics
@@ -41,18 +41,18 @@ const stats = {
  * Step 1: Alter Country table to add new geographic columns
  */
 async function addGeographicColumns() {
-  console.log('\n📐 Step 1: Adding geographic columns to Country table...');
+  console.log("\n📐 Step 1: Adding geographic columns to Country table...");
 
   try {
     // Check if columns already exist
     const tableInfo = sqlite.prepare("PRAGMA table_info(Country)").all() as Array<{ name: string }>;
-    const existingColumns = new Set(tableInfo.map(col => col.name));
+    const existingColumns = new Set(tableInfo.map((col) => col.name));
 
     const columnsToAdd = [
-      { name: 'geometry', type: 'TEXT' },
-      { name: 'centroid', type: 'TEXT' },
-      { name: 'boundingBox', type: 'TEXT' },
-      { name: 'coastlineKm', type: 'REAL' },
+      { name: "geometry", type: "TEXT" },
+      { name: "centroid", type: "TEXT" },
+      { name: "boundingBox", type: "TEXT" },
+      { name: "coastlineKm", type: "REAL" },
     ];
 
     for (const column of columnsToAdd) {
@@ -65,9 +65,9 @@ async function addGeographicColumns() {
       }
     }
 
-    console.log('✅ Geographic columns ready');
+    console.log("✅ Geographic columns ready");
   } catch (error) {
-    console.error('❌ Error adding geographic columns:', error);
+    console.error("❌ Error adding geographic columns:", error);
     throw error;
   }
 }
@@ -76,7 +76,7 @@ async function addGeographicColumns() {
  * Step 2: Create Territory table if it doesn't exist
  */
 async function createTerritoryTable() {
-  console.log('\n🗺️  Step 2: Creating Territory table...');
+  console.log("\n🗺️  Step 2: Creating Territory table...");
 
   try {
     // Check if table exists
@@ -104,11 +104,15 @@ async function createTerritoryTable() {
     sqlite.prepare(sql).run();
 
     // Create indexes
-    sqlite.prepare('CREATE INDEX IF NOT EXISTS "territories_countryId_idx" ON "territories"("countryId")').run();
+    sqlite
+      .prepare(
+        'CREATE INDEX IF NOT EXISTS "territories_countryId_idx" ON "territories"("countryId")'
+      )
+      .run();
 
-    console.log('✅ Territory table created');
+    console.log("✅ Territory table created");
   } catch (error) {
-    console.error('❌ Error creating Territory table:', error);
+    console.error("❌ Error creating Territory table:", error);
     throw error;
   }
 }
@@ -117,7 +121,7 @@ async function createTerritoryTable() {
  * Step 3: Create BorderHistory table if it doesn't exist
  */
 async function createBorderHistoryTable() {
-  console.log('\n📜 Step 3: Creating BorderHistory table...');
+  console.log("\n📜 Step 3: Creating BorderHistory table...");
 
   try {
     // Check if table exists
@@ -148,11 +152,15 @@ async function createBorderHistoryTable() {
     sqlite.prepare(sql).run();
 
     // Create indexes
-    sqlite.prepare('CREATE INDEX IF NOT EXISTS "border_history_countryId_changedAt_idx" ON "border_history"("countryId", "changedAt")').run();
+    sqlite
+      .prepare(
+        'CREATE INDEX IF NOT EXISTS "border_history_countryId_changedAt_idx" ON "border_history"("countryId", "changedAt")'
+      )
+      .run();
 
-    console.log('✅ BorderHistory table created');
+    console.log("✅ BorderHistory table created");
   } catch (error) {
-    console.error('❌ Error creating BorderHistory table:', error);
+    console.error("❌ Error creating BorderHistory table:", error);
     throw error;
   }
 }
@@ -161,7 +169,7 @@ async function createBorderHistoryTable() {
  * Step 4: Sync country data from PostgreSQL to SQLite
  */
 async function syncCountryData() {
-  console.log('\n🔄 Step 4: Syncing country data from PostgreSQL to SQLite...');
+  console.log("\n🔄 Step 4: Syncing country data from PostgreSQL to SQLite...");
 
   try {
     // Fetch all countries with geographic data from PostgreSQL
@@ -217,9 +225,11 @@ async function syncCountryData() {
 
           if (result.changes > 0) {
             stats.countriesUpdated++;
-            const areaSqMi = country.areaSqMi?.toLocaleString() || 'N/A';
-            const coastlineKm = country.coastlineKm?.toLocaleString() || 'N/A';
-            console.log(`   ✓ ${country.name.padEnd(35)} → ${areaSqMi.padStart(12)} sq mi, ${coastlineKm.padStart(10)} km coastline`);
+            const areaSqMi = country.areaSqMi?.toLocaleString() || "N/A";
+            const coastlineKm = country.coastlineKm?.toLocaleString() || "N/A";
+            console.log(
+              `   ✓ ${country.name.padEnd(35)} → ${areaSqMi.padStart(12)} sq mi, ${coastlineKm.padStart(10)} km coastline`
+            );
           } else {
             stats.countriesSkipped++;
             console.log(`   ⏭️  ${country.name} - not found in SQLite, skipped`);
@@ -237,9 +247,9 @@ async function syncCountryData() {
     // Execute the transaction
     updateMany(pgCountries);
 
-    console.log('\n✅ Country data sync complete');
+    console.log("\n✅ Country data sync complete");
   } catch (error) {
-    console.error('❌ Error syncing country data:', error);
+    console.error("❌ Error syncing country data:", error);
     throw error;
   }
 }
@@ -248,7 +258,7 @@ async function syncCountryData() {
  * Step 5: Sync Territory data (if any exists in PostgreSQL)
  */
 async function syncTerritoryData() {
-  console.log('\n🏝️  Step 5: Syncing Territory data...');
+  console.log("\n🏝️  Step 5: Syncing Territory data...");
 
   try {
     // Fetch all territories from PostgreSQL
@@ -264,7 +274,7 @@ async function syncTerritoryData() {
     });
 
     if (pgTerritories.length === 0) {
-      console.log('   ⏭️  No territories found in PostgreSQL, skipping');
+      console.log("   ⏭️  No territories found in PostgreSQL, skipping");
       return;
     }
 
@@ -299,7 +309,7 @@ async function syncTerritoryData() {
 
     console.log(`✅ Synced ${stats.territoriesCreated} territories`);
   } catch (error) {
-    console.error('❌ Error syncing territory data:', error);
+    console.error("❌ Error syncing territory data:", error);
     throw error;
   }
 }
@@ -308,7 +318,7 @@ async function syncTerritoryData() {
  * Step 6: Sync BorderHistory data (if any exists in PostgreSQL)
  */
 async function syncBorderHistoryData() {
-  console.log('\n📝 Step 6: Syncing BorderHistory data...');
+  console.log("\n📝 Step 6: Syncing BorderHistory data...");
 
   try {
     // Fetch all border history records from PostgreSQL
@@ -327,7 +337,7 @@ async function syncBorderHistoryData() {
     });
 
     if (pgBorderHistory.length === 0) {
-      console.log('   ⏭️  No border history found in PostgreSQL, skipping');
+      console.log("   ⏭️  No border history found in PostgreSQL, skipping");
       return;
     }
 
@@ -365,7 +375,7 @@ async function syncBorderHistoryData() {
 
     console.log(`✅ Synced ${stats.borderHistoryCreated} border history records`);
   } catch (error) {
-    console.error('❌ Error syncing border history data:', error);
+    console.error("❌ Error syncing border history data:", error);
     throw error;
   }
 }
@@ -374,8 +384,8 @@ async function syncBorderHistoryData() {
  * Main sync function
  */
 async function main() {
-  console.log('🚀 PostgreSQL → SQLite Geographic Data Sync');
-  console.log('='.repeat(80));
+  console.log("🚀 PostgreSQL → SQLite Geographic Data Sync");
+  console.log("=".repeat(80));
 
   try {
     // Step 1: Add geographic columns to Country table
@@ -397,8 +407,8 @@ async function main() {
     await syncBorderHistoryData();
 
     // Print summary
-    console.log('\n' + '='.repeat(80));
-    console.log('✅ Sync Summary:');
+    console.log("\n" + "=".repeat(80));
+    console.log("✅ Sync Summary:");
     console.log(`   Countries with geometry in PostgreSQL: ${stats.countriesWithGeometry}`);
     console.log(`   Countries updated in SQLite: ${stats.countriesUpdated}`);
     console.log(`   Countries skipped (not found): ${stats.countriesSkipped}`);
@@ -413,10 +423,10 @@ async function main() {
       });
     }
 
-    console.log('\n✅ Geographic data sync complete!');
-    console.log('='.repeat(80));
+    console.log("\n✅ Geographic data sync complete!");
+    console.log("=".repeat(80));
   } catch (error) {
-    console.error('\n❌ Fatal error during sync:', error);
+    console.error("\n❌ Fatal error during sync:", error);
     process.exit(1);
   } finally {
     sqlite.close();

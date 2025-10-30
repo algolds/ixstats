@@ -8,7 +8,7 @@
  * @module economy-builder
  */
 
-import type { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
+import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 
 // ============================================
 // ECONOMY BUILDER STATE
@@ -107,8 +107,8 @@ export interface EconomyStructure {
   tertiarySectors: string[];
   totalGDP: number;
   gdpCurrency: string;
-  economicTier: 'Developing' | 'Emerging' | 'Developed' | 'Advanced';
-  growthStrategy: 'Export-Led' | 'Import-Substitution' | 'Balanced' | 'Innovation-Driven';
+  economicTier: "Developing" | "Emerging" | "Developed" | "Advanced";
+  growthStrategy: "Export-Led" | "Import-Substitution" | "Balanced" | "Innovation-Driven";
   sectors?: SectorConfiguration[];
 }
 
@@ -200,16 +200,16 @@ export interface EconomyBuilderErrors {
 export interface SectorConfiguration {
   id: string;
   name: string;
-  category: 'Primary' | 'Secondary' | 'Tertiary';
+  category: "Primary" | "Secondary" | "Tertiary";
   gdpContribution: number; // percentage
   employmentShare: number; // percentage
   productivity: number; // productivity index
   growthRate: number; // annual growth percentage
   exports: number; // percentage of sector output exported
   imports: number; // percentage of sector consumption imported
-  technologyLevel: 'Traditional' | 'Modern' | 'Advanced' | 'Cutting-Edge';
+  technologyLevel: "Traditional" | "Modern" | "Advanced" | "Cutting-Edge";
   automation: number; // automation percentage
-  regulation: 'Light' | 'Moderate' | 'Heavy' | 'Comprehensive';
+  regulation: "Light" | "Moderate" | "Heavy" | "Comprehensive";
   subsidy: number; // government subsidy percentage
   innovation: number; // innovation index 0-100
   sustainability: number; // sustainability score 0-100
@@ -309,7 +309,7 @@ export interface LaborConfiguration {
   seniorEmploymentRate: number; // ages 55+
   femaleParticipationRate: number; // percentage
   maleParticipationRate: number; // percentage
-  
+
   // Sector Distribution (percent of workforce)
   sectorDistribution: {
     agriculture: number;
@@ -329,7 +329,7 @@ export interface LaborConfiguration {
     government: number;
     other: number;
   };
-  
+
   // Employment Types
   employmentType: {
     fullTime: number; // percentage
@@ -341,14 +341,14 @@ export interface LaborConfiguration {
     informal: number;
   };
   averageAnnualIncome: number;
-  
+
   // Working Conditions
   averageWorkweekHours: number;
   averageOvertimeHours: number;
   paidVacationDays: number;
   paidSickLeaveDays: number;
   parentalLeaveWeeks: number;
-  
+
   // Labor Rights & Protections
   unionizationRate: number; // percentage
   collectiveBargainingCoverage: number; // percentage
@@ -413,15 +413,15 @@ export interface DemographicsConfiguration {
     age15to64: number; // percentage
     over65: number; // percentage
   };
-  
+
   // Geographic Distribution
   urbanRuralSplit: {
     urban: number; // percentage
     rural: number; // percentage
   };
-  
+
   regions: RegionDistribution[];
-  
+
   // Social Indicators
   lifeExpectancy: number; // years
   literacyRate: number; // percentage
@@ -431,17 +431,17 @@ export interface DemographicsConfiguration {
     secondary: number; // percentage
     tertiary: number; // percentage
   };
-  
+
   // Migration
   netMigrationRate: number; // per 1000 population
   immigrationRate: number; // per 1000 population
   emigrationRate: number; // per 1000 population
-  
+
   // Health
   infantMortalityRate: number; // per 1000 live births
   maternalMortalityRate: number; // per 100,000 live births
   healthExpenditureGDP: number; // percentage of GDP
-  
+
   // Dependency Ratios
   youthDependencyRatio: number; // (0-14) / (15-64) * 100
   elderlyDependencyRatio: number; // (65+) / (15-64) * 100
@@ -454,7 +454,7 @@ export interface RegionDistribution {
   populationPercent: number;
   urbanPercent: number;
   economicActivity: number; // percentage of national economic activity
-  developmentLevel: 'Underdeveloped' | 'Developing' | 'Developed' | 'Advanced';
+  developmentLevel: "Underdeveloped" | "Developing" | "Developed" | "Advanced";
 }
 
 // ============================================
@@ -467,7 +467,7 @@ export interface IncomeWealthConfiguration {
   nationalMeanIncome: number;
   nationalMedianWage: number;
   nationalMeanWage: number;
-  
+
   // Income Distribution by Percentile
   incomePercentiles: {
     p10: number;
@@ -479,7 +479,7 @@ export interface IncomeWealthConfiguration {
     p99: number;
     p99_9: number;
   };
-  
+
   // Income Classes
   incomeClasses: {
     lowerClass: { percent: number; averageIncome: number; threshold: number };
@@ -489,7 +489,7 @@ export interface IncomeWealthConfiguration {
     upperClass: { percent: number; averageIncome: number; threshold: number };
     wealthyClass: { percent: number; averageIncome: number; threshold: number };
   };
-  
+
   // Inequality Metrics
   giniCoefficient: number; // 0-1 scale
   palmRatio: number; // ratio of top 10% to bottom 40%
@@ -499,14 +499,14 @@ export interface IncomeWealthConfiguration {
     top10: number;
     top1: number;
   };
-  
+
   // Poverty Metrics
   povertyLine: number;
   povertyRate: number; // percentage
   extremePovertyRate: number; // percentage
   childPovertyRate: number;
   seniorPovertyRate: number;
-  
+
   // Wage Data by Sector
   averageWageBySector: {
     agriculture: number;
@@ -525,12 +525,12 @@ export interface IncomeWealthConfiguration {
     hospitality: number;
     government: number;
   };
-  
+
   // Gender and Demographic Gaps
   genderPayGap: number; // percentage
   racialWageGap: number; // percentage (if applicable)
   urbanRuralIncomeGap: number; // percentage
-  
+
   // Social Mobility
   socialMobilityIndex: number; // 0-100
   interGenerationalElasticity: number; // 0-1, lower is better
@@ -548,13 +548,13 @@ export interface TradeConfiguration {
   tradeBalance: number; // USD
   exportsGDPPercent: number; // percentage
   importsGDPPercent: number; // percentage
-  
+
   // Trade Policy
-  tradeOpenness: 'Closed' | 'Limited' | 'Moderate' | 'Open' | 'Very Open';
+  tradeOpenness: "Closed" | "Limited" | "Moderate" | "Open" | "Very Open";
   averageTariffRate: number; // percentage
   nonTariffBarriers: number; // index 0-100
   tradeAgreements: string[]; // list of trade agreements
-  
+
   // Export/Import Composition
   exportComposition: {
     primary: number; // percentage
@@ -562,18 +562,18 @@ export interface TradeConfiguration {
     services: number; // percentage
     highTech: number; // percentage
   };
-  
+
   importComposition: {
     primary: number; // percentage
     manufactured: number; // percentage
     services: number; // percentage
     energy: number; // percentage
   };
-  
+
   // Trade Partners
   majorExportDestinations: TradePartner[];
   majorImportSources: TradePartner[];
-  
+
   // Competitiveness
   tradeCompetitivenessIndex: number; // 0-100
   exportDiversificationIndex: number; // 0-100
@@ -584,7 +584,7 @@ export interface TradePartner {
   country: string;
   share: number; // percentage of total trade
   tradeValue: number; // USD
-  relationship: 'Strategic' | 'Important' | 'Standard' | 'Limited';
+  relationship: "Strategic" | "Important" | "Standard" | "Limited";
 }
 
 // ============================================
@@ -597,23 +597,23 @@ export interface ProductivityConfiguration {
   laborProductivityGrowth: number; // annual percentage
   capitalProductivity: number; // GDP per unit of capital
   totalFactorProductivity: number; // index
-  
+
   // Technology Adoption
   technologyAdoptionIndex: number; // 0-100
   digitalizationIndex: number; // 0-100
   automationLevel: number; // percentage
-  
+
   // Innovation
   innovationIndex: number; // 0-100
   rdInvestmentGDP: number; // percentage
   patentApplications: number; // per capita
   technologyTransfer: number; // index
-  
+
   // Infrastructure
   infrastructureQuality: number; // 0-100
   logisticsPerformance: number; // 0-100
   connectivityIndex: number; // 0-100
-  
+
   // Human Capital
   humanCapitalIndex: number; // 0-100
   skillsMatch: number; // percentage
@@ -629,19 +629,19 @@ export interface BusinessEnvironmentConfiguration {
   easeOfDoingBusiness: number; // 0-100
   businessStartupTime: number; // days
   businessStartupCost: number; // percentage of income per capita
-  businessRegulation: 'Light' | 'Moderate' | 'Heavy' | 'Comprehensive';
-  
+  businessRegulation: "Light" | "Moderate" | "Heavy" | "Comprehensive";
+
   // Market Structure
   marketConcentration: number; // index
   competitionLevel: number; // 0-100
   marketBarriers: number; // 0-100
-  
+
   // Financial System
   financialDevelopment: number; // 0-100
   creditAvailability: number; // 0-100
   bankingEfficiency: number; // 0-100
   capitalMarketDevelopment: number; // 0-100
-  
+
   // Corruption and Governance
   corruptionPerceptionIndex: number; // 0-100
   regulatoryQuality: number; // 0-100
@@ -679,7 +679,7 @@ export interface EconomicHealthMetrics {
   productivityIndex: number; // 0-100
 
   // Risk Assessment
-  economicRiskLevel: 'Low' | 'Medium' | 'High' | 'Very High';
+  economicRiskLevel: "Low" | "Medium" | "High" | "Very High";
   externalVulnerability: number; // 0-100
   domesticVulnerability: number; // 0-100
   systemicRisk: number; // 0-100
@@ -944,20 +944,20 @@ export interface EconomicArchetype {
   id: string;
   name: string;
   description: string;
-  category: 'Developed' | 'Emerging' | 'Developing' | 'Transitional';
-  
+  category: "Developed" | "Emerging" | "Developing" | "Transitional";
+
   // Component Configuration
   atomicComponents: EconomicComponentType[];
-  
+
   // Sector Configuration
   sectorTemplate: Partial<SectorConfiguration>[];
-  
+
   // Labor Configuration
   laborTemplate: Partial<LaborConfiguration>;
-  
+
   // Trade Configuration
   tradeTemplate: Partial<TradeConfiguration>;
-  
+
   // Typical Metrics
   typicalMetrics: {
     gdpPerCapita: number;
@@ -966,7 +966,7 @@ export interface EconomicArchetype {
     inflationRate: number;
     giniCoefficient: number;
   };
-  
+
   // Examples
   realWorldExamples: string[];
   effectiveness: number; // 0-100
@@ -985,15 +985,15 @@ export interface EconomicArchetype {
  * @typedef {'atomicComponents'|'sectors'|'labor'|'demographics'|'income'|'trade'|'productivity'|'business'|'preview'} EconomyBuilderTab
  */
 export type EconomyBuilderTab =
-  | 'atomicComponents'
-  | 'sectors'
-  | 'labor'
-  | 'demographics'
-  | 'income'
-  | 'trade'
-  | 'productivity'
-  | 'business'
-  | 'preview';
+  | "atomicComponents"
+  | "sectors"
+  | "labor"
+  | "demographics"
+  | "income"
+  | "trade"
+  | "productivity"
+  | "business"
+  | "preview";
 
 /**
  * EconomyBuilderMode - Operating mode for the economy builder
@@ -1003,7 +1003,7 @@ export type EconomyBuilderTab =
  * @property {'edit'} edit - Editing an existing economy configuration
  * @property {'view'} view - Read-only view of economy data
  */
-export type EconomyBuilderMode = 'create' | 'edit' | 'view';
+export type EconomyBuilderMode = "create" | "edit" | "view";
 
 /**
  * EconomyBuilderConfig - Configuration options for the economy builder
@@ -1049,4 +1049,4 @@ export interface EconomyBuilderConfig {
 // ============================================
 
 // Re-export EconomicInputs from the canonical source
-export type { EconomicInputs } from '~/app/builder/lib/economy-data-service';
+export type { EconomicInputs } from "~/app/builder/lib/economy-data-service";

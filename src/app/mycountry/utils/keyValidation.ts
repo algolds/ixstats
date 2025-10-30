@@ -18,22 +18,20 @@ export function generateSafeKey(
   additionalContext?: string | number
 ): string {
   // Validate and clean the primary ID
-  const cleanId = id && typeof id === 'string' ? id.trim() : '';
-  
+  const cleanId = id && typeof id === "string" ? id.trim() : "";
+
   // If we have a valid ID, use it with prefix
   if (cleanId && cleanId.length > 0) {
     const baseKey = `${fallbackPrefix}-${cleanId}`;
     // Add additional context if provided for extra uniqueness
-    return additionalContext !== undefined 
-      ? `${baseKey}-${additionalContext}`
-      : baseKey;
+    return additionalContext !== undefined ? `${baseKey}-${additionalContext}` : baseKey;
   }
-  
+
   // Generate fallback key with timestamp and index for guaranteed uniqueness
   const timestamp = Date.now();
   const randomSuffix = Math.random().toString(36).substr(2, 5);
-  const contextSuffix = additionalContext !== undefined ? `-${additionalContext}` : '';
-  
+  const contextSuffix = additionalContext !== undefined ? `-${additionalContext}` : "";
+
   return `${fallbackPrefix}-fallback-${index}-${timestamp}-${randomSuffix}${contextSuffix}`;
 }
 
@@ -51,10 +49,10 @@ export function generateArrayKeys<T>(
 ): string[] {
   const usedKeys = new Set<string>();
   const keys: string[] = [];
-  
+
   items.forEach((item, index) => {
     let key = generateSafeKey(getIdFn(item), prefix, index);
-    
+
     // Ensure absolute uniqueness even if generateSafeKey somehow produces duplicates
     let counter = 0;
     const originalKey = key;
@@ -62,11 +60,11 @@ export function generateArrayKeys<T>(
       counter++;
       key = `${originalKey}-duplicate-${counter}`;
     }
-    
+
     usedKeys.add(key);
     keys.push(key);
   });
-  
+
   return keys;
 }
 
@@ -76,7 +74,7 @@ export function generateArrayKeys<T>(
  * @returns True if key is safe, false otherwise
  */
 export function isValidReactKey(key: any): key is string {
-  return typeof key === 'string' && key.trim().length > 0;
+  return typeof key === "string" && key.trim().length > 0;
 }
 
 /**
@@ -86,15 +84,11 @@ export function isValidReactKey(key: any): key is string {
  * @param index - Index for fallback
  * @returns Valid React key
  */
-export function ensureValidKey(
-  key: any,
-  fallbackPrefix: string,
-  index: number
-): string {
+export function ensureValidKey(key: any, fallbackPrefix: string, index: number): string {
   if (isValidReactKey(key)) {
     return key;
   }
-  
+
   return generateSafeKey(null, fallbackPrefix, index);
 }
 
@@ -105,21 +99,18 @@ export function ensureValidKey(
  */
 export function createKeyValidator(componentName: string) {
   const usedKeys = new Set<string>();
-  
-  return function validateKey(
-    key: string,
-    itemDescription: string = 'item'
-  ): string {
+
+  return function validateKey(key: string, itemDescription: string = "item"): string {
     if (!isValidReactKey(key)) {
       console.warn(`[${componentName}] Invalid key for ${itemDescription}:`, key);
       throw new Error(`Invalid React key in ${componentName}: key must be a non-empty string`);
     }
-    
+
     if (usedKeys.has(key)) {
-      console.error(`[${componentName}] Duplicate key detected:`, key, 'for', itemDescription);
+      console.error(`[${componentName}] Duplicate key detected:`, key, "for", itemDescription);
       throw new Error(`Duplicate React key in ${componentName}: ${key}`);
     }
-    
+
     usedKeys.add(key);
     return key;
   };
@@ -133,11 +124,7 @@ export function createKeyValidator(componentName: string) {
 export function generateNotificationKeys(
   notifications: Array<{ id?: string | null; [key: string]: any }>
 ): string[] {
-  return generateArrayKeys(
-    notifications,
-    (notification) => notification.id,
-    'notification'
-  );
+  return generateArrayKeys(notifications, (notification) => notification.id, "notification");
 }
 
 /**
@@ -148,11 +135,7 @@ export function generateNotificationKeys(
 export function generateInsightKeys(
   insights: Array<{ id?: string | null; [key: string]: any }>
 ): string[] {
-  return generateArrayKeys(
-    insights,
-    (insight) => insight.id,
-    'insight'
-  );
+  return generateArrayKeys(insights, (insight) => insight.id, "insight");
 }
 
 /**
@@ -163,11 +146,7 @@ export function generateInsightKeys(
 export function generateMilestoneKeys(
   milestones: Array<{ id?: string | null; [key: string]: any }>
 ): string[] {
-  return generateArrayKeys(
-    milestones,
-    (milestone) => milestone.id,
-    'milestone'
-  );
+  return generateArrayKeys(milestones, (milestone) => milestone.id, "milestone");
 }
 
 /**
@@ -187,22 +166,17 @@ export function generateContextualKey(
   }
 ): string {
   const { prefix, index, parentId, timestamp, additionalIdentifiers = [] } = context;
-  
+
   // Build context parts
   const contextParts = [
     parentId && `parent-${parentId}`,
     timestamp && `ts-${timestamp}`,
-    ...additionalIdentifiers.map(id => `ctx-${id}`)
+    ...additionalIdentifiers.map((id) => `ctx-${id}`),
   ].filter(Boolean);
-  
-  const contextString = contextParts.length > 0 ? contextParts.join('-') : '';
-  
-  return generateSafeKey(
-    item.id,
-    prefix,
-    index,
-    contextString
-  );
+
+  const contextString = contextParts.length > 0 ? contextParts.join("-") : "";
+
+  return generateSafeKey(item.id, prefix, index, contextString);
 }
 
 /**
@@ -211,32 +185,32 @@ export function generateContextualKey(
  * @param componentName - Component name for logging
  */
 export function debugKeyIssues(keys: string[], componentName: string): void {
-  if (process.env.NODE_ENV !== 'development') return;
-  
+  if (process.env.NODE_ENV !== "development") return;
+
   const keyCount = new Map<string, number>();
   const emptyKeys: number[] = [];
-  
+
   keys.forEach((key, index) => {
     if (!isValidReactKey(key)) {
       emptyKeys.push(index);
     }
-    
+
     const count = keyCount.get(key) || 0;
     keyCount.set(key, count + 1);
   });
-  
+
   const duplicates = Array.from(keyCount.entries())
     .filter(([key, count]) => count > 1)
     .map(([key, count]) => ({ key, count }));
-  
+
   if (emptyKeys.length > 0) {
     console.warn(`[${componentName}] Empty/invalid keys at indices:`, emptyKeys);
   }
-  
+
   if (duplicates.length > 0) {
     console.warn(`[${componentName}] Duplicate keys found:`, duplicates);
   }
-  
+
   if (emptyKeys.length === 0 && duplicates.length === 0) {
     console.log(`[${componentName}] All keys are valid and unique ✓`);
   }

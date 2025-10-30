@@ -5,8 +5,8 @@
  * into your tRPC routers and React components.
  */
 
-import { DiplomaticResponseAI, type WorldState } from './diplomatic-response-ai';
-import type { DiplomaticChoice } from './diplomatic-choice-tracker';
+import { DiplomaticResponseAI, type WorldState } from "./diplomatic-response-ai";
+import type { DiplomaticChoice } from "./diplomatic-choice-tracker";
 
 // ==================== tRPC ROUTER INTEGRATION ====================
 
@@ -18,7 +18,7 @@ import type { DiplomaticChoice } from './diplomatic-choice-tracker';
 export const exampleTRPCProcedure = {
   // GET diplomatic events for a country
   generateEvents: {
-    input: { countryId: 'string' },
+    input: { countryId: "string" },
     async handler(ctx: any, input: any) {
       const { countryId } = input;
 
@@ -32,24 +32,24 @@ export const exampleTRPCProcedure = {
       });
 
       if (!country) {
-        throw new Error('Country not found');
+        throw new Error("Country not found");
       }
 
       // 2. Fetch all embassies (both hosting and guest)
       const allEmbassies = [
         ...country.embassiesHosting.map((e: any) => ({
           ...e,
-          role: 'host' as const,
+          role: "host" as const,
           country: e.guestCountryId,
           countryId: e.guestCountryId,
         })),
         ...country.embassiesGuest.map((e: any) => ({
           ...e,
-          role: 'guest' as const,
+          role: "guest" as const,
           country: e.hostCountryId,
           countryId: e.hostCountryId,
         })),
-      ].filter((e) => e.status === 'active');
+      ].filter((e) => e.status === "active");
 
       // 3. Fetch diplomatic relationships
       const relationships = await ctx.db.diplomaticRelation.findMany({
@@ -59,23 +59,31 @@ export const exampleTRPCProcedure = {
       });
 
       // Transform to RelationshipState format
-      const relationshipStates = relationships.map((r: { country1: string; country2: string; relationship: string; strength: number; treaties?: string; tradeVolume?: number; culturalExchange?: string; recentActivity?: string }) => ({
-        targetCountry: r.country1 === countryId ? r.country2 : r.country1,
-        targetCountryId: r.country1 === countryId ? r.country2 : r.country1,
-        relationship: r.relationship as any,
-        strength: r.strength,
-        treaties: r.treaties ? JSON.parse(r.treaties) : [],
-        tradeVolume: r.tradeVolume,
-        culturalExchange: r.culturalExchange,
-        recentActivity: r.recentActivity,
-      }));
+      const relationshipStates = relationships.map(
+        (r: {
+          country1: string;
+          country2: string;
+          relationship: string;
+          strength: number;
+          treaties?: string;
+          tradeVolume?: number;
+          culturalExchange?: string;
+          recentActivity?: string;
+        }) => ({
+          targetCountry: r.country1 === countryId ? r.country2 : r.country1,
+          targetCountryId: r.country1 === countryId ? r.country2 : r.country1,
+          relationship: r.relationship as any,
+          strength: r.strength,
+          treaties: r.treaties ? JSON.parse(r.treaties) : [],
+          tradeVolume: r.tradeVolume,
+          culturalExchange: r.culturalExchange,
+          recentActivity: r.recentActivity,
+        })
+      );
 
       // 4. Fetch recent diplomatic actions
       // You would implement this based on your action tracking system
-      const recentActions: DiplomaticChoice[] = await fetchRecentActions(
-        ctx.db,
-        countryId
-      );
+      const recentActions: DiplomaticChoice[] = await fetchRecentActions(ctx.db, countryId);
 
       // 5. Fetch active treaties
       const treaties = await ctx.db.treaty.findMany({
@@ -83,18 +91,27 @@ export const exampleTRPCProcedure = {
           parties: {
             contains: countryId,
           },
-          status: 'active',
+          status: "active",
         },
       });
 
-      const treatyStates = treaties.map((t: { id: string; name: string; type: string; parties?: string; status: string; terms: string }) => ({
-        id: t.id,
-        name: t.name,
-        type: t.type,
-        parties: JSON.parse(t.parties || '[]'),
-        status: t.status,
-        terms: t.terms,
-      }));
+      const treatyStates = treaties.map(
+        (t: {
+          id: string;
+          name: string;
+          type: string;
+          parties?: string;
+          status: string;
+          terms: string;
+        }) => ({
+          id: t.id,
+          name: t.name,
+          type: t.type,
+          parties: JSON.parse(t.parties || "[]"),
+          status: t.status,
+          terms: t.terms,
+        })
+      );
 
       // 6. Calculate total trade volume
       const totalTradeVolume = relationshipStates.reduce(
@@ -143,7 +160,7 @@ export const exampleTRPCProcedure = {
               title: event.title,
               description: event.description,
               severity: event.severity,
-              status: 'active',
+              status: "active",
               metadata: JSON.stringify({
                 longDescription: event.longDescription,
                 responseOptions: event.responseOptions,
@@ -173,10 +190,7 @@ export const exampleTRPCProcedure = {
  * Helper function to fetch recent diplomatic actions
  * Implement based on your action tracking system
  */
-async function fetchRecentActions(
-  db: any,
-  countryId: string
-): Promise<DiplomaticChoice[]> {
+async function fetchRecentActions(db: any, countryId: string): Promise<DiplomaticChoice[]> {
   // Option 1: If you store DiplomaticChoice in database
   // const actions = await db.diplomaticChoice.findMany({
   //   where: { countryId },
@@ -189,7 +203,7 @@ async function fetchRecentActions(
     where: {
       OR: [{ country1Id: countryId }, { country2Id: countryId }],
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
     take: 20,
   });
 
@@ -200,7 +214,7 @@ async function fetchRecentActions(
     type: mapEventTypeToChoiceType(event.eventType),
     targetCountry: event.country2Id,
     targetCountryId: event.country2Id,
-    details: JSON.parse(event.metadata || '{}'),
+    details: JSON.parse(event.metadata || "{}"),
     timestamp: event.createdAt.toISOString(),
     ixTimeTimestamp: event.ixTimeTimestamp || Date.now(),
   }));
@@ -209,19 +223,19 @@ async function fetchRecentActions(
 /**
  * Map DiplomaticEvent types to DiplomaticChoice types
  */
-function mapEventTypeToChoiceType(eventType: string): DiplomaticChoice['type'] {
-  const mapping: Record<string, DiplomaticChoice['type']> = {
-    embassy_established: 'establish_embassy',
-    embassy_upgraded: 'upgrade_embassy',
-    embassy_closed: 'close_embassy',
-    treaty: 'sign_treaty',
-    alliance: 'alliance_formation',
-    trade_agreement: 'trade_agreement',
-    cultural_exchange: 'cultural_exchange',
+function mapEventTypeToChoiceType(eventType: string): DiplomaticChoice["type"] {
+  const mapping: Record<string, DiplomaticChoice["type"]> = {
+    embassy_established: "establish_embassy",
+    embassy_upgraded: "upgrade_embassy",
+    embassy_closed: "close_embassy",
+    treaty: "sign_treaty",
+    alliance: "alliance_formation",
+    trade_agreement: "trade_agreement",
+    cultural_exchange: "cultural_exchange",
     // Add more mappings as needed
   };
 
-  return mapping[eventType] || 'diplomatic_message';
+  return mapping[eventType] || "diplomatic_message";
 }
 
 // ==================== REACT COMPONENT INTEGRATION ====================
@@ -421,19 +435,19 @@ function getPriorityVariant(priority: string): 'default' | 'destructive' | 'outl
  * Run this every 12 hours (24 IxTime hours at 2x speed)
  */
 export async function scheduledEventGeneration(db: any) {
-  console.log('[DiplomaticAI] Starting scheduled event generation...');
+  console.log("[DiplomaticAI] Starting scheduled event generation...");
 
   // Get all active countries with embassies
   const activeCountries = await db.country.findMany({
     where: {
       OR: [
-        { embassiesHosting: { some: { status: 'active' } } },
-        { embassiesGuest: { some: { status: 'active' } } },
+        { embassiesHosting: { some: { status: "active" } } },
+        { embassiesGuest: { some: { status: "active" } } },
       ],
     },
     include: {
-      embassiesHosting: { where: { status: 'active' } },
-      embassiesGuest: { where: { status: 'active' } },
+      embassiesHosting: { where: { status: "active" } },
+      embassiesGuest: { where: { status: "active" } },
     },
   });
 
@@ -457,7 +471,7 @@ export async function scheduledEventGeneration(db: any) {
             title: event.title,
             description: event.description,
             severity: event.severity,
-            status: 'active',
+            status: "active",
             metadata: JSON.stringify({
               longDescription: event.longDescription,
               responseOptions: event.responseOptions,
@@ -472,18 +486,13 @@ export async function scheduledEventGeneration(db: any) {
         });
       }
 
-      console.log(
-        `[DiplomaticAI] Generated ${events.length} events for ${country.name}`
-      );
+      console.log(`[DiplomaticAI] Generated ${events.length} events for ${country.name}`);
     } catch (error) {
-      console.error(
-        `[DiplomaticAI] Error generating events for ${country.name}:`,
-        error
-      );
+      console.error(`[DiplomaticAI] Error generating events for ${country.name}:`, error);
     }
   }
 
-  console.log('[DiplomaticAI] Scheduled event generation complete');
+  console.log("[DiplomaticAI] Scheduled event generation complete");
 }
 
 /**
@@ -504,7 +513,7 @@ async function buildWorldStateForCountry(db: any, country: any): Promise<WorldSt
   const treaties = await db.treaty.findMany({
     where: {
       parties: { contains: country.id },
-      status: 'active',
+      status: "active",
     },
   });
 
@@ -562,7 +571,7 @@ async function buildWorldStateForCountry(db: any, country: any): Promise<WorldSt
       id: t.id,
       name: t.name,
       type: t.type,
-      parties: JSON.parse(t.parties || '[]'),
+      parties: JSON.parse(t.parties || "[]"),
       status: t.status,
       terms: t.terms,
     })),
@@ -576,51 +585,51 @@ async function buildWorldStateForCountry(db: any, country: any): Promise<WorldSt
  */
 export function generateTestWorldState(): WorldState {
   return {
-    countryId: 'test_country_123',
-    countryName: 'Test Country',
+    countryId: "test_country_123",
+    countryName: "Test Country",
     embassies: [
       {
-        id: 'embassy_1',
-        country: 'Pelaxia',
-        countryId: 'pelaxia_id',
+        id: "embassy_1",
+        country: "Pelaxia",
+        countryId: "pelaxia_id",
         level: 3,
         strength: 75,
-        status: 'active',
-        specialization: 'cultural',
+        status: "active",
+        specialization: "cultural",
         establishedAt: new Date().toISOString(),
       },
       {
-        id: 'embassy_2',
-        country: 'Burgundie',
-        countryId: 'burgundie_id',
+        id: "embassy_2",
+        country: "Burgundie",
+        countryId: "burgundie_id",
         level: 2,
         strength: 60,
-        status: 'active',
+        status: "active",
         establishedAt: new Date().toISOString(),
       },
     ],
     relationships: [
       {
-        targetCountry: 'Pelaxia',
-        targetCountryId: 'pelaxia_id',
-        relationship: 'friendly',
+        targetCountry: "Pelaxia",
+        targetCountryId: "pelaxia_id",
+        relationship: "friendly",
         strength: 78,
-        treaties: ['Trade Agreement'],
+        treaties: ["Trade Agreement"],
         tradeVolume: 1500000,
-        culturalExchange: 'Medium',
+        culturalExchange: "Medium",
       },
       {
-        targetCountry: 'Burgundie',
-        targetCountryId: 'burgundie_id',
-        relationship: 'cooperative',
+        targetCountry: "Burgundie",
+        targetCountryId: "burgundie_id",
+        relationship: "cooperative",
         strength: 65,
         treaties: [],
         tradeVolume: 800000,
       },
       {
-        targetCountry: 'Urcea',
-        targetCountryId: 'urcea_id',
-        relationship: 'strained',
+        targetCountry: "Urcea",
+        targetCountryId: "urcea_id",
+        relationship: "strained",
         strength: 28,
         treaties: [],
         tradeVolume: 200000,
@@ -628,11 +637,11 @@ export function generateTestWorldState(): WorldState {
     ],
     recentActions: [
       {
-        id: 'action_1',
-        countryId: 'test_country_123',
-        type: 'establish_embassy',
-        targetCountry: 'Pelaxia',
-        targetCountryId: 'pelaxia_id',
+        id: "action_1",
+        countryId: "test_country_123",
+        type: "establish_embassy",
+        targetCountry: "Pelaxia",
+        targetCountryId: "pelaxia_id",
         details: {},
         timestamp: new Date().toISOString(),
         ixTimeTimestamp: Date.now(),
@@ -641,18 +650,18 @@ export function generateTestWorldState(): WorldState {
     economicData: {
       currentGdp: 5000000000,
       gdpGrowth: 3.2,
-      economicTier: 'developed',
+      economicTier: "developed",
       tradeBalance: -50000000,
       totalTradeVolume: 2500000,
     },
-    diplomaticReputation: 'Cooperative',
+    diplomaticReputation: "Cooperative",
     activeTreaties: [
       {
-        id: 'treaty_1',
-        name: 'Pelaxia-Test Trade Agreement',
-        type: 'Trade Agreement',
-        parties: ['test_country_123', 'pelaxia_id'],
-        status: 'active',
+        id: "treaty_1",
+        name: "Pelaxia-Test Trade Agreement",
+        type: "Trade Agreement",
+        parties: ["test_country_123", "pelaxia_id"],
+        status: "active",
       },
     ],
   };

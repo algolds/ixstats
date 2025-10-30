@@ -1,9 +1,9 @@
 // src/components/defense/AssetManager.tsx
 "use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { api } from '~/trpc/react';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { api } from "~/trpc/react";
 import {
   Plus,
   Edit,
@@ -18,19 +18,32 @@ import {
   CheckCircle2,
   Search,
   Filter,
-} from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '~/components/ui/dialog';
-import { Button } from '~/components/ui/button';
-import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
-import { Slider } from '~/components/ui/slider';
-import { Badge } from '~/components/ui/badge';
-import { Progress } from '~/components/ui/progress';
-import { Separator } from '~/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { NumberFlowDisplay } from '~/components/ui/number-flow';
-import { toast } from 'sonner';
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Slider } from "~/components/ui/slider";
+import { Badge } from "~/components/ui/badge";
+import { Progress } from "~/components/ui/progress";
+import { Separator } from "~/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
+import { toast } from "sonner";
 import {
   MILITARY_AIRCRAFT,
   MILITARY_SHIPS,
@@ -39,21 +52,21 @@ import {
   DEFENSE_MANUFACTURERS,
   MILITARY_ERAS,
   EXPANDED_MILITARY_DATABASE,
-} from '~/lib/military-equipment';
+} from "~/lib/military-equipment";
 
 // Define a more specific type for our asset
 interface Asset {
-    id: string;
-    name: string;
-    assetType: string;
-    category: string;
-    status: string;
-    operational: number;
-    quantity: number;
-    acquisitionCost: number;
-    maintenanceCost: number;
-    modernizationLevel: number;
-    capability: string | null;
+  id: string;
+  name: string;
+  assetType: string;
+  category: string;
+  status: string;
+  operational: number;
+  quantity: number;
+  acquisitionCost: number;
+  maintenanceCost: number;
+  modernizationLevel: number;
+  capability: string | null;
 }
 
 interface AssetManagerProps {
@@ -64,28 +77,28 @@ interface AssetManagerProps {
 }
 
 const ASSET_TYPE_CONFIG = {
-  aircraft: { icon: Plane, color: 'text-sky-600', label: 'Aircraft' },
-  ship: { icon: Ship, color: 'text-blue-600', label: 'Naval Vessel' },
-  vehicle: { icon: Truck, color: 'text-green-600', label: 'Vehicle' },
-  installation: { icon: Target, color: 'text-purple-600', label: 'Installation' },
-  weapon_system: { icon: Radio, color: 'text-red-600', label: 'Weapon System' },
+  aircraft: { icon: Plane, color: "text-sky-600", label: "Aircraft" },
+  ship: { icon: Ship, color: "text-blue-600", label: "Naval Vessel" },
+  vehicle: { icon: Truck, color: "text-green-600", label: "Vehicle" },
+  installation: { icon: Target, color: "text-purple-600", label: "Installation" },
+  weapon_system: { icon: Radio, color: "text-red-600", label: "Weapon System" },
 } as const;
 
 const STATUS_CONFIG = {
-  operational: { label: 'Operational', color: 'bg-green-500' },
-  maintenance: { label: 'Maintenance', color: 'bg-yellow-500' },
-  reserve: { label: 'Reserve', color: 'bg-blue-500' },
-  retired: { label: 'Retired', color: 'bg-gray-500' },
+  operational: { label: "Operational", color: "bg-green-500" },
+  maintenance: { label: "Maintenance", color: "bg-yellow-500" },
+  reserve: { label: "Reserve", color: "bg-blue-500" },
+  retired: { label: "Retired", color: "bg-gray-500" },
 } as const;
 
 export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetManagerProps) {
   const [showDialog, setShowDialog] = useState(false);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
-  const [filterType, setFilterType] = useState<string>('all');
+  const [filterType, setFilterType] = useState<string>("all");
 
   const createAsset = api.security.createMilitaryAsset.useMutation({
     onSuccess: () => {
-      toast.success('Asset created successfully');
+      toast.success("Asset created successfully");
       setShowDialog(false);
       setEditingAsset(null);
       onRefetch();
@@ -97,7 +110,7 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
 
   const updateAsset = api.security.updateMilitaryAsset.useMutation({
     onSuccess: () => {
-      toast.success('Asset updated successfully');
+      toast.success("Asset updated successfully");
       setShowDialog(false);
       setEditingAsset(null);
       onRefetch();
@@ -109,7 +122,7 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
 
   const deleteAsset = api.security.deleteMilitaryAsset.useMutation({
     onSuccess: () => {
-      toast.success('Asset deleted successfully');
+      toast.success("Asset deleted successfully");
       onRefetch();
     },
     onError: (error) => {
@@ -128,34 +141,36 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
   };
 
   const handleDelete = (assetId: string) => {
-    if (confirm('Are you sure you want to delete this asset?')) {
+    if (confirm("Are you sure you want to delete this asset?")) {
       deleteAsset.mutate({ id: assetId });
     }
   };
 
-  const filteredAssets = filterType === 'all'
-    ? assets
-    : assets.filter(a => a.assetType === filterType);
+  const filteredAssets =
+    filterType === "all" ? assets : assets.filter((a) => a.assetType === filterType);
 
   // Group assets by type
-  const assetsByType = filteredAssets.reduce((acc, asset) => {
-    if (!acc[asset.assetType]) {
-      acc[asset.assetType] = [];
-    }
-    acc[asset.assetType].push(asset);
-    return acc;
-  }, {} as Record<string, Asset[]>);
+  const assetsByType = filteredAssets.reduce(
+    (acc, asset) => {
+      if (!acc[asset.assetType]) {
+        acc[asset.assetType] = [];
+      }
+      acc[asset.assetType].push(asset);
+      return acc;
+    },
+    {} as Record<string, Asset[]>
+  );
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h4 className="font-semibold text-sm flex items-center gap-2">
+          <h4 className="flex items-center gap-2 text-sm font-semibold">
             <Target className="h-4 w-4" />
             Assets ({assets.length})
           </h4>
           <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="w-[180px] h-8">
+            <SelectTrigger className="h-8 w-[180px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -169,7 +184,7 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
           </Select>
         </div>
         <Button size="sm" onClick={handleCreate}>
-          <Plus className="h-3 w-3 mr-1" />
+          <Plus className="mr-1 h-3 w-3" />
           Add Asset
         </Button>
       </div>
@@ -182,7 +197,7 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
 
             return (
               <div key={type} className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
                   <Icon className={`h-4 w-4 ${config?.color}`} />
                   {config?.label} ({typeAssets.length})
                 </div>
@@ -193,32 +208,41 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
                       key={asset.id}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                      className="bg-card hover:bg-accent/50 rounded-lg border p-3 transition-colors"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h5 className="font-medium text-sm">{asset.name}</h5>
+                          <div className="mb-1 flex items-center gap-2">
+                            <h5 className="text-sm font-medium">{asset.name}</h5>
                             <Badge variant="outline" className="text-xs">
                               {asset.category}
                             </Badge>
-                            <Badge className={STATUS_CONFIG[asset.status as keyof typeof STATUS_CONFIG]?.color}>
+                            <Badge
+                              className={
+                                STATUS_CONFIG[asset.status as keyof typeof STATUS_CONFIG]?.color
+                              }
+                            >
                               {STATUS_CONFIG[asset.status as keyof typeof STATUS_CONFIG]?.label}
                             </Badge>
                           </div>
 
-                          <div className="grid grid-cols-3 gap-3 mt-2 text-xs">
+                          <div className="mt-2 grid grid-cols-3 gap-3 text-xs">
                             <div>
                               <span className="text-muted-foreground">Quantity:</span>
                               <span className="ml-1 font-medium">
-                                <NumberFlowDisplay value={asset.operational} /> / <NumberFlowDisplay value={asset.quantity} />
+                                <NumberFlowDisplay value={asset.operational} /> /{" "}
+                                <NumberFlowDisplay value={asset.quantity} />
                               </span>
                             </div>
                             {asset.acquisitionCost > 0 && (
                               <div>
                                 <span className="text-muted-foreground">Unit Cost:</span>
                                 <span className="ml-1 font-medium">
-                                  $<NumberFlowDisplay value={asset.acquisitionCost} format="compact" />
+                                  $
+                                  <NumberFlowDisplay
+                                    value={asset.acquisitionCost}
+                                    format="compact"
+                                  />
                                 </span>
                               </div>
                             )}
@@ -226,20 +250,25 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
                               <div>
                                 <span className="text-muted-foreground">Maintenance:</span>
                                 <span className="ml-1 font-medium">
-                                  $<NumberFlowDisplay value={asset.maintenanceCost} format="compact" />/yr
+                                  $
+                                  <NumberFlowDisplay
+                                    value={asset.maintenanceCost}
+                                    format="compact"
+                                  />
+                                  /yr
                                 </span>
                               </div>
                             )}
                           </div>
 
                           {asset.capability && (
-                            <p className="text-xs text-muted-foreground mt-2 line-clamp-1">
+                            <p className="text-muted-foreground mt-2 line-clamp-1 text-xs">
                               {asset.capability}
                             </p>
                           )}
 
                           <div className="mt-2">
-                            <div className="flex items-center justify-between text-xs mb-1">
+                            <div className="mb-1 flex items-center justify-between text-xs">
                               <span className="text-muted-foreground">Modernization</span>
                               <span className="font-medium">{asset.modernizationLevel}%</span>
                             </div>
@@ -247,7 +276,7 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-1 ml-2">
+                        <div className="ml-2 flex items-center gap-1">
                           <Button size="sm" variant="ghost" onClick={() => handleEdit(asset)}>
                             <Edit className="h-3 w-3" />
                           </Button>
@@ -264,7 +293,7 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
           })}
         </div>
       ) : (
-        <div className="text-center py-6 text-muted-foreground text-sm border rounded-lg border-dashed">
+        <div className="text-muted-foreground rounded-lg border border-dashed py-6 text-center text-sm">
           No assets yet. Add your first asset to get started.
         </div>
       )}
@@ -292,22 +321,30 @@ interface AssetDialogProps {
   onUpdate: (id: string, data: any) => void;
 }
 
-function AssetDialog({ open, onOpenChange, asset, branchId, branchType, onCreate, onUpdate }: AssetDialogProps) {
-  const [activeTab, setActiveTab] = useState('manual');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedEra, setSelectedEra] = useState<string>('all');
-  const [selectedManufacturer, setSelectedManufacturer] = useState<string>('all');
+function AssetDialog({
+  open,
+  onOpenChange,
+  asset,
+  branchId,
+  branchType,
+  onCreate,
+  onUpdate,
+}: AssetDialogProps) {
+  const [activeTab, setActiveTab] = useState("manual");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedEra, setSelectedEra] = useState<string>("all");
+  const [selectedManufacturer, setSelectedManufacturer] = useState<string>("all");
 
   const [formData, setFormData] = useState({
-    assetType: asset?.assetType ?? 'aircraft',
-    category: asset?.category ?? '',
-    name: asset?.name ?? '',
+    assetType: asset?.assetType ?? "aircraft",
+    category: asset?.category ?? "",
+    name: asset?.name ?? "",
     quantity: asset?.quantity ?? 1,
     operational: asset?.operational ?? 1,
-    capability: asset?.capability ?? '',
+    capability: asset?.capability ?? "",
     range: asset?.range ?? 0,
     payload: asset?.payload ?? 0,
-    status: asset?.status ?? 'operational',
+    status: asset?.status ?? "operational",
     modernizationLevel: asset?.modernizationLevel ?? 50,
     acquisitionCost: asset?.acquisitionCost ?? 0,
     maintenanceCost: asset?.maintenanceCost ?? 0,
@@ -321,7 +358,7 @@ function AssetDialog({ open, onOpenChange, asset, branchId, branchType, onCreate
 
   const handleSubmit = () => {
     if (!formData.name.trim()) {
-      toast.error('Asset name is required');
+      toast.error("Asset name is required");
       return;
     }
 
@@ -342,30 +379,68 @@ function AssetDialog({ open, onOpenChange, asset, branchId, branchType, onCreate
       payload: equipment.payload ?? 0,
       acquisitionCost: equipment.acquisitionCost ?? 0,
       maintenanceCost: equipment.maintenanceCost ?? 0,
-      modernizationLevel: MILITARY_ERAS[equipment.era as keyof typeof MILITARY_ERAS]?.techLevel ?? 50,
+      modernizationLevel:
+        MILITARY_ERAS[equipment.era as keyof typeof MILITARY_ERAS]?.techLevel ?? 50,
     });
-    setActiveTab('manual');
-    toast.success('Equipment template loaded');
+    setActiveTab("manual");
+    toast.success("Equipment template loaded");
   };
 
   // Filter equipment database - now includes all 150+ items from expanded database
   const allEquipment = [
     // Expanded database with 250+ items and images
-    ...Object.entries(EXPANDED_MILITARY_DATABASE.fighters_gen5 ?? {}).map(([key, value]) => ({ ...value, key, type: 'aircraft' })),
-    ...Object.entries(EXPANDED_MILITARY_DATABASE.fighters_gen4_5 ?? {}).map(([key, value]) => ({ ...value, key, type: 'aircraft' })),
-    ...Object.entries(EXPANDED_MILITARY_DATABASE.attack_aircraft ?? {}).map(([key, value]) => ({ ...value, key, type: 'aircraft' })),
-    ...Object.entries(EXPANDED_MILITARY_DATABASE.bombers ?? {}).map(([key, value]) => ({ ...value, key, type: 'aircraft' })),
-    ...Object.entries(EXPANDED_MILITARY_DATABASE.transport ?? {}).map(([key, value]) => ({ ...value, key, type: 'aircraft' })),
-    ...Object.entries(EXPANDED_MILITARY_DATABASE.helicopters ?? {}).map(([key, value]) => ({ ...value, key, type: 'aircraft' })),
-    ...Object.entries(EXPANDED_MILITARY_DATABASE.naval_ships ?? {}).map(([key, value]) => ({ ...value, key, type: 'ship' })),
-    ...Object.entries(EXPANDED_MILITARY_DATABASE.ground_vehicles ?? {}).map(([key, value]) => ({ ...value, key, type: 'vehicle' })),
-    ...Object.entries(EXPANDED_MILITARY_DATABASE.weapon_systems ?? {}).map(([key, value]) => ({ ...value, key, type: 'weapon_system' })),
+    ...Object.entries(EXPANDED_MILITARY_DATABASE.fighters_gen5 ?? {}).map(([key, value]) => ({
+      ...value,
+      key,
+      type: "aircraft",
+    })),
+    ...Object.entries(EXPANDED_MILITARY_DATABASE.fighters_gen4_5 ?? {}).map(([key, value]) => ({
+      ...value,
+      key,
+      type: "aircraft",
+    })),
+    ...Object.entries(EXPANDED_MILITARY_DATABASE.attack_aircraft ?? {}).map(([key, value]) => ({
+      ...value,
+      key,
+      type: "aircraft",
+    })),
+    ...Object.entries(EXPANDED_MILITARY_DATABASE.bombers ?? {}).map(([key, value]) => ({
+      ...value,
+      key,
+      type: "aircraft",
+    })),
+    ...Object.entries(EXPANDED_MILITARY_DATABASE.transport ?? {}).map(([key, value]) => ({
+      ...value,
+      key,
+      type: "aircraft",
+    })),
+    ...Object.entries(EXPANDED_MILITARY_DATABASE.helicopters ?? {}).map(([key, value]) => ({
+      ...value,
+      key,
+      type: "aircraft",
+    })),
+    ...Object.entries(EXPANDED_MILITARY_DATABASE.naval_ships ?? {}).map(([key, value]) => ({
+      ...value,
+      key,
+      type: "ship",
+    })),
+    ...Object.entries(EXPANDED_MILITARY_DATABASE.ground_vehicles ?? {}).map(([key, value]) => ({
+      ...value,
+      key,
+      type: "vehicle",
+    })),
+    ...Object.entries(EXPANDED_MILITARY_DATABASE.weapon_systems ?? {}).map(([key, value]) => ({
+      ...value,
+      key,
+      type: "weapon_system",
+    })),
   ];
 
   const filteredEquipment = allEquipment.filter((eq) => {
     const matchesSearch = !searchQuery || eq.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesEra = selectedEra === 'all' || eq.era === selectedEra;
-    const matchesManufacturer = selectedManufacturer === 'all' || eq.manufacturer === selectedManufacturer;
+    const matchesEra = selectedEra === "all" || eq.era === selectedEra;
+    const matchesManufacturer =
+      selectedManufacturer === "all" || eq.manufacturer === selectedManufacturer;
     const matchesType = formData.assetType === eq.type;
 
     return matchesSearch && matchesEra && matchesManufacturer && matchesType;
@@ -373,9 +448,9 @@ function AssetDialog({ open, onOpenChange, asset, branchId, branchType, onCreate
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-5xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{asset ? 'Edit Asset' : 'Add New Asset'}</DialogTitle>
+          <DialogTitle>{asset ? "Edit Asset" : "Add New Asset"}</DialogTitle>
           <DialogDescription>
             Browse real-world military equipment or create custom assets
           </DialogDescription>
@@ -391,7 +466,7 @@ function AssetDialog({ open, onOpenChange, asset, branchId, branchType, onCreate
             {/* Search and Filters */}
             <div className="grid grid-cols-3 gap-3">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
                 <Input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -428,22 +503,25 @@ function AssetDialog({ open, onOpenChange, asset, branchId, branchType, onCreate
             </div>
 
             {/* Equipment List */}
-            <div className="grid grid-cols-1 gap-2 max-h-96 overflow-y-auto">
+            <div className="grid max-h-96 grid-cols-1 gap-2 overflow-y-auto">
               {filteredEquipment.map((equipment) => {
-                const manufacturer = DEFENSE_MANUFACTURERS[equipment.manufacturer as keyof typeof DEFENSE_MANUFACTURERS];
+                const manufacturer =
+                  DEFENSE_MANUFACTURERS[
+                    equipment.manufacturer as keyof typeof DEFENSE_MANUFACTURERS
+                  ];
                 const era = MILITARY_ERAS[equipment.era as keyof typeof MILITARY_ERAS];
                 const imageUrl = (equipment as any).imageUrl;
 
                 return (
                   <div
                     key={equipment.key}
-                    className="relative overflow-hidden rounded-lg border hover:border-primary/50 cursor-pointer transition-all group"
+                    className="hover:border-primary/50 group relative cursor-pointer overflow-hidden rounded-lg border transition-all"
                     onClick={() => loadEquipment(equipment)}
                   >
                     {/* Background Image with Glass Blur Effect */}
                     {imageUrl && (
                       <div
-                        className="absolute inset-0 bg-cover bg-center opacity-20 group-hover:opacity-30 transition-opacity"
+                        className="absolute inset-0 bg-cover bg-center opacity-20 transition-opacity group-hover:opacity-30"
                         style={{
                           backgroundImage: `url(${imageUrl})`,
                         }}
@@ -451,29 +529,33 @@ function AssetDialog({ open, onOpenChange, asset, branchId, branchType, onCreate
                     )}
 
                     {/* Glass Overlay */}
-                    <div className="relative backdrop-blur-sm bg-background/80 p-3">
+                    <div className="bg-background/80 relative p-3 backdrop-blur-sm">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h5 className="font-medium text-sm">{equipment.name}</h5>
+                          <div className="mb-1 flex items-center gap-2">
+                            <h5 className="text-sm font-medium">{equipment.name}</h5>
                             <Badge variant="outline" className="text-xs">
                               {equipment.category}
                             </Badge>
                             <Badge variant="secondary" className="text-xs">
-                              {era?.label.split(' ')[0]}
+                              {era?.label.split(" ")[0]}
                             </Badge>
                           </div>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-muted-foreground text-xs">
                             {manufacturer?.name} • {manufacturer?.country}
                           </p>
-                          <div className="flex items-center gap-4 mt-2 text-xs">
+                          <div className="mt-2 flex items-center gap-4 text-xs">
                             <span>
                               <span className="text-muted-foreground">Cost:</span> $
-                              <NumberFlowDisplay value={equipment.acquisitionCost} format="compact" />
+                              <NumberFlowDisplay
+                                value={equipment.acquisitionCost}
+                                format="compact"
+                              />
                             </span>
                             {(equipment as any).range && (
                               <span>
-                                <span className="text-muted-foreground">Range:</span> {(equipment as any).range} km
+                                <span className="text-muted-foreground">Range:</span>{" "}
+                                {(equipment as any).range} km
                               </span>
                             )}
                           </div>
@@ -487,7 +569,7 @@ function AssetDialog({ open, onOpenChange, asset, branchId, branchType, onCreate
                 );
               })}
               {filteredEquipment.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground text-sm">
+                <div className="text-muted-foreground py-8 text-center text-sm">
                   No equipment found matching your criteria
                 </div>
               )}
@@ -498,7 +580,10 @@ function AssetDialog({ open, onOpenChange, asset, branchId, branchType, onCreate
             {/* Asset Type */}
             <div className="space-y-2">
               <Label>Asset Type</Label>
-              <Select value={formData.assetType} onValueChange={(value) => setFormData({ ...formData, assetType: value })}>
+              <Select
+                value={formData.assetType}
+                onValueChange={(value) => setFormData({ ...formData, assetType: value })}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -539,7 +624,9 @@ function AssetDialog({ open, onOpenChange, asset, branchId, branchType, onCreate
                 <Input
                   type="number"
                   value={formData.quantity}
-                  onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, quantity: parseInt(e.target.value) || 1 })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -547,7 +634,9 @@ function AssetDialog({ open, onOpenChange, asset, branchId, branchType, onCreate
                 <Input
                   type="number"
                   value={formData.operational}
-                  onChange={(e) => setFormData({ ...formData, operational: parseInt(e.target.value) || 1 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, operational: parseInt(e.target.value) || 1 })
+                  }
                   max={formData.quantity}
                 />
               </div>
@@ -570,7 +659,9 @@ function AssetDialog({ open, onOpenChange, asset, branchId, branchType, onCreate
                 <Input
                   type="number"
                   value={formData.range}
-                  onChange={(e) => setFormData({ ...formData, range: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, range: parseFloat(e.target.value) || 0 })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -578,7 +669,9 @@ function AssetDialog({ open, onOpenChange, asset, branchId, branchType, onCreate
                 <Input
                   type="number"
                   value={formData.payload}
-                  onChange={(e) => setFormData({ ...formData, payload: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, payload: parseFloat(e.target.value) || 0 })
+                  }
                 />
               </div>
             </div>
@@ -586,7 +679,10 @@ function AssetDialog({ open, onOpenChange, asset, branchId, branchType, onCreate
             {/* Status */}
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => setFormData({ ...formData, status: value })}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -623,7 +719,9 @@ function AssetDialog({ open, onOpenChange, asset, branchId, branchType, onCreate
                 <Input
                   type="number"
                   value={formData.acquisitionCost}
-                  onChange={(e) => setFormData({ ...formData, acquisitionCost: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, acquisitionCost: parseFloat(e.target.value) || 0 })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -631,7 +729,9 @@ function AssetDialog({ open, onOpenChange, asset, branchId, branchType, onCreate
                 <Input
                   type="number"
                   value={formData.maintenanceCost}
-                  onChange={(e) => setFormData({ ...formData, maintenanceCost: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, maintenanceCost: parseFloat(e.target.value) || 0 })
+                  }
                 />
               </div>
             </div>
@@ -643,8 +743,8 @@ function AssetDialog({ open, onOpenChange, asset, branchId, branchType, onCreate
             Cancel
           </Button>
           <Button onClick={handleSubmit}>
-            <CheckCircle2 className="h-4 w-4 mr-2" />
-            {asset ? 'Update Asset' : 'Add Asset'}
+            <CheckCircle2 className="mr-2 h-4 w-4" />
+            {asset ? "Update Asset" : "Add Asset"}
           </Button>
         </DialogFooter>
       </DialogContent>

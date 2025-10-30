@@ -1,8 +1,8 @@
-import { Button } from '~/components/ui/button';
-import { Filter } from 'lucide-react';
-import { areaConfig } from '../_config/intelligence-config';
+import { Button } from "~/components/ui/button";
+import { Filter } from "lucide-react";
+import { areaConfig } from "../_config/intelligence-config";
 
-type AreaType = 'all' | 'economic' | 'population' | 'diplomatic' | 'governance';
+type AreaType = "all" | "economic" | "population" | "diplomatic" | "governance";
 
 interface AreaFilterProps {
   filterArea: AreaType;
@@ -12,11 +12,11 @@ interface AreaFilterProps {
 export function AreaFilter({ filterArea, onFilterChange }: AreaFilterProps) {
   return (
     <div className="flex items-center gap-2 overflow-x-auto pb-2">
-      <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+      <Filter className="text-muted-foreground h-4 w-4 flex-shrink-0" />
       <Button
-        variant={filterArea === 'all' ? 'default' : 'outline'}
+        variant={filterArea === "all" ? "default" : "outline"}
         size="sm"
-        onClick={() => onFilterChange('all')}
+        onClick={() => onFilterChange("all")}
       >
         All Areas
       </Button>
@@ -25,11 +25,11 @@ export function AreaFilter({ filterArea, onFilterChange }: AreaFilterProps) {
         return (
           <Button
             key={key}
-            variant={filterArea === key ? 'default' : 'outline'}
+            variant={filterArea === key ? "default" : "outline"}
             size="sm"
             onClick={() => onFilterChange(key as AreaType)}
           >
-            <Icon className="h-3 w-3 mr-1" />
+            <Icon className="mr-1 h-3 w-3" />
             {config.label}
           </Button>
         );

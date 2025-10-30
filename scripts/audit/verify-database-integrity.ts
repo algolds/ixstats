@@ -20,8 +20,7 @@ const results: IntegrityCheck[] = [];
 
 function log(check: IntegrityCheck) {
   results.push(check);
-  const icon =
-    check.status === "PASS" ? "✅" : check.status === "FAIL" ? "❌" : "⚠️";
+  const icon = check.status === "PASS" ? "✅" : check.status === "FAIL" ? "❌" : "⚠️";
   console.log(`${icon} [${check.category}] ${check.check}: ${check.message}`);
 }
 
@@ -116,19 +115,19 @@ async function checkIsActiveFieldConsistency() {
   try {
     // Check User model isActive field
     const inactiveUsers = await db.user.count({
-      where: { isActive: false }
+      where: { isActive: false },
     });
     const totalUsers = await db.user.count();
     log({
       category,
       check: "User isActive Field",
       status: "PASS",
-      message: `${inactiveUsers}/${totalUsers} users are inactive (${((inactiveUsers/totalUsers)*100).toFixed(1)}%)`,
+      message: `${inactiveUsers}/${totalUsers} users are inactive (${((inactiveUsers / totalUsers) * 100).toFixed(1)}%)`,
     });
 
     // Check ThinkpagesAccount isActive field
     const inactiveAccounts = await db.thinkpagesAccount.count({
-      where: { isActive: false }
+      where: { isActive: false },
     });
     const totalAccounts = await db.thinkpagesAccount.count();
     if (totalAccounts > 0) {
@@ -136,13 +135,13 @@ async function checkIsActiveFieldConsistency() {
         category,
         check: "ThinkpagesAccount isActive Field",
         status: "PASS",
-        message: `${inactiveAccounts}/${totalAccounts} accounts are inactive (${((inactiveAccounts/totalAccounts)*100).toFixed(1)}%)`,
+        message: `${inactiveAccounts}/${totalAccounts} accounts are inactive (${((inactiveAccounts / totalAccounts) * 100).toFixed(1)}%)`,
       });
     }
 
     // Check IntelligenceItem isActive field
     const inactiveIntelligence = await db.intelligenceItem.count({
-      where: { isActive: false }
+      where: { isActive: false },
     });
     const totalIntelligence = await db.intelligenceItem.count();
     if (totalIntelligence > 0) {
@@ -150,13 +149,13 @@ async function checkIsActiveFieldConsistency() {
         category,
         check: "IntelligenceItem isActive Field",
         status: "PASS",
-        message: `${inactiveIntelligence}/${totalIntelligence} intelligence items are inactive (${((inactiveIntelligence/totalIntelligence)*100).toFixed(1)}%)`,
+        message: `${inactiveIntelligence}/${totalIntelligence} intelligence items are inactive (${((inactiveIntelligence / totalIntelligence) * 100).toFixed(1)}%)`,
       });
     }
 
     // Check TrendingTopic isActive field
     const inactiveTopics = await db.trendingTopic.count({
-      where: { isActive: false }
+      where: { isActive: false },
     });
     const totalTopics = await db.trendingTopic.count();
     if (totalTopics > 0) {
@@ -164,13 +163,13 @@ async function checkIsActiveFieldConsistency() {
         category,
         check: "TrendingTopic isActive Field",
         status: "PASS",
-        message: `${inactiveTopics}/${totalTopics} trending topics are inactive (${((inactiveTopics/totalTopics)*100).toFixed(1)}%)`,
+        message: `${inactiveTopics}/${totalTopics} trending topics are inactive (${((inactiveTopics / totalTopics) * 100).toFixed(1)}%)`,
       });
     }
 
     // Check ThinktankGroup isActive field
     const inactiveGroups = await db.thinktankGroup.count({
-      where: { isActive: false }
+      where: { isActive: false },
     });
     const totalGroups = await db.thinktankGroup.count();
     if (totalGroups > 0) {
@@ -178,13 +177,13 @@ async function checkIsActiveFieldConsistency() {
         category,
         check: "ThinktankGroup isActive Field",
         status: "PASS",
-        message: `${inactiveGroups}/${totalGroups} thinktank groups are inactive (${((inactiveGroups/totalGroups)*100).toFixed(1)}%)`,
+        message: `${inactiveGroups}/${totalGroups} thinktank groups are inactive (${((inactiveGroups / totalGroups) * 100).toFixed(1)}%)`,
       });
     }
 
     // Check for any records with null isActive (should not happen with @default(true))
     const nullIsActiveUsers = await db.user.count({
-      where: { isActive: null as any }
+      where: { isActive: null as any },
     });
     if (nullIsActiveUsers > 0) {
       log({
@@ -194,7 +193,6 @@ async function checkIsActiveFieldConsistency() {
         message: `Found ${nullIsActiveUsers} users with null isActive values`,
       });
     }
-
   } catch (error) {
     log({
       category,
@@ -305,7 +303,7 @@ async function checkDataConsistency() {
 
     // Check for self-referencing embassies
     const allEmbassies = await db.embassy.findMany();
-    const selfEmbassies = allEmbassies.filter(e => e.hostCountryId === e.guestCountryId);
+    const selfEmbassies = allEmbassies.filter((e) => e.hostCountryId === e.guestCountryId);
     log({
       category,
       check: "Self-Referencing Embassies",
@@ -364,10 +362,7 @@ async function checkDatabaseStatistics() {
         category,
         check: `${table} Table`,
         status: count > 0 ? "PASS" : "WARNING",
-        message:
-          count > 0
-            ? `${count} records found`
-            : "Table is empty - may need seeding",
+        message: count > 0 ? `${count} records found` : "Table is empty - may need seeding",
       });
     });
 
@@ -545,9 +540,7 @@ async function checkDataQuality() {
       category,
       check: "Data Freshness",
       status:
-        totalActivities === 0 || recentActivities / totalActivities > 0.5
-          ? "PASS"
-          : "WARNING",
+        totalActivities === 0 || recentActivities / totalActivities > 0.5 ? "PASS" : "WARNING",
       message: `${recentActivities}/${totalActivities} activities from last year (${((recentActivities / totalActivities) * 100).toFixed(1)}%)`,
     });
   } catch (error) {
@@ -596,18 +589,14 @@ async function runDatabaseIntegrityAudit() {
     console.log("\n❌ Failed Checks:");
     results
       .filter((r) => r.status === "FAIL")
-      .forEach((r) =>
-        console.log(`   [${r.category}] ${r.check}: ${r.message}`)
-      );
+      .forEach((r) => console.log(`   [${r.category}] ${r.check}: ${r.message}`));
   }
 
   if (warnings > 0) {
     console.log("\n⚠️  Warnings:");
     results
       .filter((r) => r.status === "WARNING")
-      .forEach((r) =>
-        console.log(`   [${r.category}] ${r.check}: ${r.message}`)
-      );
+      .forEach((r) => console.log(`   [${r.category}] ${r.check}: ${r.message}`));
   }
 
   const score = ((passed + warnings * 0.5) / results.length) * 100;

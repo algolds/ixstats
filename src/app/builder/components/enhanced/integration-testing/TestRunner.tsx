@@ -1,11 +1,11 @@
 "use client";
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { TestTube, RefreshCw, Play, Clock, Timer, AlertCircle, Eye, EyeOff } from 'lucide-react';
-import type { ComprehensiveIntegrationReport } from '~/app/builder/services/IntegrationTestingService';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { TestTube, RefreshCw, Play, Clock, Timer, AlertCircle, Eye, EyeOff } from "lucide-react";
+import type { ComprehensiveIntegrationReport } from "~/app/builder/services/IntegrationTestingService";
 
 interface TestRunnerProps {
   isRunning: boolean;
@@ -24,7 +24,7 @@ export function TestRunner({
   canRunTests,
   onRunTests,
   onToggleDetails,
-  formatDuration
+  formatDuration,
 }: TestRunnerProps) {
   return (
     <Card>
@@ -34,8 +34,9 @@ export function TestRunner({
           <span>Integration Testing</span>
         </CardTitle>
         <p className="text-sm text-gray-600">
-          Comprehensive integration testing of all cross-builder functionality including synergy detection,
-          bidirectional synchronization, effectiveness calculations, and validation systems.
+          Comprehensive integration testing of all cross-builder functionality including synergy
+          detection, bidirectional synchronization, effectiveness calculations, and validation
+          systems.
         </p>
       </CardHeader>
       <CardContent>
@@ -51,14 +52,16 @@ export function TestRunner({
               ) : (
                 <Play className="h-4 w-4" />
               )}
-              <span>{isRunning ? 'Running Tests...' : 'Run Integration Tests'}</span>
+              <span>{isRunning ? "Running Tests..." : "Run Integration Tests"}</span>
             </Button>
 
             {integrationReport && (
               <div className="flex items-center space-x-4 text-sm">
                 <div className="flex items-center space-x-1">
                   <Clock className="h-4 w-4" />
-                  <span>Last run: {new Date(integrationReport.timestamp).toLocaleTimeString()}</span>
+                  <span>
+                    Last run: {new Date(integrationReport.timestamp).toLocaleTimeString()}
+                  </span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <Timer className="h-4 w-4" />
@@ -76,7 +79,7 @@ export function TestRunner({
               disabled={!integrationReport}
             >
               {showDetails ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              <span className="ml-1">{showDetails ? 'Hide Details' : 'Show Details'}</span>
+              <span className="ml-1">{showDetails ? "Hide Details" : "Show Details"}</span>
             </Button>
           </div>
         </div>
@@ -92,7 +95,8 @@ export function TestConfigurationAlert({ canRunTests }: { canRunTests: boolean }
     <Alert>
       <AlertCircle className="h-4 w-4" />
       <AlertDescription>
-        <strong>Configuration Required:</strong> Please configure economy, government, and tax systems before running integration tests.
+        <strong>Configuration Required:</strong> Please configure economy, government, and tax
+        systems before running integration tests.
       </AlertDescription>
     </Alert>
   );

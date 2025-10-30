@@ -40,41 +40,27 @@ export interface ScrollAreaProps
 const ScrollArea = React.forwardRef<
   React.ElementRef<typeof ScrollAreaPrimitive.Root>,
   ScrollAreaProps
->(
-  (
-    {
-      className,
-      children,
-      orientation,
-      scrollHideDelay,
-      type,
-      ...props
-    },
-    ref
-  ) => (
-    <ScrollAreaPrimitive.Root
-      ref={ref}
-      className={cn(scrollAreaVariants({ orientation }), className)}
-      {...props}
-    >
-      <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
-        {children}
-      </ScrollAreaPrimitive.Viewport>
-      <ScrollBar orientation="vertical" />
-      {(orientation === "horizontal" || orientation === "both") && (
-        <ScrollBar orientation="horizontal" />
-      )}
-      <ScrollAreaPrimitive.Corner />
-    </ScrollAreaPrimitive.Root>
-  )
-);
+>(({ className, children, orientation, scrollHideDelay, type, ...props }, ref) => (
+  <ScrollAreaPrimitive.Root
+    ref={ref}
+    className={cn(scrollAreaVariants({ orientation }), className)}
+    {...props}
+  >
+    <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
+      {children}
+    </ScrollAreaPrimitive.Viewport>
+    <ScrollBar orientation="vertical" />
+    {(orientation === "horizontal" || orientation === "both") && (
+      <ScrollBar orientation="horizontal" />
+    )}
+    <ScrollAreaPrimitive.Corner />
+  </ScrollAreaPrimitive.Root>
+));
 
 ScrollArea.displayName = ScrollAreaPrimitive.Root.displayName;
 
 interface ScrollBarProps
-  extends React.ComponentPropsWithoutRef<
-    typeof ScrollAreaPrimitive.ScrollAreaScrollbar
-  > {
+  extends React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.ScrollAreaScrollbar> {
   scrollHideDelay?: number;
   type?: "auto" | "always" | "scroll" | "hover";
 }
@@ -82,27 +68,18 @@ interface ScrollBarProps
 const ScrollBar = React.forwardRef<
   React.ElementRef<typeof ScrollAreaPrimitive.ScrollAreaScrollbar>,
   ScrollBarProps
->(
-  (
-    { className, orientation = "vertical", ...props },
-    ref
-  ) => {
-    return (
-      <ScrollAreaPrimitive.ScrollAreaScrollbar
-        ref={ref}
-        orientation={orientation}
-        className={cn(
-          scrollBarVariants({ orientation }),
-          "hover:bg-accent",
-          className
-        )}
-        {...props}
-      >
-        <ScrollAreaPrimitive.ScrollAreaThumb className="relative flex-1 rounded-full bg-border hover:bg-foreground/30 transition-colors" />
-      </ScrollAreaPrimitive.ScrollAreaScrollbar>
-    );
-  }
-);
+>(({ className, orientation = "vertical", ...props }, ref) => {
+  return (
+    <ScrollAreaPrimitive.ScrollAreaScrollbar
+      ref={ref}
+      orientation={orientation}
+      className={cn(scrollBarVariants({ orientation }), "hover:bg-accent", className)}
+      {...props}
+    >
+      <ScrollAreaPrimitive.ScrollAreaThumb className="bg-border hover:bg-foreground/30 relative flex-1 rounded-full transition-colors" />
+    </ScrollAreaPrimitive.ScrollAreaScrollbar>
+  );
+});
 
 ScrollBar.displayName = ScrollAreaPrimitive.ScrollAreaScrollbar.displayName;
 

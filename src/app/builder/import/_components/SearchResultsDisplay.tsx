@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Globe, ExternalLink, Users, DollarSign, MapPin, Building } from "lucide-react";
-import { GlassCard, GlassCardContent, GlassCardHeader } from "~/app/builder/components/glass/GlassCard";
+import {
+  GlassCard,
+  GlassCardContent,
+  GlassCardHeader,
+} from "~/app/builder/components/glass/GlassCard";
 import { ProgressiveBlur } from "~/components/magicui/progressive-blur";
 import { cn } from "~/lib/utils";
 import { SearchResultItem } from "./SearchResultItem";
@@ -25,7 +29,7 @@ interface WikiSite {
   baseUrl: string;
   description: string;
   categoryFilter?: string;
-  theme: 'blue' | 'indigo';
+  theme: "blue" | "indigo";
   gradient: string;
 }
 
@@ -59,7 +63,10 @@ export const SearchResultsDisplay: React.FC<SearchResultsDisplayProps> = ({
   const [previewingCountry, setPreviewingCountry] = useState<SearchResult | null>(null);
 
   const handleCountrySelect = (result: SearchResult) => {
-    if (categoryFilter.toLowerCase() === 'countries' || categoryFilter.toLowerCase() === 'nations') {
+    if (
+      categoryFilter.toLowerCase() === "countries" ||
+      categoryFilter.toLowerCase() === "nations"
+    ) {
       setPreviewingCountry(result);
       if (onCountryPreview) {
         onCountryPreview(result);
@@ -91,42 +98,38 @@ export const SearchResultsDisplay: React.FC<SearchResultsDisplayProps> = ({
       className="relative"
     >
       <motion.div
-        animate={{ 
+        animate={{
           opacity: previewingCountry ? 0.3 : 1,
           scale: previewingCountry ? 0.95 : 1,
-          filter: previewingCountry ? 'blur(2px)' : 'blur(0px)'
+          filter: previewingCountry ? "blur(2px)" : "blur(0px)",
         }}
         transition={{ duration: 0.3, ease: "easeOut" }}
       >
-        <GlassCard
-          depth="elevated"
-          blur="medium"
-          theme="neutral"
-          motionPreset="slide"
-        >
+        <GlassCard depth="elevated" blur="medium" theme="neutral" motionPreset="slide">
           <GlassCardHeader>
             <div className="flex items-center gap-3">
-              <div 
-                className="p-2 rounded-lg border border-border-secondary/30"
-                style={{ backgroundColor: 'rgba(245, 158, 11, 0.2)' }}
+              <div
+                className="border-border-secondary/30 rounded-lg border p-2"
+                style={{ backgroundColor: "rgba(245, 158, 11, 0.2)" }}
               >
-                <Search className="h-5 w-5 text-text-secondary" />
+                <Search className="text-text-secondary h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-text-primary">
+                <h2 className="text-text-primary text-lg font-semibold">
                   Search Results ({searchResults.length})
                 </h2>
-                {selectedSite.name === 'iiwiki' && searchResults.some(r => r.snippet.includes('subcategory')) && (
-                  <p className="text-sm text-text-muted mt-1">
-                    Results include pages from subcategories
-                  </p>
-                )}
+                {selectedSite.name === "iiwiki" &&
+                  searchResults.some((r) => r.snippet.includes("subcategory")) && (
+                    <p className="text-text-muted mt-1 text-sm">
+                      Results include pages from subcategories
+                    </p>
+                  )}
               </div>
             </div>
           </GlassCardHeader>
           <GlassCardContent className="relative">
             <div className="relative">
-              <div className="space-y-3 max-h-96 overflow-y-auto hide-scrollbar">
+              <div className="hide-scrollbar max-h-96 space-y-3 overflow-y-auto">
                 {displayedResults.map((result, index) => (
                   <SearchResultItem
                     key={index}
@@ -141,11 +144,7 @@ export const SearchResultsDisplay: React.FC<SearchResultsDisplayProps> = ({
               </div>
 
               {/* Progressive Blur for scroll fade */}
-              <ProgressiveBlur 
-                className="bottom-2"
-                position="bottom"
-                height="27%"
-              />
+              <ProgressiveBlur className="bottom-2" position="bottom" height="27%" />
             </div>
 
             {/* Load More Button */}
@@ -155,11 +154,11 @@ export const SearchResultsDisplay: React.FC<SearchResultsDisplayProps> = ({
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={loadMoreResults}
-                  className="px-6 py-3 rounded-lg border transition-all duration-200"
+                  className="rounded-lg border px-6 py-3 transition-all duration-200"
                   style={{
-                    backgroundColor: 'var(--color-bg-secondary)',
-                    borderColor: 'var(--color-border-primary)',
-                    color: 'var(--color-text-primary)'
+                    backgroundColor: "var(--color-bg-secondary)",
+                    borderColor: "var(--color-border-primary)",
+                    color: "var(--color-text-primary)",
                   }}
                 >
                   Load More Results ({searchResults.length - displayedResults.length} remaining)

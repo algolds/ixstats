@@ -11,7 +11,12 @@ import {
   polygonToLine as turfPolygonToLine,
   lineOverlap as turfLineOverlap,
 } from "@turf/turf";
-import { createTRPCRouter, publicProcedure, protectedProcedure, adminProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  adminProcedure,
+} from "~/server/api/trpc";
 
 // Zod schemas for validation
 const GeoJSONGeometrySchema = z.object({
@@ -90,7 +95,9 @@ export const geoRouter = createTRPCRouter({
           try {
             const geoFeatures = countries
               .map((country) => {
-                const geometry = country.geometry as Feature<Polygon | MultiPolygon>["geometry"] | null;
+                const geometry = country.geometry as
+                  | Feature<Polygon | MultiPolygon>["geometry"]
+                  | null;
                 if (!geometry) {
                   return null;
                 }
@@ -104,14 +111,16 @@ export const geoRouter = createTRPCRouter({
                   feature,
                 };
               })
-              .filter((item): item is { id: string; feature: Feature<Polygon | MultiPolygon> } => item !== null);
+              .filter(
+                (item): item is { id: string; feature: Feature<Polygon | MultiPolygon> } =>
+                  item !== null
+              );
 
             const boundaryData = geoFeatures.map(({ id, feature }) => {
               const areaSqMeters = turfArea(feature);
               const polygonLines = turfPolygonToLine(feature);
-              const lineFeatures = polygonLines.type === "FeatureCollection"
-                ? polygonLines.features
-                : [polygonLines];
+              const lineFeatures =
+                polygonLines.type === "FeatureCollection" ? polygonLines.features : [polygonLines];
 
               const totalBoundaryKm = lineFeatures.reduce(
                 (sum, line) => sum + turfLength(line, { units: "kilometers" }),
@@ -123,16 +132,19 @@ export const geoRouter = createTRPCRouter({
                 feature,
                 lines: lineFeatures,
                 areaKm2: areaSqMeters / 1_000_000,
-                areaSqMi: (areaSqMeters / 1_000_000) / 2.58999,
+                areaSqMi: areaSqMeters / 1_000_000 / 2.58999,
                 totalBoundaryKm,
               };
             });
 
-            const coastlineMap = new Map<string, {
-              land_area_km2: number;
-              area_sqmi: number;
-              coastline_km: number;
-            }>();
+            const coastlineMap = new Map<
+              string,
+              {
+                land_area_km2: number;
+                area_sqmi: number;
+                coastline_km: number;
+              }
+            >();
 
             boundaryData.forEach(({ id, areaKm2, areaSqMi, totalBoundaryKm }) => {
               coastlineMap.set(id, {
@@ -183,7 +195,10 @@ export const geoRouter = createTRPCRouter({
               ])
             );
           } catch (geoError) {
-            console.warn("[geo.getCountryBorders] Failed to compute coastline via Turf, falling back to stored values", geoError);
+            console.warn(
+              "[geo.getCountryBorders] Failed to compute coastline via Turf, falling back to stored values",
+              geoError
+            );
           }
         }
 
@@ -300,11 +315,7 @@ export const geoRouter = createTRPCRouter({
 
         // Check for overlaps with other countries if requested
         if (checkOverlaps) {
-          const overlappingCountries = await checkGeometryOverlaps(
-            ctx.db,
-            countryId,
-            geometry
-          );
+          const overlappingCountries = await checkGeometryOverlaps(ctx.db, countryId, geometry);
 
           if (overlappingCountries.length > 0) {
             throw new TRPCError({
@@ -613,7 +624,7 @@ export const geoRouter = createTRPCRouter({
         // Calculate tile bounds in Web Mercator (EPSG:3857)
         const tileSize = 256;
         const earthCircumference = 40075016.686; // meters at equator
-        const worldSize = earthCircumference / (2 ** z);
+        const worldSize = earthCircumference / 2 ** z;
         const tileWorldSize = worldSize;
 
         // Calculate tile extent in EPSG:3857 coordinates
@@ -647,11 +658,15 @@ export const geoRouter = createTRPCRouter({
               ogc_fid,
               COALESCE(id, 'unknown') as name,
               fill,
-              ${layer === 'political' ? `
+              ${
+                layer === "political"
+                  ? `
               -- Additional political boundary fields
               ST_Area(ST_Transform(${sourceField}, 4326)::geography) / 1000000 as area_km2,
               ST_Area(ST_Transform(${sourceField}, 4326)::geography) / 2589988.11 as area_sqmi
-              ` : ''}
+              `
+                  : ""
+              }
               -- Geometry in tile coordinates (ST_AsMVTGeom handles transformation)
               ST_AsMVTGeom(
                 ${sourceField},
@@ -686,7 +701,10 @@ export const geoRouter = createTRPCRouter({
         // Return empty MVT if no features
         return Buffer.from([]);
       } catch (error) {
-        console.error(`[geo.getVectorTile] Error generating tile ${input.z}/${input.x}/${input.y} for layer ${input.layer}:`, error);
+        console.error(
+          `[geo.getVectorTile] Error generating tile ${input.z}/${input.x}/${input.y} for layer ${input.layer}:`,
+          error
+        );
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: `Failed to generate vector tile for ${input.layer}`,
@@ -782,9 +800,7 @@ export const geoRouter = createTRPCRouter({
           newAreaSqMi: h.newAreaSqMi,
           areaDeltaSqMi: h.areaDeltaSqMi,
           percentChange:
-            h.oldAreaSqMi && h.areaDeltaSqMi
-              ? (h.areaDeltaSqMi / h.oldAreaSqMi) * 100
-              : null,
+            h.oldAreaSqMi && h.areaDeltaSqMi ? (h.areaDeltaSqMi / h.oldAreaSqMi) * 100 : null,
         }));
 
         return {

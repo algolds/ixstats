@@ -3,20 +3,20 @@
  * Connects to WebSocket server for live intelligence updates
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { useUser } from '~/context/auth-context';
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useUser } from "~/context/auth-context";
 
 interface IntelligenceUpdate {
-  type: 'intelligence_update' | 'connection' | 'pong';
-  category?: 'economic' | 'diplomatic' | 'government' | 'crisis' | 'achievement';
+  type: "intelligence_update" | "connection" | "pong";
+  category?: "economic" | "diplomatic" | "government" | "crisis" | "achievement";
   countryId?: string;
   data?: any;
   timestamp?: Date;
-  priority?: 'low' | 'medium' | 'high' | 'critical';
+  priority?: "low" | "medium" | "high" | "critical";
 }
 
 interface ConnectionState {
-  status: 'connecting' | 'connected' | 'disconnected' | 'error';
+  status: "connecting" | "connected" | "disconnected" | "error";
   lastUpdate: Date | null;
   reconnectAttempts: number;
 }
@@ -44,15 +44,15 @@ export function useRealTimeIntelligence(
   const { user } = useUser();
   const {
     countryId,
-    subscriptions = ['all'],
+    subscriptions = ["all"],
     autoReconnect = true,
-    maxReconnectAttempts = 5
+    maxReconnectAttempts = 5,
   } = options;
 
   const [connectionState, setConnectionState] = useState<ConnectionState>({
-    status: 'disconnected',
+    status: "disconnected",
     lastUpdate: null,
-    reconnectAttempts: 0
+    reconnectAttempts: 0,
   });
 
   const [latestUpdate, setLatestUpdate] = useState<IntelligenceUpdate | null>(null);
@@ -71,7 +71,7 @@ export function useRealTimeIntelligence(
       return;
     }
 
-    setConnectionState(prev => ({ ...prev, status: 'connecting' }));
+    setConnectionState((prev) => ({ ...prev, status: "connecting" }));
 
     try {
       // Always use development WebSocket configuration (port 3555)
@@ -80,23 +80,25 @@ export function useRealTimeIntelligence(
 
       wsRef.current.onopen = () => {
         setConnectionState({
-          status: 'connected',
+          status: "connected",
           lastUpdate: new Date(),
-          reconnectAttempts: 0
+          reconnectAttempts: 0,
         });
 
         // Subscribe to channels
         if (wsRef.current) {
-          wsRef.current.send(JSON.stringify({
-            type: 'subscribe',
-            channels: subscriptions
-          }));
+          wsRef.current.send(
+            JSON.stringify({
+              type: "subscribe",
+              channels: subscriptions,
+            })
+          );
         }
 
         // Start ping/pong for connection health
         pingIntervalRef.current = setInterval(() => {
           if (wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(JSON.stringify({ type: 'ping' }));
+            wsRef.current.send(JSON.stringify({ type: "ping" }));
           }
         }, 30000); // Ping every 30 seconds
       };
@@ -104,29 +106,29 @@ export function useRealTimeIntelligence(
       wsRef.current.onmessage = (event) => {
         try {
           const update: IntelligenceUpdate = JSON.parse(event.data);
-          
+
           setLatestUpdate(update);
-          setConnectionState(prev => ({ ...prev, lastUpdate: new Date() }));
+          setConnectionState((prev) => ({ ...prev, lastUpdate: new Date() }));
 
           // Only store intelligence updates (not connection/ping messages)
-          if (update.type === 'intelligence_update') {
-            setUpdates(prev => [update, ...prev].slice(0, 50)); // Keep last 50 updates
-            
+          if (update.type === "intelligence_update") {
+            setUpdates((prev) => [update, ...prev].slice(0, 50)); // Keep last 50 updates
+
             console.log(`📊 Intelligence update: ${update.category} for ${update.countryId}`);
           }
         } catch (error) {
-          console.error('❌ Failed to parse WebSocket message:', error);
+          console.error("❌ Failed to parse WebSocket message:", error);
         }
       };
 
       wsRef.current.onerror = (error) => {
-        console.error('❌ WebSocket error:', error);
-        setConnectionState(prev => ({ ...prev, status: 'error' }));
+        console.error("❌ WebSocket error:", error);
+        setConnectionState((prev) => ({ ...prev, status: "error" }));
       };
 
       wsRef.current.onclose = (event) => {
-        console.log('❌ WebSocket connection closed:', event.code, event.reason);
-        setConnectionState(prev => ({ ...prev, status: 'disconnected' }));
+        console.log("❌ WebSocket connection closed:", event.code, event.reason);
+        setConnectionState((prev) => ({ ...prev, status: "disconnected" }));
 
         // Clear ping interval
         if (pingIntervalRef.current) {
@@ -137,21 +139,28 @@ export function useRealTimeIntelligence(
         // Attempt reconnection if enabled
         if (autoReconnect && connectionState.reconnectAttempts < maxReconnectAttempts) {
           const delay = Math.min(1000 * Math.pow(2, connectionState.reconnectAttempts), 30000);
-          
+
           reconnectTimeoutRef.current = setTimeout(() => {
-            setConnectionState(prev => ({
+            setConnectionState((prev) => ({
               ...prev,
-              reconnectAttempts: prev.reconnectAttempts + 1
+              reconnectAttempts: prev.reconnectAttempts + 1,
             }));
             connect();
           }, delay);
         }
       };
     } catch (error) {
-      console.error('❌ Failed to create WebSocket connection:', error);
-      setConnectionState(prev => ({ ...prev, status: 'error' }));
+      console.error("❌ Failed to create WebSocket connection:", error);
+      setConnectionState((prev) => ({ ...prev, status: "error" }));
     }
-  }, [countryId, user?.id, subscriptions, autoReconnect, maxReconnectAttempts, connectionState.reconnectAttempts]);
+  }, [
+    countryId,
+    user?.id,
+    subscriptions,
+    autoReconnect,
+    maxReconnectAttempts,
+    connectionState.reconnectAttempts,
+  ]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {
@@ -165,32 +174,36 @@ export function useRealTimeIntelligence(
     }
 
     if (wsRef.current) {
-      wsRef.current.close(1000, 'Client disconnect');
+      wsRef.current.close(1000, "Client disconnect");
       wsRef.current = null;
     }
 
     setConnectionState({
-      status: 'disconnected',
+      status: "disconnected",
       lastUpdate: null,
-      reconnectAttempts: 0
+      reconnectAttempts: 0,
     });
   }, []);
 
   const subscribe = useCallback((channels: string[]) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({
-        type: 'subscribe',
-        channels
-      }));
+      wsRef.current.send(
+        JSON.stringify({
+          type: "subscribe",
+          channels,
+        })
+      );
     }
   }, []);
 
   const unsubscribe = useCallback((channels: string[]) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({
-        type: 'unsubscribe',
-        channels
-      }));
+      wsRef.current.send(
+        JSON.stringify({
+          type: "unsubscribe",
+          channels,
+        })
+      );
     }
   }, []);
 
@@ -224,7 +237,7 @@ export function useRealTimeIntelligence(
     subscribe,
     unsubscribe,
     clearUpdates,
-    isConnected: connectionState.status === 'connected'
+    isConnected: connectionState.status === "connected",
   };
 }
 
@@ -234,20 +247,20 @@ export function useRealTimeIntelligence(
 export function useRealTimeEconomicIntelligence(countryId?: string) {
   return useRealTimeIntelligence({
     countryId,
-    subscriptions: ['economic', 'all']
+    subscriptions: ["economic", "all"],
   });
 }
 
 export function useRealTimeDiplomaticIntelligence(countryId?: string) {
   return useRealTimeIntelligence({
     countryId,
-    subscriptions: ['diplomatic', 'all']
+    subscriptions: ["diplomatic", "all"],
   });
 }
 
 export function useRealTimeCrisisIntelligence(countryId?: string) {
   return useRealTimeIntelligence({
     countryId,
-    subscriptions: ['crisis', 'all']
+    subscriptions: ["crisis", "all"],
   });
 }

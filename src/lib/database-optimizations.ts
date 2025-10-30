@@ -4,7 +4,7 @@
  */
 
 import { db } from "~/server/db";
-import { performance } from 'perf_hooks';
+import { performance } from "perf_hooks";
 
 export interface QueryMetrics {
   queryKey: string;
@@ -34,7 +34,7 @@ export class QueryPerformanceMonitor {
 
   recordQuery(metrics: QueryMetrics): void {
     this.metrics.push(metrics);
-    
+
     // Keep only recent metrics
     if (this.metrics.length > this.MAX_METRICS) {
       this.metrics = this.metrics.slice(-this.MAX_METRICS);
@@ -51,14 +51,14 @@ export class QueryPerformanceMonitor {
   }
 
   getAverageDuration(queryKey: string): number {
-    const relevant = this.metrics.filter(m => m.queryKey === queryKey && m.success);
+    const relevant = this.metrics.filter((m) => m.queryKey === queryKey && m.success);
     if (relevant.length === 0) return 0;
-    
+
     return relevant.reduce((sum, m) => sum + m.duration, 0) / relevant.length;
   }
 
   getSlowQueries(threshold = 100): QueryMetrics[] {
-    return this.metrics.filter(m => m.duration > threshold && m.success);
+    return this.metrics.filter((m) => m.duration > threshold && m.success);
   }
 }
 
@@ -68,16 +68,12 @@ export const queryMonitor = new QueryPerformanceMonitor();
  * Optimized country queries with intelligent caching and batching
  */
 export class OptimizedCountryQueries {
-  
   /**
    * Get country by ID with optimized includes
    */
-  static async getCountryById(
-    id: string, 
-    options: OptimizedQueryOptions = {}
-  ): Promise<any> {
+  static async getCountryById(id: string, options: OptimizedQueryOptions = {}): Promise<any> {
     const startTime = performance.now();
-    
+
     try {
       const country = await db.country.findUnique({
         where: { id },
@@ -170,9 +166,9 @@ export class OptimizedCountryQueries {
                 id: true,
                 clerkUserId: true,
                 membershipTier: true,
-                isActive: true
-              }
-            }
+                isActive: true,
+              },
+            },
           }),
           ...(options.include?.government && {
             governmentStructure: {
@@ -180,9 +176,9 @@ export class OptimizedCountryQueries {
                 id: true,
                 governmentName: true,
                 governmentType: true,
-                totalBudget: true
-              }
-            }
+                totalBudget: true,
+              },
+            },
           }),
           ...(options.include?.embassies && {
             embassiesHosting: {
@@ -190,39 +186,39 @@ export class OptimizedCountryQueries {
                 id: true,
                 name: true,
                 level: true,
-                status: true
+                status: true,
               },
-              take: 10
-            }
+              take: 10,
+            },
           }),
           _count: {
             select: {
               dmInputs: true,
               embassiesHosting: true,
-              embassiesGuest: true
-            }
-          }
-        }
+              embassiesGuest: true,
+            },
+          },
+        },
       });
 
       const duration = performance.now() - startTime;
       queryMonitor.recordQuery({
-        queryKey: 'getCountryById',
+        queryKey: "getCountryById",
         duration,
         success: true,
         dataSize: JSON.stringify(country).length,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       return country;
     } catch (error) {
       const duration = performance.now() - startTime;
       queryMonitor.recordQuery({
-        queryKey: 'getCountryById',
+        queryKey: "getCountryById",
         duration,
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: Date.now()
+        error: error instanceof Error ? error.message : "Unknown error",
+        timestamp: Date.now(),
       });
       throw error;
     }
@@ -232,11 +228,11 @@ export class OptimizedCountryQueries {
    * Get multiple countries with optimized batching
    */
   static async getCountriesByIds(
-    ids: string[], 
+    ids: string[],
     options: OptimizedQueryOptions = {}
   ): Promise<any[]> {
     const startTime = performance.now();
-    
+
     try {
       // Batch query for better performance
       const countries = await db.country.findMany({
@@ -252,29 +248,29 @@ export class OptimizedCountryQueries {
           currentPopulation: true,
           currentTotalGdp: true,
           flag: true,
-          ...(options.select || {})
+          ...(options.select || {}),
         },
-        orderBy: { name: 'asc' }
+        orderBy: { name: "asc" },
       });
 
       const duration = performance.now() - startTime;
       queryMonitor.recordQuery({
-        queryKey: 'getCountriesByIds',
+        queryKey: "getCountriesByIds",
         duration,
         success: true,
         dataSize: JSON.stringify(countries).length,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       return countries;
     } catch (error) {
       const duration = performance.now() - startTime;
       queryMonitor.recordQuery({
-        queryKey: 'getCountriesByIds',
+        queryKey: "getCountriesByIds",
         duration,
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: Date.now()
+        error: error instanceof Error ? error.message : "Unknown error",
+        timestamp: Date.now(),
       });
       throw error;
     }
@@ -289,9 +285,9 @@ export class OptimizedCountryQueries {
     limit = 50,
     offset = 0,
     options: OptimizedQueryOptions = {}
-  ): Promise<{ countries: any[], total: number }> {
+  ): Promise<{ countries: any[]; total: number }> {
     const startTime = performance.now();
-    
+
     try {
       const whereClause: any = {};
       if (continent) whereClause.continent = continent;
@@ -311,33 +307,33 @@ export class OptimizedCountryQueries {
             currentPopulation: true,
             currentTotalGdp: true,
             flag: true,
-            ...(options.select || {})
+            ...(options.select || {}),
           },
-          orderBy: { name: 'asc' },
+          orderBy: { name: "asc" },
           take: limit,
-          skip: offset
+          skip: offset,
         }),
-        db.country.count({ where: whereClause })
+        db.country.count({ where: whereClause }),
       ]);
 
       const duration = performance.now() - startTime;
       queryMonitor.recordQuery({
-        queryKey: 'getCountriesByRegion',
+        queryKey: "getCountriesByRegion",
         duration,
         success: true,
         dataSize: JSON.stringify(countries).length,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       return { countries, total };
     } catch (error) {
       const duration = performance.now() - startTime;
       queryMonitor.recordQuery({
-        queryKey: 'getCountriesByRegion',
+        queryKey: "getCountriesByRegion",
         duration,
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: Date.now()
+        error: error instanceof Error ? error.message : "Unknown error",
+        timestamp: Date.now(),
       });
       throw error;
     }
@@ -348,7 +344,7 @@ export class OptimizedCountryQueries {
    */
   static async getGlobalStats(): Promise<any> {
     const startTime = performance.now();
-    
+
     try {
       const result = await db.$queryRaw`
         SELECT
@@ -371,22 +367,22 @@ export class OptimizedCountryQueries {
 
       const duration = performance.now() - startTime;
       queryMonitor.recordQuery({
-        queryKey: 'getGlobalStats',
+        queryKey: "getGlobalStats",
         duration,
         success: true,
         dataSize: JSON.stringify(result).length,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       return (result as any[])[0];
     } catch (error) {
       const duration = performance.now() - startTime;
       queryMonitor.recordQuery({
-        queryKey: 'getGlobalStats',
+        queryKey: "getGlobalStats",
         duration,
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: Date.now()
+        error: error instanceof Error ? error.message : "Unknown error",
+        timestamp: Date.now(),
       });
       throw error;
     }
@@ -397,7 +393,6 @@ export class OptimizedCountryQueries {
  * Optimized ThinkPages queries
  */
 export class OptimizedThinkPagesQueries {
-  
   /**
    * Get feed with optimized pagination and filtering
    */
@@ -406,23 +401,23 @@ export class OptimizedThinkPagesQueries {
       limit?: number;
       offset?: number;
       countryId?: string;
-      filter?: 'trending' | 'recent';
+      filter?: "trending" | "recent";
       hashtag?: string;
     } = {}
   ): Promise<any[]> {
     const startTime = performance.now();
     const { limit = 50, offset = 0, countryId, filter, hashtag } = options;
-    
+
     try {
       let whereClause: any = {
-        visibility: 'public'
+        visibility: "public",
       };
-      
+
       if (countryId) {
         whereClause.account = { countryId };
       }
-      
-      if (filter === 'trending') {
+
+      if (filter === "trending") {
         whereClause.trending = true;
       }
 
@@ -450,8 +445,8 @@ export class OptimizedThinkPagesQueries {
               displayName: true,
               profileImageUrl: true,
               accountType: true,
-              verified: true
-            }
+              verified: true,
+            },
           },
           parentPost: {
             select: {
@@ -460,10 +455,10 @@ export class OptimizedThinkPagesQueries {
               account: {
                 select: {
                   username: true,
-                  displayName: true
-                }
-              }
-            }
+                  displayName: true,
+                },
+              },
+            },
           },
           repostOf: {
             select: {
@@ -472,38 +467,35 @@ export class OptimizedThinkPagesQueries {
               account: {
                 select: {
                   username: true,
-                  displayName: true
-                }
-              }
-            }
-          }
+                  displayName: true,
+                },
+              },
+            },
+          },
         },
-        orderBy: [
-          { pinned: 'desc' },
-          { createdAt: 'desc' }
-        ],
+        orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
         take: limit,
-        skip: offset
+        skip: offset,
       });
 
       const duration = performance.now() - startTime;
       queryMonitor.recordQuery({
-        queryKey: 'getFeed',
+        queryKey: "getFeed",
         duration,
         success: true,
         dataSize: JSON.stringify(posts).length,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       return posts;
     } catch (error) {
       const duration = performance.now() - startTime;
       queryMonitor.recordQuery({
-        queryKey: 'getFeed',
+        queryKey: "getFeed",
         duration,
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: Date.now()
+        error: error instanceof Error ? error.message : "Unknown error",
+        timestamp: Date.now(),
       });
       throw error;
     }
@@ -514,7 +506,6 @@ export class OptimizedThinkPagesQueries {
  * Optimized Intelligence queries
  */
 export class OptimizedIntelligenceQueries {
-  
   /**
    * Get intelligence feed with optimized filtering
    */
@@ -524,15 +515,12 @@ export class OptimizedIntelligenceQueries {
     options: OptimizedQueryOptions = {}
   ): Promise<any[]> {
     const startTime = performance.now();
-    
+
     try {
       const whereClause: any = { isActive: true };
-      
+
       if (countryId) {
-        whereClause.OR = [
-          { affectedCountries: { contains: countryId } },
-          { category: 'economic' }
-        ];
+        whereClause.OR = [{ affectedCountries: { contains: countryId } }, { category: "economic" }];
       }
 
       const intelligence = await db.intelligenceItem.findMany({
@@ -546,33 +534,30 @@ export class OptimizedIntelligenceQueries {
           timestamp: true,
           source: true,
           affectedCountries: true,
-          isActive: true
+          isActive: true,
         },
-        orderBy: [
-          { priority: 'desc' },
-          { timestamp: 'desc' }
-        ],
-        take: limit
+        orderBy: [{ priority: "desc" }, { timestamp: "desc" }],
+        take: limit,
       });
 
       const duration = performance.now() - startTime;
       queryMonitor.recordQuery({
-        queryKey: 'getIntelligenceFeed',
+        queryKey: "getIntelligenceFeed",
         duration,
         success: true,
         dataSize: JSON.stringify(intelligence).length,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       return intelligence;
     } catch (error) {
       const duration = performance.now() - startTime;
       queryMonitor.recordQuery({
-        queryKey: 'getIntelligenceFeed',
+        queryKey: "getIntelligenceFeed",
         duration,
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: Date.now()
+        error: error instanceof Error ? error.message : "Unknown error",
+        timestamp: Date.now(),
       });
       throw error;
     }
@@ -583,7 +568,6 @@ export class OptimizedIntelligenceQueries {
  * Database connection optimization
  */
 export class DatabaseOptimizer {
-  
   /**
    * Optimize database connection settings
    */
@@ -595,10 +579,10 @@ export class DatabaseOptimizer {
       await db.$executeRaw`PRAGMA cache_size = 10000`;
       await db.$executeRaw`PRAGMA temp_store = MEMORY`;
       await db.$executeRaw`PRAGMA mmap_size = 268435456`;
-      
-      console.log('[DatabaseOptimizer] Connection optimized for production');
+
+      console.log("[DatabaseOptimizer] Connection optimized for production");
     } catch (error) {
-      console.error('[DatabaseOptimizer] Failed to optimize connection:', error);
+      console.error("[DatabaseOptimizer] Failed to optimize connection:", error);
     }
   }
 
@@ -608,16 +592,16 @@ export class DatabaseOptimizer {
   static async analyzePerformance(): Promise<any> {
     const metrics = queryMonitor.getMetrics();
     const slowQueries = queryMonitor.getSlowQueries(100);
-    
+
     const analysis = {
       totalQueries: metrics.length,
       slowQueries: slowQueries.length,
       averageDuration: metrics.reduce((sum, m) => sum + m.duration, 0) / metrics.length,
-      cacheHitRate: metrics.filter(m => m.cacheHit).length / metrics.length,
+      cacheHitRate: metrics.filter((m) => m.cacheHit).length / metrics.length,
       topSlowQueries: slowQueries
         .sort((a, b) => b.duration - a.duration)
         .slice(0, 10)
-        .map(q => ({ queryKey: q.queryKey, duration: q.duration }))
+        .map((q) => ({ queryKey: q.queryKey, duration: q.duration })),
     };
 
     return analysis;

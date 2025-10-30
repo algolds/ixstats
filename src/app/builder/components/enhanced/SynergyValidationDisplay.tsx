@@ -1,18 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { Progress } from '~/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { 
-  CheckCircle, 
-  XCircle, 
-  AlertTriangle, 
-  Info, 
-  Play, 
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Progress } from "~/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import {
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Info,
+  Play,
   RefreshCw,
   BarChart3,
   Shield,
@@ -22,22 +22,24 @@ import {
   AlertCircle,
   CheckCircle2,
   Timer,
-  Zap
-} from 'lucide-react';
-import { SynergyValidationService } from '~/app/builder/services/SynergyValidationService';
+  Zap,
+} from "lucide-react";
+import { SynergyValidationService } from "~/app/builder/services/SynergyValidationService";
 import type {
   ComprehensiveValidationReport,
   ValidationTestSuite,
   SynergyValidationResult,
-  ConflictValidationResult
-} from '~/app/builder/services/SynergyValidationService';
+  ConflictValidationResult,
+} from "~/app/builder/services/SynergyValidationService";
 
 interface SynergyValidationDisplayProps {
   className?: string;
 }
 
 export function SynergyValidationDisplay({ className }: SynergyValidationDisplayProps) {
-  const [validationReport, setValidationReport] = useState<ComprehensiveValidationReport | null>(null);
+  const [validationReport, setValidationReport] = useState<ComprehensiveValidationReport | null>(
+    null
+  );
   const [isRunning, setIsRunning] = useState(false);
   const [selectedSuite, setSelectedSuite] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -50,36 +52,46 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
       const report = await validationService.runComprehensiveValidation();
       setValidationReport(report);
     } catch (error) {
-      console.error('Validation failed:', error);
+      console.error("Validation failed:", error);
     } finally {
       setIsRunning(false);
     }
   };
 
-  const getSeverityColor = (severity: 'low' | 'medium' | 'high' | 'critical') => {
+  const getSeverityColor = (severity: "low" | "medium" | "high" | "critical") => {
     switch (severity) {
-      case 'low': return 'bg-green-100 text-green-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'critical': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "low":
+        return "bg-green-100 text-green-800";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800";
+      case "high":
+        return "bg-orange-100 text-orange-800";
+      case "critical":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
-  const getSeverityIcon = (severity: 'low' | 'medium' | 'high' | 'critical') => {
+  const getSeverityIcon = (severity: "low" | "medium" | "high" | "critical") => {
     switch (severity) {
-      case 'low': return <CheckCircle2 className="h-4 w-4" />;
-      case 'medium': return <AlertTriangle className="h-4 w-4" />;
-      case 'high': return <AlertCircle className="h-4 w-4" />;
-      case 'critical': return <XCircle className="h-4 w-4" />;
-      default: return <Info className="h-4 w-4" />;
+      case "low":
+        return <CheckCircle2 className="h-4 w-4" />;
+      case "medium":
+        return <AlertTriangle className="h-4 w-4" />;
+      case "high":
+        return <AlertCircle className="h-4 w-4" />;
+      case "critical":
+        return <XCircle className="h-4 w-4" />;
+      default:
+        return <Info className="h-4 w-4" />;
     }
   };
 
   const getPassRateColor = (rate: number) => {
-    if (rate >= 90) return 'text-green-600';
-    if (rate >= 70) return 'text-yellow-600';
-    return 'text-red-600';
+    if (rate >= 90) return "text-green-600";
+    if (rate >= 70) return "text-yellow-600";
+    return "text-red-600";
   };
 
   const formatDuration = (ms: number) => {
@@ -87,11 +99,14 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
     return `${(ms / 1000).toFixed(2)}s`;
   };
 
-  const renderTestResult = (result: SynergyValidationResult | ConflictValidationResult, index: number) => {
-    const isSynergyResult = 'expectedSynergy' in result;
-    
+  const renderTestResult = (
+    result: SynergyValidationResult | ConflictValidationResult,
+    index: number
+  ) => {
+    const isSynergyResult = "expectedSynergy" in result;
+
     return (
-      <div key={result.id} className="border rounded-lg p-4 space-y-3">
+      <div key={result.id} className="space-y-3 rounded-lg border p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             {result.validationPassed ? (
@@ -120,26 +135,30 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="font-medium">Expected Synergy:</span>
-              <span className={`ml-2 ${result.expectedSynergy ? 'text-green-600' : 'text-gray-600'}`}>
-                {result.expectedSynergy ? 'Yes' : 'No'}
+              <span
+                className={`ml-2 ${result.expectedSynergy ? "text-green-600" : "text-gray-600"}`}
+              >
+                {result.expectedSynergy ? "Yes" : "No"}
               </span>
             </div>
             <div>
               <span className="font-medium">Actual Synergy:</span>
-              <span className={`ml-2 ${result.actualSynergy ? 'text-green-600' : 'text-gray-600'}`}>
-                {result.actualSynergy ? 'Yes' : 'No'}
+              <span className={`ml-2 ${result.actualSynergy ? "text-green-600" : "text-gray-600"}`}>
+                {result.actualSynergy ? "Yes" : "No"}
               </span>
             </div>
             <div>
               <span className="font-medium">Expected Conflict:</span>
-              <span className={`ml-2 ${result.expectedConflict ? 'text-red-600' : 'text-gray-600'}`}>
-                {result.expectedConflict ? 'Yes' : 'No'}
+              <span
+                className={`ml-2 ${result.expectedConflict ? "text-red-600" : "text-gray-600"}`}
+              >
+                {result.expectedConflict ? "Yes" : "No"}
               </span>
             </div>
             <div>
               <span className="font-medium">Actual Conflict:</span>
-              <span className={`ml-2 ${result.actualConflict ? 'text-red-600' : 'text-gray-600'}`}>
-                {result.actualConflict ? 'Yes' : 'No'}
+              <span className={`ml-2 ${result.actualConflict ? "text-red-600" : "text-gray-600"}`}>
+                {result.actualConflict ? "Yes" : "No"}
               </span>
             </div>
           </div>
@@ -149,28 +168,32 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="font-medium">Expected Conflict:</span>
-              <span className={`ml-2 ${result.expectedConflict ? 'text-red-600' : 'text-gray-600'}`}>
-                {result.expectedConflict ? 'Yes' : 'No'}
+              <span
+                className={`ml-2 ${result.expectedConflict ? "text-red-600" : "text-gray-600"}`}
+              >
+                {result.expectedConflict ? "Yes" : "No"}
               </span>
             </div>
             <div>
               <span className="font-medium">Actual Conflict:</span>
-              <span className={`ml-2 ${result.actualConflict ? 'text-red-600' : 'text-gray-600'}`}>
-                {result.actualConflict ? 'Yes' : 'No'}
+              <span className={`ml-2 ${result.actualConflict ? "text-red-600" : "text-gray-600"}`}>
+                {result.actualConflict ? "Yes" : "No"}
               </span>
             </div>
           </div>
         )}
 
         <div className="space-y-2">
-          <h4 className="font-medium text-sm">Recommendations:</h4>
-          <ul className="text-sm space-y-1">
-            {(isSynergyResult ? result.recommendations : result.mitigationStrategies).map((rec, idx) => (
-              <li key={idx} className="flex items-start space-x-2">
-                <span className="text-blue-600 mt-1">•</span>
-                <span>{rec}</span>
-              </li>
-            ))}
+          <h4 className="text-sm font-medium">Recommendations:</h4>
+          <ul className="space-y-1 text-sm">
+            {(isSynergyResult ? result.recommendations : result.mitigationStrategies).map(
+              (rec, idx) => (
+                <li key={idx} className="flex items-start space-x-2">
+                  <span className="mt-1 text-blue-600">•</span>
+                  <span>{rec}</span>
+                </li>
+              )
+            )}
           </ul>
         </div>
       </div>
@@ -186,7 +209,7 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
               <Target className="h-5 w-5" />
               <span>{suite.name}</span>
             </CardTitle>
-            <p className="text-sm text-gray-600 mt-1">{suite.description}</p>
+            <p className="mt-1 text-sm text-gray-600">{suite.description}</p>
           </div>
           <div className="text-right">
             <div className={`text-2xl font-bold ${getPassRateColor(suite.overallPassRate)}`}>
@@ -197,7 +220,7 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="mb-6 grid grid-cols-3 gap-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">
               {suite.testCases.length + suite.conflictCases.length}
@@ -205,15 +228,11 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
             <div className="text-sm text-gray-600">Total Tests</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-red-600">
-              {suite.criticalFailures}
-            </div>
+            <div className="text-2xl font-bold text-red-600">{suite.criticalFailures}</div>
             <div className="text-sm text-gray-600">Critical Failures</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-orange-600">
-              {suite.warnings}
-            </div>
+            <div className="text-2xl font-bold text-orange-600">{suite.warnings}</div>
             <div className="text-sm text-gray-600">Warnings</div>
           </div>
         </div>
@@ -224,8 +243,8 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
           <div className="space-y-4">
             {suite.testCases.length > 0 && (
               <div>
-                <h3 className="font-medium mb-3">Synergy Tests ({suite.testCases.length})</h3>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <h3 className="mb-3 font-medium">Synergy Tests ({suite.testCases.length})</h3>
+                <div className="max-h-96 space-y-3 overflow-y-auto">
                   {suite.testCases.map((test, index) => renderTestResult(test, index))}
                 </div>
               </div>
@@ -233,19 +252,19 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
 
             {suite.conflictCases.length > 0 && (
               <div>
-                <h3 className="font-medium mb-3">Conflict Tests ({suite.conflictCases.length})</h3>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
+                <h3 className="mb-3 font-medium">Conflict Tests ({suite.conflictCases.length})</h3>
+                <div className="max-h-96 space-y-3 overflow-y-auto">
                   {suite.conflictCases.map((test, index) => renderTestResult(test, index))}
                 </div>
               </div>
             )}
 
             <div>
-              <h3 className="font-medium mb-3">Recommendations</h3>
+              <h3 className="mb-3 font-medium">Recommendations</h3>
               <ul className="space-y-2">
                 {suite.recommendations.map((rec, index) => (
                   <li key={index} className="flex items-start space-x-2">
-                    <span className="text-blue-600 mt-1">•</span>
+                    <span className="mt-1 text-blue-600">•</span>
                     <span className="text-sm">{rec}</span>
                   </li>
                 ))}
@@ -255,12 +274,8 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
         )}
 
         <div className="mt-4">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setShowDetails(!showDetails)}
-          >
-            {showDetails ? 'Hide Details' : 'Show Details'}
+          <Button variant="outline" size="sm" onClick={() => setShowDetails(!showDetails)}>
+            {showDetails ? "Hide Details" : "Show Details"}
           </Button>
         </div>
       </CardContent>
@@ -276,13 +291,14 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
             <span>Synergy & Conflict Validation Testing</span>
           </CardTitle>
           <p className="text-sm text-gray-600">
-            Comprehensive testing system for atomic component interactions across economy, government, and tax systems.
+            Comprehensive testing system for atomic component interactions across economy,
+            government, and tax systems.
           </p>
         </CardHeader>
         <CardContent>
           <div className="flex items-center space-x-4">
-            <Button 
-              onClick={runValidation} 
+            <Button
+              onClick={runValidation}
               disabled={isRunning}
               className="flex items-center space-x-2"
             >
@@ -291,9 +307,9 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
               ) : (
                 <Play className="h-4 w-4" />
               )}
-              <span>{isRunning ? 'Running Tests...' : 'Run Validation Tests'}</span>
+              <span>{isRunning ? "Running Tests..." : "Run Validation Tests"}</span>
             </Button>
-            
+
             {validationReport && (
               <div className="flex items-center space-x-4 text-sm">
                 <div className="flex items-center space-x-1">
@@ -321,7 +337,7 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
+              <div className="mb-6 grid grid-cols-2 gap-6 md:grid-cols-4">
                 <div className="text-center">
                   <div className="text-3xl font-bold text-blue-600">
                     {validationReport.totalTests}
@@ -341,7 +357,9 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
                   <div className="text-sm text-gray-600">Failed</div>
                 </div>
                 <div className="text-center">
-                  <div className={`text-3xl font-bold ${getPassRateColor(validationReport.passRate)}`}>
+                  <div
+                    className={`text-3xl font-bold ${getPassRateColor(validationReport.passRate)}`}
+                  >
                     {validationReport.passRate.toFixed(1)}%
                   </div>
                   <div className="text-sm text-gray-600">Pass Rate</div>
@@ -357,7 +375,9 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
                     <strong>Critical Issues Found:</strong>
                     <ul className="mt-2 space-y-1">
                       {validationReport.criticalIssues.map((issue, index) => (
-                        <li key={index} className="text-sm">• {issue}</li>
+                        <li key={index} className="text-sm">
+                          • {issue}
+                        </li>
                       ))}
                     </ul>
                   </AlertDescription>
@@ -371,7 +391,9 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
                     <strong>Warnings:</strong>
                     <ul className="mt-2 space-y-1">
                       {validationReport.warnings.map((warning, index) => (
-                        <li key={index} className="text-sm">• {warning}</li>
+                        <li key={index} className="text-sm">
+                          • {warning}
+                        </li>
                       ))}
                     </ul>
                   </AlertDescription>
@@ -379,11 +401,11 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
               )}
 
               <div>
-                <h3 className="font-medium mb-3">Overall Recommendations</h3>
+                <h3 className="mb-3 font-medium">Overall Recommendations</h3>
                 <ul className="space-y-2">
                   {validationReport.recommendations.map((rec, index) => (
                     <li key={index} className="flex items-start space-x-2">
-                      <span className="text-blue-600 mt-1">•</span>
+                      <span className="mt-1 text-blue-600">•</span>
                       <span className="text-sm">{rec}</span>
                     </li>
                   ))}
@@ -394,7 +416,7 @@ export function SynergyValidationDisplay({ className }: SynergyValidationDisplay
 
           {/* Test Suite Results */}
           <div>
-            <h2 className="text-xl font-semibold mb-4">Test Suite Results</h2>
+            <h2 className="mb-4 text-xl font-semibold">Test Suite Results</h2>
             {validationReport.testSuites.map(renderTestSuite)}
           </div>
         </>

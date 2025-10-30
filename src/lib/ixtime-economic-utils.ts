@@ -1,9 +1,6 @@
 // src/lib/ixtime-economic-utils.ts
 import { IxTime } from "./ixtime";
-import type { 
-  CoreEconomicIndicatorsData,
-  EconomyData 
-} from "~/types/economics";
+import type { CoreEconomicIndicatorsData, EconomyData } from "~/types/economics";
 
 /**
  * Calculate economic growth over time using IxTime
@@ -16,7 +13,7 @@ export function calculateEconomicGrowth(
   endIxTime: number
 ): number {
   const yearsElapsed = IxTime.getYearsElapsed(startIxTime, endIxTime);
-  
+
   // Compound annual growth formula: FV = PV * (1 + r)^t
   return baseValue * Math.pow(1 + annualGrowthRate, yearsElapsed);
 }
@@ -31,15 +28,15 @@ export function calculatePopulationGrowth(
   endIxTime: number
 ): number {
   const yearsElapsed = IxTime.getYearsElapsed(startIxTime, endIxTime);
-  
+
   // Population growth with reasonable bounds
   const growth = Math.pow(1 + annualGrowthRate, yearsElapsed);
   const newPopulation = basePopulation * growth;
-  
+
   // Sanity check - population shouldn't grow/shrink too dramatically
   const maxGrowthFactor = Math.pow(1.05, yearsElapsed); // Max 5% per year
   const minGrowthFactor = Math.pow(0.95, yearsElapsed); // Max 5% decline per year
-  
+
   return Math.max(
     basePopulation * minGrowthFactor,
     Math.min(basePopulation * maxGrowthFactor, newPopulation)
@@ -56,7 +53,7 @@ export function projectEconomicIndicators(
 ): CoreEconomicIndicatorsData {
   const currentIxTime = IxTime.getCurrentIxTime();
   const yearsToProject = IxTime.getYearsElapsed(currentIxTime, targetIxTime);
-  
+
   // If projecting backwards or no time has passed, return base
   if (yearsToProject <= 0) {
     return { ...baseIndicators };
@@ -83,12 +80,15 @@ export function projectEconomicIndicators(
 
   // Inflation compounds over time
   const cumulativeInflation = Math.pow(1 + baseIndicators.inflationRate, yearsToProject);
-  
+
   // Exchange rate may drift based on economic performance
   const gdpGrowthFactor = newNominalGDP / baseIndicators.nominalGDP;
-  const exchangeRateDrift = gdpGrowthFactor > 1.5 ? 0.95 : // Strong growth = stronger currency
-                           gdpGrowthFactor < 0.8 ? 1.10 : // Weak growth = weaker currency
-                           1.0;
+  const exchangeRateDrift =
+    gdpGrowthFactor > 1.5
+      ? 0.95 // Strong growth = stronger currency
+      : gdpGrowthFactor < 0.8
+        ? 1.1 // Weak growth = weaker currency
+        : 1.0;
   const newExchangeRate = baseIndicators.currencyExchangeRate * exchangeRateDrift;
 
   return {
@@ -106,7 +106,7 @@ export function projectEconomicIndicators(
  */
 export interface EconomicEvent {
   ixTime: number;
-  type: 'boom' | 'recession' | 'crisis' | 'recovery' | 'policy_change';
+  type: "boom" | "recession" | "crisis" | "recovery" | "policy_change";
   gdpImpact: number; // Multiplier (1.1 = +10%, 0.9 = -10%)
   durationYears: number;
   description: string;
@@ -121,21 +121,21 @@ export function applyEconomicEvents(
 
   for (const event of events) {
     const eventEndTime = IxTime.addYears(event.ixTime, event.durationYears);
-    
+
     // Check if we're within the event's timeframe
     if (currentIxTime >= event.ixTime && currentIxTime <= eventEndTime) {
       // Apply GDP impact
       modifiedIndicators.nominalGDP *= event.gdpImpact;
       modifiedIndicators.gdpPerCapita *= event.gdpImpact;
-      
+
       // Events also affect growth rates
-      if (event.type === 'boom') {
+      if (event.type === "boom") {
         modifiedIndicators.realGDPGrowthRate *= 1.5; // Boost growth
         modifiedIndicators.inflationRate *= 1.2; // Slight inflation increase
-      } else if (event.type === 'recession') {
+      } else if (event.type === "recession") {
         modifiedIndicators.realGDPGrowthRate *= 0.3; // Slow growth
         modifiedIndicators.inflationRate *= 0.8; // Deflation risk
-      } else if (event.type === 'crisis') {
+      } else if (event.type === "crisis") {
         modifiedIndicators.realGDPGrowthRate = -0.05; // Negative growth
         modifiedIndicators.inflationRate *= 0.5; // Severe deflation risk
       }
@@ -156,7 +156,7 @@ export function generateEconomicHistory(
   intervalYears = 1
 ): Array<{ ixTime: number; indicators: CoreEconomicIndicatorsData }> {
   const history: Array<{ ixTime: number; indicators: CoreEconomicIndicatorsData }> = [];
-  
+
   let currentTime = startIxTime;
   while (currentTime <= endIxTime) {
     const projectedIndicators = projectEconomicIndicators(
@@ -164,15 +164,15 @@ export function generateEconomicHistory(
       populationGrowthRate,
       currentTime
     );
-    
+
     history.push({
       ixTime: currentTime,
-      indicators: projectedIndicators
+      indicators: projectedIndicators,
     });
-    
+
     currentTime = IxTime.addYears(currentTime, intervalYears);
   }
-  
+
   return history;
 }
 
@@ -186,34 +186,27 @@ export function getCurrentEconomicState(
 ): CoreEconomicIndicatorsData {
   const rosterTime = IxTime.getInGameEpoch(); // January 1, 2028
   const currentTime = IxTime.getCurrentIxTime();
-  
+
   // First, project from roster baseline to current time
   let currentIndicators = projectEconomicIndicators(
     rosterBaselineData,
     populationGrowthRate,
     currentTime
   );
-  
+
   // Then apply any economic events
-  currentIndicators = applyEconomicEvents(
-    currentIndicators,
-    economicEvents,
-    currentTime
-  );
-  
+  currentIndicators = applyEconomicEvents(currentIndicators, economicEvents, currentTime);
+
   return currentIndicators;
 }
 
 /**
  * Format time-based economic description
  */
-export function getEconomicTimeDescription(
-  baseYear = 2028,
-  currentIxTime?: number
-): string {
+export function getEconomicTimeDescription(baseYear = 2028, currentIxTime?: number): string {
   const gameYear = IxTime.getCurrentGameYear(currentIxTime);
   const yearsSinceBase = gameYear - baseYear;
-  
+
   if (yearsSinceBase < 0) {
     return `${Math.abs(yearsSinceBase)} years before economic baseline`;
   } else if (yearsSinceBase === 0) {
@@ -235,11 +228,11 @@ export function calculateCAGR(
   endIxTime: number
 ): number {
   const years = IxTime.getYearsElapsed(startIxTime, endIxTime);
-  
+
   if (years <= 0 || startValue <= 0) {
     return 0;
   }
-  
+
   // CAGR = (Ending Value / Beginning Value)^(1 / Years) - 1
   return Math.pow(endValue / startValue, 1 / years) - 1;
 }
@@ -255,10 +248,10 @@ export function timeToReachTarget(
   if (annualGrowthRate <= 0 || currentValue <= 0 || targetValue <= currentValue) {
     return null;
   }
-  
+
   // Years = ln(Target / Current) / ln(1 + GrowthRate)
   const years = Math.log(targetValue / currentValue) / Math.log(1 + annualGrowthRate);
   const targetIxTime = IxTime.addYears(IxTime.getCurrentIxTime(), years);
-  
+
   return { years, ixTime: targetIxTime };
 }

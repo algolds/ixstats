@@ -94,11 +94,10 @@ export function generateCacheKey(
  * Generate a content hash for validation
  */
 export function generateContentHash(content: any): string {
-  const normalized = typeof content === 'string'
-    ? content
-    : JSON.stringify(content, Object.keys(content).sort());
+  const normalized =
+    typeof content === "string" ? content : JSON.stringify(content, Object.keys(content).sort());
 
-  return createHash('sha256').update(normalized).digest('hex');
+  return createHash("sha256").update(normalized).digest("hex");
 }
 
 /**
@@ -106,31 +105,31 @@ export function generateContentHash(content: any): string {
  */
 export const CACHE_TTL = {
   // MediaWiki content (mostly static)
-  INFOBOX: 7 * 24 * 60 * 60 * 1000,      // 7 days
-  WIKITEXT: 7 * 24 * 60 * 60 * 1000,     // 7 days
-  TEMPLATE: 14 * 24 * 60 * 60 * 1000,    // 14 days (templates change rarely)
-  FLAG: 30 * 24 * 60 * 60 * 1000,        // 30 days (flags change very rarely)
+  INFOBOX: 7 * 24 * 60 * 60 * 1000, // 7 days
+  WIKITEXT: 7 * 24 * 60 * 60 * 1000, // 7 days
+  TEMPLATE: 14 * 24 * 60 * 60 * 1000, // 14 days (templates change rarely)
+  FLAG: 30 * 24 * 60 * 60 * 1000, // 30 days (flags change very rarely)
 
   // Image services
-  IMAGE: 30 * 24 * 60 * 60 * 1000,       // 30 days (images are immutable)
+  IMAGE: 30 * 24 * 60 * 60 * 1000, // 30 days (images are immutable)
 
   // Country data APIs
   COUNTRY_DATA: 30 * 24 * 60 * 60 * 1000, // 30 days (country metadata changes rarely)
 
   // Default fallback
-  DEFAULT: 7 * 24 * 60 * 60 * 1000,       // 7 days
+  DEFAULT: 7 * 24 * 60 * 60 * 1000, // 7 days
 } as const;
 
 /**
  * Revalidation intervals (how often to check if content changed)
  */
 export const REVALIDATION_INTERVAL = {
-  INFOBOX: 7 * 24 * 60 * 60 * 1000,      // Check weekly
-  WIKITEXT: 7 * 24 * 60 * 60 * 1000,     // Check weekly
-  TEMPLATE: 14 * 24 * 60 * 60 * 1000,    // Check bi-weekly
-  FLAG: 30 * 24 * 60 * 60 * 1000,        // Check monthly
-  IMAGE: 90 * 24 * 60 * 60 * 1000,       // Check quarterly (images rarely change)
-  DEFAULT: 7 * 24 * 60 * 60 * 1000,      // Check weekly
+  INFOBOX: 7 * 24 * 60 * 60 * 1000, // Check weekly
+  WIKITEXT: 7 * 24 * 60 * 60 * 1000, // Check weekly
+  TEMPLATE: 14 * 24 * 60 * 60 * 1000, // Check bi-weekly
+  FLAG: 30 * 24 * 60 * 60 * 1000, // Check monthly
+  IMAGE: 90 * 24 * 60 * 60 * 1000, // Check quarterly (images rarely change)
+  DEFAULT: 7 * 24 * 60 * 60 * 1000, // Check weekly
 } as const;
 
 /**
@@ -168,7 +167,7 @@ export class ExternalApiCacheService {
       // Parse the data and metadata
       const data = JSON.parse(cached.data) as T;
       const metadata = cached.metadata
-        ? JSON.parse(cached.metadata) as CacheMetadata
+        ? (JSON.parse(cached.metadata) as CacheMetadata)
         : { lastFetched: cached.createdAt.toISOString() };
 
       return {
@@ -231,7 +230,9 @@ export class ExternalApiCacheService {
         },
       });
 
-      console.log(`[ExternalApiCache] Cached ${options.service}:${options.type}:${options.identifier} (expires: ${expiresAt.toISOString()})`);
+      console.log(
+        `[ExternalApiCache] Cached ${options.service}:${options.type}:${options.identifier} (expires: ${expiresAt.toISOString()})`
+      );
     } catch (error) {
       console.error(`[ExternalApiCache] Error setting cache for key ${key}:`, error);
     }
@@ -273,10 +274,7 @@ export class ExternalApiCacheService {
    * Validate cached content against fresh data
    * Returns true if content is still valid, false if it changed
    */
-  async validateContent<T = any>(
-    options: CacheOptions,
-    freshData: T
-  ): Promise<boolean> {
+  async validateContent<T = any>(options: CacheOptions, freshData: T): Promise<boolean> {
     const key = generateCacheKey(options.service, options.type, options.identifier);
     const freshHash = generateContentHash(freshData);
 
@@ -340,7 +338,9 @@ export class ExternalApiCacheService {
       const result = await db.externalApiCache.deleteMany({
         where: { service },
       });
-      console.log(`[ExternalApiCache] Cleared ${result.count} cache entries for service: ${service}`);
+      console.log(
+        `[ExternalApiCache] Cleared ${result.count} cache entries for service: ${service}`
+      );
       return result.count;
     } catch (error) {
       console.error(`[ExternalApiCache] Error clearing cache for service ${service}:`, error);
@@ -356,7 +356,9 @@ export class ExternalApiCacheService {
       const result = await db.externalApiCache.deleteMany({
         where: { countryName },
       });
-      console.log(`[ExternalApiCache] Cleared ${result.count} cache entries for country: ${countryName}`);
+      console.log(
+        `[ExternalApiCache] Cleared ${result.count} cache entries for country: ${countryName}`
+      );
       return result.count;
     } catch (error) {
       console.error(`[ExternalApiCache] Error clearing cache for country ${countryName}:`, error);
@@ -402,7 +404,7 @@ export class ExternalApiCacheService {
         db.externalApiCache.findMany({
           where,
           select: { key: true, hitCount: true, service: true, type: true },
-          orderBy: { hitCount: 'desc' },
+          orderBy: { hitCount: "desc" },
           take: 10,
         }),
       ]);

@@ -40,22 +40,23 @@ interface EmptyStateProps {
  */
 export const EmptyState = React.memo(function EmptyState({
   isOwner,
-  onEstablishEmbassy
+  onEstablishEmbassy,
 }: EmptyStateProps) {
   return (
     <Card>
       <CardContent className="py-12">
-        <div className="text-center space-y-4">
-          <Building2 className="h-16 w-16 mx-auto text-muted-foreground" />
+        <div className="space-y-4 text-center">
+          <Building2 className="text-muted-foreground mx-auto h-16 w-16" />
           <div>
-            <h3 className="text-lg font-semibold mb-2">No Embassies Yet</h3>
-            <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              Establish embassies with other countries to unlock atomic synergies and diplomatic bonuses.
+            <h3 className="mb-2 text-lg font-semibold">No Embassies Yet</h3>
+            <p className="text-muted-foreground mx-auto max-w-md text-sm">
+              Establish embassies with other countries to unlock atomic synergies and diplomatic
+              bonuses.
             </p>
           </div>
           {isOwner && (
             <Button onClick={onEstablishEmbassy}>
-              <Building2 className="h-4 w-4 mr-2" />
+              <Building2 className="mr-2 h-4 w-4" />
               Establish First Embassy
             </Button>
           )}

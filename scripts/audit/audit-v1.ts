@@ -12,13 +12,13 @@
  * - Performance metrics
  */
 
-import { PrismaClient } from '@prisma/client';
-import { db } from '../../src/server/db';
+import { PrismaClient } from "@prisma/client";
+import { db } from "../../src/server/db";
 
 interface AuditResult {
   category: string;
   test: string;
-  status: 'PASS' | 'FAIL' | 'WARN' | 'SKIP';
+  status: "PASS" | "FAIL" | "WARN" | "SKIP";
   message?: string;
   details?: unknown;
 }
@@ -34,10 +34,10 @@ function log(result: AuditResult) {
   totalTests++;
 
   const icon = {
-    PASS: '✅',
-    FAIL: '❌',
-    WARN: '⚠️',
-    SKIP: '⏭️'
+    PASS: "✅",
+    FAIL: "❌",
+    WARN: "⚠️",
+    SKIP: "⏭️",
   }[result.status];
 
   console.log(`${icon} [${result.category}] ${result.test}`);
@@ -45,9 +45,9 @@ function log(result: AuditResult) {
     console.log(`   ${result.message}`);
   }
 
-  if (result.status === 'PASS') passedTests++;
-  if (result.status === 'FAIL') failedTests++;
-  if (result.status === 'WARN') warnings++;
+  if (result.status === "PASS") passedTests++;
+  if (result.status === "FAIL") failedTests++;
+  if (result.status === "WARN") warnings++;
 }
 
 // ====================
@@ -55,35 +55,35 @@ function log(result: AuditResult) {
 // ====================
 
 async function auditDatabase() {
-  console.log('\n📊 DATABASE VALIDATION\n');
+  console.log("\n📊 DATABASE VALIDATION\n");
 
   try {
     // Test database connection
     await db.$connect();
     log({
-      category: 'Database',
-      test: 'Connection',
-      status: 'PASS',
-      message: 'Successfully connected to database'
+      category: "Database",
+      test: "Connection",
+      status: "PASS",
+      message: "Successfully connected to database",
     });
   } catch (error) {
     log({
-      category: 'Database',
-      test: 'Connection',
-      status: 'FAIL',
-      message: `Failed to connect: ${error instanceof Error ? error.message : 'Unknown error'}`
+      category: "Database",
+      test: "Connection",
+      status: "FAIL",
+      message: `Failed to connect: ${error instanceof Error ? error.message : "Unknown error"}`,
     });
     return;
   }
 
   // Test critical tables exist and have data
   const criticalTables = [
-    { name: 'User', model: db.user },
-    { name: 'Country', model: db.country },
-    { name: 'GovernmentComponent', model: db.governmentComponent },
-    { name: 'IntelligenceAlert', model: db.intelligenceAlert },
-    { name: 'Embassy', model: db.embassy },
-    { name: 'EmbassyMission', model: db.embassyMission },
+    { name: "User", model: db.user },
+    { name: "Country", model: db.country },
+    { name: "GovernmentComponent", model: db.governmentComponent },
+    { name: "IntelligenceAlert", model: db.intelligenceAlert },
+    { name: "Embassy", model: db.embassy },
+    { name: "EmbassyMission", model: db.embassyMission },
   ];
 
   for (const table of criticalTables) {
@@ -91,18 +91,18 @@ async function auditDatabase() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const count = await (table.model as any).count();
       log({
-        category: 'Database',
+        category: "Database",
         test: `Table: ${table.name}`,
-        status: count > 0 ? 'PASS' : 'WARN',
+        status: count > 0 ? "PASS" : "WARN",
         message: `${count} records found`,
-        details: { count }
+        details: { count },
       });
     } catch (error) {
       log({
-        category: 'Database',
+        category: "Database",
         test: `Table: ${table.name}`,
-        status: 'FAIL',
-        message: `Error accessing table: ${error instanceof Error ? error.message : 'Unknown error'}`
+        status: "FAIL",
+        message: `Error accessing table: ${error instanceof Error ? error.message : "Unknown error"}`,
       });
     }
   }
@@ -113,30 +113,30 @@ async function auditDatabase() {
       include: {
         governmentComponents: true,
         user: true,
-      }
+      },
     });
 
     if (countryWithRelations) {
       log({
-        category: 'Database',
-        test: 'Foreign Key Relations',
-        status: 'PASS',
-        message: 'Country relationships properly configured'
+        category: "Database",
+        test: "Foreign Key Relations",
+        status: "PASS",
+        message: "Country relationships properly configured",
       });
     } else {
       log({
-        category: 'Database',
-        test: 'Foreign Key Relations',
-        status: 'WARN',
-        message: 'No test data with relationships found'
+        category: "Database",
+        test: "Foreign Key Relations",
+        status: "WARN",
+        message: "No test data with relationships found",
       });
     }
   } catch (error) {
     log({
-      category: 'Database',
-      test: 'Foreign Key Relations',
-      status: 'FAIL',
-      message: `Relationship error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      category: "Database",
+      test: "Foreign Key Relations",
+      status: "FAIL",
+      message: `Relationship error: ${error instanceof Error ? error.message : "Unknown error"}`,
     });
   }
 
@@ -148,27 +148,27 @@ async function auditDatabase() {
       where: {
         country: {
           id: {
-            not: undefined
-          }
-        }
-      }
+            not: undefined,
+          },
+        },
+      },
     });
 
     const orphanedCount = totalComponents - componentsWithValidCountry;
 
     log({
-      category: 'Database',
-      test: 'Data Integrity (Orphans)',
-      status: orphanedCount === 0 ? 'PASS' : 'WARN',
+      category: "Database",
+      test: "Data Integrity (Orphans)",
+      status: orphanedCount === 0 ? "PASS" : "WARN",
       message: `${orphanedCount} components with invalid country references`,
-      details: { orphanedCount, totalComponents, componentsWithValidCountry }
+      details: { orphanedCount, totalComponents, componentsWithValidCountry },
     });
   } catch (error) {
     log({
-      category: 'Database',
-      test: 'Data Integrity (Orphans)',
-      status: 'SKIP',
-      message: 'Referential integrity enforced by database constraints'
+      category: "Database",
+      test: "Data Integrity (Orphans)",
+      status: "SKIP",
+      message: "Referential integrity enforced by database constraints",
     });
   }
 
@@ -182,20 +182,21 @@ async function auditDatabase() {
     `;
 
     log({
-      category: 'Database',
-      test: 'Unique Constraints (User)',
-      status: duplicateUsers.length === 0 ? 'PASS' : 'FAIL',
-      message: duplicateUsers.length === 0
-        ? 'No duplicate clerkUserId values'
-        : `${duplicateUsers.length} duplicate clerkUserId values found`,
-      details: duplicateUsers.length > 0 ? duplicateUsers : undefined
+      category: "Database",
+      test: "Unique Constraints (User)",
+      status: duplicateUsers.length === 0 ? "PASS" : "FAIL",
+      message:
+        duplicateUsers.length === 0
+          ? "No duplicate clerkUserId values"
+          : `${duplicateUsers.length} duplicate clerkUserId values found`,
+      details: duplicateUsers.length > 0 ? duplicateUsers : undefined,
     });
   } catch (error) {
     log({
-      category: 'Database',
-      test: 'Unique Constraints (User)',
-      status: 'SKIP',
-      message: 'Query may not be compatible with current schema'
+      category: "Database",
+      test: "Unique Constraints (User)",
+      status: "SKIP",
+      message: "Query may not be compatible with current schema",
     });
   }
 }
@@ -205,77 +206,73 @@ async function auditDatabase() {
 // ====================
 
 async function auditAPISecurity() {
-  console.log('\n🔒 API SECURITY VALIDATION\n');
+  console.log("\n🔒 API SECURITY VALIDATION\n");
 
   // Check for exposed admin endpoints
   const adminEndpoints = [
-    'admin.getAllUsers',
-    'admin.deleteUser',
-    'admin.updateUserRole',
-    'country.deleteCountry',
-    'eci.createDirective',
-    'sdi.createInitiative',
+    "admin.getAllUsers",
+    "admin.deleteUser",
+    "admin.updateUserRole",
+    "country.deleteCountry",
+    "eci.createDirective",
+    "sdi.createInitiative",
   ];
 
   for (const endpoint of adminEndpoints) {
     // This is a structural check - actual runtime testing would require server running
     log({
-      category: 'API Security',
+      category: "API Security",
       test: `Admin Endpoint: ${endpoint}`,
-      status: 'PASS',
-      message: 'Endpoint exists in router definition (manual verification required)'
+      status: "PASS",
+      message: "Endpoint exists in router definition (manual verification required)",
     });
   }
 
   // Validate authentication middleware
-  const authRequiredPaths = [
-    '/api/trpc',
-    '/mycountry',
-    '/dashboard',
-  ];
+  const authRequiredPaths = ["/api/trpc", "/mycountry", "/dashboard"];
 
   log({
-    category: 'API Security',
-    test: 'Authentication Middleware',
-    status: 'PASS',
-    message: `${authRequiredPaths.length} protected paths identified`
+    category: "API Security",
+    test: "Authentication Middleware",
+    status: "PASS",
+    message: `${authRequiredPaths.length} protected paths identified`,
   });
 
   // Check for rate limiting configuration
-  const hasRateLimiting = process.env.ENABLE_RATE_LIMITING === 'true';
+  const hasRateLimiting = process.env.ENABLE_RATE_LIMITING === "true";
   log({
-    category: 'API Security',
-    test: 'Rate Limiting',
-    status: hasRateLimiting ? 'PASS' : 'WARN',
+    category: "API Security",
+    test: "Rate Limiting",
+    status: hasRateLimiting ? "PASS" : "WARN",
     message: hasRateLimiting
-      ? 'Rate limiting enabled'
-      : 'Rate limiting not enabled (in-memory fallback active)'
+      ? "Rate limiting enabled"
+      : "Rate limiting not enabled (in-memory fallback active)",
   });
 
   // Check for CSRF protection
   log({
-    category: 'API Security',
-    test: 'CSRF Protection',
-    status: 'PASS',
-    message: 'tRPC provides built-in CSRF protection'
+    category: "API Security",
+    test: "CSRF Protection",
+    status: "PASS",
+    message: "tRPC provides built-in CSRF protection",
   });
 
   // Validate audit logging
   try {
-    const auditLogCount = await db.auditLog?.count() ?? 0;
+    const auditLogCount = (await db.auditLog?.count()) ?? 0;
     log({
-      category: 'API Security',
-      test: 'Audit Logging',
-      status: auditLogCount > 0 ? 'PASS' : 'WARN',
+      category: "API Security",
+      test: "Audit Logging",
+      status: auditLogCount > 0 ? "PASS" : "WARN",
       message: `${auditLogCount} audit log entries found`,
-      details: { auditLogCount }
+      details: { auditLogCount },
     });
   } catch (error) {
     log({
-      category: 'API Security',
-      test: 'Audit Logging',
-      status: 'WARN',
-      message: 'AuditLog table may not exist in schema'
+      category: "API Security",
+      test: "Audit Logging",
+      status: "WARN",
+      message: "AuditLog table may not exist in schema",
     });
   }
 }
@@ -285,76 +282,76 @@ async function auditAPISecurity() {
 // ====================
 
 async function auditAuthentication() {
-  console.log('\n🔑 AUTHENTICATION VALIDATION\n');
+  console.log("\n🔑 AUTHENTICATION VALIDATION\n");
 
   // Check Clerk configuration
   const hasClerkKeys = !!(
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-    process.env.CLERK_SECRET_KEY
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY
   );
 
   log({
-    category: 'Authentication',
-    test: 'Clerk Configuration',
-    status: hasClerkKeys ? 'PASS' : 'WARN',
+    category: "Authentication",
+    test: "Clerk Configuration",
+    status: hasClerkKeys ? "PASS" : "WARN",
     message: hasClerkKeys
-      ? 'Clerk API keys configured'
-      : 'Missing Clerk keys (demo mode may be active)'
+      ? "Clerk API keys configured"
+      : "Missing Clerk keys (demo mode may be active)",
   });
 
   // Validate role-based access control
-  const roleHierarchy = ['USER', 'ADMIN', 'SUPERADMIN'];
+  const roleHierarchy = ["USER", "ADMIN", "SUPERADMIN"];
   log({
-    category: 'Authentication',
-    test: 'RBAC Configuration',
-    status: 'PASS',
-    message: `${roleHierarchy.length} roles defined: ${roleHierarchy.join(', ')}`
+    category: "Authentication",
+    test: "RBAC Configuration",
+    status: "PASS",
+    message: `${roleHierarchy.length} roles defined: ${roleHierarchy.join(", ")}`,
   });
 
   // Check for test users in production
-  const isProduction = process.env.NODE_ENV === 'production';
+  const isProduction = process.env.NODE_ENV === "production";
   if (isProduction) {
     try {
       const testUsers = await db.user.count({
         where: {
           clerkUserId: {
-            contains: 'test'
-          }
-        }
+            contains: "test",
+          },
+        },
       });
 
       log({
-        category: 'Authentication',
-        test: 'Production User Validation',
-        status: testUsers === 0 ? 'PASS' : 'WARN',
-        message: testUsers === 0
-          ? 'No test users found'
-          : `${testUsers} potential test users found in production`,
-        details: testUsers > 0 ? { testUsers } : undefined
+        category: "Authentication",
+        test: "Production User Validation",
+        status: testUsers === 0 ? "PASS" : "WARN",
+        message:
+          testUsers === 0
+            ? "No test users found"
+            : `${testUsers} potential test users found in production`,
+        details: testUsers > 0 ? { testUsers } : undefined,
       });
     } catch (error) {
       log({
-        category: 'Authentication',
-        test: 'Production User Validation',
-        status: 'SKIP',
-        message: 'Unable to query users'
+        category: "Authentication",
+        test: "Production User Validation",
+        status: "SKIP",
+        message: "Unable to query users",
       });
     }
   } else {
     log({
-      category: 'Authentication',
-      test: 'Production User Validation',
-      status: 'SKIP',
-      message: 'Not in production environment'
+      category: "Authentication",
+      test: "Production User Validation",
+      status: "SKIP",
+      message: "Not in production environment",
     });
   }
 
   // Validate session management
   log({
-    category: 'Authentication',
-    test: 'Session Management',
-    status: 'PASS',
-    message: 'Clerk handles session management with JWT tokens'
+    category: "Authentication",
+    test: "Session Management",
+    status: "PASS",
+    message: "Clerk handles session management with JWT tokens",
   });
 }
 
@@ -363,16 +360,16 @@ async function auditAuthentication() {
 // ====================
 
 async function auditEconomicCalculations() {
-  console.log('\n💰 ECONOMIC CALCULATION VALIDATION\n');
+  console.log("\n💰 ECONOMIC CALCULATION VALIDATION\n");
 
   try {
     // Validate GDP calculation logic using Country model fields
     const sampleCountry = await db.country.findFirst({
       where: {
         currentPopulation: {
-          gt: 0
-        }
-      }
+          gt: 0,
+        },
+      },
     });
 
     if (sampleCountry) {
@@ -380,65 +377,65 @@ async function auditEconomicCalculations() {
       const calculatedGDP = currentPopulation * currentGdpPerCapita;
 
       log({
-        category: 'Economic Calculations',
-        test: 'GDP Calculation',
-        status: Math.abs(calculatedGDP - currentTotalGdp) < 1000 ? 'PASS' : 'WARN',
+        category: "Economic Calculations",
+        test: "GDP Calculation",
+        status: Math.abs(calculatedGDP - currentTotalGdp) < 1000 ? "PASS" : "WARN",
         message: `Calculated: $${calculatedGDP.toLocaleString()} vs Stored: $${currentTotalGdp.toLocaleString()}`,
-        details: { currentPopulation, currentGdpPerCapita, calculatedGDP, currentTotalGdp }
+        details: { currentPopulation, currentGdpPerCapita, calculatedGDP, currentTotalGdp },
       });
     } else {
       log({
-        category: 'Economic Calculations',
-        test: 'GDP Calculation',
-        status: 'SKIP',
-        message: 'No country data available for testing'
+        category: "Economic Calculations",
+        test: "GDP Calculation",
+        status: "SKIP",
+        message: "No country data available for testing",
       });
     }
 
     // Validate tier-based growth modeling
-    const tiers = ['EMERGING', 'DEVELOPING', 'DEVELOPED', 'ADVANCED'];
+    const tiers = ["EMERGING", "DEVELOPING", "DEVELOPED", "ADVANCED"];
     log({
-      category: 'Economic Calculations',
-      test: 'Tier-Based Modeling',
-      status: 'PASS',
-      message: `${tiers.length} economic tiers configured`
+      category: "Economic Calculations",
+      test: "Tier-Based Modeling",
+      status: "PASS",
+      message: `${tiers.length} economic tiers configured`,
     });
 
     // Check for negative economic values in Country model
     const negativeGDP = await db.country.count({
       where: {
         currentGdpPerCapita: {
-          lt: 0
-        }
-      }
+          lt: 0,
+        },
+      },
     });
 
     log({
-      category: 'Economic Calculations',
-      test: 'Data Validation (Negative Values)',
-      status: negativeGDP === 0 ? 'PASS' : 'WARN',
-      message: negativeGDP === 0
-        ? 'No negative GDP values found'
-        : `${negativeGDP} records with negative GDP`,
-      details: negativeGDP > 0 ? { negativeGDP } : undefined
+      category: "Economic Calculations",
+      test: "Data Validation (Negative Values)",
+      status: negativeGDP === 0 ? "PASS" : "WARN",
+      message:
+        negativeGDP === 0
+          ? "No negative GDP values found"
+          : `${negativeGDP} records with negative GDP`,
+      details: negativeGDP > 0 ? { negativeGDP } : undefined,
     });
 
     // Validate historical tracking
-    const historicalRecords = await db.historicalDataPoint?.count() ?? 0;
+    const historicalRecords = (await db.historicalDataPoint?.count()) ?? 0;
     log({
-      category: 'Economic Calculations',
-      test: 'Historical Tracking',
-      status: historicalRecords > 0 ? 'PASS' : 'WARN',
+      category: "Economic Calculations",
+      test: "Historical Tracking",
+      status: historicalRecords > 0 ? "PASS" : "WARN",
       message: `${historicalRecords} historical data points found`,
-      details: { historicalRecords }
+      details: { historicalRecords },
     });
-
   } catch (error) {
     log({
-      category: 'Economic Calculations',
-      test: 'Economic System',
-      status: 'FAIL',
-      message: `Error during economic validation: ${error instanceof Error ? error.message : 'Unknown error'}`
+      category: "Economic Calculations",
+      test: "Economic System",
+      status: "FAIL",
+      message: `Error during economic validation: ${error instanceof Error ? error.message : "Unknown error"}`,
     });
   }
 }
@@ -448,62 +445,58 @@ async function auditEconomicCalculations() {
 // ====================
 
 async function auditExternalIntegrations() {
-  console.log('\n🌐 EXTERNAL INTEGRATION VALIDATION\n');
+  console.log("\n🌐 EXTERNAL INTEGRATION VALIDATION\n");
 
   // IxWiki API
-  const ixwikiApiUrl = process.env.IXWIKI_API_URL || 'https://iiwiki.com/mediawiki/api.php';
+  const ixwikiApiUrl = process.env.IXWIKI_API_URL || "https://iiwiki.com/mediawiki/api.php";
   log({
-    category: 'External Integrations',
-    test: 'IxWiki API Configuration',
-    status: 'PASS',
-    message: `API URL: ${ixwikiApiUrl}`
+    category: "External Integrations",
+    test: "IxWiki API Configuration",
+    status: "PASS",
+    message: `API URL: ${ixwikiApiUrl}`,
   });
 
   // Discord Bot Sync
   const discordWebhookUrl = process.env.DISCORD_WEBHOOK_URL;
   log({
-    category: 'External Integrations',
-    test: 'Discord Bot Integration',
-    status: discordWebhookUrl ? 'PASS' : 'WARN',
-    message: discordWebhookUrl
-      ? 'Discord webhook configured'
-      : 'Discord webhook not configured'
+    category: "External Integrations",
+    test: "Discord Bot Integration",
+    status: discordWebhookUrl ? "PASS" : "WARN",
+    message: discordWebhookUrl ? "Discord webhook configured" : "Discord webhook not configured",
   });
 
   // Flag Service
   const flagServiceUrl = process.env.FLAG_SERVICE_URL;
   log({
-    category: 'External Integrations',
-    test: 'Flag Service',
-    status: flagServiceUrl ? 'PASS' : 'WARN',
-    message: flagServiceUrl
-      ? `Flag service: ${flagServiceUrl}`
-      : 'Using default flag service'
+    category: "External Integrations",
+    test: "Flag Service",
+    status: flagServiceUrl ? "PASS" : "WARN",
+    message: flagServiceUrl ? `Flag service: ${flagServiceUrl}` : "Using default flag service",
   });
 
   // IxTime Synchronization
   try {
-    const { IxTime } = await import('../../src/lib/ixtime');
+    const { IxTime } = await import("../../src/lib/ixtime");
     const currentIxTimeMs = IxTime.getCurrentIxTime();
     const currentIxTimeDate = new Date(currentIxTimeMs);
 
     log({
-      category: 'External Integrations',
-      test: 'IxTime Synchronization',
-      status: 'PASS',
-      message: `Current IxTime: ${currentIxTimeDate.toISOString().split('T')[0]}`,
+      category: "External Integrations",
+      test: "IxTime Synchronization",
+      status: "PASS",
+      message: `Current IxTime: ${currentIxTimeDate.toISOString().split("T")[0]}`,
       details: {
         timestamp: currentIxTimeMs,
         date: currentIxTimeDate.toISOString(),
-        multiplier: IxTime.getDefaultMultiplier()
-      }
+        multiplier: IxTime.getDefaultMultiplier(),
+      },
     });
   } catch (error) {
     log({
-      category: 'External Integrations',
-      test: 'IxTime Synchronization',
-      status: 'FAIL',
-      message: `IxTime error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      category: "External Integrations",
+      test: "IxTime Synchronization",
+      status: "FAIL",
+      message: `IxTime error: ${error instanceof Error ? error.message : "Unknown error"}`,
     });
   }
 }
@@ -513,49 +506,49 @@ async function auditExternalIntegrations() {
 // ====================
 
 async function auditUIComponents() {
-  console.log('\n🎨 UI COMPONENT VALIDATION\n');
+  console.log("\n🎨 UI COMPONENT VALIDATION\n");
 
   // Glass physics system
-  const glassDepthLevels = ['parent', 'child', 'interactive', 'modal'];
+  const glassDepthLevels = ["parent", "child", "interactive", "modal"];
   log({
-    category: 'UI Components',
-    test: 'Glass Physics System',
-    status: 'PASS',
-    message: `${glassDepthLevels.length} depth levels defined`
+    category: "UI Components",
+    test: "Glass Physics System",
+    status: "PASS",
+    message: `${glassDepthLevels.length} depth levels defined`,
   });
 
   // Theme system
-  const themes = ['MyCountry', 'Global', 'ECI', 'SDI', 'Defense'];
+  const themes = ["MyCountry", "Global", "ECI", "SDI", "Defense"];
   log({
-    category: 'UI Components',
-    test: 'Theme System',
-    status: 'PASS',
-    message: `${themes.length} section themes configured`
+    category: "UI Components",
+    test: "Theme System",
+    status: "PASS",
+    message: `${themes.length} section themes configured`,
   });
 
   // Accessibility
   log({
-    category: 'UI Components',
-    test: 'Accessibility (WCAG 2.1)',
-    status: 'PASS',
-    message: 'Focus indicators and ARIA labels implemented (manual verification required)'
+    category: "UI Components",
+    test: "Accessibility (WCAG 2.1)",
+    status: "PASS",
+    message: "Focus indicators and ARIA labels implemented (manual verification required)",
   });
 
   // Responsive design
-  const breakpoints = ['sm', 'md', 'lg', 'xl', '2xl'];
+  const breakpoints = ["sm", "md", "lg", "xl", "2xl"];
   log({
-    category: 'UI Components',
-    test: 'Responsive Design',
-    status: 'PASS',
-    message: `${breakpoints.length} breakpoints configured`
+    category: "UI Components",
+    test: "Responsive Design",
+    status: "PASS",
+    message: `${breakpoints.length} breakpoints configured`,
   });
 
   // Component library size
   log({
-    category: 'UI Components',
-    test: 'Component Library',
-    status: 'PASS',
-    message: '100+ UI components available'
+    category: "UI Components",
+    test: "Component Library",
+    status: "PASS",
+    message: "100+ UI components available",
   });
 }
 
@@ -564,7 +557,7 @@ async function auditUIComponents() {
 // ====================
 
 async function auditPerformance() {
-  console.log('\n⚡ PERFORMANCE VALIDATION\n');
+  console.log("\n⚡ PERFORMANCE VALIDATION\n");
 
   // Database query performance
   const startTime = Date.now();
@@ -573,46 +566,44 @@ async function auditPerformance() {
     const queryTime = Date.now() - startTime;
 
     log({
-      category: 'Performance',
-      test: 'Database Query Speed',
-      status: queryTime < 100 ? 'PASS' : 'WARN',
+      category: "Performance",
+      test: "Database Query Speed",
+      status: queryTime < 100 ? "PASS" : "WARN",
       message: `Query completed in ${queryTime}ms`,
-      details: { queryTime }
+      details: { queryTime },
     });
   } catch (error) {
     log({
-      category: 'Performance',
-      test: 'Database Query Speed',
-      status: 'FAIL',
-      message: `Query failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      category: "Performance",
+      test: "Database Query Speed",
+      status: "FAIL",
+      message: `Query failed: ${error instanceof Error ? error.message : "Unknown error"}`,
     });
   }
 
   // React optimization patterns
   log({
-    category: 'Performance',
-    test: 'React Optimization',
-    status: 'PASS',
-    message: 'React.memo, useMemo, useCallback patterns implemented'
+    category: "Performance",
+    test: "React Optimization",
+    status: "PASS",
+    message: "React.memo, useMemo, useCallback patterns implemented",
   });
 
   // Bundle size (estimated)
   log({
-    category: 'Performance',
-    test: 'Bundle Size',
-    status: 'PASS',
-    message: 'Dynamic imports and code splitting implemented (run build for exact size)'
+    category: "Performance",
+    test: "Bundle Size",
+    status: "PASS",
+    message: "Dynamic imports and code splitting implemented (run build for exact size)",
   });
 
   // Caching strategy
-  const hasCaching = process.env.ENABLE_QUERY_CACHE !== 'false';
+  const hasCaching = process.env.ENABLE_QUERY_CACHE !== "false";
   log({
-    category: 'Performance',
-    test: 'Caching Strategy',
-    status: hasCaching ? 'PASS' : 'WARN',
-    message: hasCaching
-      ? 'tRPC query caching enabled'
-      : 'Query caching disabled'
+    category: "Performance",
+    test: "Caching Strategy",
+    status: hasCaching ? "PASS" : "WARN",
+    message: hasCaching ? "tRPC query caching enabled" : "Query caching disabled",
   });
 }
 
@@ -621,10 +612,10 @@ async function auditPerformance() {
 // ====================
 
 async function runAudit() {
-  console.log('╔════════════════════════════════════════╗');
-  console.log('║  IxStats V1 Production Audit Script   ║');
-  console.log('╚════════════════════════════════════════╝\n');
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log("╔════════════════════════════════════════╗");
+  console.log("║  IxStats V1 Production Audit Script   ║");
+  console.log("╚════════════════════════════════════════╝\n");
+  console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`Timestamp: ${new Date().toISOString()}\n`);
 
   try {
@@ -637,9 +628,9 @@ async function runAudit() {
     await auditPerformance();
 
     // Generate summary report
-    console.log('\n╔════════════════════════════════════════╗');
-    console.log('║           AUDIT SUMMARY                ║');
-    console.log('╚════════════════════════════════════════╝\n');
+    console.log("\n╔════════════════════════════════════════╗");
+    console.log("║           AUDIT SUMMARY                ║");
+    console.log("╚════════════════════════════════════════╝\n");
 
     const passRate = ((passedTests / totalTests) * 100).toFixed(1);
     console.log(`Total Tests: ${totalTests}`);
@@ -651,59 +642,65 @@ async function runAudit() {
     // Production readiness assessment
     const isProductionReady = failedTests === 0 && warnings < 5;
     if (isProductionReady) {
-      console.log('✅ PRODUCTION READY - All critical systems operational\n');
+      console.log("✅ PRODUCTION READY - All critical systems operational\n");
     } else {
-      console.log('⚠️  REVIEW REQUIRED - Address failures and warnings before production deployment\n');
+      console.log(
+        "⚠️  REVIEW REQUIRED - Address failures and warnings before production deployment\n"
+      );
     }
 
     // Category breakdown
-    const categories = [...new Set(results.map(r => r.category))];
-    console.log('Category Breakdown:');
+    const categories = [...new Set(results.map((r) => r.category))];
+    console.log("Category Breakdown:");
     for (const category of categories) {
-      const categoryResults = results.filter(r => r.category === category);
-      const categoryPassed = categoryResults.filter(r => r.status === 'PASS').length;
+      const categoryResults = results.filter((r) => r.category === category);
+      const categoryPassed = categoryResults.filter((r) => r.status === "PASS").length;
       const categoryTotal = categoryResults.length;
       console.log(`  ${category}: ${categoryPassed}/${categoryTotal} passed`);
     }
 
     // Export detailed results
-    const reportPath = `./audit-results-${new Date().toISOString().split('T')[0]}.json`;
-    const fs = await import('fs/promises');
+    const reportPath = `./audit-results-${new Date().toISOString().split("T")[0]}.json`;
+    const fs = await import("fs/promises");
     await fs.writeFile(
       reportPath,
-      JSON.stringify({
-        timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV,
-        summary: {
-          total: totalTests,
-          passed: passedTests,
-          failed: failedTests,
-          warnings,
-          passRate: parseFloat(passRate),
-          productionReady: isProductionReady
+      JSON.stringify(
+        {
+          timestamp: new Date().toISOString(),
+          environment: process.env.NODE_ENV,
+          summary: {
+            total: totalTests,
+            passed: passedTests,
+            failed: failedTests,
+            warnings,
+            passRate: parseFloat(passRate),
+            productionReady: isProductionReady,
+          },
+          results,
         },
-        results
-      }, null, 2)
+        null,
+        2
+      )
     );
 
     console.log(`\n📄 Detailed report saved to: ${reportPath}\n`);
 
     // Additionally, emit a concise issues JSON for failures/unwired/not-for-prod
     try {
-      const issuesDir = 'scripts/audit/reports';
+      const issuesDir = "scripts/audit/reports";
       await fs.mkdir(issuesDir, { recursive: true });
-      const failures = results.filter(r => r.status === 'FAIL');
-      const warns = results.filter(r => r.status === 'WARN');
+      const failures = results.filter((r) => r.status === "FAIL");
+      const warns = results.filter((r) => r.status === "WARN");
 
       // Try to load latest tRPC wiring audit to include unwired models and CRUD gaps (optional)
       let unwiredModels: string[] | undefined;
       let modelsMissingOps: Array<{ model: string; missingOperations: string[] }> | undefined;
       try {
-        const dirents = await fs.readdir('.', { withFileTypes: true });
+        const dirents = await fs.readdir(".", { withFileTypes: true });
         const candidates = await Promise.all(
           dirents
-            .filter(d => d.isFile() && /^audit-results-\d{4}-\d{2}-\d{2}\.json$/.test(d.name))
-            .map(async d => {
+            .filter((d) => d.isFile() && /^audit-results-\d{4}-\d{2}-\d{2}\.json$/.test(d.name))
+            .map(async (d) => {
               const stat = await fs.stat(d.name);
               return { name: d.name, mtimeMs: stat.mtimeMs };
             })
@@ -711,14 +708,16 @@ async function runAudit() {
         candidates.sort((a, b) => b.mtimeMs - a.mtimeMs);
         for (const cand of candidates) {
           try {
-            const raw = await fs.readFile(cand.name, 'utf-8');
+            const raw = await fs.readFile(cand.name, "utf-8");
             const parsed = JSON.parse(raw);
             if (parsed && Array.isArray(parsed.unusedModels)) {
               unwiredModels = parsed.unusedModels as string[];
               if (Array.isArray(parsed.coverage)) {
                 modelsMissingOps = (parsed.coverage as any[])
-                  .filter(c => Array.isArray(c.missingOperations) && c.missingOperations.length > 0)
-                  .map(c => ({ model: c.model, missingOperations: c.missingOperations }));
+                  .filter(
+                    (c) => Array.isArray(c.missingOperations) && c.missingOperations.length > 0
+                  )
+                  .map((c) => ({ model: c.model, missingOperations: c.missingOperations }));
               }
               break;
             }
@@ -741,17 +740,19 @@ async function runAudit() {
         modelsMissingOps,
       };
 
-      const issuesPath = `${issuesDir}/prod-issues-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      const issuesPath = `${issuesDir}/prod-issues-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
       await fs.writeFile(issuesPath, JSON.stringify(issuesPayload, null, 2));
       console.log(`🧾 Issues summary saved to: ${issuesPath}`);
     } catch (issuesErr) {
-      console.warn('⚠️  Failed to write issues summary JSON:', issuesErr instanceof Error ? issuesErr.message : issuesErr);
+      console.warn(
+        "⚠️  Failed to write issues summary JSON:",
+        issuesErr instanceof Error ? issuesErr.message : issuesErr
+      );
     }
 
     process.exit(failedTests > 0 ? 1 : 0);
-
   } catch (error) {
-    console.error('\n❌ AUDIT FAILED WITH CRITICAL ERROR:\n');
+    console.error("\n❌ AUDIT FAILED WITH CRITICAL ERROR:\n");
     console.error(error);
     process.exit(1);
   } finally {

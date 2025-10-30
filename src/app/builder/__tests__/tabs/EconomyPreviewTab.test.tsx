@@ -2,13 +2,13 @@
  * Tests for EconomyPreviewTab Component
  */
 
-import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { EconomyPreviewTab } from '../../components/enhanced/tabs/EconomyPreviewTab';
-import { mockEconomyBuilder, mockAtomicComponents } from '../fixtures';
-import type { EconomyBuilderState } from '~/types/economy-builder';
+import React from "react";
+import { render, screen } from "@testing-library/react";
+import { EconomyPreviewTab } from "../../components/enhanced/tabs/EconomyPreviewTab";
+import { mockEconomyBuilder, mockAtomicComponents } from "../fixtures";
+import type { EconomyBuilderState } from "~/types/economy-builder";
 
-describe('EconomyPreviewTab', () => {
+describe("EconomyPreviewTab", () => {
   const mockOnChange = jest.fn();
 
   const defaultProps = {
@@ -22,35 +22,35 @@ describe('EconomyPreviewTab', () => {
     mockOnChange.mockClear();
   });
 
-  describe('Rendering', () => {
-    it('renders the preview tab', () => {
+  describe("Rendering", () => {
+    it("renders the preview tab", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
       expect(document.body).toBeInTheDocument();
     });
 
-    it('displays economy summary', () => {
+    it("displays economy summary", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
       expect(document.body).toBeInTheDocument();
     });
   });
 
-  describe('Effectiveness Score', () => {
-    it('calculates overall effectiveness score', () => {
+  describe("Effectiveness Score", () => {
+    it("calculates overall effectiveness score", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
       // Score should be calculated based on multiple factors
       expect(document.body).toBeInTheDocument();
     });
 
-    it('displays effectiveness as percentage', () => {
+    it("displays effectiveness as percentage", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
       expect(document.body).toBeInTheDocument();
     });
 
-    it('updates score when economy changes', () => {
+    it("updates score when economy changes", () => {
       const { rerender } = render(<EconomyPreviewTab {...defaultProps} />);
 
       const updatedBuilder: EconomyBuilderState = {
@@ -63,77 +63,62 @@ describe('EconomyPreviewTab', () => {
         ],
       };
 
-      rerender(
-        <EconomyPreviewTab
-          {...defaultProps}
-          economyBuilder={updatedBuilder}
-        />
-      );
+      rerender(<EconomyPreviewTab {...defaultProps} economyBuilder={updatedBuilder} />);
 
       expect(document.body).toBeInTheDocument();
     });
   });
 
-  describe('Validation Errors Display', () => {
-    it('shows no errors when economy is valid', () => {
+  describe("Validation Errors Display", () => {
+    it("shows no errors when economy is valid", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
       expect(mockEconomyBuilder.isValid).toBe(true);
     });
 
-    it('displays validation errors when present', () => {
+    it("displays validation errors when present", () => {
       const invalidBuilder: EconomyBuilderState = {
         ...mockEconomyBuilder,
         isValid: false,
         errors: {
-          sectors: { '0': ['GDP contribution exceeds 100%'] },
+          sectors: { "0": ["GDP contribution exceeds 100%"] },
         },
         validation: {
-          errors: ['Total sector GDP exceeds 100%'],
+          errors: ["Total sector GDP exceeds 100%"],
           warnings: [],
           isValid: false,
         },
       };
 
-      render(
-        <EconomyPreviewTab
-          {...defaultProps}
-          economyBuilder={invalidBuilder}
-        />
-      );
+      render(<EconomyPreviewTab {...defaultProps} economyBuilder={invalidBuilder} />);
 
       expect(document.body).toBeInTheDocument();
     });
 
-    it('displays validation warnings', () => {
+    it("displays validation warnings", () => {
       const builderWithWarnings: EconomyBuilderState = {
         ...mockEconomyBuilder,
         validation: {
           errors: [],
-          warnings: ['Low productivity in agriculture sector'],
+          warnings: ["Low productivity in agriculture sector"],
           isValid: true,
         },
       };
 
-      render(
-        <EconomyPreviewTab
-          {...defaultProps}
-          economyBuilder={builderWithWarnings}
-        />
-      );
+      render(<EconomyPreviewTab {...defaultProps} economyBuilder={builderWithWarnings} />);
 
       expect(document.body).toBeInTheDocument();
     });
   });
 
-  describe('Sector Summaries', () => {
-    it('displays summary for each sector', () => {
+  describe("Sector Summaries", () => {
+    it("displays summary for each sector", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
       expect(mockEconomyBuilder.sectors.length).toBe(3);
     });
 
-    it('shows sector GDP contributions', () => {
+    it("shows sector GDP contributions", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
       mockEconomyBuilder.sectors.forEach((sector) => {
@@ -141,7 +126,7 @@ describe('EconomyPreviewTab', () => {
       });
     });
 
-    it('shows sector employment shares', () => {
+    it("shows sector employment shares", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
       mockEconomyBuilder.sectors.forEach((sector) => {
@@ -149,7 +134,7 @@ describe('EconomyPreviewTab', () => {
       });
     });
 
-    it('highlights problematic sectors', () => {
+    it("highlights problematic sectors", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
       // Should identify low-performing sectors
@@ -157,20 +142,20 @@ describe('EconomyPreviewTab', () => {
     });
   });
 
-  describe('Atomic Component Summary', () => {
-    it('lists selected atomic components', () => {
+  describe("Atomic Component Summary", () => {
+    it("lists selected atomic components", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
       expect(mockAtomicComponents.length).toBeGreaterThan(0);
     });
 
-    it('shows component impacts', () => {
+    it("shows component impacts", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
       expect(document.body).toBeInTheDocument();
     });
 
-    it('calculates synergy score', () => {
+    it("calculates synergy score", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
       // Synergy between components
@@ -178,29 +163,29 @@ describe('EconomyPreviewTab', () => {
     });
   });
 
-  describe('Labor Market Summary', () => {
-    it('displays key labor metrics', () => {
+  describe("Labor Market Summary", () => {
+    it("displays key labor metrics", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
       expect(mockEconomyBuilder.laborMarket.employmentRate).toBe(94);
       expect(mockEconomyBuilder.laborMarket.unemploymentRate).toBe(6);
     });
 
-    it('shows workforce size', () => {
+    it("shows workforce size", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
       expect(mockEconomyBuilder.laborMarket.totalWorkforce).toBe(6500000);
     });
   });
 
-  describe('Demographics Summary', () => {
-    it('displays population metrics', () => {
+  describe("Demographics Summary", () => {
+    it("displays population metrics", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
       expect(mockEconomyBuilder.demographics.totalPopulation).toBe(10000000);
     });
 
-    it('shows age distribution summary', () => {
+    it("shows age distribution summary", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
       const ageDistribution = mockEconomyBuilder.demographics.ageDistribution;
@@ -209,31 +194,30 @@ describe('EconomyPreviewTab', () => {
     });
   });
 
-  describe('Economic Health Indicators', () => {
-    it('calculates GDP per capita', () => {
+  describe("Economic Health Indicators", () => {
+    it("calculates GDP per capita", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
       const gdpPerCapita =
-        mockEconomyBuilder.structure.totalGDP /
-        mockEconomyBuilder.demographics.totalPopulation;
+        mockEconomyBuilder.structure.totalGDP / mockEconomyBuilder.demographics.totalPopulation;
       expect(gdpPerCapita).toBeGreaterThan(0);
     });
 
-    it('displays economic tier', () => {
+    it("displays economic tier", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
-      expect(mockEconomyBuilder.structure.economicTier).toBe('Developed');
+      expect(mockEconomyBuilder.structure.economicTier).toBe("Developed");
     });
 
-    it('shows growth strategy', () => {
+    it("shows growth strategy", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
-      expect(mockEconomyBuilder.structure.growthStrategy).toBe('Balanced');
+      expect(mockEconomyBuilder.structure.growthStrategy).toBe("Balanced");
     });
   });
 
-  describe('Reactive Updates', () => {
-    it('updates when sectors change', () => {
+  describe("Reactive Updates", () => {
+    it("updates when sectors change", () => {
       const { rerender } = render(<EconomyPreviewTab {...defaultProps} />);
 
       const updatedBuilder: EconomyBuilderState = {
@@ -246,17 +230,12 @@ describe('EconomyPreviewTab', () => {
         ],
       };
 
-      rerender(
-        <EconomyPreviewTab
-          {...defaultProps}
-          economyBuilder={updatedBuilder}
-        />
-      );
+      rerender(<EconomyPreviewTab {...defaultProps} economyBuilder={updatedBuilder} />);
 
       expect(document.body).toBeInTheDocument();
     });
 
-    it('updates when labor market changes', () => {
+    it("updates when labor market changes", () => {
       const { rerender } = render(<EconomyPreviewTab {...defaultProps} />);
 
       const updatedBuilder: EconomyBuilderState = {
@@ -268,17 +247,12 @@ describe('EconomyPreviewTab', () => {
         },
       };
 
-      rerender(
-        <EconomyPreviewTab
-          {...defaultProps}
-          economyBuilder={updatedBuilder}
-        />
-      );
+      rerender(<EconomyPreviewTab {...defaultProps} economyBuilder={updatedBuilder} />);
 
       expect(document.body).toBeInTheDocument();
     });
 
-    it('updates when demographics change', () => {
+    it("updates when demographics change", () => {
       const { rerender } = render(<EconomyPreviewTab {...defaultProps} />);
 
       const updatedBuilder: EconomyBuilderState = {
@@ -289,23 +263,18 @@ describe('EconomyPreviewTab', () => {
         },
       };
 
-      rerender(
-        <EconomyPreviewTab
-          {...defaultProps}
-          economyBuilder={updatedBuilder}
-        />
-      );
+      rerender(<EconomyPreviewTab {...defaultProps} economyBuilder={updatedBuilder} />);
 
       expect(document.body).toBeInTheDocument();
     });
 
-    it('updates when components change', () => {
+    it("updates when components change", () => {
       const { rerender } = render(<EconomyPreviewTab {...defaultProps} />);
 
       rerender(
         <EconomyPreviewTab
           {...defaultProps}
-          selectedComponents={[...mockAtomicComponents, 'free-trade-zone']}
+          selectedComponents={[...mockAtomicComponents, "free-trade-zone"]}
         />
       );
 
@@ -313,32 +282,27 @@ describe('EconomyPreviewTab', () => {
     });
   });
 
-  describe('Completeness Indicators', () => {
-    it('shows configuration completeness percentage', () => {
+  describe("Completeness Indicators", () => {
+    it("shows configuration completeness percentage", () => {
       render(<EconomyPreviewTab {...defaultProps} />);
 
       expect(document.body).toBeInTheDocument();
     });
 
-    it('identifies missing required fields', () => {
+    it("identifies missing required fields", () => {
       const incompleteBuilder: EconomyBuilderState = {
         ...mockEconomyBuilder,
         sectors: [],
       };
 
-      render(
-        <EconomyPreviewTab
-          {...defaultProps}
-          economyBuilder={incompleteBuilder}
-        />
-      );
+      render(<EconomyPreviewTab {...defaultProps} economyBuilder={incompleteBuilder} />);
 
       expect(document.body).toBeInTheDocument();
     });
   });
 
-  describe('Performance', () => {
-    it('memoizes effectiveness calculations', () => {
+  describe("Performance", () => {
+    it("memoizes effectiveness calculations", () => {
       const { rerender } = render(<EconomyPreviewTab {...defaultProps} />);
 
       rerender(<EconomyPreviewTab {...defaultProps} />);
@@ -346,7 +310,7 @@ describe('EconomyPreviewTab', () => {
       expect(document.body).toBeInTheDocument();
     });
 
-    it('handles complex calculations efficiently', () => {
+    it("handles complex calculations efficiently", () => {
       const start = performance.now();
       render(<EconomyPreviewTab {...defaultProps} />);
       const end = performance.now();

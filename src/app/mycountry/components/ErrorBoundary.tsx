@@ -1,10 +1,10 @@
 "use client";
 
-import React from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Alert, AlertDescription } from '~/components/ui/alert';
+import React from "react";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Alert, AlertDescription } from "~/components/ui/alert";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 
 interface ErrorBoundaryState {
@@ -21,11 +21,14 @@ interface ErrorBoundaryProps {
 
 /**
  * Error Boundary component for MyCountry system
- * 
+ *
  * Provides graceful error handling and recovery options for the MyCountry interface.
  * Catches JavaScript errors anywhere in the child component tree and displays a fallback UI.
  */
-export class MyCountryErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class MyCountryErrorBoundary extends React.Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = {
@@ -45,9 +48,9 @@ export class MyCountryErrorBoundary extends React.Component<ErrorBoundaryProps, 
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log error details
-    console.error('[MyCountryErrorBoundary] Error caught:', error);
-    console.error('[MyCountryErrorBoundary] Error info:', errorInfo);
-    
+    console.error("[MyCountryErrorBoundary] Error caught:", error);
+    console.error("[MyCountryErrorBoundary] Error info:", errorInfo);
+
     // Update state with error details
     this.setState({
       error,
@@ -72,20 +75,15 @@ export class MyCountryErrorBoundary extends React.Component<ErrorBoundaryProps, 
       // Check for custom fallback component
       if (this.props.fallback) {
         const FallbackComponent = this.props.fallback;
-        return (
-          <FallbackComponent 
-            error={this.state.error!} 
-            retry={this.handleRetry} 
-          />
-        );
+        return <FallbackComponent error={this.state.error!} retry={this.handleRetry} />;
       }
 
       // Default error UI
       return (
         <div className="container mx-auto px-4 py-8">
-          <Card className="max-w-2xl mx-auto glass-hierarchy-parent">
+          <Card className="glass-hierarchy-parent mx-auto max-w-2xl">
             <CardHeader className="text-center">
-              <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+              <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-red-500" />
               <CardTitle className="text-2xl font-bold text-red-700">
                 MyCountry System Error
               </CardTitle>
@@ -94,24 +92,24 @@ export class MyCountryErrorBoundary extends React.Component<ErrorBoundaryProps, 
               <Alert className="border-red-200 bg-red-50">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  An unexpected error occurred while loading your country dashboard. 
-                  This could be due to a temporary network issue or system problem.
+                  An unexpected error occurred while loading your country dashboard. This could be
+                  due to a temporary network issue or system problem.
                 </AlertDescription>
               </Alert>
 
               {/* Error details (development only) */}
-              {process.env.NODE_ENV === 'development' && this.state.error && (
-                <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-                  <h4 className="font-semibold text-gray-800 mb-2">Error Details:</h4>
-                  <pre className="text-xs text-gray-600 overflow-auto max-h-32">
+              {process.env.NODE_ENV === "development" && this.state.error && (
+                <div className="mt-4 rounded-lg bg-gray-100 p-4">
+                  <h4 className="mb-2 font-semibold text-gray-800">Error Details:</h4>
+                  <pre className="max-h-32 overflow-auto text-xs text-gray-600">
                     {this.state.error.message}
                   </pre>
                   {this.state.errorInfo && (
                     <details className="mt-2">
-                      <summary className="text-xs text-gray-500 cursor-pointer">
+                      <summary className="cursor-pointer text-xs text-gray-500">
                         Component Stack
                       </summary>
-                      <pre className="text-xs text-gray-500 mt-1 overflow-auto max-h-32">
+                      <pre className="mt-1 max-h-32 overflow-auto text-xs text-gray-500">
                         {this.state.errorInfo.componentStack}
                       </pre>
                     </details>
@@ -120,18 +118,15 @@ export class MyCountryErrorBoundary extends React.Component<ErrorBoundaryProps, 
               )}
 
               {/* Recovery actions */}
-              <div className="flex gap-4 justify-center pt-4">
-                <Button 
-                  onClick={this.handleRetry}
-                  className="flex items-center gap-2"
-                >
+              <div className="flex justify-center gap-4 pt-4">
+                <Button onClick={this.handleRetry} className="flex items-center gap-2">
                   <RefreshCw className="h-4 w-4" />
                   Try Again
                 </Button>
-                
-                <Button 
+
+                <Button
                   variant="outline"
-                  onClick={() => window.location.href = createAbsoluteUrl('/dashboard')}
+                  onClick={() => (window.location.href = createAbsoluteUrl("/dashboard"))}
                   className="flex items-center gap-2"
                 >
                   <Home className="h-4 w-4" />
@@ -140,7 +135,7 @@ export class MyCountryErrorBoundary extends React.Component<ErrorBoundaryProps, 
               </div>
 
               {/* User guidance */}
-              <div className="text-center text-sm text-muted-foreground pt-4">
+              <div className="text-muted-foreground pt-4 text-center text-sm">
                 <p>
                   If this problem persists, please contact support or try refreshing your browser.
                 </p>
@@ -157,7 +152,7 @@ export class MyCountryErrorBoundary extends React.Component<ErrorBoundaryProps, 
 
 /**
  * Hook version of error boundary for functional components
- * 
+ *
  * @param onError - Optional error handler callback
  * @returns Error state and reset function
  */
@@ -168,10 +163,13 @@ export function useErrorBoundary(onError?: (error: Error) => void) {
     setError(null);
   }, []);
 
-  const captureError = React.useCallback((error: Error) => {
-    setError(error);
-    onError?.(error);
-  }, [onError]);
+  const captureError = React.useCallback(
+    (error: Error) => {
+      setError(error);
+      onError?.(error);
+    },
+    [onError]
+  );
 
   React.useEffect(() => {
     if (error) {

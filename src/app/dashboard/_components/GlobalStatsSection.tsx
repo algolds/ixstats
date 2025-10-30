@@ -6,20 +6,10 @@ import { useMemo } from "react";
 import { Users, Globe, TrendingUp, MapPin, Scaling, Layers, Calendar } from "lucide-react";
 import type { GlobalEconomicSnapshot } from "~/types/ixstats";
 import { IxTime } from "~/lib/ixtime";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardFooter,
-} from "~/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Separator } from "~/components/ui/separator";
-import { 
-  formatPopulation, 
-  formatCurrency, 
-  formatPercentage 
-} from "~/lib/chart-utils";
+import { formatPopulation, formatCurrency, formatPercentage } from "~/lib/chart-utils";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import { Badge } from "~/components/ui/badge";
 import { TierVisualization } from "../../_components/TierVisualization";
@@ -58,7 +48,7 @@ interface ExecutiveSummaryProps {
     label: string;
     value: number;
     suffix?: string;
-    trend: 'up' | 'down' | 'stable';
+    trend: "up" | "down" | "stable";
     description: string;
   }>;
   isLoading?: boolean;
@@ -83,7 +73,8 @@ const safeFormatDensity = (num: number | null | undefined, unit: string): string
   if (num == null || !isFinite(num) || isNaN(num)) {
     return "N/A";
   }
-  if (num < 0.01 && unit === "/km²") { // Only apply <0.01 logic for population density, not GDP
+  if (num < 0.01 && unit === "/km²") {
+    // Only apply <0.01 logic for population density, not GDP
     return "< 0.01" + unit;
   }
   // Apply currency formatting for GDP density, keep as is for population density
@@ -91,15 +82,24 @@ const safeFormatDensity = (num: number | null | undefined, unit: string): string
   return `${formattedNum}${unit}`;
 };
 
-class ExecutiveSummaryErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
+class ExecutiveSummaryErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
   constructor(props: any) {
     super(props);
     this.state = { hasError: false };
   }
-  static getDerivedStateFromError() { return { hasError: true }; }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
   render() {
     if (this.state.hasError) {
-      return <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 text-center">An error occurred in Executive Summary.</div>;
+      return (
+        <div className="bg-card text-card-foreground rounded-lg border p-6 text-center shadow-sm">
+          An error occurred in Executive Summary.
+        </div>
+      );
     }
     return this.props.children;
   }
@@ -114,8 +114,8 @@ function ExecutiveSummaryImpl({
   if (isLoading) {
     return (
       <div className="mb-8">
-        <h2 className="text-2xl font-semibold text-foreground mb-6">Executive Summary</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <h2 className="text-foreground mb-6 text-2xl font-semibold">Executive Summary</h2>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <GlassCard key={i} className="h-64" />
           ))}
@@ -124,10 +124,10 @@ function ExecutiveSummaryImpl({
     );
   }
   // Get the names of the top countries
-  const topCountryNames = topCountries.map(c => c.name);
+  const topCountryNames = topCountries.map((c) => c.name);
   // Use the bulk flag cache hook
   const { flagUrls } = useBulkFlagCache(topCountryNames);
-  const countries: TierVisualizationCountry[] = topCountries.map(country => ({
+  const countries: TierVisualizationCountry[] = topCountries.map((country) => ({
     id: country.id,
     name: country.name,
     currentPopulation: 0, // Not available in topCountries
@@ -139,12 +139,12 @@ function ExecutiveSummaryImpl({
     populationDensity: null,
     gdpDensity: null,
     adjustedGdpGrowth: 0, // Default value
-    populationGrowthRate: 0 // Default value
+    populationGrowthRate: 0, // Default value
   }));
   return (
     <section className="executive-summary py-8">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Economic Tier Distribution */}
           <GlassCard variant="economic" hover="lift" className="tier-distribution">
             <CardHeader>
@@ -154,15 +154,14 @@ function ExecutiveSummaryImpl({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <TierVisualization 
-                countries={countries}
-                isLoading={isLoading}
-              />
+              <TierVisualization countries={countries} isLoading={isLoading} />
               <div className="tier-legend mt-4 space-y-2">
                 {Object.entries(globalStats.economicTierDistribution || {}).map(([tier, count]) => (
                   <div key={tier} className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full tier-indicator-${tier.toLowerCase()}`} />
+                      <div
+                        className={`h-3 w-3 rounded-full tier-indicator-${tier.toLowerCase()}`}
+                      />
                       {tier}
                     </span>
                     <span className="font-medium">{count} nations</span>
@@ -186,18 +185,16 @@ function ExecutiveSummaryImpl({
                   <div key={country.id} className="top-country-item">
                     <div className="flex items-center gap-3">
                       <div className="rank-badge">#{index + 1}</div>
-                      <div className="country-flag w-8 h-6 rounded overflow-hidden">
-                        <img 
-                          src={flagUrls[country.name] || '/placeholder-flag.svg'} 
+                      <div className="country-flag h-6 w-8 overflow-hidden rounded">
+                        <img
+                          src={flagUrls[country.name] || "/placeholder-flag.svg"}
                           alt={`${country.name} flag`}
-                          className="w-full h-full object-cover"
+                          className="h-full w-full object-cover"
                         />
                       </div>
                       <div className="flex-1">
-                        <div className="font-medium text-foreground">
-                          {country.name}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-foreground font-medium">{country.name}</div>
+                        <div className="text-muted-foreground text-sm">
                           ${(country.currentTotalGdp / 1e12).toFixed(1)}T GDP
                         </div>
                       </div>
@@ -233,33 +230,31 @@ function ExecutiveSummaryImpl({
   );
 }
 
-function TrendItem({ 
-  label, 
-  value, 
-  suffix = '', 
-  trend, 
-  description 
+function TrendItem({
+  label,
+  value,
+  suffix = "",
+  trend,
+  description,
 }: {
   label: string;
   value: number;
   suffix?: string;
-  trend: 'up' | 'down' | 'stable';
+  trend: "up" | "down" | "stable";
   description: string;
 }) {
   return (
     <div className="trend-item">
-      <div className="flex items-center justify-between mb-1">
-        <span className="font-medium text-foreground">
-          {label}
-        </span>
-        <span className="font-bold text-foreground">
-          {value > 0 ? '+' : ''}{value}{suffix}
+      <div className="mb-1 flex items-center justify-between">
+        <span className="text-foreground font-medium">{label}</span>
+        <span className="text-foreground font-bold">
+          {value > 0 ? "+" : ""}
+          {value}
+          {suffix}
         </span>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">
-          {description}
-        </span>
+        <span className="text-muted-foreground text-sm">{description}</span>
         {/* You can use TrendIndicator here if desired */}
       </div>
     </div>
@@ -267,5 +262,9 @@ function TrendItem({
 }
 
 export function ExecutiveSummary(props: ExecutiveSummaryProps) {
-  return <ExecutiveSummaryErrorBoundary><ExecutiveSummaryImpl {...props} /></ExecutiveSummaryErrorBoundary>;
+  return (
+    <ExecutiveSummaryErrorBoundary>
+      <ExecutiveSummaryImpl {...props} />
+    </ExecutiveSummaryErrorBoundary>
+  );
 }

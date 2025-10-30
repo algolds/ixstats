@@ -12,7 +12,13 @@ import {
   DialogDescription,
 } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
-import { RiBuilding2Line, RiMapPinLine, RiUserLine, RiCloseLine, RiLoader4Line } from "react-icons/ri";
+import {
+  RiBuilding2Line,
+  RiMapPinLine,
+  RiUserLine,
+  RiCloseLine,
+  RiLoader4Line,
+} from "react-icons/ri";
 import { CountrySelector } from "./CountrySelector";
 
 interface EstablishEmbassyModalProps {
@@ -28,7 +34,7 @@ export function EstablishEmbassyModal({
   onOpenChange,
   guestCountryId,
   guestCountryName,
-  onSuccess
+  onSuccess,
 }: EstablishEmbassyModalProps) {
   const [step, setStep] = useState(1);
   const [hostCountryId, setHostCountryId] = useState<string>("");
@@ -39,21 +45,22 @@ export function EstablishEmbassyModal({
   const [showCostBreakdown, setShowCostBreakdown] = useState(false);
 
   // Calculate establishment cost
-  const { data: costData, isLoading: costLoading } = api.diplomatic.calculateEstablishmentCost.useQuery(
-    {
-      hostCountryId,
-      guestCountryId
-    },
-    {
-      enabled: !!hostCountryId && step === 2
-    }
-  );
+  const { data: costData, isLoading: costLoading } =
+    api.diplomatic.calculateEstablishmentCost.useQuery(
+      {
+        hostCountryId,
+        guestCountryId,
+      },
+      {
+        enabled: !!hostCountryId && step === 2,
+      }
+    );
 
   // Establish embassy mutation
   const establishMutation = api.diplomatic.establishEmbassy.useMutation({
     onSuccess: (data) => {
-      toast.success('Embassy established successfully!', {
-        description: `${embassyName} is now operational in ${data.hostCountryName}`
+      toast.success("Embassy established successfully!", {
+        description: `${embassyName} is now operational in ${data.hostCountryName}`,
       });
       onOpenChange(false);
       resetForm();
@@ -61,7 +68,7 @@ export function EstablishEmbassyModal({
     },
     onError: (error) => {
       toast.error(`Failed to establish embassy: ${error.message}`);
-    }
+    },
   });
 
   const resetForm = () => {
@@ -82,11 +89,11 @@ export function EstablishEmbassyModal({
 
   const handleNext = () => {
     if (step === 1 && !hostCountryId) {
-      toast.error('Please select a host country');
+      toast.error("Please select a host country");
       return;
     }
     if (step === 2 && !embassyName.trim()) {
-      toast.error('Please enter an embassy name');
+      toast.error("Please enter an embassy name");
       return;
     }
     setStep(step + 1);
@@ -98,7 +105,7 @@ export function EstablishEmbassyModal({
 
   const handleSubmit = () => {
     if (!embassyName.trim()) {
-      toast.error('Embassy name is required');
+      toast.error("Embassy name is required");
       return;
     }
 
@@ -107,30 +114,35 @@ export function EstablishEmbassyModal({
       guestCountryId,
       name: embassyName,
       location: location || undefined,
-      ambassadorName: ambassadorName || undefined
+      ambassadorName: ambassadorName || undefined,
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-[--intel-gold]">
             <RiBuilding2Line className="h-5 w-5" />
             Establish New Embassy
           </DialogTitle>
           <DialogDescription>
-            Step {step} of 3: {step === 1 ? 'Select Host Country' : step === 2 ? 'Embassy Details' : 'Review & Confirm'}
+            Step {step} of 3:{" "}
+            {step === 1
+              ? "Select Host Country"
+              : step === 2
+                ? "Embassy Details"
+                : "Review & Confirm"}
           </DialogDescription>
         </DialogHeader>
 
         {/* Progress Indicator */}
-        <div className="flex items-center gap-2 mb-6">
+        <div className="mb-6 flex items-center gap-2">
           {[1, 2, 3].map((s) => (
             <div
               key={s}
               className={`h-2 flex-1 rounded-full transition-colors ${
-                s <= step ? 'bg-[--intel-gold]' : 'bg-white/10'
+                s <= step ? "bg-[--intel-gold]" : "bg-white/10"
               }`}
             />
           ))}
@@ -146,10 +158,10 @@ export function EstablishEmbassyModal({
               className="space-y-4"
             >
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <label className="text-foreground mb-2 block text-sm font-medium">
                   Select Host Country
                 </label>
-                <p className="text-sm text-[--intel-silver] mb-4">
+                <p className="mb-4 text-sm text-[--intel-silver]">
                   Choose the country where you want to establish your embassy.
                 </p>
                 <CountrySelector
@@ -158,9 +170,10 @@ export function EstablishEmbassyModal({
                   placeholder="Search for a country..."
                 />
                 {hostCountryId && (
-                  <div className="mt-4 p-3 bg-[--intel-gold]/10 border border-[--intel-gold]/30 rounded-lg">
-                    <p className="text-sm text-foreground">
-                      Selected: <span className="font-semibold text-[--intel-gold]">{hostCountryName}</span>
+                  <div className="mt-4 rounded-lg border border-[--intel-gold]/30 bg-[--intel-gold]/10 p-3">
+                    <p className="text-foreground text-sm">
+                      Selected:{" "}
+                      <span className="font-semibold text-[--intel-gold]">{hostCountryName}</span>
                     </p>
                   </div>
                 )}
@@ -177,49 +190,49 @@ export function EstablishEmbassyModal({
               className="space-y-4"
             >
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <label className="text-foreground mb-2 block text-sm font-medium">
                   Embassy Name <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
-                  <RiBuilding2Line className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[--intel-silver]" />
+                  <RiBuilding2Line className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[--intel-silver]" />
                   <input
                     type="text"
                     value={embassyName}
                     onChange={(e) => setEmbassyName(e.target.value)}
                     placeholder="e.g., Embassy of [Your Country] in [Host Country]"
-                    className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-foreground placeholder:text-[--intel-silver] focus:outline-none focus:border-[--intel-gold]/50"
+                    className="text-foreground w-full rounded-lg border border-white/20 bg-white/10 py-3 pr-4 pl-10 placeholder:text-[--intel-silver] focus:border-[--intel-gold]/50 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <label className="text-foreground mb-2 block text-sm font-medium">
                   Location (Optional)
                 </label>
                 <div className="relative">
-                  <RiMapPinLine className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[--intel-silver]" />
+                  <RiMapPinLine className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[--intel-silver]" />
                   <input
                     type="text"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     placeholder="e.g., Capital City, Downtown District"
-                    className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-foreground placeholder:text-[--intel-silver] focus:outline-none focus:border-[--intel-gold]/50"
+                    className="text-foreground w-full rounded-lg border border-white/20 bg-white/10 py-3 pr-4 pl-10 placeholder:text-[--intel-silver] focus:border-[--intel-gold]/50 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <label className="text-foreground mb-2 block text-sm font-medium">
                   Ambassador Name (Optional)
                 </label>
                 <div className="relative">
-                  <RiUserLine className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[--intel-silver]" />
+                  <RiUserLine className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[--intel-silver]" />
                   <input
                     type="text"
                     value={ambassadorName}
                     onChange={(e) => setAmbassadorName(e.target.value)}
                     placeholder="e.g., Ambassador John Smith"
-                    className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-foreground placeholder:text-[--intel-silver] focus:outline-none focus:border-[--intel-gold]/50"
+                    className="text-foreground w-full rounded-lg border border-white/20 bg-white/10 py-3 pr-4 pl-10 placeholder:text-[--intel-silver] focus:border-[--intel-gold]/50 focus:outline-none"
                   />
                 </div>
               </div>
@@ -227,24 +240,24 @@ export function EstablishEmbassyModal({
               {/* Cost Preview */}
               {costLoading ? (
                 <div className="flex items-center justify-center py-4">
-                  <RiLoader4Line className="h-6 w-6 text-[--intel-gold] animate-spin" />
+                  <RiLoader4Line className="h-6 w-6 animate-spin text-[--intel-gold]" />
                 </div>
               ) : costData ? (
-                <div className="bg-white/5 border border-white/10 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-foreground">Establishment Cost</span>
+                <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-foreground text-sm font-medium">Establishment Cost</span>
                     <button
                       onClick={() => setShowCostBreakdown(!showCostBreakdown)}
                       className="text-xs text-[--intel-gold] hover:underline"
                     >
-                      {showCostBreakdown ? 'Hide' : 'Show'} breakdown
+                      {showCostBreakdown ? "Hide" : "Show"} breakdown
                     </button>
                   </div>
                   <div className="text-2xl font-bold text-[--intel-gold]">
                     ${costData.totalCost.toLocaleString()}
                   </div>
                   {showCostBreakdown && (
-                    <div className="mt-3 pt-3 border-t border-white/10 space-y-1 text-sm text-[--intel-silver]">
+                    <div className="mt-3 space-y-1 border-t border-white/10 pt-3 text-sm text-[--intel-silver]">
                       <div className="flex justify-between">
                         <span>Base cost:</span>
                         <span>${costData.baseCost.toLocaleString()}</span>
@@ -272,8 +285,8 @@ export function EstablishEmbassyModal({
               exit={{ opacity: 0, x: -20 }}
               className="space-y-4"
             >
-              <div className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-3">
-                <h4 className="font-semibold text-foreground">Embassy Details</h4>
+              <div className="space-y-3 rounded-lg border border-white/10 bg-white/5 p-4">
+                <h4 className="text-foreground font-semibold">Embassy Details</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-[--intel-silver]">Host Country:</span>
@@ -299,17 +312,17 @@ export function EstablishEmbassyModal({
               </div>
 
               {costData && (
-                <div className="bg-[--intel-gold]/10 border border-[--intel-gold]/30 rounded-lg p-4">
+                <div className="rounded-lg border border-[--intel-gold]/30 bg-[--intel-gold]/10 p-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-foreground">Total Cost</span>
+                    <span className="text-foreground text-sm font-medium">Total Cost</span>
                     <span className="text-xl font-bold text-[--intel-gold]">
                       ${costData.totalCost.toLocaleString()}
                     </span>
                   </div>
                   {costData.requirements && (
-                    <div className="mt-3 pt-3 border-t border-[--intel-gold]/20 space-y-1 text-xs text-[--intel-silver]">
-                      <p className="font-medium text-foreground mb-1">Requirements:</p>
-                      <ul className="space-y-1 list-disc list-inside">
+                    <div className="mt-3 space-y-1 border-t border-[--intel-gold]/20 pt-3 text-xs text-[--intel-silver]">
+                      <p className="text-foreground mb-1 font-medium">Requirements:</p>
+                      <ul className="list-inside list-disc space-y-1">
                         <li>Minimum relationship: {costData.requirements.minimumRelationship}</li>
                         {costData.requirements.requiredDocuments.map((doc: string, idx: number) => (
                           <li key={idx}>{doc}</li>
@@ -320,9 +333,10 @@ export function EstablishEmbassyModal({
                 </div>
               )}
 
-              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+              <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-3">
                 <p className="text-xs text-blue-400">
-                  ℹ️ Both countries will be notified of the embassy establishment. The host country can view your embassy details.
+                  ℹ️ Both countries will be notified of the embassy establishment. The host country
+                  can view your embassy details.
                 </p>
               </div>
             </motion.div>
@@ -330,7 +344,7 @@ export function EstablishEmbassyModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between pt-4 border-t border-white/10">
+        <div className="flex items-center justify-between border-t border-white/10 pt-4">
           <Button
             variant="ghost"
             onClick={() => {
@@ -343,7 +357,7 @@ export function EstablishEmbassyModal({
             }}
             disabled={establishMutation.isPending}
           >
-            {step === 1 ? 'Cancel' : 'Back'}
+            {step === 1 ? "Cancel" : "Back"}
           </Button>
 
           <Button
@@ -353,17 +367,17 @@ export function EstablishEmbassyModal({
               (step === 1 && !hostCountryId) ||
               (step === 2 && !embassyName.trim())
             }
-            className="bg-[--intel-gold]/20 hover:bg-[--intel-gold]/30 text-[--intel-gold]"
+            className="bg-[--intel-gold]/20 text-[--intel-gold] hover:bg-[--intel-gold]/30"
           >
             {establishMutation.isPending ? (
               <>
-                <RiLoader4Line className="h-4 w-4 animate-spin mr-2" />
+                <RiLoader4Line className="mr-2 h-4 w-4 animate-spin" />
                 Establishing...
               </>
             ) : step === 3 ? (
-              'Establish Embassy'
+              "Establish Embassy"
             ) : (
-              'Next'
+              "Next"
             )}
           </Button>
         </div>

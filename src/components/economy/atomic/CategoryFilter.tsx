@@ -5,12 +5,12 @@
  * Optimized with React.memo for performance.
  */
 
-'use client';
+"use client";
 
-import React from 'react';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { COMPONENT_CATEGORIES, type EconomicCategory } from '~/lib/atomic-economic-data';
+import React from "react";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { COMPONENT_CATEGORIES, type EconomicCategory } from "~/lib/atomic-economic-data";
 
 export interface CategoryFilterProps {
   category: EconomicCategory | null;
@@ -24,7 +24,7 @@ export interface CategoryFilterProps {
 function CategoryFilterComponent({
   category,
   setCategory,
-  componentCounts = {}
+  componentCounts = {},
 }: CategoryFilterProps) {
   const categories = Object.values(COMPONENT_CATEGORIES);
 
@@ -34,7 +34,7 @@ function CategoryFilterComponent({
       <div className="flex flex-wrap gap-2">
         <Button
           size="sm"
-          variant={category === null ? 'default' : 'outline'}
+          variant={category === null ? "default" : "outline"}
           onClick={() => setCategory(null)}
         >
           All Components
@@ -48,11 +48,11 @@ function CategoryFilterComponent({
             <Button
               key={cat.name}
               size="sm"
-              variant={isActive ? 'default' : 'outline'}
+              variant={isActive ? "default" : "outline"}
               onClick={() => setCategory(cat.name as EconomicCategory)}
               className="flex items-center gap-2"
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="h-4 w-4" />
               {cat.name}
               {count > 0 && (
                 <Badge variant="secondary" className="ml-1">

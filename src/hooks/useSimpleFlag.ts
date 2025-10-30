@@ -1,8 +1,8 @@
 // Simple flag hook - uses unified flag service
 "use client";
 
-import { useState, useEffect } from 'react';
-import { unifiedFlagService } from '~/lib/unified-flag-service';
+import { useState, useEffect } from "react";
+import { unifiedFlagService } from "~/lib/unified-flag-service";
 
 export function useSimpleFlag(countryName?: string) {
   const [flagUrl, setFlagUrl] = useState<string | null>(null);
@@ -34,7 +34,7 @@ export function useSimpleFlag(countryName?: string) {
         setError(false);
 
         const url = await unifiedFlagService.getFlagUrl(countryName);
-        
+
         if (mounted) {
           setFlagUrl(url);
           setIsLoading(false);
@@ -60,7 +60,7 @@ export function useSimpleFlag(countryName?: string) {
     flagUrl,
     isLoading,
     error,
-    isPlaceholder: flagUrl ? unifiedFlagService.isPlaceholderFlag(flagUrl) : false
+    isPlaceholder: flagUrl ? unifiedFlagService.isPlaceholderFlag(flagUrl) : false,
   };
 }
 
@@ -86,7 +86,7 @@ export function useSimpleFlags(countryNames: string[]) {
       // Load flags one by one (simple approach)
       for (const countryName of countryNames) {
         if (!mounted) break;
-        
+
         try {
           const url = await unifiedFlagService.getFlagUrl(countryName);
           urls[countryName] = url;
@@ -107,7 +107,7 @@ export function useSimpleFlags(countryNames: string[]) {
     return () => {
       mounted = false;
     };
-  }, [countryNames.join(',')]);
+  }, [countryNames.join(",")]);
 
   const refetch = async () => {
     // Simple refetch - clear cache and reload
@@ -128,6 +128,6 @@ export function useSimpleFlags(countryNames: string[]) {
     flagUrls,
     isLoading,
     error,
-    refetch
+    refetch,
   };
 }

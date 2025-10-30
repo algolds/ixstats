@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * Map Scale Component
@@ -7,31 +7,31 @@
  * Shows both metric (kilometers/meters) and imperial (miles/feet) units.
  */
 
-import { useEffect, useState, useCallback } from 'react';
-import type { Map as MapLibreMap } from 'maplibre-gl';
+import { useEffect, useState, useCallback } from "react";
+import type { Map as MapLibreMap } from "maplibre-gl";
 import {
   calculateScaleAtZoom,
   getNiceScaleDistance,
   KM_TO_MILES,
   getScaleForProjection,
-} from '~/lib/maps/measurement-utils';
+} from "~/lib/maps/measurement-utils";
 
 interface MapScaleProps {
   map: MapLibreMap | null;
-  position?: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right';
+  position?: "bottom-left" | "bottom-right" | "top-left" | "top-right";
   maxWidth?: number; // Maximum width of scale bar in pixels
   showImperial?: boolean;
   showMetric?: boolean;
-  currentProjection?: 'mercator' | 'globe' | 'equalEarth';
+  currentProjection?: "mercator" | "globe" | "equalEarth";
 }
 
 export default function MapScale({
   map,
-  position = 'bottom-left',
+  position = "bottom-left",
   maxWidth = 100,
   showImperial = true,
   showMetric = true,
-  currentProjection = 'mercator',
+  currentProjection = "mercator",
 }: MapScaleProps) {
   const [scaleInfo, setScaleInfo] = useState<{
     widthPx: number;
@@ -49,11 +49,7 @@ export default function MapScale({
       const zoom = map.getZoom();
 
       // Use projection-aware scale calculation
-      const { kmPerPixel } = getScaleForProjection(
-        currentProjection,
-        zoom,
-        center.lat,
-      );
+      const { kmPerPixel } = getScaleForProjection(currentProjection, zoom, center.lat);
 
       // Calculate target distance for max width
       const targetKm = kmPerPixel * maxWidth;
@@ -99,7 +95,7 @@ export default function MapScale({
         labelMi,
       });
     } catch (e) {
-      console.warn('Error updating map scale:', e);
+      console.warn("Error updating map scale:", e);
     }
   }, [map, maxWidth, currentProjection]);
 
@@ -111,14 +107,14 @@ export default function MapScale({
     updateScale();
 
     // Update on zoom or move
-    map.on('zoom', updateScale);
-    map.on('move', updateScale);
-    map.on('resize', updateScale);
+    map.on("zoom", updateScale);
+    map.on("move", updateScale);
+    map.on("resize", updateScale);
 
     return () => {
-      map.off('zoom', updateScale);
-      map.off('move', updateScale);
-      map.off('resize', updateScale);
+      map.off("zoom", updateScale);
+      map.off("move", updateScale);
+      map.off("resize", updateScale);
     };
   }, [map, updateScale]);
 
@@ -126,34 +122,34 @@ export default function MapScale({
 
   // Position classes
   const positionClasses = {
-    'bottom-left': 'bottom-4 left-4',
-    'bottom-right': 'bottom-4 right-4',
-    'top-left': 'top-4 left-4',
-    'top-right': 'top-4 right-4',
+    "bottom-left": "bottom-4 left-4",
+    "bottom-right": "bottom-4 right-4",
+    "top-left": "top-4 left-4",
+    "top-right": "top-4 right-4",
   };
 
   return (
     <div
-      className={`absolute ${positionClasses[position]} z-[1000] pointer-events-none select-none`}
+      className={`absolute ${positionClasses[position]} pointer-events-none z-[1000] select-none`}
     >
-      <div className="bg-white/90 backdrop-blur-sm border border-gray-300 rounded px-2 py-1 shadow-md">
+      <div className="rounded border border-gray-300 bg-white/90 px-2 py-1 shadow-md backdrop-blur-sm">
         {/* Metric scale */}
         {showMetric && (
           <div className="mb-1">
             <div className="flex items-end gap-1">
-              <div className="text-[10px] font-medium text-gray-700 mb-0.5">
+              <div className="mb-0.5 text-[10px] font-medium text-gray-700">
                 {scaleInfo.labelKm}
               </div>
             </div>
-            <div className="relative h-1 border-b-2 border-l-2 border-r-2 border-gray-700">
+            <div className="relative h-1 border-r-2 border-b-2 border-l-2 border-gray-700">
               <div
                 className="absolute bottom-0 left-0 h-full border-t-2 border-gray-700"
                 style={{ width: `${scaleInfo.widthPx}px` }}
               >
                 {/* Tick marks */}
-                <div className="absolute top-0 left-0 w-px h-1.5 bg-gray-700"></div>
-                <div className="absolute top-0 left-1/2 w-px h-1 bg-gray-700"></div>
-                <div className="absolute top-0 right-0 w-px h-1.5 bg-gray-700"></div>
+                <div className="absolute top-0 left-0 h-1.5 w-px bg-gray-700"></div>
+                <div className="absolute top-0 left-1/2 h-1 w-px bg-gray-700"></div>
+                <div className="absolute top-0 right-0 h-1.5 w-px bg-gray-700"></div>
               </div>
             </div>
           </div>
@@ -163,19 +159,19 @@ export default function MapScale({
         {showImperial && (
           <div>
             <div className="flex items-end gap-1">
-              <div className="text-[10px] font-medium text-gray-700 mb-0.5">
+              <div className="mb-0.5 text-[10px] font-medium text-gray-700">
                 {scaleInfo.labelMi}
               </div>
             </div>
-            <div className="relative h-1 border-b-2 border-l-2 border-r-2 border-gray-700">
+            <div className="relative h-1 border-r-2 border-b-2 border-l-2 border-gray-700">
               <div
                 className="absolute bottom-0 left-0 h-full border-t-2 border-gray-700"
                 style={{ width: `${scaleInfo.widthPx}px` }}
               >
                 {/* Tick marks */}
-                <div className="absolute top-0 left-0 w-px h-1.5 bg-gray-700"></div>
-                <div className="absolute top-0 left-1/2 w-px h-1 bg-gray-700"></div>
-                <div className="absolute top-0 right-0 w-px h-1.5 bg-gray-700"></div>
+                <div className="absolute top-0 left-0 h-1.5 w-px bg-gray-700"></div>
+                <div className="absolute top-0 left-1/2 h-1 w-px bg-gray-700"></div>
+                <div className="absolute top-0 right-0 h-1.5 w-px bg-gray-700"></div>
               </div>
             </div>
           </div>
@@ -183,8 +179,11 @@ export default function MapScale({
 
         {/* Scale ratio (optional info) */}
         {showMetric && showImperial && (
-          <div className="text-[9px] text-gray-500 text-center mt-0.5">
-            1:{Math.round(1 / calculateScaleAtZoom(map.getCenter().lat, map.getZoom())).toLocaleString()}
+          <div className="mt-0.5 text-center text-[9px] text-gray-500">
+            1:
+            {Math.round(
+              1 / calculateScaleAtZoom(map.getCenter().lat, map.getZoom())
+            ).toLocaleString()}
           </div>
         )}
       </div>

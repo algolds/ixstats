@@ -8,8 +8,8 @@ import type {
   NotificationContext,
   DeliveryMethod,
   NotificationPriority,
-} from '~/types/unified-notifications';
-import { createAbsoluteUrl } from '~/lib/url-utils';
+} from "~/types/unified-notifications";
+import { createAbsoluteUrl } from "~/lib/url-utils";
 
 // Base interface for all delivery handlers
 export interface DeliveryHandler {
@@ -34,7 +34,7 @@ export class DynamicIslandDeliveryHandler implements DeliveryHandler {
   private batchTimeout: NodeJS.Timeout | null = null;
 
   constructor() {
-    console.log('[DynamicIslandDeliveryHandler] Initialized');
+    console.log("[DynamicIslandDeliveryHandler] Initialized");
   }
 
   /**
@@ -45,12 +45,12 @@ export class DynamicIslandDeliveryHandler implements DeliveryHandler {
   }
 
   canHandle(method: DeliveryMethod): boolean {
-    return method === 'dynamic-island';
+    return method === "dynamic-island";
   }
 
   async deliver(notification: UnifiedNotification, context: NotificationContext): Promise<boolean> {
     if (!this.islandCallback) {
-      console.warn('[DynamicIslandDeliveryHandler] No island callback registered');
+      console.warn("[DynamicIslandDeliveryHandler] No island callback registered");
       return false;
     }
 
@@ -65,7 +65,7 @@ export class DynamicIslandDeliveryHandler implements DeliveryHandler {
       this.islandCallback(this.enhanceNotificationForIsland(notification, context));
       return true;
     } catch (error) {
-      console.error('[DynamicIslandDeliveryHandler] Delivery failed:', error);
+      console.error("[DynamicIslandDeliveryHandler] Delivery failed:", error);
       return false;
     }
   }
@@ -75,7 +75,7 @@ export class DynamicIslandDeliveryHandler implements DeliveryHandler {
       supportsBatching: true,
       supportsActions: true,
       maxContentLength: 150,
-      priorityLevels: ['critical', 'high', 'medium', 'low'],
+      priorityLevels: ["critical", "high", "medium", "low"],
       requiresUserInteraction: false,
       persistsAcrossSessions: false,
     };
@@ -83,25 +83,27 @@ export class DynamicIslandDeliveryHandler implements DeliveryHandler {
 
   private shouldBatch(notification: UnifiedNotification, context: NotificationContext): boolean {
     // Don't batch critical notifications
-    if (notification.priority === 'critical') return false;
-    
+    if (notification.priority === "critical") return false;
+
     // Don't batch if user is in executive mode and it's governance/economic
-    if (context.isExecutiveMode && 
-        ['economic', 'governance', 'security'].includes(notification.category)) {
+    if (
+      context.isExecutiveMode &&
+      ["economic", "governance", "security"].includes(notification.category)
+    ) {
       return false;
     }
 
     // Batch achievements and system notifications
-    return ['achievement', 'system', 'opportunity'].includes(notification.category);
+    return ["achievement", "system", "opportunity"].includes(notification.category);
   }
 
   private async addToBatch(notification: UnifiedNotification, context: NotificationContext) {
     const batchKey = `${context.userId}-${notification.category}`;
-    
+
     if (!this.batchedNotifications.has(batchKey)) {
       this.batchedNotifications.set(batchKey, []);
     }
-    
+
     this.batchedNotifications.get(batchKey)!.push(notification);
 
     // Clear existing timeout
@@ -141,41 +143,43 @@ export class DynamicIslandDeliveryHandler implements DeliveryHandler {
     context: NotificationContext
   ): UnifiedNotification {
     if (notifications.length === 0) {
-      throw new Error('Cannot create batch notification from empty array');
+      throw new Error("Cannot create batch notification from empty array");
     }
-    
+
     const category = notifications[0]!.category;
     const count = notifications.length;
-    
+
     const batchNotification: UnifiedNotification = {
       id: `batch-${Date.now()}`,
-      source: 'intelligence',
+      source: "intelligence",
       timestamp: Date.now(),
       title: `${count} ${category} updates`,
       message: `${count} new ${category} notifications`,
       category,
-      type: 'info',
-      priority: 'medium',
-      severity: 'informational',
+      type: "info",
+      priority: "medium",
+      severity: "informational",
       context,
       triggers: [],
-      relevanceScore: Math.max(...notifications.map(n => n.relevanceScore)),
-      deliveryMethod: 'dynamic-island',
-      status: 'pending',
+      relevanceScore: Math.max(...notifications.map((n) => n.relevanceScore)),
+      deliveryMethod: "dynamic-island",
+      status: "pending",
       actionable: true,
-      actions: [{
-        id: 'view-all',
-        label: `View All (${count})`,
-        type: 'primary',
-        onClick: () => {
-          // Open command palette with filtered notifications
-          console.log('View all batch notifications');
-        }
-      }],
+      actions: [
+        {
+          id: "view-all",
+          label: `View All (${count})`,
+          type: "primary",
+          onClick: () => {
+            // Open command palette with filtered notifications
+            console.log("View all batch notifications");
+          },
+        },
+      ],
       metadata: {
-        batchedNotifications: notifications.map(n => n.id),
+        batchedNotifications: notifications.map((n) => n.id),
         isBatch: true,
-      }
+      },
     };
 
     return batchNotification;
@@ -190,7 +194,8 @@ export class DynamicIslandDeliveryHandler implements DeliveryHandler {
 
     // Truncate message for island display
     if (enhanced.message.length > this.getCapabilities().maxContentLength) {
-      enhanced.message = enhanced.message.substring(0, this.getCapabilities().maxContentLength - 3) + '...';
+      enhanced.message =
+        enhanced.message.substring(0, this.getCapabilities().maxContentLength - 3) + "...";
     }
 
     // Add contextual actions
@@ -199,22 +204,22 @@ export class DynamicIslandDeliveryHandler implements DeliveryHandler {
     }
 
     // Add "View Details" action if not present
-    if (!enhanced.actions.some(a => a.id === 'view-details')) {
+    if (!enhanced.actions.some((a) => a.id === "view-details")) {
       enhanced.actions.unshift({
-        id: 'view-details',
-        label: 'View Details',
-        type: 'secondary',
+        id: "view-details",
+        label: "View Details",
+        type: "secondary",
         onClick: () => {
           // Navigate to appropriate page based on category
           const routes = {
-            economic: '/mycountry/new',
-            governance: '/mycountry/new?tab=executive',
-            diplomatic: '/executive/diplomatic',
-            achievement: '/mycountry/achievements',
+            economic: "/mycountry/new",
+            governance: "/mycountry/new?tab=executive",
+            diplomatic: "/executive/diplomatic",
+            achievement: "/mycountry/achievements",
           };
-          const route = routes[notification.category as keyof typeof routes] || '/mycountry/new';
+          const route = routes[notification.category as keyof typeof routes] || "/mycountry/new";
           window.location.href = createAbsoluteUrl(route);
-        }
+        },
       });
     }
 
@@ -227,7 +232,7 @@ export class ToastDeliveryHandler implements DeliveryHandler {
   private toastCallback: ((notification: UnifiedNotification) => void) | null = null;
 
   constructor() {
-    console.log('[ToastDeliveryHandler] Initialized');
+    console.log("[ToastDeliveryHandler] Initialized");
   }
 
   setToastCallback(callback: (notification: UnifiedNotification) => void) {
@@ -235,12 +240,12 @@ export class ToastDeliveryHandler implements DeliveryHandler {
   }
 
   canHandle(method: DeliveryMethod): boolean {
-    return method === 'toast';
+    return method === "toast";
   }
 
   async deliver(notification: UnifiedNotification, context: NotificationContext): Promise<boolean> {
     if (!this.toastCallback) {
-      console.warn('[ToastDeliveryHandler] No toast callback registered');
+      console.warn("[ToastDeliveryHandler] No toast callback registered");
       return false;
     }
 
@@ -249,7 +254,7 @@ export class ToastDeliveryHandler implements DeliveryHandler {
       this.toastCallback(enhancedNotification);
       return true;
     } catch (error) {
-      console.error('[ToastDeliveryHandler] Delivery failed:', error);
+      console.error("[ToastDeliveryHandler] Delivery failed:", error);
       return false;
     }
   }
@@ -259,7 +264,7 @@ export class ToastDeliveryHandler implements DeliveryHandler {
       supportsBatching: false,
       supportsActions: true,
       maxContentLength: 200,
-      priorityLevels: ['high', 'medium', 'low'],
+      priorityLevels: ["high", "medium", "low"],
       requiresUserInteraction: false,
       persistsAcrossSessions: false,
     };
@@ -290,17 +295,17 @@ export class ToastDeliveryHandler implements DeliveryHandler {
 
   private getToastType(notification: UnifiedNotification): string {
     const typeMapping = {
-      success: 'success',
-      info: 'info',
-      warning: 'warning',
-      error: 'error',
-      critical: 'error',
-      alert: 'warning',
-      opportunity: 'info',
-      update: 'info',
+      success: "success",
+      info: "info",
+      warning: "warning",
+      error: "error",
+      critical: "error",
+      alert: "warning",
+      opportunity: "info",
+      update: "info",
     };
 
-    return typeMapping[notification.type] || 'info';
+    return typeMapping[notification.type] || "info";
   }
 }
 
@@ -309,7 +314,7 @@ export class ModalDeliveryHandler implements DeliveryHandler {
   private modalCallback: ((notification: UnifiedNotification) => void) | null = null;
 
   constructor() {
-    console.log('[ModalDeliveryHandler] Initialized');
+    console.log("[ModalDeliveryHandler] Initialized");
   }
 
   setModalCallback(callback: (notification: UnifiedNotification) => void) {
@@ -317,12 +322,12 @@ export class ModalDeliveryHandler implements DeliveryHandler {
   }
 
   canHandle(method: DeliveryMethod): boolean {
-    return method === 'modal';
+    return method === "modal";
   }
 
   async deliver(notification: UnifiedNotification, context: NotificationContext): Promise<boolean> {
     if (!this.modalCallback) {
-      console.warn('[ModalDeliveryHandler] No modal callback registered');
+      console.warn("[ModalDeliveryHandler] No modal callback registered");
       return false;
     }
 
@@ -331,7 +336,7 @@ export class ModalDeliveryHandler implements DeliveryHandler {
       this.modalCallback(enhancedNotification);
       return true;
     } catch (error) {
-      console.error('[ModalDeliveryHandler] Delivery failed:', error);
+      console.error("[ModalDeliveryHandler] Delivery failed:", error);
       return false;
     }
   }
@@ -341,7 +346,7 @@ export class ModalDeliveryHandler implements DeliveryHandler {
       supportsBatching: false,
       supportsActions: true,
       maxContentLength: 500,
-      priorityLevels: ['critical', 'high'],
+      priorityLevels: ["critical", "high"],
       requiresUserInteraction: true,
       persistsAcrossSessions: false,
     };
@@ -356,35 +361,40 @@ export class ModalDeliveryHandler implements DeliveryHandler {
     // Add modal-specific metadata
     enhanced.metadata = {
       ...enhanced.metadata,
-      modalSize: notification.priority === 'critical' ? 'large' : 'medium',
+      modalSize: notification.priority === "critical" ? "large" : "medium",
       modalType: this.getModalType(notification),
-      requiresAcknowledgment: notification.priority === 'critical',
+      requiresAcknowledgment: notification.priority === "critical",
     };
 
     // Ensure critical notifications have proper actions
-    if (notification.priority === 'critical' && (!enhanced.actions || enhanced.actions.length === 0)) {
-      enhanced.actions = [{
-        id: 'acknowledge',
-        label: 'Acknowledge',
-        type: 'primary',
-        onClick: () => {
-          // Mark as acknowledged
-          console.log('Critical notification acknowledged');
-        }
-      }];
+    if (
+      notification.priority === "critical" &&
+      (!enhanced.actions || enhanced.actions.length === 0)
+    ) {
+      enhanced.actions = [
+        {
+          id: "acknowledge",
+          label: "Acknowledge",
+          type: "primary",
+          onClick: () => {
+            // Mark as acknowledged
+            console.log("Critical notification acknowledged");
+          },
+        },
+      ];
     }
 
     return enhanced;
   }
 
   private getModalType(notification: UnifiedNotification): string {
-    if (notification.category === 'crisis' || notification.priority === 'critical') {
-      return 'error';
+    if (notification.category === "crisis" || notification.priority === "critical") {
+      return "error";
     }
-    if (notification.type === 'warning') {
-      return 'warning';
+    if (notification.type === "warning") {
+      return "warning";
     }
-    return 'info';
+    return "info";
   }
 }
 
@@ -393,7 +403,7 @@ export class CommandPaletteDeliveryHandler implements DeliveryHandler {
   private paletteCallback: ((notification: UnifiedNotification) => void) | null = null;
 
   constructor() {
-    console.log('[CommandPaletteDeliveryHandler] Initialized');
+    console.log("[CommandPaletteDeliveryHandler] Initialized");
   }
 
   setPaletteCallback(callback: (notification: UnifiedNotification) => void) {
@@ -401,12 +411,12 @@ export class CommandPaletteDeliveryHandler implements DeliveryHandler {
   }
 
   canHandle(method: DeliveryMethod): boolean {
-    return method === 'command-palette';
+    return method === "command-palette";
   }
 
   async deliver(notification: UnifiedNotification, context: NotificationContext): Promise<boolean> {
     if (!this.paletteCallback) {
-      console.warn('[CommandPaletteDeliveryHandler] No palette callback registered');
+      console.warn("[CommandPaletteDeliveryHandler] No palette callback registered");
       return false;
     }
 
@@ -415,7 +425,7 @@ export class CommandPaletteDeliveryHandler implements DeliveryHandler {
       this.paletteCallback(enhancedNotification);
       return true;
     } catch (error) {
-      console.error('[CommandPaletteDeliveryHandler] Delivery failed:', error);
+      console.error("[CommandPaletteDeliveryHandler] Delivery failed:", error);
       return false;
     }
   }
@@ -425,7 +435,7 @@ export class CommandPaletteDeliveryHandler implements DeliveryHandler {
       supportsBatching: true,
       supportsActions: true,
       maxContentLength: 300,
-      priorityLevels: ['critical', 'high', 'medium', 'low'],
+      priorityLevels: ["critical", "high", "medium", "low"],
       requiresUserInteraction: false,
       persistsAcrossSessions: true,
     };
@@ -450,22 +460,22 @@ export class CommandPaletteDeliveryHandler implements DeliveryHandler {
 
   private getPaletteCategory(notification: UnifiedNotification): string {
     const categoryMapping: Record<string, string> = {
-      economic: 'Economy',
-      governance: 'Government',
-      diplomatic: 'Diplomacy',
-      security: 'Security',
-      achievement: 'Achievements',
-      system: 'System',
-      crisis: 'Crisis Management',
-      opportunity: 'Opportunities',
-      social: 'Social',
-      policy: 'Policy',
-      intelligence: 'Intelligence',
-      global: 'Global',
-      military: 'Military',
+      economic: "Economy",
+      governance: "Government",
+      diplomatic: "Diplomacy",
+      security: "Security",
+      achievement: "Achievements",
+      system: "System",
+      crisis: "Crisis Management",
+      opportunity: "Opportunities",
+      social: "Social",
+      policy: "Policy",
+      intelligence: "Intelligence",
+      global: "Global",
+      military: "Military",
     };
 
-    return categoryMapping[notification.category] || 'General';
+    return categoryMapping[notification.category] || "General";
   }
 
   private generateSearchKeywords(notification: UnifiedNotification): string[] {
@@ -473,15 +483,15 @@ export class CommandPaletteDeliveryHandler implements DeliveryHandler {
       notification.category,
       notification.type,
       notification.priority,
-      ...notification.title.toLowerCase().split(' '),
+      ...notification.title.toLowerCase().split(" "),
     ];
 
     // Add contextual keywords
-    if (notification.category === 'economic') {
-      keywords.push('gdp', 'economy', 'trade', 'growth');
+    if (notification.category === "economic") {
+      keywords.push("gdp", "economy", "trade", "growth");
     }
-    if (notification.category === 'governance') {
-      keywords.push('government', 'policy', 'efficiency');
+    if (notification.category === "governance") {
+      keywords.push("government", "policy", "efficiency");
     }
 
     return [...new Set(keywords)]; // Remove duplicates
@@ -490,10 +500,10 @@ export class CommandPaletteDeliveryHandler implements DeliveryHandler {
   private getShortcut(notification: UnifiedNotification): string | undefined {
     // Generate shortcuts for common notification types
     const shortcuts = {
-      economic: 'Ctrl+E',
-      governance: 'Ctrl+G',
-      diplomatic: 'Ctrl+D',
-      security: 'Ctrl+S',
+      economic: "Ctrl+E",
+      governance: "Ctrl+G",
+      diplomatic: "Ctrl+D",
+      security: "Ctrl+S",
     };
 
     return shortcuts[notification.category as keyof typeof shortcuts];
@@ -505,7 +515,7 @@ export class SilentDeliveryHandler implements DeliveryHandler {
   private storageCallback: ((notification: UnifiedNotification) => void) | null = null;
 
   constructor() {
-    console.log('[SilentDeliveryHandler] Initialized');
+    console.log("[SilentDeliveryHandler] Initialized");
   }
 
   setStorageCallback(callback: (notification: UnifiedNotification) => void) {
@@ -513,7 +523,7 @@ export class SilentDeliveryHandler implements DeliveryHandler {
   }
 
   canHandle(method: DeliveryMethod): boolean {
-    return method === 'silent';
+    return method === "silent";
   }
 
   async deliver(notification: UnifiedNotification, context: NotificationContext): Promise<boolean> {
@@ -525,10 +535,10 @@ export class SilentDeliveryHandler implements DeliveryHandler {
 
       // Add to browser storage for persistence
       this.storeNotificationLocally(notification);
-      
+
       return true;
     } catch (error) {
-      console.error('[SilentDeliveryHandler] Delivery failed:', error);
+      console.error("[SilentDeliveryHandler] Delivery failed:", error);
       return false;
     }
   }
@@ -538,19 +548,19 @@ export class SilentDeliveryHandler implements DeliveryHandler {
       supportsBatching: true,
       supportsActions: false,
       maxContentLength: 1000,
-      priorityLevels: ['medium', 'low'],
+      priorityLevels: ["medium", "low"],
       requiresUserInteraction: false,
       persistsAcrossSessions: true,
     };
   }
 
   private storeNotificationLocally(notification: UnifiedNotification) {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
     try {
-      const stored = localStorage.getItem('silent-notifications') || '[]';
+      const stored = localStorage.getItem("silent-notifications") || "[]";
       const notifications = JSON.parse(stored);
-      
+
       notifications.push({
         ...notification,
         storedAt: Date.now(),
@@ -558,10 +568,10 @@ export class SilentDeliveryHandler implements DeliveryHandler {
 
       // Keep only last 100 silent notifications
       const trimmed = notifications.slice(-100);
-      
-      localStorage.setItem('silent-notifications', JSON.stringify(trimmed));
+
+      localStorage.setItem("silent-notifications", JSON.stringify(trimmed));
     } catch (error) {
-      console.error('[SilentDeliveryHandler] Failed to store notification:', error);
+      console.error("[SilentDeliveryHandler] Failed to store notification:", error);
     }
   }
 }
@@ -572,7 +582,7 @@ export class BadgeDeliveryHandler implements DeliveryHandler {
   private badgeCounts: Map<string, number> = new Map();
 
   constructor() {
-    console.log('[BadgeDeliveryHandler] Initialized');
+    console.log("[BadgeDeliveryHandler] Initialized");
   }
 
   setBadgeCallback(callback: (count: number, category?: string) => void) {
@@ -580,7 +590,7 @@ export class BadgeDeliveryHandler implements DeliveryHandler {
   }
 
   canHandle(method: DeliveryMethod): boolean {
-    return method === 'badge';
+    return method === "badge";
   }
 
   async deliver(notification: UnifiedNotification, context: NotificationContext): Promise<boolean> {
@@ -597,7 +607,7 @@ export class BadgeDeliveryHandler implements DeliveryHandler {
 
       return true;
     } catch (error) {
-      console.error('[BadgeDeliveryHandler] Delivery failed:', error);
+      console.error("[BadgeDeliveryHandler] Delivery failed:", error);
       return false;
     }
   }
@@ -607,7 +617,7 @@ export class BadgeDeliveryHandler implements DeliveryHandler {
       supportsBatching: true,
       supportsActions: false,
       maxContentLength: 0, // No content, just count
-      priorityLevels: ['high', 'medium', 'low'],
+      priorityLevels: ["high", "medium", "low"],
       requiresUserInteraction: false,
       persistsAcrossSessions: false,
     };
@@ -636,14 +646,14 @@ export class DeliveryHandlerRegistry {
 
   constructor() {
     // Register default handlers
-    this.registerHandler('dynamic-island', new DynamicIslandDeliveryHandler());
-    this.registerHandler('toast', new ToastDeliveryHandler());
-    this.registerHandler('modal', new ModalDeliveryHandler());
-    this.registerHandler('command-palette', new CommandPaletteDeliveryHandler());
-    this.registerHandler('silent', new SilentDeliveryHandler());
-    this.registerHandler('badge', new BadgeDeliveryHandler());
+    this.registerHandler("dynamic-island", new DynamicIslandDeliveryHandler());
+    this.registerHandler("toast", new ToastDeliveryHandler());
+    this.registerHandler("modal", new ModalDeliveryHandler());
+    this.registerHandler("command-palette", new CommandPaletteDeliveryHandler());
+    this.registerHandler("silent", new SilentDeliveryHandler());
+    this.registerHandler("badge", new BadgeDeliveryHandler());
 
-    console.log('[DeliveryHandlerRegistry] Initialized with', this.handlers.size, 'handlers');
+    console.log("[DeliveryHandlerRegistry] Initialized with", this.handlers.size, "handlers");
   }
 
   registerHandler(method: DeliveryMethod, handler: DeliveryHandler) {
@@ -660,7 +670,7 @@ export class DeliveryHandlerRegistry {
 
   getCapabilities(): Record<DeliveryMethod, DeliveryCapabilities> {
     const capabilities: Partial<Record<DeliveryMethod, DeliveryCapabilities>> = {};
-    
+
     for (const [method, handler] of this.handlers) {
       capabilities[method] = handler.getCapabilities();
     }

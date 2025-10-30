@@ -8,4 +8,4 @@ export function LiveTime({ className }: { className?: string }) {
     return () => clearInterval(interval);
   }, []);
   return <span className={className}>{now.toLocaleTimeString()}</span>;
-} 
+}

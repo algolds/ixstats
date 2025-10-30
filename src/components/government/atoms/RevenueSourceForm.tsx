@@ -1,22 +1,28 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from 'react';
-import { usePendingLocks } from '~/app/mycountry/editor/hooks/usePendingLocks';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { Switch } from '~/components/ui/switch';
-import { Slider } from '~/components/ui/slider';
-import { 
-  Plus, 
-  X, 
-  DollarSign, 
-  Receipt, 
-  Building2, 
-  FileText, 
+import React, { useState, useRef, useCallback } from "react";
+import { usePendingLocks } from "~/app/mycountry/editor/hooks/usePendingLocks";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Switch } from "~/components/ui/switch";
+import { Slider } from "~/components/ui/slider";
+import {
+  Plus,
+  X,
+  DollarSign,
+  Receipt,
+  Building2,
+  FileText,
   MoreHorizontal,
   TrendingUp,
   TrendingDown,
@@ -27,10 +33,13 @@ import {
   Shield,
   FileCheck,
   AlertTriangle,
-  Mountain
-} from 'lucide-react';
-import type { RevenueSourceInput, RevenueCategory } from '~/types/government';
-import { revenueTaxIntegrationService, type CollectionMethod } from '~/app/builder/services/RevenueTaxIntegrationService';
+  Mountain,
+} from "lucide-react";
+import type { RevenueSourceInput, RevenueCategory } from "~/types/government";
+import {
+  revenueTaxIntegrationService,
+  type CollectionMethod,
+} from "~/app/builder/services/RevenueTaxIntegrationService";
 
 interface RevenueSourceFormProps {
   data: RevenueSourceInput[];
@@ -42,82 +51,77 @@ interface RevenueSourceFormProps {
 }
 
 const revenueCategories: RevenueCategory[] = [
-  'Direct Tax', 
-  'Indirect Tax', 
-  'Non-Tax Revenue', 
-  'Fees and Fines', 
-  'Other'
+  "Direct Tax",
+  "Indirect Tax",
+  "Non-Tax Revenue",
+  "Fees and Fines",
+  "Other",
 ];
 
 const revenueCategoryIcons = {
-  'Direct Tax': Receipt,
-  'Indirect Tax': Building2,
-  'Non-Tax Revenue': DollarSign,
-  'Fees and Fines': FileText,
-  'Other': MoreHorizontal
+  "Direct Tax": Receipt,
+  "Indirect Tax": Building2,
+  "Non-Tax Revenue": DollarSign,
+  "Fees and Fines": FileText,
+  Other: MoreHorizontal,
 };
 
 const revenueCategoryColors = {
-  'Direct Tax': '#059669',
-  'Indirect Tax': '#0891b2',
-  'Non-Tax Revenue': '#7c3aed',
-  'Fees and Fines': '#ea580c',
-  'Other': '#6b7280'
+  "Direct Tax": "#059669",
+  "Indirect Tax": "#0891b2",
+  "Non-Tax Revenue": "#7c3aed",
+  "Fees and Fines": "#ea580c",
+  Other: "#6b7280",
 };
 
 const commonRevenueSources = {
-  'Direct Tax': [
-    'Personal Income Tax',
-    'Corporate Income Tax',
-    'Capital Gains Tax',
-    'Estate Tax',
-    'Property Tax'
+  "Direct Tax": [
+    "Personal Income Tax",
+    "Corporate Income Tax",
+    "Capital Gains Tax",
+    "Estate Tax",
+    "Property Tax",
   ],
-  'Indirect Tax': [
-    'Value Added Tax (VAT)',
-    'Goods and Services Tax (GST)',
-    'Sales Tax',
-    'Excise Tax',
-    'Customs Duties',
-    'Import Tariffs'
+  "Indirect Tax": [
+    "Value Added Tax (VAT)",
+    "Goods and Services Tax (GST)",
+    "Sales Tax",
+    "Excise Tax",
+    "Customs Duties",
+    "Import Tariffs",
   ],
-  'Non-Tax Revenue': [
-    'State-Owned Enterprise Profits',
-    'Natural Resource Royalties',
-    'Investment Returns',
-    'Public Asset Sales',
-    'Licensing Fees'
+  "Non-Tax Revenue": [
+    "State-Owned Enterprise Profits",
+    "Natural Resource Royalties",
+    "Investment Returns",
+    "Public Asset Sales",
+    "Licensing Fees",
   ],
-  'Fees and Fines': [
-    'Court Fines',
-    'Traffic Violations',
-    'Regulatory Fees',
-    'Service Charges',
-    'Permit Fees'
+  "Fees and Fines": [
+    "Court Fines",
+    "Traffic Violations",
+    "Regulatory Fees",
+    "Service Charges",
+    "Permit Fees",
   ],
-  'Other': [
-    'Foreign Aid',
-    'Grants',
-    'Borrowing',
-    'Special Levies'
-  ]
+  Other: ["Foreign Aid", "Grants", "Borrowing", "Special Levies"],
 };
 
 // Icon mapping for collection methods
 const getCollectionMethodIcon = (iconName: string) => {
   const iconMap: Record<string, any> = {
-    'Zap': Zap,
-    'Calculator': Calculator,
-    'CreditCard': CreditCard,
-    'Shield': Shield,
-    'FileText': FileText,
-    'FileCheck': FileCheck,
-    'AlertTriangle': AlertTriangle,
-    'Mountain': Mountain,
-    'Receipt': Receipt,
-    'DollarSign': DollarSign,
-    'Building2': Building2,
-    'MoreHorizontal': MoreHorizontal
+    Zap: Zap,
+    Calculator: Calculator,
+    CreditCard: CreditCard,
+    Shield: Shield,
+    FileText: FileText,
+    FileCheck: FileCheck,
+    AlertTriangle: AlertTriangle,
+    Mountain: Mountain,
+    Receipt: Receipt,
+    DollarSign: DollarSign,
+    Building2: Building2,
+    MoreHorizontal: MoreHorizontal,
   };
   return iconMap[iconName] || MoreHorizontal;
 };
@@ -125,39 +129,39 @@ const getCollectionMethodIcon = (iconName: string) => {
 // Get relevant collection methods for a revenue category
 const getCollectionMethodsForCategory = (category: RevenueCategory): CollectionMethod[] => {
   const allMethods = revenueTaxIntegrationService.COLLECTION_METHODS;
-  
-  if (category === 'Direct Tax') {
-    return allMethods.filter(m => m.isTaxRelated && m.taxCategoryType === 'Direct Tax');
-  } else if (category === 'Indirect Tax') {
-    return allMethods.filter(m => m.isTaxRelated && m.taxCategoryType === 'Indirect Tax');
-  } else if (category === 'Non-Tax Revenue') {
-    return allMethods.filter(m => !m.isTaxRelated && m.taxCategoryType === 'Non-Tax Revenue');
-  } else if (category === 'Fees and Fines') {
-    return allMethods.filter(m => !m.isTaxRelated && m.taxCategoryType === 'Fees and Fines');
+
+  if (category === "Direct Tax") {
+    return allMethods.filter((m) => m.isTaxRelated && m.taxCategoryType === "Direct Tax");
+  } else if (category === "Indirect Tax") {
+    return allMethods.filter((m) => m.isTaxRelated && m.taxCategoryType === "Indirect Tax");
+  } else if (category === "Non-Tax Revenue") {
+    return allMethods.filter((m) => !m.isTaxRelated && m.taxCategoryType === "Non-Tax Revenue");
+  } else if (category === "Fees and Fines") {
+    return allMethods.filter((m) => !m.isTaxRelated && m.taxCategoryType === "Fees and Fines");
   } else {
     return allMethods; // Show all for 'Other' category
   }
 };
 
-export function RevenueSourceForm({ 
-  data, 
-  onChange, 
+export function RevenueSourceForm({
+  data,
+  onChange,
   totalRevenue,
-  currency = 'USD',
+  currency = "USD",
   isReadOnly = false,
-  availableDepartments = []
+  availableDepartments = [],
 }: RevenueSourceFormProps) {
   const { isLocked } = usePendingLocks();
   const [isAddingNew, setIsAddingNew] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<RevenueCategory>('Direct Tax');
+  const [selectedCategory, setSelectedCategory] = useState<RevenueCategory>("Direct Tax");
   const [newRevenue, setNewRevenue] = useState<RevenueSourceInput>({
-    name: '',
-    category: 'Direct Tax',
-    description: '',
+    name: "",
+    category: "Direct Tax",
+    description: "",
     rate: 0,
     revenueAmount: 0,
-    collectionMethod: '',
-    administeredBy: ''
+    collectionMethod: "",
+    administeredBy: "",
   });
 
   // Use refs to access latest values without causing re-renders
@@ -167,11 +171,11 @@ export function RevenueSourceForm({
   totalRevenueRef.current = totalRevenue;
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
       currency: currency,
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
@@ -185,78 +189,92 @@ export function RevenueSourceForm({
   const totalCalculated = data.reduce((sum, item) => sum + item.revenueAmount, 0);
   const totalPercent = data.reduce((sum, item) => sum + (item.revenuePercent ?? 0), 0);
 
-  const handleUpdate = useCallback((index: number, field: keyof RevenueSourceInput, value: any) => {
-    const updated = [...dataRef.current];
-    updated[index] = {
-      ...updated[index],
-      [field]: value
-    };
+  const handleUpdate = useCallback(
+    (index: number, field: keyof RevenueSourceInput, value: any) => {
+      const updated = [...dataRef.current];
+      updated[index] = {
+        ...updated[index],
+        [field]: value,
+      };
 
-    // Auto-calculate percentage when amount changes
-    if (field === 'revenueAmount' && totalRevenueRef.current > 0) {
-      updated[index].revenuePercent = (value / totalRevenueRef.current) * 100;
-    }
+      // Auto-calculate percentage when amount changes
+      if (field === "revenueAmount" && totalRevenueRef.current > 0) {
+        updated[index].revenuePercent = (value / totalRevenueRef.current) * 100;
+      }
 
-    onChange(updated);
-  }, [onChange]);
+      onChange(updated);
+    },
+    [onChange]
+  );
 
   const handleAdd = useCallback(() => {
     if (newRevenue.name.trim()) {
       const revenueToAdd = {
         ...newRevenue,
-        revenuePercent: totalRevenueRef.current > 0 ? (newRevenue.revenueAmount / totalRevenueRef.current) * 100 : 0
+        revenuePercent:
+          totalRevenueRef.current > 0
+            ? (newRevenue.revenueAmount / totalRevenueRef.current) * 100
+            : 0,
       };
 
       onChange([...dataRef.current, revenueToAdd]);
       setNewRevenue({
-        name: '',
+        name: "",
         category: selectedCategory,
-        description: '',
+        description: "",
         rate: 0,
         revenueAmount: 0,
-        collectionMethod: '',
-        administeredBy: ''
+        collectionMethod: "",
+        administeredBy: "",
       });
       setIsAddingNew(false);
     }
   }, [newRevenue, selectedCategory, onChange]);
 
-  const handleRemove = useCallback((index: number) => {
-    const updated = dataRef.current.filter((_, i) => i !== index);
-    onChange(updated);
-  }, [onChange]);
+  const handleRemove = useCallback(
+    (index: number) => {
+      const updated = dataRef.current.filter((_, i) => i !== index);
+      onChange(updated);
+    },
+    [onChange]
+  );
 
   const addPresetRevenue = (name: string) => {
     const preset: RevenueSourceInput = {
       name,
       category: selectedCategory,
       description: `${name} revenue collection`,
-      rate: selectedCategory.includes('Tax') ? 10 : undefined,
+      rate: selectedCategory.includes("Tax") ? 10 : undefined,
       revenueAmount: totalRevenue * 0.1,
-      collectionMethod: 'automatic_deduction',
-      administeredBy: availableDepartments.find(d => d.name.includes('Finance') || d.name.includes('Treasury'))?.name || 'Ministry of Finance'
+      collectionMethod: "automatic_deduction",
+      administeredBy:
+        availableDepartments.find((d) => d.name.includes("Finance") || d.name.includes("Treasury"))
+          ?.name || "Ministry of Finance",
     };
 
-    onChange([...data, {
-      ...preset,
-      revenuePercent: totalRevenue > 0 ? (preset.revenueAmount / totalRevenue) * 100 : 0
-    }]);
+    onChange([
+      ...data,
+      {
+        ...preset,
+        revenuePercent: totalRevenue > 0 ? (preset.revenueAmount / totalRevenue) * 100 : 0,
+      },
+    ]);
   };
 
   const getCategoryStats = () => {
-    const stats = revenueCategories.map(category => {
-      const categoryData = data.filter(item => item.category === category);
+    const stats = revenueCategories.map((category) => {
+      const categoryData = data.filter((item) => item.category === category);
       const amount = categoryData.reduce((sum, item) => sum + item.revenueAmount, 0);
       const percent = totalCalculated > 0 ? (amount / totalCalculated) * 100 : 0;
       return {
         category,
         amount,
         percent,
-        count: categoryData.length
+        count: categoryData.length,
       };
     });
 
-    return stats.filter(stat => stat.count > 0);
+    return stats.filter((stat) => stat.count > 0);
   };
 
   return (
@@ -264,22 +282,20 @@ export function RevenueSourceForm({
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center text-lg font-semibold text-[var(--color-text-primary)]">
-            <DollarSign className="h-5 w-5 mr-2 text-[var(--color-brand-primary)]" />
+            <DollarSign className="mr-2 h-5 w-5 text-[var(--color-brand-primary)]" />
             Revenue Sources
           </CardTitle>
           <div className="flex items-center gap-2">
             <Badge variant={totalPercent > 100 ? "destructive" : "default"}>
               {data.length} Sources
             </Badge>
-            <Badge variant="secondary">
-              {formatCurrency(totalCalculated)}
-            </Badge>
+            <Badge variant="secondary">{formatCurrency(totalCalculated)}</Badge>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Revenue Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-[var(--color-bg-tertiary)] rounded-lg">
+        <div className="grid grid-cols-2 gap-4 rounded-lg bg-[var(--color-bg-tertiary)] p-4 md:grid-cols-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-[var(--color-text-primary)]">
               {formatNumber(totalCalculated)}
@@ -288,19 +304,19 @@ export function RevenueSourceForm({
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">
-              {data.filter(r => r.category.includes('Tax')).length}
+              {data.filter((r) => r.category.includes("Tax")).length}
             </div>
             <div className="text-sm text-[var(--color-text-muted)]">Tax Sources</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">
-              {data.filter(r => !r.category.includes('Tax')).length}
+              {data.filter((r) => !r.category.includes("Tax")).length}
             </div>
             <div className="text-sm text-[var(--color-text-muted)]">Non-Tax Sources</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-[var(--color-text-primary)]">
-              {data.length > 0 ? formatNumber(totalCalculated / data.length) : '0'}
+              {data.length > 0 ? formatNumber(totalCalculated / data.length) : "0"}
             </div>
             <div className="text-sm text-[var(--color-text-muted)]">Avg per Source</div>
           </div>
@@ -309,18 +325,27 @@ export function RevenueSourceForm({
         {/* Category Breakdown */}
         {getCategoryStats().length > 0 && (
           <div className="space-y-3">
-            <h4 className="text-sm font-medium text-[var(--color-text-primary)]">Revenue by Category</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {getCategoryStats().map(stat => {
+            <h4 className="text-sm font-medium text-[var(--color-text-primary)]">
+              Revenue by Category
+            </h4>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {getCategoryStats().map((stat) => {
                 const Icon = revenueCategoryIcons[stat.category];
                 const color = revenueCategoryColors[stat.category];
                 return (
-                  <div key={stat.category} className="flex items-center justify-between p-3 bg-[var(--color-bg-secondary)] rounded-lg">
+                  <div
+                    key={stat.category}
+                    className="flex items-center justify-between rounded-lg bg-[var(--color-bg-secondary)] p-3"
+                  >
                     <div className="flex items-center gap-2">
                       <Icon className="h-4 w-4" style={{ color }} />
                       <div>
-                        <div className="font-medium text-[var(--color-text-primary)]">{stat.category}</div>
-                        <div className="text-xs text-[var(--color-text-muted)]">{stat.count} sources</div>
+                        <div className="font-medium text-[var(--color-text-primary)]">
+                          {stat.category}
+                        </div>
+                        <div className="text-xs text-[var(--color-text-muted)]">
+                          {stat.count} sources
+                        </div>
                       </div>
                     </div>
                     <div className="text-right">
@@ -352,29 +377,31 @@ export function RevenueSourceForm({
                       variant="ghost"
                       size="sm"
                       onClick={() => handleRemove(index)}
-                      className="absolute top-2 right-2 text-red-600 hover:text-red-800 hover:bg-red-50"
+                      className="absolute top-2 right-2 text-red-600 hover:bg-red-50 hover:text-red-800"
                     >
                       <X className="h-4 w-4" />
                     </Button>
                   )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {/* Basic Info */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <Icon className="h-4 w-4" style={{ color }} />
                         <Input
                           value={item.name}
-                          onChange={(e) => handleUpdate(index, 'name', e.target.value)}
+                          onChange={(e) => handleUpdate(index, "name", e.target.value)}
                           placeholder="Revenue source name"
                           disabled={isReadOnly}
                           className="font-medium"
                         />
                       </div>
-                      
+
                       <Select
                         value={item.category}
-                        onValueChange={(value: RevenueCategory) => handleUpdate(index, 'category', value)}
+                        onValueChange={(value: RevenueCategory) =>
+                          handleUpdate(index, "category", value)
+                        }
                         disabled={isReadOnly}
                       >
                         <SelectTrigger>
@@ -386,7 +413,10 @@ export function RevenueSourceForm({
                             return (
                               <SelectItem key={category} value={category}>
                                 <div className="flex items-center">
-                                  <CategoryIcon className="h-4 w-4 mr-2" style={{ color: revenueCategoryColors[category] }} />
+                                  <CategoryIcon
+                                    className="mr-2 h-4 w-4"
+                                    style={{ color: revenueCategoryColors[category] }}
+                                  />
                                   {category}
                                 </div>
                               </SelectItem>
@@ -396,39 +426,48 @@ export function RevenueSourceForm({
                       </Select>
 
                       <textarea
-                        value={item.description || ''}
-                        onChange={(e) => handleUpdate(index, 'description', e.target.value)}
+                        value={item.description || ""}
+                        onChange={(e) => handleUpdate(index, "description", e.target.value)}
                         placeholder="Description..."
                         disabled={isReadOnly}
                         rows={2}
-                        className="w-full px-3 py-2 border border-[var(--color-border-primary)] rounded-md bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] text-sm placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)] focus:border-transparent resize-none"
+                        className="w-full resize-none rounded-md border border-[var(--color-border-primary)] bg-[var(--color-bg-primary)] px-3 py-2 text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:border-transparent focus:ring-2 focus:ring-[var(--color-brand-primary)] focus:outline-none"
                       />
                     </div>
 
                     {/* Financial Details */}
                     <div className="space-y-3">
                       <div className="space-y-2">
-                        <Label className="text-xs text-[var(--color-text-muted)]">Annual Revenue</Label>
+                        <Label className="text-xs text-[var(--color-text-muted)]">
+                          Annual Revenue
+                        </Label>
                         <Input
                           type="number"
                           value={item.revenueAmount}
-                          onChange={(e) => handleUpdate(index, 'revenueAmount', parseFloat(e.target.value) || 0)}
-                          disabled={isReadOnly || isLocked('revenueSources')}
+                          onChange={(e) =>
+                            handleUpdate(index, "revenueAmount", parseFloat(e.target.value) || 0)
+                          }
+                          disabled={isReadOnly || isLocked("revenueSources")}
                           min="0"
                           step="1000000"
                         />
                         <p className="text-xs text-[var(--color-text-muted)]">
-                          {formatCurrency(item.revenueAmount)} ({(item.revenuePercent ?? 0).toFixed(1)}%)
+                          {formatCurrency(item.revenueAmount)} (
+                          {(item.revenuePercent ?? 0).toFixed(1)}%)
                         </p>
                       </div>
 
-                      {item.category.includes('Tax') && (
+                      {item.category.includes("Tax") && (
                         <div className="space-y-2">
-                          <Label className="text-xs text-[var(--color-text-muted)]">Tax Rate (%)</Label>
+                          <Label className="text-xs text-[var(--color-text-muted)]">
+                            Tax Rate (%)
+                          </Label>
                           <Input
                             type="number"
                             value={item.rate || 0}
-                            onChange={(e) => handleUpdate(index, 'rate', parseFloat(e.target.value) || 0)}
+                            onChange={(e) =>
+                              handleUpdate(index, "rate", parseFloat(e.target.value) || 0)
+                            }
                             disabled={isReadOnly}
                             min="0"
                             max="100"
@@ -441,10 +480,12 @@ export function RevenueSourceForm({
                     {/* Administration */}
                     <div className="space-y-3">
                       <div className="space-y-2">
-                        <Label className="text-xs text-[var(--color-text-muted)]">Collection Method</Label>
+                        <Label className="text-xs text-[var(--color-text-muted)]">
+                          Collection Method
+                        </Label>
                         <Select
-                          value={item.collectionMethod || ''}
-                          onValueChange={(value) => handleUpdate(index, 'collectionMethod', value)}
+                          value={item.collectionMethod || ""}
+                          onValueChange={(value) => handleUpdate(index, "collectionMethod", value)}
                           disabled={isReadOnly}
                         >
                           <SelectTrigger>
@@ -456,10 +497,15 @@ export function RevenueSourceForm({
                               return (
                                 <SelectItem key={method.id} value={method.id}>
                                   <div className="flex items-center gap-2">
-                                    <IconComponent className="h-4 w-4" style={{ color: method.color }} />
+                                    <IconComponent
+                                      className="h-4 w-4"
+                                      style={{ color: method.color }}
+                                    />
                                     <div className="flex flex-col">
                                       <span className="font-medium">{method.name}</span>
-                                      <span className="text-xs text-muted-foreground">{method.description}</span>
+                                      <span className="text-muted-foreground text-xs">
+                                        {method.description}
+                                      </span>
                                     </div>
                                   </div>
                                 </SelectItem>
@@ -470,11 +516,13 @@ export function RevenueSourceForm({
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="text-xs text-[var(--color-text-muted)]">Administered By</Label>
+                        <Label className="text-xs text-[var(--color-text-muted)]">
+                          Administered By
+                        </Label>
                         {availableDepartments.length > 0 ? (
                           <Select
-                            value={item.administeredBy || ''}
-                            onValueChange={(value) => handleUpdate(index, 'administeredBy', value)}
+                            value={item.administeredBy || ""}
+                            onValueChange={(value) => handleUpdate(index, "administeredBy", value)}
                             disabled={isReadOnly}
                           >
                             <SelectTrigger>
@@ -490,8 +538,8 @@ export function RevenueSourceForm({
                           </Select>
                         ) : (
                           <Input
-                            value={item.administeredBy || ''}
-                            onChange={(e) => handleUpdate(index, 'administeredBy', e.target.value)}
+                            value={item.administeredBy || ""}
+                            onChange={(e) => handleUpdate(index, "administeredBy", e.target.value)}
                             placeholder="Department name"
                             disabled={isReadOnly}
                           />
@@ -513,24 +561,29 @@ export function RevenueSourceForm({
                 <Button
                   variant="outline"
                   onClick={() => setIsAddingNew(true)}
-                  className="w-full h-12 border-2 border-dashed border-[var(--color-border-primary)] hover:border-[var(--color-brand-primary)]"
+                  className="h-12 w-full border-2 border-dashed border-[var(--color-border-primary)] hover:border-[var(--color-brand-primary)]"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Add Revenue Source
                 </Button>
 
                 {/* Quick Add Presets */}
                 <div className="space-y-2">
-                  <Label className="text-sm text-[var(--color-text-muted)]">Quick Add Common Sources:</Label>
+                  <Label className="text-sm text-[var(--color-text-muted)]">
+                    Quick Add Common Sources:
+                  </Label>
                   <div className="space-y-2">
-                    {revenueCategories.map(category => (
+                    {revenueCategories.map((category) => (
                       <div key={category} className="space-y-1">
-                        <div className="text-xs font-medium text-[var(--color-text-secondary)] flex items-center gap-1">
-                          {React.createElement(revenueCategoryIcons[category], { className: "h-3 w-3", style: { color: revenueCategoryColors[category] } })}
+                        <div className="flex items-center gap-1 text-xs font-medium text-[var(--color-text-secondary)]">
+                          {React.createElement(revenueCategoryIcons[category], {
+                            className: "h-3 w-3",
+                            style: { color: revenueCategoryColors[category] },
+                          })}
                           {category}
                         </div>
                         <div className="flex flex-wrap gap-1">
-                          {commonRevenueSources[category].map(source => (
+                          {commonRevenueSources[category].map((source) => (
                             <Button
                               key={source}
                               variant="outline"
@@ -539,9 +592,9 @@ export function RevenueSourceForm({
                                 setSelectedCategory(category);
                                 addPresetRevenue(source);
                               }}
-                              className="text-xs h-7"
+                              className="h-7 text-xs"
                             >
-                              <Plus className="h-3 w-3 mr-1" />
+                              <Plus className="mr-1 h-3 w-3" />
                               {source}
                             </Button>
                           ))}
@@ -554,17 +607,21 @@ export function RevenueSourceForm({
             ) : (
               <Card className="border-2 border-dashed border-[var(--color-brand-primary)]">
                 <CardContent className="p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-3">
                       <Input
                         value={newRevenue.name}
-                        onChange={(e) => setNewRevenue(prev => ({ ...prev, name: e.target.value }))}
+                        onChange={(e) =>
+                          setNewRevenue((prev) => ({ ...prev, name: e.target.value }))
+                        }
                         placeholder="Revenue source name"
                       />
-                      
+
                       <Select
                         value={newRevenue.category}
-                        onValueChange={(value: RevenueCategory) => setNewRevenue(prev => ({ ...prev, category: value }))}
+                        onValueChange={(value: RevenueCategory) =>
+                          setNewRevenue((prev) => ({ ...prev, category: value }))
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -575,7 +632,10 @@ export function RevenueSourceForm({
                             return (
                               <SelectItem key={category} value={category}>
                                 <div className="flex items-center">
-                                  <CategoryIcon className="h-4 w-4 mr-2" style={{ color: revenueCategoryColors[category] }} />
+                                  <CategoryIcon
+                                    className="mr-2 h-4 w-4"
+                                    style={{ color: revenueCategoryColors[category] }}
+                                  />
                                   {category}
                                 </div>
                               </SelectItem>
@@ -589,17 +649,27 @@ export function RevenueSourceForm({
                       <Input
                         type="number"
                         value={newRevenue.revenueAmount}
-                        onChange={(e) => setNewRevenue(prev => ({ ...prev, revenueAmount: parseFloat(e.target.value) || 0 }))}
+                        onChange={(e) =>
+                          setNewRevenue((prev) => ({
+                            ...prev,
+                            revenueAmount: parseFloat(e.target.value) || 0,
+                          }))
+                        }
                         placeholder="Annual revenue amount"
                         min="0"
                         step="1000000"
                       />
 
-                      {newRevenue.category.includes('Tax') && (
+                      {newRevenue.category.includes("Tax") && (
                         <Input
                           type="number"
                           value={newRevenue.rate || 0}
-                          onChange={(e) => setNewRevenue(prev => ({ ...prev, rate: parseFloat(e.target.value) || 0 }))}
+                          onChange={(e) =>
+                            setNewRevenue((prev) => ({
+                              ...prev,
+                              rate: parseFloat(e.target.value) || 0,
+                            }))
+                          }
                           placeholder="Tax rate (%)"
                           min="0"
                           max="100"
@@ -609,12 +679,16 @@ export function RevenueSourceForm({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label className="text-sm text-[var(--color-text-muted)]">Collection Method</Label>
+                      <Label className="text-sm text-[var(--color-text-muted)]">
+                        Collection Method
+                      </Label>
                       <Select
-                        value={newRevenue.collectionMethod || ''}
-                        onValueChange={(value) => setNewRevenue(prev => ({ ...prev, collectionMethod: value }))}
+                        value={newRevenue.collectionMethod || ""}
+                        onValueChange={(value) =>
+                          setNewRevenue((prev) => ({ ...prev, collectionMethod: value }))
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select collection method" />
@@ -625,10 +699,15 @@ export function RevenueSourceForm({
                             return (
                               <SelectItem key={method.id} value={method.id}>
                                 <div className="flex items-center gap-2">
-                                  <IconComponent className="h-4 w-4" style={{ color: method.color }} />
+                                  <IconComponent
+                                    className="h-4 w-4"
+                                    style={{ color: method.color }}
+                                  />
                                   <div className="flex flex-col">
                                     <span className="font-medium">{method.name}</span>
-                                    <span className="text-xs text-muted-foreground">{method.description}</span>
+                                    <span className="text-muted-foreground text-xs">
+                                      {method.description}
+                                    </span>
                                   </div>
                                 </div>
                               </SelectItem>
@@ -639,11 +718,15 @@ export function RevenueSourceForm({
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-sm text-[var(--color-text-muted)]">Administered By</Label>
+                      <Label className="text-sm text-[var(--color-text-muted)]">
+                        Administered By
+                      </Label>
                       {availableDepartments.length > 0 ? (
                         <Select
-                          value={newRevenue.administeredBy || ''}
-                          onValueChange={(value) => setNewRevenue(prev => ({ ...prev, administeredBy: value }))}
+                          value={newRevenue.administeredBy || ""}
+                          onValueChange={(value) =>
+                            setNewRevenue((prev) => ({ ...prev, administeredBy: value }))
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select department" />
@@ -658,33 +741,33 @@ export function RevenueSourceForm({
                         </Select>
                       ) : (
                         <Input
-                          value={newRevenue.administeredBy || ''}
-                          onChange={(e) => setNewRevenue(prev => ({ ...prev, administeredBy: e.target.value }))}
+                          value={newRevenue.administeredBy || ""}
+                          onChange={(e) =>
+                            setNewRevenue((prev) => ({ ...prev, administeredBy: e.target.value }))
+                          }
                           placeholder="Department or agency name"
                         />
                       )}
                     </div>
                   </div>
 
-                  <div className="space-y-2 mt-4">
+                  <div className="mt-4 space-y-2">
                     <Label className="text-sm text-[var(--color-text-muted)]">Description</Label>
                     <Input
-                      value={newRevenue.description || ''}
-                      onChange={(e) => setNewRevenue(prev => ({ ...prev, description: e.target.value }))}
+                      value={newRevenue.description || ""}
+                      onChange={(e) =>
+                        setNewRevenue((prev) => ({ ...prev, description: e.target.value }))
+                      }
                       placeholder="Brief description of this revenue source"
                     />
                   </div>
 
-                  <div className="flex gap-2 mt-4">
+                  <div className="mt-4 flex gap-2">
                     <Button onClick={handleAdd} size="sm">
-                      <Plus className="h-4 w-4 mr-1" />
+                      <Plus className="mr-1 h-4 w-4" />
                       Add
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setIsAddingNew(false)} 
-                      size="sm"
-                    >
+                    <Button variant="outline" onClick={() => setIsAddingNew(false)} size="sm">
                       Cancel
                     </Button>
                   </div>

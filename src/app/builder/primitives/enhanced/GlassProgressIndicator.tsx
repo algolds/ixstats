@@ -1,16 +1,16 @@
 "use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { cn } from '~/lib/utils';
-import { useSectionTheme, getGlassClasses } from './theme-utils';
-import { useAnimatedValue, DEFAULT_ANIMATIONS } from './animation-utils';
-import type { EnhancedInputProps } from './types';
+import React from "react";
+import { motion } from "framer-motion";
+import { cn } from "~/lib/utils";
+import { useSectionTheme, getGlassClasses } from "./theme-utils";
+import { useAnimatedValue, DEFAULT_ANIMATIONS } from "./animation-utils";
+import type { EnhancedInputProps } from "./types";
 
-interface GlassProgressIndicatorProps extends Omit<EnhancedInputProps, 'value' | 'onChange'> {
+interface GlassProgressIndicatorProps extends Omit<EnhancedInputProps, "value" | "onChange"> {
   value: number;
   max?: number;
-  variant?: 'linear' | 'circular' | 'ring';
+  variant?: "linear" | "circular" | "ring";
   showPercentage?: boolean;
   showValue?: boolean;
   height?: number;
@@ -26,11 +26,11 @@ export function GlassProgressIndicator({
   min = 0,
   label,
   description,
-  unit = '%',
+  unit = "%",
   sectionId,
   theme,
-  size = 'md',
-  variant = 'linear',
+  size = "md",
+  variant = "linear",
   showPercentage = true,
   showValue = false,
   height,
@@ -39,42 +39,42 @@ export function GlassProgressIndicator({
   color,
   backgroundColor,
   animationDuration = 800,
-  className
+  className,
 }: GlassProgressIndicatorProps) {
   const { theme: resolvedTheme, colors, cssVars } = useSectionTheme(sectionId, theme);
-  
+
   // Calculate percentage (0-100)
   const percentage = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
-  
+
   // Animated percentage for smooth transitions
-  const animatedValue = useAnimatedValue(
-    percentage,
-    { ...DEFAULT_ANIMATIONS.spring, duration: animationDuration }
-  );
+  const animatedValue = useAnimatedValue(percentage, {
+    ...DEFAULT_ANIMATIONS.spring,
+    duration: animationDuration,
+  });
 
   const sizeConfigs = {
     sm: { linear: 6, circular: 60, thickness: 4 },
     md: { linear: 8, circular: 80, thickness: 6 },
-    lg: { linear: 12, circular: 100, thickness: 8 }
+    lg: { linear: 12, circular: 100, thickness: 8 },
   };
 
   const config = sizeConfigs[size];
   const progressHeight = height || config.linear;
   const progressThickness = thickness || config.thickness;
 
-  if (variant === 'circular' || variant === 'ring') {
+  if (variant === "circular" || variant === "ring") {
     const radius = config.circular / 2 - progressThickness;
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
     return (
-      <div 
-        className={cn('flex flex-col items-center space-y-3', className)}
+      <div
+        className={cn("flex flex-col items-center space-y-3", className)}
         style={cssVars as React.CSSProperties}
       >
         {/* Label */}
         {label && (
-          <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <label className="text-foreground flex items-center gap-2 text-sm font-medium">
             {Icon && <Icon className="h-4 w-4" />}
             {label}
           </label>
@@ -82,22 +82,18 @@ export function GlassProgressIndicator({
 
         {/* Circular Progress */}
         <div className="relative">
-          <svg
-            width={config.circular}
-            height={config.circular}
-            className="transform -rotate-90"
-          >
+          <svg width={config.circular} height={config.circular} className="-rotate-90 transform">
             {/* Background Circle */}
             <circle
               cx={config.circular / 2}
               cy={config.circular / 2}
               r={radius}
-              stroke={backgroundColor || 'var(--primitive-border)'}
+              stroke={backgroundColor || "var(--primitive-border)"}
               strokeWidth={progressThickness}
               fill="none"
               className="opacity-20"
             />
-            
+
             {/* Progress Circle */}
             <motion.circle
               cx={config.circular / 2}
@@ -112,11 +108,11 @@ export function GlassProgressIndicator({
               animate={{ strokeDashoffset }}
               transition={{
                 duration: animationDuration / 1000,
-                ease: "easeOut"
+                ease: "easeOut",
               }}
               className="drop-shadow-sm"
               style={{
-                filter: `drop-shadow(0 0 8px ${color || colors.primary}40)`
+                filter: `drop-shadow(0 0 8px ${color || colors.primary}40)`,
               }}
             />
           </svg>
@@ -124,8 +120,8 @@ export function GlassProgressIndicator({
           {/* Center Content */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             {showPercentage && (
-              <motion.span 
-                className="text-lg font-bold text-foreground"
+              <motion.span
+                className="text-foreground text-lg font-bold"
                 animate={{ scale: [1, 1.05, 1] }}
                 transition={{ duration: 0.3 }}
               >
@@ -133,47 +129,42 @@ export function GlassProgressIndicator({
               </motion.span>
             )}
             {showValue && (
-              <span className="text-sm text-muted-foreground">
-                {value}{unit}
+              <span className="text-muted-foreground text-sm">
+                {value}
+                {unit}
               </span>
             )}
           </div>
         </div>
 
         {/* Description */}
-        {description && (
-          <p className="text-xs text-muted-foreground text-center">{description}</p>
-        )}
+        {description && <p className="text-muted-foreground text-center text-xs">{description}</p>}
       </div>
     );
   }
 
   // Linear Progress
   return (
-    <div 
-      className={cn('space-y-2', className)}
-      style={cssVars as React.CSSProperties}
-    >
+    <div className={cn("space-y-2", className)} style={cssVars as React.CSSProperties}>
       {/* Header */}
       {(label || showPercentage || showValue) && (
         <div className="flex items-center justify-between">
           {label && (
-            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <label className="text-foreground flex items-center gap-2 text-sm font-medium">
               {Icon && <Icon className="h-4 w-4" />}
               {label}
             </label>
           )}
-          
+
           {(showPercentage || showValue) && (
             <div className="flex items-center gap-2 text-sm">
               {showPercentage && (
-                <motion.span className="text-foreground">
-                  {Math.round(percentage)}%
-                </motion.span>
+                <motion.span className="text-foreground">{Math.round(percentage)}%</motion.span>
               )}
               {showValue && (
                 <span className="text-muted-foreground">
-                  {value}{unit}
+                  {value}
+                  {unit}
                 </span>
               )}
             </div>
@@ -182,33 +173,35 @@ export function GlassProgressIndicator({
       )}
 
       {/* Progress Bar */}
-      <div className={cn(
-        'relative rounded-full overflow-hidden',
-        getGlassClasses('base', resolvedTheme, sectionId),
-        'bg-gray-100/80 dark:bg-gray-800/80',
-        'border border-gray-200/40 dark:border-gray-700/40'
-      )} style={{ height: progressHeight }}>
-        
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-full",
+          getGlassClasses("base", resolvedTheme, sectionId),
+          "bg-gray-100/80 dark:bg-gray-800/80",
+          "border border-gray-200/40 dark:border-gray-700/40"
+        )}
+        style={{ height: progressHeight }}
+      >
         {/* Background Track */}
-        <div 
+        <div
           className="absolute inset-0 rounded-full"
           style={{
-            backgroundColor: backgroundColor || 'transparent'
+            backgroundColor: backgroundColor || "transparent",
           }}
         />
 
         {/* Progress Fill */}
         <motion.div
-          className="absolute left-0 top-0 h-full rounded-full"
+          className="absolute top-0 left-0 h-full rounded-full"
           style={{
             background: color || `linear-gradient(90deg, ${colors.primary}, ${colors.accent})`,
-            boxShadow: `0 0 12px ${color || colors.primary}40`
+            boxShadow: `0 0 12px ${color || colors.primary}40`,
           }}
-          initial={{ width: '0%' }}
+          initial={{ width: "0%" }}
           animate={{ width: `${percentage}%` }}
           transition={{
             duration: animationDuration / 1000,
-            ease: "easeOut"
+            ease: "easeOut",
           }}
         />
 
@@ -216,23 +209,21 @@ export function GlassProgressIndicator({
         <motion.div
           className="absolute inset-0 rounded-full opacity-30"
           style={{
-            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)'
+            background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)",
           }}
           animate={{
-            x: ['-100%', '100%']
+            x: ["-100%", "100%"],
           }}
           transition={{
             duration: 2,
             repeat: Infinity,
-            ease: "linear"
+            ease: "linear",
           }}
         />
       </div>
 
       {/* Description */}
-      {description && (
-        <p className="text-xs text-muted-foreground">{description}</p>
-      )}
+      {description && <p className="text-muted-foreground text-xs">{description}</p>}
     </div>
   );
 }

@@ -1,11 +1,11 @@
 "use client";
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
-import { Skeleton } from '~/components/ui/skeleton';
-import { safeFormatCurrency } from '~/lib/format-utils';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
+import { safeFormatCurrency } from "~/lib/format-utils";
 import {
   Building2,
   Crown,
@@ -17,28 +17,25 @@ import {
   Settings,
   TrendingUp,
   Zap,
-  Shield
-} from 'lucide-react';
+  Shield,
+} from "lucide-react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-import Link from 'next/link';
-import { createUrl } from '~/lib/url-utils';
-import { useAtomicGovernment, useAtomicState } from '~/components/atomic/AtomicStateProvider';
+import Link from "next/link";
+import { createUrl } from "~/lib/url-utils";
+import { useAtomicGovernment, useAtomicState } from "~/components/atomic/AtomicStateProvider";
 
 interface GovernmentStructureDisplayProps {
   countryId: string;
-  variant?: 'compact' | 'full';
+  variant?: "compact" | "full";
 }
 
-export function GovernmentStructureDisplay({ 
-  countryId, 
-  variant = 'full' 
+export function GovernmentStructureDisplay({
+  countryId,
+  variant = "full",
 }: GovernmentStructureDisplayProps) {
   const { user } = useUser();
-  const { data: userProfile } = api.users.getProfile.useQuery(
-    undefined,
-    { enabled: !!user?.id }
-  );
+  const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
 
   // Try to use atomic state if available
   let atomicState = null;
@@ -51,8 +48,12 @@ export function GovernmentStructureDisplay({
   }
 
   // Use EXACT same pattern as other working queries
-  const { data: governmentData, isLoading, refetch } = api.government.getByCountryId.useQuery(
-    { countryId: countryId || '' },
+  const {
+    data: governmentData,
+    isLoading,
+    refetch,
+  } = api.government.getByCountryId.useQuery(
+    { countryId: countryId || "" },
     { enabled: !!countryId }
   );
 
@@ -60,10 +61,10 @@ export function GovernmentStructureDisplay({
 
   if (!countryId) {
     return (
-      <Card className="border-2 border-dashed border-muted">
+      <Card className="border-muted border-2 border-dashed">
         <CardContent className="p-8 text-center">
-          <Building2 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-          <h4 className="text-lg font-semibold mb-2">No Country ID</h4>
+          <Building2 className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
+          <h4 className="mb-2 text-lg font-semibold">No Country ID</h4>
           <p className="text-muted-foreground">
             Cannot load government structure without a valid country ID.
           </p>
@@ -83,7 +84,7 @@ export function GovernmentStructureDisplay({
         </CardHeader>
         <CardContent className="space-y-4">
           <Skeleton className="h-24 w-full" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-16 w-full" />
             ))}
@@ -102,21 +103,24 @@ export function GovernmentStructureDisplay({
     return (
       <div className="space-y-6">
         {/* Atomic Government Overview */}
-        <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-purple/5">
+        <Card className="border-primary/20 from-primary/5 to-purple/5 border-2 bg-gradient-to-br">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Zap className="h-6 w-6 text-primary" />
+                <div className="bg-primary/10 rounded-lg p-2">
+                  <Zap className="text-primary h-6 w-6" />
                 </div>
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     {traditionalStructure.governmentType}
-                    <Badge variant="default" className="text-xs bg-primary/10 text-primary border-primary/20">
+                    <Badge
+                      variant="default"
+                      className="bg-primary/10 text-primary border-primary/20 text-xs"
+                    >
                       Atomic-Driven
                     </Badge>
                   </CardTitle>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Powered by {selectedComponents.length} Atomic Components
                   </p>
                 </div>
@@ -139,69 +143,78 @@ export function GovernmentStructureDisplay({
               )}
             </div>
           </CardHeader>
-          
+
           <CardContent>
             {/* Real-time Atomic Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="text-center p-3 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border border-primary/20">
-                <div className="flex items-center justify-center mb-2">
-                  <TrendingUp className="h-5 w-5 text-primary" />
+            <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="from-primary/10 to-primary/5 border-primary/20 rounded-lg border bg-gradient-to-br p-3 text-center">
+                <div className="mb-2 flex items-center justify-center">
+                  <TrendingUp className="text-primary h-5 w-5" />
                 </div>
-                <div className="text-2xl font-bold text-primary">{effectivenessScore.toFixed(0)}%</div>
-                <div className="text-xs text-muted-foreground">Effectiveness</div>
+                <div className="text-primary text-2xl font-bold">
+                  {effectivenessScore.toFixed(0)}%
+                </div>
+                <div className="text-muted-foreground text-xs">Effectiveness</div>
               </div>
-              
-              <div className="text-center p-3 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                <div className="flex items-center justify-center mb-2">
+
+              <div className="rounded-lg border border-green-200 bg-gradient-to-br from-green-50 to-emerald-50 p-3 text-center">
+                <div className="mb-2 flex items-center justify-center">
                   <Users className="h-5 w-5 text-green-600" />
                 </div>
                 <div className="text-2xl font-bold text-green-700">
                   {realTimeMetrics.governmentCapacity.toFixed(0)}%
                 </div>
-                <div className="text-xs text-muted-foreground">Gov Capacity</div>
+                <div className="text-muted-foreground text-xs">Gov Capacity</div>
               </div>
-              
-              <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
-                <div className="flex items-center justify-center mb-2">
+
+              <div className="rounded-lg border border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50 p-3 text-center">
+                <div className="mb-2 flex items-center justify-center">
                   <Zap className="h-5 w-5 text-blue-600" />
                 </div>
                 <div className="text-2xl font-bold text-blue-700">
                   {realTimeMetrics.policyImplementationSpeed.toFixed(0)}%
                 </div>
-                <div className="text-xs text-muted-foreground">Policy Speed</div>
+                <div className="text-muted-foreground text-xs">Policy Speed</div>
               </div>
-              
-              <div className="text-center p-3 bg-gradient-to-br from-purple-50 to-violet-50 rounded-lg border border-purple-200">
-                <div className="flex items-center justify-center mb-2">
+
+              <div className="rounded-lg border border-purple-200 bg-gradient-to-br from-purple-50 to-violet-50 p-3 text-center">
+                <div className="mb-2 flex items-center justify-center">
                   <Shield className="h-5 w-5 text-purple-600" />
                 </div>
                 <div className="text-2xl font-bold text-purple-700">
                   {realTimeMetrics.crisisResiliency.toFixed(0)}%
                 </div>
-                <div className="text-xs text-muted-foreground">Crisis Resiliency</div>
+                <div className="text-muted-foreground text-xs">Crisis Resiliency</div>
               </div>
             </div>
 
             {/* Active Atomic Components */}
             <div className="mb-6">
-              <h4 className="font-semibold mb-3">Active Atomic Components</h4>
+              <h4 className="mb-3 font-semibold">Active Atomic Components</h4>
               <div className="flex flex-wrap gap-2">
                 {selectedComponents.map((component) => (
-                  <Badge key={component} variant="outline" className="bg-primary/5 border-primary/20 text-primary">
-                    {component.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())}
+                  <Badge
+                    key={component}
+                    variant="outline"
+                    className="bg-primary/5 border-primary/20 text-primary"
+                  >
+                    {component
+                      .replace(/_/g, " ")
+                      .toLowerCase()
+                      .replace(/\b\w/g, (l) => l.toUpperCase())}
                   </Badge>
                 ))}
               </div>
             </div>
 
             {/* Generated Structure */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
-                <h4 className="font-semibold mb-3">Executive Structure</h4>
+                <h4 className="mb-3 font-semibold">Executive Structure</h4>
                 <div className="space-y-2 text-sm">
                   {traditionalStructure.executiveStructure.map((position, index) => (
                     <div key={index} className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-primary rounded-full"></div>
+                      <div className="bg-primary h-2 w-2 rounded-full"></div>
                       <span>{position}</span>
                     </div>
                   ))}
@@ -209,21 +222,22 @@ export function GovernmentStructureDisplay({
               </div>
 
               <div>
-                <h4 className="font-semibold mb-3">Key Departments</h4>
+                <h4 className="mb-3 font-semibold">Key Departments</h4>
                 <div className="space-y-2 text-sm">
                   {traditionalStructure.departments.slice(0, 5).map((dept, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 bg-muted/30 rounded">
+                    <div
+                      key={index}
+                      className="bg-muted/30 flex items-center justify-between rounded p-2"
+                    >
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <div className="h-2 w-2 rounded-full bg-green-500"></div>
                         <span>{dept.name}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-xs">
                           +{dept.effectivenessBonus}% effectiveness
                         </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          P{dept.priority}
-                        </span>
+                        <span className="text-muted-foreground text-xs">P{dept.priority}</span>
                       </div>
                     </div>
                   ))}
@@ -233,22 +247,24 @@ export function GovernmentStructureDisplay({
 
             {/* Budget Distribution (Atomic-Generated) */}
             <div className="mt-6">
-              <h4 className="font-semibold mb-3">Atomic Budget Allocation</h4>
+              <h4 className="mb-3 font-semibold">Atomic Budget Allocation</h4>
               <div className="space-y-2">
-                {Object.entries(traditionalStructure.budgetAllocations).map(([category, percentage]) => (
-                  <div key={category} className="flex items-center justify-between">
-                    <span className="capitalize text-sm">{category.replace('_', ' ')}</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-24 bg-muted h-2 rounded-full overflow-hidden">
-                        <div 
-                          className="bg-primary h-full transition-all"
-                          style={{ width: `${percentage}%` }}
-                        />
+                {Object.entries(traditionalStructure.budgetAllocations).map(
+                  ([category, percentage]) => (
+                    <div key={category} className="flex items-center justify-between">
+                      <span className="text-sm capitalize">{category.replace("_", " ")}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="bg-muted h-2 w-24 overflow-hidden rounded-full">
+                          <div
+                            className="bg-primary h-full transition-all"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                        <span className="min-w-[3rem] text-sm font-medium">{percentage}%</span>
                       </div>
-                      <span className="text-sm font-medium min-w-[3rem]">{percentage}%</span>
                     </div>
-                  </div>
-                ))}
+                  )
+                )}
               </div>
             </div>
           </CardContent>
@@ -260,20 +276,19 @@ export function GovernmentStructureDisplay({
   // Fallback to traditional government structure if no atomic data
   if (!governmentData) {
     return (
-      <Card className="border-2 border-dashed border-muted">
+      <Card className="border-muted border-2 border-dashed">
         <CardContent className="p-8 text-center">
-          <Building2 className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-          <h4 className="text-lg font-semibold mb-2">No Government Structure</h4>
+          <Building2 className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
+          <h4 className="mb-2 text-lg font-semibold">No Government Structure</h4>
           <p className="text-muted-foreground mb-4">
-            {isOwner 
-              ? "Create your nation's government using atomic components or traditional structure." 
-              : "This country has not configured its government structure yet."
-            }
+            {isOwner
+              ? "Create your nation's government using atomic components or traditional structure."
+              : "This country has not configured its government structure yet."}
           </p>
           {isOwner && (
             <div className="flex items-center justify-center gap-3">
               <Link href={createUrl("/mycountry/editor?tab=atomic")}>
-                <Button className="flex items-center gap-2 bg-primary">
+                <Button className="bg-primary flex items-center gap-2">
                   <Zap className="h-4 w-4" />
                   Launch Atomic Editor
                 </Button>
@@ -293,20 +308,19 @@ export function GovernmentStructureDisplay({
 
   const getDepartmentStats = () => {
     const totalDepartments = governmentData.departments?.length || 0;
-    const totalBudgetAllocated = governmentData.budgetAllocations?.reduce(
-      (sum, a) => sum + (a.allocatedAmount || 0), 0
-    ) || 0;
-    const totalRevenueProjected = governmentData.revenueSources?.reduce(
-      (sum, r) => sum + (r.revenueAmount || 0), 0
-    ) || 0;
-    
+    const totalBudgetAllocated =
+      governmentData.budgetAllocations?.reduce((sum, a) => sum + (a.allocatedAmount || 0), 0) || 0;
+    const totalRevenueProjected =
+      governmentData.revenueSources?.reduce((sum, r) => sum + (r.revenueAmount || 0), 0) || 0;
+
     return {
       totalDepartments,
       totalBudgetAllocated,
       totalRevenueProjected,
-      budgetUtilization: governmentData.totalBudget > 0 
-        ? (totalBudgetAllocated / governmentData.totalBudget) * 100 
-        : 0
+      budgetUtilization:
+        governmentData.totalBudget > 0
+          ? (totalBudgetAllocated / governmentData.totalBudget) * 100
+          : 0,
     };
   };
 
@@ -327,7 +341,7 @@ export function GovernmentStructureDisplay({
                     {governmentData.governmentType}
                   </Badge>
                 </CardTitle>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Government Structure & Budget Overview
                 </p>
               </div>
@@ -342,66 +356,68 @@ export function GovernmentStructureDisplay({
             )}
           </div>
         </CardHeader>
-        
+
         <CardContent>
           {/* Quick Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="text-center p-3 bg-muted/50 rounded-lg">
-              <div className="flex items-center justify-center mb-2">
+          <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="bg-muted/50 rounded-lg p-3 text-center">
+              <div className="mb-2 flex items-center justify-center">
                 <Users className="h-5 w-5 text-blue-600" />
               </div>
               <div className="text-2xl font-bold">{stats.totalDepartments}</div>
-              <div className="text-xs text-muted-foreground">Departments</div>
+              <div className="text-muted-foreground text-xs">Departments</div>
             </div>
-            
-            <div className="text-center p-3 bg-muted/50 rounded-lg">
-              <div className="flex items-center justify-center mb-2">
+
+            <div className="bg-muted/50 rounded-lg p-3 text-center">
+              <div className="mb-2 flex items-center justify-center">
                 <DollarSign className="h-5 w-5 text-green-600" />
               </div>
               <div className="text-2xl font-bold">
-                {new Intl.NumberFormat('en-US', { 
-                  notation: 'compact', 
-                  maximumFractionDigits: 1 
+                {new Intl.NumberFormat("en-US", {
+                  notation: "compact",
+                  maximumFractionDigits: 1,
                 }).format(stats.totalBudgetAllocated)}
               </div>
-              <div className="text-xs text-muted-foreground">Budget Allocated</div>
+              <div className="text-muted-foreground text-xs">Budget Allocated</div>
             </div>
-            
-            <div className="text-center p-3 bg-muted/50 rounded-lg">
-              <div className="flex items-center justify-center mb-2">
+
+            <div className="bg-muted/50 rounded-lg p-3 text-center">
+              <div className="mb-2 flex items-center justify-center">
                 <Building2 className="h-5 w-5 text-purple-600" />
               </div>
-              <div className="text-2xl font-bold">
-                {governmentData.revenueSources?.length || 0}
-              </div>
-              <div className="text-xs text-muted-foreground">Revenue Sources</div>
+              <div className="text-2xl font-bold">{governmentData.revenueSources?.length || 0}</div>
+              <div className="text-muted-foreground text-xs">Revenue Sources</div>
             </div>
-            
-            <div className="text-center p-3 bg-muted/50 rounded-lg">
-              <div className="flex items-center justify-center mb-2">
-                <div className={`h-5 w-5 rounded ${
-                  stats.totalRevenueProjected >= stats.totalBudgetAllocated 
-                    ? 'bg-green-100 text-green-600' 
-                    : 'bg-red-100 text-red-600'
-                } flex items-center justify-center text-xs`}>
-                  {stats.totalRevenueProjected >= stats.totalBudgetAllocated ? '↑' : '↓'}
+
+            <div className="bg-muted/50 rounded-lg p-3 text-center">
+              <div className="mb-2 flex items-center justify-center">
+                <div
+                  className={`h-5 w-5 rounded ${
+                    stats.totalRevenueProjected >= stats.totalBudgetAllocated
+                      ? "bg-green-100 text-green-600"
+                      : "bg-red-100 text-red-600"
+                  } flex items-center justify-center text-xs`}
+                >
+                  {stats.totalRevenueProjected >= stats.totalBudgetAllocated ? "↑" : "↓"}
                 </div>
               </div>
-              <div className={`text-2xl font-bold ${
-                stats.totalRevenueProjected >= stats.totalBudgetAllocated 
-                  ? 'text-green-600' 
-                  : 'text-red-600'
-              }`}>
-                {stats.totalRevenueProjected >= stats.totalBudgetAllocated ? 'Surplus' : 'Deficit'}
+              <div
+                className={`text-2xl font-bold ${
+                  stats.totalRevenueProjected >= stats.totalBudgetAllocated
+                    ? "text-green-600"
+                    : "text-red-600"
+                }`}
+              >
+                {stats.totalRevenueProjected >= stats.totalBudgetAllocated ? "Surplus" : "Deficit"}
               </div>
-              <div className="text-xs text-muted-foreground">Fiscal Status</div>
+              <div className="text-muted-foreground text-xs">Fiscal Status</div>
             </div>
           </div>
 
           {/* Government Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
-              <h4 className="font-semibold mb-3">Government Structure</h4>
+              <h4 className="mb-3 font-semibold">Government Structure</h4>
               <div className="space-y-2 text-sm">
                 {governmentData.headOfState && (
                   <div className="flex justify-between">
@@ -425,21 +441,30 @@ export function GovernmentStructureDisplay({
             </div>
 
             <div>
-              <h4 className="font-semibold mb-3">Budget Information</h4>
+              <h4 className="mb-3 font-semibold">Budget Information</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total Budget:</span>
                   <span className="font-medium">
-                    {safeFormatCurrency(governmentData.totalBudget, governmentData.budgetCurrency, false, 'USD')}
+                    {safeFormatCurrency(
+                      governmentData.totalBudget,
+                      governmentData.budgetCurrency,
+                      false,
+                      "USD"
+                    )}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Allocation:</span>
-                  <span className={`font-medium ${
-                    stats.budgetUtilization > 100 ? 'text-red-600' :
-                    stats.budgetUtilization > 90 ? 'text-orange-600' :
-                    'text-green-600'
-                  }`}>
+                  <span
+                    className={`font-medium ${
+                      stats.budgetUtilization > 100
+                        ? "text-red-600"
+                        : stats.budgetUtilization > 90
+                          ? "text-orange-600"
+                          : "text-green-600"
+                    }`}
+                  >
                     {stats.budgetUtilization.toFixed(1)}%
                   </span>
                 </div>
@@ -454,49 +479,54 @@ export function GovernmentStructureDisplay({
           {/* Top Departments */}
           {governmentData.departments && governmentData.departments.length > 0 && (
             <div className="mt-6">
-              <h4 className="font-semibold mb-3">Top Departments</h4>
+              <h4 className="mb-3 font-semibold">Top Departments</h4>
               <div className="space-y-2">
-                {governmentData.departments.slice(0, variant === 'compact' ? 3 : 5).map((dept, index) => {
-                  const allocation = governmentData.budgetAllocations?.find(
-                    a => a.departmentId === index.toString()
-                  );
-                  
-                  return (
-                    <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-3 h-3 rounded"
-                          style={{ backgroundColor: dept.color }}
-                        />
-                        <div>
-                          <div className="font-medium text-sm">{dept.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {dept.category}
-                            {dept.minister && ` • ${dept.ministerTitle}: ${dept.minister}`}
+                {governmentData.departments
+                  .slice(0, variant === "compact" ? 3 : 5)
+                  .map((dept, index) => {
+                    const allocation = governmentData.budgetAllocations?.find(
+                      (a) => a.departmentId === index.toString()
+                    );
+
+                    return (
+                      <div
+                        key={index}
+                        className="bg-muted/30 flex items-center justify-between rounded-lg p-3"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="h-3 w-3 rounded"
+                            style={{ backgroundColor: dept.color }}
+                          />
+                          <div>
+                            <div className="text-sm font-medium">{dept.name}</div>
+                            <div className="text-muted-foreground text-xs">
+                              {dept.category}
+                              {dept.minister && ` • ${dept.ministerTitle}: ${dept.minister}`}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-semibold">
+                            {allocation ? `${allocation.allocatedPercent.toFixed(1)}%` : "0%"}
+                          </div>
+                          <div className="text-muted-foreground text-xs">
+                            {allocation
+                              ? new Intl.NumberFormat("en-US", {
+                                  notation: "compact",
+                                  maximumFractionDigits: 1,
+                                }).format(allocation.allocatedAmount)
+                              : "0"}
                           </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-semibold text-sm">
-                          {allocation ? `${allocation.allocatedPercent.toFixed(1)}%` : '0%'}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {allocation 
-                            ? new Intl.NumberFormat('en-US', { 
-                                notation: 'compact', 
-                                maximumFractionDigits: 1 
-                              }).format(allocation.allocatedAmount)
-                            : '0'
-                          }
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                
-                {governmentData.departments.length > (variant === 'compact' ? 3 : 5) && (
-                  <div className="text-center py-2 text-xs text-muted-foreground">
-                    +{governmentData.departments.length - (variant === 'compact' ? 3 : 5)} more departments
+                    );
+                  })}
+
+                {governmentData.departments.length > (variant === "compact" ? 3 : 5) && (
+                  <div className="text-muted-foreground py-2 text-center text-xs">
+                    +{governmentData.departments.length - (variant === "compact" ? 3 : 5)} more
+                    departments
                   </div>
                 )}
               </div>
@@ -505,13 +535,13 @@ export function GovernmentStructureDisplay({
 
           {/* Budget Warnings */}
           {stats.budgetUtilization > 100 && (
-            <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+            <div className="bg-destructive/10 border-destructive/20 mt-4 rounded-lg border p-3">
               <div className="flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                <AlertTriangle className="text-destructive mt-0.5 h-4 w-4 flex-shrink-0" />
                 <div className="text-sm">
-                  <div className="font-medium text-destructive">Budget Overallocation</div>
+                  <div className="text-destructive font-medium">Budget Overallocation</div>
                   <div className="text-muted-foreground">
-                    Departments are allocated {stats.budgetUtilization.toFixed(1)}% of total budget. 
+                    Departments are allocated {stats.budgetUtilization.toFixed(1)}% of total budget.
                     Consider reducing allocations or increasing the total budget.
                   </div>
                 </div>

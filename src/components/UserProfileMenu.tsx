@@ -2,15 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { 
-  User,
-  Crown,
-  Home,
-  ChevronDown,
-  LogOut,
-  AlertCircle,
-  Settings
-} from "lucide-react";
+import { User, Crown, Home, ChevronDown, LogOut, AlertCircle, Settings } from "lucide-react";
 import { SignInButton } from "~/context/auth-context";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { createAbsoluteUrl } from "~/lib/url-utils";
@@ -23,16 +15,22 @@ interface UserProfileMenuProps {
   flagsLoading: boolean;
 }
 
-export function UserProfileMenu({ user, userProfile, setupStatus, userCountryFlag, flagsLoading }: UserProfileMenuProps) {
+export function UserProfileMenu({
+  user,
+  userProfile,
+  setupStatus,
+  userCountryFlag,
+  flagsLoading,
+}: UserProfileMenuProps) {
   const [showUserPopover, setShowUserPopover] = useState(false);
 
   if (!user) {
     return (
       <SignInButton mode="modal">
-        <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent/10 hover:bg-accent/20 text-foreground transition-all duration-200">
+        <button className="bg-accent/10 hover:bg-accent/20 text-foreground flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-200">
           <div className="flex items-center gap-2">
             <User className="h-4 w-4" />
-            <span className="hidden md:block text-sm">Sign In</span>
+            <span className="hidden text-sm md:block">Sign In</span>
           </div>
         </button>
       </SignInButton>
@@ -41,72 +39,72 @@ export function UserProfileMenu({ user, userProfile, setupStatus, userCountryFla
 
   return (
     <Popover open={showUserPopover} onOpenChange={setShowUserPopover}>
-      <PopoverTrigger className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors duration-200">
-          {setupStatus === 'complete' && userProfile?.country && userCountryFlag ? (
-            <img
-              src={userCountryFlag}
-              alt={`Flag of ${userProfile.country.name}`}
-              className="w-8 h-8 rounded-full border-border object-cover"
-            />
-          ) : (
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-medium border-border">
-              {user?.firstName?.[0] || (user as any)?.username?.[0] || 'U'}
-            </div>
-          )}
-          <div className="hidden md:block text-left">
-            <div className="text-foreground text-sm font-medium">
-              {user?.firstName || (user as any)?.username || 'User'}
-            </div>
-            {setupStatus === 'complete' && userProfile?.country && (
-              <div className="text-muted-foreground text-xs">
-                {userProfile.country.name}
-              </div>
-            )}
+      <PopoverTrigger className="flex items-center gap-2 rounded-lg px-3 py-2 transition-colors duration-200 hover:bg-white/10">
+        {setupStatus === "complete" && userProfile?.country && userCountryFlag ? (
+          <img
+            src={userCountryFlag}
+            alt={`Flag of ${userProfile.country.name}`}
+            className="border-border h-8 w-8 rounded-full object-cover"
+          />
+        ) : (
+          <div className="border-border flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-sm font-medium text-white">
+            {user?.firstName?.[0] || (user as any)?.username?.[0] || "U"}
           </div>
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+        )}
+        <div className="hidden text-left md:block">
+          <div className="text-foreground text-sm font-medium">
+            {user?.firstName || (user as any)?.username || "User"}
+          </div>
+          {setupStatus === "complete" && userProfile?.country && (
+            <div className="text-muted-foreground text-xs">{userProfile.country.name}</div>
+          )}
+        </div>
+        <ChevronDown className="text-muted-foreground h-4 w-4" />
       </PopoverTrigger>
       <PopoverContent align="end" className="w-64 p-0">
         <div className="py-2">
           {/* User Info */}
-          <div className="px-4 py-3 border-b border-border-white/10">
+          <div className="border-border-white/10 border-b px-4 py-3">
             <div className="flex items-center gap-3">
-              {setupStatus === 'complete' && userProfile?.country && userCountryFlag ? (
+              {setupStatus === "complete" && userProfile?.country && userCountryFlag ? (
                 <img
                   src={userCountryFlag}
                   alt={`Flag of ${userProfile.country.name}`}
-                  className="w-12 h-12 rounded-full border-border object-cover"
+                  className="border-border h-12 w-12 rounded-full object-cover"
                 />
               ) : (
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-lg border-border">
-                  {user?.firstName?.[0] || (user as any)?.username?.[0] || 'U'}
+                <div className="border-border flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-lg font-medium text-white">
+                  {user?.firstName?.[0] || (user as any)?.username?.[0] || "U"}
                 </div>
               )}
               <div>
-                <div className="font-medium text-foreground">
+                <div className="text-foreground font-medium">
                   {user?.firstName} {user?.lastName}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {setupStatus === 'complete' && userProfile?.country ? userProfile.country.name : 'Not linked to country'}
+                <div className="text-muted-foreground text-sm">
+                  {setupStatus === "complete" && userProfile?.country
+                    ? userProfile.country.name
+                    : "Not linked to country"}
                 </div>
               </div>
             </div>
           </div>
-          
+
           {/* Menu Items */}
           <div className="py-1">
-            {setupStatus === 'complete' && userProfile?.country && (
+            {setupStatus === "complete" && userProfile?.country && (
               <Link
                 href={`/countries/${userProfile.country.slug}`}
-                className="flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/10 transition-colors"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex items-center gap-3 px-4 py-2 text-sm transition-colors"
               >
                 <Crown className="h-4 w-4" />
                 My Country Dashboard
               </Link>
             )}
-            {setupStatus === 'needs-setup' && (
+            {setupStatus === "needs-setup" && (
               <Link
                 href="/setup"
-                className="flex items-center gap-3 px-4 py-2 text-sm text-amber-600 dark:text-amber-300 hover:text-amber-700 dark:hover:text-amber-200 hover:bg-amber-500/10 transition-colors"
+                className="flex items-center gap-3 px-4 py-2 text-sm text-amber-600 transition-colors hover:bg-amber-500/10 hover:text-amber-700 dark:text-amber-300 dark:hover:text-amber-200"
               >
                 <AlertCircle className="h-4 w-4" />
                 Complete Setup
@@ -114,14 +112,14 @@ export function UserProfileMenu({ user, userProfile, setupStatus, userCountryFla
             )}
             <Link
               href="/dashboard"
-              className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+              className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 transition-colors hover:bg-white/10 hover:text-white"
             >
               <Home className="h-4 w-4" />
               Dashboard
             </Link>
             <Link
               href="/profile"
-              className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+              className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 transition-colors hover:bg-white/10 hover:text-white"
             >
               <User className="h-4 w-4" />
               Profile Settings
@@ -130,25 +128,25 @@ export function UserProfileMenu({ user, userProfile, setupStatus, userCountryFla
               href="https://accounts.ixwiki.com/user"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+              className="flex items-center gap-3 px-4 py-2 text-sm text-white/80 transition-colors hover:bg-white/10 hover:text-white"
             >
               <Settings className="h-4 w-4" />
               Account Management
             </a>
           </div>
-          
+
           {/* Divider */}
-          <div className="border-t border-border my-1" />
-          
+          <div className="border-border my-1 border-t" />
+
           {/* Sign Out */}
           <div className="px-4 py-2">
             <button
               onClick={() => {
-                if (typeof window !== 'undefined') {
-                  window.location.href = createAbsoluteUrl('/sign-out');
+                if (typeof window !== "undefined") {
+                  window.location.href = createAbsoluteUrl("/sign-out");
                 }
               }}
-              className="w-full flex items-center gap-3 px-0 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/10 rounded-md transition-colors"
+              className="text-muted-foreground hover:text-foreground hover:bg-accent/10 flex w-full items-center gap-3 rounded-md px-0 py-2 text-sm transition-colors"
             >
               <LogOut className="h-4 w-4" />
               Sign Out

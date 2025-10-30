@@ -3,22 +3,22 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ArrowLeft, 
-  Search, 
-  Globe, 
-  ExternalLink, 
-  Loader2, 
-  CheckCircle, 
-  AlertCircle, 
-  Users, 
-  DollarSign, 
-  Building, 
+import {
+  ArrowLeft,
+  Search,
+  Globe,
+  ExternalLink,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+  Users,
+  DollarSign,
+  Building,
   MapPin,
   Sparkles,
   Crown,
   Filter,
-  Import
+  Import,
 } from "lucide-react";
 import { createUrl } from "~/lib/url-utils";
 import { api } from "~/trpc/react";
@@ -47,7 +47,7 @@ interface WikiSite {
   baseUrl: string;
   description: string;
   categoryFilter?: string;
-  theme: 'blue' | 'indigo';
+  theme: "blue" | "indigo";
   gradient: string;
 }
 
@@ -87,15 +87,15 @@ const wikiSites: WikiSite[] = [
     baseUrl: "https://ixwiki.com",
     description: "Geopolitical worldbuilding community",
     theme: "blue",
-    gradient: "from-blue-500/20 to-cyan-600/20"
+    gradient: "from-blue-500/20 to-cyan-600/20",
   },
   {
-    name: "iiwiki", 
+    name: "iiwiki",
     displayName: "IIWiki",
     baseUrl: "https://iiwiki.com",
     description: "SimFic and Alt-History Encyclopedia",
     theme: "blue",
-    gradient: "from-teal-500/20 to-green-600/20"
+    gradient: "from-teal-500/20 to-green-600/20",
   },
   {
     name: "althistory",
@@ -103,19 +103,17 @@ const wikiSites: WikiSite[] = [
     baseUrl: "https://althistory.fandom.com",
     description: "Alternative History and Speculative Fiction Encyclopedia",
     theme: "indigo",
-    gradient: "from-purple-500/20 to-indigo-600/20"
-  }
+    gradient: "from-purple-500/20 to-indigo-600/20",
+  },
 ];
 
-const popularCategories = [
-  "Countries", "Nations", "Cities", "Regions", "Organizations"
-];
+const popularCategories = ["Countries", "Nations", "Cities", "Regions", "Organizations"];
 
 // Simple cache for search results
 const searchCache = new Map<string, SearchResult[]>();
 
 export default function ImportFromWikiPage() {
-  const router = useRouter(); 
+  const router = useRouter();
   const [selectedSite, setSelectedSite] = useState<WikiSite>(wikiSites[0]!);
   const [categoryFilter, setCategoryFilter] = useState("Countries");
   const [searchTerm, setSearchTerm] = useState("");
@@ -145,7 +143,6 @@ export default function ImportFromWikiPage() {
   searchTermRef.current = searchTerm;
   selectedSiteRef.current = selectedSite;
 
-
   // Debounced search effect
   useEffect(() => {
     if (!searchTerm.trim()) {
@@ -163,7 +160,7 @@ export default function ImportFromWikiPage() {
 
       // Generate unique request ID for this search
       const requestId = ++searchRequestIdRef.current;
-      
+
       // Check cache first
       const cacheKey = `${currentSite.name}:${currentSearchTerm}:${categoryFilter}`;
       if (searchCache.has(cacheKey)) {
@@ -173,18 +170,18 @@ export default function ImportFromWikiPage() {
         setCurrentPage(1);
         return;
       }
-      
+
       setIsSearching(true);
       setError(null);
       setSelectedResult(null);
       setParsedData(null);
-      
+
       try {
         const results = await searchWikiMutation.mutateAsync({
           query: currentSearchTerm,
           // Fix: site must be one of the allowed string literals
           site: currentSite.name as "ixwiki" | "iiwiki" | "althistory",
-          categoryFilter: categoryFilter
+          categoryFilter: categoryFilter,
         });
 
         // Check if this request is still valid (not superseded by a newer search)
@@ -194,37 +191,40 @@ export default function ImportFromWikiPage() {
 
         // Cache the search results
         searchCache.set(cacheKey, results);
-        
+
         // For countries, try to fetch flags using the unified flag service
-        if (categoryFilter.toLowerCase() === 'countries' || categoryFilter.toLowerCase() === 'nations') {
+        if (
+          categoryFilter.toLowerCase() === "countries" ||
+          categoryFilter.toLowerCase() === "nations"
+        ) {
           const resultsWithFlags = await Promise.all(
             results.map(async (result) => {
               try {
                 // Get flag from unified flag service
                 const flagUrl = await unifiedFlagService.getFlagUrl(result.title);
-                
+
                 // Parse additional country data in background (optional)
                 let additionalData = {};
                 try {
                   const countryData = await parseInfoboxMutation.mutateAsync({
                     pageName: result.title,
-                    site: currentSite.name as "ixwiki" | "iiwiki" | "althistory"
+                    site: currentSite.name as "ixwiki" | "iiwiki" | "althistory",
                   });
-                  
+
                   additionalData = {
                     population: countryData?.population,
                     gdpPerCapita: countryData?.gdpPerCapita,
                     capital: countryData?.capital,
-                    government: countryData?.government
+                    government: countryData?.government,
                   };
                 } catch (parseError) {
                   // Additional data parsing failed, continue without it
                 }
-                
-                return { 
-                  ...result, 
+
+                return {
+                  ...result,
                   flagUrl,
-                  ...additionalData
+                  ...additionalData,
                 };
               } catch (error) {
                 return { ...result, flagUrl: null };
@@ -250,7 +250,7 @@ export default function ImportFromWikiPage() {
       } catch (error) {
         // Only show error if this is still the latest request
         if (requestId === searchRequestIdRef.current) {
-          setError(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          setError(`Search failed: ${error instanceof Error ? error.message : "Unknown error"}`);
           setSearchResults([]);
           setDisplayedResults([]);
           setCurrentPage(1);
@@ -280,9 +280,9 @@ export default function ImportFromWikiPage() {
     try {
       const data = await parseInfoboxMutation.mutateAsync({
         pageName: result.title,
-        site: selectedSite.name as "ixwiki" | "iiwiki" | "althistory"
+        site: selectedSite.name as "ixwiki" | "iiwiki" | "althistory",
       });
-      
+
       // Store flag URL for dynamic island
       if (data?.flagUrl) {
         setSelectedCountryFlag(data.flagUrl);
@@ -291,10 +291,10 @@ export default function ImportFromWikiPage() {
       if (data) {
         setParsedData(data);
       } else {
-        setError('Could not parse data from this page.');
+        setError("Could not parse data from this page.");
       }
     } catch (error) {
-      setError(`Failed to parse data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setError(`Failed to parse data: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setIsLoading(false);
     }
@@ -315,8 +315,8 @@ export default function ImportFromWikiPage() {
     const startIndex = (nextPage - 1) * resultsPerPage;
     const endIndex = startIndex + resultsPerPage;
     const newResults = searchResults.slice(startIndex, endIndex);
-    
-    setDisplayedResults(prev => [...prev, ...newResults]);
+
+    setDisplayedResults((prev) => [...prev, ...newResults]);
     setCurrentPage(nextPage);
   };
 
@@ -347,44 +347,47 @@ export default function ImportFromWikiPage() {
         _wikiSourceName: selectedSite.name,
       };
 
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('builder_imported_data', JSON.stringify(enhancedData));
+      if (typeof window !== "undefined") {
+        localStorage.setItem("builder_imported_data", JSON.stringify(enhancedData));
       }
-      router.push(createUrl('/builder?import=true'));
-
+      router.push(createUrl("/builder?import=true"));
     } catch (error) {
-      setError(`Failed to process wiki import: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setError(
+        `Failed to process wiki import: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   const formatNumber = (num: number | undefined): string => {
-    if (!num) return 'Unknown';
+    if (!num) return "Unknown";
     if (num >= 1e9) return `${(num / 1e9).toFixed(1)}B`;
     if (num >= 1e6) return `${(num / 1e6).toFixed(1)}M`;
     if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
     return num.toLocaleString();
   };
 
-
   return (
     <BuilderErrorBoundary>
       {/* Background Pattern - Full viewport */}
-      <div className="fixed inset-0 overflow-hidden z-0">
+      <div className="fixed inset-0 z-0 overflow-hidden">
         <InteractiveGridPattern
           width={40}
           height={40}
           squares={[50, 40]}
-          className="absolute inset-0 w-full h-full opacity-40 dark:opacity-25"
+          className="absolute inset-0 h-full w-full opacity-40 dark:opacity-25"
           squaresClassName="fill-slate-200/30 dark:fill-slate-700/30 stroke-slate-300/40 dark:stroke-slate-600/40 [&:nth-child(4n+1):hover]:fill-amber-600/50 [&:nth-child(4n+1):hover]:stroke-amber-600/70 [&:nth-child(4n+2):hover]:fill-blue-600/50 [&:nth-child(4n+2):hover]:stroke-blue-600/70 transition-all duration-200"
         />
       </div>
 
-      <div className="min-h-screen relative z-10" style={{ backgroundColor: 'var(--color-bg-primary)' }}>
-        <div className="container mx-auto p-6 max-w-screen-2xl pt-12">
+      <div
+        className="relative z-10 min-h-screen"
+        style={{ backgroundColor: "var(--color-bg-primary)" }}
+      >
+        <div className="container mx-auto max-w-screen-2xl p-6 pt-12">
           {/* Header */}
-          <ImportPageHeader onBackClick={() => router.push(createUrl('/builder'))} />
+          <ImportPageHeader onBackClick={() => router.push(createUrl("/builder"))} />
 
           {/* Wiki Site Selection */}
           <WikiSourceSelector
@@ -394,7 +397,7 @@ export default function ImportFromWikiPage() {
           />
 
           {/* Main Content with Sidebar Layout */}
-          <div className="grid lg:grid-cols-4 gap-8">
+          <div className="grid gap-8 lg:grid-cols-4">
             {/* Sidebar - Category Filter */}
             <div className="lg:col-span-1">
               <CategoryFilterSidebar
@@ -406,7 +409,7 @@ export default function ImportFromWikiPage() {
             </div>
 
             {/* Main Content Area */}
-            <div className="lg:col-span-3 space-y-6">
+            <div className="space-y-6 lg:col-span-3">
               {/* Back Button - Sticky when country selected */}
               {(selectedResult || parsedData) && (
                 <div className="sticky top-4 z-20">
@@ -414,7 +417,9 @@ export default function ImportFromWikiPage() {
                 </div>
               )}
 
-              <div className="sticky top-0 z-10 bg-background pb-4"> {/* Added sticky, top-0, z-10, bg-background, pb-4 */}
+              <div className="bg-background sticky top-0 z-10 pb-4">
+                {" "}
+                {/* Added sticky, top-0, z-10, bg-background, pb-4 */}
                 <SearchBar
                   searchTerm={searchTerm}
                   setSearchTerm={setSearchTerm}
@@ -438,7 +443,7 @@ export default function ImportFromWikiPage() {
                   searchTerm={searchTerm}
                   categoryFilter={categoryFilter}
                   selectedSiteDisplayName={selectedSite.displayName}
-                  isIiwiki={selectedSite.name === 'iiwiki'}
+                  isIiwiki={selectedSite.name === "iiwiki"}
                 />
               )}
 
@@ -480,12 +485,7 @@ export default function ImportFromWikiPage() {
               )}
 
               {/* Error State */}
-              {error && (
-                <StatusMessageDisplay
-                  type="error"
-                  error={error}
-                />
-              )}
+              {error && <StatusMessageDisplay type="error" error={error} />}
 
               {/* Parsed Data Preview */}
               {parsedData && (
@@ -495,7 +495,7 @@ export default function ImportFromWikiPage() {
                   formatNumber={formatNumber}
                 />
               )}
-              </div>
+            </div>
           </div>
         </div>
       </div>

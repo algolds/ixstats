@@ -1,11 +1,26 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { 
-  Globe, BarChart3, Settings, Activity, TrendingUp, Crown, 
-  Gauge, Eye, Target, Command
+import {
+  Globe,
+  BarChart3,
+  Settings,
+  Activity,
+  TrendingUp,
+  Crown,
+  Gauge,
+  Eye,
+  Target,
+  Command,
 } from "lucide-react";
-import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "~/components/ui/command";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "~/components/ui/command";
 import { createAbsoluteUrl } from "~/lib/url-utils";
 
 interface UserProfile {
@@ -25,18 +40,38 @@ export function CommandPalette({ commandOpen, setCommandOpen, userProfile }: Com
       {
         group: "Navigation",
         items: [
-          { title: "Go to Countries", icon: <Globe className="h-4 w-4" />, action: () => window.location.href = createAbsoluteUrl("/countries/new") },
-          { title: "View Analytics", icon: <BarChart3 className="h-4 w-4" />, action: () => window.location.href = createAbsoluteUrl("/analytics") },
-          { title: "Open Settings", icon: <Settings className="h-4 w-4" />, action: () => window.location.href = createAbsoluteUrl("/settings") },
-        ]
+          {
+            title: "Go to Countries",
+            icon: <Globe className="h-4 w-4" />,
+            action: () => (window.location.href = createAbsoluteUrl("/countries/new")),
+          },
+          {
+            title: "View Analytics",
+            icon: <BarChart3 className="h-4 w-4" />,
+            action: () => (window.location.href = createAbsoluteUrl("/analytics")),
+          },
+          {
+            title: "Open Settings",
+            icon: <Settings className="h-4 w-4" />,
+            action: () => (window.location.href = createAbsoluteUrl("/settings")),
+          },
+        ],
       },
       {
         group: "Quick Actions",
         items: [
-          { title: "Refresh Data", icon: <Activity className="h-4 w-4" />, action: () => window.location.reload() },
-          { title: "Export Statistics", icon: <TrendingUp className="h-4 w-4" />, action: () => console.log("Export statistics") },
-        ]
-      }
+          {
+            title: "Refresh Data",
+            icon: <Activity className="h-4 w-4" />,
+            action: () => window.location.reload(),
+          },
+          {
+            title: "Export Statistics",
+            icon: <TrendingUp className="h-4 w-4" />,
+            action: () => console.log("Export statistics"),
+          },
+        ],
+      },
     ];
 
     // Only show dashboard sections if user has configured their country profile
@@ -44,18 +79,34 @@ export function CommandPalette({ commandOpen, setCommandOpen, userProfile }: Com
       baseItems.splice(1, 0, {
         group: "Dashboard Sections",
         items: [
-          { title: "Go to MyCountry", icon: <Crown className="h-4 w-4" />, action: () => window.location.href = createAbsoluteUrl("/mycountry") },
-          { title: "Intelligence Operations", icon: <Eye className="h-4 w-4" />, action: () => window.location.href = createAbsoluteUrl("/mycountry/intelligence") },
-        ]
+          {
+            title: "Go to MyCountry",
+            icon: <Crown className="h-4 w-4" />,
+            action: () => (window.location.href = createAbsoluteUrl("/mycountry")),
+          },
+          {
+            title: "Intelligence Operations",
+            icon: <Eye className="h-4 w-4" />,
+            action: () => (window.location.href = createAbsoluteUrl("/mycountry/intelligence")),
+          },
+        ],
       });
     } else {
       // Show setup-related commands for users without country profiles
       baseItems.splice(1, 0, {
         group: "Setup Required",
         items: [
-          { title: "Complete Setup", icon: <Target className="h-4 w-4" />, action: () => window.location.href = createAbsoluteUrl("/setup") },
-          { title: "Configure Profile", icon: <Settings className="h-4 w-4" />, action: () => window.location.href = createAbsoluteUrl("/profile") },
-        ]
+          {
+            title: "Complete Setup",
+            icon: <Target className="h-4 w-4" />,
+            action: () => (window.location.href = createAbsoluteUrl("/setup")),
+          },
+          {
+            title: "Configure Profile",
+            icon: <Settings className="h-4 w-4" />,
+            action: () => (window.location.href = createAbsoluteUrl("/profile")),
+          },
+        ],
       });
     }
 
@@ -67,7 +118,7 @@ export function CommandPalette({ commandOpen, setCommandOpen, userProfile }: Com
       <CommandInput placeholder="Search commands and navigation..." />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
-        
+
         {commandItems.map((group, groupIndex) => (
           <CommandGroup key={groupIndex} heading={group.group}>
             {group.items.map((item, itemIndex) => (

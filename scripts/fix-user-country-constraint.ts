@@ -15,9 +15,9 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 // System owner IDs
-const DEV_USER_ID = 'user_2zqmDdZvhpNQWGLdAIj2YwH8MLo';
-const PROD_USER_ID = 'user_3078Ja62W7yJDlBjjwNppfzceEz';
-const COUNTRY_NAME = 'Caphiria';
+const DEV_USER_ID = "user_2zqmDdZvhpNQWGLdAIj2YwH8MLo";
+const PROD_USER_ID = "user_3078Ja62W7yJDlBjjwNppfzceEz";
+const COUNTRY_NAME = "Caphiria";
 
 async function fixUserCountryConstraint() {
   try {
@@ -42,9 +42,9 @@ async function fixUserCountryConstraint() {
     const country = await prisma.country.findFirst({
       where: {
         name: {
-          contains: COUNTRY_NAME
-        }
-      }
+          contains: COUNTRY_NAME,
+        },
+      },
     });
 
     if (!country) {
@@ -58,32 +58,35 @@ async function fixUserCountryConstraint() {
     console.log("\n🔍 Step 3: Checking current user records...");
     const allUsers = await prisma.user.findMany({
       include: { role: true, country: true },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: "desc" },
     });
 
     console.log(`📊 Found ${allUsers.length} users in database:`);
     allUsers.forEach((user, index) => {
       console.log(`   ${index + 1}. ${user.clerkUserId}`);
-      console.log(`      Role: ${user.role?.name || 'none'} (level ${user.role?.level || 'N/A'})`);
-      console.log(`      Country: ${user.country?.name || 'none'}`);
+      console.log(`      Role: ${user.role?.name || "none"} (level ${user.role?.level || "N/A"})`);
+      console.log(`      Country: ${user.country?.name || "none"}`);
       console.log(`      Active: ${user.isActive}`);
       console.log("");
     });
 
     // Step 4: Clean up duplicate user records
     console.log("🔍 Step 4: Cleaning up duplicate user records...");
-    
+
     // Find duplicates by clerkUserId
-    const userGroups = allUsers.reduce((acc, user) => {
-      if (!acc[user.clerkUserId]) {
-        acc[user.clerkUserId] = [];
-      }
-      acc[user.clerkUserId].push(user);
-      return acc;
-    }, {} as Record<string, typeof allUsers>);
+    const userGroups = allUsers.reduce(
+      (acc, user) => {
+        if (!acc[user.clerkUserId]) {
+          acc[user.clerkUserId] = [];
+        }
+        acc[user.clerkUserId].push(user);
+        return acc;
+      },
+      {} as Record<string, typeof allUsers>
+    );
 
     const duplicates = Object.entries(userGroups).filter(([_, users]) => users.length > 1);
-    
+
     if (duplicates.length > 0) {
       console.log(`⚠️  Found ${duplicates.length} duplicate user records:`);
       for (const [clerkUserId, users] of duplicates) {
@@ -93,10 +96,10 @@ async function fixUserCountryConstraint() {
           if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
           return b.createdAt.getTime() - a.createdAt.getTime();
         });
-        
+
         const keepUser = sortedUsers[0];
         const deleteUsers = sortedUsers.slice(1);
-        
+
         console.log(`   Keeping: ${keepUser.id} (created: ${keepUser.createdAt.toISOString()})`);
         for (const user of deleteUsers) {
           console.log(`   Deleting: ${user.id} (created: ${user.createdAt.toISOString()})`);
@@ -110,20 +113,20 @@ async function fixUserCountryConstraint() {
     // Step 5: Ensure system owner role exists
     console.log("\n🔍 Step 5: Ensuring system owner role exists...");
     let ownerRole = await prisma.role.findFirst({
-      where: { name: 'owner' }
+      where: { name: "owner" },
     });
 
     if (!ownerRole) {
       console.log("Creating owner role...");
       ownerRole = await prisma.role.create({
         data: {
-          name: 'owner',
-          displayName: 'System Owner',
-          description: 'System owner with unrestricted access to all functions',
+          name: "owner",
+          displayName: "System Owner",
+          description: "System owner with unrestricted access to all functions",
           level: 0,
           isSystem: true,
           isActive: true,
-        }
+        },
       });
       console.log(`✅ Created owner role: ${ownerRole.id}`);
     } else {
@@ -132,20 +135,25 @@ async function fixUserCountryConstraint() {
 
     // Step 6: Create/update user records for both system owner IDs
     console.log("\n🔍 Step 6: Setting up system owner user records...");
-    
-    for (const [userId, env] of [[DEV_USER_ID, 'DEV'], [PROD_USER_ID, 'PROD']]) {
+
+    for (const [userId, env] of [
+      [DEV_USER_ID, "DEV"],
+      [PROD_USER_ID, "PROD"],
+    ]) {
       console.log(`\nProcessing ${env} user: ${userId}`);
-      
+
       // Check if user exists
       let user = await prisma.user.findUnique({
         where: { clerkUserId: userId },
-        include: { role: true, country: true }
+        include: { role: true, country: true },
       });
 
       if (user) {
         console.log(`  ✅ User exists (ID: ${user.id})`);
-        console.log(`  Current role: ${user.role?.name || 'none'} (level ${user.role?.level || 'N/A'})`);
-        console.log(`  Current country: ${user.country?.name || 'none'}`);
+        console.log(
+          `  Current role: ${user.role?.name || "none"} (level ${user.role?.level || "N/A"})`
+        );
+        console.log(`  Current country: ${user.country?.name || "none"}`);
       } else {
         console.log(`  ⚠️  User not found, creating...`);
         user = await prisma.user.create({
@@ -154,7 +162,7 @@ async function fixUserCountryConstraint() {
             roleId: ownerRole.id,
             isActive: true,
           },
-          include: { role: true, country: true }
+          include: { role: true, country: true },
         });
         console.log(`  ✅ Created user: ${user.id}`);
       }
@@ -163,7 +171,7 @@ async function fixUserCountryConstraint() {
       if (user.roleId !== ownerRole.id) {
         await prisma.user.update({
           where: { clerkUserId: userId },
-          data: { roleId: ownerRole.id }
+          data: { roleId: ownerRole.id },
         });
         console.log(`  🔄 Updated role to "owner"`);
       } else {
@@ -173,17 +181,17 @@ async function fixUserCountryConstraint() {
 
     // Step 7: Link dev user to Caphiria
     console.log("\n🔍 Step 7: Linking dev user to Caphiria...");
-    
+
     // Check if any user is currently linked to Caphiria
     const currentOwner = await prisma.user.findFirst({
       where: { countryId: country.id },
-      include: { role: true }
+      include: { role: true },
     });
 
     if (currentOwner) {
       console.log(`📋 Caphiria is currently owned by: ${currentOwner.clerkUserId}`);
       console.log(`   Role: ${currentOwner.role?.name} (level ${currentOwner.role?.level})`);
-      
+
       // If it's the prod user, that's fine - we'll link the dev user too
       if (currentOwner.clerkUserId === PROD_USER_ID) {
         console.log("✅ PROD user is already linked to Caphiria");
@@ -196,30 +204,30 @@ async function fixUserCountryConstraint() {
     console.log("🔗 Linking DEV user to Caphiria...");
     await prisma.user.update({
       where: { clerkUserId: DEV_USER_ID },
-      data: { countryId: country.id }
+      data: { countryId: country.id },
     });
     console.log("✅ DEV user linked to Caphiria");
 
     // Step 8: Verify the setup
     console.log("\n🔍 Step 8: Verifying setup...");
-    
+
     const devUser = await prisma.user.findUnique({
       where: { clerkUserId: DEV_USER_ID },
-      include: { role: true, country: true }
+      include: { role: true, country: true },
     });
-    
+
     const prodUser = await prisma.user.findUnique({
       where: { clerkUserId: PROD_USER_ID },
-      include: { role: true, country: true }
+      include: { role: true, country: true },
     });
 
     console.log("\n📊 Final Status:");
     console.log("================");
-    
+
     if (devUser) {
       console.log(`✅ DEV User (${DEV_USER_ID}):`);
       console.log(`   Role: ${devUser.role?.name} (level ${devUser.role?.level})`);
-      console.log(`   Country: ${devUser.country?.name || 'none'}`);
+      console.log(`   Country: ${devUser.country?.name || "none"}`);
       console.log(`   Active: ${devUser.isActive}`);
     } else {
       console.log(`❌ DEV User not found`);
@@ -228,7 +236,7 @@ async function fixUserCountryConstraint() {
     if (prodUser) {
       console.log(`✅ PROD User (${PROD_USER_ID}):`);
       console.log(`   Role: ${prodUser.role?.name} (level ${prodUser.role?.level})`);
-      console.log(`   Country: ${prodUser.country?.name || 'none'}`);
+      console.log(`   Country: ${prodUser.country?.name || "none"}`);
       console.log(`   Active: ${prodUser.isActive}`);
     } else {
       console.log(`❌ PROD User not found`);
@@ -237,12 +245,12 @@ async function fixUserCountryConstraint() {
     // Check all users linked to Caphiria
     const caphiriaUsers = await prisma.user.findMany({
       where: { countryId: country.id },
-      include: { role: true }
+      include: { role: true },
     });
 
     console.log(`\n🏛️  Users linked to Caphiria: ${caphiriaUsers.length}`);
     caphiriaUsers.forEach((user, index) => {
-      console.log(`   ${index + 1}. ${user.clerkUserId} (${user.role?.name || 'no role'})`);
+      console.log(`   ${index + 1}. ${user.clerkUserId} (${user.role?.name || "no role"})`);
     });
 
     console.log("\n🎉 Fix completed successfully!");
@@ -251,10 +259,11 @@ async function fixUserCountryConstraint() {
     console.log("2. Restart your dev server: npm run dev");
     console.log("3. Check the debug page: http://localhost:3000/debug");
     console.log("4. Verify you can access /mycountry");
-    console.log("\n🔧 The unique constraint has been removed, allowing multiple system owners to access the same country.");
-
+    console.log(
+      "\n🔧 The unique constraint has been removed, allowing multiple system owners to access the same country."
+    );
   } catch (error) {
-    console.error('❌ Error fixing user country constraint:', error);
+    console.error("❌ Error fixing user country constraint:", error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();

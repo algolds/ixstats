@@ -15,7 +15,7 @@ import {
   Heart,
   Crown,
   Medal,
-  Star
+  Star,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
@@ -24,8 +24,6 @@ import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
 import Link from "next/link";
 import { createUrl } from "~/lib/url-utils";
 
-
-
 export default function LeaderboardsPage() {
   usePageTitle({ title: "Leaderboards" });
 
@@ -33,26 +31,25 @@ export default function LeaderboardsPage() {
   const [selectedMetric, setSelectedMetric] = useState<string>("gdp");
 
   // Get user profile
-  const { data: userProfile } = api.users.getProfile.useQuery(
-    undefined,
-    { enabled: !!user?.id }
-  );
+  const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
 
   // Get all countries for leaderboards
   const { data: allCountries, isLoading: countriesLoading } = api.countries.getAll.useQuery();
 
   // Get achievements leaderboard
-  const { data: achievementsLeaderboard, isLoading: achievementsLoading } = api.achievements.getLeaderboard.useQuery({ limit: 20 });
+  const { data: achievementsLeaderboard, isLoading: achievementsLoading } =
+    api.achievements.getLeaderboard.useQuery({ limit: 20 });
 
   // Get diplomatic influence leaderboard
-  const { data: diplomaticLeaderboard, isLoading: diplomaticLoading } = api.diplomatic.getInfluenceLeaderboard.useQuery();
+  const { data: diplomaticLeaderboard, isLoading: diplomaticLoading } =
+    api.diplomatic.getInfluenceLeaderboard.useQuery();
 
   const metrics = [
     { id: "gdp", name: "Total GDP", icon: TrendingUp, format: formatCurrency },
     { id: "gdpPerCapita", name: "GDP Per Capita", icon: TrendingUp, format: formatCurrency },
     { id: "population", name: "Population", icon: Users, format: formatPopulation },
     { id: "achievements", name: "Achievements", icon: Trophy },
-    { id: "diplomatic", name: "Diplomatic Influence", icon: Globe }
+    { id: "diplomatic", name: "Diplomatic Influence", icon: Globe },
   ];
 
   const getLeaderboardData = () => {
@@ -62,66 +59,79 @@ export default function LeaderboardsPage() {
       case "gdp":
         return [...allCountries]
           .sort((a, b) => (b.currentTotalGdp || 0) - (a.currentTotalGdp || 0))
-          .map(c => ({
+          .map((c) => ({
             id: c.id,
             name: c.name,
             value: c.currentTotalGdp,
-            formatted: formatCurrency(c.currentTotalGdp || 0)
+            formatted: formatCurrency(c.currentTotalGdp || 0),
           }));
       case "gdpPerCapita":
         return [...allCountries]
           .sort((a, b) => (b.currentGdpPerCapita || 0) - (a.currentGdpPerCapita || 0))
-          .map(c => ({
+          .map((c) => ({
             id: c.id,
             name: c.name,
             value: c.currentGdpPerCapita,
-            formatted: formatCurrency(c.currentGdpPerCapita || 0)
+            formatted: formatCurrency(c.currentGdpPerCapita || 0),
           }));
       case "population":
         return [...allCountries]
           .sort((a, b) => (b.currentPopulation || 0) - (a.currentPopulation || 0))
-          .map(c => ({
+          .map((c) => ({
             id: c.id,
             name: c.name,
             value: c.currentPopulation,
-            formatted: formatPopulation(c.currentPopulation || 0)
+            formatted: formatPopulation(c.currentPopulation || 0),
           }));
       case "achievements":
-        return achievementsLeaderboard?.map((a: { countryId: string; countryName: string; totalPoints: number; achievementCount: number }) => ({
-          id: a.countryId,
-          name: a.countryName,
-          value: a.totalPoints,
-          formatted: `${a.totalPoints} pts`,
-          extra: `${a.achievementCount} achievements`
-        })) || [];
+        return (
+          achievementsLeaderboard?.map(
+            (a: {
+              countryId: string;
+              countryName: string;
+              totalPoints: number;
+              achievementCount: number;
+            }) => ({
+              id: a.countryId,
+              name: a.countryName,
+              value: a.totalPoints,
+              formatted: `${a.totalPoints} pts`,
+              extra: `${a.achievementCount} achievements`,
+            })
+          ) || []
+        );
       case "diplomatic":
-        return diplomaticLeaderboard?.map(d => ({
-          id: d.countryId,
-          name: d.countryName,
-          value: d.totalInfluence,
-          formatted: `${d.totalInfluence} influence`,
-          extra: `${d.activeEmbassies} embassies`
-        })) || [];
+        return (
+          diplomaticLeaderboard?.map((d) => ({
+            id: d.countryId,
+            name: d.countryName,
+            value: d.totalInfluence,
+            formatted: `${d.totalInfluence} influence`,
+            extra: `${d.activeEmbassies} embassies`,
+          })) || []
+        );
       default:
         return [];
     }
   };
 
   const leaderboardData = getLeaderboardData();
-  const userRank = leaderboardData.findIndex((item: { id: string }) => item.id === userProfile?.countryId) + 1;
+  const userRank =
+    leaderboardData.findIndex((item: { id: string }) => item.id === userProfile?.countryId) + 1;
 
-  const isLoading = selectedMetric === "gdp" || selectedMetric === "gdpPerCapita" || selectedMetric === "population"
-    ? countriesLoading
-    : selectedMetric === "achievements"
-      ? achievementsLoading
-      : diplomaticLoading;
+  const isLoading =
+    selectedMetric === "gdp" || selectedMetric === "gdpPerCapita" || selectedMetric === "population"
+      ? countriesLoading
+      : selectedMetric === "achievements"
+        ? achievementsLoading
+        : diplomaticLoading;
 
   return (
-    <div className="min-h-screen bg-background p-6 space-y-6">
+    <div className="bg-background min-h-screen space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
+          <h1 className="flex items-center gap-3 text-3xl font-bold">
             <Medal className="h-8 w-8 text-amber-500" />
             Global Leaderboards
           </h1>
@@ -131,7 +141,7 @@ export default function LeaderboardsPage() {
         </div>
         <Link href={createUrl("/achievements")}>
           <Button variant="outline">
-            <Trophy className="h-4 w-4 mr-2" />
+            <Trophy className="mr-2 h-4 w-4" />
             View Achievements
           </Button>
         </Link>
@@ -139,23 +149,26 @@ export default function LeaderboardsPage() {
 
       {/* User Position Card */}
       {userProfile && userRank > 0 && (
-        <Card className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/20">
+        <Card className="border-blue-500/20 bg-gradient-to-r from-blue-500/10 to-purple-500/10">
           <CardHeader>
             <CardTitle>Your Position</CardTitle>
             <CardDescription>{userProfile.country?.name}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              {metrics.map(metric => {
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+              {metrics.map((metric) => {
                 const metricData = getLeaderboardData();
-                const rank = metricData.findIndex((item: { id: string }) => item.id === userProfile.countryId) + 1;
+                const rank =
+                  metricData.findIndex(
+                    (item: { id: string }) => item.id === userProfile.countryId
+                  ) + 1;
                 const Icon = metric.icon;
 
                 return (
                   <div key={metric.id} className="space-y-1 text-center">
-                    <Icon className="h-5 w-5 mx-auto text-muted-foreground" />
+                    <Icon className="text-muted-foreground mx-auto h-5 w-5" />
                     <div className="text-2xl font-bold text-blue-600">#{rank || "—"}</div>
-                    <div className="text-xs text-muted-foreground">{metric.name}</div>
+                    <div className="text-muted-foreground text-xs">{metric.name}</div>
                   </div>
                 );
               })}
@@ -165,8 +178,8 @@ export default function LeaderboardsPage() {
       )}
 
       {/* Metric Selector */}
-      <div className="flex gap-2 flex-wrap">
-        {metrics.map(metric => {
+      <div className="flex flex-wrap gap-2">
+        {metrics.map((metric) => {
           const Icon = metric.icon;
           return (
             <Button
@@ -174,7 +187,7 @@ export default function LeaderboardsPage() {
               variant={selectedMetric === metric.id ? "default" : "outline"}
               onClick={() => setSelectedMetric(metric.id)}
             >
-              <Icon className="h-4 w-4 mr-2" />
+              <Icon className="mr-2 h-4 w-4" />
               {metric.name}
             </Button>
           );
@@ -185,79 +198,93 @@ export default function LeaderboardsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            {metrics.find(m => m.id === selectedMetric)?.icon &&
-              React.createElement(metrics.find(m => m.id === selectedMetric)!.icon, { className: "h-5 w-5" })}
-            {metrics.find(m => m.id === selectedMetric)?.name} Leaderboard
+            {metrics.find((m) => m.id === selectedMetric)?.icon &&
+              React.createElement(metrics.find((m) => m.id === selectedMetric)!.icon, {
+                className: "h-5 w-5",
+              })}
+            {metrics.find((m) => m.id === selectedMetric)?.name} Leaderboard
           </CardTitle>
           <CardDescription>
-            Top 20 nations ranked by {metrics.find(m => m.id === selectedMetric)?.name.toLowerCase()}
+            Top 20 nations ranked by{" "}
+            {metrics.find((m) => m.id === selectedMetric)?.name.toLowerCase()}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <div className="py-12 text-center">
+              <div className="border-primary mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2"></div>
               <p className="text-muted-foreground">Loading leaderboard data...</p>
             </div>
           ) : leaderboardData.length > 0 ? (
             <div className="space-y-2">
-              {leaderboardData.slice(0, 20).map((entry: {
-                [x: string]: any; id: string; name: string; formatted: string; extra?: string 
-}, index: number) => {
-                const isUserCountry = entry.id === userProfile?.countryId;
+              {leaderboardData.slice(0, 20).map(
+                (
+                  entry: {
+                    [x: string]: any;
+                    id: string;
+                    name: string;
+                    formatted: string;
+                    extra?: string;
+                  },
+                  index: number
+                ) => {
+                  const isUserCountry = entry.id === userProfile?.countryId;
 
-                return (
-                  <Link
-                    key={entry.id}
-                    href={createUrl(`/countries/${entry.slug}`)}
-                  >
-                    <div
-                      className={cn(
-                        "flex items-center justify-between p-3 rounded-lg border transition-all hover:shadow-md",
-                        index < 3
-                          ? "bg-gradient-to-r from-amber-500/10 to-transparent border-amber-500/20"
-                          : isUserCountry
-                            ? "bg-blue-500/10 border-blue-500/20"
-                            : "bg-muted/30 hover:bg-muted/50"
-                      )}
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        {/* Rank */}
-                        <div className={cn(
-                          "text-2xl font-bold w-10 text-center",
-                          index === 0 ? "text-amber-500" :
-                          index === 1 ? "text-gray-400" :
-                          index === 2 ? "text-amber-700" :
-                          "text-muted-foreground"
-                        )}>
-                          {index === 0 && <Crown className="h-8 w-8 mx-auto" />}
-                          {index > 0 && (index + 1)}
-                        </div>
-
-                        {/* Country Name */}
-                        <div className="flex-1">
-                          <div className="font-semibold flex items-center gap-2">
-                            {entry.name}
-                            {isUserCountry && <Badge variant="default">You</Badge>}
+                  return (
+                    <Link key={entry.id} href={createUrl(`/countries/${entry.slug}`)}>
+                      <div
+                        className={cn(
+                          "flex items-center justify-between rounded-lg border p-3 transition-all hover:shadow-md",
+                          index < 3
+                            ? "border-amber-500/20 bg-gradient-to-r from-amber-500/10 to-transparent"
+                            : isUserCountry
+                              ? "border-blue-500/20 bg-blue-500/10"
+                              : "bg-muted/30 hover:bg-muted/50"
+                        )}
+                      >
+                        <div className="flex flex-1 items-center gap-3">
+                          {/* Rank */}
+                          <div
+                            className={cn(
+                              "w-10 text-center text-2xl font-bold",
+                              index === 0
+                                ? "text-amber-500"
+                                : index === 1
+                                  ? "text-gray-400"
+                                  : index === 2
+                                    ? "text-amber-700"
+                                    : "text-muted-foreground"
+                            )}
+                          >
+                            {index === 0 && <Crown className="mx-auto h-8 w-8" />}
+                            {index > 0 && index + 1}
                           </div>
-                          {entry.extra && (
-                            <div className="text-xs text-muted-foreground">{entry.extra}</div>
-                          )}
-                        </div>
 
-                        {/* Value */}
-                        <div className="text-right">
-                          <div className="text-xl font-bold">{entry.formatted}</div>
+                          {/* Country Name */}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 font-semibold">
+                              {entry.name}
+                              {isUserCountry && <Badge variant="default">You</Badge>}
+                            </div>
+                            {entry.extra && (
+                              <div className="text-muted-foreground text-xs">{entry.extra}</div>
+                            )}
+                          </div>
+
+                          {/* Value */}
+                          <div className="text-right">
+                            <div className="text-xl font-bold">{entry.formatted}</div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Link>
-                );
-              })}
+                    </Link>
+                  );
+                }
+              )}
             </div>
           ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <Trophy className="h-16 w-16 mx-auto mb-4 opacity-50" />
+            <div className="text-muted-foreground py-12 text-center">
+              <Trophy className="mx-auto mb-4 h-16 w-16 opacity-50" />
               <p>No leaderboard data available</p>
             </div>
           )}
@@ -269,17 +296,18 @@ export default function LeaderboardsPage() {
         <CardHeader>
           <CardTitle>About Leaderboards</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm text-muted-foreground">
+        <CardContent className="text-muted-foreground space-y-3 text-sm">
           <p>
-            <strong>Economic Metrics:</strong> Total GDP and GDP per capita reflect your nation's economic
-            power and citizen prosperity.
+            <strong>Economic Metrics:</strong> Total GDP and GDP per capita reflect your nation's
+            economic power and citizen prosperity.
           </p>
           <p>
-            <strong>Achievements:</strong> Points earned through gameplay milestones and accomplishments.
+            <strong>Achievements:</strong> Points earned through gameplay milestones and
+            accomplishments.
           </p>
           <p>
-            <strong>Diplomatic Influence:</strong> Based on embassy network strength, relationship quality,
-            and cultural exchange programs.
+            <strong>Diplomatic Influence:</strong> Based on embassy network strength, relationship
+            quality, and cultural exchange programs.
           </p>
           <p className="text-xs italic">
             Rankings update in real-time based on your nation's performance and activities.

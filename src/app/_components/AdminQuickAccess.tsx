@@ -11,7 +11,13 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Input } from "~/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 // Icons
 import {
@@ -35,7 +41,7 @@ import {
   Key,
   Cog,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
 } from "lucide-react";
 
 import { AdminFavoriteButton } from "~/components/admin/AdminFavoriteButton";
@@ -138,32 +144,36 @@ const getIcon = (iconName: string) => {
 };
 
 export function AdminQuickAccess() {
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [availablePanelsExpanded, setAvailablePanelsExpanded] = useState(true);
 
   // Get user's favorites
-  const { data: favoritesData, isLoading: favoritesLoading, error: favoritesError } = api.users.getAdminFavorites.useQuery(
-    undefined,
-    {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    }
-  );
+  const {
+    data: favoritesData,
+    isLoading: favoritesLoading,
+    error: favoritesError,
+  } = api.users.getAdminFavorites.useQuery(undefined, {
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
   const favorites = favoritesData?.favorites || [];
 
   // Handle favorites loading error
   if (favoritesError) {
-    console.warn('Failed to load admin favorites:', favoritesError);
+    console.warn("Failed to load admin favorites:", favoritesError);
   }
 
   // Group favorites by category
-  const favoritesByCategory = favorites.reduce((acc, fav) => {
-    if (!acc[fav.category]) {
-      acc[fav.category] = [];
-    }
-    acc[fav.category].push(fav);
-    return acc;
-  }, {} as Record<string, typeof favorites>);
+  const favoritesByCategory = favorites.reduce(
+    (acc, fav) => {
+      if (!acc[fav.category]) {
+        acc[fav.category] = [];
+      }
+      acc[fav.category].push(fav);
+      return acc;
+    },
+    {} as Record<string, typeof favorites>
+  );
 
   const categories = Object.keys(favoritesByCategory).sort();
 
@@ -185,12 +195,12 @@ export function AdminQuickAccess() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 shadow-lg">
             <Crown className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-foreground">Admin Quick Access</h3>
-            <p className="text-sm text-muted-foreground">
+            <h3 className="text-foreground text-xl font-bold">Admin Quick Access</h3>
+            <p className="text-muted-foreground text-sm">
               {favorites.length} favorited panels • Quick access to admin tools
             </p>
           </div>
@@ -198,16 +208,16 @@ export function AdminQuickAccess() {
 
         <div className="flex items-center gap-2">
           <Button
-            variant={viewMode === 'grid' ? 'default' : 'outline'}
+            variant={viewMode === "grid" ? "default" : "outline"}
             size="sm"
-            onClick={() => setViewMode('grid')}
+            onClick={() => setViewMode("grid")}
           >
             <Grid3X3 className="h-4 w-4" />
           </Button>
           <Button
-            variant={viewMode === 'list' ? 'default' : 'outline'}
+            variant={viewMode === "list" ? "default" : "outline"}
             size="sm"
-            onClick={() => setViewMode('list')}
+            onClick={() => setViewMode("list")}
           >
             <List className="h-4 w-4" />
           </Button>
@@ -216,13 +226,13 @@ export function AdminQuickAccess() {
 
       {/* Favorites Content */}
       {favoritesLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 glass-hierarchy-child rounded-lg animate-pulse" />
+            <div key={i} className="glass-hierarchy-child h-24 animate-pulse rounded-lg" />
           ))}
         </div>
       ) : favorites.length > 0 ? (
-        <Tabs defaultValue={categories[0] || 'all'} className="w-full">
+        <Tabs defaultValue={categories[0] || "all"} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="all">All ({favorites.length})</TabsTrigger>
             {categories.slice(0, 3).map((category) => (
@@ -245,8 +255,8 @@ export function AdminQuickAccess() {
       ) : (
         <Card className="glass-hierarchy-child">
           <CardContent className="p-8 text-center">
-            <Star className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-            <h4 className="text-lg font-semibold text-foreground mb-2">No Favorites Yet</h4>
+            <Star className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
+            <h4 className="text-foreground mb-2 text-lg font-semibold">No Favorites Yet</h4>
             <p className="text-muted-foreground mb-6">
               Add your frequently used admin panels to favorites for quick access.
             </p>
@@ -264,20 +274,25 @@ export function AdminQuickAccess() {
       <Card className="glass-hierarchy-child">
         <CardHeader className="pb-3">
           <CardTitle
-            className="flex items-center justify-between cursor-pointer"
+            className="flex cursor-pointer items-center justify-between"
             onClick={() => setAvailablePanelsExpanded(!availablePanelsExpanded)}
           >
             <div className="flex items-center gap-2">
               <Plus className="h-5 w-5" />
               Available Admin Panels
               <Badge variant="outline" className="text-xs">
-                {ADMIN_PANELS.filter(panel => !favorites.some(fav => fav.panelId === panel.panelId)).length} available
+                {
+                  ADMIN_PANELS.filter(
+                    (panel) => !favorites.some((fav) => fav.panelId === panel.panelId)
+                  ).length
+                }{" "}
+                available
               </Badge>
             </div>
             {availablePanelsExpanded ? (
-              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              <ChevronUp className="text-muted-foreground h-4 w-4" />
             ) : (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              <ChevronDown className="text-muted-foreground h-4 w-4" />
             )}
           </CardTitle>
         </CardHeader>
@@ -285,46 +300,44 @@ export function AdminQuickAccess() {
           initial={false}
           animate={{
             height: availablePanelsExpanded ? "auto" : 0,
-            opacity: availablePanelsExpanded ? 1 : 0
+            opacity: availablePanelsExpanded ? 1 : 0,
           }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
           style={{ overflow: "hidden" }}
         >
           <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-            {ADMIN_PANELS.map((panel) => {
-              const Icon = getIcon(panel.iconName);
-              const isFavorited = favorites.some(fav => fav.panelId === panel.panelId);
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+              {ADMIN_PANELS.map((panel) => {
+                const Icon = getIcon(panel.iconName);
+                const isFavorited = favorites.some((fav) => fav.panelId === panel.panelId);
 
-              return (
-                <div
-                  key={panel.panelId}
-                  className={cn(
-                    "p-3 rounded-lg border transition-all duration-200 hover:scale-[1.02]",
-                    isFavorited
-                      ? "bg-yellow-50 border-yellow-200 dark:bg-yellow-950 dark:border-yellow-800"
-                      : "glass-hierarchy-interactive"
-                  )}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <Icon className="h-5 w-5 text-purple-500" />
-                    <AdminFavoriteButton
-                      {...panel}
-                      size="sm"
-                      variant="ghost"
-                    />
+                return (
+                  <div
+                    key={panel.panelId}
+                    className={cn(
+                      "rounded-lg border p-3 transition-all duration-200 hover:scale-[1.02]",
+                      isFavorited
+                        ? "border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950"
+                        : "glass-hierarchy-interactive"
+                    )}
+                  >
+                    <div className="mb-2 flex items-center justify-between">
+                      <Icon className="h-5 w-5 text-purple-500" />
+                      <AdminFavoriteButton {...panel} size="sm" variant="ghost" />
+                    </div>
+                    <div className="space-y-1">
+                      <h5 className="text-foreground text-sm font-medium">{panel.displayName}</h5>
+                      <p className="text-muted-foreground line-clamp-2 text-xs">
+                        {panel.description}
+                      </p>
+                      <Badge variant="outline" className="text-xs capitalize">
+                        {panel.category}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <h5 className="font-medium text-sm text-foreground">{panel.displayName}</h5>
-                    <p className="text-xs text-muted-foreground line-clamp-2">{panel.description}</p>
-                    <Badge variant="outline" className="text-xs capitalize">
-                      {panel.category}
-                    </Badge>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
           </CardContent>
         </motion.div>
       </Card>
@@ -334,11 +347,11 @@ export function AdminQuickAccess() {
 
 interface AdminPanelGridProps {
   favorites: any[];
-  viewMode: 'grid' | 'list';
+  viewMode: "grid" | "list";
 }
 
 function AdminPanelGrid({ favorites, viewMode }: AdminPanelGridProps) {
-  if (viewMode === 'list') {
+  if (viewMode === "list") {
     return (
       <div className="grid grid-cols-1 gap-3">
         {favorites.map((favorite) => (
@@ -347,7 +360,7 @@ function AdminPanelGrid({ favorites, viewMode }: AdminPanelGridProps) {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.2 }}
-            className="hover:scale-[1.005] transition-all duration-200"
+            className="transition-all duration-200 hover:scale-[1.005]"
           >
             <div className="h-auto">
               <AdminControlEmbed favorite={favorite} />
@@ -359,14 +372,14 @@ function AdminPanelGrid({ favorites, viewMode }: AdminPanelGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       {favorites.map((favorite) => (
         <motion.div
           key={favorite.id}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className="hover:scale-[1.02] transition-all duration-200"
+          className="transition-all duration-200 hover:scale-[1.02]"
         >
           <AdminControlEmbed favorite={favorite} />
         </motion.div>

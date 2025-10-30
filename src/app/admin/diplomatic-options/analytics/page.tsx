@@ -1,11 +1,31 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '~/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend, Tooltip } from 'recharts';
-import { api } from '~/trpc/react';
-import { Loader2, TrendingUp, TrendingDown, BarChart3, PieChartIcon, Activity } from 'lucide-react';
+import React from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from "~/components/ui/chart";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  Legend,
+  Tooltip,
+} from "recharts";
+import { api } from "~/trpc/react";
+import { Loader2, TrendingUp, TrendingDown, BarChart3, PieChartIcon, Activity } from "lucide-react";
 
 /**
  * Diplomatic Options Analytics Dashboard
@@ -49,35 +69,48 @@ export default function DiplomaticOptionsAnalyticsPage() {
   }
 
   // Prepare chart data
-  const topOptionsChartData = stats.topOptions.map(opt => ({
-    name: opt.value.length > 30 ? opt.value.substring(0, 30) + '...' : opt.value,
+  const topOptionsChartData = stats.topOptions.map((opt) => ({
+    name: opt.value.length > 30 ? opt.value.substring(0, 30) + "..." : opt.value,
     fullName: opt.value,
     count: opt.currentUsageCount,
     type: opt.type,
-    category: opt.category || 'Uncategorized'
+    category: opt.category || "Uncategorized",
   }));
 
   const categoryChartData = Object.entries(stats.categoryStats).map(([category, data]) => ({
     name: category,
     value: data.totalUsage,
-    count: data.count
+    count: data.count,
   }));
 
   const typeChartData = Object.entries(stats.typeStats).map(([type, data]) => ({
-    name: type.replace('_', ' ').split(' ').map(word =>
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' '),
+    name: type
+      .replace("_", " ")
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" "),
     value: data.totalUsage,
-    count: data.count
+    count: data.count,
   }));
 
   // Colors for charts
-  const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#6366f1', '#f97316', '#14b8a6', '#ef4444', '#a855f7'];
+  const COLORS = [
+    "#3b82f6",
+    "#8b5cf6",
+    "#ec4899",
+    "#f59e0b",
+    "#10b981",
+    "#6366f1",
+    "#f97316",
+    "#14b8a6",
+    "#ef4444",
+    "#a855f7",
+  ];
 
   // Chart configs for Recharts
   const chartConfig = {
-    count: { label: 'Usage Count', color: '#3b82f6' },
-    value: { label: 'Total Usage', color: '#8b5cf6' }
+    count: { label: "Usage Count", color: "#3b82f6" },
+    value: { label: "Total Usage", color: "#8b5cf6" },
   };
 
   return (
@@ -112,9 +145,7 @@ export default function DiplomaticOptionsAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.summary.activeOptions}</div>
-            <p className="text-muted-foreground text-xs">
-              Currently available for selection
-            </p>
+            <p className="text-muted-foreground text-xs">Currently available for selection</p>
           </CardContent>
         </Card>
 
@@ -125,9 +156,7 @@ export default function DiplomaticOptionsAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.summary.totalCurrentUsage}</div>
-            <p className="text-muted-foreground text-xs">
-              Active selections across all embassies
-            </p>
+            <p className="text-muted-foreground text-xs">Active selections across all embassies</p>
           </CardContent>
         </Card>
 
@@ -140,9 +169,7 @@ export default function DiplomaticOptionsAnalyticsPage() {
             <div className="text-2xl font-bold">
               {(stats.summary.totalCurrentUsage / stats.summary.activeOptions).toFixed(1)}
             </div>
-            <p className="text-muted-foreground text-xs">
-              Average selections per active option
-            </p>
+            <p className="text-muted-foreground text-xs">Average selections per active option</p>
           </CardContent>
         </Card>
       </div>
@@ -246,7 +273,7 @@ export default function DiplomaticOptionsAnalyticsPage() {
                   dataKey="count"
                   stroke="#3b82f6"
                   strokeWidth={2}
-                  dot={{ fill: '#3b82f6', r: 4 }}
+                  dot={{ fill: "#3b82f6", r: 4 }}
                   activeDot={{ r: 6 }}
                 />
               </LineChart>
@@ -280,24 +307,28 @@ export default function DiplomaticOptionsAnalyticsPage() {
               </thead>
               <tbody>
                 {stats.leastUsedOptions.map((option, index) => (
-                  <tr key={option.id} className={index % 2 === 0 ? 'bg-muted/50' : ''}>
+                  <tr key={option.id} className={index % 2 === 0 ? "bg-muted/50" : ""}>
                     <td className="px-4 py-3 text-sm">{option.value}</td>
                     <td className="px-4 py-3 text-sm">
-                      {option.type.replace('_', ' ').split(' ').map(word =>
-                        word.charAt(0).toUpperCase() + word.slice(1)
-                      ).join(' ')}
+                      {option.type
+                        .replace("_", " ")
+                        .split(" ")
+                        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                        .join(" ")}
                     </td>
-                    <td className="px-4 py-3 text-sm">{option.category || 'Uncategorized'}</td>
-                    <td className="px-4 py-3 text-right text-sm font-mono">
+                    <td className="px-4 py-3 text-sm">{option.category || "Uncategorized"}</td>
+                    <td className="px-4 py-3 text-right font-mono text-sm">
                       {option.currentUsageCount}
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                        option.isActive
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {option.isActive ? 'Active' : 'Inactive'}
+                      <span
+                        className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                          option.isActive
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {option.isActive ? "Active" : "Inactive"}
                       </span>
                     </td>
                   </tr>

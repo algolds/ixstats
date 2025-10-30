@@ -7,7 +7,7 @@
  * @module meeting-scheduler-utils
  */
 
-import { IxTime } from '~/lib/ixtime';
+import { IxTime } from "~/lib/ixtime";
 
 // ============================================================================
 // Types
@@ -97,21 +97,21 @@ export function validateMeetingData(
   scheduledDate: Date
 ): { valid: boolean; error?: string } {
   if (!title || title.trim().length === 0) {
-    return { valid: false, error: 'Meeting title is required' };
+    return { valid: false, error: "Meeting title is required" };
   }
 
   if (title.trim().length > 200) {
-    return { valid: false, error: 'Meeting title must be less than 200 characters' };
+    return { valid: false, error: "Meeting title must be less than 200 characters" };
   }
 
   if (!scheduledDate || isNaN(scheduledDate.getTime())) {
-    return { valid: false, error: 'Valid scheduled date is required' };
+    return { valid: false, error: "Valid scheduled date is required" };
   }
 
   // Check if date is in the past (allowing 5 minutes buffer)
   const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
   if (scheduledDate < fiveMinutesAgo) {
-    return { valid: false, error: 'Cannot schedule meetings in the past' };
+    return { valid: false, error: "Cannot schedule meetings in the past" };
   }
 
   return { valid: true };
@@ -129,15 +129,15 @@ export function validateAgendaItemData(
   estimatedDuration: number
 ): { valid: boolean; error?: string } {
   if (!title || title.trim().length === 0) {
-    return { valid: false, error: 'Agenda item title is required' };
+    return { valid: false, error: "Agenda item title is required" };
   }
 
   if (title.trim().length > 200) {
-    return { valid: false, error: 'Agenda item title must be less than 200 characters' };
+    return { valid: false, error: "Agenda item title must be less than 200 characters" };
   }
 
   if (estimatedDuration < 1 || estimatedDuration > 480) {
-    return { valid: false, error: 'Duration must be between 1 and 480 minutes' };
+    return { valid: false, error: "Duration must be between 1 and 480 minutes" };
   }
 
   return { valid: true };
@@ -149,15 +149,13 @@ export function validateAgendaItemData(
  * @param title - Decision title
  * @returns Validation result with error message if invalid
  */
-export function validateDecisionData(
-  title: string
-): { valid: boolean; error?: string } {
+export function validateDecisionData(title: string): { valid: boolean; error?: string } {
   if (!title || title.trim().length === 0) {
-    return { valid: false, error: 'Decision title is required' };
+    return { valid: false, error: "Decision title is required" };
   }
 
   if (title.trim().length > 200) {
-    return { valid: false, error: 'Decision title must be less than 200 characters' };
+    return { valid: false, error: "Decision title must be less than 200 characters" };
   }
 
   return { valid: true };
@@ -177,19 +175,19 @@ export function validateActionItemData(
   dueDate: Date
 ): { valid: boolean; error?: string } {
   if (!title || title.trim().length === 0) {
-    return { valid: false, error: 'Action item title is required' };
+    return { valid: false, error: "Action item title is required" };
   }
 
   if (title.trim().length > 200) {
-    return { valid: false, error: 'Action item title must be less than 200 characters' };
+    return { valid: false, error: "Action item title must be less than 200 characters" };
   }
 
   if (!assignedToId || assignedToId.trim().length === 0) {
-    return { valid: false, error: 'Action item must be assigned to someone' };
+    return { valid: false, error: "Action item must be assigned to someone" };
   }
 
   if (!dueDate || isNaN(dueDate.getTime())) {
-    return { valid: false, error: 'Valid due date is required' };
+    return { valid: false, error: "Valid due date is required" };
   }
 
   return { valid: true };
@@ -218,10 +216,10 @@ export function calculateMeetingDuration(startTime: Date, endTime: Date): number
  * @returns Formatted time string
  */
 export function formatMeetingTime(date: Date): string {
-  return date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
+  return date.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
   });
 }
 
@@ -262,7 +260,7 @@ export function filterMeetingsByDate(
 ): Meeting[] {
   if (!meetings || !selectedDate) return [];
 
-  return meetings.filter(meeting => {
+  return meetings.filter((meeting) => {
     const meetingDate = new Date(meeting.scheduledDate);
     return (
       meetingDate.getDate() === selectedDate.getDate() &&
@@ -295,9 +293,9 @@ export function sortMeetingsByTime(meetings: Meeting[]): Meeting[] {
 export function groupMeetingsByDate(meetings: Meeting[]): Record<string, Meeting[]> {
   const grouped: Record<string, Meeting[]> = {};
 
-  meetings.forEach(meeting => {
+  meetings.forEach((meeting) => {
     const date = new Date(meeting.scheduledDate);
-    const dateKey = date.toISOString().split('T')[0]!;
+    const dateKey = date.toISOString().split("T")[0]!;
 
     if (!grouped[dateKey]) {
       grouped[dateKey] = [];
@@ -328,18 +326,18 @@ export function calculateMeetingStats(meetings: Meeting[]): MeetingStats {
     completed: 0,
     cancelled: 0,
     upcoming: 0,
-    past: 0
+    past: 0,
   };
 
-  meetings.forEach(meeting => {
-    const status = meeting.status || 'scheduled';
+  meetings.forEach((meeting) => {
+    const status = meeting.status || "scheduled";
     const meetingDate = new Date(meeting.scheduledDate);
 
     // Count by status
-    if (status === 'scheduled') stats.scheduled++;
-    else if (status === 'in_progress') stats.inProgress++;
-    else if (status === 'completed') stats.completed++;
-    else if (status === 'cancelled') stats.cancelled++;
+    if (status === "scheduled") stats.scheduled++;
+    else if (status === "in_progress") stats.inProgress++;
+    else if (status === "completed") stats.completed++;
+    else if (status === "cancelled") stats.cancelled++;
 
     // Count upcoming vs past
     if (meetingDate > now) stats.upcoming++;
@@ -361,16 +359,16 @@ export function calculateMeetingStats(meetings: Meeting[]): MeetingStats {
  */
 export function getStatusColor(status: string): string {
   switch (status) {
-    case 'scheduled':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
-    case 'in_progress':
-      return 'bg-amber-100 text-amber-800 border-amber-200';
-    case 'completed':
-      return 'bg-green-100 text-green-800 border-green-200';
-    case 'cancelled':
-      return 'bg-red-100 text-red-800 border-red-200';
+    case "scheduled":
+      return "bg-blue-100 text-blue-800 border-blue-200";
+    case "in_progress":
+      return "bg-amber-100 text-amber-800 border-amber-200";
+    case "completed":
+      return "bg-green-100 text-green-800 border-green-200";
+    case "cancelled":
+      return "bg-red-100 text-red-800 border-red-200";
     default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
+      return "bg-gray-100 text-gray-800 border-gray-200";
   }
 }
 
@@ -382,14 +380,14 @@ export function getStatusColor(status: string): string {
  */
 export function getPriorityColor(priority: string): string {
   switch (priority) {
-    case 'high':
-      return 'bg-red-100 text-red-800 border-red-200';
-    case 'medium':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'low':
-      return 'bg-green-100 text-green-800 border-green-200';
+    case "high":
+      return "bg-red-100 text-red-800 border-red-200";
+    case "medium":
+      return "bg-yellow-100 text-yellow-800 border-yellow-200";
+    case "low":
+      return "bg-green-100 text-green-800 border-green-200";
     default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
+      return "bg-gray-100 text-gray-800 border-gray-200";
   }
 }
 
@@ -401,15 +399,15 @@ export function getPriorityColor(priority: string): string {
  */
 export function getOutcomeColor(outcome: string): string {
   switch (outcome) {
-    case 'approved':
-      return 'bg-green-100 text-green-800 border-green-200';
-    case 'rejected':
-      return 'bg-red-100 text-red-800 border-red-200';
-    case 'deferred':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'requires_review':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+    case "approved":
+      return "bg-green-100 text-green-800 border-green-200";
+    case "rejected":
+      return "bg-red-100 text-red-800 border-red-200";
+    case "deferred":
+      return "bg-yellow-100 text-yellow-800 border-yellow-200";
+    case "requires_review":
+      return "bg-blue-100 text-blue-800 border-blue-200";
     default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
+      return "bg-gray-100 text-gray-800 border-gray-200";
   }
 }

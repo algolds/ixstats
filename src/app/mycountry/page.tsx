@@ -11,7 +11,7 @@ import { MobileOptimized } from "./components/MobileOptimizations";
 import { useMyCountryCompliance } from "~/hooks/useMyCountryCompliance";
 import { MyCountryComplianceModal } from "~/components/mycountry/MyCountryComplianceModal";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 // Inner component that has access to country data
 function MyCountryWithAtomicState() {
@@ -57,10 +57,7 @@ function MyCountryWithAtomicState() {
   const handleRemindLater = () => {
     if (typeof window !== "undefined" && complianceStorageKey) {
       const snoozeDurationMs = 1000 * 60 * 60 * 12; // 12 hours
-      window.localStorage.setItem(
-        complianceStorageKey,
-        String(Date.now() + snoozeDurationMs)
-      );
+      window.localStorage.setItem(complianceStorageKey, String(Date.now() + snoozeDurationMs));
     }
     setShowComplianceModal(false);
   };
@@ -74,8 +71,8 @@ function MyCountryWithAtomicState() {
   };
 
   // Set page title based on country name
-  usePageTitle({ 
-    title: country?.name ? `${country.name} - MyCountry` : "MyCountry" 
+  usePageTitle({
+    title: country?.name ? `${country.name} - MyCountry` : "MyCountry",
   });
 
   const content = country?.id ? (
@@ -108,7 +105,7 @@ export default function MyCountryPage() {
   return (
     <MobileOptimized enableTouchGestures={true} className="min-h-screen">
       <AuthenticationGuard redirectPath="/mycountry">
-        <CountryDataProvider userId={user?.id || 'placeholder-disabled'}>
+        <CountryDataProvider userId={user?.id || "placeholder-disabled"}>
           <MyCountryWithAtomicState />
         </CountryDataProvider>
       </AuthenticationGuard>

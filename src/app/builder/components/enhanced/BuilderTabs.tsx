@@ -1,9 +1,9 @@
 "use client";
 
-import React from 'react';
-import { TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { Badge } from '~/components/ui/badge';
-import { cn } from '~/lib/utils';
+import React from "react";
+import { TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Badge } from "~/components/ui/badge";
+import { cn } from "~/lib/utils";
 
 interface EnhancedTabsListProps extends React.ComponentProps<typeof TabsList> {}
 
@@ -11,7 +11,7 @@ export function EnhancedTabsList({ children, className, ...props }: EnhancedTabs
   return (
     <TabsList
       className={cn(
-        "grid w-full bg-muted/50 backdrop-blur-sm border border-border/50 p-1 rounded-xl",
+        "bg-muted/50 border-border/50 grid w-full rounded-xl border p-1 backdrop-blur-sm",
         className
       )}
       {...props}
@@ -36,7 +36,7 @@ export function EnhancedTabsTrigger({
   return (
     <TabsTrigger
       className={cn(
-        "relative flex flex-col gap-1.5 p-3 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-200",
+        "data-[state=active]:bg-background relative flex flex-col gap-1.5 p-3 transition-all duration-200 data-[state=active]:shadow-sm",
         "hover:bg-background/50",
         className
       )}
@@ -47,7 +47,10 @@ export function EnhancedTabsTrigger({
       </div>
       <span className="text-xs font-medium">{children}</span>
       {badge !== undefined && (
-        <Badge variant="secondary" className="absolute -top-1 -right-1 h-5 min-w-[20px] p-0 flex items-center justify-center text-[10px]">
+        <Badge
+          variant="secondary"
+          className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center p-0 text-[10px]"
+        >
           {badge}
         </Badge>
       )}

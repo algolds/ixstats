@@ -3,7 +3,7 @@
  * Central hub for processing, routing, and delivering all notifications
  */
 
-import { IxTime } from '~/lib/ixtime';
+import { IxTime } from "~/lib/ixtime";
 import type {
   UnifiedNotification,
   NotificationContext,
@@ -17,17 +17,21 @@ import type {
   DeliveryMethod,
   NotificationPriority,
   NotificationCategory,
-} from '~/types/unified-notifications';
+} from "~/types/unified-notifications";
 import {
   DEFAULT_ORCHESTRATOR_CONFIG,
   DEFAULT_USER_PREFERENCES,
-} from '~/types/unified-notifications';
+} from "~/types/unified-notifications";
 
 // Event emitter for orchestrator events
 class NotificationEventEmitter extends EventTarget {
-  emit(type: NotificationEventType, notification: UnifiedNotification, context: NotificationContext) {
+  emit(
+    type: NotificationEventType,
+    notification: UnifiedNotification,
+    context: NotificationContext
+  ) {
     const event = new CustomEvent(type, {
-      detail: { notification, context, timestamp: Date.now() }
+      detail: { notification, context, timestamp: Date.now() },
     });
     this.dispatchEvent(event);
   }
@@ -79,29 +83,29 @@ export class NotificationOrchestrator {
     this.config = { ...DEFAULT_ORCHESTRATOR_CONFIG, ...config };
     this.eventEmitter = new NotificationEventEmitter();
     this.analytics = this.initializeAnalytics();
-    
+
     // Start processing queue
     this.startProcessing();
-    
-    console.log('[NotificationOrchestrator] Initialized with config:', this.config);
+
+    console.log("[NotificationOrchestrator] Initialized with config:", this.config);
   }
 
   /**
    * Main entry point for creating notifications
    */
   async createNotification(
-    notification: Omit<UnifiedNotification, 'id' | 'timestamp' | 'status' | 'relevanceScore'>,
+    notification: Omit<UnifiedNotification, "id" | "timestamp" | "status" | "relevanceScore">,
     context: NotificationContext
   ): Promise<string> {
     // Generate unique ID
     const id = `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // Create full notification object
     const fullNotification: UnifiedNotification = {
       ...notification,
       id,
       timestamp: Date.now(),
-      status: 'pending',
+      status: "pending",
       relevanceScore: 0, // Will be calculated
     };
 
@@ -110,20 +114,20 @@ export class NotificationOrchestrator {
 
     // Check if notification should be suppressed
     if (await this.shouldSuppress(fullNotification, context)) {
-      fullNotification.status = 'suppressed';
-      this.eventEmitter.emit('suppressed', fullNotification, context);
+      fullNotification.status = "suppressed";
+      this.eventEmitter.emit("suppressed", fullNotification, context);
       return id;
     }
 
     // Add to processing queue
     this.addToQueue(fullNotification, context);
-    
+
     // Emit created event
-    this.eventEmitter.emit('created', fullNotification, context);
-    
+    this.eventEmitter.emit("created", fullNotification, context);
+
     // Update analytics
     this.analytics.totalDelivered++;
-    
+
     return id;
   }
 
@@ -160,11 +164,15 @@ export class NotificationOrchestrator {
 
     // Update analytics
     this.analytics.engagementRate = this.calculateEngagementRate();
-    
+
     // Emit engagement event for learning
-    this.eventEmitter.emit('engaged', {
-      id: engagement.notificationId,
-    } as UnifiedNotification, engagement.contextAtEngagement as NotificationContext);
+    this.eventEmitter.emit(
+      "engaged",
+      {
+        id: engagement.notificationId,
+      } as UnifiedNotification,
+      engagement.contextAtEngagement as NotificationContext
+    );
   }
 
   /**
@@ -198,12 +206,13 @@ export class NotificationOrchestrator {
     const weights = this.config.contextWeighting;
 
     // Priority scoring (0-40 points)
-    const priorityScore = {
-      critical: 40,
-      high: 30,
-      medium: 20,
-      low: 10,
-    }[notification.priority] || 10;
+    const priorityScore =
+      {
+        critical: 40,
+        high: 30,
+        medium: 20,
+        low: 10,
+      }[notification.priority] || 10;
     score += priorityScore * (weights.priority || 0.4);
 
     // Recency scoring (0-20 points)
@@ -231,7 +240,10 @@ export class NotificationOrchestrator {
     // Executive mode relevance
     if (context.isExecutiveMode) {
       const executiveCategories: NotificationCategory[] = [
-        'economic', 'governance', 'security', 'crisis'
+        "economic",
+        "governance",
+        "security",
+        "crisis",
       ];
       if (executiveCategories.includes(notification.category)) {
         relevance += 5;
@@ -239,14 +251,16 @@ export class NotificationOrchestrator {
     }
 
     // Route-based relevance
-    if (context.currentRoute.includes('mycountry') && 
-        ['economic', 'governance', 'achievement'].includes(notification.category)) {
+    if (
+      context.currentRoute.includes("mycountry") &&
+      ["economic", "governance", "achievement"].includes(notification.category)
+    ) {
       relevance += 3;
     }
 
     // Time-based relevance (during business hours for important notifications)
     const hour = new Date().getHours();
-    if (hour >= 9 && hour <= 17 && notification.priority === 'high') {
+    if (hour >= 9 && hour <= 17 && notification.priority === "high") {
       relevance += 2;
     }
 
@@ -259,16 +273,16 @@ export class NotificationOrchestrator {
   ): number {
     const preferences = this.getUserPreferences(context.userId);
     const categoryPrefs = preferences.categories[notification.category];
-    
+
     if (!categoryPrefs?.enabled) return 0;
-    
+
     // Check minimum priority
-    const priorityOrder = ['low', 'medium', 'high', 'critical'];
+    const priorityOrder = ["low", "medium", "high", "critical"];
     const notificationPriorityIndex = priorityOrder.indexOf(notification.priority);
     const minPriorityIndex = priorityOrder.indexOf(categoryPrefs.minPriority);
-    
+
     if (notificationPriorityIndex < minPriorityIndex) return 5;
-    
+
     return 15; // Good match with user preferences
   }
 
@@ -277,7 +291,7 @@ export class NotificationOrchestrator {
     context: NotificationContext
   ): Promise<boolean> {
     const rules = this.suppressionRules.get(context.userId) || [];
-    
+
     for (const rule of rules) {
       if (await this.evaluateSuppressionRule(rule, notification, context)) {
         return true;
@@ -292,7 +306,7 @@ export class NotificationOrchestrator {
     // Quiet hours check
     const preferences = this.getUserPreferences(context.userId);
     if (preferences.quietHours && this.isInQuietHours(preferences.quietHours)) {
-      return notification.priority !== 'critical';
+      return notification.priority !== "critical";
     }
 
     return false;
@@ -306,18 +320,18 @@ export class NotificationOrchestrator {
     // Simple rule evaluation - can be extended
     for (const condition of rule.conditions) {
       const value = notification[condition.field as keyof UnifiedNotification];
-      
+
       switch (condition.operator) {
-        case 'equals':
+        case "equals":
           if (value !== condition.value) return false;
           break;
-        case 'contains':
-          if (typeof value === 'string' && !value.includes(condition.value)) return false;
+        case "contains":
+          if (typeof value === "string" && !value.includes(condition.value)) return false;
           break;
         // Add more operators as needed
       }
     }
-    
+
     return true;
   }
 
@@ -326,25 +340,25 @@ export class NotificationOrchestrator {
     const now = Date.now();
     const windowMs = 60 * 1000; // 1 minute window
     const limit = this.config.rateLimiting[notification.priority];
-    
+
     if (!this.rateLimiters.has(key)) {
       this.rateLimiters.set(key, []);
     }
-    
+
     const timestamps = this.rateLimiters.get(key);
     if (!timestamps) {
       return false;
     }
-    
+
     // Remove old timestamps
     while (timestamps.length > 0 && timestamps[0] !== undefined && timestamps[0] < now - windowMs) {
       timestamps.shift();
     }
-    
+
     if (timestamps.length >= limit) {
       return true;
     }
-    
+
     timestamps.push(now);
     return false;
   }
@@ -352,13 +366,13 @@ export class NotificationOrchestrator {
   private isInQuietHours(quietHours: { start: string; end: string }): boolean {
     const now = new Date();
     const currentTime = now.getHours() * 60 + now.getMinutes();
-    
-    const [startHour, startMin] = quietHours.start.split(':').map(Number);
-    const [endHour, endMin] = quietHours.end.split(':').map(Number);
-    
+
+    const [startHour, startMin] = quietHours.start.split(":").map(Number);
+    const [endHour, endMin] = quietHours.end.split(":").map(Number);
+
     const startTime = (startHour || 0) * 60 + (startMin || 0);
     const endTime = (endHour || 0) * 60 + (endMin || 0);
-    
+
     if (startTime <= endTime) {
       return currentTime >= startTime && currentTime <= endTime;
     } else {
@@ -369,7 +383,7 @@ export class NotificationOrchestrator {
 
   private addToQueue(notification: UnifiedNotification, context: NotificationContext) {
     if (this.processingQueue.length >= this.config.maxQueueSize) {
-      console.warn('[NotificationOrchestrator] Queue full, dropping oldest notification');
+      console.warn("[NotificationOrchestrator] Queue full, dropping oldest notification");
       this.processingQueue.shift();
     }
 
@@ -381,10 +395,11 @@ export class NotificationOrchestrator {
     };
 
     // Insert based on priority
-    const priorityOrder = ['critical', 'high', 'medium', 'low'];
-    const insertIndex = this.processingQueue.findIndex(item => 
-      priorityOrder.indexOf(item.notification.priority) > 
-      priorityOrder.indexOf(notification.priority)
+    const priorityOrder = ["critical", "high", "medium", "low"];
+    const insertIndex = this.processingQueue.findIndex(
+      (item) =>
+        priorityOrder.indexOf(item.notification.priority) >
+        priorityOrder.indexOf(notification.priority)
     );
 
     if (insertIndex === -1) {
@@ -393,7 +408,7 @@ export class NotificationOrchestrator {
       this.processingQueue.splice(insertIndex, 0, queueItem);
     }
 
-    this.eventEmitter.emit('queued', notification, context);
+    this.eventEmitter.emit("queued", notification, context);
   }
 
   private startProcessing() {
@@ -405,19 +420,19 @@ export class NotificationOrchestrator {
 
       this.isProcessing = true;
       const item = this.processingQueue.shift();
-      
+
       if (item) {
         try {
           await this.processNotification(item);
         } catch (error) {
-          console.error('[NotificationOrchestrator] Processing error:', error);
-          
+          console.error("[NotificationOrchestrator] Processing error:", error);
+
           // Retry logic
           if (item.attempts < 3) {
             item.attempts++;
             this.processingQueue.unshift(item);
           } else {
-            this.eventEmitter.emit('failed', item.notification, item.context);
+            this.eventEmitter.emit("failed", item.notification, item.context);
           }
         }
       }
@@ -431,11 +446,11 @@ export class NotificationOrchestrator {
 
   private async processNotification(item: QueueItem) {
     const { notification, context } = item;
-    
+
     // Check if notification is still relevant
     if (notification.expiresAt && Date.now() > notification.expiresAt) {
-      notification.status = 'expired';
-      this.eventEmitter.emit('expired', notification, context);
+      notification.status = "expired";
+      this.eventEmitter.emit("expired", notification, context);
       return;
     }
 
@@ -464,10 +479,10 @@ export class NotificationOrchestrator {
   ): DeliveryMethod {
     const preferences = this.getUserPreferences(context.userId);
     const categoryPrefs = preferences.categories[notification.category];
-    
+
     // Critical notifications always use dynamic island or modal
-    if (notification.priority === 'critical') {
-      return context.isExecutiveMode ? 'dynamic-island' : 'modal';
+    if (notification.priority === "critical") {
+      return context.isExecutiveMode ? "dynamic-island" : "modal";
     }
 
     // Use category preferences if available
@@ -484,10 +499,10 @@ export class NotificationOrchestrator {
 
     // Default based on context
     if (context.isExecutiveMode) {
-      return 'dynamic-island';
+      return "dynamic-island";
     }
 
-    return 'toast';
+    return "toast";
   }
 
   private async deliverNotification(
@@ -497,18 +512,18 @@ export class NotificationOrchestrator {
   ) {
     try {
       const success = await handler.deliver(notification, context);
-      
+
       if (success) {
-        notification.status = 'delivered';
-        this.eventEmitter.emit('delivered', notification, context);
+        notification.status = "delivered";
+        this.eventEmitter.emit("delivered", notification, context);
         this.updateDeliveryAnalytics(notification.deliveryMethod, true);
       } else {
-        throw new Error('Delivery handler returned false');
+        throw new Error("Delivery handler returned false");
       }
     } catch (error) {
-      console.error('[NotificationOrchestrator] Delivery failed:', error);
-      notification.status = 'failed';
-      this.eventEmitter.emit('failed', notification, context);
+      console.error("[NotificationOrchestrator] Delivery failed:", error);
+      notification.status = "failed";
+      this.eventEmitter.emit("failed", notification, context);
       this.updateDeliveryAnalytics(notification.deliveryMethod, false);
       throw error;
     }
@@ -541,24 +556,28 @@ export class NotificationOrchestrator {
         military: 0,
       } as Record<NotificationCategory, number>,
       methodEffectiveness: {
-        'dynamic-island': { delivered: 0, engaged: 0, rate: 0 },
-        'toast': { delivered: 0, engaged: 0, rate: 0 },
-        'modal': { delivered: 0, engaged: 0, rate: 0 },
-        'command-palette': { delivered: 0, engaged: 0, rate: 0 },
-        'badge': { delivered: 0, engaged: 0, rate: 0 },
-        'silent': { delivered: 0, engaged: 0, rate: 0 },
-        'push': { delivered: 0, engaged: 0, rate: 0 },
-      } as Record<DeliveryMethod, { delivered: number, engaged: number, rate: number }>,
+        "dynamic-island": { delivered: 0, engaged: 0, rate: 0 },
+        toast: { delivered: 0, engaged: 0, rate: 0 },
+        modal: { delivered: 0, engaged: 0, rate: 0 },
+        "command-palette": { delivered: 0, engaged: 0, rate: 0 },
+        badge: { delivered: 0, engaged: 0, rate: 0 },
+        silent: { delivered: 0, engaged: 0, rate: 0 },
+        push: { delivered: 0, engaged: 0, rate: 0 },
+      } as Record<DeliveryMethod, { delivered: number; engaged: number; rate: number }>,
     };
   }
 
   private calculateEngagementRate(): number {
     // Simplified calculation - would be more sophisticated in practice
-    const totalMethodDeliveries = Object.values(this.analytics.methodEffectiveness)
-      .reduce((sum, method) => sum + method.delivered, 0);
-    const totalMethodEngagements = Object.values(this.analytics.methodEffectiveness)
-      .reduce((sum, method) => sum + method.engaged, 0);
-    
+    const totalMethodDeliveries = Object.values(this.analytics.methodEffectiveness).reduce(
+      (sum, method) => sum + method.delivered,
+      0
+    );
+    const totalMethodEngagements = Object.values(this.analytics.methodEffectiveness).reduce(
+      (sum, method) => sum + method.engaged,
+      0
+    );
+
     return totalMethodDeliveries > 0 ? (totalMethodEngagements / totalMethodDeliveries) * 100 : 0;
   }
 
@@ -566,10 +585,12 @@ export class NotificationOrchestrator {
     if (success) {
       this.analytics.methodEffectiveness[method].delivered++;
     }
-    
+
     // Update delivery rate
-    const totalDelivered = Object.values(this.analytics.methodEffectiveness)
-      .reduce((sum, method) => sum + method.delivered, 0);
+    const totalDelivered = Object.values(this.analytics.methodEffectiveness).reduce(
+      (sum, method) => sum + method.delivered,
+      0
+    );
     this.analytics.deliveryRate = (totalDelivered / this.analytics.totalDelivered) * 100;
   }
 }
@@ -580,7 +601,9 @@ let orchestratorInstance: NotificationOrchestrator | null = null;
 /**
  * Get the singleton notification orchestrator instance
  */
-export function getNotificationOrchestrator(config?: Partial<OrchestratorConfig>): NotificationOrchestrator {
+export function getNotificationOrchestrator(
+  config?: Partial<OrchestratorConfig>
+): NotificationOrchestrator {
   if (!orchestratorInstance) {
     orchestratorInstance = new NotificationOrchestrator(config);
   }

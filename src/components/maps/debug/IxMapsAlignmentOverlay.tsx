@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import type { Map as MapLibreMap } from 'maplibre-gl';
+import React, { useEffect, useState } from "react";
+import type { Map as MapLibreMap } from "maplibre-gl";
 
 interface IxMapsAlignmentOverlayProps {
   map: MapLibreMap | null;
@@ -20,19 +20,19 @@ export default function IxMapsAlignmentOverlay({
     if (!map || !enabled) return;
 
     // Add alignment overlay image source
-    const sourceId = 'ixmaps-alignment-overlay';
-    const layerId = 'ixmaps-alignment-overlay-layer';
+    const sourceId = "ixmaps-alignment-overlay";
+    const layerId = "ixmaps-alignment-overlay-layer";
 
     const addOverlay = () => {
       if (!map.getSource(sourceId)) {
         // Add image source with world bounds
         map.addSource(sourceId, {
-          type: 'image',
+          type: "image",
           url: imageUrl,
           coordinates: [
-            [-180, 85.051129],  // top-left
-            [180, 85.051129],   // top-right
-            [180, -85.051129],  // bottom-right
+            [-180, 85.051129], // top-left
+            [180, 85.051129], // top-right
+            [180, -85.051129], // bottom-right
             [-180, -85.051129], // bottom-left
           ],
         });
@@ -41,10 +41,10 @@ export default function IxMapsAlignmentOverlay({
       if (!map.getLayer(layerId)) {
         map.addLayer({
           id: layerId,
-          type: 'raster',
+          type: "raster",
           source: sourceId,
           paint: {
-            'raster-opacity': opacity,
+            "raster-opacity": opacity,
           },
         });
       }
@@ -56,7 +56,7 @@ export default function IxMapsAlignmentOverlay({
     if (map.loaded()) {
       addOverlay();
     } else {
-      map.on('load', addOverlay);
+      map.on("load", addOverlay);
     }
 
     return () => {
@@ -73,7 +73,7 @@ export default function IxMapsAlignmentOverlay({
   if (!enabled || !isLoaded) return null;
 
   return (
-    <div className="absolute top-2 right-2 z-10 bg-white/90 p-2 rounded text-xs">
+    <div className="absolute top-2 right-2 z-10 rounded bg-white/90 p-2 text-xs">
       <div>IxMaps Overlay: {opacity * 100}%</div>
     </div>
   );

@@ -26,7 +26,7 @@ import type { ChartDataPoint, EventMarker } from "~/lib/historical-economic-data
 interface TimeSeriesChartProps {
   chartData: ChartDataPoint[];
   eventMarkers: EventMarker[];
-  selectedMetric: 'gdp' | 'population' | 'unemployment';
+  selectedMetric: "gdp" | "population" | "unemployment";
   formatMetricValue: (value: number) => string;
   getMetricColor: () => string;
 }
@@ -38,17 +38,19 @@ export const TimeSeriesChart = React.memo(function TimeSeriesChart({
   formatMetricValue,
   getMetricColor,
 }: TimeSeriesChartProps) {
-  const metricLabel = selectedMetric === 'gdp'
-    ? 'GDP per Capita'
-    : selectedMetric === 'population'
-    ? 'Population'
-    : 'Unemployment Rate';
+  const metricLabel =
+    selectedMetric === "gdp"
+      ? "GDP per Capita"
+      : selectedMetric === "population"
+        ? "Population"
+        : "Unemployment Rate";
 
-  const dataKey = selectedMetric === 'gdp'
-    ? 'gdpPerCapita'
-    : selectedMetric === 'population'
-    ? 'population'
-    : 'unemploymentRate';
+  const dataKey =
+    selectedMetric === "gdp"
+      ? "gdpPerCapita"
+      : selectedMetric === "population"
+        ? "population"
+        : "unemploymentRate";
 
   return (
     <Card>
@@ -69,7 +71,7 @@ export const TimeSeriesChart = React.memo(function TimeSeriesChart({
               <XAxis
                 dataKey="uniqueKey"
                 tickFormatter={(value) => {
-                  const gameYear = value.split('-')[0];
+                  const gameYear = value.split("-")[0];
                   return `${gameYear}`;
                 }}
               />
@@ -85,11 +87,7 @@ export const TimeSeriesChart = React.memo(function TimeSeriesChart({
                 strokeWidth={2}
                 dot={{ fill: getMetricColor(), strokeWidth: 2 }}
               />
-              <Bar
-                dataKey="eventsCount"
-                fill="rgba(239, 68, 68, 0.3)"
-                yAxisId="right"
-              />
+              <Bar dataKey="eventsCount" fill="rgba(239, 68, 68, 0.3)" yAxisId="right" />
 
               {eventMarkers.slice(0, 10).map((marker, index) => (
                 <ReferenceLine
@@ -105,8 +103,8 @@ export const TimeSeriesChart = React.memo(function TimeSeriesChart({
         </div>
 
         {eventMarkers.length > 0 && (
-          <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-            <h6 className="text-sm font-medium mb-2">Recent Events in Timeline:</h6>
+          <div className="bg-muted/50 mt-4 rounded-lg p-3">
+            <h6 className="mb-2 text-sm font-medium">Recent Events in Timeline:</h6>
             <div className="flex flex-wrap gap-2">
               {eventMarkers.slice(0, 6).map((marker, index) => (
                 <Badge key={index} variant="outline" className="text-xs">

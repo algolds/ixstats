@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { Clock, Zap, Pause } from 'lucide-react';
-import { IxTime } from '~/lib/ixtime';
-import { useIxTime } from '~/contexts/IxTimeContext';
+import { useState, useEffect } from "react";
+import { Clock, Zap, Pause } from "lucide-react";
+import { IxTime } from "~/lib/ixtime";
+import { useIxTime } from "~/contexts/IxTimeContext";
 
 interface RealTimeClockProps {
   className?: string;
@@ -12,21 +12,22 @@ interface RealTimeClockProps {
   updateInterval?: number;
 }
 
-export function RealTimeClock({ 
-  className = "", 
-  showMultiplier = true, 
+export function RealTimeClock({
+  className = "",
+  showMultiplier = true,
   showGameYear = true,
-  updateInterval = 1000 
+  updateInterval = 1000,
 }: RealTimeClockProps) {
   // Use centralized time context
-  const { ixTimeTimestamp, ixTimeFormatted, multiplier, gameYear, isNaturalProgression } = useIxTime();
-  
+  const { ixTimeTimestamp, ixTimeFormatted, multiplier, gameYear, isNaturalProgression } =
+    useIxTime();
+
   const [currentTime, setCurrentTime] = useState({
     ixTime: Date.now(),
-    formatted: '',
+    formatted: "",
     multiplier: 2,
     gameYear: 2040,
-    isNatural: true
+    isNatural: true,
   });
 
   useEffect(() => {
@@ -36,7 +37,7 @@ export function RealTimeClock({
       formatted: ixTimeFormatted,
       multiplier,
       gameYear,
-      isNatural: isNaturalProgression
+      isNatural: isNaturalProgression,
     });
   }, [ixTimeTimestamp, ixTimeFormatted, multiplier, gameYear, isNaturalProgression]);
 
@@ -44,13 +45,9 @@ export function RealTimeClock({
     <div className={`flex items-center gap-2 ${className}`}>
       <Clock className="h-4 w-4 text-blue-500" />
       <div className="flex flex-col">
-        <div className="text-sm font-medium text-foreground">
-          {currentTime.formatted}
-        </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {showGameYear && (
-            <span>Year {currentTime.gameYear}</span>
-          )}
+        <div className="text-foreground text-sm font-medium">{currentTime.formatted}</div>
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          {showGameYear && <span>Year {currentTime.gameYear}</span>}
           {showMultiplier && (
             <div className="flex items-center gap-1">
               {currentTime.multiplier === 0 ? (
@@ -59,8 +56,7 @@ export function RealTimeClock({
                 <Zap className="h-3 w-3" />
               )}
               <span>
-                {currentTime.multiplier}x 
-                {currentTime.isNatural ? ' (natural)' : ' (override)'}
+                {currentTime.multiplier}x{currentTime.isNatural ? " (natural)" : " (override)"}
               </span>
             </div>
           )}

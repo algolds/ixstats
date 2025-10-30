@@ -1,14 +1,21 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, useRef, memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { Progress } from '~/components/ui/progress';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '~/components/ui/dialog';
-import { Label } from '~/components/ui/label';
+import React, { useState, useEffect, useMemo, useCallback, useRef, memo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Progress } from "~/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "~/components/ui/dialog";
+import { Label } from "~/components/ui/label";
 import {
   Building2,
   Factory,
@@ -35,64 +42,62 @@ import {
   HelpCircle,
   Atom,
   Sparkles,
-  Loader2
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { cn } from '~/lib/utils';
+  Loader2,
+} from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "~/lib/utils";
 
 // Economy Builder Components
-import { AtomicEconomicComponentSelector } from '~/components/economy/atoms/AtomicEconomicComponents';
+import { AtomicEconomicComponentSelector } from "~/components/economy/atoms/AtomicEconomicComponents";
 import {
   EconomicEffectiveness,
-  EconomicImpactPreview
-} from '~/components/economy/atoms/AtomicEconomicUI';
-import {
-  EconomicComponentType
-} from '~/components/economy/atoms/AtomicEconomicComponents';
-import { ATOMIC_ECONOMIC_COMPONENTS } from '~/lib/atomic-economic-data';
+  EconomicImpactPreview,
+} from "~/components/economy/atoms/AtomicEconomicUI";
+import { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
+import { ATOMIC_ECONOMIC_COMPONENTS } from "~/lib/atomic-economic-data";
 
 // Types and Services
 import type {
   EconomyBuilderState,
   EconomyBuilderTab,
   EconomicHealthMetrics,
-  CrossBuilderIntegration
-} from '~/types/economy-builder';
-import type { EconomicInputs } from '../../lib/economy-data-service';
-import type { TaxBuilderState } from '~/hooks/useTaxBuilderState';
-import { economyIntegrationService } from '../../services/EconomyIntegrationService';
+  CrossBuilderIntegration,
+} from "~/types/economy-builder";
+import type { EconomicInputs } from "../../lib/economy-data-service";
+import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
+import { economyIntegrationService } from "../../services/EconomyIntegrationService";
 
 // Tab Components (lazy-loaded)
-import { Suspense } from 'react';
-import { EconomySectorsTab, LaborEmploymentTab, DemographicsPopulationTab } from './tabs';
-import { buildTaxSyncPayload } from './utils/taxSync';
-import { getRegionColor } from './tabs/utils/demographicsCalculations';
-import { TabLoadingFallback } from '../../components/LoadingFallback';
+import { Suspense } from "react";
+import { EconomySectorsTab, LaborEmploymentTab, DemographicsPopulationTab } from "./tabs";
+import { buildTaxSyncPayload } from "./utils/taxSync";
+import { getRegionColor } from "./tabs/utils/demographicsCalculations";
+import { TabLoadingFallback } from "../../components/LoadingFallback";
 
 // Step Components
-import { ComponentSelectionStep } from './steps/ComponentSelectionStep';
-import { TaxSystemStep } from './steps/TaxSystemStep';
-import { PreviewStep } from './steps/PreviewStep';
+import { ComponentSelectionStep } from "./steps/ComponentSelectionStep";
+import { TaxSystemStep } from "./steps/TaxSystemStep";
+import { PreviewStep } from "./steps/PreviewStep";
 
 // Cross-Builder Integration Components
-import { BuilderIntegrationSidebar } from './BuilderIntegrationSidebar';
-import { CrossBuilderSynergyDisplay } from './CrossBuilderSynergyDisplay';
-import { BidirectionalTaxSyncDisplay } from './BidirectionalTaxSyncDisplay';
-import { BidirectionalGovernmentSyncDisplay } from './BidirectionalGovernmentSyncDisplay';
-import { UnifiedEffectivenessDisplay } from './UnifiedEffectivenessDisplay';
-import { SynergyValidationDisplay } from './SynergyValidationDisplay';
-import { EconomicArchetypeModal } from './EconomicArchetypeModal';
-import { UnifiedValidationDisplay } from './UnifiedValidationDisplay';
-import { IntegrationTestingDisplay } from './IntegrationTestingDisplay';
+import { BuilderIntegrationSidebar } from "./BuilderIntegrationSidebar";
+import { CrossBuilderSynergyDisplay } from "./CrossBuilderSynergyDisplay";
+import { BidirectionalTaxSyncDisplay } from "./BidirectionalTaxSyncDisplay";
+import { BidirectionalGovernmentSyncDisplay } from "./BidirectionalGovernmentSyncDisplay";
+import { UnifiedEffectivenessDisplay } from "./UnifiedEffectivenessDisplay";
+import { SynergyValidationDisplay } from "./SynergyValidationDisplay";
+import { EconomicArchetypeModal } from "./EconomicArchetypeModal";
+import { UnifiedValidationDisplay } from "./UnifiedValidationDisplay";
+import { IntegrationTestingDisplay } from "./IntegrationTestingDisplay";
 
 // tRPC API
-import { api } from '~/trpc/react';
+import { api } from "~/trpc/react";
 
 // Format utilities
-import { formatCurrency, formatPercent } from '~/lib/format-utils';
+import { formatCurrency, formatPercent } from "~/lib/format-utils";
 
 // Government types
-import type { RevenueSource } from '~/types/government';
+import type { RevenueSource } from "~/types/government";
 
 /**
  * Props for the EconomyBuilderPage component
@@ -194,7 +199,7 @@ export function EconomyBuilderPage({
   economicHealthMetrics,
   persistedEconomyBuilder = null,
   onPersistEconomyBuilder,
-  onPersistTaxSystem
+  onPersistTaxSystem,
 }: EconomyBuilderPageProps) {
   // Removed auto-save state - using global builder autosave instead
 
@@ -206,7 +211,7 @@ export function EconomyBuilderPage({
         laborMarket: {
           ...persistedEconomyBuilder.laborMarket,
           averageAnnualIncome:
-            typeof persistedEconomyBuilder.laborMarket?.averageAnnualIncome === 'number'
+            typeof persistedEconomyBuilder.laborMarket?.averageAnnualIncome === "number"
               ? persistedEconomyBuilder.laborMarket.averageAnnualIncome
               : Math.round((economicInputs.coreIndicators?.gdpPerCapita || 0) * 0.8),
         },
@@ -215,123 +220,126 @@ export function EconomyBuilderPage({
 
     return {
       structure: {
-        economicModel: 'Mixed Economy',
+        economicModel: "Mixed Economy",
         primarySectors: [],
         secondarySectors: [],
         tertiarySectors: [],
-      totalGDP: 0,
-      gdpCurrency: economicInputs.nationalIdentity?.currency || 'USD',
-      economicTier: 'Developing' as const,
-      growthStrategy: 'Balanced'
-    },
-    sectors: [],
-    laborMarket: {
-      totalWorkforce: 0,
-      laborForceParticipationRate: 65,
-      employmentRate: 95,
-      unemploymentRate: 5,
-      underemploymentRate: 3,
-      youthUnemploymentRate: 10,
-      seniorEmploymentRate: 30,
-      femaleParticipationRate: 60,
-      maleParticipationRate: 70,
-      sectorDistribution: {
-        agriculture: 5,
-        mining: 2,
-        manufacturing: 15,
-        construction: 8,
-        utilities: 2,
-        wholesale: 5,
-        retail: 12,
-        transportation: 6,
-        information: 5,
-        finance: 8,
-        professional: 10,
-        education: 8,
-        healthcare: 10,
-        hospitality: 6,
-        government: 8,
-        other: 5
+        totalGDP: 0,
+        gdpCurrency: economicInputs.nationalIdentity?.currency || "USD",
+        economicTier: "Developing" as const,
+        growthStrategy: "Balanced",
       },
-      employmentType: {
-        fullTime: 70,
-        partTime: 15,
-        temporary: 5,
-        seasonal: 3,
-        selfEmployed: 10,
-        gig: 3,
-        informal: 4
+      sectors: [],
+      laborMarket: {
+        totalWorkforce: 0,
+        laborForceParticipationRate: 65,
+        employmentRate: 95,
+        unemploymentRate: 5,
+        underemploymentRate: 3,
+        youthUnemploymentRate: 10,
+        seniorEmploymentRate: 30,
+        femaleParticipationRate: 60,
+        maleParticipationRate: 70,
+        sectorDistribution: {
+          agriculture: 5,
+          mining: 2,
+          manufacturing: 15,
+          construction: 8,
+          utilities: 2,
+          wholesale: 5,
+          retail: 12,
+          transportation: 6,
+          information: 5,
+          finance: 8,
+          professional: 10,
+          education: 8,
+          healthcare: 10,
+          hospitality: 6,
+          government: 8,
+          other: 5,
+        },
+        employmentType: {
+          fullTime: 70,
+          partTime: 15,
+          temporary: 5,
+          seasonal: 3,
+          selfEmployed: 10,
+          gig: 3,
+          informal: 4,
+        },
+        averageAnnualIncome:
+          economicInputs.laborEmployment?.averageAnnualIncome ??
+          Math.round((economicInputs.coreIndicators?.gdpPerCapita || 0) * 0.8),
+        averageWorkweekHours: 40,
+        averageOvertimeHours: 3,
+        paidVacationDays: 15,
+        paidSickLeaveDays: 10,
+        parentalLeaveWeeks: 12,
+        unionizationRate: 20,
+        collectiveBargainingCoverage: 25,
+        minimumWageHourly: 12,
+        livingWageHourly: 18,
+        workplaceSafetyIndex: 70,
+        laborRightsScore: 65,
+        workerProtections: {
+          jobSecurity: 60,
+          wageProtection: 65,
+          healthSafety: 70,
+          discriminationProtection: 75,
+          collectiveRights: 55,
+        },
       },
-      averageAnnualIncome:
-        economicInputs.laborEmployment?.averageAnnualIncome ??
-        Math.round((economicInputs.coreIndicators?.gdpPerCapita || 0) * 0.8),
-      averageWorkweekHours: 40,
-      averageOvertimeHours: 3,
-      paidVacationDays: 15,
-      paidSickLeaveDays: 10,
-      parentalLeaveWeeks: 12,
-      unionizationRate: 20,
-      collectiveBargainingCoverage: 25,
-      minimumWageHourly: 12,
-      livingWageHourly: 18,
-      workplaceSafetyIndex: 70,
-      laborRightsScore: 65,
-      workerProtections: {
-        jobSecurity: 60,
-        wageProtection: 65,
-        healthSafety: 70,
-        discriminationProtection: 75,
-        collectiveRights: 55
-      }
-    },
-    demographics: {
-      totalPopulation: economicInputs.coreIndicators?.totalPopulation || 0,
-      populationGrowthRate: 0,
-      ageDistribution: {
-        under15: 20,
-        age15to64: 65,
-        over65: 15
+      demographics: {
+        totalPopulation: economicInputs.coreIndicators?.totalPopulation || 0,
+        populationGrowthRate: 0,
+        ageDistribution: {
+          under15: 20,
+          age15to64: 65,
+          over65: 15,
+        },
+        urbanRuralSplit: {
+          urban: 50,
+          rural: 50,
+        },
+        regions: [],
+        lifeExpectancy: 75,
+        literacyRate: 90,
+        educationLevels: {
+          noEducation: 5,
+          primary: 25,
+          secondary: 45,
+          tertiary: 25,
+        },
+        netMigrationRate: 0,
+        immigrationRate: 0,
+        emigrationRate: 0,
+        infantMortalityRate: 10,
+        maternalMortalityRate: 50,
+        healthExpenditureGDP: 5,
+        youthDependencyRatio: 30,
+        elderlyDependencyRatio: 23,
+        totalDependencyRatio: 53,
       },
-      urbanRuralSplit: {
-        urban: 50,
-        rural: 50
+      selectedAtomicComponents: [],
+      isValid: true,
+      errors: {
+        structure: [],
+        sectors: {},
+        labor: [],
+        demographics: [],
+        atomicComponents: [],
+        validation: [],
       },
-      regions: [],
-      lifeExpectancy: 75,
-      literacyRate: 90,
-      educationLevels: {
-        noEducation: 5,
-        primary: 25,
-        secondary: 45,
-        tertiary: 25
-      },
-      netMigrationRate: 0,
-      immigrationRate: 0,
-      emigrationRate: 0,
-      infantMortalityRate: 10,
-      maternalMortalityRate: 50,
-      healthExpenditureGDP: 5,
-      youthDependencyRatio: 30,
-      elderlyDependencyRatio: 23,
-      totalDependencyRatio: 53
-    },
-    selectedAtomicComponents: [],
-    isValid: true,
-    errors: {
-      structure: [],
-      sectors: {},
-      labor: [],
-      demographics: [],
-      atomicComponents: [],
-      validation: []
-    },
-    lastUpdated: new Date(),
-    version: '1.0.0'
+      lastUpdated: new Date(),
+      version: "1.0.0",
     };
   });
 
-  const [selectedComponents, setSelectedComponents] = useState<EconomicComponentType[]>(propsSelectedComponents);
-  const [currentStep, setCurrentStep] = useState<'components' | 'sectors' | 'labor' | 'demographics' | 'taxes' | 'preview'>('components');
+  const [selectedComponents, setSelectedComponents] =
+    useState<EconomicComponentType[]>(propsSelectedComponents);
+  const [currentStep, setCurrentStep] = useState<
+    "components" | "sectors" | "labor" | "demographics" | "taxes" | "preview"
+  >("components");
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isPresetsOpen, setIsPresetsOpen] = useState(false);
@@ -343,30 +351,34 @@ export function EconomyBuilderPage({
     nonTaxRevenue: number;
     taxBurdenRatio: number;
     revenueToGDPRatio: number;
-    governmentSizeIndicator: 'Small' | 'Medium' | 'Large';
+    governmentSizeIndicator: "Small" | "Medium" | "Large";
   }>({
     totalRevenue: 0,
     taxRevenue: 0,
     nonTaxRevenue: 0,
     taxBurdenRatio: 0,
     revenueToGDPRatio: 0,
-    governmentSizeIndicator: 'Medium'
+    governmentSizeIndicator: "Medium",
   });
 
   // Tax System tRPC Queries
-  const { data: fetchedTaxSystemData, refetch: refetchTaxSystem } = api.taxSystem.getByCountryId.useQuery(
-    { countryId: countryId || '' },
-    {
-      enabled: !!countryId,
-      staleTime: 30000
-    }
-  );
+  const { data: fetchedTaxSystemData, refetch: refetchTaxSystem } =
+    api.taxSystem.getByCountryId.useQuery(
+      { countryId: countryId || "" },
+      {
+        enabled: !!countryId,
+        staleTime: 30000,
+      }
+    );
 
   const createTaxSystemMutation = api.taxSystem.create.useMutation();
   const updateTaxSystemMutation = api.taxSystem.update.useMutation();
 
   // Use fetched tax data or prop tax data
-  const activeTaxSystemData: TaxBuilderState | null = (fetchedTaxSystemData as TaxBuilderState | null) ?? (taxSystemData as TaxBuilderState | null) ?? null;
+  const activeTaxSystemData: TaxBuilderState | null =
+    (fetchedTaxSystemData as TaxBuilderState | null) ??
+    (taxSystemData as TaxBuilderState | null) ??
+    null;
 
   useEffect(() => {
     if (activeTaxSystemData && onPersistTaxSystem) {
@@ -376,7 +388,9 @@ export function EconomyBuilderPage({
 
   // Track auto-selection to prevent loops
   const hasAutoSelectedRef = useRef(false);
-  const persistEconomyBuilderRef = useRef<typeof onPersistEconomyBuilder | undefined>(onPersistEconomyBuilder);
+  const persistEconomyBuilderRef = useRef<typeof onPersistEconomyBuilder | undefined>(
+    onPersistEconomyBuilder
+  );
 
   useEffect(() => {
     persistEconomyBuilderRef.current = onPersistEconomyBuilder;
@@ -384,22 +398,28 @@ export function EconomyBuilderPage({
 
   // Government Revenue Integration Effect
   useEffect(() => {
-    if (!governmentBuilderData?.revenueSources || governmentBuilderData.revenueSources.length === 0) {
+    if (
+      !governmentBuilderData?.revenueSources ||
+      governmentBuilderData.revenueSources.length === 0
+    ) {
       return;
     }
 
     const revenueSources = governmentBuilderData.revenueSources as RevenueSource[];
 
     // Calculate total government revenue from revenue sources
-    const totalRevenue = revenueSources.reduce((sum, source) => sum + (source.revenueAmount || 0), 0);
+    const totalRevenue = revenueSources.reduce(
+      (sum, source) => sum + (source.revenueAmount || 0),
+      0
+    );
 
     // Separate tax revenue from non-tax revenue
     const taxRevenue = revenueSources
-      .filter(source => source.category === 'Direct Tax' || source.category === 'Indirect Tax')
+      .filter((source) => source.category === "Direct Tax" || source.category === "Indirect Tax")
       .reduce((sum, source) => sum + (source.revenueAmount || 0), 0);
 
     const nonTaxRevenue = revenueSources
-      .filter(source => source.category !== 'Direct Tax' && source.category !== 'Indirect Tax')
+      .filter((source) => source.category !== "Direct Tax" && source.category !== "Indirect Tax")
       .reduce((sum, source) => sum + (source.revenueAmount || 0), 0);
 
     // Get GDP from economic inputs
@@ -410,11 +430,11 @@ export function EconomyBuilderPage({
     const revenueToGDPRatio = gdp > 0 ? (totalRevenue / gdp) * 100 : 0;
 
     // Determine government size based on revenue-to-GDP ratio
-    let governmentSizeIndicator: 'Small' | 'Medium' | 'Large' = 'Medium';
+    let governmentSizeIndicator: "Small" | "Medium" | "Large" = "Medium";
     if (revenueToGDPRatio < 25) {
-      governmentSizeIndicator = 'Small';
+      governmentSizeIndicator = "Small";
     } else if (revenueToGDPRatio > 40) {
-      governmentSizeIndicator = 'Large';
+      governmentSizeIndicator = "Large";
     }
 
     // Update revenue integration state
@@ -424,32 +444,31 @@ export function EconomyBuilderPage({
       nonTaxRevenue,
       taxBurdenRatio,
       revenueToGDPRatio,
-      governmentSizeIndicator
+      governmentSizeIndicator,
     });
 
     const adjustedBuilder = applyGovernmentRevenueAdjustments(economyBuilder, {
       taxBurdenRatio,
       revenueToGDPRatio,
-      gdp
+      gdp,
     });
 
     if (adjustedBuilder !== economyBuilder) {
       handleEconomyBuilderChange(adjustedBuilder);
     }
 
-    console.log('[EconomyBuilder] Government revenue integration applied:', {
+    console.log("[EconomyBuilder] Government revenue integration applied:", {
       totalRevenue,
       taxRevenue,
       nonTaxRevenue,
       taxBurdenRatio: `${taxBurdenRatio.toFixed(1)}%`,
       revenueToGDPRatio: `${revenueToGDPRatio.toFixed(1)}%`,
-      governmentSizeIndicator
+      governmentSizeIndicator,
     });
-
   }, [
     governmentBuilderData?.revenueSources,
     economicInputs.coreIndicators?.nominalGDP,
-    economyBuilder
+    economyBuilder,
   ]);
 
   // Auto-select economic components based on government components with comprehensive synergy scoring
@@ -458,28 +477,36 @@ export function EconomyBuilderPage({
       hasAutoSelectedRef.current = true;
 
       // Extract government component types from various possible formats
-      const govCompTypes = governmentComponents.map(comp => {
-        if (typeof comp === 'string') return comp;
-        if (comp.type) return comp.type;
-        if (comp.id) return comp.id;
-        return null;
-      }).filter(Boolean) as string[];
+      const govCompTypes = governmentComponents
+        .map((comp) => {
+          if (typeof comp === "string") return comp;
+          if (comp.type) return comp.type;
+          if (comp.id) return comp.id;
+          return null;
+        })
+        .filter(Boolean) as string[];
 
-      console.log('[EconomyBuilder] Government components detected:', govCompTypes);
+      console.log("[EconomyBuilder] Government components detected:", govCompTypes);
 
       // Score each economic component based on synergies with government
       const componentScores = Object.entries(ATOMIC_ECONOMIC_COMPONENTS).map(([key, component]) => {
         if (!component) return { type: key as EconomicComponentType, score: 0 };
 
         // Calculate synergy score
-        const synergyMatches = component.governmentSynergies?.filter(govType =>
-          govCompTypes.some(gc => gc === govType || gc.includes(govType) || govType.includes(gc))
-        ).length || 0;
+        const synergyMatches =
+          component.governmentSynergies?.filter((govType) =>
+            govCompTypes.some(
+              (gc) => gc === govType || gc.includes(govType) || govType.includes(gc)
+            )
+          ).length || 0;
 
         // Calculate conflict penalty
-        const conflictMatches = component.governmentConflicts?.filter(govType =>
-          govCompTypes.some(gc => gc === govType || gc.includes(govType) || govType.includes(gc))
-        ).length || 0;
+        const conflictMatches =
+          component.governmentConflicts?.filter((govType) =>
+            govCompTypes.some(
+              (gc) => gc === govType || gc.includes(govType) || govType.includes(gc)
+            )
+          ).length || 0;
 
         // Base score = component effectiveness
         let score = component.effectiveness || 50;
@@ -495,34 +522,37 @@ export function EconomyBuilderPage({
           score,
           synergyCount: synergyMatches,
           conflictCount: conflictMatches,
-          component
+          component,
         };
       });
 
       // Sort by score (highest first) and select top 6-8 components with positive synergies
       const topComponents = componentScores
-        .filter(item => item.score > 60 && (item.synergyCount ?? 0) > 0) // Must have synergies and good score
+        .filter((item) => item.score > 60 && (item.synergyCount ?? 0) > 0) // Must have synergies and good score
         .sort((a, b) => b.score - a.score)
         .slice(0, 8) // Select top 6-8
-        .map(item => item.type);
+        .map((item) => item.type);
 
       if (topComponents.length > 0) {
         const merged = Array.from(new Set([...selectedComponents, ...topComponents]));
         setSelectedComponents(merged);
 
-        console.log(`[EconomyBuilder] Auto-selected ${topComponents.length} components with government synergies:`, {
-          components: topComponents.map(type => {
-            const comp = ATOMIC_ECONOMIC_COMPONENTS[type];
-            const item = componentScores.find(i => i.type === type);
-            return {
-              type,
-              name: comp?.name,
-              score: item?.score,
-              synergies: item?.synergyCount,
-              conflicts: item?.conflictCount
-            };
-          })
-        });
+        console.log(
+          `[EconomyBuilder] Auto-selected ${topComponents.length} components with government synergies:`,
+          {
+            components: topComponents.map((type) => {
+              const comp = ATOMIC_ECONOMIC_COMPONENTS[type];
+              const item = componentScores.find((i) => i.type === type);
+              return {
+                type,
+                name: comp?.name,
+                score: item?.score,
+                synergies: item?.synergyCount,
+                conflicts: item?.conflictCount,
+              };
+            }),
+          }
+        );
 
         // User-friendly notification
         toast.success(
@@ -530,7 +560,7 @@ export function EconomyBuilderPage({
           { duration: 4000 }
         );
       } else {
-        console.log('[EconomyBuilder] No strong synergies found with government components');
+        console.log("[EconomyBuilder] No strong synergies found with government components");
       }
     }
   }, [governmentComponents.length]); // Only trigger on count change
@@ -544,7 +574,10 @@ export function EconomyBuilderPage({
       }
 
       // Only call parent callback if truly different (deep equality check)
-      if (state.economicInputs && JSON.stringify(state.economicInputs) !== JSON.stringify(economicInputs)) {
+      if (
+        state.economicInputs &&
+        JSON.stringify(state.economicInputs) !== JSON.stringify(economicInputs)
+      ) {
         onEconomicInputsChange(state.economicInputs);
       }
     });
@@ -566,24 +599,30 @@ export function EconomyBuilderPage({
   }, [governmentBuilderData]);
 
   // Component Change Handler - Memoized
-  const handleComponentChange = useCallback((components: EconomicComponentType[]) => {
-    setSelectedComponents(components);
-    economyIntegrationService.updateEconomicComponents(components);
-    // Notify parent component
-    onSelectedComponentsChange?.(components);
-  }, [onSelectedComponentsChange]);
+  const handleComponentChange = useCallback(
+    (components: EconomicComponentType[]) => {
+      setSelectedComponents(components);
+      economyIntegrationService.updateEconomicComponents(components);
+      // Notify parent component
+      onSelectedComponentsChange?.(components);
+    },
+    [onSelectedComponentsChange]
+  );
 
   // Economy Builder Change Handler - Memoized
-  const handleEconomyBuilderChange = useCallback((builder: EconomyBuilderState) => {
-    setEconomyBuilder(builder);
-    economyIntegrationService.updateEconomyBuilder(builder);
-    onPersistEconomyBuilder?.(builder);
+  const handleEconomyBuilderChange = useCallback(
+    (builder: EconomyBuilderState) => {
+      setEconomyBuilder(builder);
+      economyIntegrationService.updateEconomyBuilder(builder);
+      onPersistEconomyBuilder?.(builder);
 
-    if (economicInputs) {
-      const mergedInputs = mergeEconomyBuilderIntoInputs(economicInputs, builder);
-      onEconomicInputsChange(mergedInputs);
-    }
-  }, [economicInputs, onEconomicInputsChange, onPersistEconomyBuilder]);
+      if (economicInputs) {
+        const mergedInputs = mergeEconomyBuilderIntoInputs(economicInputs, builder);
+        onEconomicInputsChange(mergedInputs);
+      }
+    },
+    [economicInputs, onEconomicInputsChange, onPersistEconomyBuilder]
+  );
 
   // tRPC mutations for comprehensive economy builder management
   const saveEconomyMutation = api.economics.saveEconomyBuilderState.useMutation({
@@ -593,7 +632,7 @@ export function EconomyBuilderPage({
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to save economy configuration");
-    }
+    },
   });
 
   const syncGovernmentMutation = api.economics.syncEconomyWithGovernment.useMutation({
@@ -602,7 +641,7 @@ export function EconomyBuilderPage({
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to sync with government");
-    }
+    },
   });
 
   const syncTaxMutation = api.economics.syncEconomyWithTax.useMutation({
@@ -611,36 +650,47 @@ export function EconomyBuilderPage({
     },
     onError: (error: any) => {
       toast.error(error.message || "Failed to sync with tax system");
-    }
+    },
   });
 
   // Load existing economy builder state
-  const { data: existingConfiguration, isLoading: isLoadingConfig } = api.economics.getEconomyBuilderState.useQuery(
-    { countryId: countryId! },
-    {
-      enabled: !!countryId
-    }
-  );
+  const { data: existingConfiguration, isLoading: isLoadingConfig } =
+    api.economics.getEconomyBuilderState.useQuery(
+      { countryId: countryId! },
+      {
+        enabled: !!countryId,
+      }
+    );
 
   // Handle existing configuration when data loads
   React.useEffect(() => {
     if (existingConfiguration) {
-      const existingLaborMarket = (existingConfiguration.laborMarket ?? {}) as Partial<EconomyBuilderState['laborMarket']>;
+      const existingLaborMarket = (existingConfiguration.laborMarket ?? {}) as Partial<
+        EconomyBuilderState["laborMarket"]
+      >;
       const mergedBuilder: EconomyBuilderState = {
         ...economyBuilder,
         structure: {
           ...economyBuilder.structure,
           ...existingConfiguration.structure,
-          economicTier: (['Developing', 'Emerging', 'Developed', 'Advanced'] as const).includes(
+          economicTier: (["Developing", "Emerging", "Developed", "Advanced"] as const).includes(
             existingConfiguration.structure?.economicTier as any
           )
-            ? (existingConfiguration.structure.economicTier as 'Developing' | 'Emerging' | 'Developed' | 'Advanced')
-            : 'Developing',
-          growthStrategy: (['Export-Led', 'Import-Substitution', 'Balanced', 'Innovation-Driven'] as const).includes(
-            existingConfiguration.structure?.growthStrategy as any
-          )
-            ? (existingConfiguration.structure.growthStrategy as 'Export-Led' | 'Import-Substitution' | 'Balanced' | 'Innovation-Driven')
-            : 'Balanced',
+            ? (existingConfiguration.structure.economicTier as
+                | "Developing"
+                | "Emerging"
+                | "Developed"
+                | "Advanced")
+            : "Developing",
+          growthStrategy: (
+            ["Export-Led", "Import-Substitution", "Balanced", "Innovation-Driven"] as const
+          ).includes(existingConfiguration.structure?.growthStrategy as any)
+            ? (existingConfiguration.structure.growthStrategy as
+                | "Export-Led"
+                | "Import-Substitution"
+                | "Balanced"
+                | "Innovation-Driven")
+            : "Balanced",
         },
         sectors: {
           ...economyBuilder.sectors,
@@ -681,7 +731,7 @@ export function EconomyBuilderPage({
       // Validate before saving
       const validation = validateEconomyConfiguration();
       if (!validation.isValid) {
-        toast.error(`Validation failed: ${validation.errors.join(', ')}`);
+        toast.error(`Validation failed: ${validation.errors.join(", ")}`);
         setIsSaving(false);
         return;
       }
@@ -694,7 +744,7 @@ export function EconomyBuilderPage({
         demographics: economyBuilder.demographics,
         selectedAtomicComponents: selectedComponents,
         lastUpdated: new Date(),
-        version: economyBuilder.version || '1.0.0'
+        version: economyBuilder.version || "1.0.0",
       };
 
       // Use tRPC mutation
@@ -707,15 +757,15 @@ export function EconomyBuilderPage({
           demographics: economyBuilder.demographics,
           selectedAtomicComponents: selectedComponents,
           lastUpdated: new Date(),
-          version: economyBuilder.version || '1.0.0'
-        }
+          version: economyBuilder.version || "1.0.0",
+        },
       });
 
       // Update integration service state
       economyIntegrationService.updateEconomyBuilder(economyBuilder);
       economyIntegrationService.updateEconomicComponents(selectedComponents);
     } catch (error) {
-      console.error('Error saving economy configuration:', error);
+      console.error("Error saving economy configuration:", error);
       // Error toast handled by mutation onError
     } finally {
       setIsSaving(false);
@@ -727,37 +777,46 @@ export function EconomyBuilderPage({
     const errors: string[] = [];
 
     // Check sector contributions sum to 100%
-    const sectorSum = economyBuilder.sectors.reduce((sum, sector) => sum + sector.gdpContribution, 0);
+    const sectorSum = economyBuilder.sectors.reduce(
+      (sum, sector) => sum + sector.gdpContribution,
+      0
+    );
     if (Math.abs(sectorSum - 100) > 1) {
       errors.push(`Sector GDP contributions must sum to 100% (currently ${sectorSum.toFixed(1)}%)`);
     }
 
     // Check employment shares sum to 100%
-    const employmentSum = economyBuilder.sectors.reduce((sum, sector) => sum + sector.employmentShare, 0);
+    const employmentSum = economyBuilder.sectors.reduce(
+      (sum, sector) => sum + sector.employmentShare,
+      0
+    );
     if (Math.abs(employmentSum - 100) > 1) {
       errors.push(`Employment shares must sum to 100% (currently ${employmentSum.toFixed(1)}%)`);
     }
 
     // Check labor force makes sense
     if (economyBuilder.laborMarket.laborForceParticipationRate > 90) {
-      errors.push('Labor force participation rate seems too high (>90%)');
+      errors.push("Labor force participation rate seems too high (>90%)");
     }
 
-    if (economyBuilder.laborMarket.unemploymentRate < 0 || economyBuilder.laborMarket.unemploymentRate > 50) {
-      errors.push('Unemployment rate seems unrealistic');
+    if (
+      economyBuilder.laborMarket.unemploymentRate < 0 ||
+      economyBuilder.laborMarket.unemploymentRate > 50
+    ) {
+      errors.push("Unemployment rate seems unrealistic");
     }
 
     // Check demographics
-    const ageSum = (economyBuilder.demographics.ageDistribution?.under15 || 0) +
-                   (economyBuilder.demographics.ageDistribution?.age15to64 || 0) +
-                   (economyBuilder.demographics.ageDistribution?.over65 || 0);
+    const ageSum =
+      (economyBuilder.demographics.ageDistribution?.under15 || 0) +
+      (economyBuilder.demographics.ageDistribution?.age15to64 || 0) +
+      (economyBuilder.demographics.ageDistribution?.over65 || 0);
     if (Math.abs(ageSum - 100) > 1) {
       errors.push(`Age distribution must sum to 100% (currently ${ageSum}%)`);
     }
 
     return { isValid: errors.length === 0, errors };
   }, [economyBuilder]);
-
 
   // Cross-builder synchronization effects
   useEffect(() => {
@@ -768,10 +827,10 @@ export function EconomyBuilderPage({
       try {
         await syncGovernmentMutation.mutateAsync({
           countryId,
-          governmentComponents: governmentComponents.map(comp => comp.toString())
+          governmentComponents: governmentComponents.map((comp) => comp.toString()),
         });
       } catch (error) {
-        console.warn('Government sync failed:', error);
+        console.warn("Government sync failed:", error);
       }
     };
 
@@ -787,10 +846,10 @@ export function EconomyBuilderPage({
         const taxPayload = buildTaxSyncPayload(taxSystemData);
         await syncTaxMutation.mutateAsync({
           countryId,
-          taxData: taxPayload
+          taxData: taxPayload,
         });
       } catch (error) {
-        console.warn('Tax sync failed:', error);
+        console.warn("Tax sync failed:", error);
       }
     };
 
@@ -805,7 +864,7 @@ export function EconomyBuilderPage({
   }>({
     isSyncing: false,
     lastSync: null,
-    syncError: null
+    syncError: null,
   });
 
   // Update sync status based on mutation states
@@ -815,17 +874,13 @@ export function EconomyBuilderPage({
       syncGovernmentMutation.isPending ||
       syncTaxMutation.isPending;
 
-    setSyncStatus(prev => ({
+    setSyncStatus((prev) => ({
       ...prev,
       isSyncing: isAnyMutationLoading,
       lastSync: isAnyMutationLoading ? prev.lastSync : new Date(),
-      syncError: null
+      syncError: null,
     }));
-  }, [
-    saveEconomyMutation.isPending,
-    syncGovernmentMutation.isPending,
-    syncTaxMutation.isPending
-  ]);
+  }, [saveEconomyMutation.isPending, syncGovernmentMutation.isPending, syncTaxMutation.isPending]);
 
   // Validation Status - Memoized
   const validationStatus = useMemo(() => {
@@ -836,7 +891,7 @@ export function EconomyBuilderPage({
       isValid: economyBuilder.isValid && errors.length === 0,
       hasWarnings: warnings.length > 0,
       errorCount: errors.length,
-      warningCount: warnings.length
+      warningCount: warnings.length,
     };
   }, [economyBuilder.isValid, economyBuilder.validation]);
 
@@ -870,24 +925,24 @@ export function EconomyBuilderPage({
       productivityIndex: 70 + (selectedComponents?.length ?? 0) * 1.5,
 
       // Risk Assessment
-      economicRiskLevel: 'Medium' as const,
+      economicRiskLevel: "Medium" as const,
       externalVulnerability: 25,
       domesticVulnerability: 35,
-      systemicRisk: 30
+      systemicRisk: 30,
     };
   }, [economicHealthMetrics, economyBuilder.laborMarket, selectedComponents]);
 
   // Steps Configuration - Following GovernmentBuilder pattern
   const steps = [
-    { id: 'components', label: 'Atomic Components', icon: Zap },
-    { id: 'sectors', label: 'Economic Sectors', icon: Factory },
-    { id: 'labor', label: 'Labor & Employment', icon: Users },
-    { id: 'demographics', label: 'Demographics', icon: Globe },
-    { id: 'taxes', label: 'Tax System', icon: DollarSign },
-    { id: 'preview', label: 'Preview', icon: Eye }
+    { id: "components", label: "Atomic Components", icon: Zap },
+    { id: "sectors", label: "Economic Sectors", icon: Factory },
+    { id: "labor", label: "Labor & Employment", icon: Users },
+    { id: "demographics", label: "Demographics", icon: Globe },
+    { id: "taxes", label: "Tax System", icon: DollarSign },
+    { id: "preview", label: "Preview", icon: Eye },
   ] as const;
 
-  const currentStepIndex = steps.findIndex(step => step.id === currentStep);
+  const currentStepIndex = steps.findIndex((step) => step.id === currentStep);
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -896,17 +951,15 @@ export function EconomyBuilderPage({
         {/* Header - Matching GovernmentBuilder style */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              MyEconomy
-            </h1>
+            <h1 className="text-foreground text-3xl font-bold">MyEconomy</h1>
             <p className="text-muted-foreground mt-1">
               Configure your nation's economic systems and tax policies
             </p>
             {/* Sync Status Indicators */}
-            <div className="flex items-center gap-4 mt-2">
+            <div className="mt-2 flex items-center gap-4">
               {/* Loading Indicator */}
               {isLoadingConfig && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2 text-sm">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span>Loading configuration...</span>
                 </div>
@@ -914,7 +967,7 @@ export function EconomyBuilderPage({
 
               {/* Last Saved */}
               {lastSaved && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2 text-sm">
                   <CheckCircle className="h-4 w-4 text-green-600" />
                   <span>Last saved: {new Date(lastSaved).toLocaleTimeString()}</span>
                 </div>
@@ -924,19 +977,19 @@ export function EconomyBuilderPage({
               {validationStatus && (
                 <div className="flex items-center gap-2">
                   {validationStatus.isValid ? (
-                    <Badge variant="outline" className="text-green-600 border-green-600">
-                      <CheckCircle className="h-3 w-3 mr-1" />
+                    <Badge variant="outline" className="border-green-600 text-green-600">
+                      <CheckCircle className="mr-1 h-3 w-3" />
                       Valid
                     </Badge>
                   ) : (
-                    <Badge variant="outline" className="text-red-600 border-red-600">
-                      <AlertTriangle className="h-3 w-3 mr-1" />
+                    <Badge variant="outline" className="border-red-600 text-red-600">
+                      <AlertTriangle className="mr-1 h-3 w-3" />
                       {validationStatus.errorCount} errors
                     </Badge>
                   )}
                   {validationStatus.hasWarnings && (
-                    <Badge variant="outline" className="text-amber-600 border-amber-600">
-                      <Info className="h-3 w-3 mr-1" />
+                    <Badge variant="outline" className="border-amber-600 text-amber-600">
+                      <Info className="mr-1 h-3 w-3" />
                       {validationStatus.warningCount} warnings
                     </Badge>
                   )}
@@ -953,7 +1006,7 @@ export function EconomyBuilderPage({
                   Help
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <HelpCircle className="h-6 w-6 text-blue-600" />
@@ -965,98 +1018,140 @@ export function EconomyBuilderPage({
                 </DialogHeader>
                 <div className="space-y-6 text-sm">
                   <div>
-                    <h3 className="font-semibold text-base mb-2 flex items-center gap-2">
+                    <h3 className="mb-2 flex items-center gap-2 text-base font-semibold">
                       <Target className="h-5 w-5 text-blue-600" />
                       Getting Started
                     </h3>
                     <p className="text-muted-foreground mb-2">
-                      The Economy Builder follows a 6-step process to create a complete economic profile for your nation:
+                      The Economy Builder follows a 6-step process to create a complete economic
+                      profile for your nation:
                     </p>
-                    <ol className="space-y-2 text-muted-foreground list-decimal list-inside ml-2">
-                      <li><strong>Economic Components:</strong> Select atomic components that define your economic philosophy (Free Market, Planned, etc.)</li>
-                      <li><strong>Economic Sectors:</strong> Set up your primary industries (Agriculture, Manufacturing, Services, etc.)</li>
-                      <li><strong>Labor & Employment:</strong> Configure workforce distribution, unemployment, and labor rights</li>
-                      <li><strong>Demographics:</strong> Define population characteristics, age distribution, and growth rates</li>
-                      <li><strong>Tax System:</strong> Build your taxation structure with brackets, categories, and policies</li>
-                      <li><strong>Preview:</strong> Review all settings and save your complete economic configuration</li>
+                    <ol className="text-muted-foreground ml-2 list-inside list-decimal space-y-2">
+                      <li>
+                        <strong>Economic Components:</strong> Select atomic components that define
+                        your economic philosophy (Free Market, Planned, etc.)
+                      </li>
+                      <li>
+                        <strong>Economic Sectors:</strong> Set up your primary industries
+                        (Agriculture, Manufacturing, Services, etc.)
+                      </li>
+                      <li>
+                        <strong>Labor & Employment:</strong> Configure workforce distribution,
+                        unemployment, and labor rights
+                      </li>
+                      <li>
+                        <strong>Demographics:</strong> Define population characteristics, age
+                        distribution, and growth rates
+                      </li>
+                      <li>
+                        <strong>Tax System:</strong> Build your taxation structure with brackets,
+                        categories, and policies
+                      </li>
+                      <li>
+                        <strong>Preview:</strong> Review all settings and save your complete
+                        economic configuration
+                      </li>
                     </ol>
                   </div>
 
                   <div>
-                    <h3 className="font-semibold text-base mb-2 flex items-center gap-2">
+                    <h3 className="mb-2 flex items-center gap-2 text-base font-semibold">
                       <Atom className="h-5 w-5 text-green-600" />
                       Atomic Economic Components
                     </h3>
                     <p className="text-muted-foreground mb-2">
-                      Components are modular building blocks that define your economic system. Each represents a specific philosophy or policy.
+                      Components are modular building blocks that define your economic system. Each
+                      represents a specific philosophy or policy.
                     </p>
-                    <ul className="space-y-2 text-muted-foreground list-disc list-inside ml-2">
-                      <li><strong>Select up to 12 components</strong> that best represent your economic vision</li>
-                      <li><strong>Green badges (synergies):</strong> Components that work well together and boost effectiveness</li>
-                      <li><strong>Red badges (conflicts):</strong> Components that contradict and reduce efficiency</li>
-                      <li><strong>★ Star:</strong> Active synergy (both components selected)</li>
-                      <li><strong>⚠ Warning:</strong> Active conflict (creates inefficiency)</li>
-                      <li><strong>Use Presets button</strong> to quick-start with common economic archetypes</li>
+                    <ul className="text-muted-foreground ml-2 list-inside list-disc space-y-2">
+                      <li>
+                        <strong>Select up to 12 components</strong> that best represent your
+                        economic vision
+                      </li>
+                      <li>
+                        <strong>Green badges (synergies):</strong> Components that work well
+                        together and boost effectiveness
+                      </li>
+                      <li>
+                        <strong>Red badges (conflicts):</strong> Components that contradict and
+                        reduce efficiency
+                      </li>
+                      <li>
+                        <strong>★ Star:</strong> Active synergy (both components selected)
+                      </li>
+                      <li>
+                        <strong>⚠ Warning:</strong> Active conflict (creates inefficiency)
+                      </li>
+                      <li>
+                        <strong>Use Presets button</strong> to quick-start with common economic
+                        archetypes
+                      </li>
                     </ul>
                   </div>
 
                   <div>
-                    <h3 className="font-semibold text-base mb-2 flex items-center gap-2">
+                    <h3 className="mb-2 flex items-center gap-2 text-base font-semibold">
                       <BarChart3 className="h-5 w-5 text-purple-600" />
                       Economic Sectors
                     </h3>
                     <p className="text-muted-foreground">
-                      Define your primary, secondary, and tertiary industries. Your sector distribution affects GDP composition,
-                      employment patterns, and economic development tier (Developing → Emerging → Developed → Advanced).
-                      Balanced sectors create economic stability, while specialized economies excel in specific areas.
+                      Define your primary, secondary, and tertiary industries. Your sector
+                      distribution affects GDP composition, employment patterns, and economic
+                      development tier (Developing → Emerging → Developed → Advanced). Balanced
+                      sectors create economic stability, while specialized economies excel in
+                      specific areas.
                     </p>
                   </div>
 
                   <div>
-                    <h3 className="font-semibold text-base mb-2 flex items-center gap-2">
+                    <h3 className="mb-2 flex items-center gap-2 text-base font-semibold">
                       <Users className="h-5 w-5 text-emerald-600" />
                       Labor & Employment
                     </h3>
                     <p className="text-muted-foreground">
-                      Set employment rates, workforce distribution across sectors, minimum wage, and working conditions.
-                      These settings interact with your economic components - for example, "Strong Labor Unions" increases worker protections
-                      but may reduce business flexibility. Balance employment metrics with your economic philosophy.
+                      Set employment rates, workforce distribution across sectors, minimum wage, and
+                      working conditions. These settings interact with your economic components -
+                      for example, "Strong Labor Unions" increases worker protections but may reduce
+                      business flexibility. Balance employment metrics with your economic
+                      philosophy.
                     </p>
                   </div>
 
                   <div>
-                    <h3 className="font-semibold text-base mb-2 flex items-center gap-2">
+                    <h3 className="mb-2 flex items-center gap-2 text-base font-semibold">
                       <TrendingUp className="h-5 w-5 text-amber-600" />
                       Demographics & Population
                     </h3>
                     <p className="text-muted-foreground">
-                      Configure total population, age distribution, growth rates, and urbanization levels.
-                      Demographics directly influence labor supply, consumer markets, and social program costs.
-                      Aging populations require different policies than young, growing populations.
+                      Configure total population, age distribution, growth rates, and urbanization
+                      levels. Demographics directly influence labor supply, consumer markets, and
+                      social program costs. Aging populations require different policies than young,
+                      growing populations.
                     </p>
                   </div>
 
                   <div>
-                    <h3 className="font-semibold text-base mb-2 flex items-center gap-2">
+                    <h3 className="mb-2 flex items-center gap-2 text-base font-semibold">
                       <DollarSign className="h-5 w-5 text-red-600" />
                       Tax System Integration
                     </h3>
                     <p className="text-muted-foreground">
-                      The tax builder auto-populates based on your economic data (GDP, sectors, employment).
-                      It recommends progressive/flat taxation based on your components, suggests brackets by income distribution,
-                      and links to government departments. Tax policy affects economic growth, inequality, and business investment.
+                      The tax builder auto-populates based on your economic data (GDP, sectors,
+                      employment). It recommends progressive/flat taxation based on your components,
+                      suggests brackets by income distribution, and links to government departments.
+                      Tax policy affects economic growth, inequality, and business investment.
                     </p>
                   </div>
 
                   <div>
-                    <h3 className="font-semibold text-base mb-2 flex items-center gap-2">
+                    <h3 className="mb-2 flex items-center gap-2 text-base font-semibold">
                       <Gauge className="h-5 w-5 text-blue-600" />
                       Effectiveness & Synergies
                     </h3>
                     <p className="text-muted-foreground mb-2">
                       Your overall economic effectiveness is calculated from:
                     </p>
-                    <ul className="space-y-1 text-muted-foreground list-disc list-inside ml-4">
+                    <ul className="text-muted-foreground ml-4 list-inside list-disc space-y-1">
                       <li>Average effectiveness of selected components</li>
                       <li>Internal synergies (+10 pts each)</li>
                       <li>Government cross-builder synergies (+15 pts each)</li>
@@ -1064,36 +1159,60 @@ export function EconomyBuilderPage({
                       <li>Government conflicts (-15 pts each)</li>
                     </ul>
                     <p className="text-muted-foreground mt-2">
-                      Higher effectiveness means more efficient economic policies with fewer contradictions.
+                      Higher effectiveness means more efficient economic policies with fewer
+                      contradictions.
                     </p>
                   </div>
 
-                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <h3 className="font-semibold text-base mb-2 flex items-center gap-2">
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+                    <h3 className="mb-2 flex items-center gap-2 text-base font-semibold">
                       <Sparkles className="h-5 w-5 text-blue-600" />
                       Pro Tips
                     </h3>
-                    <ul className="space-y-2 text-muted-foreground text-xs">
-                      <li><strong>Start with Presets:</strong> Use economic archetypes (Capitalist, Socialist, Mixed Economy) as templates, then customize</li>
-                      <li><strong>Balance vs. Specialization:</strong> Diverse sectors = stability, focused sectors = competitive advantages</li>
-                      <li><strong>Watch Conflicts:</strong> Small conflicts are okay if components align with your vision, but avoid major contradictions</li>
-                      <li><strong>Economic Tiers Matter:</strong> Your GDP per capita determines development tier, which affects recommended tax rates</li>
-                      <li><strong>Government Integration:</strong> Economic components sync with government structures for compound effectiveness</li>
-                      <li><strong>Preview Before Saving:</strong> Always review the complete configuration in Preview tab before finalizing</li>
+                    <ul className="text-muted-foreground space-y-2 text-xs">
+                      <li>
+                        <strong>Start with Presets:</strong> Use economic archetypes (Capitalist,
+                        Socialist, Mixed Economy) as templates, then customize
+                      </li>
+                      <li>
+                        <strong>Balance vs. Specialization:</strong> Diverse sectors = stability,
+                        focused sectors = competitive advantages
+                      </li>
+                      <li>
+                        <strong>Watch Conflicts:</strong> Small conflicts are okay if components
+                        align with your vision, but avoid major contradictions
+                      </li>
+                      <li>
+                        <strong>Economic Tiers Matter:</strong> Your GDP per capita determines
+                        development tier, which affects recommended tax rates
+                      </li>
+                      <li>
+                        <strong>Government Integration:</strong> Economic components sync with
+                        government structures for compound effectiveness
+                      </li>
+                      <li>
+                        <strong>Preview Before Saving:</strong> Always review the complete
+                        configuration in Preview tab before finalizing
+                      </li>
                     </ul>
                   </div>
 
-                  <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
-                    <h3 className="font-semibold text-base mb-2 flex items-center gap-2">
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/20">
+                    <h3 className="mb-2 flex items-center gap-2 text-base font-semibold">
                       <Info className="h-5 w-5 text-emerald-600" />
                       Navigation Tips
                     </h3>
-                    <ul className="space-y-1 text-muted-foreground text-xs">
+                    <ul className="text-muted-foreground space-y-1 text-xs">
                       <li>Use the step indicators at the top to jump between sections</li>
                       <li>Green checkmarks show completed steps</li>
-                      <li>The Preview tab shows collapsible sections - click headers to expand/collapse</li>
+                      <li>
+                        The Preview tab shows collapsible sections - click headers to
+                        expand/collapse
+                      </li>
                       <li>Changes auto-save when enabled, or use the Save button manually</li>
-                      <li>Click "Expand All" in Preview to see full economic configuration at once</li>
+                      <li>
+                        Click "Expand All" in Preview to see full economic configuration at once
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -1101,34 +1220,30 @@ export function EconomyBuilderPage({
             </Dialog>
 
             {/* Presets Modal Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsPresetsOpen(true)}
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
+            <Button variant="outline" size="sm" onClick={() => setIsPresetsOpen(true)}>
+              <Sparkles className="mr-2 h-4 w-4" />
               Presets
             </Button>
           </div>
         </div>
 
         {/* Progress Steps - Matching GovernmentBuilder pattern */}
-        <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border overflow-x-auto">
+        <div className="bg-muted/50 border-border flex items-center justify-between overflow-x-auto rounded-lg border p-4">
           {steps.map((step, index) => {
             const StepIcon = step.icon;
             const isActive = step.id === currentStep;
             const isCompleted = index < currentStepIndex;
 
             return (
-              <div key={step.id} className="flex items-center flex-shrink-0">
+              <div key={step.id} className="flex flex-shrink-0 items-center">
                 <button
                   onClick={() => setCurrentStep(step.id as any)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors relative ${
+                  className={`relative flex items-center gap-2 rounded-lg px-3 py-2 transition-colors ${
                     isActive
-                      ? 'bg-primary text-primary-foreground'
+                      ? "bg-primary text-primary-foreground"
                       : isCompleted
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
-                        : 'hover:bg-muted text-muted-foreground'
+                        ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
+                        : "hover:bg-muted text-muted-foreground"
                   }`}
                 >
                   <StepIcon className="h-4 w-4" />
@@ -1136,7 +1251,7 @@ export function EconomyBuilderPage({
                   {isCompleted && <CheckCircle className="h-4 w-4" />}
                 </button>
                 {index < steps.length - 1 && (
-                  <ArrowRight className="h-4 w-4 mx-2 text-muted-foreground flex-shrink-0" />
+                  <ArrowRight className="text-muted-foreground mx-2 h-4 w-4 flex-shrink-0" />
                 )}
               </div>
             );
@@ -1149,9 +1264,11 @@ export function EconomyBuilderPage({
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription>
               Please fix the following issues:
-              <ul className="mt-2 list-disc list-inside space-y-1">
+              <ul className="mt-2 list-inside list-disc space-y-1">
                 {economyBuilder.validation.errors.map((error, index) => (
-                  <li key={index} className="text-sm">{error}</li>
+                  <li key={index} className="text-sm">
+                    {error}
+                  </li>
                 ))}
               </ul>
             </AlertDescription>
@@ -1160,23 +1277,21 @@ export function EconomyBuilderPage({
 
         {/* Step Content - Matching GovernmentBuilder pattern */}
         <div className="space-y-6">
-          {currentStep === 'components' && (
+          {currentStep === "components" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-foreground">
+                <h2 className="text-foreground text-2xl font-semibold">
                   Economic Atomic Components
                 </h2>
-                <Badge variant="outline">
-                  {selectedComponents.length} / 12 selected
-                </Badge>
+                <Badge variant="outline">{selectedComponents.length} / 12 selected</Badge>
               </div>
 
               {/* Government Revenue Integration Card */}
               {revenueIntegration.totalRevenue > 0 && (
-                <Card className="border-gold-200 dark:border-gold-800 bg-gradient-to-br from-gold-50/50 to-transparent dark:from-gold-950/20">
+                <Card className="border-gold-200 dark:border-gold-800 from-gold-50/50 dark:from-gold-950/20 bg-gradient-to-br to-transparent">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <DollarSign className="h-5 w-5 text-gold-600" />
+                      <DollarSign className="text-gold-600 h-5 w-5" />
                       Government Revenue Integration
                     </CardTitle>
                     <CardDescription>
@@ -1184,21 +1299,29 @@ export function EconomyBuilderPage({
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                       {/* Total Government Revenue */}
                       <div className="space-y-2">
-                        <Label className="text-sm text-muted-foreground">Total Government Revenue</Label>
-                        <div className="text-2xl font-bold text-foreground">
-                          {formatCurrency(revenueIntegration.totalRevenue, economicInputs.nationalIdentity?.currency || 'USD')}
+                        <Label className="text-muted-foreground text-sm">
+                          Total Government Revenue
+                        </Label>
+                        <div className="text-foreground text-2xl font-bold">
+                          {formatCurrency(
+                            revenueIntegration.totalRevenue,
+                            economicInputs.nationalIdentity?.currency || "USD"
+                          )}
                         </div>
-                        <div className="flex items-center gap-2 mt-2">
+                        <div className="mt-2 flex items-center gap-2">
                           <Badge
                             variant="outline"
                             className={cn(
                               "text-xs",
-                              revenueIntegration.governmentSizeIndicator === 'Large' && "border-blue-600 text-blue-600",
-                              revenueIntegration.governmentSizeIndicator === 'Medium' && "border-amber-600 text-amber-600",
-                              revenueIntegration.governmentSizeIndicator === 'Small' && "border-green-600 text-green-600"
+                              revenueIntegration.governmentSizeIndicator === "Large" &&
+                                "border-blue-600 text-blue-600",
+                              revenueIntegration.governmentSizeIndicator === "Medium" &&
+                                "border-amber-600 text-amber-600",
+                              revenueIntegration.governmentSizeIndicator === "Small" &&
+                                "border-green-600 text-green-600"
                             )}
                           >
                             {revenueIntegration.governmentSizeIndicator} Government
@@ -1208,30 +1331,50 @@ export function EconomyBuilderPage({
 
                       {/* Tax Revenue Share */}
                       <div className="space-y-2">
-                        <Label className="text-sm text-muted-foreground">Tax Revenue Breakdown</Label>
+                        <Label className="text-muted-foreground text-sm">
+                          Tax Revenue Breakdown
+                        </Label>
                         <div className="space-y-3">
                           <div>
-                            <div className="flex items-center justify-between text-sm mb-1">
+                            <div className="mb-1 flex items-center justify-between text-sm">
                               <span className="text-muted-foreground">Tax Revenue</span>
                               <span className="font-semibold">
-                                {formatCurrency(revenueIntegration.taxRevenue, economicInputs.nationalIdentity?.currency || 'USD')}
+                                {formatCurrency(
+                                  revenueIntegration.taxRevenue,
+                                  economicInputs.nationalIdentity?.currency || "USD"
+                                )}
                               </span>
                             </div>
                             <Progress
-                              value={revenueIntegration.totalRevenue > 0 ? (revenueIntegration.taxRevenue / revenueIntegration.totalRevenue) * 100 : 0}
+                              value={
+                                revenueIntegration.totalRevenue > 0
+                                  ? (revenueIntegration.taxRevenue /
+                                      revenueIntegration.totalRevenue) *
+                                    100
+                                  : 0
+                              }
                               className="h-2"
                             />
                           </div>
                           <div>
-                            <div className="flex items-center justify-between text-sm mb-1">
+                            <div className="mb-1 flex items-center justify-between text-sm">
                               <span className="text-muted-foreground">Non-Tax Revenue</span>
                               <span className="font-semibold">
-                                {formatCurrency(revenueIntegration.nonTaxRevenue, economicInputs.nationalIdentity?.currency || 'USD')}
+                                {formatCurrency(
+                                  revenueIntegration.nonTaxRevenue,
+                                  economicInputs.nationalIdentity?.currency || "USD"
+                                )}
                               </span>
                             </div>
                             <Progress
-                              value={revenueIntegration.totalRevenue > 0 ? (revenueIntegration.nonTaxRevenue / revenueIntegration.totalRevenue) * 100 : 0}
-                              className="h-2 bg-muted [&>div]:bg-emerald-500"
+                              value={
+                                revenueIntegration.totalRevenue > 0
+                                  ? (revenueIntegration.nonTaxRevenue /
+                                      revenueIntegration.totalRevenue) *
+                                    100
+                                  : 0
+                              }
+                              className="bg-muted h-2 [&>div]:bg-emerald-500"
                             />
                           </div>
                         </div>
@@ -1239,27 +1382,40 @@ export function EconomyBuilderPage({
 
                       {/* Revenue Ratios */}
                       <div className="space-y-2">
-                        <Label className="text-sm text-muted-foreground">Economic Impact Metrics</Label>
+                        <Label className="text-muted-foreground text-sm">
+                          Economic Impact Metrics
+                        </Label>
                         <div className="space-y-3">
                           <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm text-muted-foreground">Revenue as % of GDP</span>
+                            <div className="mb-1 flex items-center justify-between">
+                              <span className="text-muted-foreground text-sm">
+                                Revenue as % of GDP
+                              </span>
                               <Badge variant="outline" className="text-sm font-semibold">
                                 {formatPercent(revenueIntegration.revenueToGDPRatio, 1)}
                               </Badge>
                             </div>
-                            <Progress value={Math.min(revenueIntegration.revenueToGDPRatio, 100)} className="h-2" />
+                            <Progress
+                              value={Math.min(revenueIntegration.revenueToGDPRatio, 100)}
+                              className="h-2"
+                            />
                           </div>
                           <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm text-muted-foreground">Tax Burden Ratio</span>
+                            <div className="mb-1 flex items-center justify-between">
+                              <span className="text-muted-foreground text-sm">
+                                Tax Burden Ratio
+                              </span>
                               <Badge
                                 variant="outline"
                                 className={cn(
                                   "text-sm font-semibold",
-                                  revenueIntegration.taxBurdenRatio > 35 && "border-red-600 text-red-600",
-                                  revenueIntegration.taxBurdenRatio >= 20 && revenueIntegration.taxBurdenRatio <= 35 && "border-amber-600 text-amber-600",
-                                  revenueIntegration.taxBurdenRatio < 20 && "border-green-600 text-green-600"
+                                  revenueIntegration.taxBurdenRatio > 35 &&
+                                    "border-red-600 text-red-600",
+                                  revenueIntegration.taxBurdenRatio >= 20 &&
+                                    revenueIntegration.taxBurdenRatio <= 35 &&
+                                    "border-amber-600 text-amber-600",
+                                  revenueIntegration.taxBurdenRatio < 20 &&
+                                    "border-green-600 text-green-600"
                                 )}
                               >
                                 {formatPercent(revenueIntegration.taxBurdenRatio, 1)}
@@ -1270,7 +1426,9 @@ export function EconomyBuilderPage({
                               className={cn(
                                 "h-2",
                                 revenueIntegration.taxBurdenRatio > 35 && "[&>div]:bg-red-500",
-                                revenueIntegration.taxBurdenRatio >= 20 && revenueIntegration.taxBurdenRatio <= 35 && "[&>div]:bg-amber-500",
+                                revenueIntegration.taxBurdenRatio >= 20 &&
+                                  revenueIntegration.taxBurdenRatio <= 35 &&
+                                  "[&>div]:bg-amber-500",
                                 revenueIntegration.taxBurdenRatio < 20 && "[&>div]:bg-green-500"
                               )}
                             />
@@ -1281,11 +1439,12 @@ export function EconomyBuilderPage({
 
                     {/* Info Alert */}
                     {revenueIntegration.taxBurdenRatio > 35 && (
-                      <Alert className="mt-4 border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
+                      <Alert className="mt-4 border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/20">
                         <Info className="h-4 w-4 text-amber-600" />
                         <AlertDescription className="text-sm text-amber-900 dark:text-amber-100">
-                          High tax burden ({formatPercent(revenueIntegration.taxBurdenRatio, 1)}) may reduce private sector GDP growth.
-                          Consider balancing with economic components that promote business development.
+                          High tax burden ({formatPercent(revenueIntegration.taxBurdenRatio, 1)})
+                          may reduce private sector GDP growth. Consider balancing with economic
+                          components that promote business development.
                         </AlertDescription>
                       </Alert>
                     )}
@@ -1297,17 +1456,15 @@ export function EconomyBuilderPage({
                 selectedComponents={selectedComponents}
                 onComponentChange={handleComponentChange}
                 maxComponents={12}
-                governmentComponents={governmentComponents?.map(c => c.type || c.id) || []}
+                governmentComponents={governmentComponents?.map((c) => c.type || c.id) || []}
               />
             </div>
           )}
 
-          {currentStep === 'sectors' && (
+          {currentStep === "sectors" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-foreground">
-                  Economic Sectors
-                </h2>
+                <h2 className="text-foreground text-2xl font-semibold">Economic Sectors</h2>
               </div>
               <Suspense fallback={<TabLoadingFallback />}>
                 <EconomySectorsTab
@@ -1320,12 +1477,10 @@ export function EconomyBuilderPage({
             </div>
           )}
 
-          {currentStep === 'labor' && (
+          {currentStep === "labor" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-foreground">
-                  Labor & Employment
-                </h2>
+                <h2 className="text-foreground text-2xl font-semibold">Labor & Employment</h2>
               </div>
               <Suspense fallback={<TabLoadingFallback />}>
                 <LaborEmploymentTab
@@ -1337,10 +1492,10 @@ export function EconomyBuilderPage({
             </div>
           )}
 
-          {currentStep === 'demographics' && (
+          {currentStep === "demographics" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-foreground">
+                <h2 className="text-foreground text-2xl font-semibold">
                   Demographics & Population
                 </h2>
               </div>
@@ -1355,7 +1510,7 @@ export function EconomyBuilderPage({
             </div>
           )}
 
-          {currentStep === 'taxes' && (
+          {currentStep === "taxes" && (
             <TaxSystemStep
               countryId={countryId ?? null}
               activeTaxSystemData={activeTaxSystemData}
@@ -1370,21 +1525,23 @@ export function EconomyBuilderPage({
                 await updateTaxSystemMutation.mutateAsync({
                   countryId: countryId!,
                   data: taxSystem,
-                  skipConflictCheck: false
+                  skipConflictCheck: false,
                 });
               }}
               onCreate={async (taxSystem) => {
                 await createTaxSystemMutation.mutateAsync({
                   countryId: countryId!,
                   data: taxSystem,
-                  skipConflictCheck: false
+                  skipConflictCheck: false,
                 });
               }}
-              onRefetch={async () => { await refetchTaxSystem(); }}
+              onRefetch={async () => {
+                await refetchTaxSystem();
+              }}
             />
           )}
 
-          {currentStep === 'preview' && (
+          {currentStep === "preview" && (
             <PreviewStep
               economyBuilder={economyBuilder}
               economicInputs={economicInputs}
@@ -1395,7 +1552,7 @@ export function EconomyBuilderPage({
         </div>
 
         {/* Navigation - Matching GovernmentBuilder pattern */}
-        <div className="flex items-center justify-between pt-6 border-t border-border">
+        <div className="border-border flex items-center justify-between border-t pt-6">
           <Button
             variant="outline"
             onClick={() => {
@@ -1404,7 +1561,7 @@ export function EconomyBuilderPage({
             }}
             disabled={currentStepIndex === 0}
           >
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Previous
           </Button>
 
@@ -1417,12 +1574,12 @@ export function EconomyBuilderPage({
             >
               {saveEconomyMutation.isPending ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving...
                 </>
               ) : (
                 <>
-                  <Save className="h-4 w-4 mr-2" />
+                  <Save className="mr-2 h-4 w-4" />
                   Save Configuration
                 </>
               )}
@@ -1430,13 +1587,16 @@ export function EconomyBuilderPage({
 
             {/* Validation Status */}
             {validationStatus.isValid ? (
-              <Badge variant="default" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                <CheckCircle className="h-3 w-3 mr-1" />
+              <Badge
+                variant="default"
+                className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+              >
+                <CheckCircle className="mr-1 h-3 w-3" />
                 Valid Configuration
               </Badge>
             ) : (
               <Badge variant="destructive">
-                <AlertTriangle className="h-3 w-3 mr-1" />
+                <AlertTriangle className="mr-1 h-3 w-3" />
                 {validationStatus.errorCount} Issues
               </Badge>
             )}
@@ -1450,7 +1610,7 @@ export function EconomyBuilderPage({
             disabled={currentStepIndex === steps.length - 1}
           >
             Next
-            <ArrowRight className="h-4 w-4 ml-2" />
+            <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -1462,7 +1622,7 @@ export function EconomyBuilderPage({
         currentState={economyBuilder}
         onArchetypeApplied={(newState) => {
           // Apply the archetype state to the economy builder
-          console.log('[EconomyBuilder] Archetype applied:', newState);
+          console.log("[EconomyBuilder] Archetype applied:", newState);
           const nextState: EconomyBuilderState = {
             ...economyBuilder,
             ...newState,
@@ -1480,7 +1640,10 @@ export function EconomyBuilderPage({
   );
 }
 
-function mergeEconomyBuilderIntoInputs(baseInputs: EconomicInputs, builder: EconomyBuilderState): EconomicInputs {
+function mergeEconomyBuilderIntoInputs(
+  baseInputs: EconomicInputs,
+  builder: EconomyBuilderState
+): EconomicInputs {
   const safeBase: EconomicInputs = {
     ...baseInputs,
     coreIndicators: { ...baseInputs.coreIndicators },
@@ -1502,11 +1665,13 @@ function mergeEconomyBuilderIntoInputs(baseInputs: EconomicInputs, builder: Econ
     },
   };
 
-  const totalPopulation = builder.demographics.totalPopulation || safeBase.coreIndicators.totalPopulation;
+  const totalPopulation =
+    builder.demographics.totalPopulation || safeBase.coreIndicators.totalPopulation;
   const totalGDP = builder.structure.totalGDP || safeBase.coreIndicators.nominalGDP;
-  const inferredGdpPerCapita = totalPopulation > 0 && totalGDP > 0
-    ? totalGDP / totalPopulation
-    : safeBase.coreIndicators.gdpPerCapita;
+  const inferredGdpPerCapita =
+    totalPopulation > 0 && totalGDP > 0
+      ? totalGDP / totalPopulation
+      : safeBase.coreIndicators.gdpPerCapita;
 
   safeBase.coreIndicators = {
     ...safeBase.coreIndicators,
@@ -1518,9 +1683,11 @@ function mergeEconomyBuilderIntoInputs(baseInputs: EconomicInputs, builder: Econ
   const workerProtectionValues = builder.laborMarket.workerProtections
     ? Object.values(builder.laborMarket.workerProtections)
     : [];
-  const averageProtectionScore = workerProtectionValues.length > 0
-    ? workerProtectionValues.reduce((sum, value) => sum + value, 0) / workerProtectionValues.length
-    : undefined;
+  const averageProtectionScore =
+    workerProtectionValues.length > 0
+      ? workerProtectionValues.reduce((sum, value) => sum + value, 0) /
+        workerProtectionValues.length
+      : undefined;
 
   safeBase.laborEmployment = {
     ...safeBase.laborEmployment,
@@ -1531,53 +1698,54 @@ function mergeEconomyBuilderIntoInputs(baseInputs: EconomicInputs, builder: Econ
     averageWorkweekHours: builder.laborMarket.averageWorkweekHours,
     minimumWage: builder.laborMarket.minimumWageHourly,
     averageAnnualIncome:
-      typeof builder.laborMarket.averageAnnualIncome === 'number'
+      typeof builder.laborMarket.averageAnnualIncome === "number"
         ? builder.laborMarket.averageAnnualIncome
         : safeBase.laborEmployment.averageAnnualIncome,
-    laborProtections: averageProtectionScore !== undefined
-      ? averageProtectionScore >= 60
-      : safeBase.laborEmployment.laborProtections,
+    laborProtections:
+      averageProtectionScore !== undefined
+        ? averageProtectionScore >= 60
+        : safeBase.laborEmployment.laborProtections,
   };
 
   const ageDistribution = [
     {
-      group: '0-14',
+      group: "0-14",
       percent: builder.demographics.ageDistribution.under15,
-      color: safeBase.demographics.ageDistribution?.[0]?.color || '#60a5fa',
+      color: safeBase.demographics.ageDistribution?.[0]?.color || "#60a5fa",
     },
     {
-      group: '15-64',
+      group: "15-64",
       percent: builder.demographics.ageDistribution.age15to64,
-      color: safeBase.demographics.ageDistribution?.[1]?.color || '#34d399',
+      color: safeBase.demographics.ageDistribution?.[1]?.color || "#34d399",
     },
     {
-      group: '65+',
+      group: "65+",
       percent: builder.demographics.ageDistribution.over65,
-      color: safeBase.demographics.ageDistribution?.[2]?.color || '#f97316',
+      color: safeBase.demographics.ageDistribution?.[2]?.color || "#f97316",
     },
   ];
 
   const educationLevels = builder.demographics.educationLevels
     ? [
         {
-          level: 'No Formal Education',
+          level: "No Formal Education",
           percent: builder.demographics.educationLevels.noEducation,
-          color: safeBase.demographics.educationLevels?.[0]?.color || '#ef4444',
+          color: safeBase.demographics.educationLevels?.[0]?.color || "#ef4444",
         },
         {
-          level: 'Primary Education',
+          level: "Primary Education",
           percent: builder.demographics.educationLevels.primary,
-          color: safeBase.demographics.educationLevels?.[1]?.color || '#f59e0b',
+          color: safeBase.demographics.educationLevels?.[1]?.color || "#f59e0b",
         },
         {
-          level: 'Secondary Education',
+          level: "Secondary Education",
           percent: builder.demographics.educationLevels.secondary,
-          color: safeBase.demographics.educationLevels?.[2]?.color || '#22c55e',
+          color: safeBase.demographics.educationLevels?.[2]?.color || "#22c55e",
         },
         {
-          level: 'Tertiary Education',
+          level: "Tertiary Education",
           percent: builder.demographics.educationLevels.tertiary,
-          color: safeBase.demographics.educationLevels?.[3]?.color || '#3b82f6',
+          color: safeBase.demographics.educationLevels?.[3]?.color || "#3b82f6",
         },
       ]
     : safeBase.demographics.educationLevels;
@@ -1585,7 +1753,9 @@ function mergeEconomyBuilderIntoInputs(baseInputs: EconomicInputs, builder: Econ
   const regions = builder.demographics.regions?.length
     ? builder.demographics.regions.map((region, index) => ({
         name: region.name,
-        population: region.population || Math.round(totalPopulation * (region.populationPercent ?? 0) / 100),
+        population:
+          region.population ||
+          Math.round((totalPopulation * (region.populationPercent ?? 0)) / 100),
         urbanPercent: region.urbanPercent,
         color: safeBase.demographics.regions?.[index]?.color || getRegionColor(index),
       }))
@@ -1652,10 +1822,10 @@ function applyGovernmentRevenueAdjustments(
     }
   }
 
-  if (revenueToGDPRatio > 35 && gdp > 1_000_000_000_000 && structure.economicTier !== 'Advanced') {
+  if (revenueToGDPRatio > 35 && gdp > 1_000_000_000_000 && structure.economicTier !== "Advanced") {
     structure = {
       ...structure,
-      economicTier: 'Advanced',
+      economicTier: "Advanced",
     };
     changed = true;
   }

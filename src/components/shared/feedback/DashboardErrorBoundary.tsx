@@ -1,12 +1,12 @@
 "use client";
 
-import React from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Alert, AlertDescription } from '~/components/ui/alert';
+import React from "react";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Alert, AlertDescription } from "~/components/ui/alert";
 import { createUrl } from "~/lib/url-utils";
-import { logger, LogCategory } from '~/lib/logger';
+import { logger, LogCategory } from "~/lib/logger";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -87,13 +87,13 @@ export class DashboardErrorBoundary extends React.Component<
     });
 
     // Log to console
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
 
     // Call optional error callback (can be used for monitoring services)
     this.props.onError?.(error, errorInfo);
 
     // Log to monitoring service in production
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === "production") {
       this.logToMonitoring(error, errorInfo);
     }
   }
@@ -121,11 +121,11 @@ export class DashboardErrorBoundary extends React.Component<
     try {
       // Use existing logger system for production error monitoring
       logger.critical(LogCategory.SYSTEM, `React Error Boundary: ${error.message}`, {
-        component: 'DashboardErrorBoundary',
+        component: "DashboardErrorBoundary",
         error: {
           name: error.name,
           message: error.message,
-          stack: error.stack || '',
+          stack: error.stack || "",
         },
         metadata: {
           componentStack: errorInfo.componentStack,
@@ -138,8 +138,8 @@ export class DashboardErrorBoundary extends React.Component<
       // No need to call discordWebhook directly from client component
     } catch (loggingError) {
       // Fallback if logging fails - don't let logging errors crash the error handler
-      console.error('[Error Boundary] Failed to log error to monitoring:', loggingError);
-      console.error('[Error Boundary] Original error:', error, errorInfo);
+      console.error("[Error Boundary] Failed to log error to monitoring:", loggingError);
+      console.error("[Error Boundary] Original error:", error, errorInfo);
     }
   }
 
@@ -148,9 +148,7 @@ export class DashboardErrorBoundary extends React.Component<
 
     // Prevent infinite retry loops
     if (this.state.errorCount >= maxRetries) {
-      console.warn(
-        `Max retry limit (${maxRetries}) reached. Preventing further retries.`
-      );
+      console.warn(`Max retry limit (${maxRetries}) reached. Preventing further retries.`);
       return;
     }
 
@@ -163,7 +161,7 @@ export class DashboardErrorBoundary extends React.Component<
   };
 
   handleGoHome = () => {
-    const homeUrl = this.props.homeUrl || '/dashboard';
+    const homeUrl = this.props.homeUrl || "/dashboard";
     window.location.href = createUrl(homeUrl);
   };
 
@@ -175,22 +173,17 @@ export class DashboardErrorBoundary extends React.Component<
       // Check for custom fallback component
       if (this.props.fallback) {
         const FallbackComponent = this.props.fallback;
-        return (
-          <FallbackComponent
-            error={this.state.error!}
-            retry={this.handleRetry}
-          />
-        );
+        return <FallbackComponent error={this.state.error!} retry={this.handleRetry} />;
       }
 
       // Default error UI with glass physics design
       return (
         <div className="container mx-auto px-4 py-8">
-          <Card className="max-w-2xl mx-auto glass-hierarchy-parent">
+          <Card className="glass-hierarchy-parent mx-auto max-w-2xl">
             <CardHeader className="text-center">
-              <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+              <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-red-500" />
               <CardTitle className="text-2xl font-bold text-red-700">
-                {this.props.title || 'Something Went Wrong'}
+                {this.props.title || "Something Went Wrong"}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -198,7 +191,7 @@ export class DashboardErrorBoundary extends React.Component<
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   {this.props.description ||
-                    'An unexpected error occurred. Please try again or return to the dashboard.'}
+                    "An unexpected error occurred. Please try again or return to the dashboard."}
                 </AlertDescription>
               </Alert>
 
@@ -207,51 +200,47 @@ export class DashboardErrorBoundary extends React.Component<
                 <Alert className="border-orange-200 bg-orange-50">
                   <AlertTriangle className="h-4 w-4 text-orange-500" />
                   <AlertDescription className="text-orange-700">
-                    Maximum retry attempts reached. Please refresh the page or
-                    return to the dashboard.
+                    Maximum retry attempts reached. Please refresh the page or return to the
+                    dashboard.
                   </AlertDescription>
                 </Alert>
               )}
 
               {/* Error details (development only) */}
-              {process.env.NODE_ENV === 'development' && this.state.error && (
-                <div className="mt-4 p-4 bg-gray-100 rounded-lg border border-gray-200">
-                  <h4 className="font-semibold text-gray-800 mb-2">
+              {process.env.NODE_ENV === "development" && this.state.error && (
+                <div className="mt-4 rounded-lg border border-gray-200 bg-gray-100 p-4">
+                  <h4 className="mb-2 font-semibold text-gray-800">
                     Error Details (Development Mode):
                   </h4>
                   <div className="space-y-2">
                     <div>
-                      <span className="text-xs font-semibold text-gray-600">
-                        Error Count:
-                      </span>{' '}
+                      <span className="text-xs font-semibold text-gray-600">Error Count:</span>{" "}
                       <span className="text-xs text-gray-700">
                         {this.state.errorCount} / {maxRetries}
                       </span>
                     </div>
                     <div>
-                      <span className="text-xs font-semibold text-gray-600">
-                        Message:
-                      </span>
-                      <pre className="text-xs text-gray-600 overflow-auto max-h-32 mt-1 p-2 bg-white rounded border">
+                      <span className="text-xs font-semibold text-gray-600">Message:</span>
+                      <pre className="mt-1 max-h-32 overflow-auto rounded border bg-white p-2 text-xs text-gray-600">
                         {this.state.error.message}
                       </pre>
                     </div>
                     {this.state.error.stack && (
                       <details>
-                        <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700">
+                        <summary className="cursor-pointer text-xs text-gray-500 hover:text-gray-700">
                           Stack Trace
                         </summary>
-                        <pre className="text-xs text-gray-500 mt-1 overflow-auto max-h-32 p-2 bg-white rounded border">
+                        <pre className="mt-1 max-h-32 overflow-auto rounded border bg-white p-2 text-xs text-gray-500">
                           {this.state.error.stack}
                         </pre>
                       </details>
                     )}
                     {this.state.errorInfo && (
                       <details>
-                        <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700">
+                        <summary className="cursor-pointer text-xs text-gray-500 hover:text-gray-700">
                           Component Stack
                         </summary>
-                        <pre className="text-xs text-gray-500 mt-1 overflow-auto max-h-32 p-2 bg-white rounded border">
+                        <pre className="mt-1 max-h-32 overflow-auto rounded border bg-white p-2 text-xs text-gray-500">
                           {this.state.errorInfo.componentStack}
                         </pre>
                       </details>
@@ -265,7 +254,7 @@ export class DashboardErrorBoundary extends React.Component<
                 {canRetry ? (
                   <Button
                     onClick={this.handleRetry}
-                    className="flex items-center justify-center gap-2 w-full"
+                    className="flex w-full items-center justify-center gap-2"
                   >
                     <RefreshCw className="h-4 w-4" />
                     Try Again
@@ -273,7 +262,7 @@ export class DashboardErrorBoundary extends React.Component<
                 ) : (
                   <Button
                     onClick={() => window.location.reload()}
-                    className="flex items-center justify-center gap-2 w-full"
+                    className="flex w-full items-center justify-center gap-2"
                   >
                     <RefreshCw className="h-4 w-4" />
                     Reload Page
@@ -284,7 +273,7 @@ export class DashboardErrorBoundary extends React.Component<
                   <Button
                     variant="outline"
                     onClick={this.handleGoHome}
-                    className="flex items-center justify-center gap-2 w-full"
+                    className="flex w-full items-center justify-center gap-2"
                   >
                     <Home className="h-4 w-4" />
                     Return to Dashboard
@@ -293,11 +282,8 @@ export class DashboardErrorBoundary extends React.Component<
               </div>
 
               {/* User guidance */}
-              <div className="text-center text-sm text-muted-foreground pt-4">
-                <p>
-                  If this problem persists, try refreshing the page or contact
-                  support.
-                </p>
+              <div className="text-muted-foreground pt-4 text-center text-sm">
+                <p>If this problem persists, try refreshing the page or contact support.</p>
               </div>
             </CardContent>
           </Card>
@@ -345,7 +331,7 @@ export function useErrorBoundary(onError?: (error: Error) => void) {
   const captureError = React.useCallback(
     (error: Error | unknown) => {
       const errorObj = error instanceof Error ? error : new Error(String(error));
-      console.error('useErrorBoundary caught an error:', errorObj);
+      console.error("useErrorBoundary caught an error:", errorObj);
       setError(errorObj);
       onError?.(errorObj);
     },
@@ -378,7 +364,7 @@ export function useErrorBoundary(onError?: (error: Error) => void) {
  */
 export function withErrorBoundary<P extends object>(
   Component: React.ComponentType<P>,
-  errorBoundaryProps?: Omit<DashboardErrorBoundaryProps, 'children'>
+  errorBoundaryProps?: Omit<DashboardErrorBoundaryProps, "children">
 ) {
   const WrappedComponent = (props: P) => (
     <DashboardErrorBoundary {...errorBoundaryProps}>
@@ -386,7 +372,7 @@ export function withErrorBoundary<P extends object>(
     </DashboardErrorBoundary>
   );
 
-  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name || 'Component'})`;
+  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name || "Component"})`;
 
   return WrappedComponent;
 }

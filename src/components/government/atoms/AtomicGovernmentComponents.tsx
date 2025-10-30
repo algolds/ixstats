@@ -13,14 +13,14 @@
  * @module AtomicGovernmentComponents
  */
 
-import React, { useMemo } from 'react';
-import { Button } from '~/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Save, RotateCcw, Info, Blocks } from 'lucide-react';
-import { useAtomicGovernmentBuilder } from '~/hooks/useAtomicGovernmentBuilder';
-import { ATOMIC_COMPONENTS, GOVERNMENT_TEMPLATES } from '~/lib/atomic-government-data';
-import { getCategories } from '~/lib/atomic-government-utils';
-import { useGovernmentComponentsData } from '~/hooks/useGovernmentComponentsData';
+import React, { useMemo } from "react";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Save, RotateCcw, Info, Blocks } from "lucide-react";
+import { useAtomicGovernmentBuilder } from "~/hooks/useAtomicGovernmentBuilder";
+import { ATOMIC_COMPONENTS, GOVERNMENT_TEMPLATES } from "~/lib/atomic-government-data";
+import { getCategories } from "~/lib/atomic-government-utils";
+import { useGovernmentComponentsData } from "~/hooks/useGovernmentComponentsData";
 import {
   ComponentLibrary,
   SelectedComponentsList,
@@ -29,9 +29,9 @@ import {
   ComponentSearch,
   MetricsPanel,
   TemplateSelector,
-} from '~/components/government/atomic';
-import { ComponentType } from '@prisma/client';
-import { Alert, AlertDescription } from '~/components/ui/alert';
+} from "~/components/government/atomic";
+import { ComponentType } from "@prisma/client";
+import { Alert, AlertDescription } from "~/components/ui/alert";
 
 export interface AtomicGovernmentComponentsProps {
   /** Currently selected components */
@@ -62,7 +62,7 @@ export function AtomicGovernmentComponents({
     components: componentData,
     isLoading: componentsLoading,
     isUsingFallback,
-    incrementUsage
+    incrementUsage,
   } = useGovernmentComponentsData();
 
   // Initialize builder hook
@@ -116,7 +116,7 @@ export function AtomicGovernmentComponents({
 
   // Build components map with ComponentType keys for SynergyDisplay
   const componentsMap = useMemo(() => {
-    const map: Partial<Record<ComponentType, typeof ATOMIC_COMPONENTS[ComponentType]>> = {};
+    const map: Partial<Record<ComponentType, (typeof ATOMIC_COMPONENTS)[ComponentType]>> = {};
     Object.entries(ATOMIC_COMPONENTS).forEach(([key, value]) => {
       map[key as ComponentType] = value;
     });
@@ -138,7 +138,7 @@ export function AtomicGovernmentComponents({
   const handleSave = () => {
     if (builder.validation.isValid) {
       // Track usage of all selected components
-      builder.selectedComponents.forEach(componentType => {
+      builder.selectedComponents.forEach((componentType) => {
         incrementUsage(componentType);
       });
       onSave?.(builder.selectedComponents);
@@ -154,9 +154,9 @@ export function AtomicGovernmentComponents({
   // Show loading state
   if (componentsLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center space-y-2">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="space-y-2 text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-purple-600"></div>
           <p className="text-sm text-gray-600 dark:text-gray-400">Loading components...</p>
         </div>
       </div>
@@ -180,14 +180,14 @@ export function AtomicGovernmentComponents({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
+              <div className="rounded-lg bg-purple-100 p-2 dark:bg-purple-900/20">
                 <Blocks className="h-6 w-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
                 <CardTitle className="text-2xl">Atomic Government Builder</CardTitle>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                   Build your government from modular components
-                  {isUsingFallback && ' (Local Mode)'}
+                  {isUsingFallback && " (Local Mode)"}
                 </p>
               </div>
             </div>
@@ -199,15 +199,11 @@ export function AtomicGovernmentComponents({
                   onClick={builder.clearSelection}
                   disabled={builder.selectedComponents.length === 0}
                 >
-                  <RotateCcw className="h-4 w-4 mr-2" />
+                  <RotateCcw className="mr-2 h-4 w-4" />
                   Reset
                 </Button>
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={!builder.validation.isValid}
-                >
-                  <Save className="h-4 w-4 mr-2" />
+                <Button size="sm" onClick={handleSave} disabled={!builder.validation.isValid}>
+                  <Save className="mr-2 h-4 w-4" />
                   Save Configuration
                 </Button>
               </div>
@@ -220,8 +216,8 @@ export function AtomicGovernmentComponents({
       <Alert>
         <Info className="h-4 w-4" />
         <AlertDescription>
-          Select {maxComponents} government components to build your custom governance system.
-          Watch for synergies (bonuses) and conflicts (penalties) between components.
+          Select {maxComponents} government components to build your custom governance system. Watch
+          for synergies (bonuses) and conflicts (penalties) between components.
         </AlertDescription>
       </Alert>
 
@@ -229,7 +225,7 @@ export function AtomicGovernmentComponents({
       {!builder.validation.isValid && builder.validation.errors.length > 0 && (
         <Alert variant="destructive">
           <AlertDescription>
-            <ul className="list-disc list-inside space-y-1">
+            <ul className="list-inside list-disc space-y-1">
               {builder.validation.errors.map((error, index) => (
                 <li key={index}>{error}</li>
               ))}
@@ -268,7 +264,7 @@ export function AtomicGovernmentComponents({
       </Card>
 
       {/* Main Content: Component Library and Selected Components */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Component Library (2/3 width on large screens) */}
         <div className="lg:col-span-2">
           <Card>
@@ -315,15 +311,11 @@ export function AtomicGovernmentComponents({
             onClick={builder.clearSelection}
             disabled={builder.selectedComponents.length === 0}
           >
-            <RotateCcw className="h-4 w-4 mr-2" />
+            <RotateCcw className="mr-2 h-4 w-4" />
             Reset Selection
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!builder.validation.isValid}
-            size="lg"
-          >
-            <Save className="h-4 w-4 mr-2" />
+          <Button onClick={handleSave} disabled={!builder.validation.isValid} size="lg">
+            <Save className="mr-2 h-4 w-4" />
             Save Government Configuration
           </Button>
         </div>
@@ -333,14 +325,14 @@ export function AtomicGovernmentComponents({
 }
 
 // Re-export types and utilities for convenience
-export { ComponentType } from '@prisma/client';
-export { ATOMIC_COMPONENTS, GOVERNMENT_TEMPLATES } from '~/lib/atomic-government-data';
-export type { AtomicGovernmentComponent } from '~/lib/atomic-government-data';
+export { ComponentType } from "@prisma/client";
+export { ATOMIC_COMPONENTS, GOVERNMENT_TEMPLATES } from "~/lib/atomic-government-data";
+export type { AtomicGovernmentComponent } from "~/lib/atomic-government-data";
 export {
   calculateGovernmentEffectiveness,
   checkGovernmentSynergy,
-  checkGovernmentConflict
-} from '~/lib/atomic-government-utils';
+  checkGovernmentConflict,
+} from "~/lib/atomic-government-utils";
 
 // Export alias for backward compatibility
 export { AtomicGovernmentComponents as AtomicComponentSelector };

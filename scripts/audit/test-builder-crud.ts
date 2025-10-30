@@ -92,11 +92,7 @@ async function testCountryCreate() {
       data: testData,
     });
 
-    logTest(
-      "Country CREATE",
-      !!country.id,
-      `Created country: ${country.name} (ID: ${country.id})`
-    );
+    logTest("Country CREATE", !!country.id, `Created country: ${country.name} (ID: ${country.id})`);
 
     return country;
   } catch (error) {
@@ -117,11 +113,7 @@ async function testCountryRead(countryId: string) {
       return false;
     }
 
-    logTest(
-      "Country READ (by ID)",
-      true,
-      `Found country: ${country.name} (ID: ${country.id})`
-    );
+    logTest("Country READ (by ID)", true, `Found country: ${country.name} (ID: ${country.id})`);
 
     // Test findFirst with slug
     const countryBySlug = await prisma.country.findFirst({
@@ -133,11 +125,7 @@ async function testCountryRead(countryId: string) {
       return false;
     }
 
-    logTest(
-      "Country READ (by slug)",
-      true,
-      `Found country by slug: ${countryBySlug.name}`
-    );
+    logTest("Country READ (by slug)", true, `Found country by slug: ${countryBySlug.name}`);
 
     // Test findMany
     const countries = await prisma.country.findMany({
@@ -206,9 +194,7 @@ async function testCountryDelete(countryId: string) {
     logTest(
       "Country DELETE",
       success,
-      success
-        ? "Successfully deleted country"
-        : "Country still exists after deletion"
+      success ? "Successfully deleted country" : "Country still exists after deletion"
     );
 
     return success;
@@ -343,8 +329,7 @@ async function testBuilderDataFlow() {
         currentPopulation: builderInputs.economicInputs.population,
         currentGdpPerCapita: builderInputs.economicInputs.gdpPerCapita,
         currentTotalGdp:
-          builderInputs.economicInputs.population *
-          builderInputs.economicInputs.gdpPerCapita,
+          builderInputs.economicInputs.population * builderInputs.economicInputs.gdpPerCapita,
         landArea: foundationCountry.landArea,
         areaSqMi: foundationCountry.areaSqMi,
         baselineDate: new Date(),
@@ -357,8 +342,7 @@ async function testBuilderDataFlow() {
         populationTier: "2",
         realGDPGrowthRate: builderInputs.economicInputs.realGDPGrowthRate,
         inflationRate: builderInputs.economicInputs.inflationRate,
-        laborForceParticipationRate:
-          builderInputs.economicInputs.laborForceParticipationRate,
+        laborForceParticipationRate: builderInputs.economicInputs.laborForceParticipationRate,
         employmentRate: builderInputs.economicInputs.employmentRate,
         unemploymentRate: builderInputs.economicInputs.unemploymentRate,
         taxRevenueGDPPercent: 25,
@@ -427,9 +411,7 @@ async function testRelationalData(countryId: string) {
       },
     });
 
-    const success =
-      countryWithHistory &&
-      countryWithHistory.historicalData.length > 0;
+    const success = countryWithHistory && countryWithHistory.historicalData.length > 0;
 
     logTest(
       "Relational Data (Read with includes)",
@@ -446,7 +428,7 @@ async function testRelationalData(countryId: string) {
 
 async function runAllTests() {
   console.log("🧪 Starting Builder & Wiki Import CRUD Tests\n");
-  console.log("=" .repeat(60));
+  console.log("=".repeat(60));
   console.log();
 
   // Test 1: Database connection
@@ -485,7 +467,7 @@ async function runAllTests() {
 
   // Summary
   console.log();
-  console.log("=" .repeat(60));
+  console.log("=".repeat(60));
   console.log("\n📊 TEST SUMMARY\n");
 
   const passed = results.filter((r) => r.passed).length;

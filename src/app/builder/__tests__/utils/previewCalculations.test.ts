@@ -6,27 +6,27 @@ import {
   calculateEffectivenessScore,
   calculateCompleteness,
   identifyIssues,
-} from '../../components/enhanced/tabs/utils/previewCalculations';
-import { mockEconomyBuilder } from '../fixtures';
-import type { EconomyBuilderState } from '~/types/economy-builder';
+} from "../../components/enhanced/tabs/utils/previewCalculations";
+import { mockEconomyBuilder } from "../fixtures";
+import type { EconomyBuilderState } from "~/types/economy-builder";
 
-describe('Preview Calculations', () => {
-  describe('calculateEffectivenessScore', () => {
-    it('calculates effectiveness score for valid economy', () => {
+describe("Preview Calculations", () => {
+  describe("calculateEffectivenessScore", () => {
+    it("calculates effectiveness score for valid economy", () => {
       const score = calculateEffectivenessScore(mockEconomyBuilder);
 
       expect(score).toBeGreaterThanOrEqual(0);
       expect(score).toBeLessThanOrEqual(100);
     });
 
-    it('returns higher score for well-configured economy', () => {
+    it("returns higher score for well-configured economy", () => {
       const score = calculateEffectivenessScore(mockEconomyBuilder);
 
       // Mock economy should score reasonably well
       expect(score).toBeGreaterThan(50);
     });
 
-    it('penalizes incomplete configurations', () => {
+    it("penalizes incomplete configurations", () => {
       const incomplete: EconomyBuilderState = {
         ...mockEconomyBuilder,
         sectors: [],
@@ -37,7 +37,7 @@ describe('Preview Calculations', () => {
       expect(score).toBeLessThan(calculateEffectivenessScore(mockEconomyBuilder));
     });
 
-    it('rewards balanced sector distribution', () => {
+    it("rewards balanced sector distribution", () => {
       const balanced: EconomyBuilderState = {
         ...mockEconomyBuilder,
         sectors: [
@@ -52,7 +52,7 @@ describe('Preview Calculations', () => {
       expect(score).toBeGreaterThanOrEqual(0);
     });
 
-    it('considers unemployment rate in scoring', () => {
+    it("considers unemployment rate in scoring", () => {
       const highUnemployment: EconomyBuilderState = {
         ...mockEconomyBuilder,
         laborMarket: {
@@ -67,7 +67,7 @@ describe('Preview Calculations', () => {
       expect(score).toBeLessThan(calculateEffectivenessScore(mockEconomyBuilder));
     });
 
-    it('considers productivity in scoring', () => {
+    it("considers productivity in scoring", () => {
       const highProductivity: EconomyBuilderState = {
         ...mockEconomyBuilder,
         sectors: mockEconomyBuilder.sectors.map((s) => ({
@@ -81,7 +81,7 @@ describe('Preview Calculations', () => {
       expect(score).toBeGreaterThanOrEqual(0);
     });
 
-    it('returns 0 for completely invalid economy', () => {
+    it("returns 0 for completely invalid economy", () => {
       const invalid: EconomyBuilderState = {
         ...mockEconomyBuilder,
         sectors: [],
@@ -101,14 +101,14 @@ describe('Preview Calculations', () => {
     });
   });
 
-  describe('calculateCompleteness', () => {
-    it('returns 100% for complete configuration', () => {
+  describe("calculateCompleteness", () => {
+    it("returns 100% for complete configuration", () => {
       const completeness = calculateCompleteness(mockEconomyBuilder);
 
       expect(completeness).toBe(100);
     });
 
-    it('returns lower percentage for missing sectors', () => {
+    it("returns lower percentage for missing sectors", () => {
       const incomplete: EconomyBuilderState = {
         ...mockEconomyBuilder,
         sectors: [],
@@ -119,7 +119,7 @@ describe('Preview Calculations', () => {
       expect(completeness).toBeLessThan(100);
     });
 
-    it('returns lower percentage for missing demographics', () => {
+    it("returns lower percentage for missing demographics", () => {
       const incomplete: EconomyBuilderState = {
         ...mockEconomyBuilder,
         demographics: {
@@ -133,7 +133,7 @@ describe('Preview Calculations', () => {
       expect(completeness).toBeLessThanOrEqual(100);
     });
 
-    it('returns 0% for empty configuration', () => {
+    it("returns 0% for empty configuration", () => {
       const empty: EconomyBuilderState = {
         ...mockEconomyBuilder,
         sectors: [],
@@ -150,7 +150,7 @@ describe('Preview Calculations', () => {
       expect(completeness).toBeLessThan(50);
     });
 
-    it('weighs different sections appropriately', () => {
+    it("weighs different sections appropriately", () => {
       const partialSectors: EconomyBuilderState = {
         ...mockEconomyBuilder,
         sectors: [mockEconomyBuilder.sectors[0]],
@@ -163,15 +163,15 @@ describe('Preview Calculations', () => {
     });
   });
 
-  describe('identifyIssues', () => {
-    it('returns empty array for valid economy', () => {
+  describe("identifyIssues", () => {
+    it("returns empty array for valid economy", () => {
       const issues = identifyIssues(mockEconomyBuilder);
 
       expect(Array.isArray(issues)).toBe(true);
       expect(issues.length).toBe(0);
     });
 
-    it('identifies missing sectors', () => {
+    it("identifies missing sectors", () => {
       const noSectors: EconomyBuilderState = {
         ...mockEconomyBuilder,
         sectors: [],
@@ -179,10 +179,10 @@ describe('Preview Calculations', () => {
 
       const issues = identifyIssues(noSectors);
 
-      expect(issues.some((issue) => issue.includes('sector'))).toBe(true);
+      expect(issues.some((issue) => issue.includes("sector"))).toBe(true);
     });
 
-    it('identifies invalid sector totals', () => {
+    it("identifies invalid sector totals", () => {
       const invalidTotals: EconomyBuilderState = {
         ...mockEconomyBuilder,
         sectors: [
@@ -193,10 +193,10 @@ describe('Preview Calculations', () => {
 
       const issues = identifyIssues(invalidTotals);
 
-      expect(issues.some((issue) => issue.includes('100'))).toBe(true);
+      expect(issues.some((issue) => issue.includes("100"))).toBe(true);
     });
 
-    it('identifies high unemployment', () => {
+    it("identifies high unemployment", () => {
       const highUnemployment: EconomyBuilderState = {
         ...mockEconomyBuilder,
         laborMarket: {
@@ -208,10 +208,10 @@ describe('Preview Calculations', () => {
 
       const issues = identifyIssues(highUnemployment);
 
-      expect(issues.some((issue) => issue.toLowerCase().includes('unemployment'))).toBe(true);
+      expect(issues.some((issue) => issue.toLowerCase().includes("unemployment"))).toBe(true);
     });
 
-    it('identifies zero population', () => {
+    it("identifies zero population", () => {
       const zeroPop: EconomyBuilderState = {
         ...mockEconomyBuilder,
         demographics: {
@@ -222,10 +222,10 @@ describe('Preview Calculations', () => {
 
       const issues = identifyIssues(zeroPop);
 
-      expect(issues.some((issue) => issue.toLowerCase().includes('population'))).toBe(true);
+      expect(issues.some((issue) => issue.toLowerCase().includes("population"))).toBe(true);
     });
 
-    it('identifies missing atomic components', () => {
+    it("identifies missing atomic components", () => {
       const noComponents: EconomyBuilderState = {
         ...mockEconomyBuilder,
         selectedAtomicComponents: [],
@@ -233,10 +233,10 @@ describe('Preview Calculations', () => {
 
       const issues = identifyIssues(noComponents);
 
-      expect(issues.some((issue) => issue.toLowerCase().includes('component'))).toBe(true);
+      expect(issues.some((issue) => issue.toLowerCase().includes("component"))).toBe(true);
     });
 
-    it('prioritizes critical issues', () => {
+    it("prioritizes critical issues", () => {
       const multipleIssues: EconomyBuilderState = {
         ...mockEconomyBuilder,
         sectors: [],
@@ -251,7 +251,7 @@ describe('Preview Calculations', () => {
       expect(issues.length).toBeGreaterThan(1);
     });
 
-    it('returns issues in order of severity', () => {
+    it("returns issues in order of severity", () => {
       const issues = identifyIssues(mockEconomyBuilder);
 
       // Should be ordered (critical first)
@@ -259,8 +259,8 @@ describe('Preview Calculations', () => {
     });
   });
 
-  describe('Edge Cases', () => {
-    it('handles undefined validation object', () => {
+  describe("Edge Cases", () => {
+    it("handles undefined validation object", () => {
       const noValidation: EconomyBuilderState = {
         ...mockEconomyBuilder,
         validation: undefined,
@@ -273,7 +273,7 @@ describe('Preview Calculations', () => {
       expect(completeness).toBeGreaterThanOrEqual(0);
     });
 
-    it('handles very large GDP values', () => {
+    it("handles very large GDP values", () => {
       const largeGDP: EconomyBuilderState = {
         ...mockEconomyBuilder,
         structure: {
@@ -288,7 +288,7 @@ describe('Preview Calculations', () => {
       expect(score).toBeLessThanOrEqual(100);
     });
 
-    it('handles fractional percentages', () => {
+    it("handles fractional percentages", () => {
       const fractional: EconomyBuilderState = {
         ...mockEconomyBuilder,
         sectors: [
@@ -304,15 +304,15 @@ describe('Preview Calculations', () => {
     });
   });
 
-  describe('Integration Tests', () => {
-    it('provides consistent scoring across multiple calls', () => {
+  describe("Integration Tests", () => {
+    it("provides consistent scoring across multiple calls", () => {
       const score1 = calculateEffectivenessScore(mockEconomyBuilder);
       const score2 = calculateEffectivenessScore(mockEconomyBuilder);
 
       expect(score1).toBe(score2);
     });
 
-    it('completeness and effectiveness correlate', () => {
+    it("completeness and effectiveness correlate", () => {
       const completeness = calculateCompleteness(mockEconomyBuilder);
       const effectiveness = calculateEffectivenessScore(mockEconomyBuilder);
 
@@ -322,7 +322,7 @@ describe('Preview Calculations', () => {
       }
     });
 
-    it('issues inversely correlate with effectiveness', () => {
+    it("issues inversely correlate with effectiveness", () => {
       const issues = identifyIssues(mockEconomyBuilder);
       const effectiveness = calculateEffectivenessScore(mockEconomyBuilder);
 

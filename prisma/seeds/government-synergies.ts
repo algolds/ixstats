@@ -8,15 +8,15 @@
  * Run with: npx tsx prisma/seeds/government-synergies.ts
  */
 
-import { PrismaClient, ComponentType } from '@prisma/client';
-import { ATOMIC_COMPONENTS } from '../../src/lib/atomic-government-data';
+import { PrismaClient, ComponentType } from "@prisma/client";
+import { ATOMIC_COMPONENTS } from "../../src/lib/atomic-government-data";
 
 const prisma = new PrismaClient();
 
 interface SynergyRelationship {
   component1: ComponentType;
   component2: ComponentType;
-  synergyType: 'strong' | 'moderate' | 'weak' | 'conflict';
+  synergyType: "strong" | "moderate" | "weak" | "conflict";
   bonusPercent: number;
   description: string;
 }
@@ -28,23 +28,27 @@ interface SynergyRelationship {
 function determineSynergyStrength(
   comp1Effectiveness: number,
   comp2Effectiveness: number
-): 'strong' | 'moderate' | 'weak' {
+): "strong" | "moderate" | "weak" {
   const avgEffectiveness = (comp1Effectiveness + comp2Effectiveness) / 2;
 
-  if (avgEffectiveness >= 80) return 'strong';
-  if (avgEffectiveness >= 70) return 'moderate';
-  return 'weak';
+  if (avgEffectiveness >= 80) return "strong";
+  if (avgEffectiveness >= 70) return "moderate";
+  return "weak";
 }
 
 /**
  * Calculate bonus percentage based on synergy type
  */
-function calculateBonusPercent(synergyType: 'strong' | 'moderate' | 'weak' | 'conflict'): number {
+function calculateBonusPercent(synergyType: "strong" | "moderate" | "weak" | "conflict"): number {
   switch (synergyType) {
-    case 'strong': return 15;
-    case 'moderate': return 10;
-    case 'weak': return 5;
-    case 'conflict': return -10;
+    case "strong":
+      return 15;
+    case "moderate":
+      return 10;
+    case "weak":
+      return 5;
+    case "conflict":
+      return -10;
   }
 }
 
@@ -54,25 +58,26 @@ function calculateBonusPercent(synergyType: 'strong' | 'moderate' | 'weak' | 'co
 function generateDescription(
   comp1Name: string,
   comp2Name: string,
-  synergyType: 'strong' | 'moderate' | 'weak' | 'conflict'
+  synergyType: "strong" | "moderate" | "weak" | "conflict"
 ): string {
-  if (synergyType === 'conflict') {
+  if (synergyType === "conflict") {
     return `${comp1Name} conflicts with ${comp2Name}, reducing overall effectiveness`;
   }
 
-  const strengthWord = synergyType === 'strong' ? 'powerful' : synergyType === 'moderate' ? 'beneficial' : 'minor';
+  const strengthWord =
+    synergyType === "strong" ? "powerful" : synergyType === "moderate" ? "beneficial" : "minor";
   return `${strengthWord.charAt(0).toUpperCase() + strengthWord.slice(1)} synergy between ${comp1Name} and ${comp2Name}`;
 }
 
 async function main() {
-  console.log('\n🔗 Starting Government Synergies seed...\n');
+  console.log("\n🔗 Starting Government Synergies seed...\n");
 
   let createdCount = 0;
   let updatedCount = 0;
   let skippedCount = 0;
   let errorCount = 0;
 
-  const components = Object.values(ATOMIC_COMPONENTS).filter(c => c !== undefined);
+  const components = Object.values(ATOMIC_COMPONENTS).filter((c) => c !== undefined);
   const relationships = new Map<string, SynergyRelationship>();
 
   console.log(`📊 Processing synergies from ${components.length} components\n`);
@@ -91,7 +96,7 @@ async function main() {
       if (!comp2) continue;
 
       // Create a unique key (always use alphabetically sorted order to avoid duplicates)
-      const key = [comp1Type, comp2Type].sort().join('|');
+      const key = [comp1Type, comp2Type].sort().join("|");
 
       // Skip if we already have this relationship
       if (relationships.has(key)) continue;
@@ -115,18 +120,18 @@ async function main() {
       if (!comp2) continue;
 
       // Create a unique key (always use alphabetically sorted order to avoid duplicates)
-      const key = [comp1Type, comp2Type].sort().join('|');
+      const key = [comp1Type, comp2Type].sort().join("|");
 
       // Skip if we already have this relationship
       if (relationships.has(key)) continue;
 
-      const bonusPercent = calculateBonusPercent('conflict');
-      const description = generateDescription(comp1Name, comp2.name, 'conflict');
+      const bonusPercent = calculateBonusPercent("conflict");
+      const description = generateDescription(comp1Name, comp2.name, "conflict");
 
       relationships.set(key, {
         component1: comp1Type,
         component2: comp2Type,
-        synergyType: 'conflict',
+        synergyType: "conflict",
         bonusPercent,
         description,
       });
@@ -187,7 +192,7 @@ async function main() {
     }
   }
 
-  console.log('\n📈 Seed Summary:');
+  console.log("\n📈 Seed Summary:");
   console.log(`  ✅ Created: ${createdCount}`);
   console.log(`  🔄 Updated: ${updatedCount}`);
   console.log(`  ⏭️  Skipped: ${skippedCount}`);
@@ -200,21 +205,21 @@ async function main() {
 
   // Show synergy type breakdown
   const synergyTypes = await prisma.governmentSynergy.groupBy({
-    by: ['synergyType'],
+    by: ["synergyType"],
     _count: true,
   });
 
-  console.log('\n📊 Synergies by type:');
+  console.log("\n📊 Synergies by type:");
   for (const type of synergyTypes) {
     console.log(`  ${type.synergyType}: ${type._count}`);
   }
 
-  console.log('\n✨ Government Synergies seed completed!\n');
+  console.log("\n✨ Government Synergies seed completed!\n");
 }
 
 main()
   .catch((e) => {
-    console.error('💥 Fatal error during seed:', e);
+    console.error("💥 Fatal error during seed:", e);
     process.exit(1);
   })
   .finally(async () => {

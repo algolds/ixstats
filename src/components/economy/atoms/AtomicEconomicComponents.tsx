@@ -17,13 +17,13 @@
  * Better organization, testability, and maintainability
  */
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { UnifiedAtomicComponentSelector } from '~/components/atomic/shared/UnifiedAtomicComponentSelector';
-import { ECONOMY_THEME } from '~/components/atomic/shared/themes';
-import { DollarSign, AlertCircle, Save, RotateCcw, Database } from 'lucide-react';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { UnifiedAtomicComponentSelector } from "~/components/atomic/shared/UnifiedAtomicComponentSelector";
+import { ECONOMY_THEME } from "~/components/atomic/shared/themes";
+import { DollarSign, AlertCircle, Save, RotateCcw, Database } from "lucide-react";
 
 // Data imports
 import {
@@ -31,21 +31,21 @@ import {
   COMPONENT_CATEGORIES,
   type EconomicComponentType,
   type EconomicCategory,
-  formatComponentName
-} from '~/lib/atomic-economic-data';
+  formatComponentName,
+} from "~/lib/atomic-economic-data";
 
 // Hook import for database integration
-import { useEconomicComponentsData } from '~/hooks/useEconomicComponentsData';
+import { useEconomicComponentsData } from "~/hooks/useEconomicComponentsData";
 
 // Utility imports
 import {
   calculateEconomicEffectiveness,
   checkEconomicSynergy,
-  checkEconomicConflict
-} from '~/lib/atomic-economic-utils';
+  checkEconomicConflict,
+} from "~/lib/atomic-economic-utils";
 
 // Hook import
-import { useAtomicEconomicBuilder } from '~/hooks/useAtomicEconomicBuilder';
+import { useAtomicEconomicBuilder } from "~/hooks/useAtomicEconomicBuilder";
 
 // UI Component imports
 import {
@@ -55,8 +55,8 @@ import {
   CategoryFilter,
   ComponentSearch,
   MetricsPanel,
-  TemplateSelector
-} from '~/components/economy/atomic';
+  TemplateSelector,
+} from "~/components/economy/atomic";
 
 // ============================================================================
 // Type Definitions
@@ -77,7 +77,9 @@ export interface AtomicEconomicComponentSelectorProps {
 /**
  * Convert AtomicEconomicComponent to UnifiedAtomicComponent format
  */
-function convertEconomicToUnifiedComponents(components: typeof ATOMIC_ECONOMIC_COMPONENTS): Record<string, any> {
+function convertEconomicToUnifiedComponents(
+  components: typeof ATOMIC_ECONOMIC_COMPONENTS
+): Record<string, any> {
   const converted: Record<string, any> = {};
 
   Object.entries(components).forEach(([key, component]) => {
@@ -91,10 +93,10 @@ function convertEconomicToUnifiedComponents(components: typeof ATOMIC_ECONOMIC_C
         implementationCost: component.implementationCost,
         maintenanceCost: component.maintenanceCost,
         prerequisites: [],
-        synergies: component.synergies.map(s => s.toString()),
-        conflicts: component.conflicts.map(c => c.toString()),
+        synergies: component.synergies.map((s) => s.toString()),
+        conflicts: component.conflicts.map((c) => c.toString()),
         metadata: component.metadata,
-        icon: component.icon
+        icon: component.icon,
       };
     }
   });
@@ -106,12 +108,14 @@ function convertEconomicToUnifiedComponents(components: typeof ATOMIC_ECONOMIC_C
  * Convert categories to the expected format
  */
 const convertedCategories: Record<string, string[]> = {
-  "Economic Model": COMPONENT_CATEGORIES["Economic Model"].components.map(c => c.toString()),
-  "Sector Focus": COMPONENT_CATEGORIES["Sector Focus"].components.map(c => c.toString()),
-  "Labor System": COMPONENT_CATEGORIES["Labor System"].components.map(c => c.toString()),
-  "Trade Policy": COMPONENT_CATEGORIES["Trade Policy"].components.map(c => c.toString()),
-  "Innovation": COMPONENT_CATEGORIES["Innovation"].components.map(c => c.toString()),
-  "Resource Management": COMPONENT_CATEGORIES["Resource Management"].components.map(c => c.toString())
+  "Economic Model": COMPONENT_CATEGORIES["Economic Model"].components.map((c) => c.toString()),
+  "Sector Focus": COMPONENT_CATEGORIES["Sector Focus"].components.map((c) => c.toString()),
+  "Labor System": COMPONENT_CATEGORIES["Labor System"].components.map((c) => c.toString()),
+  "Trade Policy": COMPONENT_CATEGORIES["Trade Policy"].components.map((c) => c.toString()),
+  Innovation: COMPONENT_CATEGORIES["Innovation"].components.map((c) => c.toString()),
+  "Resource Management": COMPONENT_CATEGORIES["Resource Management"].components.map((c) =>
+    c.toString()
+  ),
 };
 
 // ============================================================================
@@ -129,18 +133,23 @@ export function AtomicEconomicComponentSelector({
   onComponentChange,
   maxComponents = 12,
   isReadOnly = false,
-  governmentComponents = []
+  governmentComponents = [],
 }: AtomicEconomicComponentSelectorProps) {
   // Use database hook for component data
-  const { components: dbComponents, isLoading, isUsingFallback, incrementUsage } = useEconomicComponentsData();
+  const {
+    components: dbComponents,
+    isLoading,
+    isUsingFallback,
+    incrementUsage,
+  } = useEconomicComponentsData();
 
   // Track component selection
   const handleComponentChange = (components: string[]) => {
-    const newComponents = components.map(c => c as EconomicComponentType);
+    const newComponents = components.map((c) => c as EconomicComponentType);
 
     // Track newly selected components
-    const addedComponents = newComponents.filter(c => !selectedComponents.includes(c));
-    addedComponents.forEach(comp => incrementUsage(comp));
+    const addedComponents = newComponents.filter((c) => !selectedComponents.includes(c));
+    addedComponents.forEach((comp) => incrementUsage(comp));
 
     onComponentChange(newComponents);
   };
@@ -150,7 +159,7 @@ export function AtomicEconomicComponentSelector({
     if (dbComponents.length > 0) {
       // Build components object from database data
       const componentsObj: Record<string, any> = {};
-      dbComponents.forEach(comp => {
+      dbComponents.forEach((comp) => {
         componentsObj[comp.type] = comp;
       });
       return convertEconomicToUnifiedComponents(componentsObj);
@@ -164,7 +173,7 @@ export function AtomicEconomicComponentSelector({
       <Card>
         <CardContent className="py-12 text-center">
           <div className="animate-pulse space-y-2">
-            <Database className="w-8 h-8 mx-auto text-gray-400" />
+            <Database className="mx-auto h-8 w-8 text-gray-400" />
             <p className="text-sm text-gray-600">Loading economic components...</p>
           </div>
         </CardContent>
@@ -187,14 +196,16 @@ export function AtomicEconomicComponentSelector({
       <UnifiedAtomicComponentSelector
         components={componentsToUse}
         categories={convertedCategories}
-        selectedComponents={selectedComponents.map(s => s.toString())}
+        selectedComponents={selectedComponents.map((s) => s.toString())}
         onComponentChange={handleComponentChange}
         maxComponents={maxComponents}
         isReadOnly={isReadOnly}
         theme={ECONOMY_THEME}
         systemName="Atomic Economic Components"
         systemIcon={DollarSign}
-        calculateEffectiveness={(components) => calculateEconomicEffectiveness(components.map(c => c as EconomicComponentType))}
+        calculateEffectiveness={(components) =>
+          calculateEconomicEffectiveness(components.map((c) => c as EconomicComponentType))
+        }
         checkSynergy={checkEconomicSynergy}
         checkConflict={checkEconomicConflict}
       />
@@ -227,14 +238,14 @@ export function AtomicEconomicBuilder({
   maxComponents = 12,
   onSave,
   onCancel,
-  isReadOnly = false
+  isReadOnly = false,
 }: AtomicEconomicBuilderProps) {
   // Use the custom hook for all state management
   const builder = useAtomicEconomicBuilder({
     countryId,
     initialSelection,
     maxComponents,
-    onSelectionChange: undefined // Handle changes locally
+    onSelectionChange: undefined, // Handle changes locally
   });
 
   // ============================================================================
@@ -262,7 +273,7 @@ export function AtomicEconomicBuilder({
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <DollarSign className="w-6 h-6" />
+              <DollarSign className="h-6 w-6" />
               Atomic Economic System Builder
             </span>
             <div className="flex items-center gap-2">
@@ -274,7 +285,7 @@ export function AtomicEconomicBuilder({
                     onClick={handleReset}
                     disabled={builder.selectedComponents.length === 0}
                   >
-                    <RotateCcw className="w-4 h-4 mr-2" />
+                    <RotateCcw className="mr-2 h-4 w-4" />
                     Reset
                   </Button>
                   <Button
@@ -283,7 +294,7 @@ export function AtomicEconomicBuilder({
                     onClick={handleSave}
                     disabled={!builder.validation.valid}
                   >
-                    <Save className="w-4 h-4 mr-2" />
+                    <Save className="mr-2 h-4 w-4" />
                     Save Configuration
                   </Button>
                 </>
@@ -293,8 +304,8 @@ export function AtomicEconomicBuilder({
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-600">
-            Build your economy by selecting complementary components. Discover synergies and avoid conflicts
-            to maximize effectiveness.
+            Build your economy by selecting complementary components. Discover synergies and avoid
+            conflicts to maximize effectiveness.
           </p>
         </CardContent>
       </Card>
@@ -332,13 +343,11 @@ export function AtomicEconomicBuilder({
       )}
 
       {/* Metrics Panel */}
-      {builder.selectedComponents.length > 0 && (
-        <MetricsPanel metrics={builder.metrics} />
-      )}
+      {builder.selectedComponents.length > 0 && <MetricsPanel metrics={builder.metrics} />}
 
       {/* Filters and Search */}
       <Card>
-        <CardContent className="pt-6 space-y-4">
+        <CardContent className="space-y-4 pt-6">
           <CategoryFilter
             category={builder.categoryFilter.category}
             setCategory={builder.categoryFilter.setCategory}
@@ -352,7 +361,7 @@ export function AtomicEconomicBuilder({
       </Card>
 
       {/* Main Content Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Available Components */}
         <div className="lg:col-span-2">
           <ComponentLibrary
@@ -396,12 +405,8 @@ export function AtomicEconomicBuilder({
                     Cancel
                   </Button>
                 )}
-                <Button
-                  variant="default"
-                  onClick={handleSave}
-                  disabled={!builder.validation.valid}
-                >
-                  <Save className="w-4 h-4 mr-2" />
+                <Button variant="default" onClick={handleSave} disabled={!builder.validation.valid}>
+                  <Save className="mr-2 h-4 w-4" />
                   Save Economic Configuration
                 </Button>
               </div>
@@ -421,14 +426,14 @@ export function AtomicEconomicBuilder({
 export {
   formatComponentName,
   EconomicComponentType,
-  EconomicCategory
-} from '~/lib/atomic-economic-data';
+  EconomicCategory,
+} from "~/lib/atomic-economic-data";
 
 export {
   calculateEconomicEffectiveness,
   checkEconomicSynergy,
-  checkEconomicConflict
-} from '~/lib/atomic-economic-utils';
+  checkEconomicConflict,
+} from "~/lib/atomic-economic-utils";
 
 // Default export for convenience
 export default AtomicEconomicBuilder;

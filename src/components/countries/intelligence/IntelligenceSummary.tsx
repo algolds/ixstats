@@ -14,10 +14,7 @@ import { IxTime } from "~/lib/ixtime";
 import { ClassificationBadge } from "./StatusIndicators";
 import { CLASSIFICATION_STYLES } from "./constants";
 import type { IntelligenceAlert, CountryInformation, ClearanceLevel } from "./types";
-import {
-  RiAlertLine,
-  RiCheckboxCircleLine,
-} from "react-icons/ri";
+import { RiAlertLine, RiCheckboxCircleLine } from "react-icons/ri";
 
 export interface IntelligenceAlertsProps {
   alerts: IntelligenceAlert[];
@@ -28,12 +25,12 @@ export interface IntelligenceAlertsProps {
 export const IntelligenceAlerts: React.FC<IntelligenceAlertsProps> = ({
   alerts,
   viewerClearanceLevel,
-  className
+  className,
 }) => {
-  const levels = { 'PUBLIC': 1, 'RESTRICTED': 2, 'CONFIDENTIAL': 3 };
+  const levels = { PUBLIC: 1, RESTRICTED: 2, CONFIDENTIAL: 3 };
 
-  const filteredAlerts = alerts.filter(alert =>
-    levels[viewerClearanceLevel] >= levels[alert.classification]
+  const filteredAlerts = alerts.filter(
+    (alert) => levels[viewerClearanceLevel] >= levels[alert.classification]
   );
 
   if (filteredAlerts.length === 0) {
@@ -42,10 +39,10 @@ export const IntelligenceAlerts: React.FC<IntelligenceAlertsProps> = ({
 
   return (
     <Card className={cn("glass-hierarchy-child", className)}>
-      <div className="p-6 space-y-4">
+      <div className="space-y-4 p-6">
         <div className="flex items-center gap-2">
           <RiAlertLine className="h-5 w-5 text-orange-400" />
-          <h3 className="font-semibold text-lg">Active Intelligence Alerts</h3>
+          <h3 className="text-lg font-semibold">Active Intelligence Alerts</h3>
         </div>
 
         <div className="space-y-3">
@@ -56,25 +53,23 @@ export const IntelligenceAlerts: React.FC<IntelligenceAlertsProps> = ({
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3 }}
               className={cn(
-                "p-4 rounded-lg border-l-4",
-                alert.type === 'critical' && "border-red-500 bg-red-500/10",
-                alert.type === 'warning' && "border-yellow-500 bg-yellow-500/10",
-                alert.type === 'info' && "border-blue-500 bg-blue-500/10",
-                alert.type === 'success' && "border-green-500 bg-green-500/10"
+                "rounded-lg border-l-4 p-4",
+                alert.type === "critical" && "border-red-500 bg-red-500/10",
+                alert.type === "warning" && "border-yellow-500 bg-yellow-500/10",
+                alert.type === "info" && "border-blue-500 bg-blue-500/10",
+                alert.type === "success" && "border-green-500 bg-green-500/10"
               )}
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <h4 className="font-medium">{alert.title}</h4>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {alert.description}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2">
+                  <p className="text-muted-foreground mt-1 text-sm">{alert.description}</p>
+                  <div className="mt-2 flex items-center gap-2">
                     <ClassificationBadge
                       classification={alert.classification}
                       className="text-xs"
                     />
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       {IxTime.formatIxTime(alert.timestamp, true)}
                     </span>
                   </div>
@@ -107,9 +102,9 @@ export interface CountryInformationDisplayProps {
 export const CountryInformationDisplay: React.FC<CountryInformationDisplayProps> = ({
   information,
   viewerClearanceLevel,
-  className
+  className,
 }) => {
-  const levels = { 'PUBLIC': 1, 'RESTRICTED': 2, 'CONFIDENTIAL': 3 };
+  const levels = { PUBLIC: 1, RESTRICTED: 2, CONFIDENTIAL: 3 };
 
   return (
     <div className={cn("space-y-6", className)}>
@@ -117,8 +112,8 @@ export const CountryInformationDisplay: React.FC<CountryInformationDisplayProps>
         const Icon = section.icon as React.ComponentType<{ className?: string }>;
 
         // Filter items based on clearance
-        const visibleItems = section.items.filter(item =>
-          levels[viewerClearanceLevel] >= levels[item.classification]
+        const visibleItems = section.items.filter(
+          (item) => levels[viewerClearanceLevel] >= levels[item.classification]
         );
 
         if (visibleItems.length === 0) {
@@ -134,24 +129,22 @@ export const CountryInformationDisplay: React.FC<CountryInformationDisplayProps>
           >
             <Card className="glass-hierarchy-child">
               <CardContent className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <Icon className="h-5 w-5 text-primary" />
-                  <h3 className="font-semibold text-lg">{section.category}</h3>
+                <div className="mb-4 flex items-center gap-3">
+                  <Icon className="text-primary h-5 w-5" />
+                  <h3 className="text-lg font-semibold">{section.category}</h3>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {visibleItems.map((item, index) => (
                     <div
                       key={index}
-                      className="flex items-start justify-between gap-2 p-3 rounded-lg bg-muted/30"
+                      className="bg-muted/30 flex items-start justify-between gap-2 rounded-lg p-3"
                     >
                       <div className="flex-1">
-                        <div className="text-sm text-muted-foreground">
-                          {item.label}
-                        </div>
-                        <div className="font-medium mt-1">{item.value}</div>
+                        <div className="text-muted-foreground text-sm">{item.label}</div>
+                        <div className="mt-1 font-medium">{item.value}</div>
                       </div>
-                      {item.classification !== 'PUBLIC' && (
+                      {item.classification !== "PUBLIC" && (
                         <ClassificationBadge
                           classification={item.classification}
                           className="text-xs"
@@ -188,17 +181,17 @@ export const IntelligenceHeader: React.FC<IntelligenceHeaderProps> = ({
   onToggleClassified,
   showClassified = false,
   flagElement,
-  className
+  className,
 }) => {
   return (
-    <div className={cn("glass-hierarchy-child rounded-lg relative overflow-hidden", className)}>
+    <div className={cn("glass-hierarchy-child relative overflow-hidden rounded-lg", className)}>
       {/* Background gradient */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
-        <div className="w-full h-full bg-gradient-to-r from-background/80 via-background/60 to-background/80"></div>
+      <div className="pointer-events-none absolute inset-0 opacity-[0.03]">
+        <div className="from-background/80 via-background/60 to-background/80 h-full w-full bg-gradient-to-r"></div>
       </div>
 
       <div className="relative p-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
             {flagElement}
             <div>
@@ -207,15 +200,15 @@ export const IntelligenceHeader: React.FC<IntelligenceHeaderProps> = ({
                 <Badge
                   variant="outline"
                   className={cn(
-                    "border-green-500/30 text-green-400 bg-green-500/10",
-                    !isStable && "border-red-500/30 text-red-400 bg-red-500/10"
+                    "border-green-500/30 bg-green-500/10 text-green-400",
+                    !isStable && "border-red-500/30 bg-red-500/10 text-red-400"
                   )}
                 >
-                  <RiCheckboxCircleLine className="h-3 w-3 mr-1" />
-                  {isStable ? 'STABLE' : 'UNSTABLE'}
+                  <RiCheckboxCircleLine className="mr-1 h-3 w-3" />
+                  {isStable ? "STABLE" : "UNSTABLE"}
                 </Badge>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Country Intelligence Briefing • {IxTime.formatIxTime(currentIxTime, true)}
               </p>
             </div>
@@ -223,14 +216,14 @@ export const IntelligenceHeader: React.FC<IntelligenceHeaderProps> = ({
 
           <div className="flex items-center gap-3">
             <ClassificationBadge classification={viewerClearanceLevel} />
-            {viewerClearanceLevel !== 'PUBLIC' && onToggleClassified && (
+            {viewerClearanceLevel !== "PUBLIC" && onToggleClassified && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={onToggleClassified}
                 className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
               >
-                {showClassified ? 'Hide' : 'Show'} Classified
+                {showClassified ? "Hide" : "Show"} Classified
               </Button>
             )}
           </div>

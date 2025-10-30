@@ -4,8 +4,8 @@ export {
   IntelligenceBarChart,
   IntelligenceAreaChart,
   IntelligenceRadarChart,
-  IntelligenceMultiLineChart
-} from './IntelligenceCharts';
+  IntelligenceMultiLineChart,
+} from "./IntelligenceCharts";
 
 export type {
   BaseChartProps,
@@ -13,18 +13,9 @@ export type {
   BarChartProps,
   AreaChartProps,
   RadarChartProps,
-  MultiLineChartProps
-} from './IntelligenceCharts';
+  MultiLineChartProps,
+} from "./IntelligenceCharts";
 
-export {
-  CHART_COLORS,
-  CHART_DEFAULTS,
-  getChartMargin,
-  commonChartProps
-} from './chartConfig';
+export { CHART_COLORS, CHART_DEFAULTS, getChartMargin, commonChartProps } from "./chartConfig";
 
-export type {
-  ChartDataPoint,
-  TimeSeriesDataPoint,
-  MultiSeriesDataPoint
-} from './chartConfig';
+export type { ChartDataPoint, TimeSeriesDataPoint, MultiSeriesDataPoint } from "./chartConfig";

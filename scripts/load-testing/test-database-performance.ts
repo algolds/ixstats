@@ -90,10 +90,7 @@ function progressBar(current: number, total: number, width: number = 40): string
  * Test 1: Complex Query Performance
  * Measures execution time for queries with deep relations
  */
-async function testComplexQueries(
-  db: PrismaClient,
-  iterations: number
-): Promise<QueryTestResult> {
+async function testComplexQueries(db: PrismaClient, iterations: number): Promise<QueryTestResult> {
   console.log(colorize("\n=== Testing Complex Queries ===", "cyan"));
   console.log("Query: Country with full relations (economy, government, diplomatic, etc.)\n");
 
@@ -276,7 +273,10 @@ async function testConcurrentWrites(
             raceConditionsDetected++;
           }
 
-          console.error(`\nWrite error (batch ${batch}, item ${i}):`, errorMessage.substring(0, 100));
+          console.error(
+            `\nWrite error (batch ${batch}, item ${i}):`,
+            errorMessage.substring(0, 100)
+          );
         }
       })();
 
@@ -516,7 +516,9 @@ function displayQueryResults(result: QueryTestResult) {
   console.log(colorize(`\n=== ${result.name} Results ===`, "cyan"));
   console.log(`Total Queries:       ${result.successCount + result.errorCount}`);
   console.log(`Successful:          ${colorize(String(result.successCount), "green")}`);
-  console.log(`Errors:              ${result.errorCount > 0 ? colorize(String(result.errorCount), "red") : String(result.errorCount)}`);
+  console.log(
+    `Errors:              ${result.errorCount > 0 ? colorize(String(result.errorCount), "red") : String(result.errorCount)}`
+  );
 
   console.log(colorize("\n=== Query Times ===", "cyan"));
   console.log(`Average:             ${formatMs(result.averageTime)}`);
@@ -538,8 +540,12 @@ function displayConcurrentResults(result: ConcurrentWriteResult) {
   console.log(colorize("\n=== Concurrent Write Results ===", "cyan"));
   console.log(`Total Writes:        ${result.totalWrites}`);
   console.log(`Successful:          ${colorize(String(result.successfulWrites), "green")}`);
-  console.log(`Failed:              ${result.failedWrites > 0 ? colorize(String(result.failedWrites), "red") : String(result.failedWrites)}`);
-  console.log(`Success Rate:        ${((result.successfulWrites / result.totalWrites) * 100).toFixed(2)}%`);
+  console.log(
+    `Failed:              ${result.failedWrites > 0 ? colorize(String(result.failedWrites), "red") : String(result.failedWrites)}`
+  );
+  console.log(
+    `Success Rate:        ${((result.successfulWrites / result.totalWrites) * 100).toFixed(2)}%`
+  );
   console.log(`Average Time:        ${formatMs(result.averageTime)}`);
 
   console.log(colorize("\n=== Health Checks ===", "cyan"));
@@ -560,9 +566,15 @@ function displayConcurrentResults(result: ConcurrentWriteResult) {
 // ============================================================================
 
 async function main() {
-  console.log(colorize("╔═══════════════════════════════════════════════════════════════════╗", "blue"));
-  console.log(colorize("║          IxStats Database Performance Test Suite v1.0            ║", "blue"));
-  console.log(colorize("╚═══════════════════════════════════════════════════════════════════╝", "blue"));
+  console.log(
+    colorize("╔═══════════════════════════════════════════════════════════════════╗", "blue")
+  );
+  console.log(
+    colorize("║          IxStats Database Performance Test Suite v1.0            ║", "blue")
+  );
+  console.log(
+    colorize("╚═══════════════════════════════════════════════════════════════════╝", "blue")
+  );
 
   // Parse command-line arguments
   const args = process.argv.slice(2);
@@ -629,17 +641,27 @@ async function main() {
     }
 
     // Summary
-    console.log(colorize("\n╔═══════════════════════════════════════════════════════════════════╗", "blue"));
-    console.log(colorize("║                        Test Summary                               ║", "blue"));
-    console.log(colorize("╚═══════════════════════════════════════════════════════════════════╝", "blue"));
+    console.log(
+      colorize("\n╔═══════════════════════════════════════════════════════════════════╗", "blue")
+    );
+    console.log(
+      colorize("║                        Test Summary                               ║", "blue")
+    );
+    console.log(
+      colorize("╚═══════════════════════════════════════════════════════════════════╝", "blue")
+    );
 
     const totalTests = results.length;
     const passedTests = results.filter((r) => r).length;
     const failedTests = totalTests - passedTests;
 
     console.log(`\nTotal Tests:    ${totalTests}`);
-    console.log(`Passed:         ${colorize(String(passedTests), "green")} (${((passedTests / totalTests) * 100).toFixed(1)}%)`);
-    console.log(`Failed:         ${failedTests > 0 ? colorize(String(failedTests), "red") : String(failedTests)} (${((failedTests / totalTests) * 100).toFixed(1)}%)`);
+    console.log(
+      `Passed:         ${colorize(String(passedTests), "green")} (${((passedTests / totalTests) * 100).toFixed(1)}%)`
+    );
+    console.log(
+      `Failed:         ${failedTests > 0 ? colorize(String(failedTests), "red") : String(failedTests)} (${((failedTests / totalTests) * 100).toFixed(1)}%)`
+    );
 
     // Exit code
     const exitCode = failedTests > 0 ? 1 : 0;

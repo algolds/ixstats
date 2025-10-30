@@ -15,8 +15,8 @@
  * - Automatic refetching on dependencies
  */
 
-import { api } from '~/trpc/react';
-import type { PersonalityArchetype } from '@/lib/diplomatic-npc-personality';
+import { api } from "~/trpc/react";
+import type { PersonalityArchetype } from "@/lib/diplomatic-npc-personality";
 
 /**
  * Query all NPC personalities with optional filters
@@ -35,19 +35,19 @@ import type { PersonalityArchetype } from '@/lib/diplomatic-npc-personality';
 export function useNPCPersonalities(options?: {
   archetype?: PersonalityArchetype;
   isActive?: boolean;
-  orderBy?: 'usageCount' | 'name' | 'archetype';
+  orderBy?: "usageCount" | "name" | "archetype";
 }) {
   const query = api.npcPersonalities.getAllPersonalities.useQuery({
     archetype: options?.archetype,
     isActive: options?.isActive,
-    orderBy: options?.orderBy || 'usageCount'
+    orderBy: options?.orderBy || "usageCount",
   });
 
   return {
     ...query,
     personalities: query.data || [],
     isLoading: query.isLoading,
-    error: query.error
+    error: query.error,
   };
 }
 
@@ -109,7 +109,7 @@ export function usePersonalityResponse(
     {
       personalityId,
       scenario,
-      contextFactors: context
+      contextFactors: context,
     },
     { enabled: !!personalityId && !!scenario }
   );
@@ -167,13 +167,13 @@ export function usePersonalityByArchetype(archetype: PersonalityArchetype) {
 export function useDiplomaticTone(
   personalityId: string,
   relationshipLevel: string,
-  formality: 'formal' | 'casual'
+  formality: "formal" | "casual"
 ) {
   return api.npcPersonalities.getToneForContext.useQuery(
     {
       personalityId,
       relationshipLevel,
-      formality
+      formality,
     },
     { enabled: !!personalityId && !!relationshipLevel }
   );

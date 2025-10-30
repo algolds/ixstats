@@ -2,7 +2,17 @@ import React, { useState } from "react";
 import { GlassCard } from "./enhanced-card";
 import { cn } from "~/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { Globe, Shield, User, LogOut, Settings, Menu, ChevronLeft, ChevronRight, Bell } from "lucide-react";
+import {
+  Globe,
+  Shield,
+  User,
+  LogOut,
+  Settings,
+  Menu,
+  ChevronLeft,
+  ChevronRight,
+  Bell,
+} from "lucide-react";
 import { InterfaceSwitcher } from "../shared/InterfaceSwitcher";
 import { Button } from "./button";
 import { Badge } from "./badge";
@@ -34,7 +44,13 @@ interface UnifiedSidebarProps {
   mobileOpen?: boolean;
   onMobileOpen?: () => void;
   onMobileClose?: () => void;
-  links?: Array<{ key: string; label: string; href: string; icon: React.ReactNode; badge?: string | number }>;
+  links?: Array<{
+    key: string;
+    label: string;
+    href: string;
+    icon: React.ReactNode;
+    badge?: string | number;
+  }>;
   activeKey?: string;
   notifications?: Notification[];
   unreadCount?: number;
@@ -42,7 +58,7 @@ interface UnifiedSidebarProps {
 }
 
 function getInitials(name?: string) {
-  if (!name || typeof name !== 'string') return "?";
+  if (!name || typeof name !== "string") return "?";
   const parts = name.split(" ").filter(Boolean);
   if (parts.length === 0) return "?";
   if (parts.length === 1) return parts[0]?.[0] ? parts[0][0].toUpperCase() : "?";
@@ -75,27 +91,33 @@ export function UnifiedSidebar({
   ) || { data: undefined };
   const { data: unreadCount = 0 } = api.unifiedIntelligence.getIntelligenceFeed?.useQuery?.(
     { countryId: countryId || "" },
-    { enabled: !!countryId, refetchInterval: 10000, select: (data: any) => data?.filter((n: any) => !n.read).length || 0 }
+    {
+      enabled: !!countryId,
+      refetchInterval: 10000,
+      select: (data: any) => data?.filter((n: any) => !n.read).length || 0,
+    }
   ) || { data: 0 };
   // Determine activeKey from route if not provided
   let computedActiveKey = activeKey;
   if (!computedActiveKey && links && pathname) {
-    const found = links.find(link => pathname === link.href || pathname.startsWith(link.href + "/"));
+    const found = links.find(
+      (link) => pathname === link.href || pathname.startsWith(link.href + "/")
+    );
     computedActiveKey = found?.key;
   }
 
   // Local state for mobile toggle if not controlled
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const isMobileOpen = typeof mobileOpen === 'boolean' ? mobileOpen : mobileSidebarOpen;
+  const isMobileOpen = typeof mobileOpen === "boolean" ? mobileOpen : mobileSidebarOpen;
   const handleMobileOpen = onMobileOpen || (() => setMobileSidebarOpen(true));
   const handleMobileClose = onMobileClose || (() => setMobileSidebarOpen(false));
 
   // Local state for collapse if not controlled
   const [localCollapsed, setLocalCollapsed] = useState(false);
-  const isCollapsed = typeof setCollapsed === 'function' ? collapsed : localCollapsed;
+  const isCollapsed = typeof setCollapsed === "function" ? collapsed : localCollapsed;
   const handleCollapse = () => {
     if (setCollapsed) setCollapsed(!collapsed);
-    else setLocalCollapsed(c => !c);
+    else setLocalCollapsed((c) => !c);
   };
 
   // Notification popover state
@@ -106,26 +128,30 @@ export function UnifiedSidebar({
     <GlassCard
       variant="glass"
       className={cn(
-        "h-full flex flex-col justify-between p-4 w-64 min-w-[220px] max-w-[320px] border-none shadow-xl bg-white/95 dark:bg-neutral-900/95 transition-all duration-300",
-        isCollapsed && "w-20 min-w-[60px] max-w-[80px] p-2"
+        "flex h-full w-64 max-w-[320px] min-w-[220px] flex-col justify-between border-none bg-white/95 p-4 shadow-xl transition-all duration-300 dark:bg-neutral-900/95",
+        isCollapsed && "w-20 max-w-[80px] min-w-[60px] p-2"
       )}
     >
       {/* Top: Collapse/Expand and Notifications */}
-      <div className="flex items-center justify-between mb-2 relative">
-        {!isCollapsed && <span className="font-bold text-lg tracking-wide">{current === 'sdi' ? 'Sovereign Digital Interface' : 'Executive Command Interface'}</span>}
-        <div className="flex items-center gap-2 ml-auto">
+      <div className="relative mb-2 flex items-center justify-between">
+        {!isCollapsed && (
+          <span className="text-lg font-bold tracking-wide">
+            {current === "sdi" ? "Sovereign Digital Interface" : "Executive Command Interface"}
+          </span>
+        )}
+        <div className="ml-auto flex items-center gap-2">
           {/* Notification Bell */}
           <Button
             variant="ghost"
             size="icon"
             aria-label="Notifications"
             className="relative"
-            onClick={() => setShowNotifications(v => !v)}
+            onClick={() => setShowNotifications((v) => !v)}
           >
-            <Bell className="w-5 h-5" />
+            <Bell className="h-5 w-5" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] flex items-center justify-center">
-                {unreadCount > 9 ? '9+' : unreadCount}
+              <span className="absolute -top-1 -right-1 flex min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-xs text-white">
+                {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
           </Button>
@@ -137,32 +163,48 @@ export function UnifiedSidebar({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.18 }}
-                className="fixed left-0 right-0 mx-auto z-[10002] w-72 max-w-[90vw] bg-white dark:bg-neutral-900 rounded-xl shadow-lg border border-blue-200 dark:border-blue-800 p-3"
+                className="fixed right-0 left-0 z-[10002] mx-auto w-72 max-w-[90vw] rounded-xl border border-blue-200 bg-white p-3 shadow-lg dark:border-blue-800 dark:bg-neutral-900"
                 style={{ top: 70 }}
-                onClick={e => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
               >
-                <div className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Notifications</div>
+                <div className="mb-2 font-semibold text-blue-900 dark:text-blue-100">
+                  Notifications
+                </div>
                 {(!notificationsData?.items || notificationsData.items.length === 0) && (
-                  <div className="text-sm text-muted-foreground py-6 text-center">No notifications</div>
+                  <div className="text-muted-foreground py-6 text-center text-sm">
+                    No notifications
+                  </div>
                 )}
                 {(notificationsData?.items || []).slice(0, 6).map((n: any) => (
                   <Link
                     key={n.id}
-                    href={n.href || '#'}
+                    href={n.href || "#"}
                     className={cn(
-                      "block px-2 py-2 rounded-md transition-colors text-sm",
-                      n.read ? "text-gray-500 dark:text-gray-400" : "bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100 font-semibold"
+                      "block rounded-md px-2 py-2 text-sm transition-colors",
+                      n.read
+                        ? "text-gray-500 dark:text-gray-400"
+                        : "bg-blue-50 font-semibold text-blue-900 dark:bg-blue-900/20 dark:text-blue-100"
                     )}
                     onClick={() => setShowNotifications(false)}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="truncate flex-1">{n.title}</span>
-                      {!n.read && <span className="ml-2 w-2 h-2 bg-blue-500 rounded-full" />}
+                      <span className="flex-1 truncate">{n.title}</span>
+                      {!n.read && <span className="ml-2 h-2 w-2 rounded-full bg-blue-500" />}
                     </div>
-                    {n.description && <div className="text-xs text-muted-foreground mt-0.5">{n.description}</div>}
+                    {n.description && (
+                      <div className="text-muted-foreground mt-0.5 text-xs">{n.description}</div>
+                    )}
                   </Link>
                 ))}
-                <div className="mt-2 text-xs text-blue-500 text-center cursor-pointer hover:underline" onClick={() => { setShowNotifications(false); router.push(createUrl('/notifications')); }}>View all</div>
+                <div
+                  className="mt-2 cursor-pointer text-center text-xs text-blue-500 hover:underline"
+                  onClick={() => {
+                    setShowNotifications(false);
+                    router.push(createUrl("/notifications"));
+                  }}
+                >
+                  View all
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -174,70 +216,90 @@ export function UnifiedSidebar({
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             onClick={handleCollapse}
           >
-            {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+            {isCollapsed ? (
+              <ChevronRight className="h-5 w-5" />
+            ) : (
+              <ChevronLeft className="h-5 w-5" />
+            )}
           </Button>
         </div>
       </div>
       {/* Top: Navigation */}
-      <nav className="flex flex-col gap-2 mt-2">
+      <nav className="mt-2 flex flex-col gap-2">
         {(links || []).map((link) => (
           <button
             key={link.key}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 font-medium transition-all hover:bg-blue-500/10 hover:text-blue-600 w-full text-left",
+              "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left font-medium transition-all hover:bg-blue-500/10 hover:text-blue-600",
               computedActiveKey === link.key
-                ? "bg-blue-500/20 text-blue-700 dark:text-blue-200 font-semibold shadow-lg border border-blue-400/30"
+                ? "border border-blue-400/30 bg-blue-500/20 font-semibold text-blue-700 shadow-lg dark:text-blue-200"
                 : "text-neutral-700 dark:text-neutral-200",
               isCollapsed && "justify-center px-2"
             )}
             tabIndex={0}
-            onClick={() => onNav ? onNav(link.key) : (link.href && router.push(link.href))}
+            onClick={() => (onNav ? onNav(link.key) : link.href && router.push(link.href))}
           >
             {link.icon}
             {!isCollapsed && <span>{link.label}</span>}
             {link.badge && (
-              <Badge className="ml-auto bg-blue-500 text-white px-2 py-0.5 text-xs rounded-full">{link.badge}</Badge>
+              <Badge className="ml-auto rounded-full bg-blue-500 px-2 py-0.5 text-xs text-white">
+                {link.badge}
+              </Badge>
             )}
           </button>
         ))}
       </nav>
       {/* Middle: SDI/ECI Switcher */}
-      <div className={cn("mt-6 flex justify-center", isCollapsed && "mt-2")}> 
+      <div className={cn("mt-6 flex justify-center", isCollapsed && "mt-2")}>
         <InterfaceSwitcher currentInterface={current} countryId={countryId} />
       </div>
       {/* Bottom: Profile Info */}
-      <div className={cn("mt-8 flex flex-col items-center gap-2", isCollapsed && "mt-4")}
+      <div
+        className={cn("mt-8 flex flex-col items-center gap-2", isCollapsed && "mt-4")}
         style={{ marginTop: "auto" }}
       >
-        <div className="flex items-center gap-3 w-full">
+        <div className="flex w-full items-center gap-3">
           {/* Avatar with UserButton overlayed in the shadow location */}
-          <div className="relative flex-shrink-0 w-10 h-10 rounded-full bg-blue-200 dark:bg-blue-900 flex items-center justify-center text-lg font-bold text-blue-700 dark:text-blue-200 overflow-hidden">
+          <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-200 text-lg font-bold text-blue-700 dark:bg-blue-900 dark:text-blue-200">
             {profile?.avatarUrl ? (
               <img
                 src={profile.avatarUrl}
                 alt={profile.name || "User"}
-                className="w-full h-full object-cover rounded-full"
+                className="h-full w-full rounded-full object-cover"
               />
-            ) : (
-              profile?.name ? getInitials(profile.name) : null
-            )}
+            ) : profile?.name ? (
+              getInitials(profile.name)
+            ) : null}
             {/* Clerk UserButton absolutely positioned over avatar shadow */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <UserButton afterSignOutUrl="/" appearance={{ elements: { userButtonBox: "w-full h-full" } }} />
+              <UserButton
+                afterSignOutUrl="/"
+                appearance={{ elements: { userButtonBox: "w-full h-full" } }}
+              />
             </div>
           </div>
           {/* Name/role (hide if collapsed) */}
           {!isCollapsed && profile?.name && profile.role && (
-            <div className="flex flex-col min-w-0">
-              <span className="font-semibold text-sm truncate">{profile.name}</span>
-              <span className="text-xs text-blue-500 dark:text-blue-300 truncate">{profile.role}</span>
+            <div className="flex min-w-0 flex-col">
+              <span className="truncate text-sm font-semibold">{profile.name}</span>
+              <span className="truncate text-xs text-blue-500 dark:text-blue-300">
+                {profile.role}
+              </span>
             </div>
           )}
         </div>
         {/* User Menu: Profile/Settings/Logout */}
-        <div className={cn("flex flex-col gap-2 w-full justify-center mt-2", isCollapsed && "items-center mt-1")}> 
-          <Link href={createUrl("/profile")} className="flex items-center gap-2 text-blue-500 dark:text-blue-300 text-sm hover:underline">
-            <Settings className="w-4 h-4" />
+        <div
+          className={cn(
+            "mt-2 flex w-full flex-col justify-center gap-2",
+            isCollapsed && "mt-1 items-center"
+          )}
+        >
+          <Link
+            href={createUrl("/profile")}
+            className="flex items-center gap-2 text-sm text-blue-500 hover:underline dark:text-blue-300"
+          >
+            <Settings className="h-4 w-4" />
             {!isCollapsed && <span>Profile & Settings</span>}
           </Link>
         </div>
@@ -249,18 +311,13 @@ export function UnifiedSidebar({
   return (
     <>
       {/* Mobile Hamburger Button */}
-      <div className="md:hidden fixed top-4 left-4 z-[9999]">
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Open sidebar"
-          onClick={handleMobileOpen}
-        >
-          <Menu className="w-6 h-6" />
+      <div className="fixed top-4 left-4 z-[9999] md:hidden">
+        <Button variant="ghost" size="icon" aria-label="Open sidebar" onClick={handleMobileOpen}>
+          <Menu className="h-6 w-6" />
         </Button>
       </div>
       {/* Desktop */}
-      <aside className={cn("hidden md:flex h-screen z-40")}>{sidebarContent}</aside>
+      <aside className={cn("z-40 hidden h-screen md:flex")}>{sidebarContent}</aside>
       {/* Mobile */}
       <AnimatePresence>
         {isMobileOpen && (
@@ -273,17 +330,14 @@ export function UnifiedSidebar({
             style={{ background: "rgba(16,24,40,0.25)", backdropFilter: "blur(8px)" }}
             onClick={handleMobileClose}
           >
-            <div
-              className="w-64 max-w-[90vw] h-full"
-              onClick={e => e.stopPropagation()}
-            >
+            <div className="h-full w-64 max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
               {sidebarContent}
             </div>
             {/* Click outside to close */}
-            <div className="flex-1 h-full" />
+            <div className="h-full flex-1" />
           </motion.div>
         )}
       </AnimatePresence>
     </>
   );
-} 
+}

@@ -13,14 +13,7 @@ import { Redis } from "ioredis";
 import { env } from "~/env";
 
 // Valid layer names
-const VALID_LAYERS = [
-  "political",
-  "rivers",
-  "lakes",
-  "icecaps",
-  "climate",
-  "altitudes",
-] as const;
+const VALID_LAYERS = ["political", "rivers", "lakes", "icecaps", "climate", "altitudes"] as const;
 
 type LayerName = (typeof VALID_LAYERS)[number];
 
@@ -59,10 +52,7 @@ export async function GET(
 
     // Validate layer name
     if (!VALID_LAYERS.includes(layer as LayerName)) {
-      return NextResponse.json(
-        { error: `Invalid layer: ${layer}` },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: `Invalid layer: ${layer}` }, { status: 400 });
     }
 
     // Parse and validate tile coordinates
@@ -70,17 +60,8 @@ export async function GET(
     const xNum = parseInt(x);
     const yNum = parseInt(y);
 
-    if (
-      isNaN(zNum) ||
-      isNaN(xNum) ||
-      isNaN(yNum) ||
-      zNum < 0 ||
-      zNum > 18
-    ) {
-      return NextResponse.json(
-        { error: "Invalid tile coordinates" },
-        { status: 400 }
-      );
+    if (isNaN(zNum) || isNaN(xNum) || isNaN(yNum) || zNum < 0 || zNum > 18) {
+      return NextResponse.json({ error: "Invalid tile coordinates" }, { status: 400 });
     }
 
     // Cache key for Redis (Phase 2)

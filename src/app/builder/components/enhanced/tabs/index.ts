@@ -5,21 +5,23 @@
  * Each tab component is code-split and loaded on demand when the user navigates to it.
  */
 
-import { lazy } from 'react';
+import { lazy } from "react";
 
 // Lazy load tab components
 export const DemographicsPopulationTab = lazy(() =>
-  import('./DemographicsPopulationTab').then(module => ({ default: module.DemographicsPopulationTab }))
+  import("./DemographicsPopulationTab").then((module) => ({
+    default: module.DemographicsPopulationTab,
+  }))
 );
 
 export const LaborEmploymentTab = lazy(() =>
-  import('./LaborEmploymentTab').then(module => ({ default: module.LaborEmploymentTab }))
+  import("./LaborEmploymentTab").then((module) => ({ default: module.LaborEmploymentTab }))
 );
 
 export const EconomySectorsTab = lazy(() =>
-  import('./EconomySectorsTab').then(module => ({ default: module.EconomySectorsTab }))
+  import("./EconomySectorsTab").then((module) => ({ default: module.EconomySectorsTab }))
 );
 
 export const EconomyPreviewTab = lazy(() =>
-  import('./EconomyPreviewTab').then(module => ({ default: module.EconomyPreviewTab }))
+  import("./EconomyPreviewTab").then((module) => ({ default: module.EconomyPreviewTab }))
 );

@@ -1,6 +1,6 @@
 /**
  * Wiki Cache Refresh Background Service
- * 
+ *
  * Periodically refreshes stale wiki cache entries and cleans up expired ones.
  * Prioritizes popular countries based on hit count.
  */
@@ -27,11 +27,11 @@ export class WikiCacheRefreshService {
    */
   start() {
     if (this.isRunning) {
-      console.log('[WikiCacheRefresh] Service already running');
+      console.log("[WikiCacheRefresh] Service already running");
       return;
     }
 
-    console.log('[WikiCacheRefresh] Starting background refresh service');
+    console.log("[WikiCacheRefresh] Starting background refresh service");
     this.isRunning = true;
 
     // Refresh stale entries every 6 hours
@@ -59,8 +59,8 @@ export class WikiCacheRefreshService {
    * Stop the background refresh service
    */
   stop() {
-    console.log('[WikiCacheRefresh] Stopping background refresh service');
-    
+    console.log("[WikiCacheRefresh] Stopping background refresh service");
+
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval);
       this.refreshInterval = null;
@@ -79,11 +79,11 @@ export class WikiCacheRefreshService {
    */
   async refreshStaleEntries(): Promise<RefreshStats> {
     const startTime = Date.now();
-    console.log('[WikiCacheRefresh] Starting refresh of stale entries');
+    console.log("[WikiCacheRefresh] Starting refresh of stale entries");
 
     try {
       const refreshed = await wikiCacheService.refreshStaleEntries(2); // 2 hours threshold
-      
+
       const stats: RefreshStats = {
         refreshed,
         cleaned: 0,
@@ -91,11 +91,11 @@ export class WikiCacheRefreshService {
         duration: Date.now() - startTime,
       };
 
-      console.log('[WikiCacheRefresh] Refresh complete:', stats);
+      console.log("[WikiCacheRefresh] Refresh complete:", stats);
       return stats;
     } catch (error) {
-      console.error('[WikiCacheRefresh] Error during refresh:', error);
-      
+      console.error("[WikiCacheRefresh] Error during refresh:", error);
+
       return {
         refreshed: 0,
         cleaned: 0,
@@ -110,11 +110,11 @@ export class WikiCacheRefreshService {
    */
   async cleanupExpiredEntries(): Promise<RefreshStats> {
     const startTime = Date.now();
-    console.log('[WikiCacheRefresh] Starting cleanup of expired entries');
+    console.log("[WikiCacheRefresh] Starting cleanup of expired entries");
 
     try {
       const cleaned = await wikiCacheService.cleanupExpiredEntries();
-      
+
       const stats: RefreshStats = {
         refreshed: 0,
         cleaned,
@@ -122,11 +122,11 @@ export class WikiCacheRefreshService {
         duration: Date.now() - startTime,
       };
 
-      console.log('[WikiCacheRefresh] Cleanup complete:', stats);
+      console.log("[WikiCacheRefresh] Cleanup complete:", stats);
       return stats;
     } catch (error) {
-      console.error('[WikiCacheRefresh] Error during cleanup:', error);
-      
+      console.error("[WikiCacheRefresh] Error during cleanup:", error);
+
       return {
         refreshed: 0,
         cleaned: 0,
@@ -148,10 +148,10 @@ export class WikiCacheRefreshService {
       // Get countries ordered by cache hit count
       const popularEntries = await db.wikiCache.findMany({
         where: {
-          type: 'infobox', // Focus on country infoboxes
+          type: "infobox", // Focus on country infoboxes
         },
         orderBy: {
-          hitCount: 'desc',
+          hitCount: "desc",
         },
         take: limit,
         select: {
@@ -160,11 +160,11 @@ export class WikiCacheRefreshService {
       });
 
       const countryNames = popularEntries
-        .map(entry => entry.countryName)
+        .map((entry) => entry.countryName)
         .filter((name): name is string => name !== null);
 
       if (countryNames.length === 0) {
-        console.log('[WikiCacheRefresh] No popular countries found to warm');
+        console.log("[WikiCacheRefresh] No popular countries found to warm");
         return {
           refreshed: 0,
           cleaned: 0,
@@ -174,7 +174,7 @@ export class WikiCacheRefreshService {
       }
 
       const result = await wikiCacheService.warmCache(countryNames);
-      
+
       const stats: RefreshStats = {
         refreshed: result.success,
         cleaned: 0,
@@ -182,11 +182,11 @@ export class WikiCacheRefreshService {
         duration: Date.now() - startTime,
       };
 
-      console.log('[WikiCacheRefresh] Popular countries warmed:', stats);
+      console.log("[WikiCacheRefresh] Popular countries warmed:", stats);
       return stats;
     } catch (error) {
-      console.error('[WikiCacheRefresh] Error warming popular countries:', error);
-      
+      console.error("[WikiCacheRefresh] Error warming popular countries:", error);
+
       return {
         refreshed: 0,
         cleaned: 0,
@@ -210,4 +210,3 @@ export class WikiCacheRefreshService {
 
 // Export singleton instance
 export const wikiCacheRefreshService = new WikiCacheRefreshService();
-

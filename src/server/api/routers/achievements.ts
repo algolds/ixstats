@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  rateLimitedPublicProcedure,
+} from "~/server/api/trpc";
 import { IxTime } from "~/lib/ixtime";
 import { ActivityHooks } from "~/lib/activity-hooks";
 import { notificationHooks } from "~/lib/notification-hooks";
@@ -7,29 +12,31 @@ import { notificationHooks } from "~/lib/notification-hooks";
 export const achievementsRouter = createTRPCRouter({
   // Get recent achievements for a country
   getRecentByCountry: rateLimitedPublicProcedure
-    .input(z.object({
-      countryId: z.string(),
-      limit: z.number().optional().default(10)
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        limit: z.number().optional().default(10),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         // Get users for this country
         const users = await ctx.db.user.findMany({
           where: { countryId: input.countryId },
-          select: { clerkUserId: true }
+          select: { clerkUserId: true },
         });
 
-        const userIds = users.map(u => u.clerkUserId);
+        const userIds = users.map((u) => u.clerkUserId);
 
         const achievements = await ctx.db.userAchievement.findMany({
           where: {
-            userId: { in: userIds }
+            userId: { in: userIds },
           },
-          orderBy: { unlockedAt: 'desc' },
-          take: input.limit
+          orderBy: { unlockedAt: "desc" },
+          take: input.limit,
         });
 
-        return achievements.map(achievement => ({
+        return achievements.map((achievement) => ({
           id: achievement.id,
           title: achievement.title,
           description: achievement.description,
@@ -37,37 +44,39 @@ export const achievementsRouter = createTRPCRouter({
           unlockedAt: achievement.unlockedAt.toISOString(),
           category: achievement.category,
           rarity: achievement.rarity,
-          points: 10 // Default points
+          points: 10, // Default points
         }));
       } catch (error) {
-        console.error('Error fetching recent achievements:', error);
+        console.error("Error fetching recent achievements:", error);
         return [];
       }
     }),
 
   // Get all achievements for a country
   getAllByCountry: rateLimitedPublicProcedure
-    .input(z.object({
-      countryId: z.string()
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         // Get users for this country
         const users = await ctx.db.user.findMany({
           where: { countryId: input.countryId },
-          select: { clerkUserId: true }
+          select: { clerkUserId: true },
         });
 
-        const userIds = users.map(u => u.clerkUserId);
+        const userIds = users.map((u) => u.clerkUserId);
 
         const achievements = await ctx.db.userAchievement.findMany({
           where: {
-            userId: { in: userIds }
+            userId: { in: userIds },
           },
-          orderBy: { unlockedAt: 'desc' }
+          orderBy: { unlockedAt: "desc" },
         });
 
-        return achievements.map(achievement => ({
+        return achievements.map((achievement) => ({
           id: achievement.id,
           achievementId: achievement.achievementId,
           title: achievement.title,
@@ -77,7 +86,7 @@ export const achievementsRouter = createTRPCRouter({
           category: achievement.category,
           rarity: achievement.rarity,
           points: 10, // Default points
-          progress: 100 // Default progress
+          progress: 100, // Default progress
         }));
       } catch (error) {
         return [];
@@ -86,10 +95,12 @@ export const achievementsRouter = createTRPCRouter({
 
   // Get achievement leaderboard
   getLeaderboard: rateLimitedPublicProcedure
-    .input(z.object({
-      limit: z.number().optional().default(20),
-      category: z.string().optional()
-    }))
+    .input(
+      z.object({
+        limit: z.number().optional().default(20),
+        category: z.string().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         // Get all countries with user
@@ -97,64 +108,77 @@ export const achievementsRouter = createTRPCRouter({
           include: {
             users: {
               select: {
-                clerkUserId: true
-              }
-            }
+                clerkUserId: true,
+              },
+            },
           },
-          take: input.limit
+          take: input.limit,
         });
 
-        const leaderboard = await Promise.all(countries.map(async (country) => {
-          const userIds = country.users && country.users.length > 0 ? country.users.map(u => u.clerkUserId) : [];
+        const leaderboard = await Promise.all(
+          countries.map(async (country) => {
+            const userIds =
+              country.users && country.users.length > 0
+                ? country.users.map((u) => u.clerkUserId)
+                : [];
 
-          const achievements = await ctx.db.userAchievement.findMany({
-            where: {
-              userId: { in: userIds },
-              ...(input.category ? { category: input.category } : {})
-            }
-          });
+            const achievements = await ctx.db.userAchievement.findMany({
+              where: {
+                userId: { in: userIds },
+                ...(input.category ? { category: input.category } : {}),
+              },
+            });
 
-          const totalPoints = achievements.length * 10; // Default 10 points per achievement
-          const achievementCount = achievements.length;
+            const totalPoints = achievements.length * 10; // Default 10 points per achievement
+            const achievementCount = achievements.length;
 
-          return {
-            countryId: country.id,
-            countryName: country.name,
-            totalPoints,
-            achievementCount,
-            rareAchievements: achievements.filter((a: { rarity?: string | null }) => a.rarity === 'rare' || a.rarity === 'epic' || a.rarity === 'legendary').length
-          };
-        }));
+            return {
+              countryId: country.id,
+              countryName: country.name,
+              totalPoints,
+              achievementCount,
+              rareAchievements: achievements.filter(
+                (a: { rarity?: string | null }) =>
+                  a.rarity === "rare" || a.rarity === "epic" || a.rarity === "legendary"
+              ).length,
+            };
+          })
+        );
 
         return leaderboard
           .filter((entry: { achievementCount: number }) => entry.achievementCount > 0)
-          .sort((a: { totalPoints: number }, b: { totalPoints: number }) => b.totalPoints - a.totalPoints)
+          .sort(
+            (a: { totalPoints: number }, b: { totalPoints: number }) =>
+              b.totalPoints - a.totalPoints
+          )
           .slice(0, input.limit);
       } catch (error) {
-        console.error('Error fetching achievements leaderboard:', error);
+        console.error("Error fetching achievements leaderboard:", error);
         return [];
       }
     }),
 
   // Unlock achievement (internal use)
   unlock: protectedProcedure
-    .input(z.object({
-      userId: z.string(),
-      achievementId: z.string(),
-      title: z.string(),
-      description: z.string().optional(),
-      icon: z.string().optional(),
-      category: z.string().optional(),
-      rarity: z.enum(['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary']).optional(),
-      points: z.number().optional()
-    }))
+    .input(
+      z.object({
+        userId: z.string(),
+        achievementId: z.string(),
+        title: z.string(),
+        description: z.string().optional(),
+        icon: z.string().optional(),
+        category: z.string().optional(),
+        rarity: z.enum(["Common", "Uncommon", "Rare", "Epic", "Legendary"]).optional(),
+        points: z.number().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Check if already unlocked
       const existing = await ctx.db.userAchievement.findFirst({
         where: {
           userId: input.userId,
-          achievementId: input.achievementId
-        }
+          achievementId: input.achievementId,
+        },
       });
 
       if (existing) {
@@ -170,14 +194,14 @@ export const achievementsRouter = createTRPCRouter({
           iconUrl: input.icon || "🏆",
           category: input.category || "General",
           rarity: input.rarity || "Common",
-          unlockedAt: new Date()
-        }
+          unlockedAt: new Date(),
+        },
       });
 
       // Get user's country for activity feed
       const user = await ctx.db.user.findUnique({
         where: { clerkUserId: input.userId },
-        select: { countryId: true, clerkUserId: true }
+        select: { countryId: true, clerkUserId: true },
       });
 
       // Generate activity feed entry (non-blocking)
@@ -186,8 +210,9 @@ export const achievementsRouter = createTRPCRouter({
           user.clerkUserId,
           user.countryId,
           input.title,
-          input.description || `Unlocked ${input.rarity || 'Common'} achievement worth ${input.points || 10} points`
-        ).catch(err => console.error('Failed to create achievement activity:', err));
+          input.description ||
+            `Unlocked ${input.rarity || "Common"} achievement worth ${input.points || 10} points`
+        ).catch((err) => console.error("Failed to create achievement activity:", err));
       }
 
       // 🔔 Notify user about achievement unlock
@@ -196,14 +221,16 @@ export const achievementsRouter = createTRPCRouter({
           userId: input.userId,
           achievementId: input.achievementId,
           name: input.title,
-          description: input.description || `You've unlocked a ${input.rarity || 'Common'} achievement!`,
-          category: input.category || 'General',
-          rarity: (input.rarity?.toLowerCase() as 'common' | 'rare' | 'epic' | 'legendary') || 'common',
+          description:
+            input.description || `You've unlocked a ${input.rarity || "Common"} achievement!`,
+          category: input.category || "General",
+          rarity:
+            (input.rarity?.toLowerCase() as "common" | "rare" | "epic" | "legendary") || "common",
         });
       } catch (error) {
-        console.error('[Achievements] Failed to send achievement notification:', error);
+        console.error("[Achievements] Failed to send achievement notification:", error);
       }
 
       return achievement;
-    })
+    }),
 });

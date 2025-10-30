@@ -5,13 +5,13 @@
  * Optimized with React.memo for performance.
  */
 
-'use client';
+"use client";
 
-import React from 'react';
-import { Button } from '~/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { FileText } from 'lucide-react';
-import type { EconomicTemplate } from '~/lib/atomic-economic-data';
+import React from "react";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { FileText } from "lucide-react";
+import type { EconomicTemplate } from "~/lib/atomic-economic-data";
 
 export interface TemplateSelectorProps {
   templates: EconomicTemplate[];
@@ -25,18 +25,18 @@ export interface TemplateSelectorProps {
 function TemplateSelectorComponent({
   templates,
   onLoadTemplate,
-  disabled = false
+  disabled = false,
 }: TemplateSelectorProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <FileText className="w-4 h-4" />
+        <CardTitle className="flex items-center gap-2 text-sm font-medium">
+          <FileText className="h-4 w-4" />
           Quick Start Templates
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-6">
           {templates.map((template) => {
             const Icon = template.icon;
 
@@ -47,12 +47,12 @@ function TemplateSelectorComponent({
                 size="sm"
                 onClick={() => onLoadTemplate(template.id)}
                 disabled={disabled}
-                className="flex flex-col items-center gap-2 h-auto py-3"
+                className="flex h-auto flex-col items-center gap-2 py-3"
               >
-                <Icon className="w-5 h-5" />
+                <Icon className="h-5 w-5" />
                 <div className="text-center">
                   <div className="text-xs font-medium">{template.name}</div>
-                  <div className="text-xs text-gray-500 mt-1">
+                  <div className="mt-1 text-xs text-gray-500">
                     {template.components.length} components
                   </div>
                 </div>

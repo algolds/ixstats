@@ -1,6 +1,6 @@
 // React hook for country flag management
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { countryFlagService, type CountryFlag } from '~/lib/country-flag-service';
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { countryFlagService, type CountryFlag } from "~/lib/country-flag-service";
 
 interface UseCountryFlagsOptions {
   countries: string[];
@@ -25,13 +25,13 @@ interface UseCountryFlagsReturn {
 
 export function useCountryFlags(options: UseCountryFlagsOptions): UseCountryFlagsReturn {
   const { countries, preload = true, batchSize = 5 } = options;
-  
+
   const [flags, setFlags] = useState<Map<string, CountryFlag>>(new Map());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Memoize the country list to prevent unnecessary re-fetches
-  const memoizedCountries = useMemo(() => countries, [countries.join(',')]);
+  const memoizedCountries = useMemo(() => countries, [countries.join(",")]);
 
   /**
    * Fetch flags for all countries
@@ -43,17 +43,15 @@ export function useCountryFlags(options: UseCountryFlagsOptions): UseCountryFlag
     setError(null);
 
     try {
-      
       const flagResults = await countryFlagService.batchGetCountryFlags(countryList);
-      
+
       setFlags(flagResults);
-      
+
       const stats = countryFlagService.getCacheStats();
-      
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch country flags';
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch country flags";
       setError(errorMessage);
-      console.error('[useCountryFlags] Error fetching flags:', err);
+      console.error("[useCountryFlags] Error fetching flags:", err);
     } finally {
       setLoading(false);
     }
@@ -65,8 +63,8 @@ export function useCountryFlags(options: UseCountryFlagsOptions): UseCountryFlag
   const refetchFlag = useCallback(async (countryName: string) => {
     try {
       const flag = await countryFlagService.getCountryFlag(countryName);
-      
-      setFlags(prev => new Map(prev).set(countryName, flag));
+
+      setFlags((prev) => new Map(prev).set(countryName, flag));
     } catch (err) {
       console.error(`[useCountryFlags] Error refetching flag for ${countryName}:`, err);
     }
@@ -75,9 +73,12 @@ export function useCountryFlags(options: UseCountryFlagsOptions): UseCountryFlag
   /**
    * Get a flag from the current state
    */
-  const getFlag = useCallback((countryName: string): CountryFlag | null => {
-    return flags.get(countryName) || null;
-  }, [flags]);
+  const getFlag = useCallback(
+    (countryName: string): CountryFlag | null => {
+      return flags.get(countryName) || null;
+    },
+    [flags]
+  );
 
   /**
    * Clear the flag cache
@@ -93,14 +94,14 @@ export function useCountryFlags(options: UseCountryFlagsOptions): UseCountryFlag
    */
   const stats = useMemo(() => {
     const total = flags.size;
-    const successful = Array.from(flags.values()).filter(flag => flag.flagUrl !== null).length;
+    const successful = Array.from(flags.values()).filter((flag) => flag.flagUrl !== null).length;
     const failed = total - successful;
-    
+
     return {
       total,
       successful,
       failed,
-      hitRate: total > 0 ? (successful / total) * 100 : 0
+      hitRate: total > 0 ? (successful / total) * 100 : 0,
     };
   }, [flags]);
 
@@ -118,7 +119,7 @@ export function useCountryFlags(options: UseCountryFlagsOptions): UseCountryFlag
     getFlag,
     refetchFlag,
     clearCache,
-    stats
+    stats,
   };
 }
 
@@ -140,7 +141,7 @@ export function useCountryFlag(countryName: string) {
       const flagResult = await countryFlagService.getCountryFlag(countryName);
       setFlag(flagResult);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch country flag';
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch country flag";
       setError(errorMessage);
       console.error(`[useCountryFlag] Error fetching flag for ${countryName}:`, err);
     } finally {
@@ -156,6 +157,6 @@ export function useCountryFlag(countryName: string) {
     flag,
     loading,
     error,
-    refetch: fetchFlag
+    refetch: fetchFlag,
   };
 }

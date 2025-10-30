@@ -1,17 +1,23 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
-import { Switch } from '~/components/ui/switch';
-import { Textarea } from '~/components/ui/textarea';
-import { Badge } from '~/components/ui/badge';
-import { Slider } from '~/components/ui/slider';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components/ui/tooltip';
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Switch } from "~/components/ui/switch";
+import { Textarea } from "~/components/ui/textarea";
+import { Badge } from "~/components/ui/badge";
+import { Slider } from "~/components/ui/slider";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import {
   Receipt,
   Building,
@@ -37,10 +43,10 @@ import {
   Link2,
   ExternalLink,
   RefreshCw,
-  Sparkles
-} from 'lucide-react';
-import type { TaxCategoryInput, TaxBracketInput } from '~/types/tax-system';
-import { TAX_CATEGORIES, TAX_TYPES, CALCULATION_METHODS } from '~/types/tax-system';
+  Sparkles,
+} from "lucide-react";
+import type { TaxCategoryInput, TaxBracketInput } from "~/types/tax-system";
+import { TAX_CATEGORIES, TAX_TYPES, CALCULATION_METHODS } from "~/types/tax-system";
 
 interface TaxCategoryFormProps {
   data: TaxCategoryInput;
@@ -65,74 +71,74 @@ const categoryIcons = {
   [TAX_CATEGORIES.SALES]: Receipt,
   [TAX_CATEGORIES.PROPERTY]: Home,
   [TAX_CATEGORIES.CAPITAL_GAINS]: TrendingUp,
-  [TAX_CATEGORIES.OTHER]: Settings
+  [TAX_CATEGORIES.OTHER]: Settings,
 };
 
 const categoryColors = {
-  [TAX_CATEGORIES.INCOME]: '#3b82f6',
-  [TAX_CATEGORIES.CORPORATE]: '#059669',
-  [TAX_CATEGORIES.SALES]: '#dc2626',
-  [TAX_CATEGORIES.PROPERTY]: '#7c3aed',
-  [TAX_CATEGORIES.CAPITAL_GAINS]: '#ea580c',
-  [TAX_CATEGORIES.OTHER]: '#6b7280'
+  [TAX_CATEGORIES.INCOME]: "#3b82f6",
+  [TAX_CATEGORIES.CORPORATE]: "#059669",
+  [TAX_CATEGORIES.SALES]: "#dc2626",
+  [TAX_CATEGORIES.PROPERTY]: "#7c3aed",
+  [TAX_CATEGORIES.CAPITAL_GAINS]: "#ea580c",
+  [TAX_CATEGORIES.OTHER]: "#6b7280",
 };
 
 const collectionMethodIcons: Record<string, any> = {
-  'automatic_deduction': Zap,
-  'self_assessment': Calculator,
-  'point_of_sale': CreditCard,
-  'withholding_tax': Shield,
-  'annual_return': FileText,
-  'direct_billing': Receipt,
-  'licensing_fee': FileCheck,
-  'fine_penalty': AlertTriangle,
-  'royalty_payment': Mountain,
-  'dividend_distribution': TrendingUp
+  automatic_deduction: Zap,
+  self_assessment: Calculator,
+  point_of_sale: CreditCard,
+  withholding_tax: Shield,
+  annual_return: FileText,
+  direct_billing: Receipt,
+  licensing_fee: FileCheck,
+  fine_penalty: AlertTriangle,
+  royalty_payment: Mountain,
+  dividend_distribution: TrendingUp,
 };
 
 const collectionMethodColors: Record<string, string> = {
-  'automatic_deduction': '#059669',
-  'self_assessment': '#0891b2',
-  'point_of_sale': '#dc2626',
-  'withholding_tax': '#7c3aed',
-  'annual_return': '#ea580c',
-  'direct_billing': '#059669',
-  'licensing_fee': '#0891b2',
-  'fine_penalty': '#dc2626',
-  'royalty_payment': '#7c3aed',
-  'dividend_distribution': '#059669'
+  automatic_deduction: "#059669",
+  self_assessment: "#0891b2",
+  point_of_sale: "#dc2626",
+  withholding_tax: "#7c3aed",
+  annual_return: "#ea580c",
+  direct_billing: "#059669",
+  licensing_fee: "#0891b2",
+  fine_penalty: "#dc2626",
+  royalty_payment: "#7c3aed",
+  dividend_distribution: "#059669",
 };
 
 const getCollectionMethodName = (methodId: string): string => {
   const names: Record<string, string> = {
-    'automatic_deduction': 'Automatic Deduction',
-    'self_assessment': 'Self Assessment',
-    'point_of_sale': 'Point of Sale',
-    'withholding_tax': 'Withholding Tax',
-    'annual_return': 'Annual Return',
-    'direct_billing': 'Direct Billing',
-    'licensing_fee': 'Licensing Fee',
-    'fine_penalty': 'Fine/Penalty',
-    'royalty_payment': 'Royalty Payment',
-    'dividend_distribution': 'Dividend Distribution'
+    automatic_deduction: "Automatic Deduction",
+    self_assessment: "Self Assessment",
+    point_of_sale: "Point of Sale",
+    withholding_tax: "Withholding Tax",
+    annual_return: "Annual Return",
+    direct_billing: "Direct Billing",
+    licensing_fee: "Licensing Fee",
+    fine_penalty: "Fine/Penalty",
+    royalty_payment: "Royalty Payment",
+    dividend_distribution: "Dividend Distribution",
   };
   return names[methodId] || methodId;
 };
 
 const getCollectionMethodDescription = (methodId: string): string => {
   const descriptions: Record<string, string> = {
-    'automatic_deduction': 'Automatically deducted from income/salary',
-    'self_assessment': 'Taxpayers calculate and pay themselves',
-    'point_of_sale': 'Collected at time of purchase/transaction',
-    'withholding_tax': 'Deducted at source by payers',
-    'annual_return': 'Filed annually with tax returns',
-    'direct_billing': 'Government bills directly for services',
-    'licensing_fee': 'Periodic fees for licenses/permits',
-    'fine_penalty': 'One-time fines and penalties',
-    'royalty_payment': 'Payments for resource extraction',
-    'dividend_distribution': 'Profits from state-owned enterprises'
+    automatic_deduction: "Automatically deducted from income/salary",
+    self_assessment: "Taxpayers calculate and pay themselves",
+    point_of_sale: "Collected at time of purchase/transaction",
+    withholding_tax: "Deducted at source by payers",
+    annual_return: "Filed annually with tax returns",
+    direct_billing: "Government bills directly for services",
+    licensing_fee: "Periodic fees for licenses/permits",
+    fine_penalty: "One-time fines and penalties",
+    royalty_payment: "Payments for resource extraction",
+    dividend_distribution: "Profits from state-owned enterprises",
   };
-  return descriptions[methodId] || 'Custom collection method';
+  return descriptions[methodId] || "Custom collection method";
 };
 
 export function TaxCategoryForm({
@@ -149,52 +155,53 @@ export function TaxCategoryForm({
   administeredBy,
   isSyncedFromRevenue = false,
   onApplyStandardBrackets,
-  availableDepartments = []
+  availableDepartments = [],
 }: TaxCategoryFormProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleChange = (field: keyof TaxCategoryInput, value: any) => {
     const updatedData = { ...data, [field]: value };
-    
+
     // Auto-set icon and color based on category
-    if (field === 'categoryName') {
-      const icon = Object.keys(categoryIcons).find(key => 
-        TAX_CATEGORIES[key as keyof typeof TAX_CATEGORIES] === value
+    if (field === "categoryName") {
+      const icon = Object.keys(categoryIcons).find(
+        (key) => TAX_CATEGORIES[key as keyof typeof TAX_CATEGORIES] === value
       );
       if (icon) {
         updatedData.icon = icon;
         updatedData.color = categoryColors[value as keyof typeof categoryColors];
       }
     }
-    
+
     onChange(updatedData);
   };
 
   const addBracket = () => {
     if (!onBracketsChange) return;
-    
+
     const newBracket: TaxBracketInput = {
       // Use the highest defined boundary as the next min. If an open-ended bracket exists,
       // fall back to the highest of its minIncome to keep ordering monotonic.
-      minIncome: brackets.length > 0
-        ? Math.max(
-            ...brackets.map(b => (b.maxIncome !== undefined ? b.maxIncome : b.minIncome))
-          )
-        : 0,
+      minIncome:
+        brackets.length > 0
+          ? Math.max(
+              ...brackets.map((b) => (b.maxIncome !== undefined ? b.maxIncome : b.minIncome))
+            )
+          : 0,
       maxIncome: undefined,
       rate: data.baseRate || 0,
       marginalRate: true,
       isActive: true,
-      priority: brackets.length + 1
+      priority: brackets.length + 1,
     };
-    
+
     onBracketsChange([...brackets, newBracket]);
   };
 
   const updateBracket = (index: number, bracket: TaxBracketInput) => {
     if (!onBracketsChange) return;
-    
+
     const newBrackets = [...brackets];
     newBrackets[index] = bracket;
 
@@ -235,13 +242,13 @@ export function TaxCategoryForm({
         <div className="flex items-center justify-between">
           <Collapsible open={isExpanded} onOpenChange={setIsExpanded} className="flex-1">
             <CollapsibleTrigger asChild>
-              <div className="flex items-center justify-between w-full cursor-pointer">
+              <div className="flex w-full cursor-pointer items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div
-                    className="p-2 rounded-lg"
+                    className="rounded-lg p-2"
                     style={{
-                      backgroundColor: `${data.color || '#6b7280'}20`,
-                      color: data.color || '#6b7280'
+                      backgroundColor: `${data.color || "#6b7280"}20`,
+                      color: data.color || "#6b7280",
                     }}
                   >
                     <IconComponent className="h-5 w-5" />
@@ -257,27 +264,29 @@ export function TaxCategoryForm({
                             <TooltipTrigger>
                               <Badge
                                 variant="outline"
-                                className="bg-green-50 text-green-700 border-green-200"
+                                className="border-green-200 bg-green-50 text-green-700"
                               >
-                                <Link2 className="h-3 w-3 mr-1" />
+                                <Link2 className="mr-1 h-3 w-3" />
                                 Synced
                               </Badge>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>This tax category is synchronized from a government revenue source</p>
+                              <p>
+                                This tax category is synchronized from a government revenue source
+                              </p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       {data.categoryType} • {data.calculationMethod}
                       {data.baseRate && ` • ${data.baseRate}%`}
                     </p>
                     {administeredBy && (
-                      <div className="flex items-center gap-1 mt-1">
-                        <Building className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">
+                      <div className="mt-1 flex items-center gap-1">
+                        <Building className="text-muted-foreground h-3 w-3" />
+                        <span className="text-muted-foreground text-xs">
                           Administered by: <span className="font-medium">{administeredBy}</span>
                         </span>
                       </div>
@@ -287,16 +296,20 @@ export function TaxCategoryForm({
                 <div className="flex items-center gap-2">
                   {isValid ? (
                     <Badge variant="default" className="bg-green-100 text-green-700">
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                      <CheckCircle2 className="mr-1 h-3 w-3" />
                       Valid
                     </Badge>
                   ) : (
                     <Badge variant="destructive">
-                      <AlertCircle className="h-3 w-3 mr-1" />
-                      {hasErrors ? `${Object.keys(errors).length} Errors` : 'Incomplete'}
+                      <AlertCircle className="mr-1 h-3 w-3" />
+                      {hasErrors ? `${Object.keys(errors).length} Errors` : "Incomplete"}
                     </Badge>
                   )}
-                  {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  {isExpanded ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
                 </div>
               </div>
             </CollapsibleTrigger>
@@ -308,22 +321,23 @@ export function TaxCategoryForm({
         <CollapsibleContent>
           <CardContent className="space-y-6">
             {/* Basic Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="categoryName" className="text-sm font-medium">
                   Tax Category *
                 </Label>
                 <Select
                   value={data.categoryName}
-                  onValueChange={(value) => handleChange('categoryName', value)}
+                  onValueChange={(value) => handleChange("categoryName", value)}
                   disabled={isReadOnly}
                 >
-                  <SelectTrigger className={errors.categoryName ? 'border-red-500' : ''}>
+                  <SelectTrigger className={errors.categoryName ? "border-red-500" : ""}>
                     <SelectValue placeholder="Select tax category" />
                   </SelectTrigger>
                   <SelectContent>
                     {Object.values(TAX_CATEGORIES).map((category) => {
-                      const IconComp = categoryIcons[category as keyof typeof categoryIcons] || Settings;
+                      const IconComp =
+                        categoryIcons[category as keyof typeof categoryIcons] || Settings;
                       return (
                         <SelectItem key={category} value={category}>
                           <div className="flex items-center gap-2">
@@ -346,7 +360,7 @@ export function TaxCategoryForm({
                 </Label>
                 <Select
                   value={data.categoryType}
-                  onValueChange={(value) => handleChange('categoryType', value)}
+                  onValueChange={(value) => handleChange("categoryType", value)}
                   disabled={isReadOnly}
                 >
                   <SelectTrigger>
@@ -376,16 +390,16 @@ export function TaxCategoryForm({
                             style={{
                               backgroundColor: `${collectionMethodColors[collectionMethod]}15`,
                               borderColor: collectionMethodColors[collectionMethod],
-                              color: collectionMethodColors[collectionMethod]
+                              color: collectionMethodColors[collectionMethod],
                             }}
                           >
-                            <CollectionMethodIcon className="h-3 w-3 mr-1" />
+                            <CollectionMethodIcon className="mr-1 h-3 w-3" />
                             {getCollectionMethodName(collectionMethod)}
                           </Badge>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p className="font-medium">Collection Method</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-muted-foreground text-xs">
                             {getCollectionMethodDescription(collectionMethod)}
                           </p>
                         </TooltipContent>
@@ -395,7 +409,7 @@ export function TaxCategoryForm({
                 </div>
                 <Select
                   value={data.calculationMethod}
-                  onValueChange={(value) => handleChange('calculationMethod', value)}
+                  onValueChange={(value) => handleChange("calculationMethod", value)}
                   disabled={isReadOnly}
                 >
                   <SelectTrigger>
@@ -411,20 +425,18 @@ export function TaxCategoryForm({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  Base Rate (%)
-                </Label>
-                <div className="px-3 py-2 bg-muted rounded-lg">
+                <Label className="text-sm font-medium">Base Rate (%)</Label>
+                <div className="bg-muted rounded-lg px-3 py-2">
                   <Slider
                     value={[data.baseRate || 0]}
-                    onValueChange={([value]) => handleChange('baseRate', value)}
+                    onValueChange={([value]) => handleChange("baseRate", value)}
                     max={100}
                     min={0}
                     step={0.1}
                     disabled={isReadOnly}
                     className="w-full"
                   />
-                  <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                  <div className="text-muted-foreground mt-1 flex justify-between text-xs">
                     <span>0%</span>
                     <span className="font-medium">{(data.baseRate || 0).toFixed(1)}%</span>
                     <span>100%</span>
@@ -440,8 +452,8 @@ export function TaxCategoryForm({
               </Label>
               <Textarea
                 id="description"
-                value={data.description || ''}
-                onChange={(e) => handleChange('description', e.target.value)}
+                value={data.description || ""}
+                onChange={(e) => handleChange("description", e.target.value)}
                 placeholder="Describe this tax category..."
                 disabled={isReadOnly}
                 className="min-h-[80px]"
@@ -456,26 +468,32 @@ export function TaxCategoryForm({
                 onClick={() => setShowAdvanced(!showAdvanced)}
                 className="text-sm"
               >
-                <Settings className="h-4 w-4 mr-2" />
-                {showAdvanced ? 'Hide' : 'Show'} Advanced Settings
-                {showAdvanced ? <ChevronDown className="h-4 w-4 ml-2" /> : <ChevronRight className="h-4 w-4 ml-2" />}
+                <Settings className="mr-2 h-4 w-4" />
+                {showAdvanced ? "Hide" : "Show"} Advanced Settings
+                {showAdvanced ? (
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                ) : (
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                )}
               </Button>
             </div>
 
             {/* Advanced Settings */}
             {showAdvanced && (
-              <div className="space-y-6 pt-4 border-t">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-6 border-t pt-4">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   {/* Amount Limits */}
                   <div className="space-y-4">
-                    <h5 className="font-medium text-sm">Amount Limits</h5>
-                    
+                    <h5 className="text-sm font-medium">Amount Limits</h5>
+
                     <div className="space-y-2">
                       <Label className="text-xs">Minimum Taxable Amount</Label>
                       <Input
                         type="number"
-                        value={data.minimumAmount || ''}
-                        onChange={(e) => handleChange('minimumAmount', parseFloat(e.target.value) || undefined)}
+                        value={data.minimumAmount || ""}
+                        onChange={(e) =>
+                          handleChange("minimumAmount", parseFloat(e.target.value) || undefined)
+                        }
                         placeholder="0"
                         disabled={isReadOnly}
                       />
@@ -485,8 +503,10 @@ export function TaxCategoryForm({
                       <Label className="text-xs">Maximum Taxable Amount</Label>
                       <Input
                         type="number"
-                        value={data.maximumAmount || ''}
-                        onChange={(e) => handleChange('maximumAmount', parseFloat(e.target.value) || undefined)}
+                        value={data.maximumAmount || ""}
+                        onChange={(e) =>
+                          handleChange("maximumAmount", parseFloat(e.target.value) || undefined)
+                        }
                         placeholder="No limit"
                         disabled={isReadOnly}
                       />
@@ -495,14 +515,16 @@ export function TaxCategoryForm({
 
                   {/* Exemptions and Deductions */}
                   <div className="space-y-4">
-                    <h5 className="font-medium text-sm">Exemptions & Deductions</h5>
-                    
+                    <h5 className="text-sm font-medium">Exemptions & Deductions</h5>
+
                     <div className="space-y-2">
                       <Label className="text-xs">Standard Exemption Amount</Label>
                       <Input
                         type="number"
-                        value={data.exemptionAmount || ''}
-                        onChange={(e) => handleChange('exemptionAmount', parseFloat(e.target.value) || undefined)}
+                        value={data.exemptionAmount || ""}
+                        onChange={(e) =>
+                          handleChange("exemptionAmount", parseFloat(e.target.value) || undefined)
+                        }
                         placeholder="0"
                         disabled={isReadOnly}
                       />
@@ -515,7 +537,7 @@ export function TaxCategoryForm({
                       <Switch
                         id="deductionAllowed"
                         checked={data.deductionAllowed}
-                        onCheckedChange={(checked) => handleChange('deductionAllowed', checked)}
+                        onCheckedChange={(checked) => handleChange("deductionAllowed", checked)}
                         disabled={isReadOnly}
                       />
                     </div>
@@ -525,8 +547,13 @@ export function TaxCategoryForm({
                         <Label className="text-xs">Standard Deduction Amount</Label>
                         <Input
                           type="number"
-                          value={data.standardDeduction || ''}
-                          onChange={(e) => handleChange('standardDeduction', parseFloat(e.target.value) || undefined)}
+                          value={data.standardDeduction || ""}
+                          onChange={(e) =>
+                            handleChange(
+                              "standardDeduction",
+                              parseFloat(e.target.value) || undefined
+                            )
+                          }
                           placeholder="0"
                           disabled={isReadOnly}
                         />
@@ -536,22 +563,20 @@ export function TaxCategoryForm({
                 </div>
 
                 {/* Priority and Status */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">
-                      Priority Level
-                    </Label>
-                    <div className="px-3 py-2 bg-muted rounded-lg">
+                    <Label className="text-sm font-medium">Priority Level</Label>
+                    <div className="bg-muted rounded-lg px-3 py-2">
                       <Slider
                         value={[data.priority]}
-                        onValueChange={([value]) => handleChange('priority', value)}
+                        onValueChange={([value]) => handleChange("priority", value)}
                         max={100}
                         min={1}
                         step={1}
                         disabled={isReadOnly}
                         className="w-full"
                       />
-                      <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                      <div className="text-muted-foreground mt-1 flex justify-between text-xs">
                         <span>Low (1)</span>
                         <span className="font-medium">{data.priority}</span>
                         <span>High (100)</span>
@@ -566,7 +591,7 @@ export function TaxCategoryForm({
                     <Switch
                       id="isActive"
                       checked={data.isActive}
-                      onCheckedChange={(checked) => handleChange('isActive', checked)}
+                      onCheckedChange={(checked) => handleChange("isActive", checked)}
                       disabled={isReadOnly}
                     />
                   </div>
@@ -575,8 +600,8 @@ export function TaxCategoryForm({
             )}
 
             {/* Tax Brackets */}
-            {showBrackets && data.calculationMethod === 'progressive' && (
-              <div className="space-y-4 pt-4 border-t">
+            {showBrackets && data.calculationMethod === "progressive" && (
+              <div className="space-y-4 border-t pt-4">
                 <div className="flex items-center justify-between">
                   <h5 className="font-medium">Tax Brackets</h5>
                   <div className="flex items-center gap-2">
@@ -588,9 +613,9 @@ export function TaxCategoryForm({
                               variant="outline"
                               size="sm"
                               onClick={onApplyStandardBrackets}
-                              className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                              className="border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
                             >
-                              <Sparkles className="h-4 w-4 mr-2" />
+                              <Sparkles className="mr-2 h-4 w-4" />
                               Apply Standard Brackets
                             </Button>
                           </TooltipTrigger>
@@ -601,12 +626,8 @@ export function TaxCategoryForm({
                       </TooltipProvider>
                     )}
                     {!isReadOnly && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={addBracket}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
+                      <Button variant="outline" size="sm" onClick={addBracket}>
+                        <Plus className="mr-2 h-4 w-4" />
                         Add Bracket
                       </Button>
                     )}
@@ -615,30 +636,34 @@ export function TaxCategoryForm({
 
                 <div className="space-y-3">
                   {brackets.map((bracket, index) => (
-                    <div key={index} className="p-4 bg-muted rounded-lg">
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div key={index} className="bg-muted rounded-lg p-4">
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                         <div className="space-y-2">
                           <Label className="text-xs">Min Income</Label>
                           <Input
                             type="number"
                             value={bracket.minIncome}
-                            onChange={(e) => updateBracket(index, {
-                              ...bracket,
-                              minIncome: parseFloat(e.target.value) || 0
-                            })}
+                            onChange={(e) =>
+                              updateBracket(index, {
+                                ...bracket,
+                                minIncome: parseFloat(e.target.value) || 0,
+                              })
+                            }
                             disabled={isReadOnly}
                           />
                         </div>
-                        
+
                         <div className="space-y-2">
                           <Label className="text-xs">Max Income</Label>
                           <Input
                             type="number"
-                            value={bracket.maxIncome || ''}
-                            onChange={(e) => updateBracket(index, {
-                              ...bracket,
-                              maxIncome: parseFloat(e.target.value) || undefined
-                            })}
+                            value={bracket.maxIncome || ""}
+                            onChange={(e) =>
+                              updateBracket(index, {
+                                ...bracket,
+                                maxIncome: parseFloat(e.target.value) || undefined,
+                              })
+                            }
                             placeholder="No limit"
                             disabled={isReadOnly}
                           />
@@ -649,10 +674,12 @@ export function TaxCategoryForm({
                           <Input
                             type="number"
                             value={bracket.rate}
-                            onChange={(e) => updateBracket(index, {
-                              ...bracket,
-                              rate: parseFloat(e.target.value) || 0
-                            })}
+                            onChange={(e) =>
+                              updateBracket(index, {
+                                ...bracket,
+                                rate: parseFloat(e.target.value) || 0,
+                              })
+                            }
                             step="0.1"
                             disabled={isReadOnly}
                           />
@@ -678,14 +705,10 @@ export function TaxCategoryForm({
 
             {/* Actions */}
             {!isReadOnly && (
-              <div className="flex items-center justify-end gap-2 pt-4 border-t">
+              <div className="flex items-center justify-end gap-2 border-t pt-4">
                 {onDelete && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={onDelete}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
+                  <Button variant="destructive" size="sm" onClick={onDelete}>
+                    <Trash2 className="mr-2 h-4 w-4" />
                     Delete Category
                   </Button>
                 )}

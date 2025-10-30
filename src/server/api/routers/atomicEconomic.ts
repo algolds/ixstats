@@ -156,9 +156,7 @@ export const atomicEconomicRouter = createTRPCRouter({
       });
 
       // Create a map of existing components
-      const existingMap = new Map(
-        existing.map((comp) => [comp.componentType, comp])
-      );
+      const existingMap = new Map(existing.map((comp) => [comp.componentType, comp]));
 
       const results = [];
 
@@ -270,10 +268,7 @@ export const atomicEconomicRouter = createTRPCRouter({
         };
       }
 
-      const totalEffectiveness = components.reduce(
-        (sum, comp) => sum + comp.effectivenessScore,
-        0
-      );
+      const totalEffectiveness = components.reduce((sum, comp) => sum + comp.effectivenessScore, 0);
       const averageEffectiveness = totalEffectiveness / components.length;
 
       const sortedComponents = components.sort(
@@ -289,4 +284,3 @@ export const atomicEconomicRouter = createTRPCRouter({
       };
     }),
 });
-

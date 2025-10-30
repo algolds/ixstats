@@ -3,7 +3,7 @@
  * Analyzes user context and provides intelligent recommendations for notification delivery
  */
 
-import { IxTime } from '~/lib/ixtime';
+import { IxTime } from "~/lib/ixtime";
 import type {
   NotificationContext,
   UnifiedNotification,
@@ -12,7 +12,7 @@ import type {
   NotificationCategory,
   UserNotificationPreferences,
   NotificationEngagement,
-} from '~/types/unified-notifications';
+} from "~/types/unified-notifications";
 
 // Context analysis results
 interface ContextAnalysis {
@@ -54,14 +54,14 @@ interface BatchingRecommendation {
   batchWindow: number; // milliseconds
 }
 
-type FocusLevel = 'deep-work' | 'focused' | 'normal' | 'browsing' | 'distracted';
-type ActivityPattern = 'highly-active' | 'active' | 'moderate' | 'passive' | 'idle';
-type EngagementLevel = 'high' | 'medium' | 'low' | 'disengaged';
-type CognitiveLoad = 'overloaded' | 'high' | 'moderate' | 'low' | 'available';
-type TimeContext = 'deep-work-hours' | 'business-hours' | 'evening' | 'night' | 'early-morning';
-type DayContext = 'weekday' | 'weekend' | 'holiday';
-type SystemLoad = 'heavy' | 'moderate' | 'light';
-type NetworkCondition = 'excellent' | 'good' | 'poor' | 'offline';
+type FocusLevel = "deep-work" | "focused" | "normal" | "browsing" | "distracted";
+type ActivityPattern = "highly-active" | "active" | "moderate" | "passive" | "idle";
+type EngagementLevel = "high" | "medium" | "low" | "disengaged";
+type CognitiveLoad = "overloaded" | "high" | "moderate" | "low" | "available";
+type TimeContext = "deep-work-hours" | "business-hours" | "evening" | "night" | "early-morning";
+type DayContext = "weekday" | "weekend" | "holiday";
+type SystemLoad = "heavy" | "moderate" | "light";
+type NetworkCondition = "excellent" | "good" | "poor" | "offline";
 
 interface SessionContext {
   duration: number; // milliseconds
@@ -96,7 +96,7 @@ export class ContextIntelligenceEngine {
   private readonly MIN_SAMPLES_FOR_LEARNING = 10;
 
   constructor() {
-    console.log('[ContextIntelligenceEngine] Initialized');
+    console.log("[ContextIntelligenceEngine] Initialized");
   }
 
   /**
@@ -109,7 +109,7 @@ export class ContextIntelligenceEngine {
   ): Promise<ContextAnalysis> {
     const userState = this.analyzeUserState(context);
     const environmentalFactors = this.analyzeEnvironmentalFactors(context);
-    
+
     const contextualRelevance = this.calculateContextualRelevance(
       notification,
       context,
@@ -157,7 +157,7 @@ export class ContextIntelligenceEngine {
     engagement: NotificationEngagement
   ) {
     const userId = context.userId;
-    
+
     // Store engagement history
     if (!this.engagementHistory.has(userId)) {
       this.engagementHistory.set(userId, []);
@@ -215,56 +215,58 @@ export class ContextIntelligenceEngine {
 
   private determineFocusLevel(context: NotificationContext): FocusLevel {
     const { recentActions, sessionDuration, currentRoute } = context;
-    
+
     // Deep work indicators
-    if (sessionDuration > 30 * 60 * 1000 && // 30+ minutes
-        recentActions.length < 5 && // Few actions
-        currentRoute.includes('executive')) {
-      return 'deep-work';
+    if (
+      sessionDuration > 30 * 60 * 1000 && // 30+ minutes
+      recentActions.length < 5 && // Few actions
+      currentRoute.includes("executive")
+    ) {
+      return "deep-work";
     }
 
     // Focused work indicators
     if (recentActions.length < 10 && sessionDuration > 10 * 60 * 1000) {
-      return 'focused';
+      return "focused";
     }
 
     // Distracted indicators
-    if (recentActions.length > 20 && recentActions.includes('tab-switch')) {
-      return 'distracted';
+    if (recentActions.length > 20 && recentActions.includes("tab-switch")) {
+      return "distracted";
     }
 
     // Browsing indicators
-    if (recentActions.includes('navigation') || recentActions.includes('search')) {
-      return 'browsing';
+    if (recentActions.includes("navigation") || recentActions.includes("search")) {
+      return "browsing";
     }
 
-    return 'normal';
+    return "normal";
   }
 
   private determineActivityPattern(context: NotificationContext): ActivityPattern {
     const actionCount = context.recentActions.length;
     const timeWindow = 10 * 60 * 1000; // 10 minutes
-    
-    if (actionCount > 30) return 'highly-active';
-    if (actionCount > 20) return 'active';
-    if (actionCount > 10) return 'moderate';
-    if (actionCount > 0) return 'passive';
-    return 'idle';
+
+    if (actionCount > 30) return "highly-active";
+    if (actionCount > 20) return "active";
+    if (actionCount > 10) return "moderate";
+    if (actionCount > 0) return "passive";
+    return "idle";
   }
 
   private determineEngagementLevel(context: NotificationContext): EngagementLevel {
     const lastInteractionAge = Date.now() - (context.sessionDuration - 60000);
-    
-    if (lastInteractionAge < 30000) return 'high'; // Active in last 30s
-    if (lastInteractionAge < 120000) return 'medium'; // Active in last 2min
-    if (lastInteractionAge < 300000) return 'low'; // Active in last 5min
-    return 'disengaged';
+
+    if (lastInteractionAge < 30000) return "high"; // Active in last 30s
+    if (lastInteractionAge < 120000) return "medium"; // Active in last 2min
+    if (lastInteractionAge < 300000) return "low"; // Active in last 5min
+    return "disengaged";
   }
 
   private analyzeSessionContext(context: NotificationContext): SessionContext {
     return {
       duration: context.sessionDuration,
-      pageViews: context.recentActions.filter(a => a === 'navigation').length,
+      pageViews: context.recentActions.filter((a) => a === "navigation").length,
       actionCount: context.recentActions.length,
       lastInteraction: Date.now() - 60000, // Simplified
       routeStability: this.calculateRouteStability(context),
@@ -273,7 +275,7 @@ export class ContextIntelligenceEngine {
 
   private calculateRouteStability(context: NotificationContext): number {
     // Simplified route stability calculation
-    const navigationActions = context.recentActions.filter(a => a === 'navigation').length;
+    const navigationActions = context.recentActions.filter((a) => a === "navigation").length;
     return Math.max(0, 10 - navigationActions) * 10; // 0-100 score
   }
 
@@ -285,24 +287,24 @@ export class ContextIntelligenceEngine {
 
     // High activity increases load
     if (sessionContext.actionCount > 20) loadScore += 30;
-    
+
     // Multiple tabs/features increase load
     if (context.activeFeatures.length > 3) loadScore += 20;
-    
+
     // Executive mode increases load
     if (context.isExecutiveMode) loadScore += 15;
-    
+
     // Recent page changes increase load
     if (sessionContext.pageViews > 5) loadScore += 20;
-    
+
     // Low route stability increases load
     if (sessionContext.routeStability < 50) loadScore += 15;
 
-    if (loadScore > 80) return 'overloaded';
-    if (loadScore > 60) return 'high';
-    if (loadScore > 40) return 'moderate';
-    if (loadScore > 20) return 'low';
-    return 'available';
+    if (loadScore > 80) return "overloaded";
+    if (loadScore > 60) return "high";
+    if (loadScore > 40) return "moderate";
+    if (loadScore > 20) return "low";
+    return "available";
   }
 
   private analyzeEnvironmentalFactors(context: NotificationContext): EnvironmentalFactors {
@@ -323,17 +325,17 @@ export class ContextIntelligenceEngine {
 
   private analyzeTimeOfDay(): TimeContext {
     const hour = new Date().getHours();
-    
-    if (hour >= 6 && hour < 9) return 'early-morning';
-    if (hour >= 9 && hour < 12) return 'deep-work-hours';
-    if (hour >= 12 && hour < 17) return 'business-hours';
-    if (hour >= 17 && hour < 22) return 'evening';
-    return 'night';
+
+    if (hour >= 6 && hour < 9) return "early-morning";
+    if (hour >= 9 && hour < 12) return "deep-work-hours";
+    if (hour >= 12 && hour < 17) return "business-hours";
+    if (hour >= 17 && hour < 22) return "evening";
+    return "night";
   }
 
   private analyzeDayOfWeek(): DayContext {
     const day = new Date().getDay();
-    return (day === 0 || day === 6) ? 'weekend' : 'weekday';
+    return day === 0 || day === 6 ? "weekend" : "weekday";
   }
 
   private analyzeIxTimeContext(context: NotificationContext): IxTimeContext {
@@ -348,15 +350,15 @@ export class ContextIntelligenceEngine {
   private assessSystemLoad(context: NotificationContext): SystemLoad {
     // Simplified system load assessment
     const featureCount = context.activeFeatures.length;
-    
-    if (featureCount > 5) return 'heavy';
-    if (featureCount > 3) return 'moderate';
-    return 'light';
+
+    if (featureCount > 5) return "heavy";
+    if (featureCount > 3) return "moderate";
+    return "light";
   }
 
   private assessNetworkCondition(context: NotificationContext): NetworkCondition {
     // Simplified - in real implementation would check network APIs
-    return 'good';
+    return "good";
   }
 
   private calculateContextualRelevance(
@@ -368,12 +370,15 @@ export class ContextIntelligenceEngine {
     let relevance = 50; // Base relevance
 
     // Category-route matching
-    const routeRelevance = this.calculateRouteRelevance(notification.category, context.currentRoute);
+    const routeRelevance = this.calculateRouteRelevance(
+      notification.category,
+      context.currentRoute
+    );
     relevance += routeRelevance * 0.3;
 
     // Executive mode relevance
     if (context.isExecutiveMode) {
-      const executiveCategories = ['economic', 'governance', 'security', 'crisis'];
+      const executiveCategories = ["economic", "governance", "security", "crisis"];
       if (executiveCategories.includes(notification.category)) {
         relevance += 20;
       }
@@ -401,19 +406,19 @@ export class ContextIntelligenceEngine {
 
   private calculateRouteRelevance(category: NotificationCategory, route: string): number {
     const routeMatches: Record<NotificationCategory, string[]> = {
-      economic: ['mycountry', 'executive', 'economy', 'trade'],
-      governance: ['mycountry-new', 'executive', 'admin', 'government'],
-      diplomatic: ['executive', 'diplomatic', 'relations'],
-      security: ['executive', 'security', 'crisis', 'military'],
-      achievement: ['mycountry', 'achievements', 'rankings'],
-      system: ['admin', 'settings', 'global'],
-      social: ['mycountry', 'social', 'demographics'],
-      crisis: ['executive', 'crisis', 'emergency'],
-      opportunity: ['mycountry', 'opportunities', 'growth'],
-      policy: ['mycountry', 'policies', 'governance'],
-      intelligence: ['executive', 'intelligence', 'security'],
-      global: ['global', 'world', 'system'],
-      military: ['mycountry', 'military', 'security', 'defense'],
+      economic: ["mycountry", "executive", "economy", "trade"],
+      governance: ["mycountry-new", "executive", "admin", "government"],
+      diplomatic: ["executive", "diplomatic", "relations"],
+      security: ["executive", "security", "crisis", "military"],
+      achievement: ["mycountry", "achievements", "rankings"],
+      system: ["admin", "settings", "global"],
+      social: ["mycountry", "social", "demographics"],
+      crisis: ["executive", "crisis", "emergency"],
+      opportunity: ["mycountry", "opportunities", "growth"],
+      policy: ["mycountry", "policies", "governance"],
+      intelligence: ["executive", "intelligence", "security"],
+      global: ["global", "world", "system"],
+      military: ["mycountry", "military", "security", "defense"],
     };
 
     const relevantRoutes = routeMatches[category] || [];
@@ -427,17 +432,17 @@ export class ContextIntelligenceEngine {
     let relevance = 10;
 
     // Business hours boost for important notifications
-    if (factors.timeOfDay === 'business-hours' && notification.priority === 'high') {
+    if (factors.timeOfDay === "business-hours" && notification.priority === "high") {
       relevance += 15;
     }
 
     // Evening boost for achievements
-    if (factors.timeOfDay === 'evening' && notification.category === 'achievement') {
+    if (factors.timeOfDay === "evening" && notification.category === "achievement") {
       relevance += 10;
     }
 
     // Night penalty for non-critical
-    if (factors.timeOfDay === 'night' && notification.priority !== 'critical') {
+    if (factors.timeOfDay === "night" && notification.priority !== "critical") {
       relevance -= 20;
     }
 
@@ -451,21 +456,21 @@ export class ContextIntelligenceEngine {
     let relevance = 10;
 
     // Cognitive load adjustments
-    if (userState.cognitiveLoad === 'overloaded' && notification.priority !== 'critical') {
+    if (userState.cognitiveLoad === "overloaded" && notification.priority !== "critical") {
       relevance -= 30;
     }
 
-    if (userState.cognitiveLoad === 'available') {
+    if (userState.cognitiveLoad === "available") {
       relevance += 15;
     }
 
     // Focus level adjustments
-    if (userState.focusLevel === 'deep-work' && notification.priority !== 'critical') {
+    if (userState.focusLevel === "deep-work" && notification.priority !== "critical") {
       relevance -= 25;
     }
 
     // Engagement level adjustments
-    if (userState.currentEngagement === 'high') {
+    if (userState.currentEngagement === "high") {
       relevance += 10;
     }
 
@@ -480,20 +485,20 @@ export class ContextIntelligenceEngine {
     userPreferences: UserNotificationPreferences
   ): DeliveryMethod {
     // Critical always gets dynamic island or modal
-    if (notification.priority === 'critical') {
-      return userState.focusLevel === 'deep-work' ? 'modal' : 'dynamic-island';
+    if (notification.priority === "critical") {
+      return userState.focusLevel === "deep-work" ? "modal" : "dynamic-island";
     }
 
     // Deep work mode - only silent or command-palette
-    if (userState.focusLevel === 'deep-work' || userState.cognitiveLoad === 'overloaded') {
-      return notification.priority === 'high' ? 'command-palette' : 'silent';
+    if (userState.focusLevel === "deep-work" || userState.cognitiveLoad === "overloaded") {
+      return notification.priority === "high" ? "command-palette" : "silent";
     }
 
     // Executive mode preferences
     if (context.isExecutiveMode) {
-      const executiveCategories = ['economic', 'governance', 'security'];
+      const executiveCategories = ["economic", "governance", "security"];
       if (executiveCategories.includes(notification.category)) {
-        return 'dynamic-island';
+        return "dynamic-island";
       }
     }
 
@@ -505,11 +510,11 @@ export class ContextIntelligenceEngine {
     }
 
     // Default based on engagement level
-    if (userState.currentEngagement === 'high') {
-      return 'dynamic-island';
+    if (userState.currentEngagement === "high") {
+      return "dynamic-island";
     }
 
-    return 'toast';
+    return "toast";
   }
 
   private calculateUrgencyMultiplier(
@@ -529,20 +534,20 @@ export class ContextIntelligenceEngine {
     multiplier = priorityMultipliers[notification.priority];
 
     // User state adjustments
-    if (userState.cognitiveLoad === 'overloaded') {
+    if (userState.cognitiveLoad === "overloaded") {
       multiplier *= 0.5; // Reduce urgency when overloaded
     }
 
-    if (userState.focusLevel === 'deep-work') {
+    if (userState.focusLevel === "deep-work") {
       multiplier *= 0.3; // Significantly reduce during deep work
     }
 
-    if (userState.currentEngagement === 'disengaged') {
+    if (userState.currentEngagement === "disengaged") {
       multiplier *= 1.2; // Increase urgency to re-engage
     }
 
     // Time-based adjustments
-    if (environmentalFactors.timeOfDay === 'night') {
+    if (environmentalFactors.timeOfDay === "night") {
       multiplier *= 0.5; // Reduce urgency at night
     }
 
@@ -561,33 +566,33 @@ export class ContextIntelligenceEngine {
     environmentalFactors: EnvironmentalFactors
   ): SuppressionRecommendation {
     let shouldSuppress = false;
-    let reason = '';
+    let reason = "";
     let alternativeDeliveryTime: number | undefined;
     let batchingRecommendation: BatchingRecommendation | undefined;
 
     // Deep work suppression
-    if (userState.focusLevel === 'deep-work' && notification.priority !== 'critical') {
+    if (userState.focusLevel === "deep-work" && notification.priority !== "critical") {
       shouldSuppress = true;
-      reason = 'User in deep work mode';
-      alternativeDeliveryTime = Date.now() + (15 * 60 * 1000); // 15 minutes
+      reason = "User in deep work mode";
+      alternativeDeliveryTime = Date.now() + 15 * 60 * 1000; // 15 minutes
     }
 
     // Cognitive overload suppression
-    if (userState.cognitiveLoad === 'overloaded' && notification.priority === 'low') {
+    if (userState.cognitiveLoad === "overloaded" && notification.priority === "low") {
       shouldSuppress = true;
-      reason = 'User cognitive load too high';
-      alternativeDeliveryTime = Date.now() + (30 * 60 * 1000); // 30 minutes
+      reason = "User cognitive load too high";
+      alternativeDeliveryTime = Date.now() + 30 * 60 * 1000; // 30 minutes
     }
 
     // Night time suppression
-    if (environmentalFactors.timeOfDay === 'night' && notification.priority === 'low') {
+    if (environmentalFactors.timeOfDay === "night" && notification.priority === "low") {
       shouldSuppress = true;
-      reason = 'Night time - low priority notification';
-      alternativeDeliveryTime = Date.now() + (8 * 60 * 60 * 1000); // 8 hours
+      reason = "Night time - low priority notification";
+      alternativeDeliveryTime = Date.now() + 8 * 60 * 60 * 1000; // 8 hours
     }
 
     // Batching recommendation
-    const batchableCategories = ['achievement', 'system', 'opportunity'];
+    const batchableCategories = ["achievement", "system", "opportunity"];
     if (batchableCategories.includes(notification.category) && !shouldSuppress) {
       batchingRecommendation = {
         shouldBatch: true,
@@ -614,7 +619,7 @@ export class ContextIntelligenceEngine {
     engagement: NotificationEngagement
   ) {
     let pattern = this.userPatterns.get(userId);
-    
+
     if (!pattern) {
       pattern = {
         userId,
@@ -629,7 +634,7 @@ export class ContextIntelligenceEngine {
 
     // Update preferred delivery times
     const hour = new Date().getHours();
-    if (engagement.action === 'clicked' || engagement.action === 'action-taken') {
+    if (engagement.action === "clicked" || engagement.action === "action-taken") {
       pattern.preferredDeliveryTimes.push(hour);
     }
 
@@ -643,14 +648,14 @@ export class ContextIntelligenceEngine {
     }
 
     // Update dismissal patterns
-    if (engagement.action === 'dismissed') {
+    if (engagement.action === "dismissed") {
       const current = pattern.dismissalPatterns.get(notification.category) || 0;
       pattern.dismissalPatterns.set(notification.category, current + 1);
     }
 
     // Update contextual preferences
-    const contextKey = `${context.isExecutiveMode ? 'exec' : 'public'}-${context.currentRoute}`;
-    if (engagement.action === 'clicked') {
+    const contextKey = `${context.isExecutiveMode ? "exec" : "public"}-${context.currentRoute}`;
+    if (engagement.action === "clicked") {
       pattern.contextualPreferences.set(contextKey, notification.deliveryMethod);
     }
 
@@ -663,22 +668,24 @@ export class ContextIntelligenceEngine {
     // Clean engagement history
     const engagements = this.engagementHistory.get(userId);
     if (engagements) {
-      const filtered = engagements.filter(e => e.timestamp > cutoff);
+      const filtered = engagements.filter((e) => e.timestamp > cutoff);
       this.engagementHistory.set(userId, filtered);
     }
 
     // Clean context history
     const contexts = this.contextHistory.get(userId);
     if (contexts) {
-      const filtered = contexts.filter(c => c.realTime > cutoff);
+      const filtered = contexts.filter((c) => c.realTime > cutoff);
       this.contextHistory.set(userId, filtered);
     }
   }
 
   private hasEnoughDataForLearning(pattern: UserBehaviorPattern): boolean {
-    const totalEngagements = Array.from(pattern.responseTimes.values())
-      .reduce((sum, times) => sum + times.length, 0);
-    
+    const totalEngagements = Array.from(pattern.responseTimes.values()).reduce(
+      (sum, times) => sum + times.length,
+      0
+    );
+
     return totalEngagements >= this.MIN_SAMPLES_FOR_LEARNING;
   }
 
@@ -703,21 +710,24 @@ export class ContextIntelligenceEngine {
   private extractCategoryPreferences(pattern: UserBehaviorPattern): any {
     // Convert dismissal patterns to category preferences
     const preferences: any = {};
-    
+
     for (const [category, dismissals] of pattern.dismissalPatterns) {
       const engagementCount = this.getTotalEngagementsForCategory(pattern, category);
       const dismissalRate = engagementCount > 0 ? dismissals / engagementCount : 0;
-      
+
       preferences[category] = {
         enabled: dismissalRate < 0.7, // Disable if >70% dismissal rate
-        minPriority: dismissalRate > 0.5 ? 'high' : 'medium',
+        minPriority: dismissalRate > 0.5 ? "high" : "medium",
       };
     }
 
     return preferences;
   }
 
-  private getTotalEngagementsForCategory(pattern: UserBehaviorPattern, category: NotificationCategory): number {
+  private getTotalEngagementsForCategory(
+    pattern: UserBehaviorPattern,
+    category: NotificationCategory
+  ): number {
     // Simplified - would need more sophisticated tracking in practice
     return 10; // Placeholder
   }

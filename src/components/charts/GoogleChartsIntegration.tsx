@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useEffect, useRef, useMemo } from 'react';
-import { Chart } from 'react-google-charts';
-import { motion } from 'framer-motion';
-import { cn } from '~/lib/utils';
-import { GlassChart, chartTheme } from './GlassChart';
-import { generateChartColors } from '~/lib/builder-theme-utils';
+import React, { useEffect, useRef, useMemo } from "react";
+import { Chart } from "react-google-charts";
+import { motion } from "framer-motion";
+import { cn } from "~/lib/utils";
+import { GlassChart, chartTheme } from "./GlassChart";
+import { generateChartColors } from "~/lib/builder-theme-utils";
 
 interface BaseGoogleChartProps {
   data: any[][];
@@ -15,30 +15,30 @@ interface BaseGoogleChartProps {
   className?: string;
   loading?: boolean;
   error?: string;
-  theme?: 'default' | 'gold' | 'blue' | 'emerald' | 'purple';
+  theme?: "default" | "gold" | "blue" | "emerald" | "purple";
   options?: any;
 }
 
 interface GoogleLineChartProps extends BaseGoogleChartProps {
-  curveType?: 'function' | 'none';
+  curveType?: "function" | "none";
   pointSize?: number;
   lineWidth?: number;
 }
 
 interface GoogleBarChartProps extends BaseGoogleChartProps {
-  orientation?: 'horizontal' | 'vertical';
+  orientation?: "horizontal" | "vertical";
   stacked?: boolean;
 }
 
 interface GooglePieChartProps extends BaseGoogleChartProps {
   is3D?: boolean;
   pieHole?: number;
-  pieSliceText?: 'percentage' | 'value' | 'label' | 'none';
+  pieSliceText?: "percentage" | "value" | "label" | "none";
 }
 
 interface GoogleGeoChartProps extends BaseGoogleChartProps {
   region?: string;
-  displayMode?: 'regions' | 'markers';
+  displayMode?: "regions" | "markers";
   colorAxis?: {
     minValue?: number;
     maxValue?: number;
@@ -58,84 +58,84 @@ interface GoogleGaugeChartProps extends BaseGoogleChartProps {
 // Get theme-aware Google Charts options
 function getGoogleChartTheme(theme: string, baseOptions: any = {}) {
   const themeColors = {
-    default: generateChartColors(10, 'primary'),
-    gold: ['#F59E0B', '#FBBF24', '#FCD34D', '#FDE68A'],
-    blue: ['#3B82F6', '#60A5FA', '#93C5FD', '#DBEAFE'],
-    emerald: ['#10B981', '#34D399', '#6EE7B7', '#A7F3D0'],
-    purple: ['#8B5CF6', '#A78BFA', '#C4B5FD', '#DDD6FE']
+    default: generateChartColors(10, "primary"),
+    gold: ["#F59E0B", "#FBBF24", "#FCD34D", "#FDE68A"],
+    blue: ["#3B82F6", "#60A5FA", "#93C5FD", "#DBEAFE"],
+    emerald: ["#10B981", "#34D399", "#6EE7B7", "#A7F3D0"],
+    purple: ["#8B5CF6", "#A78BFA", "#C4B5FD", "#DDD6FE"],
   };
 
   return {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     chartArea: {
-      backgroundColor: 'transparent',
+      backgroundColor: "transparent",
       left: 50,
       top: 50,
-      width: '85%',
-      height: '75%'
+      width: "85%",
+      height: "75%",
     },
     legend: {
       textStyle: {
         color: chartTheme.text.secondary,
         fontSize: 12,
-        fontName: 'Inter, system-ui, sans-serif'
+        fontName: "Inter, system-ui, sans-serif",
       },
-      position: 'bottom',
-      alignment: 'center'
+      position: "bottom",
+      alignment: "center",
     },
     titleTextStyle: {
       color: chartTheme.text.primary,
       fontSize: 16,
-      fontName: 'Inter, system-ui, sans-serif',
-      bold: true
+      fontName: "Inter, system-ui, sans-serif",
+      bold: true,
     },
     hAxis: {
       textStyle: {
         color: chartTheme.text.secondary,
         fontSize: 11,
-        fontName: 'Inter, system-ui, sans-serif'
+        fontName: "Inter, system-ui, sans-serif",
       },
       titleTextStyle: {
         color: chartTheme.text.secondary,
         fontSize: 12,
-        fontName: 'Inter, system-ui, sans-serif'
+        fontName: "Inter, system-ui, sans-serif",
       },
       gridlines: {
         color: chartTheme.grid.stroke,
-        count: 5
+        count: 5,
       },
       minorGridlines: {
-        color: 'transparent'
-      }
+        color: "transparent",
+      },
     },
     vAxis: {
       textStyle: {
         color: chartTheme.text.secondary,
         fontSize: 11,
-        fontName: 'Inter, system-ui, sans-serif'
+        fontName: "Inter, system-ui, sans-serif",
       },
       titleTextStyle: {
         color: chartTheme.text.secondary,
         fontSize: 12,
-        fontName: 'Inter, system-ui, sans-serif'
+        fontName: "Inter, system-ui, sans-serif",
       },
       gridlines: {
         color: chartTheme.grid.stroke,
-        count: 5
+        count: 5,
       },
       minorGridlines: {
-        color: 'transparent'
-      }
+        color: "transparent",
+      },
     },
     colors: themeColors[theme as keyof typeof themeColors] || themeColors.default,
     tooltip: {
       textStyle: {
         color: chartTheme.text.primary,
         fontSize: 12,
-        fontName: 'Inter, system-ui, sans-serif'
-      }
+        fontName: "Inter, system-ui, sans-serif",
+      },
     },
-    ...baseOptions
+    ...baseOptions,
   };
 }
 
@@ -148,20 +148,23 @@ export function GoogleLineChart({
   className,
   loading,
   error,
-  theme = 'default',
-  curveType = 'function',
+  theme = "default",
+  curveType = "function",
   pointSize = 4,
   lineWidth = 2,
-  options = {}
+  options = {},
 }: GoogleLineChartProps) {
-  const chartOptions = useMemo(() => 
-    getGoogleChartTheme(theme, {
-      curveType,
-      pointSize,
-      lineWidth,
-      interpolateNulls: true,
-      ...options
-    }), [theme, curveType, pointSize, lineWidth, options]);
+  const chartOptions = useMemo(
+    () =>
+      getGoogleChartTheme(theme, {
+        curveType,
+        pointSize,
+        lineWidth,
+        interpolateNulls: true,
+        ...options,
+      }),
+    [theme, curveType, pointSize, lineWidth, options]
+  );
 
   return (
     <GlassChart
@@ -180,9 +183,9 @@ export function GoogleLineChart({
         width="100%"
         height="100%"
         loader={
-          <div className="flex items-center justify-center h-full">
+          <div className="flex h-full items-center justify-center">
             <motion.div
-              className="w-8 h-8 rounded-full border-2 border-[var(--color-brand-primary)] border-t-transparent"
+              className="h-8 w-8 rounded-full border-2 border-[var(--color-brand-primary)] border-t-transparent"
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
             />
@@ -202,19 +205,22 @@ export function GoogleBarChart({
   className,
   loading,
   error,
-  theme = 'default',
-  orientation = 'vertical',
+  theme = "default",
+  orientation = "vertical",
   stacked = false,
-  options = {}
+  options = {},
 }: GoogleBarChartProps) {
-  const chartType = orientation === 'horizontal' ? 'BarChart' : 'ColumnChart';
-  
-  const chartOptions = useMemo(() => 
-    getGoogleChartTheme(theme, {
-      isStacked: stacked,
-      bar: { groupWidth: '75%' },
-      ...options
-    }), [theme, stacked, options]);
+  const chartType = orientation === "horizontal" ? "BarChart" : "ColumnChart";
+
+  const chartOptions = useMemo(
+    () =>
+      getGoogleChartTheme(theme, {
+        isStacked: stacked,
+        bar: { groupWidth: "75%" },
+        ...options,
+      }),
+    [theme, stacked, options]
+  );
 
   return (
     <GlassChart
@@ -233,9 +239,9 @@ export function GoogleBarChart({
         width="100%"
         height="100%"
         loader={
-          <div className="flex items-center justify-center h-full">
+          <div className="flex h-full items-center justify-center">
             <motion.div
-              className="w-8 h-8 rounded-full border-2 border-[var(--color-brand-primary)] border-t-transparent"
+              className="h-8 w-8 rounded-full border-2 border-[var(--color-brand-primary)] border-t-transparent"
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
             />
@@ -255,24 +261,27 @@ export function GooglePieChart({
   className,
   loading,
   error,
-  theme = 'default',
+  theme = "default",
   is3D = false,
   pieHole = 0,
-  pieSliceText = 'percentage',
-  options = {}
+  pieSliceText = "percentage",
+  options = {},
 }: GooglePieChartProps) {
-  const chartOptions = useMemo(() => 
-    getGoogleChartTheme(theme, {
-      is3D,
-      pieHole,
-      pieSliceText,
-      pieSliceTextStyle: {
-        color: chartTheme.text.primary,
-        fontSize: 12,
-        fontName: 'Inter, system-ui, sans-serif'
-      },
-      ...options
-    }), [theme, is3D, pieHole, pieSliceText, options]);
+  const chartOptions = useMemo(
+    () =>
+      getGoogleChartTheme(theme, {
+        is3D,
+        pieHole,
+        pieSliceText,
+        pieSliceTextStyle: {
+          color: chartTheme.text.primary,
+          fontSize: 12,
+          fontName: "Inter, system-ui, sans-serif",
+        },
+        ...options,
+      }),
+    [theme, is3D, pieHole, pieSliceText, options]
+  );
 
   return (
     <GlassChart
@@ -291,9 +300,9 @@ export function GooglePieChart({
         width="100%"
         height="100%"
         loader={
-          <div className="flex items-center justify-center h-full">
+          <div className="flex h-full items-center justify-center">
             <motion.div
-              className="w-8 h-8 rounded-full border-2 border-[var(--color-brand-primary)] border-t-transparent"
+              className="h-8 w-8 rounded-full border-2 border-[var(--color-brand-primary)] border-t-transparent"
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
             />
@@ -313,32 +322,32 @@ export function GoogleGeoChart({
   className,
   loading,
   error,
-  theme = 'default',
-  region = 'world',
-  displayMode = 'regions',
+  theme = "default",
+  region = "world",
+  displayMode = "regions",
   colorAxis,
-  options = {}
+  options = {},
 }: GoogleGeoChartProps) {
   const chartOptions = useMemo(() => {
     const baseOptions = getGoogleChartTheme(theme, {
       region,
       displayMode,
       colorAxis: colorAxis || {
-        colors: generateChartColors(3, theme as any)
+        colors: generateChartColors(3, theme as any),
       },
-      datalessRegionColor: 'hsl(var(--color-bg-tertiary-hsl))',
-      defaultColor: 'hsl(var(--color-bg-secondary-hsl))',
-      ...options
+      datalessRegionColor: "hsl(var(--color-bg-tertiary-hsl))",
+      defaultColor: "hsl(var(--color-bg-secondary-hsl))",
+      ...options,
     });
-    
+
     // Override background for geo charts
     return {
       ...baseOptions,
       backgroundColor: {
-        fill: 'transparent',
+        fill: "transparent",
         stroke: chartTheme.grid.stroke,
-        strokeWidth: 1
-      }
+        strokeWidth: 1,
+      },
     };
   }, [theme, region, displayMode, colorAxis, options]);
 
@@ -359,9 +368,9 @@ export function GoogleGeoChart({
         width="100%"
         height="100%"
         loader={
-          <div className="flex items-center justify-center h-full">
+          <div className="flex h-full items-center justify-center">
             <motion.div
-              className="w-8 h-8 rounded-full border-2 border-[var(--color-brand-primary)] border-t-transparent"
+              className="h-8 w-8 rounded-full border-2 border-[var(--color-brand-primary)] border-t-transparent"
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
             />
@@ -381,14 +390,14 @@ export function GoogleGaugeChart({
   className,
   loading,
   error,
-  theme = 'default',
+  theme = "default",
   min = 0,
   max = 100,
   yellowFrom = 60,
   yellowTo = 80,
   redFrom = 80,
   redTo = 100,
-  options = {}
+  options = {},
 }: GoogleGaugeChartProps) {
   const chartOptions = useMemo(() => {
     const baseTheme = getGoogleChartTheme(theme);
@@ -404,7 +413,7 @@ export function GoogleGaugeChart({
       greenTo: yellowFrom,
       minorTicks: 5,
       majorTicks: [min, (min + max) / 2, max],
-      ...options
+      ...options,
     };
   }, [theme, min, max, yellowFrom, yellowTo, redFrom, redTo, options]);
 
@@ -425,9 +434,9 @@ export function GoogleGaugeChart({
         width="100%"
         height="100%"
         loader={
-          <div className="flex items-center justify-center h-full">
+          <div className="flex h-full items-center justify-center">
             <motion.div
-              className="w-8 h-8 rounded-full border-2 border-[var(--color-brand-primary)] border-t-transparent"
+              className="h-8 w-8 rounded-full border-2 border-[var(--color-brand-primary)] border-t-transparent"
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
             />
@@ -447,18 +456,21 @@ export function GoogleAreaChart({
   className,
   loading,
   error,
-  theme = 'default',
+  theme = "default",
   stacked = false,
-  options = {}
+  options = {},
 }: BaseGoogleChartProps & { stacked?: boolean }) {
-  const chartOptions = useMemo(() => 
-    getGoogleChartTheme(theme, {
-      isStacked: stacked,
-      areaOpacity: 0.4,
-      lineWidth: 2,
-      pointSize: 0,
-      ...options
-    }), [theme, stacked, options]);
+  const chartOptions = useMemo(
+    () =>
+      getGoogleChartTheme(theme, {
+        isStacked: stacked,
+        areaOpacity: 0.4,
+        lineWidth: 2,
+        pointSize: 0,
+        ...options,
+      }),
+    [theme, stacked, options]
+  );
 
   return (
     <GlassChart
@@ -477,9 +489,9 @@ export function GoogleAreaChart({
         width="100%"
         height="100%"
         loader={
-          <div className="flex items-center justify-center h-full">
+          <div className="flex h-full items-center justify-center">
             <motion.div
-              className="w-8 h-8 rounded-full border-2 border-[var(--color-brand-primary)] border-t-transparent"
+              className="h-8 w-8 rounded-full border-2 border-[var(--color-brand-primary)] border-t-transparent"
               animate={{ rotate: 360 }}
               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
             />

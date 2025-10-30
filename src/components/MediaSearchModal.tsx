@@ -1,18 +1,27 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '~/lib/utils';
-import { X, Search, Loader2, Check, Download, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Input } from '~/components/ui/input';
-import { Button } from '~/components/ui/button';
-import * as SelectPrimitive from '@radix-ui/react-select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { api } from '~/trpc/react';
-import { toast } from 'sonner';
-import { processImageSelection, isExternalImageUrl } from '~/lib/image-download-service';
-import type { BaseImageResult, WikiImageResult } from '~/types/media-search';
+import React, { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "~/lib/utils";
+import {
+  X,
+  Search,
+  Loader2,
+  Check,
+  Download,
+  Upload,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
+import * as SelectPrimitive from "@radix-ui/react-select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { api } from "~/trpc/react";
+import { toast } from "sonner";
+import { processImageSelection, isExternalImageUrl } from "~/lib/image-download-service";
+import type { BaseImageResult, WikiImageResult } from "~/types/media-search";
 
 interface MediaSearchModalProps {
   isOpen: boolean;
@@ -21,21 +30,28 @@ interface MediaSearchModalProps {
   onFileUpload?: (file: File) => Promise<void>;
 }
 
-export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload }: MediaSearchModalProps) {
-  const [searchQuery, setSearchQuery] = useState('');
+export function MediaSearchModal({
+  isOpen,
+  onClose,
+  onImageSelect,
+  onFileUpload,
+}: MediaSearchModalProps) {
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'repository' | 'wiki-commons' | 'wiki' | 'upload'>('repository');
+  const [activeTab, setActiveTab] = useState<"repository" | "wiki-commons" | "wiki" | "upload">(
+    "repository"
+  );
   const [isDownloading, setIsDownloading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const [wikiCommonsSearchQuery, setWikiCommonsSearchQuery] = useState('');
-  const [wikiSearchQuery, setWikiSearchQuery] = useState('');
-  const [wikiSource, setWikiSource] = useState<'ixwiki' | 'iiwiki'>('ixwiki');
+  const [wikiCommonsSearchQuery, setWikiCommonsSearchQuery] = useState("");
+  const [wikiSearchQuery, setWikiSearchQuery] = useState("");
+  const [wikiSource, setWikiSource] = useState<"ixwiki" | "iiwiki">("ixwiki");
 
   // Debounced search queries to reduce API calls
-  const [debouncedRepoQuery, setDebouncedRepoQuery] = useState('');
-  const [debouncedCommonsQuery, setDebouncedCommonsQuery] = useState('');
-  const [debouncedWikiQuery, setDebouncedWikiQuery] = useState('');
+  const [debouncedRepoQuery, setDebouncedRepoQuery] = useState("");
+  const [debouncedCommonsQuery, setDebouncedCommonsQuery] = useState("");
+  const [debouncedWikiQuery, setDebouncedWikiQuery] = useState("");
 
   // Debounce search queries
   useEffect(() => {
@@ -63,15 +79,15 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
   } = api.thinkpages.searchUnsplashImages.useQuery(
     { query: debouncedRepoQuery, per_page: 6, page: repoPage },
     {
-      enabled: activeTab === 'repository' && !!debouncedRepoQuery,
+      enabled: activeTab === "repository" && !!debouncedRepoQuery,
       staleTime: 5 * 60 * 1000, // 5 minutes cache
       refetchOnWindowFocus: false,
     }
   );
 
   // Pagination functions
-  const fetchNextRepoPage = useCallback(() => setRepoPage(prev => prev + 1), []);
-  const fetchPrevRepoPage = useCallback(() => setRepoPage(prev => Math.max(1, prev - 1)), []);
+  const fetchNextRepoPage = useCallback(() => setRepoPage((prev) => prev + 1), []);
+  const fetchPrevRepoPage = useCallback(() => setRepoPage((prev) => Math.max(1, prev - 1)), []);
   const hasNextRepoPage = imagesData && imagesData.length >= 6; // Only load more if we got a full page
   const hasPrevRepoPage = repoPage > 1;
 
@@ -82,14 +98,17 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
   } = api.thinkpages.searchWikiCommonsImages.useQuery(
     { query: debouncedCommonsQuery, per_page: 6, page: commonsPage },
     {
-      enabled: activeTab === 'wiki-commons' && !!debouncedCommonsQuery,
+      enabled: activeTab === "wiki-commons" && !!debouncedCommonsQuery,
       staleTime: 5 * 60 * 1000, // 5 minutes cache
       refetchOnWindowFocus: false,
     }
   );
 
-  const fetchNextCommonsPage = useCallback(() => setCommonsPage(prev => prev + 1), []);
-  const fetchPrevCommonsPage = useCallback(() => setCommonsPage(prev => Math.max(1, prev - 1)), []);
+  const fetchNextCommonsPage = useCallback(() => setCommonsPage((prev) => prev + 1), []);
+  const fetchPrevCommonsPage = useCallback(
+    () => setCommonsPage((prev) => Math.max(1, prev - 1)),
+    []
+  );
   const hasNextCommonsPage = wikiCommonsImagesData && wikiCommonsImagesData.length >= 6; // Only load more if we got a full page
   const hasPrevCommonsPage = commonsPage > 1;
 
@@ -102,13 +121,16 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
     refetch: refetchWiki,
   } = api.thinkpages.searchWiki.useQuery(
     {
-      query: debouncedWikiQuery && debouncedWikiQuery.trim().length > 0 ? debouncedWikiQuery : 'placeholder_prevent_empty_query',
+      query:
+        debouncedWikiQuery && debouncedWikiQuery.trim().length > 0
+          ? debouncedWikiQuery
+          : "placeholder_prevent_empty_query",
       wiki: wikiSource,
       limit: 30,
-      cursor: wikiCursor
+      cursor: wikiCursor,
     },
     {
-      enabled: activeTab === 'wiki' && !!debouncedWikiQuery && debouncedWikiQuery.trim().length > 0,
+      enabled: activeTab === "wiki" && !!debouncedWikiQuery && debouncedWikiQuery.trim().length > 0,
       staleTime: 5 * 60 * 1000, // 5 minutes cache
       refetchOnWindowFocus: false,
       retry: false, // Don't retry on error
@@ -119,7 +141,7 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
 
   const fetchNextWikiPage = useCallback(() => {
     if (wikiData?.nextCursor) {
-      setWikiCursorHistory(prev => [...prev, wikiCursor || '']);
+      setWikiCursorHistory((prev) => [...prev, wikiCursor || ""]);
       setWikiCursor(wikiData.nextCursor);
     }
   }, [wikiData?.nextCursor, wikiCursor]);
@@ -128,7 +150,7 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
     if (wikiCursorHistory.length > 0) {
       const prevCursor = wikiCursorHistory[wikiCursorHistory.length - 1];
       setWikiCursor(prevCursor || undefined);
-      setWikiCursorHistory(prev => prev.slice(0, -1));
+      setWikiCursorHistory((prev) => prev.slice(0, -1));
     }
   }, [wikiCursorHistory]);
 
@@ -143,41 +165,41 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
   useEffect(() => {
     setWikiCursor(undefined);
     setWikiCursorHistory([]);
-    setWikiSearchQuery(''); // Also clear search to prevent empty queries
-    setDebouncedWikiQuery('');
+    setWikiSearchQuery(""); // Also clear search to prevent empty queries
+    setDebouncedWikiQuery("");
   }, [wikiSource]);
 
   useEffect(() => {
     if (isOpen) {
       // Reset state when modal opens
-      setSearchQuery('');
+      setSearchQuery("");
       setSelectedImage(null);
-      setWikiCommonsSearchQuery('');
-      setWikiSearchQuery('');
-      setWikiSource('ixwiki');
-      setDebouncedRepoQuery('');
-      setDebouncedCommonsQuery('');
-      setDebouncedWikiQuery('');
+      setWikiCommonsSearchQuery("");
+      setWikiSearchQuery("");
+      setWikiSource("ixwiki");
+      setDebouncedRepoQuery("");
+      setDebouncedCommonsQuery("");
+      setDebouncedWikiQuery("");
       setRepoPage(1);
       setCommonsPage(1);
       setWikiCursor(undefined);
       setWikiCursorHistory([]);
       // Prevent body scroll when modal is open
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
       // Restore body scroll when modal is closed
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     }
 
     // Cleanup on unmount
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     };
   }, [isOpen]);
 
   const handleSelectImage = async () => {
     if (!selectedImage) {
-      toast.error('Please select an image first.');
+      toast.error("Please select an image first.");
       return;
     }
 
@@ -185,24 +207,24 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
       // Check if image needs to be downloaded
       if (isExternalImageUrl(selectedImage)) {
         setIsDownloading(true);
-        toast.info('Downloading image...');
+        toast.info("Downloading image...");
 
         const processedUrl = await processImageSelection(selectedImage, {
-          onProgress: (message) => console.log('[MediaSearchModal]', message),
-          onError: (error) => console.error('[MediaSearchModal]', error),
+          onProgress: (message) => console.log("[MediaSearchModal]", message),
+          onError: (error) => console.error("[MediaSearchModal]", error),
         });
 
-        toast.success('Image downloaded and ready to use!');
+        toast.success("Image downloaded and ready to use!");
         onImageSelect(processedUrl);
       } else {
         // Already a data URL or local path
         onImageSelect(selectedImage);
       }
-      
+
       onClose();
     } catch (error) {
-      console.error('[MediaSearchModal] Failed to process image:', error);
-      toast.error('Failed to download image. Please try again.');
+      console.error("[MediaSearchModal] Failed to process image:", error);
+      toast.error("Failed to download image. Please try again.");
     } finally {
       setIsDownloading(false);
     }
@@ -215,7 +237,7 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
   const [portalElement, setPortalElement] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       setPortalElement(document.body);
     }
   }, []);
@@ -225,7 +247,10 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
   const modalContent = (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center"
+          style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0 }}
+        >
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -239,27 +264,60 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-4xl mx-4 max-h-[90vh] flex flex-col bg-neutral-900/50 border border-white/10 rounded-xl shadow-lg backdrop-blur-xl"
+            className="relative mx-4 flex max-h-[90vh] w-full max-w-4xl flex-col rounded-xl border border-white/10 bg-neutral-900/50 shadow-lg backdrop-blur-xl"
           >
             {/* Header */}
-            <div className="py-4 px-6 flex justify-between items-center border-b border-white/10">
-              <h3 className="font-bold text-white text-lg">Search Image Repository</h3>
-              <button type="button" onClick={onClose} className="p-2 rounded-full text-neutral-400 hover:bg-white/10 transition-colors">
+            <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+              <h3 className="text-lg font-bold text-white">Search Image Repository</h3>
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-full p-2 text-neutral-400 transition-colors hover:bg-white/10"
+              >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'repository' | 'wiki-commons' | 'wiki' | 'upload')} className="flex flex-col flex-1 min-h-0">
+            <Tabs
+              value={activeTab}
+              onValueChange={(value) =>
+                setActiveTab(value as "repository" | "wiki-commons" | "wiki" | "upload")
+              }
+              className="flex min-h-0 flex-1 flex-col"
+            >
               <TabsList className="grid w-full grid-cols-4 rounded-none border-b border-white/10 bg-transparent p-0">
-                <TabsTrigger value="repository" className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:shadow-none data-[state=active]:text-white">Repository</TabsTrigger>
-                <TabsTrigger value="wiki-commons" className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:shadow-none data-[state=active]:text-white">Wiki Commons</TabsTrigger>
-                <TabsTrigger value="wiki" className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:shadow-none data-[state=active]:text-white">Wiki</TabsTrigger>
-                <TabsTrigger value="upload" className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:shadow-none data-[state=active]:text-white">Upload</TabsTrigger>
+                <TabsTrigger
+                  value="repository"
+                  className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none"
+                >
+                  Repository
+                </TabsTrigger>
+                <TabsTrigger
+                  value="wiki-commons"
+                  className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none"
+                >
+                  Wiki Commons
+                </TabsTrigger>
+                <TabsTrigger
+                  value="wiki"
+                  className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none"
+                >
+                  Wiki
+                </TabsTrigger>
+                <TabsTrigger
+                  value="upload"
+                  className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none"
+                >
+                  Upload
+                </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="repository" className="flex-1 flex flex-col data-[state=inactive]:hidden min-h-0">
+              <TabsContent
+                value="repository"
+                className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+              >
                 {/* Search and Filters */}
-                <div className="p-4 border-b border-white/10 flex items-center gap-2">
+                <div className="flex items-center gap-2 border-b border-white/10 p-4">
                   <Input
                     placeholder="Search images (e.g., 'nature', 'city', 'person')"
                     value={searchQuery}
@@ -269,63 +327,63 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
                 </div>
 
                 {/* Image Results */}
-                <div className="flex-1 p-4 overflow-y-auto max-h-[60vh]">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {isLoadingRepo && images.length === 0 ? (
-                    <div className="col-span-2 md:col-span-3 flex justify-center items-center h-48">
-                      <Loader2 className="animate-spin h-8 w-8 text-blue-400" />
-                    </div>
-                  ) : images.length > 0 ? (
-                    <>
-                      {images.map((image: BaseImageResult, index: number) => (
-                        <div
-                          key={`repo-${image.id}-${index}`}
-                          className={cn(
-                            "relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all",
-                            selectedImage === image.url ? "border-blue-500" : "border-transparent hover:border-blue-400"
-                          )}
-                          onClick={() => setSelectedImage(image.url)}
-                        >
-                          <img 
-                            src={image.url} 
-                            alt={image.description ?? "Unsplash Image"} 
-                            className="w-full h-32 object-cover"
-                            loading="lazy"
-                            decoding="async"
-                          />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-sm font-medium">
-                            {image.photographer}
-                          </div>
-                          {selectedImage === image.url && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-blue-500/50">
-                              <Check className="h-8 w-8 text-white" />
+                <div className="max-h-[60vh] flex-1 overflow-y-auto p-4">
+                  <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                    {isLoadingRepo && images.length === 0 ? (
+                      <div className="col-span-2 flex h-48 items-center justify-center md:col-span-3">
+                        <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
+                      </div>
+                    ) : images.length > 0 ? (
+                      <>
+                        {images.map((image: BaseImageResult, index: number) => (
+                          <div
+                            key={`repo-${image.id}-${index}`}
+                            className={cn(
+                              "group relative cursor-pointer overflow-hidden rounded-lg border-2 transition-all",
+                              selectedImage === image.url
+                                ? "border-blue-500"
+                                : "border-transparent hover:border-blue-400"
+                            )}
+                            onClick={() => setSelectedImage(image.url)}
+                          >
+                            <img
+                              src={image.url}
+                              alt={image.description ?? "Unsplash Image"}
+                              className="h-32 w-full object-cover"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-sm font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+                              {image.photographer}
                             </div>
-                          )}
-                        </div>
-                      ))}
-                    </>
-                  ) : (
-                    <div className="col-span-2 md:col-span-3 text-center text-muted-foreground p-8">
-                      No images found. Try a different search query.
-                    </div>
-                  )}
+                            {selectedImage === image.url && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-blue-500/50">
+                                <Check className="h-8 w-8 text-white" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      <div className="text-muted-foreground col-span-2 p-8 text-center md:col-span-3">
+                        No images found. Try a different search query.
+                      </div>
+                    )}
                   </div>
 
                   {/* Pagination Controls */}
                   {images.length > 0 && (
-                    <div className="flex items-center justify-center gap-2 p-4 border-t border-white/10">
+                    <div className="flex items-center justify-center gap-2 border-t border-white/10 p-4">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={fetchPrevRepoPage}
                         disabled={!hasPrevRepoPage || isFetchingNextRepoPage}
                       >
-                        <ChevronLeft className="h-4 w-4 mr-1" />
+                        <ChevronLeft className="mr-1 h-4 w-4" />
                         Previous
                       </Button>
-                      <span className="text-sm text-muted-foreground px-3">
-                        Page {repoPage}
-                      </span>
+                      <span className="text-muted-foreground px-3 text-sm">Page {repoPage}</span>
                       <Button
                         variant="outline"
                         size="sm"
@@ -333,16 +391,19 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
                         disabled={!hasNextRepoPage || isFetchingNextRepoPage}
                       >
                         Next
-                        <ChevronRight className="h-4 w-4 ml-1" />
+                        <ChevronRight className="ml-1 h-4 w-4" />
                       </Button>
                     </div>
                   )}
                 </div>
               </TabsContent>
 
-              <TabsContent value="wiki-commons" className="flex-1 flex flex-col data-[state=inactive]:hidden min-h-0">
+              <TabsContent
+                value="wiki-commons"
+                className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+              >
                 {/* Search and Filters */}
-                <div className="p-4 border-b border-white/10 flex items-center gap-2">
+                <div className="flex items-center gap-2 border-b border-white/10 p-4">
                   <Input
                     placeholder="Search Wiki Commons images (e.g., 'flag of Germany', 'Eiffel Tower')"
                     value={wikiCommonsSearchQuery}
@@ -352,63 +413,63 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
                 </div>
 
                 {/* Image Results */}
-                <div className="flex-1 p-4 overflow-y-auto max-h-[60vh]">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {isLoadingWikiCommons && wikiCommonsImages.length === 0 ? (
-                    <div className="col-span-2 md:col-span-3 flex justify-center items-center h-48">
-                      <Loader2 className="animate-spin h-8 w-8 text-blue-400" />
-                    </div>
-                  ) : wikiCommonsImages.length > 0 ? (
-                    <>
-                      {wikiCommonsImages.map((image: BaseImageResult, index: number) => (
-                        <div
-                          key={`commons-${image.id}-${index}`}
-                          className={cn(
-                            "relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all",
-                            selectedImage === image.url ? "border-blue-500" : "border-transparent hover:border-blue-400"
-                          )}
-                          onClick={() => setSelectedImage(image.url)}
-                        >
-                          <img 
-                            src={image.url} 
-                            alt={image.description ?? "Wiki Commons Image"} 
-                            className="w-full h-32 object-cover"
-                            loading="lazy"
-                            decoding="async"
-                          />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-sm font-medium">
-                            {image.photographer}
-                          </div>
-                          {selectedImage === image.url && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-blue-500/50">
-                              <Check className="h-8 w-8 text-white" />
+                <div className="max-h-[60vh] flex-1 overflow-y-auto p-4">
+                  <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                    {isLoadingWikiCommons && wikiCommonsImages.length === 0 ? (
+                      <div className="col-span-2 flex h-48 items-center justify-center md:col-span-3">
+                        <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
+                      </div>
+                    ) : wikiCommonsImages.length > 0 ? (
+                      <>
+                        {wikiCommonsImages.map((image: BaseImageResult, index: number) => (
+                          <div
+                            key={`commons-${image.id}-${index}`}
+                            className={cn(
+                              "group relative cursor-pointer overflow-hidden rounded-lg border-2 transition-all",
+                              selectedImage === image.url
+                                ? "border-blue-500"
+                                : "border-transparent hover:border-blue-400"
+                            )}
+                            onClick={() => setSelectedImage(image.url)}
+                          >
+                            <img
+                              src={image.url}
+                              alt={image.description ?? "Wiki Commons Image"}
+                              className="h-32 w-full object-cover"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-sm font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+                              {image.photographer}
                             </div>
-                          )}
-                        </div>
-                      ))}
-                    </>
-                  ) : (
-                    <div className="col-span-2 md:col-span-3 text-center text-muted-foreground p-8">
-                      No images found. Try a different search query.
-                    </div>
-                  )}
+                            {selectedImage === image.url && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-blue-500/50">
+                                <Check className="h-8 w-8 text-white" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      <div className="text-muted-foreground col-span-2 p-8 text-center md:col-span-3">
+                        No images found. Try a different search query.
+                      </div>
+                    )}
                   </div>
 
                   {/* Pagination Controls */}
                   {wikiCommonsImages.length > 0 && (
-                    <div className="flex items-center justify-center gap-2 p-4 border-t border-white/10">
+                    <div className="flex items-center justify-center gap-2 border-t border-white/10 p-4">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={fetchPrevCommonsPage}
                         disabled={!hasPrevCommonsPage || isFetchingNextCommonsPage}
                       >
-                        <ChevronLeft className="h-4 w-4 mr-1" />
+                        <ChevronLeft className="mr-1 h-4 w-4" />
                         Previous
                       </Button>
-                      <span className="text-sm text-muted-foreground px-3">
-                        Page {commonsPage}
-                      </span>
+                      <span className="text-muted-foreground px-3 text-sm">Page {commonsPage}</span>
                       <Button
                         variant="outline"
                         size="sm"
@@ -416,35 +477,53 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
                         disabled={!hasNextCommonsPage || isFetchingNextCommonsPage}
                       >
                         Next
-                        <ChevronRight className="h-4 w-4 ml-1" />
+                        <ChevronRight className="ml-1 h-4 w-4" />
                       </Button>
                     </div>
                   )}
                 </div>
               </TabsContent>
 
-              <TabsContent value="wiki" className="flex-1 flex flex-col data-[state=inactive]:hidden min-h-0">
-                <div className="p-4 border-b border-white/10 flex items-center gap-2">
-                  <SelectPrimitive.Root value={wikiSource} onValueChange={(value) => setWikiSource(value as 'ixwiki' | 'iiwiki')}>
-                    <SelectPrimitive.Trigger className="flex h-10 w-[180px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+              <TabsContent
+                value="wiki"
+                className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+              >
+                <div className="flex items-center gap-2 border-b border-white/10 p-4">
+                  <SelectPrimitive.Root
+                    value={wikiSource}
+                    onValueChange={(value) => setWikiSource(value as "ixwiki" | "iiwiki")}
+                  >
+                    <SelectPrimitive.Trigger className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex h-10 w-[180px] items-center justify-between rounded-md border px-3 py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50">
                       <SelectPrimitive.Value placeholder="Select a wiki" />
                       <SelectPrimitive.Icon asChild>
-                        <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 opacity-50">
-                          <path d="m4.93179 5.43179c.20264-.20264.53153-.20264.73417 0L8 7.76576l2.33404-2.33397c.20264-.20264.53153-.20264.73417 0 .20264.20264.20264.53153 0 .73417L8.36708 8.56794c-.20264.20264-.53153.20264-.73417 0L5.29289 6.22612c-.20264-.20264-.20264-.53153 0-.73433Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path>
+                        <svg
+                          width="15"
+                          height="15"
+                          viewBox="0 0 15 15"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4 opacity-50"
+                        >
+                          <path
+                            d="m4.93179 5.43179c.20264-.20264.53153-.20264.73417 0L8 7.76576l2.33404-2.33397c.20264-.20264.53153-.20264.73417 0 .20264.20264.20264.53153 0 .73417L8.36708 8.56794c-.20264.20264-.53153.20264-.73417 0L5.29289 6.22612c-.20264-.20264-.20264-.53153 0-.73433Z"
+                            fill="currentColor"
+                            fillRule="evenodd"
+                            clipRule="evenodd"
+                          ></path>
                         </svg>
                       </SelectPrimitive.Icon>
                     </SelectPrimitive.Trigger>
                     <SelectPrimitive.Portal>
                       <SelectPrimitive.Content
-                        className="relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2"
+                        className="bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border shadow-md"
                         position="popper"
                         side="bottom"
                         align="start"
                       >
-                        <SelectPrimitive.Viewport className="p-1 h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]">
+                        <SelectPrimitive.Viewport className="h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] p-1">
                           <SelectPrimitive.Item
                             value="ixwiki"
-                            className="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                            className="focus:bg-accent focus:text-accent-foreground relative flex w-full cursor-default items-center rounded-sm py-1.5 pr-2 pl-8 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                           >
                             <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
                               <SelectPrimitive.ItemIndicator>
@@ -455,7 +534,7 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
                           </SelectPrimitive.Item>
                           <SelectPrimitive.Item
                             value="iiwiki"
-                            className="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                            className="focus:bg-accent focus:text-accent-foreground relative flex w-full cursor-default items-center rounded-sm py-1.5 pr-2 pl-8 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                           >
                             <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
                               <SelectPrimitive.ItemIndicator>
@@ -464,7 +543,9 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
                             </span>
                             <SelectPrimitive.ItemText>
                               <span>iiwiki</span>
-                              <span className="text-xs text-yellow-500 ml-2">(Limited - Cloudflare protected)</span>
+                              <span className="ml-2 text-xs text-yellow-500">
+                                (Limited - Cloudflare protected)
+                              </span>
                             </SelectPrimitive.ItemText>
                           </SelectPrimitive.Item>
                         </SelectPrimitive.Viewport>
@@ -475,73 +556,83 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
                     placeholder="Search for images (e.g., 'flag', 'coat of arms', 'juan kerr')..."
                     value={wikiSearchQuery}
                     onChange={(e) => setWikiSearchQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && refetchWiki()}
+                    onKeyDown={(e) => e.key === "Enter" && refetchWiki()}
                     className="flex-1"
                   />
-                  <Button onClick={() => refetchWiki()} disabled={isLoadingWiki || !debouncedWikiQuery.trim()}>
-                    {isLoadingWiki ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Search className="h-4 w-4 mr-2" />}Search
+                  <Button
+                    onClick={() => refetchWiki()}
+                    disabled={isLoadingWiki || !debouncedWikiQuery.trim()}
+                  >
+                    {isLoadingWiki ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="mr-2 h-4 w-4" />
+                    )}
+                    Search
                   </Button>
                 </div>
-                <div className="flex-1 p-4 overflow-y-auto max-h-[60vh]">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {isLoadingWiki ? (
-                    <div className="col-span-2 md:col-span-3 flex justify-center items-center h-48">
-                      <Loader2 className="animate-spin h-8 w-8 text-blue-400" />
-                    </div>
-                  ) : wikiImages.length > 0 ? (
-                    <>
-                      {wikiImages.map((image: WikiImageResult, index: number) => (
-                        <div
-                          key={`wiki-${image.path}-${index}`}
-                          className={cn(
-                            "relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all",
-                            selectedImage === image.path ? "border-blue-500" : "border-transparent hover:border-blue-400"
-                          )}
-                          onClick={() => setSelectedImage(image.path)}
-                        >
-                          <img 
-                            src={image.url ?? image.path} 
-                            alt={image.name ?? "Wiki Image"} 
-                            className="w-full h-32 object-cover"
-                            loading="lazy"
-                            decoding="async"
-                          />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-sm font-medium p-2 text-center">
-                            {image.name?.replace('File:', '') ?? 'Wiki Image'}
-                          </div>
-                          {selectedImage === image.path && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-blue-500/50">
-                              <Check className="h-8 w-8 text-white" />
+                <div className="max-h-[60vh] flex-1 overflow-y-auto p-4">
+                  <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                    {isLoadingWiki ? (
+                      <div className="col-span-2 flex h-48 items-center justify-center md:col-span-3">
+                        <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
+                      </div>
+                    ) : wikiImages.length > 0 ? (
+                      <>
+                        {wikiImages.map((image: WikiImageResult, index: number) => (
+                          <div
+                            key={`wiki-${image.path}-${index}`}
+                            className={cn(
+                              "group relative cursor-pointer overflow-hidden rounded-lg border-2 transition-all",
+                              selectedImage === image.path
+                                ? "border-blue-500"
+                                : "border-transparent hover:border-blue-400"
+                            )}
+                            onClick={() => setSelectedImage(image.path)}
+                          >
+                            <img
+                              src={image.url ?? image.path}
+                              alt={image.name ?? "Wiki Image"}
+                              className="h-32 w-full object-cover"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 p-2 text-center text-sm font-medium text-white opacity-0 transition-opacity group-hover:opacity-100">
+                              {image.name?.replace("File:", "") ?? "Wiki Image"}
                             </div>
-                          )}
-                        </div>
-                      ))}
-                    </>
-                  ) : debouncedWikiQuery ? (
-                    <div className="col-span-2 md:col-span-3 text-center text-muted-foreground p-8">
-                      No images found for "{debouncedWikiQuery}". Try a different search query.
-                    </div>
-                  ) : (
-                    <div className="col-span-2 md:col-span-3 text-center text-muted-foreground p-8">
-                      Enter a search query to find images from {wikiSource}.
-                    </div>
-                  )}
+                            {selectedImage === image.path && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-blue-500/50">
+                                <Check className="h-8 w-8 text-white" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </>
+                    ) : debouncedWikiQuery ? (
+                      <div className="text-muted-foreground col-span-2 p-8 text-center md:col-span-3">
+                        No images found for "{debouncedWikiQuery}". Try a different search query.
+                      </div>
+                    ) : (
+                      <div className="text-muted-foreground col-span-2 p-8 text-center md:col-span-3">
+                        Enter a search query to find images from {wikiSource}.
+                      </div>
+                    )}
                   </div>
 
                   {/* Pagination Controls */}
                   {wikiImages.length > 0 && (
-                    <div className="flex items-center justify-center gap-2 p-4 border-t border-white/10">
+                    <div className="flex items-center justify-center gap-2 border-t border-white/10 p-4">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={fetchPrevWikiPage}
                         disabled={!hasPrevWikiPage || isFetchingNextWikiPage}
                       >
-                        <ChevronLeft className="h-4 w-4 mr-1" />
+                        <ChevronLeft className="mr-1 h-4 w-4" />
                         Previous
                       </Button>
-                      <span className="text-sm text-muted-foreground px-3">
-                        {hasPrevWikiPage ? `Page ${wikiCursorHistory.length + 1}` : 'Page 1'}
+                      <span className="text-muted-foreground px-3 text-sm">
+                        {hasPrevWikiPage ? `Page ${wikiCursorHistory.length + 1}` : "Page 1"}
                       </span>
                       <Button
                         variant="outline"
@@ -550,7 +641,7 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
                         disabled={!hasNextWikiPage || isFetchingNextWikiPage}
                       >
                         Next
-                        <ChevronRight className="h-4 w-4 ml-1" />
+                        <ChevronRight className="ml-1 h-4 w-4" />
                       </Button>
                     </div>
                   )}
@@ -558,13 +649,16 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
               </TabsContent>
 
               {/* Upload Tab */}
-              <TabsContent value="upload" className="flex-1 flex flex-col data-[state=inactive]:hidden min-h-0">
-                <div className="flex-1 p-8 overflow-y-auto max-h-[60vh]">
-                  <div className="max-w-md mx-auto">
-                    <div className="border-2 border-dashed border-white/20 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
-                      <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                      <h3 className="text-lg font-semibold mb-2">Upload an Image</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
+              <TabsContent
+                value="upload"
+                className="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden"
+              >
+                <div className="max-h-[60vh] flex-1 overflow-y-auto p-8">
+                  <div className="mx-auto max-w-md">
+                    <div className="rounded-lg border-2 border-dashed border-white/20 p-8 text-center transition-colors hover:border-blue-400">
+                      <Upload className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+                      <h3 className="mb-2 text-lg font-semibold">Upload an Image</h3>
+                      <p className="text-muted-foreground mb-4 text-sm">
                         PNG, JPG, GIF, WEBP, or SVG (max 5MB)
                       </p>
                       <input
@@ -578,24 +672,33 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
 
                           // Validate file size
                           if (file.size > 5 * 1024 * 1024) {
-                            toast.error('File size exceeds 5MB limit');
+                            toast.error("File size exceeds 5MB limit");
                             return;
                           }
 
                           // Validate file type
-                          const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp', 'image/svg+xml'];
+                          const allowedTypes = [
+                            "image/png",
+                            "image/jpeg",
+                            "image/jpg",
+                            "image/gif",
+                            "image/webp",
+                            "image/svg+xml",
+                          ];
                           if (!allowedTypes.includes(file.type)) {
-                            toast.error('Invalid file type. Please upload PNG, JPG, GIF, WEBP, or SVG');
+                            toast.error(
+                              "Invalid file type. Please upload PNG, JPG, GIF, WEBP, or SVG"
+                            );
                             return;
                           }
 
                           setIsUploading(true);
                           try {
                             const formData = new FormData();
-                            formData.append('file', file);
+                            formData.append("file", file);
 
-                            const response = await fetch('/api/upload/image', {
-                              method: 'POST',
+                            const response = await fetch("/api/upload/image", {
+                              method: "POST",
                               body: formData,
                             });
 
@@ -604,42 +707,42 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
                             if (result.success) {
                               onImageSelect(result.dataUrl);
                               onClose();
-                              toast.success('Image uploaded successfully');
+                              toast.success("Image uploaded successfully");
                             } else {
-                              toast.error(result.error || 'Failed to upload image');
+                              toast.error(result.error || "Failed to upload image");
                             }
                           } catch (error) {
-                            console.error('Upload error:', error);
-                            toast.error('Failed to upload image');
+                            console.error("Upload error:", error);
+                            toast.error("Failed to upload image");
                           } finally {
                             setIsUploading(false);
                             // Reset file input
-                            e.target.value = '';
+                            e.target.value = "";
                           }
                         }}
                       />
                       <Button
-                        onClick={() => document.getElementById('file-upload')?.click()}
+                        onClick={() => document.getElementById("file-upload")?.click()}
                         disabled={isUploading}
                         className="mt-4"
                       >
                         {isUploading ? (
                           <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             Uploading...
                           </>
                         ) : (
                           <>
-                            <Upload className="h-4 w-4 mr-2" />
+                            <Upload className="mr-2 h-4 w-4" />
                             Choose File
                           </>
                         )}
                       </Button>
                     </div>
 
-                    <div className="mt-6 space-y-2 text-sm text-muted-foreground">
+                    <div className="text-muted-foreground mt-6 space-y-2 text-sm">
                       <p className="font-medium">File Requirements:</p>
-                      <ul className="list-disc list-inside space-y-1 ml-2">
+                      <ul className="ml-2 list-inside list-disc space-y-1">
                         <li>Maximum file size: 5MB</li>
                         <li>Supported formats: PNG, JPG, GIF, WEBP, SVG</li>
                         <li>Images will be embedded directly in your post</li>
@@ -651,25 +754,22 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload 
             </Tabs>
 
             {/* Select Image button - hidden on upload tab */}
-            {activeTab !== 'upload' && (
-              <div className="p-4 border-t border-white/10 flex justify-end items-center gap-3">
+            {activeTab !== "upload" && (
+              <div className="flex items-center justify-end gap-3 border-t border-white/10 p-4">
                 {isDownloading && (
                   <div className="flex items-center gap-2 text-sm text-blue-400">
                     <Download className="h-4 w-4 animate-bounce" />
                     <span>Downloading image...</span>
                   </div>
                 )}
-                <Button
-                  onClick={handleSelectImage}
-                  disabled={!selectedImage || isDownloading}
-                >
+                <Button onClick={handleSelectImage} disabled={!selectedImage || isDownloading}>
                   {isDownloading ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Downloading...
                     </>
                   ) : (
-                    'Select Image'
+                    "Select Image"
                   )}
                 </Button>
               </div>

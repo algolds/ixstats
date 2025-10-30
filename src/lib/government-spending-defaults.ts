@@ -5,7 +5,7 @@
  * with all 57+ required boolean policy flags initialized to false by default.
  */
 
-import type { GovernmentSpendingData } from '../types/economics';
+import type { GovernmentSpendingData } from "../types/economics";
 
 export function createDefaultGovernmentSpendingData(
   partial?: Partial<GovernmentSpendingData>

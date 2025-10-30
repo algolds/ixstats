@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { Progress } from '~/components/ui/progress';
-import { Button } from '~/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
+import React, { useMemo } from "react";
+import { motion } from "framer-motion";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Progress } from "~/components/ui/progress";
+import { Button } from "~/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
   TrendingUp,
   TrendingDown,
@@ -26,11 +26,11 @@ import {
   Lightbulb,
   AlertCircle,
   ArrowUpDown,
-  Activity
-} from 'lucide-react';
+  Activity,
+} from "lucide-react";
 
-import type { TaxSystem, TaxCategory, TaxBracket } from '~/types/tax-system';
-import type { CoreEconomicIndicatorsData, LaborEmploymentData } from '~/types/economics';
+import type { TaxSystem, TaxCategory, TaxBracket } from "~/types/tax-system";
+import type { CoreEconomicIndicatorsData, LaborEmploymentData } from "~/types/economics";
 
 interface TaxEconomySyncProps {
   taxSystem?: TaxSystem;
@@ -50,16 +50,16 @@ interface TaxBurdenAnalysis {
   disposableIncome: number;
   populationPercent: number;
   color: string;
-  status: 'low' | 'moderate' | 'high' | 'excessive';
+  status: "low" | "moderate" | "high" | "excessive";
 }
 
 interface EconomicTierRecommendation {
-  tier: 'Developing' | 'Emerging' | 'Developed' | 'Advanced';
+  tier: "Developing" | "Emerging" | "Developed" | "Advanced";
   recommendedIncomeTaxRange: [number, number];
   recommendedCorporateTaxRange: [number, number];
   recommendedSalesTaxRange: [number, number];
   maxTaxBurden: number;
-  currentAlignment: 'aligned' | 'undertaxed' | 'overtaxed';
+  currentAlignment: "aligned" | "undertaxed" | "overtaxed";
   recommendations: string[];
   color: string;
 }
@@ -67,9 +67,9 @@ interface EconomicTierRecommendation {
 interface EconomicImpact {
   gdpGrowthImpact: number;
   giniCoefficientChange: number;
-  businessInvestmentImpact: 'positive' | 'neutral' | 'negative';
-  consumerSpendingImpact: 'positive' | 'neutral' | 'negative';
-  employmentImpact: 'positive' | 'neutral' | 'negative';
+  businessInvestmentImpact: "positive" | "neutral" | "negative";
+  consumerSpendingImpact: "positive" | "neutral" | "negative";
+  employmentImpact: "positive" | "neutral" | "negative";
   overallScore: number;
 }
 
@@ -77,18 +77,17 @@ export function TaxEconomySyncDisplay({
   taxSystem,
   economicData,
   onOptimize = () => {},
-  className = ""
+  className = "",
 }: TaxEconomySyncProps) {
-
   // Determine economic tier based on GDP per capita
-  const economicTier = useMemo((): EconomicTierRecommendation['tier'] => {
-    if (!economicData?.core) return 'Emerging';
+  const economicTier = useMemo((): EconomicTierRecommendation["tier"] => {
+    if (!economicData?.core) return "Emerging";
     const gdpPerCapita = economicData.core.gdpPerCapita;
 
-    if (gdpPerCapita >= 40000) return 'Advanced';
-    if (gdpPerCapita >= 20000) return 'Developed';
-    if (gdpPerCapita >= 5000) return 'Emerging';
-    return 'Developing';
+    if (gdpPerCapita >= 40000) return "Advanced";
+    if (gdpPerCapita >= 20000) return "Developed";
+    if (gdpPerCapita >= 5000) return "Emerging";
+    return "Developing";
   }, [economicData?.core]);
 
   // Calculate tax burden by income class
@@ -102,57 +101,57 @@ export function TaxEconomySyncDisplay({
     // Define income classes
     const incomeClasses = [
       {
-        name: 'Low Income',
+        name: "Low Income",
         multiplier: 0.5,
         populationPercent: 40,
-        color: 'hsl(0, 84%, 60%)'
+        color: "hsl(0, 84%, 60%)",
       },
       {
-        name: 'Middle Income',
+        name: "Middle Income",
         multiplier: 1.0,
         populationPercent: 40,
-        color: 'hsl(45, 93%, 58%)'
+        color: "hsl(45, 93%, 58%)",
       },
       {
-        name: 'Upper Middle Income',
+        name: "Upper Middle Income",
         multiplier: 2.0,
         populationPercent: 15,
-        color: 'hsl(160, 84%, 60%)'
+        color: "hsl(160, 84%, 60%)",
       },
       {
-        name: 'High Income',
+        name: "High Income",
         multiplier: 5.0,
         populationPercent: 5,
-        color: 'hsl(217, 91%, 60%)'
-      }
+        color: "hsl(217, 91%, 60%)",
+      },
     ];
 
-    return incomeClasses.map(incomeClass => {
+    return incomeClasses.map((incomeClass) => {
       const income = averageIncome * incomeClass.multiplier;
 
       // Calculate effective tax rate from all categories
       const incomeTaxCategory = taxSystem.taxCategories?.find(
-        cat => cat.categoryName.toLowerCase().includes('income') &&
-               cat.categoryType.toLowerCase().includes('personal')
+        (cat) =>
+          cat.categoryName.toLowerCase().includes("income") &&
+          cat.categoryType.toLowerCase().includes("personal")
       );
 
       const salesTaxCategory = taxSystem.taxCategories?.find(
-        cat => cat.categoryName.toLowerCase().includes('sales') ||
-               cat.categoryName.toLowerCase().includes('vat')
+        (cat) =>
+          cat.categoryName.toLowerCase().includes("sales") ||
+          cat.categoryName.toLowerCase().includes("vat")
       );
 
       // Progressive calculation based on brackets
       let incomeTaxRate = 0;
       if (incomeTaxCategory && taxSystem.taxBrackets) {
         const applicableBrackets = taxSystem.taxBrackets
-          .filter(b => b.categoryId === incomeTaxCategory.id && b.isActive)
+          .filter((b) => b.categoryId === incomeTaxCategory.id && b.isActive)
           .sort((a, b) => a.minIncome - b.minIncome);
 
         if (applicableBrackets.length > 0) {
           // Find highest bracket that applies
-          const bracket = applicableBrackets
-            .reverse()
-            .find(b => income >= b.minIncome);
+          const bracket = applicableBrackets.reverse().find((b) => income >= b.minIncome);
           incomeTaxRate = bracket?.rate || incomeTaxCategory.baseRate || 0;
         } else {
           incomeTaxRate = incomeTaxCategory.baseRate || 0;
@@ -162,16 +161,16 @@ export function TaxEconomySyncDisplay({
       const salesTaxRate = salesTaxCategory?.baseRate || 0;
 
       // Total effective tax rate (income tax + sales tax on ~70% of income)
-      const effectiveTaxRate = incomeTaxRate + (salesTaxRate * 0.7);
+      const effectiveTaxRate = incomeTaxRate + salesTaxRate * 0.7;
       const taxBurden = income * (effectiveTaxRate / 100);
       const disposableIncome = income - taxBurden;
 
       // Determine status
-      let status: TaxBurdenAnalysis['status'] = 'moderate';
-      if (effectiveTaxRate < 15) status = 'low';
-      else if (effectiveTaxRate < 30) status = 'moderate';
-      else if (effectiveTaxRate < 45) status = 'high';
-      else status = 'excessive';
+      let status: TaxBurdenAnalysis["status"] = "moderate";
+      if (effectiveTaxRate < 15) status = "low";
+      else if (effectiveTaxRate < 30) status = "moderate";
+      else if (effectiveTaxRate < 45) status = "high";
+      else status = "excessive";
 
       return {
         incomeClass: incomeClass.name,
@@ -181,72 +180,77 @@ export function TaxEconomySyncDisplay({
         disposableIncome,
         populationPercent: incomeClass.populationPercent,
         color: incomeClass.color,
-        status
+        status,
       };
     });
   }, [taxSystem, economicData?.labor]);
 
   // Calculate tier-based recommendations
   const tierRecommendation = useMemo((): EconomicTierRecommendation => {
-    const tierConfig: Record<EconomicTierRecommendation['tier'], Omit<EconomicTierRecommendation, 'currentAlignment' | 'recommendations'>> = {
-      'Developing': {
-        tier: 'Developing',
+    const tierConfig: Record<
+      EconomicTierRecommendation["tier"],
+      Omit<EconomicTierRecommendation, "currentAlignment" | "recommendations">
+    > = {
+      Developing: {
+        tier: "Developing",
         recommendedIncomeTaxRange: [10, 25],
         recommendedCorporateTaxRange: [15, 30],
         recommendedSalesTaxRange: [5, 12],
         maxTaxBurden: 25,
-        color: 'hsl(0, 84%, 60%)'
+        color: "hsl(0, 84%, 60%)",
       },
-      'Emerging': {
-        tier: 'Emerging',
+      Emerging: {
+        tier: "Emerging",
         recommendedIncomeTaxRange: [15, 30],
         recommendedCorporateTaxRange: [20, 35],
         recommendedSalesTaxRange: [8, 15],
         maxTaxBurden: 35,
-        color: 'hsl(45, 93%, 58%)'
+        color: "hsl(45, 93%, 58%)",
       },
-      'Developed': {
-        tier: 'Developed',
+      Developed: {
+        tier: "Developed",
         recommendedIncomeTaxRange: [20, 40],
         recommendedCorporateTaxRange: [20, 30],
         recommendedSalesTaxRange: [10, 20],
         maxTaxBurden: 45,
-        color: 'hsl(160, 84%, 60%)'
+        color: "hsl(160, 84%, 60%)",
       },
-      'Advanced': {
-        tier: 'Advanced',
+      Advanced: {
+        tier: "Advanced",
         recommendedIncomeTaxRange: [25, 50],
         recommendedCorporateTaxRange: [18, 28],
         recommendedSalesTaxRange: [15, 25],
         maxTaxBurden: 50,
-        color: 'hsl(217, 91%, 60%)'
-      }
+        color: "hsl(217, 91%, 60%)",
+      },
     };
 
     const config = tierConfig[economicTier];
 
     // Calculate current alignment
-    let currentAlignment: EconomicTierRecommendation['currentAlignment'] = 'aligned';
+    let currentAlignment: EconomicTierRecommendation["currentAlignment"] = "aligned";
     const recommendations: string[] = [];
 
     if (!taxSystem?.taxCategories) {
       return {
         ...config,
-        currentAlignment: 'aligned',
-        recommendations: ['Configure tax system to receive recommendations']
+        currentAlignment: "aligned",
+        recommendations: ["Configure tax system to receive recommendations"],
       };
     }
 
     const incomeTax = taxSystem.taxCategories.find(
-      cat => cat.categoryName.toLowerCase().includes('income') &&
-             cat.categoryType.toLowerCase().includes('personal')
+      (cat) =>
+        cat.categoryName.toLowerCase().includes("income") &&
+        cat.categoryType.toLowerCase().includes("personal")
     );
-    const corporateTax = taxSystem.taxCategories.find(
-      cat => cat.categoryName.toLowerCase().includes('corporate')
+    const corporateTax = taxSystem.taxCategories.find((cat) =>
+      cat.categoryName.toLowerCase().includes("corporate")
     );
     const salesTax = taxSystem.taxCategories.find(
-      cat => cat.categoryName.toLowerCase().includes('sales') ||
-             cat.categoryName.toLowerCase().includes('vat')
+      (cat) =>
+        cat.categoryName.toLowerCase().includes("sales") ||
+        cat.categoryName.toLowerCase().includes("vat")
     );
 
     const incomeTaxRate = incomeTax?.baseRate || 0;
@@ -255,12 +259,12 @@ export function TaxEconomySyncDisplay({
 
     // Check income tax alignment
     if (incomeTaxRate < config.recommendedIncomeTaxRange[0]) {
-      currentAlignment = 'undertaxed';
+      currentAlignment = "undertaxed";
       recommendations.push(
         `Consider increasing income tax from ${incomeTaxRate}% to ${config.recommendedIncomeTaxRange[0]}-${config.recommendedIncomeTaxRange[1]}% range for ${economicTier} economies`
       );
     } else if (incomeTaxRate > config.recommendedIncomeTaxRange[1]) {
-      currentAlignment = 'overtaxed';
+      currentAlignment = "overtaxed";
       recommendations.push(
         `Income tax rate of ${incomeTaxRate}% exceeds optimal range (${config.recommendedIncomeTaxRange[0]}-${config.recommendedIncomeTaxRange[1]}%) for ${economicTier} economies`
       );
@@ -272,7 +276,7 @@ export function TaxEconomySyncDisplay({
         `Corporate tax rate of ${corporateTaxRate}% is below recommended range (${config.recommendedCorporateTaxRange[0]}-${config.recommendedCorporateTaxRange[1]}%)`
       );
     } else if (corporateTaxRate > config.recommendedCorporateTaxRange[1]) {
-      currentAlignment = 'overtaxed';
+      currentAlignment = "overtaxed";
       recommendations.push(
         `High corporate tax rate (${corporateTaxRate}%) may discourage business investment. Consider reducing to ${config.recommendedCorporateTaxRange[0]}-${config.recommendedCorporateTaxRange[1]}% range`
       );
@@ -286,41 +290,44 @@ export function TaxEconomySyncDisplay({
     }
 
     // Check tax burden distribution
-    const avgTaxBurden = taxBurdenAnalysis.reduce((sum, item) =>
-      sum + (item.effectiveTaxRate * item.populationPercent / 100), 0
+    const avgTaxBurden = taxBurdenAnalysis.reduce(
+      (sum, item) => sum + (item.effectiveTaxRate * item.populationPercent) / 100,
+      0
     );
 
     if (avgTaxBurden > config.maxTaxBurden) {
-      currentAlignment = 'overtaxed';
+      currentAlignment = "overtaxed";
       recommendations.push(
         `Average tax burden (${avgTaxBurden.toFixed(1)}%) exceeds recommended maximum (${config.maxTaxBurden}%) for ${economicTier} economies`
       );
     }
 
     // Check progressivity
-    const lowIncomeBurden = taxBurdenAnalysis.find(t => t.incomeClass === 'Low Income');
-    const highIncomeBurden = taxBurdenAnalysis.find(t => t.incomeClass === 'High Income');
+    const lowIncomeBurden = taxBurdenAnalysis.find((t) => t.incomeClass === "Low Income");
+    const highIncomeBurden = taxBurdenAnalysis.find((t) => t.incomeClass === "High Income");
 
     if (lowIncomeBurden && highIncomeBurden) {
       if (lowIncomeBurden.effectiveTaxRate >= highIncomeBurden.effectiveTaxRate) {
         recommendations.push(
-          'WARNING: Tax system appears regressive. High earners should have higher effective tax rates than low earners'
+          "WARNING: Tax system appears regressive. High earners should have higher effective tax rates than low earners"
         );
       } else if (highIncomeBurden.effectiveTaxRate - lowIncomeBurden.effectiveTaxRate < 10) {
         recommendations.push(
-          'Consider making tax system more progressive by increasing rates for higher income brackets'
+          "Consider making tax system more progressive by increasing rates for higher income brackets"
         );
       }
     }
 
     if (recommendations.length === 0) {
-      recommendations.push('Tax system is well-aligned with economic tier. Continue monitoring economic indicators.');
+      recommendations.push(
+        "Tax system is well-aligned with economic tier. Continue monitoring economic indicators."
+      );
     }
 
     return {
       ...config,
       currentAlignment,
-      recommendations
+      recommendations,
     };
   }, [economicTier, taxSystem, taxBurdenAnalysis]);
 
@@ -330,25 +337,27 @@ export function TaxEconomySyncDisplay({
       return {
         gdpGrowthImpact: 0,
         giniCoefficientChange: 0,
-        businessInvestmentImpact: 'neutral',
-        consumerSpendingImpact: 'neutral',
-        employmentImpact: 'neutral',
-        overallScore: 50
+        businessInvestmentImpact: "neutral",
+        consumerSpendingImpact: "neutral",
+        employmentImpact: "neutral",
+        overallScore: 50,
       };
     }
 
-    const avgTaxBurden = taxBurdenAnalysis.reduce((sum, item) =>
-      sum + (item.effectiveTaxRate * item.populationPercent / 100), 0
+    const avgTaxBurden = taxBurdenAnalysis.reduce(
+      (sum, item) => sum + (item.effectiveTaxRate * item.populationPercent) / 100,
+      0
     );
 
-    const corporateTax = taxSystem.taxCategories.find(
-      cat => cat.categoryName.toLowerCase().includes('corporate')
+    const corporateTax = taxSystem.taxCategories.find((cat) =>
+      cat.categoryName.toLowerCase().includes("corporate")
     );
     const corporateTaxRate = corporateTax?.baseRate || 0;
 
     const salesTax = taxSystem.taxCategories.find(
-      cat => cat.categoryName.toLowerCase().includes('sales') ||
-             cat.categoryName.toLowerCase().includes('vat')
+      (cat) =>
+        cat.categoryName.toLowerCase().includes("sales") ||
+        cat.categoryName.toLowerCase().includes("vat")
     );
     const salesTaxRate = salesTax?.baseRate || 0;
 
@@ -358,46 +367,54 @@ export function TaxEconomySyncDisplay({
     const gdpGrowthImpact = -taxBurdenDiff * 0.15; // -0.15% GDP growth per 1% excess tax
 
     // Gini coefficient change (progressive taxes reduce inequality)
-    const progressivity = taxBurdenAnalysis.length >= 2
-      ? taxBurdenAnalysis[taxBurdenAnalysis.length - 1].effectiveTaxRate - taxBurdenAnalysis[0].effectiveTaxRate
-      : 0;
+    const progressivity =
+      taxBurdenAnalysis.length >= 2
+        ? taxBurdenAnalysis[taxBurdenAnalysis.length - 1].effectiveTaxRate -
+          taxBurdenAnalysis[0].effectiveTaxRate
+        : 0;
     const giniCoefficientChange = -progressivity * 0.05; // More progressive = lower Gini
 
     // Business investment impact
-    let businessInvestmentImpact: EconomicImpact['businessInvestmentImpact'] = 'neutral';
+    let businessInvestmentImpact: EconomicImpact["businessInvestmentImpact"] = "neutral";
     if (corporateTaxRate < tierRecommendation.recommendedCorporateTaxRange[0]) {
-      businessInvestmentImpact = 'positive';
+      businessInvestmentImpact = "positive";
     } else if (corporateTaxRate > tierRecommendation.recommendedCorporateTaxRange[1]) {
-      businessInvestmentImpact = 'negative';
+      businessInvestmentImpact = "negative";
     }
 
     // Consumer spending impact
-    let consumerSpendingImpact: EconomicImpact['consumerSpendingImpact'] = 'neutral';
-    if (salesTaxRate > tierRecommendation.recommendedSalesTaxRange[1] || avgTaxBurden > tierRecommendation.maxTaxBurden) {
-      consumerSpendingImpact = 'negative';
-    } else if (salesTaxRate < tierRecommendation.recommendedSalesTaxRange[0] && avgTaxBurden < optimalTaxBurden) {
-      consumerSpendingImpact = 'positive';
+    let consumerSpendingImpact: EconomicImpact["consumerSpendingImpact"] = "neutral";
+    if (
+      salesTaxRate > tierRecommendation.recommendedSalesTaxRange[1] ||
+      avgTaxBurden > tierRecommendation.maxTaxBurden
+    ) {
+      consumerSpendingImpact = "negative";
+    } else if (
+      salesTaxRate < tierRecommendation.recommendedSalesTaxRange[0] &&
+      avgTaxBurden < optimalTaxBurden
+    ) {
+      consumerSpendingImpact = "positive";
     }
 
     // Employment impact
-    let employmentImpact: EconomicImpact['employmentImpact'] = 'neutral';
+    let employmentImpact: EconomicImpact["employmentImpact"] = "neutral";
     if (corporateTaxRate > tierRecommendation.recommendedCorporateTaxRange[1] + 5) {
-      employmentImpact = 'negative';
+      employmentImpact = "negative";
     } else if (corporateTaxRate < tierRecommendation.recommendedCorporateTaxRange[0]) {
-      employmentImpact = 'positive';
+      employmentImpact = "positive";
     }
 
     // Overall score (0-100)
     let overallScore = 50;
-    if (tierRecommendation.currentAlignment === 'aligned') overallScore += 25;
-    else if (tierRecommendation.currentAlignment === 'overtaxed') overallScore -= 15;
+    if (tierRecommendation.currentAlignment === "aligned") overallScore += 25;
+    else if (tierRecommendation.currentAlignment === "overtaxed") overallScore -= 15;
     else overallScore -= 10;
 
-    if (businessInvestmentImpact === 'positive') overallScore += 10;
-    else if (businessInvestmentImpact === 'negative') overallScore -= 10;
+    if (businessInvestmentImpact === "positive") overallScore += 10;
+    else if (businessInvestmentImpact === "negative") overallScore -= 10;
 
-    if (consumerSpendingImpact === 'positive') overallScore += 10;
-    else if (consumerSpendingImpact === 'negative') overallScore -= 10;
+    if (consumerSpendingImpact === "positive") overallScore += 10;
+    else if (consumerSpendingImpact === "negative") overallScore -= 10;
 
     if (progressivity > 15) overallScore += 5; // Bonus for progressive system
 
@@ -407,17 +424,17 @@ export function TaxEconomySyncDisplay({
       businessInvestmentImpact,
       consumerSpendingImpact,
       employmentImpact,
-      overallScore: Math.max(0, Math.min(100, overallScore))
+      overallScore: Math.max(0, Math.min(100, overallScore)),
     };
   }, [taxSystem, economicData, taxBurdenAnalysis, tierRecommendation]);
 
   // Format helpers
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
@@ -425,23 +442,23 @@ export function TaxEconomySyncDisplay({
     return `${rate.toFixed(1)}%`;
   };
 
-  const getImpactIcon = (impact: 'positive' | 'neutral' | 'negative') => {
-    if (impact === 'positive') return <TrendingUp className="h-4 w-4 text-green-600" />;
-    if (impact === 'negative') return <TrendingDown className="h-4 w-4 text-red-600" />;
+  const getImpactIcon = (impact: "positive" | "neutral" | "negative") => {
+    if (impact === "positive") return <TrendingUp className="h-4 w-4 text-green-600" />;
+    if (impact === "negative") return <TrendingDown className="h-4 w-4 text-red-600" />;
     return <Activity className="h-4 w-4 text-gray-600" />;
   };
 
-  const getImpactColor = (impact: 'positive' | 'neutral' | 'negative') => {
-    if (impact === 'positive') return 'text-green-600 dark:text-green-400';
-    if (impact === 'negative') return 'text-red-600 dark:text-red-400';
-    return 'text-gray-600 dark:text-gray-400';
+  const getImpactColor = (impact: "positive" | "neutral" | "negative") => {
+    if (impact === "positive") return "text-green-600 dark:text-green-400";
+    if (impact === "negative") return "text-red-600 dark:text-red-400";
+    return "text-gray-600 dark:text-gray-400";
   };
 
   if (!taxSystem || !economicData?.core) {
     return (
       <Card className={className}>
         <CardContent className="p-8 text-center">
-          <Info className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <Info className="mx-auto mb-4 h-12 w-12 text-gray-400" />
           <p className="text-gray-600 dark:text-gray-400">
             Configure tax system and economic data to view economic impact analysis
           </p>
@@ -457,23 +474,20 @@ export function TaxEconomySyncDisplay({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/20">
+              <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-900/20">
                 <Scale className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
                 <CardTitle className="text-xl font-semibold">Tax System Economic Impact</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Analysis for {economicTier} economy (GDP/capita: {formatCurrency(economicData.core.gdpPerCapita)})
+                <p className="text-muted-foreground text-sm">
+                  Analysis for {economicTier} economy (GDP/capita:{" "}
+                  {formatCurrency(economicData.core.gdpPerCapita)})
                 </p>
               </div>
             </div>
 
-            <Button
-              onClick={onOptimize}
-              variant="outline"
-              size="sm"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
+            <Button onClick={onOptimize} variant="outline" size="sm">
+              <RefreshCw className="mr-2 h-4 w-4" />
               Optimize
             </Button>
           </div>
@@ -481,7 +495,7 @@ export function TaxEconomySyncDisplay({
         <CardContent>
           <div className="space-y-4">
             <div>
-              <div className="flex items-center justify-between mb-2">
+              <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium">Overall Economic Health Score</span>
                 <span className="text-2xl font-bold" style={{ color: tierRecommendation.color }}>
                   {economicImpact.overallScore.toFixed(0)}/100
@@ -492,31 +506,37 @@ export function TaxEconomySyncDisplay({
                 className="h-3"
                 style={{
                   // @ts-ignore - Custom CSS variable
-                  '--progress-background': tierRecommendation.color
+                  "--progress-background": tierRecommendation.color,
                 }}
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-3 rounded-lg bg-white/50 dark:bg-gray-800/50">
-                <div className="text-xs text-muted-foreground mb-1">Economic Tier</div>
-                <Badge style={{ backgroundColor: tierRecommendation.color }}>
-                  {economicTier}
-                </Badge>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="rounded-lg bg-white/50 p-3 text-center dark:bg-gray-800/50">
+                <div className="text-muted-foreground mb-1 text-xs">Economic Tier</div>
+                <Badge style={{ backgroundColor: tierRecommendation.color }}>{economicTier}</Badge>
               </div>
-              <div className="text-center p-3 rounded-lg bg-white/50 dark:bg-gray-800/50">
-                <div className="text-xs text-muted-foreground mb-1">Tax Alignment</div>
-                <Badge variant={
-                  tierRecommendation.currentAlignment === 'aligned' ? 'default' :
-                  tierRecommendation.currentAlignment === 'overtaxed' ? 'destructive' : 'secondary'
-                }>
+              <div className="rounded-lg bg-white/50 p-3 text-center dark:bg-gray-800/50">
+                <div className="text-muted-foreground mb-1 text-xs">Tax Alignment</div>
+                <Badge
+                  variant={
+                    tierRecommendation.currentAlignment === "aligned"
+                      ? "default"
+                      : tierRecommendation.currentAlignment === "overtaxed"
+                        ? "destructive"
+                        : "secondary"
+                  }
+                >
                   {tierRecommendation.currentAlignment}
                 </Badge>
               </div>
-              <div className="text-center p-3 rounded-lg bg-white/50 dark:bg-gray-800/50">
-                <div className="text-xs text-muted-foreground mb-1">GDP Impact</div>
-                <div className={`font-semibold ${economicImpact.gdpGrowthImpact >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {economicImpact.gdpGrowthImpact >= 0 ? '+' : ''}{formatPercentage(economicImpact.gdpGrowthImpact)}
+              <div className="rounded-lg bg-white/50 p-3 text-center dark:bg-gray-800/50">
+                <div className="text-muted-foreground mb-1 text-xs">GDP Impact</div>
+                <div
+                  className={`font-semibold ${economicImpact.gdpGrowthImpact >= 0 ? "text-green-600" : "text-red-600"}`}
+                >
+                  {economicImpact.gdpGrowthImpact >= 0 ? "+" : ""}
+                  {formatPercentage(economicImpact.gdpGrowthImpact)}
                 </div>
               </div>
             </div>
@@ -525,22 +545,22 @@ export function TaxEconomySyncDisplay({
       </Card>
 
       {/* Alerts */}
-      {tierRecommendation.currentAlignment === 'overtaxed' && (
+      {tierRecommendation.currentAlignment === "overtaxed" && (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            <strong>High Tax Burden Warning:</strong> Current tax rates exceed recommended levels for {economicTier} economies,
-            potentially limiting economic growth and competitiveness.
+            <strong>High Tax Burden Warning:</strong> Current tax rates exceed recommended levels
+            for {economicTier} economies, potentially limiting economic growth and competitiveness.
           </AlertDescription>
         </Alert>
       )}
 
-      {taxBurdenAnalysis.some(t => t.status === 'excessive') && (
+      {taxBurdenAnalysis.some((t) => t.status === "excessive") && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            <strong>Excessive Tax Burden:</strong> Some income classes face tax rates above 45%, which may drive tax evasion
-            and capital flight.
+            <strong>Excessive Tax Burden:</strong> Some income classes face tax rates above 45%,
+            which may drive tax evasion and capital flight.
           </AlertDescription>
         </Alert>
       )}
@@ -570,23 +590,27 @@ export function TaxEconomySyncDisplay({
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="p-4 rounded-lg border bg-gradient-to-r from-white/50 to-gray-50/50 dark:from-gray-800/50 dark:to-gray-900/50"
+                  className="rounded-lg border bg-gradient-to-r from-white/50 to-gray-50/50 p-4 dark:from-gray-800/50 dark:to-gray-900/50"
                 >
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="mb-3 flex items-start justify-between">
                     <div>
-                      <div className="font-semibold text-lg flex items-center gap-2">
+                      <div className="flex items-center gap-2 text-lg font-semibold">
                         {burden.incomeClass}
                         <Badge
                           variant={
-                            burden.status === 'low' ? 'default' :
-                            burden.status === 'moderate' ? 'secondary' :
-                            burden.status === 'high' ? 'outline' : 'destructive'
+                            burden.status === "low"
+                              ? "default"
+                              : burden.status === "moderate"
+                                ? "secondary"
+                                : burden.status === "high"
+                                  ? "outline"
+                                  : "destructive"
                           }
                         >
                           {burden.status}
                         </Badge>
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-muted-foreground text-sm">
                         {burden.populationPercent}% of population
                       </div>
                     </div>
@@ -594,25 +618,29 @@ export function TaxEconomySyncDisplay({
                       <div className="text-2xl font-bold" style={{ color: burden.color }}>
                         {formatPercentage(burden.effectiveTaxRate)}
                       </div>
-                      <div className="text-xs text-muted-foreground">Effective Rate</div>
+                      <div className="text-muted-foreground text-xs">Effective Rate</div>
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <Progress value={burden.effectiveTaxRate} className="h-2" />
 
-                    <div className="grid grid-cols-3 gap-4 mt-3 text-sm">
+                    <div className="mt-3 grid grid-cols-3 gap-4 text-sm">
                       <div>
                         <div className="text-muted-foreground">Average Income</div>
                         <div className="font-semibold">{formatCurrency(burden.averageIncome)}</div>
                       </div>
                       <div>
                         <div className="text-muted-foreground">Tax Burden</div>
-                        <div className="font-semibold text-red-600">{formatCurrency(burden.taxBurden)}</div>
+                        <div className="font-semibold text-red-600">
+                          {formatCurrency(burden.taxBurden)}
+                        </div>
                       </div>
                       <div>
                         <div className="text-muted-foreground">Disposable Income</div>
-                        <div className="font-semibold text-green-600">{formatCurrency(burden.disposableIncome)}</div>
+                        <div className="font-semibold text-green-600">
+                          {formatCurrency(burden.disposableIncome)}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -624,11 +652,18 @@ export function TaxEconomySyncDisplay({
                 <Alert>
                   <Scale className="h-4 w-4" />
                   <AlertDescription>
-                    <strong>Progressivity Analysis:</strong> Tax rate increases from{' '}
-                    {formatPercentage(taxBurdenAnalysis[0].effectiveTaxRate)} (low income) to{' '}
-                    {formatPercentage(taxBurdenAnalysis[taxBurdenAnalysis.length - 1].effectiveTaxRate)} (high income).
-                    {taxBurdenAnalysis[0].effectiveTaxRate >= taxBurdenAnalysis[taxBurdenAnalysis.length - 1].effectiveTaxRate && (
-                      <span className="text-red-600 font-semibold"> WARNING: System is regressive!</span>
+                    <strong>Progressivity Analysis:</strong> Tax rate increases from{" "}
+                    {formatPercentage(taxBurdenAnalysis[0].effectiveTaxRate)} (low income) to{" "}
+                    {formatPercentage(
+                      taxBurdenAnalysis[taxBurdenAnalysis.length - 1].effectiveTaxRate
+                    )}{" "}
+                    (high income).
+                    {taxBurdenAnalysis[0].effectiveTaxRate >=
+                      taxBurdenAnalysis[taxBurdenAnalysis.length - 1].effectiveTaxRate && (
+                      <span className="font-semibold text-red-600">
+                        {" "}
+                        WARNING: System is regressive!
+                      </span>
                     )}
                   </AlertDescription>
                 </Alert>
@@ -648,13 +683,10 @@ export function TaxEconomySyncDisplay({
             </CardHeader>
             <CardContent className="space-y-3">
               {tierRecommendation.recommendations.map((rec, index) => (
-                <Alert
-                  key={index}
-                  variant={rec.includes('WARNING') ? 'destructive' : 'default'}
-                >
-                  {rec.includes('WARNING') ? (
+                <Alert key={index} variant={rec.includes("WARNING") ? "destructive" : "default"}>
+                  {rec.includes("WARNING") ? (
                     <AlertTriangle className="h-4 w-4" />
-                  ) : tierRecommendation.currentAlignment === 'aligned' ? (
+                  ) : tierRecommendation.currentAlignment === "aligned" ? (
                     <CheckCircle className="h-4 w-4" />
                   ) : (
                     <Info className="h-4 w-4" />
@@ -668,7 +700,7 @@ export function TaxEconomySyncDisplay({
 
         {/* Economic Impacts */}
         <TabsContent value="impacts" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {/* GDP Impact */}
             <Card>
               <CardHeader>
@@ -679,10 +711,13 @@ export function TaxEconomySyncDisplay({
               </CardHeader>
               <CardContent>
                 <div className="text-center">
-                  <div className={`text-3xl font-bold mb-2 ${economicImpact.gdpGrowthImpact >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {economicImpact.gdpGrowthImpact >= 0 ? '+' : ''}{formatPercentage(economicImpact.gdpGrowthImpact)}
+                  <div
+                    className={`mb-2 text-3xl font-bold ${economicImpact.gdpGrowthImpact >= 0 ? "text-green-600" : "text-red-600"}`}
+                  >
+                    {economicImpact.gdpGrowthImpact >= 0 ? "+" : ""}
+                    {formatPercentage(economicImpact.gdpGrowthImpact)}
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Estimated impact on annual GDP growth from current tax policy
                   </p>
                 </div>
@@ -699,10 +734,13 @@ export function TaxEconomySyncDisplay({
               </CardHeader>
               <CardContent>
                 <div className="text-center">
-                  <div className={`text-3xl font-bold mb-2 ${economicImpact.giniCoefficientChange <= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {economicImpact.giniCoefficientChange >= 0 ? '+' : ''}{economicImpact.giniCoefficientChange.toFixed(1)}
+                  <div
+                    className={`mb-2 text-3xl font-bold ${economicImpact.giniCoefficientChange <= 0 ? "text-green-600" : "text-red-600"}`}
+                  >
+                    {economicImpact.giniCoefficientChange >= 0 ? "+" : ""}
+                    {economicImpact.giniCoefficientChange.toFixed(1)}
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Change in Gini coefficient (lower is better)
                   </p>
                 </div>
@@ -719,13 +757,15 @@ export function TaxEconomySyncDisplay({
               </CardHeader>
               <CardContent>
                 <div className="text-center">
-                  <div className="flex items-center justify-center gap-2 mb-2">
+                  <div className="mb-2 flex items-center justify-center gap-2">
                     {getImpactIcon(economicImpact.businessInvestmentImpact)}
-                    <span className={`text-2xl font-bold capitalize ${getImpactColor(economicImpact.businessInvestmentImpact)}`}>
+                    <span
+                      className={`text-2xl font-bold capitalize ${getImpactColor(economicImpact.businessInvestmentImpact)}`}
+                    >
                       {economicImpact.businessInvestmentImpact}
                     </span>
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Impact on business investment and expansion
                   </p>
                 </div>
@@ -742,13 +782,15 @@ export function TaxEconomySyncDisplay({
               </CardHeader>
               <CardContent>
                 <div className="text-center">
-                  <div className="flex items-center justify-center gap-2 mb-2">
+                  <div className="mb-2 flex items-center justify-center gap-2">
                     {getImpactIcon(economicImpact.consumerSpendingImpact)}
-                    <span className={`text-2xl font-bold capitalize ${getImpactColor(economicImpact.consumerSpendingImpact)}`}>
+                    <span
+                      className={`text-2xl font-bold capitalize ${getImpactColor(economicImpact.consumerSpendingImpact)}`}
+                    >
                       {economicImpact.consumerSpendingImpact}
                     </span>
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Impact on household consumption and demand
                   </p>
                 </div>
@@ -765,16 +807,18 @@ export function TaxEconomySyncDisplay({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-white/50 to-gray-50/50 dark:from-gray-800/50 dark:to-gray-900/50">
+              <div className="flex items-center justify-between rounded-lg bg-gradient-to-r from-white/50 to-gray-50/50 p-4 dark:from-gray-800/50 dark:to-gray-900/50">
                 <div>
-                  <div className="font-semibold mb-1">Overall Employment Outlook</div>
-                  <p className="text-sm text-muted-foreground">
+                  <div className="mb-1 font-semibold">Overall Employment Outlook</div>
+                  <p className="text-muted-foreground text-sm">
                     Based on corporate tax rates and business climate
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
                   {getImpactIcon(economicImpact.employmentImpact)}
-                  <span className={`text-2xl font-bold capitalize ${getImpactColor(economicImpact.employmentImpact)}`}>
+                  <span
+                    className={`text-2xl font-bold capitalize ${getImpactColor(economicImpact.employmentImpact)}`}
+                  >
                     {economicImpact.employmentImpact}
                   </span>
                 </div>
@@ -795,22 +839,29 @@ export function TaxEconomySyncDisplay({
             <CardContent className="space-y-6">
               {/* Income Tax Benchmark */}
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="mb-2 flex items-center justify-between">
                   <span className="font-medium">Personal Income Tax</span>
-                  <span className="text-sm text-muted-foreground">
-                    Recommended: {formatPercentage(tierRecommendation.recommendedIncomeTaxRange[0])} - {formatPercentage(tierRecommendation.recommendedIncomeTaxRange[1])}
+                  <span className="text-muted-foreground text-sm">
+                    Recommended: {formatPercentage(tierRecommendation.recommendedIncomeTaxRange[0])}{" "}
+                    - {formatPercentage(tierRecommendation.recommendedIncomeTaxRange[1])}
                   </span>
                 </div>
                 <div className="relative">
                   <Progress
-                    value={(tierRecommendation.recommendedIncomeTaxRange[0] + tierRecommendation.recommendedIncomeTaxRange[1]) / 2}
+                    value={
+                      (tierRecommendation.recommendedIncomeTaxRange[0] +
+                        tierRecommendation.recommendedIncomeTaxRange[1]) /
+                      2
+                    }
                     className="h-3"
                   />
-                  {taxSystem.taxCategories?.find(cat => cat.categoryName.toLowerCase().includes('income')) && (
+                  {taxSystem.taxCategories?.find((cat) =>
+                    cat.categoryName.toLowerCase().includes("income")
+                  ) && (
                     <div
-                      className="absolute top-0 w-1 h-3 bg-red-500"
+                      className="absolute top-0 h-3 w-1 bg-red-500"
                       style={{
-                        left: `${(taxSystem.taxCategories.find(cat => cat.categoryName.toLowerCase().includes('income'))?.baseRate || 0)}%`
+                        left: `${taxSystem.taxCategories.find((cat) => cat.categoryName.toLowerCase().includes("income"))?.baseRate || 0}%`,
                       }}
                     />
                   )}
@@ -819,41 +870,52 @@ export function TaxEconomySyncDisplay({
 
               {/* Corporate Tax Benchmark */}
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="mb-2 flex items-center justify-between">
                   <span className="font-medium">Corporate Income Tax</span>
-                  <span className="text-sm text-muted-foreground">
-                    Recommended: {formatPercentage(tierRecommendation.recommendedCorporateTaxRange[0])} - {formatPercentage(tierRecommendation.recommendedCorporateTaxRange[1])}
+                  <span className="text-muted-foreground text-sm">
+                    Recommended:{" "}
+                    {formatPercentage(tierRecommendation.recommendedCorporateTaxRange[0])} -{" "}
+                    {formatPercentage(tierRecommendation.recommendedCorporateTaxRange[1])}
                   </span>
                 </div>
                 <Progress
-                  value={(tierRecommendation.recommendedCorporateTaxRange[0] + tierRecommendation.recommendedCorporateTaxRange[1]) / 2}
+                  value={
+                    (tierRecommendation.recommendedCorporateTaxRange[0] +
+                      tierRecommendation.recommendedCorporateTaxRange[1]) /
+                    2
+                  }
                   className="h-3"
                 />
               </div>
 
               {/* Sales Tax Benchmark */}
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="mb-2 flex items-center justify-between">
                   <span className="font-medium">Sales Tax / VAT</span>
-                  <span className="text-sm text-muted-foreground">
-                    Recommended: {formatPercentage(tierRecommendation.recommendedSalesTaxRange[0])} - {formatPercentage(tierRecommendation.recommendedSalesTaxRange[1])}
+                  <span className="text-muted-foreground text-sm">
+                    Recommended: {formatPercentage(tierRecommendation.recommendedSalesTaxRange[0])}{" "}
+                    - {formatPercentage(tierRecommendation.recommendedSalesTaxRange[1])}
                   </span>
                 </div>
                 <Progress
-                  value={(tierRecommendation.recommendedSalesTaxRange[0] + tierRecommendation.recommendedSalesTaxRange[1]) / 2}
+                  value={
+                    (tierRecommendation.recommendedSalesTaxRange[0] +
+                      tierRecommendation.recommendedSalesTaxRange[1]) /
+                    2
+                  }
                   className="h-3"
                 />
               </div>
 
               {/* Max Tax Burden */}
               <div>
-                <div className="flex items-center justify-between mb-2">
+                <div className="mb-2 flex items-center justify-between">
                   <span className="font-medium">Maximum Recommended Tax Burden</span>
                   <span className="text-2xl font-bold" style={{ color: tierRecommendation.color }}>
                     {formatPercentage(tierRecommendation.maxTaxBurden)}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Total effective tax rate across all income levels should not exceed this threshold
                 </p>
               </div>
@@ -861,8 +923,9 @@ export function TaxEconomySyncDisplay({
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  These benchmarks are based on international best practices for {economicTier} economies.
-                  Adjust based on your country's specific circumstances, social priorities, and development goals.
+                  These benchmarks are based on international best practices for {economicTier}{" "}
+                  economies. Adjust based on your country's specific circumstances, social
+                  priorities, and development goals.
                 </AlertDescription>
               </Alert>
             </CardContent>

@@ -1,8 +1,8 @@
 "use client";
 
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '~/lib/utils';
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "~/lib/utils";
 
 interface BasicViewProps {
   visible: boolean;
@@ -31,38 +31,38 @@ export function BasicView({ visible, children, className }: BasicViewProps) {
         <motion.div
           key="basic"
           initial={{ opacity: 0, height: 0, y: -10 }}
-          animate={{ 
-            opacity: 1, 
-            height: 'auto', 
+          animate={{
+            opacity: 1,
+            height: "auto",
             y: 0,
             transition: {
               duration: 0.3,
               ease: "easeOut",
-              height: { duration: 0.4 }
-            }
+              height: { duration: 0.4 },
+            },
           }}
-          exit={{ 
-            opacity: 0, 
-            height: 0, 
+          exit={{
+            opacity: 0,
+            height: 0,
             y: -10,
             transition: {
               duration: 0.2,
-              ease: "easeIn"
-            }
+              ease: "easeIn",
+            },
           }}
-          className={cn('overflow-hidden', className)}
+          className={cn("overflow-hidden", className)}
         >
           <motion.div
             initial={{ y: 10, opacity: 0 }}
-            animate={{ 
-              y: 0, 
+            animate={{
+              y: 0,
               opacity: 1,
-              transition: { delay: 0.1, duration: 0.3 }
+              transition: { delay: 0.1, duration: 0.3 },
             }}
-            exit={{ 
-              y: -10, 
+            exit={{
+              y: -10,
               opacity: 0,
-              transition: { duration: 0.2 }
+              transition: { duration: 0.2 },
             }}
           >
             {children}
@@ -81,38 +81,38 @@ export function AdvancedView({ visible, children, className }: AdvancedViewProps
         <motion.div
           key="advanced"
           initial={{ opacity: 0, height: 0, y: 10 }}
-          animate={{ 
-            opacity: 1, 
-            height: 'auto', 
+          animate={{
+            opacity: 1,
+            height: "auto",
             y: 0,
             transition: {
               duration: 0.4,
               ease: "easeOut",
-              height: { duration: 0.5 }
-            }
+              height: { duration: 0.5 },
+            },
           }}
-          exit={{ 
-            opacity: 0, 
-            height: 0, 
+          exit={{
+            opacity: 0,
+            height: 0,
             y: 10,
             transition: {
               duration: 0.3,
-              ease: "easeIn"
-            }
+              ease: "easeIn",
+            },
           }}
-          className={cn('overflow-hidden', className)}
+          className={cn("overflow-hidden", className)}
         >
           <motion.div
             initial={{ y: 20, opacity: 0 }}
-            animate={{ 
-              y: 0, 
+            animate={{
+              y: 0,
               opacity: 1,
-              transition: { delay: 0.15, duration: 0.4 }
+              transition: { delay: 0.15, duration: 0.4 },
             }}
-            exit={{ 
-              y: 10, 
+            exit={{
+              y: 10,
               opacity: 0,
-              transition: { duration: 0.2 }
+              transition: { duration: 0.2 },
             }}
           >
             {children}
@@ -124,21 +124,17 @@ export function AdvancedView({ visible, children, className }: AdvancedViewProps
 }
 
 // Unified View Transition Component
-export function ViewTransition({ 
-  showAdvanced, 
-  basicContent, 
-  advancedContent, 
-  className 
+export function ViewTransition({
+  showAdvanced,
+  basicContent,
+  advancedContent,
+  className,
 }: ViewTransitionProps) {
   return (
-    <div className={cn('relative', className)}>
-      <BasicView visible={!showAdvanced}>
-        {basicContent}
-      </BasicView>
-      
-      <AdvancedView visible={showAdvanced}>
-        {advancedContent}
-      </AdvancedView>
+    <div className={cn("relative", className)}>
+      <BasicView visible={!showAdvanced}>{basicContent}</BasicView>
+
+      <AdvancedView visible={showAdvanced}>{advancedContent}</AdvancedView>
     </div>
   );
 }

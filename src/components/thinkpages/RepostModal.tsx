@@ -1,8 +1,8 @@
 "use client";
 
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/components/ui/dialog';
-import { UnifiedComposerContainer } from './UnifiedComposerContainer';
+import React from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { UnifiedComposerContainer } from "./UnifiedComposerContainer";
 
 interface RepostModalProps {
   open: boolean;
@@ -29,7 +29,7 @@ export function RepostModal({
   onAccountSettings,
   onCreateAccount,
   isOwner,
-  onPost
+  onPost,
 }: RepostModalProps) {
   const handlePost = () => {
     onPost();
@@ -53,7 +53,7 @@ export function RepostModal({
           onPost={handlePost}
           repostData={{
             originalPost,
-            mode: 'repost'
+            mode: "repost",
           }}
           hideAccountsTab={true}
         />

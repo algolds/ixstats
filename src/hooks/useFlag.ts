@@ -1,8 +1,8 @@
 // src/hooks/useFlag.ts
 // Simple hook for flag URLs using the unified system
 
-import { useState, useEffect } from 'react';
-import { flagService } from '~/lib/flag-service';
+import { useState, useEffect } from "react";
+import { flagService } from "~/lib/flag-service";
 
 export interface UseFlagResult {
   flagUrl: string | null;
@@ -40,7 +40,7 @@ export function useFlag(countryName?: string): UseFlagResult {
 
         // Fetch if not cached
         const url = await flagService.getFlagUrl(countryName);
-        
+
         if (mounted) {
           setFlagUrl(url);
           setIsLoading(false);

@@ -124,9 +124,9 @@ export function BotMonitoringDashboard() {
         });
       } else if (botStatusData && "error" in botStatusData) {
         // Handle metrics when botStatusData is the error fallback
-         const newMetric: BotMetrics = {
+        const newMetric: BotMetrics = {
           timestamp: new Date().toISOString(),
-          responseTime: 0, 
+          responseTime: 0,
           isAvailable: botStatusData.botHealth.available, // botHealth is on the error type
           errorCount: 1, // Indicate an error state
         };
@@ -144,18 +144,12 @@ export function BotMonitoringDashboard() {
 
   // Helper to get status color
   const getStatusColor = (available: boolean) => {
-    return available
-      ? "text-green-600 dark:text-green-400"
-      : "text-red-600 dark:text-red-400";
+    return available ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400";
   };
 
   // Helper to get status icon
   const getStatusIcon = (available: boolean) => {
-    return available ? (
-      <CheckCircle className="h-5 w-5" />
-    ) : (
-      <AlertCircle className="h-5 w-5" />
-    );
+    return available ? <CheckCircle className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />;
   };
 
   // Helper to format uptime from milliseconds
@@ -177,12 +171,10 @@ export function BotMonitoringDashboard() {
   // Loading state
   if (isLoadingBotStatus) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
         <div className="flex items-center justify-center py-8">
-          <RefreshCw className="h-6 w-6 animate-spin text-gray-400 mr-2" />
-          <span className="text-gray-500 dark:text-gray-400">
-            Loading bot status...
-          </span>
+          <RefreshCw className="mr-2 h-6 w-6 animate-spin text-gray-400" />
+          <span className="text-gray-500 dark:text-gray-400">Loading bot status...</span>
         </div>
       </div>
     );
@@ -190,13 +182,11 @@ export function BotMonitoringDashboard() {
 
   // Handle case where data is not yet available (should be covered by isLoading, but as a fallback)
   if (!botStatusData) {
-     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+    return (
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
         <div className="flex items-center justify-center py-8">
-          <AlertCircle className="h-6 w-6 text-yellow-500 mr-2" />
-          <span className="text-gray-500 dark:text-gray-400">
-            Bot status not available.
-          </span>
+          <AlertCircle className="mr-2 h-6 w-6 text-yellow-500" />
+          <span className="text-gray-500 dark:text-gray-400">Bot status not available.</span>
         </div>
       </div>
     );
@@ -207,22 +197,26 @@ export function BotMonitoringDashboard() {
   if ("error" in botStatusData && botStatusData.error) {
     const errorState = botStatusData; // errorState is now known to be the error structure
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700 space-y-4">
+      <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
         <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 flex items-center">
-                <AlertCircle className="h-5 w-5 mr-2" />
-                Error Loading Bot Status
-            </h3>
-             <button
-              onClick={() => void refetchBotStatus()}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </button>
+          <h3 className="flex items-center text-lg font-semibold text-red-600 dark:text-red-400">
+            <AlertCircle className="mr-2 h-5 w-5" />
+            Error Loading Bot Status
+          </h3>
+          <button
+            onClick={() => void refetchBotStatus()}
+            className="rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
         </div>
-        <p className="text-sm text-gray-700 dark:text-gray-300">Details: {String(errorState.error || 'Unknown error')}</p>
+        <p className="text-sm text-gray-700 dark:text-gray-300">
+          Details: {String(errorState.error || "Unknown error")}
+        </p>
         {errorState.botHealth && (
-          <div className={`flex items-center space-x-3 p-3 rounded-md ${errorState.botHealth.available ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
+          <div
+            className={`flex items-center space-x-3 rounded-md p-3 ${errorState.botHealth.available ? "bg-green-50 dark:bg-green-900/20" : "bg-red-50 dark:bg-red-900/20"}`}
+          >
             <div className={getStatusColor(errorState.botHealth.available)}>
               {getStatusIcon(errorState.botHealth.available)}
             </div>
@@ -234,39 +228,39 @@ export function BotMonitoringDashboard() {
             </div>
           </div>
         )}
-         <p className="text-xs text-gray-500 dark:text-gray-400">
-            Current IxTime (fallback): {errorState.formattedIxTime}
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Current IxTime (fallback): {errorState.formattedIxTime}
         </p>
-         <p className="text-xs text-gray-500 dark:text-gray-400">
-            Multiplier (fallback): {errorState.multiplier}x
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Multiplier (fallback): {errorState.multiplier}x
         </p>
       </div>
     );
   }
-  
+
   // Type assertion to ensure botStatusData matches AdminPageBotStatusView
   const botStatus = botStatusData;
 
   return (
     <div className="space-y-6">
       {/* Main Status Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-            <Bot className="h-5 w-5 mr-2" />
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="flex items-center text-lg font-semibold text-gray-900 dark:text-white">
+            <Bot className="mr-2 h-5 w-5" />
             Discord Bot Monitor
           </h3>
           <div className="flex items-center space-x-2">
             <button
               onClick={() => void refetchBotStatus()}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
               aria-label="Refresh bot status"
             >
               <RefreshCw className="h-4 w-4" />
             </button>
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-md"
+              className="rounded-md bg-gray-100 px-3 py-1 text-sm text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
             >
               {isExpanded ? "Collapse" : "Expand"}
             </button>
@@ -274,19 +268,17 @@ export function BotMonitoringDashboard() {
         </div>
 
         {/* Status Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div className="flex items-center space-x-3">
             <div className={getStatusColor(botStatus.botHealth.available)}>
               {getStatusIcon(botStatus.botHealth.available)}
             </div>
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400">Connection</p>
-              <p
-                className={`font-medium ${getStatusColor(
-                  botStatus.botHealth.available
-                )}`}
-              >
-                {botStatus.botHealth.available ? "Online" : `Offline: ${botStatus.botHealth.message}`}
+              <p className={`font-medium ${getStatusColor(botStatus.botHealth.available)}`}>
+                {botStatus.botHealth.available
+                  ? "Online"
+                  : `Offline: ${botStatus.botHealth.message}`}
               </p>
             </div>
           </div>
@@ -325,32 +317,30 @@ export function BotMonitoringDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="flex space-x-2 items-center">
+        <div className="flex items-center space-x-2">
           <button
             onClick={handleSyncWithBot}
             disabled={!botStatus.botHealth.available || syncWithBotMutation.isPending}
-            className="px-3 py-1 text-sm bg-blue-100 hover:bg-blue-200 dark:bg-blue-700 dark:hover:bg-blue-600 text-blue-700 dark:text-blue-100 rounded-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            className="flex items-center rounded-md bg-blue-100 px-3 py-1 text-sm text-blue-700 hover:bg-blue-200 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-700 dark:text-blue-100 dark:hover:bg-blue-600"
           >
             <ArrowLeftRight
-              className={`h-3 w-3 mr-1 ${
-                syncWithBotMutation.isPending ? "animate-spin" : ""
-              }`}
+              className={`mr-1 h-3 w-3 ${syncWithBotMutation.isPending ? "animate-spin" : ""}`}
             />
             {syncWithBotMutation.isPending ? "Syncing..." : "Force Sync"}
           </button>
 
           {/* Access hasTimeOverride directly from botStatus (IxTimeState) */}
           {botStatus.hasTimeOverride && (
-            <div className="flex items-center px-3 py-1 bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200 rounded-md text-sm">
-              <AlertTriangle className="h-3 w-3 mr-1" />
+            <div className="flex items-center rounded-md bg-yellow-100 px-3 py-1 text-sm text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200">
+              <AlertTriangle className="mr-1 h-3 w-3" />
               Time Override Active
             </div>
           )}
-          
+
           {/* Access isPaused directly from botStatus (IxTimeState) */}
           {botStatus.isPaused && (
-            <div className="flex items-center px-3 py-1 bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200 rounded-md text-sm">
-              <AlertCircle className="h-3 w-3 mr-1" />
+            <div className="flex items-center rounded-md bg-red-100 px-3 py-1 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-200">
+              <AlertCircle className="mr-1 h-3 w-3" />
               Time Paused
             </div>
           )}
@@ -361,34 +351,37 @@ export function BotMonitoringDashboard() {
       {isExpanded && (
         <>
           {/* Performance Metrics */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <TrendingUp className="h-5 w-5 mr-2" />
+          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+            <h4 className="mb-4 flex items-center text-lg font-semibold text-gray-900 dark:text-white">
+              <TrendingUp className="mr-2 h-5 w-5" />
               Performance Metrics (Simulated)
             </h4>
 
             {metrics.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 {/* Response Time Chart */}
                 <div>
-                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <h5 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     Response Time (Last 20 checks)
                   </h5>
                   <ResponsiveContainer width="100%" height={200}>
                     <LineChart data={metrics}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#4A5568" opacity={0.3} /> {/* Updated stroke color for better dark mode visibility */}
+                      <CartesianGrid strokeDasharray="3 3" stroke="#4A5568" opacity={0.3} />{" "}
+                      {/* Updated stroke color for better dark mode visibility */}
                       <XAxis
                         dataKey="timestamp"
-                        tick={{ fontSize: 10, fill: '#A0AEC0' }} // Adjusted tick color
-                        tickFormatter={(value) =>
-                          new Date(value).toLocaleTimeString()
-                        }
+                        tick={{ fontSize: 10, fill: "#A0AEC0" }} // Adjusted tick color
+                        tickFormatter={(value) => new Date(value).toLocaleTimeString()}
                       />
-                      <YAxis tick={{ fontSize: 10, fill: '#A0AEC0' }} /> {/* Adjusted tick color */}
+                      <YAxis tick={{ fontSize: 10, fill: "#A0AEC0" }} /> {/* Adjusted tick color */}
                       <Tooltip
-                        contentStyle={{ backgroundColor: 'rgba(26, 32, 44, 0.8)', borderColor: '#4A5568', borderRadius: '0.375rem' }} // Darker tooltip
-                        labelStyle={{ color: '#E2E8F0' }} // Light label
-                        itemStyle={{ color: '#E2E8F0' }} // Light item text
+                        contentStyle={{
+                          backgroundColor: "rgba(26, 32, 44, 0.8)",
+                          borderColor: "#4A5568",
+                          borderRadius: "0.375rem",
+                        }} // Darker tooltip
+                        labelStyle={{ color: "#E2E8F0" }} // Light label
+                        itemStyle={{ color: "#E2E8F0" }} // Light item text
                         labelFormatter={(label) => new Date(label).toLocaleString()}
                         formatter={(value: number) => [`${value.toFixed(1)}ms`, "Response Time"]}
                       />
@@ -405,7 +398,7 @@ export function BotMonitoringDashboard() {
 
                 {/* Availability Chart */}
                 <div>
-                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <h5 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                     Availability Status
                   </h5>
                   <ResponsiveContainer width="100%" height={200}>
@@ -413,18 +406,28 @@ export function BotMonitoringDashboard() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#4A5568" opacity={0.3} />
                       <XAxis
                         dataKey="timestamp"
-                        tick={{ fontSize: 10, fill: '#A0AEC0' }}
-                        tickFormatter={(value) =>
-                          new Date(value).toLocaleTimeString()
-                        }
+                        tick={{ fontSize: 10, fill: "#A0AEC0" }}
+                        tickFormatter={(value) => new Date(value).toLocaleTimeString()}
                       />
-                      <YAxis tick={{ fontSize: 10, fill: '#A0AEC0' }} domain={[0, 1]} ticks={[0, 1]} tickFormatter={(value) => value === 1 ? 'Online' : 'Offline'} />
+                      <YAxis
+                        tick={{ fontSize: 10, fill: "#A0AEC0" }}
+                        domain={[0, 1]}
+                        ticks={[0, 1]}
+                        tickFormatter={(value) => (value === 1 ? "Online" : "Offline")}
+                      />
                       <Tooltip
-                        contentStyle={{ backgroundColor: 'rgba(26, 32, 44, 0.8)', borderColor: '#4A5568', borderRadius: '0.375rem' }}
-                        labelStyle={{ color: '#E2E8F0' }}
-                        itemStyle={{ color: '#E2E8F0' }}
+                        contentStyle={{
+                          backgroundColor: "rgba(26, 32, 44, 0.8)",
+                          borderColor: "#4A5568",
+                          borderRadius: "0.375rem",
+                        }}
+                        labelStyle={{ color: "#E2E8F0" }}
+                        itemStyle={{ color: "#E2E8F0" }}
                         labelFormatter={(label) => new Date(label).toLocaleString()}
-                        formatter={(value: number) => [value === 1 ? "Online" : "Offline", "Status"]}
+                        formatter={(value: number) => [
+                          value === 1 ? "Online" : "Offline",
+                          "Status",
+                        ]}
                       />
                       <Area
                         type="stepAfter"
@@ -439,19 +442,19 @@ export function BotMonitoringDashboard() {
               </div>
             ) : (
               <div className="flex items-center justify-center py-8 text-gray-500 dark:text-gray-400">
-                <Info className="h-5 w-5 mr-2" />
+                <Info className="mr-2 h-5 w-5" />
                 Collecting performance data...
               </div>
             )}
           </div>
 
           {/* Bot Information */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <Server className="h-5 w-5 mr-2" />
+          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+            <h4 className="mb-4 flex items-center text-lg font-semibold text-gray-900 dark:text-white">
+              <Server className="mr-2 h-5 w-5" />
               Bot Information
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {/* Corrected: Access username from botStatus.botStatus.botUser */}
               {botStatus.botStatus?.botUser && (
                 <div>
@@ -485,7 +488,7 @@ export function BotMonitoringDashboard() {
 
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Current IxTime</p>
-                <p className="font-medium text-gray-900 dark:text-white text-sm">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
                   {/* Access formattedIxTime directly from botStatus (IxTimeState) */}
                   {botStatus.formattedIxTime || "Unknown"}
                 </p>
@@ -518,18 +521,20 @@ export function BotMonitoringDashboard() {
           </div>
 
           {/* Sync Events Log */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <Activity className="h-5 w-5 mr-2" />
+          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-md dark:border-gray-700 dark:bg-gray-800">
+            <h4 className="mb-4 flex items-center text-lg font-semibold text-gray-900 dark:text-white">
+              <Activity className="mr-2 h-5 w-5" />
               Recent Sync Events
             </h4>
 
             {recentEvents.length > 0 ? (
-              <div className="space-y-2 max-h-96 overflow-y-auto"> {/* Added scroll for long lists */}
+              <div className="max-h-96 space-y-2 overflow-y-auto">
+                {" "}
+                {/* Added scroll for long lists */}
                 {recentEvents.map((event, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-750 rounded-md"
+                    className="dark:bg-gray-750 flex items-center justify-between rounded-md bg-gray-50 p-3"
                   >
                     <div className="flex items-center space-x-3">
                       <div className={event.success ? "text-green-500" : "text-red-500"}>
@@ -558,7 +563,7 @@ export function BotMonitoringDashboard() {
               </div>
             ) : (
               <div className="flex items-center justify-center py-8 text-gray-500 dark:text-gray-400">
-                <Info className="h-5 w-5 mr-2" />
+                <Info className="mr-2 h-5 w-5" />
                 No recent sync events
               </div>
             )}

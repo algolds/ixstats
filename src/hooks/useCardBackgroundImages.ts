@@ -18,7 +18,9 @@ export const useCardBackgroundImages = ({
   countryName,
   enabled = true,
 }: UseCardBackgroundImagesProps) => {
-  const [cardBackgroundImages, setCardBackgroundImages] = useState<{[key: string]: UnsplashImageData}>({});
+  const [cardBackgroundImages, setCardBackgroundImages] = useState<{
+    [key: string]: UnsplashImageData;
+  }>({});
   const [isLoading, setIsLoading] = useState(false);
   const [unsplashEnabled, setUnsplashEnabled] = useState(enabled);
 
@@ -31,31 +33,32 @@ export const useCardBackgroundImages = ({
       try {
         // Tier-specific keywords
         const tierKeywords = {
-          'Extravagant': 'luxury modern',
-          'Very Strong': 'developed advanced',
-          'Strong': 'growing urban',
-          'Healthy': 'city community',
-          'Developed': 'developing growth',
-          'Developing': 'emerging progress',
-          'Impoverished': 'rural basic'
+          Extravagant: "luxury modern",
+          "Very Strong": "developed advanced",
+          Strong: "growing urban",
+          Healthy: "city community",
+          Developed: "developing growth",
+          Developing: "emerging progress",
+          Impoverished: "rural basic",
         };
 
-        const baseTierKeyword = tierKeywords[economicTier as keyof typeof tierKeywords] || 'business';
+        const baseTierKeyword =
+          tierKeywords[economicTier as keyof typeof tierKeywords] || "business";
 
         // Card-specific queries
         const cardQueries = {
-          'economic-analysis': `${baseTierKeyword} economics finance charts graphs dashboard`,
-          'demographics-analysis': `${baseTierKeyword} population people urban society demographics`,
-          'development-analysis': `${baseTierKeyword} infrastructure construction development urban planning`,
-          'executive-summary': `${baseTierKeyword} government leadership headquarters executive`,
-          'economic-power': `${baseTierKeyword} financial markets money banking currency`,
-          'demographics': `${baseTierKeyword} community people social population statistics`,
-          'strategic-assessment': `${baseTierKeyword} military strategy defense intelligence analysis`,
-          'labor-force': `${baseTierKeyword} workers employment labor industry workforce`,
-          'geography': `${baseTierKeyword} landscape geography terrain natural environment`
+          "economic-analysis": `${baseTierKeyword} economics finance charts graphs dashboard`,
+          "demographics-analysis": `${baseTierKeyword} population people urban society demographics`,
+          "development-analysis": `${baseTierKeyword} infrastructure construction development urban planning`,
+          "executive-summary": `${baseTierKeyword} government leadership headquarters executive`,
+          "economic-power": `${baseTierKeyword} financial markets money banking currency`,
+          demographics: `${baseTierKeyword} community people social population statistics`,
+          "strategic-assessment": `${baseTierKeyword} military strategy defense intelligence analysis`,
+          "labor-force": `${baseTierKeyword} workers employment labor industry workforce`,
+          geography: `${baseTierKeyword} landscape geography terrain natural environment`,
         };
 
-        const loadedImages: {[key: string]: UnsplashImageData} = {};
+        const loadedImages: { [key: string]: UnsplashImageData } = {};
         const cardKeys = Object.keys(cardQueries);
 
         for (let i = 0; i < cardKeys.length; i++) {
@@ -64,15 +67,15 @@ export const useCardBackgroundImages = ({
 
           try {
             if (i > 0) {
-              await new Promise(resolve => setTimeout(resolve, 800));
+              await new Promise((resolve) => setTimeout(resolve, 800));
             }
 
             const images = await unsplashService.searchImages({
               query,
-              orientation: 'landscape',
-              size: 'regular',
+              orientation: "landscape",
+              size: "regular",
               per_page: 3,
-              page: Math.floor(i / 3) + 1
+              page: Math.floor(i / 3) + 1,
             });
 
             if (images.length > 0) {
@@ -95,9 +98,9 @@ export const useCardBackgroundImages = ({
 
         setCardBackgroundImages(loadedImages);
       } catch (error) {
-        console.error('[useCardBackgroundImages] Failed to load background images:', error);
-        if (error instanceof Error && error.message.includes('403')) {
-          console.warn('Unsplash API access denied - disabling background images');
+        console.error("[useCardBackgroundImages] Failed to load background images:", error);
+        if (error instanceof Error && error.message.includes("403")) {
+          console.warn("Unsplash API access denied - disabling background images");
           setUnsplashEnabled(false);
         }
       } finally {

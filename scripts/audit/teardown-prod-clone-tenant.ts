@@ -1,10 +1,10 @@
 #!/usr/bin/env tsx
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const tenantPrefix = process.env.TEST_TENANT_PREFIX || '__e2e__';
+  const tenantPrefix = process.env.TEST_TENANT_PREFIX || "__e2e__";
 
   console.log(`Tearing down prod-clone sandbox tenant data with prefix: ${tenantPrefix}`);
 
@@ -22,7 +22,7 @@ async function main() {
     await prisma.country.deleteMany({ where: { slug: { startsWith: tenantPrefix } } });
   } catch {}
 
-  console.log('Teardown complete.');
+  console.log("Teardown complete.");
 }
 
 main()
@@ -32,5 +32,3 @@ main()
     prisma.$disconnect();
     process.exit(1);
   });
-
-

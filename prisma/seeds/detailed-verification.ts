@@ -4,31 +4,31 @@
  * Comprehensive check of all economic data with detailed examples
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('\n📊 DETAILED ECONOMIC DATA VERIFICATION REPORT\n');
-  console.log('='.repeat(80));
+  console.log("\n📊 DETAILED ECONOMIC DATA VERIFICATION REPORT\n");
+  console.log("=".repeat(80));
 
   // Summary statistics
   const totalComponents = await prisma.economicComponentData.count();
   const totalSynergies = await prisma.economicSynergy.count();
   const totalTemplates = await prisma.economicTemplate.count();
 
-  console.log('\n📈 SUMMARY STATISTICS');
-  console.log('-'.repeat(80));
+  console.log("\n📈 SUMMARY STATISTICS");
+  console.log("-".repeat(80));
   console.log(`Total Economic Components: ${totalComponents}`);
   console.log(`Total Synergies/Conflicts: ${totalSynergies}`);
   console.log(`Total Templates: ${totalTemplates}`);
 
   // Component breakdown
-  console.log('\n📂 COMPONENT CATEGORIES');
-  console.log('-'.repeat(80));
+  console.log("\n📂 COMPONENT CATEGORIES");
+  console.log("-".repeat(80));
 
   const categories = await prisma.economicComponentData.groupBy({
-    by: ['category'],
+    by: ["category"],
     _count: true,
     _avg: { effectiveness: true, implementationCost: true },
   });
@@ -41,26 +41,28 @@ async function main() {
   }
 
   // Synergy breakdown
-  console.log('\n\n🔗 SYNERGY ANALYSIS');
-  console.log('-'.repeat(80));
+  console.log("\n\n🔗 SYNERGY ANALYSIS");
+  console.log("-".repeat(80));
 
   const synergyTypes = await prisma.economicSynergy.groupBy({
-    by: ['synergyType'],
+    by: ["synergyType"],
     _count: true,
     _avg: { bonusPercent: true },
   });
 
   for (const type of synergyTypes) {
-    console.log(`${type.synergyType}: ${type._count} records (avg bonus: ${type._avg.bonusPercent}%)`);
+    console.log(
+      `${type.synergyType}: ${type._count} records (avg bonus: ${type._avg.bonusPercent}%)`
+    );
   }
 
   // Top effectiveness components
-  console.log('\n\n⭐ TOP 10 MOST EFFECTIVE COMPONENTS');
-  console.log('-'.repeat(80));
+  console.log("\n\n⭐ TOP 10 MOST EFFECTIVE COMPONENTS");
+  console.log("-".repeat(80));
 
   const topComponents = await prisma.economicComponentData.findMany({
     take: 10,
-    orderBy: { effectiveness: 'desc' },
+    orderBy: { effectiveness: "desc" },
     select: {
       name: true,
       componentType: true,
@@ -72,15 +74,17 @@ async function main() {
 
   topComponents.forEach((comp, idx) => {
     console.log(`${idx + 1}. ${comp.name} (${comp.effectiveness}% effective)`);
-    console.log(`   Category: ${comp.category}, Cost: $${comp.implementationCost.toLocaleString()}`);
+    console.log(
+      `   Category: ${comp.category}, Cost: $${comp.implementationCost.toLocaleString()}`
+    );
   });
 
   // Detailed component example with all impacts
-  console.log('\n\n📋 DETAILED COMPONENT EXAMPLE: INNOVATION_ECONOMY');
-  console.log('-'.repeat(80));
+  console.log("\n\n📋 DETAILED COMPONENT EXAMPLE: INNOVATION_ECONOMY");
+  console.log("-".repeat(80));
 
   const detailedComponent = await prisma.economicComponentData.findUnique({
-    where: { componentType: 'INNOVATION_ECONOMY' },
+    where: { componentType: "INNOVATION_ECONOMY" },
   });
 
   if (detailedComponent) {
@@ -105,14 +109,18 @@ async function main() {
     const sectorImpact = JSON.parse(detailedComponent.sectorImpact);
     console.log(`\nSector Impact Multipliers:`);
     for (const [sector, multiplier] of Object.entries(sectorImpact)) {
-      const percent = ((multiplier as number - 1) * 100).toFixed(0);
-      const sign = Number(percent) > 0 ? '+' : '';
-      console.log(`  ${sector.charAt(0).toUpperCase() + sector.slice(1)}: ${sign}${percent}% (${multiplier}x)`);
+      const percent = (((multiplier as number) - 1) * 100).toFixed(0);
+      const sign = Number(percent) > 0 ? "+" : "";
+      console.log(
+        `  ${sector.charAt(0).toUpperCase() + sector.slice(1)}: ${sign}${percent}% (${multiplier}x)`
+      );
     }
 
     const employmentImpact = JSON.parse(detailedComponent.employmentImpact);
     console.log(`\nEmployment Impact:`);
-    console.log(`  Unemployment: ${employmentImpact.unemploymentModifier > 0 ? '+' : ''}${employmentImpact.unemploymentModifier} pp`);
+    console.log(
+      `  Unemployment: ${employmentImpact.unemploymentModifier > 0 ? "+" : ""}${employmentImpact.unemploymentModifier} pp`
+    );
     console.log(`  Labor Participation: ${(employmentImpact.participationModifier - 1) * 100}%`);
     console.log(`  Wage Growth: ${(employmentImpact.wageGrowthModifier - 1) * 100}%`);
 
@@ -123,28 +131,32 @@ async function main() {
 
     console.log(`\nRelationships:`);
     console.log(`  Economic Synergies: ${synergies.length}`);
-    console.log(`    ${synergies.slice(0, 3).join(', ')}${synergies.length > 3 ? '...' : ''}`);
+    console.log(`    ${synergies.slice(0, 3).join(", ")}${synergies.length > 3 ? "..." : ""}`);
     console.log(`  Economic Conflicts: ${conflicts.length}`);
-    console.log(`    ${conflicts.slice(0, 3).join(', ')}${conflicts.length > 3 ? '...' : ''}`);
+    console.log(`    ${conflicts.slice(0, 3).join(", ")}${conflicts.length > 3 ? "..." : ""}`);
     console.log(`  Government Synergies: ${govSynergies.length}`);
-    console.log(`    ${govSynergies.slice(0, 3).join(', ')}${govSynergies.length > 3 ? '...' : ''}`);
+    console.log(
+      `    ${govSynergies.slice(0, 3).join(", ")}${govSynergies.length > 3 ? "..." : ""}`
+    );
     console.log(`  Government Conflicts: ${govConflicts.length}`);
-    console.log(`    ${govConflicts.slice(0, 3).join(', ')}${govConflicts.length > 3 ? '...' : ''}`);
+    console.log(
+      `    ${govConflicts.slice(0, 3).join(", ")}${govConflicts.length > 3 ? "..." : ""}`
+    );
 
     const metadata = JSON.parse(detailedComponent.metadata);
     console.log(`\nImplementation Metadata:`);
     console.log(`  Complexity: ${metadata.complexity}`);
     console.log(`  Time to Implement: ${metadata.timeToImplement}`);
     console.log(`  Staff Required: ${metadata.staffRequired} employees`);
-    console.log(`  Technology Required: ${metadata.technologyRequired ? 'Yes' : 'No'}`);
+    console.log(`  Technology Required: ${metadata.technologyRequired ? "Yes" : "No"}`);
   }
 
   // Template details
-  console.log('\n\n📦 TEMPLATE DETAILS');
-  console.log('-'.repeat(80));
+  console.log("\n\n📦 TEMPLATE DETAILS");
+  console.log("-".repeat(80));
 
   const templates = await prisma.economicTemplate.findMany({
-    orderBy: { name: 'asc' },
+    orderBy: { name: "asc" },
   });
 
   for (const template of templates) {
@@ -153,16 +165,16 @@ async function main() {
     console.log(`  Key: ${template.key}`);
     console.log(`  Icon: ${template.iconName}`);
     console.log(`  Description: ${template.description}`);
-    console.log(`  Components (${components.length}): ${components.join(', ')}`);
+    console.log(`  Components (${components.length}): ${components.join(", ")}`);
   }
 
   // Strongest synergies
-  console.log('\n\n💪 STRONGEST SYNERGIES');
-  console.log('-'.repeat(80));
+  console.log("\n\n💪 STRONGEST SYNERGIES");
+  console.log("-".repeat(80));
 
   const strongestSynergies = await prisma.economicSynergy.findMany({
-    where: { synergyType: 'strong' },
-    orderBy: { bonusPercent: 'desc' },
+    where: { synergyType: "strong" },
+    orderBy: { bonusPercent: "desc" },
     take: 10,
   });
 
@@ -172,12 +184,12 @@ async function main() {
   });
 
   // Worst conflicts
-  console.log('\n\n⚡ MAJOR CONFLICTS');
-  console.log('-'.repeat(80));
+  console.log("\n\n⚡ MAJOR CONFLICTS");
+  console.log("-".repeat(80));
 
   const worstConflicts = await prisma.economicSynergy.findMany({
-    where: { synergyType: 'conflict' },
-    orderBy: { bonusPercent: 'asc' },
+    where: { synergyType: "conflict" },
+    orderBy: { bonusPercent: "asc" },
     take: 10,
   });
 
@@ -186,13 +198,13 @@ async function main() {
     console.log(`   Penalty: ${syn.bonusPercent}% | ${syn.description}`);
   });
 
-  console.log('\n' + '='.repeat(80));
-  console.log('\n✅ VERIFICATION COMPLETE - All economic data successfully migrated!\n');
+  console.log("\n" + "=".repeat(80));
+  console.log("\n✅ VERIFICATION COMPLETE - All economic data successfully migrated!\n");
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Verification failed:', e);
+    console.error("❌ Verification failed:", e);
     process.exit(1);
   })
   .finally(async () => {

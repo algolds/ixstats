@@ -7,12 +7,12 @@
  * @module ComponentCard
  */
 
-import React from 'react';
-import { Card, CardContent } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
-import { Plus, Minus } from 'lucide-react';
-import type { AtomicGovernmentComponent } from '~/lib/atomic-government-data';
+import React from "react";
+import { Card, CardContent } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Plus, Minus } from "lucide-react";
+import type { AtomicGovernmentComponent } from "~/lib/atomic-government-data";
 
 export interface ComponentCardProps {
   component: AtomicGovernmentComponent;
@@ -43,24 +43,28 @@ export const ComponentCard = React.memo<ComponentCardProps>(
       <Card
         className={`cursor-pointer transition-all hover:shadow-md ${
           isSelected
-            ? 'border-2 border-blue-500 bg-blue-50 dark:bg-blue-950'
-            : 'border-gray-200 dark:border-gray-700'
-        } ${!canSelectMore && !isSelected ? 'opacity-50 cursor-not-allowed' : ''}`}
+            ? "border-2 border-blue-500 bg-blue-50 dark:bg-blue-950"
+            : "border-gray-200 dark:border-gray-700"
+        } ${!canSelectMore && !isSelected ? "cursor-not-allowed opacity-50" : ""}`}
         onClick={handleClick}
       >
         <CardContent className="p-4">
           <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3 flex-1">
-              <div className={`p-2 rounded-lg bg-${component.color}-100 dark:bg-${component.color}-900/20`}>
-                <Icon className={`h-5 w-5 text-${component.color}-600 dark:text-${component.color}-400`} />
+            <div className="flex flex-1 items-start gap-3">
+              <div
+                className={`rounded-lg p-2 bg-${component.color}-100 dark:bg-${component.color}-900/20`}
+              >
+                <Icon
+                  className={`h-5 w-5 text-${component.color}-600 dark:text-${component.color}-400`}
+                />
               </div>
 
               <div className="flex-1 space-y-2">
                 <div>
-                  <h4 className="font-semibold text-sm text-gray-900 dark:text-white">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
                     {component.name}
                   </h4>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
                     {component.description}
                   </p>
                 </div>
@@ -72,11 +76,11 @@ export const ComponentCard = React.memo<ComponentCardProps>(
                   <Badge
                     variant="outline"
                     className={`text-xs ${
-                      component.metadata.complexity === 'High'
-                        ? 'border-red-500 text-red-700 dark:text-red-400'
-                        : component.metadata.complexity === 'Medium'
-                        ? 'border-amber-500 text-amber-700 dark:text-amber-400'
-                        : 'border-green-500 text-green-700 dark:text-green-400'
+                      component.metadata.complexity === "High"
+                        ? "border-red-500 text-red-700 dark:text-red-400"
+                        : component.metadata.complexity === "Medium"
+                          ? "border-amber-500 text-amber-700 dark:text-amber-400"
+                          : "border-green-500 text-green-700 dark:text-green-400"
                     }`}
                   >
                     {component.metadata.complexity}
@@ -91,7 +95,7 @@ export const ComponentCard = React.memo<ComponentCardProps>(
             {!isReadOnly && (
               <Button
                 size="sm"
-                variant={isSelected ? 'destructive' : 'default'}
+                variant={isSelected ? "destructive" : "default"}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (isSelected) {
@@ -112,4 +116,4 @@ export const ComponentCard = React.memo<ComponentCardProps>(
   }
 );
 
-ComponentCard.displayName = 'ComponentCard';
+ComponentCard.displayName = "ComponentCard";

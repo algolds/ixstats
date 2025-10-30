@@ -1,2 +1,2 @@
-export { useProfileSettings } from './useProfileSettings';
-export { useSetupStatus } from './useSetupStatus';
+export { useProfileSettings } from "./useProfileSettings";
+export { useSetupStatus } from "./useSetupStatus";

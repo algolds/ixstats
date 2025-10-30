@@ -14,11 +14,11 @@ export const NoResultsStatus: React.FC<NoResultsStatusProps> = ({
 }) => {
   return (
     <>
-      <AlertCircle className="h-6 w-6 mx-auto mb-2 text-text-muted" />
+      <AlertCircle className="text-text-muted mx-auto mb-2 h-6 w-6" />
       <p className="text-text-muted">
         No pages found for "{searchTerm}" in Category: {categoryFilter} on {selectedSiteDisplayName}
       </p>
-      <p className="text-sm text-text-muted mt-1">
+      <p className="text-text-muted mt-1 text-sm">
         Try a different search term or check the other wiki source.
       </p>
     </>

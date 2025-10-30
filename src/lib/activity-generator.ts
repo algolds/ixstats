@@ -6,26 +6,26 @@ import { formatCurrency, formatPopulation } from "./chart-utils";
 import { IxTime } from "./ixtime";
 
 export interface ActivityData {
-  type: 'achievement' | 'diplomatic' | 'economic' | 'social' | 'meta';
-  category?: 'game' | 'platform' | 'social';
+  type: "achievement" | "diplomatic" | "economic" | "social" | "meta";
+  category?: "game" | "platform" | "social";
   userId?: string;
   countryId?: string;
   title: string;
   description: string;
   metadata?: Record<string, any>;
-  priority?: 'low' | 'medium' | 'high' | 'critical' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  visibility?: 'public' | 'followers' | 'friends';
+  priority?: "low" | "medium" | "high" | "critical" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  visibility?: "public" | "followers" | "friends";
   relatedCountries?: string[];
 }
 
 // Helper to convert priority to lowercase
-function normalizePriority(priority?: string): 'low' | 'medium' | 'high' | 'critical' {
-  if (!priority) return 'medium';
+function normalizePriority(priority?: string): "low" | "medium" | "high" | "critical" {
+  if (!priority) return "medium";
   const lower = priority.toLowerCase();
-  if (lower === 'low' || lower === 'medium' || lower === 'high' || lower === 'critical') {
-    return lower as 'low' | 'medium' | 'high' | 'critical';
+  if (lower === "low" || lower === "medium" || lower === "high" || lower === "critical") {
+    return lower as "low" | "medium" | "high" | "critical";
   }
-  return 'medium';
+  return "medium";
 }
 
 export class ActivityGenerator {
@@ -50,13 +50,18 @@ export class ActivityGenerator {
         return;
       }
 
-      const priority = value > 1000000000000 ? 'CRITICAL' : // 1T+
-                      value > 100000000000 ? 'HIGH' : // 100B+
-                      value > 10000000000 ? 'MEDIUM' : 'LOW'; // 10B+
+      const priority =
+        value > 1000000000000
+          ? "CRITICAL" // 1T+
+          : value > 100000000000
+            ? "HIGH" // 100B+
+            : value > 10000000000
+              ? "MEDIUM"
+              : "LOW"; // 10B+
 
       const activity: ActivityData = {
-        type: 'achievement',
-        category: 'game',
+        type: "achievement",
+        category: "game",
         userId,
         countryId,
         title: `${country.name} Achieves ${milestone}`,
@@ -68,13 +73,13 @@ export class ActivityGenerator {
           countryName: country.name,
         },
         priority,
-        visibility: 'public',
+        visibility: "public",
         relatedCountries: [countryId],
       };
 
       await this.createActivity(activity);
     } catch (error) {
-      console.error('Error creating economic milestone activity:', error);
+      console.error("Error creating economic milestone activity:", error);
     }
   }
 
@@ -94,13 +99,18 @@ export class ActivityGenerator {
 
       if (!country) return;
 
-      const priority = population > 100000000 ? 'CRITICAL' : // 100M+
-                      population > 50000000 ? 'HIGH' : // 50M+
-                      population > 10000000 ? 'MEDIUM' : 'LOW'; // 10M+
+      const priority =
+        population > 100000000
+          ? "CRITICAL" // 100M+
+          : population > 50000000
+            ? "HIGH" // 50M+
+            : population > 10000000
+              ? "MEDIUM"
+              : "LOW"; // 10M+
 
       const activity: ActivityData = {
-        type: 'achievement',
-        category: 'game',
+        type: "achievement",
+        category: "game",
         userId,
         countryId,
         title: `${country.name} Reaches Population Milestone`,
@@ -111,13 +121,13 @@ export class ActivityGenerator {
           countryName: country.name,
         },
         priority,
-        visibility: 'public',
+        visibility: "public",
         relatedCountries: [countryId],
       };
 
       await this.createActivity(activity);
     } catch (error) {
-      console.error('Error creating population milestone activity:', error);
+      console.error("Error creating population milestone activity:", error);
     }
   }
 
@@ -149,14 +159,14 @@ export class ActivityGenerator {
           title,
           description,
           tradeValue,
-          status: 'active',
+          status: "active",
         },
       });
 
       // Create activity feed entry
       const activity: ActivityData = {
-        type: 'diplomatic',
-        category: 'game',
+        type: "diplomatic",
+        category: "game",
         title: `${title}`,
         description: `${country1.name} and ${country2.name} ${description}`,
         metadata: {
@@ -164,14 +174,14 @@ export class ActivityGenerator {
           countries: [country1.name, country2.name],
           tradeValue,
         },
-        priority: tradeValue && tradeValue > 50000000000 ? 'HIGH' : 'MEDIUM',
-        visibility: 'public',
+        priority: tradeValue && tradeValue > 50000000000 ? "HIGH" : "MEDIUM",
+        visibility: "public",
         relatedCountries: [country1Id, country2Id],
       };
 
       await this.createActivity(activity);
     } catch (error) {
-      console.error('Error creating diplomatic event activity:', error);
+      console.error("Error creating diplomatic event activity:", error);
     }
   }
 
@@ -180,7 +190,7 @@ export class ActivityGenerator {
    */
   static async createTierChange(
     countryId: string,
-    tierType: 'economic' | 'population',
+    tierType: "economic" | "population",
     oldTier: string,
     newTier: string,
     userId?: string
@@ -188,9 +198,9 @@ export class ActivityGenerator {
     try {
       const country = await db.country.findUnique({
         where: { id: countryId },
-        select: { 
-          name: true, 
-          currentTotalGdp: true, 
+        select: {
+          name: true,
+          currentTotalGdp: true,
           currentPopulation: true,
           currentGdpPerCapita: true,
         },
@@ -200,21 +210,26 @@ export class ActivityGenerator {
 
       // Determine if this is a promotion or demotion
       const tierHierarchy = [
-        'Impoverished', 'Developing', 'Developed', 'Healthy', 
-        'Strong', 'Very Strong', 'Extravagant'
+        "Impoverished",
+        "Developing",
+        "Developed",
+        "Healthy",
+        "Strong",
+        "Very Strong",
+        "Extravagant",
       ];
-      
+
       const oldIndex = tierHierarchy.indexOf(oldTier);
       const newIndex = tierHierarchy.indexOf(newTier);
       const isPromotion = newIndex > oldIndex;
 
       const activity: ActivityData = {
-        type: 'achievement',
-        category: 'game',
+        type: "achievement",
+        category: "game",
         userId,
         countryId,
-        title: `${country.name} ${isPromotion ? 'Promoted' : 'Changed'} to ${newTier} Tier`,
-        description: `${country.name} has ${isPromotion ? 'advanced' : 'moved'} from ${oldTier} to ${newTier} tier in ${tierType} classification!`,
+        title: `${country.name} ${isPromotion ? "Promoted" : "Changed"} to ${newTier} Tier`,
+        description: `${country.name} has ${isPromotion ? "advanced" : "moved"} from ${oldTier} to ${newTier} tier in ${tierType} classification!`,
         metadata: {
           tierType,
           oldTier,
@@ -224,14 +239,17 @@ export class ActivityGenerator {
           currentPopulation: country.currentPopulation,
           currentGdpPerCapita: country.currentGdpPerCapita,
         },
-        priority: isPromotion && (newTier === 'Extravagant' || newTier === 'Very Strong') ? 'HIGH' : 'MEDIUM',
-        visibility: 'public',
+        priority:
+          isPromotion && (newTier === "Extravagant" || newTier === "Very Strong")
+            ? "HIGH"
+            : "MEDIUM",
+        visibility: "public",
         relatedCountries: [countryId],
       };
 
       await this.createActivity(activity);
     } catch (error) {
-      console.error('Error creating tier change activity:', error);
+      console.error("Error creating tier change activity:", error);
     }
   }
 
@@ -252,26 +270,26 @@ export class ActivityGenerator {
       if (!country) return;
 
       const activity: ActivityData = {
-        type: 'social',
-        category: 'game',
+        type: "social",
+        category: "game",
         userId,
         countryId,
-        title: isNewCountry ? 'New Nation Founded' : 'Leadership Established',
-        description: isNewCountry 
+        title: isNewCountry ? "New Nation Founded" : "Leadership Established",
+        description: isNewCountry
           ? `A new nation, ${country.name}, has been founded and joins the world community!`
           : `New leadership has been established in ${country.name}.`,
         metadata: {
           isNewCountry,
           countryName: country.name,
         },
-        priority: 'MEDIUM',
-        visibility: 'public',
+        priority: "MEDIUM",
+        visibility: "public",
         relatedCountries: [countryId],
       };
 
       await this.createActivity(activity);
     } catch (error) {
-      console.error('Error creating country link activity:', error);
+      console.error("Error creating country link activity:", error);
     }
   }
 
@@ -286,8 +304,8 @@ export class ActivityGenerator {
   ): Promise<void> {
     try {
       const activity: ActivityData = {
-        type: 'meta',
-        category: 'platform',
+        type: "meta",
+        category: "platform",
         title,
         description,
         metadata: {
@@ -295,13 +313,13 @@ export class ActivityGenerator {
           features,
           timestamp: new Date().toISOString(),
         },
-        priority: 'MEDIUM',
-        visibility: 'public',
+        priority: "MEDIUM",
+        visibility: "public",
       };
 
       await this.createActivity(activity);
     } catch (error) {
-      console.error('Error creating platform announcement activity:', error);
+      console.error("Error creating platform announcement activity:", error);
     }
   }
 
@@ -324,8 +342,8 @@ export class ActivityGenerator {
       if (!country) return;
 
       const activity: ActivityData = {
-        type: 'economic',
-        category: 'game',
+        type: "economic",
+        category: "game",
         userId,
         countryId,
         title: `${country.name} Shows Strong Economic Growth`,
@@ -335,14 +353,14 @@ export class ActivityGenerator {
           gdp: country.currentTotalGdp,
           countryName: country.name,
         },
-        priority: growthRate > 0.08 ? 'HIGH' : 'MEDIUM', // 8%+ is high priority
-        visibility: 'public',
+        priority: growthRate > 0.08 ? "HIGH" : "MEDIUM", // 8%+ is high priority
+        visibility: "public",
         relatedCountries: [countryId],
       };
 
       await this.createActivity(activity);
     } catch (error) {
-      console.error('Error creating high growth activity:', error);
+      console.error("Error creating high growth activity:", error);
     }
   }
 
@@ -354,19 +372,21 @@ export class ActivityGenerator {
       await db.activityFeed.create({
         data: {
           type: activityData.type,
-          category: activityData.category || 'game',
+          category: activityData.category || "game",
           userId: activityData.userId || null,
           countryId: activityData.countryId || null,
           title: activityData.title,
           description: activityData.description,
           metadata: activityData.metadata ? JSON.stringify(activityData.metadata) : null,
           priority: normalizePriority(activityData.priority),
-          visibility: activityData.visibility || 'public',
-          relatedCountries: activityData.relatedCountries ? JSON.stringify(activityData.relatedCountries) : null,
+          visibility: activityData.visibility || "public",
+          relatedCountries: activityData.relatedCountries
+            ? JSON.stringify(activityData.relatedCountries)
+            : null,
         },
       });
     } catch (error) {
-      console.error('Error saving activity to database:', error);
+      console.error("Error saving activity to database:", error);
       throw error;
     }
   }
@@ -383,31 +403,32 @@ export class ActivityGenerator {
       });
 
       if (countries.length === 0) {
-        console.log('No countries found for sample activities');
+        console.log("No countries found for sample activities");
         return;
       }
 
       // Create sample activities
       const sampleActivities: ActivityData[] = [
         {
-          type: 'meta',
-          category: 'platform',
-          title: 'Activity Feed System Launch',
-          description: 'Introducing the new live activity feed system with real-time updates, social interactions, and comprehensive engagement tracking!',
+          type: "meta",
+          category: "platform",
+          title: "Activity Feed System Launch",
+          description:
+            "Introducing the new live activity feed system with real-time updates, social interactions, and comprehensive engagement tracking!",
           metadata: {
-            version: '2.1.0',
-            features: ['Live Activity Feed', 'Real-time Updates', 'Social Engagement'],
+            version: "2.1.0",
+            features: ["Live Activity Feed", "Real-time Updates", "Social Engagement"],
           },
-          priority: 'HIGH',
-          visibility: 'public',
-        }
+          priority: "HIGH",
+          visibility: "public",
+        },
       ];
 
       // Add country-specific activities
       for (const country of countries.slice(0, 3)) {
         sampleActivities.push({
-          type: 'achievement',
-          category: 'game',
+          type: "achievement",
+          category: "game",
           countryId: country.id,
           title: `${country.name} Economic Update`,
           description: `${country.name} maintains strong economic performance with current GDP of ${formatCurrency(country.currentTotalGdp || 0)} in the ${country.economicTier} tier.`,
@@ -415,8 +436,8 @@ export class ActivityGenerator {
             gdp: country.currentTotalGdp,
             tier: country.economicTier,
           },
-          priority: 'MEDIUM',
-          visibility: 'public',
+          priority: "MEDIUM",
+          visibility: "public",
           relatedCountries: [country.id],
         });
       }
@@ -424,17 +445,17 @@ export class ActivityGenerator {
       // Create diplomatic activity if we have at least 2 countries
       if (countries.length >= 2) {
         sampleActivities.push({
-          type: 'diplomatic',
-          category: 'game',
-          title: 'Trade Partnership Established',
+          type: "diplomatic",
+          category: "game",
+          title: "Trade Partnership Established",
           description: `${countries[0]!.name} and ${countries[1]!.name} have established a comprehensive trade partnership to boost bilateral economic cooperation.`,
           metadata: {
             countries: [countries[0]!.name, countries[1]!.name],
-            eventType: 'trade_agreement',
+            eventType: "trade_agreement",
             tradeValue: 25000000000,
           },
-          priority: 'MEDIUM',
-          visibility: 'public',
+          priority: "MEDIUM",
+          visibility: "public",
           relatedCountries: [countries[0]!.id, countries[1]!.id],
         });
       }
@@ -446,7 +467,7 @@ export class ActivityGenerator {
 
       console.log(`Created ${sampleActivities.length} sample activities`);
     } catch (error) {
-      console.error('Error generating sample activities:', error);
+      console.error("Error generating sample activities:", error);
     }
   }
 }

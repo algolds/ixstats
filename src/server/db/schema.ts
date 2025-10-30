@@ -56,4 +56,4 @@ export type PolicyEffect = {
   yearImplemented: number;
   durationYears: number;
   economicModelId: string;
-}; 
+};

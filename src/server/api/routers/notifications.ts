@@ -7,28 +7,57 @@ import {
   publicProcedure,
   adminProcedure,
   lightMutationProcedure,
-  readOnlyProcedure
+  readOnlyProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
-import { observable } from '@trpc/server/observable';
-import { EventEmitter } from 'events';
+import { observable } from "@trpc/server/observable";
+import { EventEmitter } from "events";
 
 // Event emitter for real-time notifications
 const notificationEmitter = new EventEmitter();
 
-const NotificationLevel = z.enum(['low', 'medium', 'high', 'critical']);
-const NotificationType = z.enum(['info', 'warning', 'success', 'error', 'alert', 'update', 'economic', 'crisis', 'diplomatic', 'system']);
-const NotificationCategory = z.enum(['economic', 'diplomatic', 'governance', 'social', 'security', 'system', 'achievement', 'crisis', 'opportunity', 'intelligence', 'policy', 'global', 'military']);
+const NotificationLevel = z.enum(["low", "medium", "high", "critical"]);
+const NotificationType = z.enum([
+  "info",
+  "warning",
+  "success",
+  "error",
+  "alert",
+  "update",
+  "economic",
+  "crisis",
+  "diplomatic",
+  "system",
+]);
+const NotificationCategory = z.enum([
+  "economic",
+  "diplomatic",
+  "governance",
+  "social",
+  "security",
+  "system",
+  "achievement",
+  "crisis",
+  "opportunity",
+  "intelligence",
+  "policy",
+  "global",
+  "military",
+]);
 
 export const notificationsRouter = createTRPCRouter({
   // Get notifications for current user (using auth context)
   getUserNotifications: publicProcedure
-    .input(z.object({
-      limit: z.number().min(1).max(100).default(50),
-      offset: z.number().min(0).default(0),
-      unreadOnly: z.boolean().default(false),
-      type: NotificationType.optional(),
-    }).optional())
+    .input(
+      z
+        .object({
+          limit: z.number().min(1).max(100).default(50),
+          offset: z.number().min(0).default(0),
+          unreadOnly: z.boolean().default(false),
+          type: NotificationType.optional(),
+        })
+        .optional()
+    )
     .query(async ({ ctx, input = {} }) => {
       const { db } = ctx;
       const userId = ctx.auth?.userId;
@@ -46,20 +75,17 @@ export const notificationsRouter = createTRPCRouter({
       // Get user profile to find their country
       const userProfile = await db.user.findFirst({
         where: { clerkUserId: userId },
-        include: { country: true }
+        include: { country: true },
       });
 
       // Build OR conditions - only include countryId if user has a country
       const orConditions: any[] = [
         { userId }, // Direct user notifications
-        { 
-          AND: [
-            { userId: null },
-            { countryId: null }
-          ]
-        } // Global notifications
+        {
+          AND: [{ userId: null }, { countryId: null }],
+        }, // Global notifications
       ];
-      
+
       // Only add country-wide notifications if user has a country
       if (userProfile?.countryId) {
         orConditions.push({ countryId: userProfile.countryId });
@@ -69,13 +95,13 @@ export const notificationsRouter = createTRPCRouter({
         AND: [
           { OR: orConditions },
           input.unreadOnly ? { read: false } : {},
-          input.type ? { type: input.type } : {}
-        ]
+          input.type ? { type: input.type } : {},
+        ],
       };
 
       const notifications = await db.notification.findMany({
         where: whereConditions,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: input.limit,
         skip: input.offset,
       });
@@ -102,10 +128,12 @@ export const notificationsRouter = createTRPCRouter({
   // Mark notification as read
   // RATE LIMITED: Light mutation (100 req/min) - simple toggle operation
   markAsRead: lightMutationProcedure
-    .input(z.object({
-      notificationId: z.string(),
-      userId: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        notificationId: z.string(),
+        userId: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
@@ -113,23 +141,23 @@ export const notificationsRouter = createTRPCRouter({
 
       if (!userId) {
         throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'User ID required',
+          code: "UNAUTHORIZED",
+          message: "User ID required",
         });
       }
 
       // Get user profile to find their country
       const userProfile = await db.user.findFirst({
         where: { clerkUserId: userId },
-        include: { country: true }
+        include: { country: true },
       });
 
       // Build OR conditions - only include countryId if user has a country
       const orConditions: any[] = [
         { userId: userId },
-        { userId: null, countryId: null } // Global notifications
+        { userId: null, countryId: null }, // Global notifications
       ];
-      
+
       if (userProfile?.countryId) {
         orConditions.push({ countryId: userProfile.countryId });
       }
@@ -138,14 +166,14 @@ export const notificationsRouter = createTRPCRouter({
       const notification = await db.notification.findFirst({
         where: {
           id: input.notificationId,
-          OR: orConditions
-        }
+          OR: orConditions,
+        },
       });
 
       if (!notification) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Notification not found or no access',
+          code: "NOT_FOUND",
+          message: "Notification not found or no access",
         });
       }
 
@@ -158,10 +186,12 @@ export const notificationsRouter = createTRPCRouter({
   // Dismiss notification (hides it from view)
   // RATE LIMITED: Light mutation (100 req/min) - simple toggle operation
   dismissNotification: lightMutationProcedure
-    .input(z.object({
-      notificationId: z.string(),
-      userId: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        notificationId: z.string(),
+        userId: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
@@ -169,23 +199,23 @@ export const notificationsRouter = createTRPCRouter({
 
       if (!userId) {
         throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'User ID required',
+          code: "UNAUTHORIZED",
+          message: "User ID required",
         });
       }
 
       // Get user profile to find their country
       const userProfile = await db.user.findFirst({
         where: { clerkUserId: userId },
-        include: { country: true }
+        include: { country: true },
       });
 
       // Build OR conditions - only include countryId if user has a country
       const orConditions: any[] = [
         { userId: userId },
-        { userId: null, countryId: null } // Global notifications
+        { userId: null, countryId: null }, // Global notifications
       ];
-      
+
       if (userProfile?.countryId) {
         orConditions.push({ countryId: userProfile.countryId });
       }
@@ -194,14 +224,14 @@ export const notificationsRouter = createTRPCRouter({
       const notification = await db.notification.findFirst({
         where: {
           id: input.notificationId,
-          OR: orConditions
-        }
+          OR: orConditions,
+        },
       });
 
       if (!notification) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Notification not found or no access',
+          code: "NOT_FOUND",
+          message: "Notification not found or no access",
         });
       }
 
@@ -214,9 +244,11 @@ export const notificationsRouter = createTRPCRouter({
   // Mark all notifications as read
   // RATE LIMITED: Light mutation (100 req/min) - batch operation but lightweight
   markAllAsRead: lightMutationProcedure
-    .input(z.object({
-      userId: z.string(),
-    }))
+    .input(
+      z.object({
+        userId: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
       const userId = input.userId;
@@ -224,27 +256,24 @@ export const notificationsRouter = createTRPCRouter({
       // Get user profile to find their country
       const userProfile = await db.user.findFirst({
         where: { clerkUserId: userId },
-        include: { country: true }
+        include: { country: true },
       });
 
       // Build OR conditions - only include countryId if user has a country
       const orConditions: any[] = [
         { userId },
-        { 
-          AND: [
-            { userId: null },
-            { countryId: null }
-          ]
-        }
+        {
+          AND: [{ userId: null }, { countryId: null }],
+        },
       ];
-      
+
       if (userProfile?.countryId) {
         orConditions.push({ countryId: userProfile.countryId });
       }
 
       await db.notification.updateMany({
         where: {
-          OR: orConditions
+          OR: orConditions,
         },
         data: { read: true },
       });
@@ -254,21 +283,23 @@ export const notificationsRouter = createTRPCRouter({
 
   // Create notification (admin only)
   createNotification: adminProcedure
-    .input(z.object({
-      title: z.string().min(1).max(200),
-      description: z.string().max(1000).optional(),
-      message: z.string().max(2000).optional(),
-      type: NotificationType,
-      category: NotificationCategory.optional(),
-      level: NotificationLevel.default('medium'),
-      href: z.string().optional(),
-      userId: z.string().optional(), // For direct user notifications
-      countryId: z.string().optional(), // For country-wide notifications
-      adminUserId: z.string(), // Admin user ID for verification
-      actionable: z.boolean().default(false),
-      metadata: z.string().optional(), // JSON string
-      // If both userId and countryId are null, it's a global notification
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1).max(200),
+        description: z.string().max(1000).optional(),
+        message: z.string().max(2000).optional(),
+        type: NotificationType,
+        category: NotificationCategory.optional(),
+        level: NotificationLevel.default("medium"),
+        href: z.string().optional(),
+        userId: z.string().optional(), // For direct user notifications
+        countryId: z.string().optional(), // For country-wide notifications
+        adminUserId: z.string(), // Admin user ID for verification
+        actionable: z.boolean().default(false),
+        metadata: z.string().optional(), // JSON string
+        // If both userId and countryId are null, it's a global notification
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
@@ -298,13 +329,15 @@ export const notificationsRouter = createTRPCRouter({
 
   // Get notification preferences for user
   getUserPreferences: publicProcedure
-    .input(z.object({
-      userId: z.string(),
-    }))
+    .input(
+      z.object({
+        userId: z.string(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
       const userId = input.userId;
-      
+
       let preferences = await db.userPreferences.findFirst({
         where: { userId },
       });
@@ -320,11 +353,11 @@ export const notificationsRouter = createTRPCRouter({
             crisisAlerts: true,
             diplomaticAlerts: false,
             systemAlerts: true,
-            notificationLevel: 'medium',
+            notificationLevel: "medium",
           },
         });
       }
-      
+
       return {
         emailNotifications: preferences.emailNotifications,
         pushNotifications: preferences.pushNotifications,
@@ -332,23 +365,25 @@ export const notificationsRouter = createTRPCRouter({
         crisisAlerts: preferences.crisisAlerts,
         diplomaticAlerts: preferences.diplomaticAlerts,
         systemAlerts: preferences.systemAlerts,
-        notificationLevel: preferences.notificationLevel as 'low' | 'medium' | 'high' | 'critical',
+        notificationLevel: preferences.notificationLevel as "low" | "medium" | "high" | "critical",
       };
     }),
 
   // Update notification preferences
   // RATE LIMITED: Light mutation (100 req/min) - simple preference updates
   updateUserPreferences: lightMutationProcedure
-    .input(z.object({
-      userId: z.string(),
-      emailNotifications: z.boolean().optional(),
-      pushNotifications: z.boolean().optional(),
-      economicAlerts: z.boolean().optional(),
-      crisisAlerts: z.boolean().optional(),
-      diplomaticAlerts: z.boolean().optional(),
-      systemAlerts: z.boolean().optional(),
-      notificationLevel: NotificationLevel.optional(),
-    }))
+    .input(
+      z.object({
+        userId: z.string(),
+        emailNotifications: z.boolean().optional(),
+        pushNotifications: z.boolean().optional(),
+        economicAlerts: z.boolean().optional(),
+        crisisAlerts: z.boolean().optional(),
+        diplomaticAlerts: z.boolean().optional(),
+        systemAlerts: z.boolean().optional(),
+        notificationLevel: NotificationLevel.optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
       const userId = input.userId;
@@ -359,13 +394,19 @@ export const notificationsRouter = createTRPCRouter({
       });
 
       const updateData = {
-        ...(input.emailNotifications !== undefined && { emailNotifications: input.emailNotifications }),
-        ...(input.pushNotifications !== undefined && { pushNotifications: input.pushNotifications }),
+        ...(input.emailNotifications !== undefined && {
+          emailNotifications: input.emailNotifications,
+        }),
+        ...(input.pushNotifications !== undefined && {
+          pushNotifications: input.pushNotifications,
+        }),
         ...(input.economicAlerts !== undefined && { economicAlerts: input.economicAlerts }),
         ...(input.crisisAlerts !== undefined && { crisisAlerts: input.crisisAlerts }),
         ...(input.diplomaticAlerts !== undefined && { diplomaticAlerts: input.diplomaticAlerts }),
         ...(input.systemAlerts !== undefined && { systemAlerts: input.systemAlerts }),
-        ...(input.notificationLevel !== undefined && { notificationLevel: input.notificationLevel }),
+        ...(input.notificationLevel !== undefined && {
+          notificationLevel: input.notificationLevel,
+        }),
       };
 
       if (preferences) {
@@ -385,7 +426,7 @@ export const notificationsRouter = createTRPCRouter({
             crisisAlerts: input.crisisAlerts ?? true,
             diplomaticAlerts: input.diplomaticAlerts ?? false,
             systemAlerts: input.systemAlerts ?? true,
-            notificationLevel: input.notificationLevel ?? 'medium',
+            notificationLevel: input.notificationLevel ?? "medium",
           },
         });
       }
@@ -399,17 +440,23 @@ export const notificationsRouter = createTRPCRouter({
           crisisAlerts: preferences.crisisAlerts,
           diplomaticAlerts: preferences.diplomaticAlerts,
           systemAlerts: preferences.systemAlerts,
-          notificationLevel: preferences.notificationLevel as 'low' | 'medium' | 'high' | 'critical',
+          notificationLevel: preferences.notificationLevel as
+            | "low"
+            | "medium"
+            | "high"
+            | "critical",
         },
       };
     }),
 
   // Delete notification (admin only)
   deleteNotification: adminProcedure
-    .input(z.object({
-      notificationId: z.string(),
-      adminUserId: z.string(),
-    }))
+    .input(
+      z.object({
+        notificationId: z.string(),
+        adminUserId: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
@@ -424,9 +471,11 @@ export const notificationsRouter = createTRPCRouter({
 
   // Get notification stats (admin only)
   getNotificationStats: publicProcedure
-    .input(z.object({
-      adminUserId: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        adminUserId: z.string().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
@@ -436,7 +485,7 @@ export const notificationsRouter = createTRPCRouter({
         db.notification.count(),
         db.notification.count({ where: { read: false } }),
         db.notification.groupBy({
-          by: ['type'],
+          by: ["type"],
           _count: { _all: true },
         }),
       ]);
@@ -445,7 +494,7 @@ export const notificationsRouter = createTRPCRouter({
         totalNotifications,
         unreadNotifications,
         readNotifications: totalNotifications - unreadNotifications,
-        typeBreakdown: typeBreakdown.map(item => ({
+        typeBreakdown: typeBreakdown.map((item) => ({
           type: item.type,
           count: item._count._all,
         })),
@@ -454,9 +503,11 @@ export const notificationsRouter = createTRPCRouter({
 
   // Real-time subscription for new notifications
   onNotificationAdded: publicProcedure
-    .input(z.object({
-      userId: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        userId: z.string().optional(),
+      })
+    )
     .subscription(({ input }) => {
       return observable<{
         id: string;
@@ -488,10 +539,10 @@ export const notificationsRouter = createTRPCRouter({
           emit.next(data);
         };
 
-        notificationEmitter.on('notification', onNotification);
+        notificationEmitter.on("notification", onNotification);
 
         return () => {
-          notificationEmitter.off('notification', onNotification);
+          notificationEmitter.off("notification", onNotification);
         };
       });
     }),
@@ -499,9 +550,13 @@ export const notificationsRouter = createTRPCRouter({
   // Get unread count (for badge display)
   // RATE LIMITED: Read-only (120 req/min) - frequently called for UI updates
   getUnreadCount: readOnlyProcedure
-    .input(z.object({
-      userId: z.string().optional(),
-    }).optional())
+    .input(
+      z
+        .object({
+          userId: z.string().optional(),
+        })
+        .optional()
+    )
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
       const userId = input?.userId || ctx.auth?.userId;
@@ -513,32 +568,25 @@ export const notificationsRouter = createTRPCRouter({
       // Get user profile to find their country
       const userProfile = await db.user.findFirst({
         where: { clerkUserId: userId },
-        include: { country: true }
+        include: { country: true },
       });
 
       // Build OR conditions - only include countryId if user has a country
       const orConditions: any[] = [
         { userId },
         {
-          AND: [
-            { userId: null },
-            { countryId: null }
-          ]
-        }
+          AND: [{ userId: null }, { countryId: null }],
+        },
       ];
-      
+
       if (userProfile?.countryId) {
         orConditions.push({ countryId: userProfile.countryId });
       }
 
       const count = await db.notification.count({
         where: {
-          AND: [
-            { OR: orConditions },
-            { read: false },
-            { dismissed: false }
-          ]
-        }
+          AND: [{ OR: orConditions }, { read: false }, { dismissed: false }],
+        },
       });
 
       return { count };
@@ -547,5 +595,5 @@ export const notificationsRouter = createTRPCRouter({
 
 // Helper function to emit notification events (to be called when creating notifications)
 export function emitNotificationEvent(notification: any) {
-  notificationEmitter.emit('notification', notification);
+  notificationEmitter.emit("notification", notification);
 }

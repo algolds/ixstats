@@ -5,7 +5,14 @@ import type { FiscalSystemData } from "~/types/economics";
 /**
  * Color constants for fiscal data visualizations
  */
-export const FISCAL_CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6b7280'];
+export const FISCAL_CHART_COLORS = [
+  "#3b82f6",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#6b7280",
+];
 
 /**
  * Interface for chart data items
@@ -63,22 +70,24 @@ export function recalculateFiscalData(
   const updatedData = { ...current, [field]: value };
 
   // Recalculate tax revenue derived values
-  if (field === 'taxRevenueGDPPercent') {
+  if (field === "taxRevenueGDPPercent") {
     updatedData.governmentRevenueTotal = (gdp * value) / 100;
     updatedData.taxRevenuePerCapita = updatedData.governmentRevenueTotal / population;
   }
 
   // Recalculate budget deficit/surplus
-  if (field === 'governmentBudgetGDPPercent') {
+  if (field === "governmentBudgetGDPPercent") {
     const totalSpending = (gdp * value) / 100;
     updatedData.budgetDeficitSurplus = updatedData.governmentRevenueTotal - totalSpending;
   }
 
   // Recalculate debt metrics
-  if (field === 'internalDebtGDPPercent' || field === 'externalDebtGDPPercent') {
-    updatedData.totalDebtGDPRatio = updatedData.internalDebtGDPPercent + updatedData.externalDebtGDPPercent;
+  if (field === "internalDebtGDPPercent" || field === "externalDebtGDPPercent") {
+    updatedData.totalDebtGDPRatio =
+      updatedData.internalDebtGDPPercent + updatedData.externalDebtGDPPercent;
     updatedData.debtPerCapita = (gdp * updatedData.totalDebtGDPRatio) / (100 * population);
-    updatedData.debtServiceCosts = (gdp * updatedData.totalDebtGDPRatio * updatedData.interestRates) / 10000;
+    updatedData.debtServiceCosts =
+      (gdp * updatedData.totalDebtGDPRatio * updatedData.interestRates) / 10000;
   }
 
   return updatedData;
@@ -155,24 +164,24 @@ export function calculateDebtMetrics(
 export function generateRevenueChartData(fiscalData: FiscalSystemData): ChartDataItem[] {
   return [
     {
-      name: 'Income Tax',
+      name: "Income Tax",
       value: fiscalData.taxRevenueGDPPercent * 0.4,
-      color: FISCAL_CHART_COLORS[0]
+      color: FISCAL_CHART_COLORS[0],
     },
     {
-      name: 'Corporate Tax',
+      name: "Corporate Tax",
       value: fiscalData.taxRevenueGDPPercent * 0.25,
-      color: FISCAL_CHART_COLORS[1]
+      color: FISCAL_CHART_COLORS[1],
     },
     {
-      name: 'Sales Tax',
+      name: "Sales Tax",
       value: fiscalData.taxRevenueGDPPercent * 0.2,
-      color: FISCAL_CHART_COLORS[2]
+      color: FISCAL_CHART_COLORS[2],
     },
     {
-      name: 'Other Taxes',
+      name: "Other Taxes",
       value: fiscalData.taxRevenueGDPPercent * 0.15,
-      color: FISCAL_CHART_COLORS[3]
+      color: FISCAL_CHART_COLORS[3],
     },
   ];
 }
@@ -198,7 +207,7 @@ export function generateSpendingChartData(
         (d: any) => d.id === allocation.departmentId
       );
       return {
-        category: department?.name || department?.category || 'Unknown',
+        category: department?.name || department?.category || "Unknown",
         amount: allocation.allocatedAmount,
         percent: allocation.allocatedPercent,
       };
@@ -206,14 +215,16 @@ export function generateSpendingChartData(
   }
 
   // Fallback to fiscal data or default spending if no government structure
-  return fiscalData.governmentSpendingByCategory || [
-    { category: 'Defense', amount: nominalGDP * 0.04, percent: 20 },
-    { category: 'Education', amount: nominalGDP * 0.035, percent: 17.5 },
-    { category: 'Healthcare', amount: nominalGDP * 0.035, percent: 17.5 },
-    { category: 'Infrastructure', amount: nominalGDP * 0.025, percent: 12.5 },
-    { category: 'Social Security', amount: nominalGDP * 0.045, percent: 22.5 },
-    { category: 'Other', amount: nominalGDP * 0.02, percent: 10 },
-  ];
+  return (
+    fiscalData.governmentSpendingByCategory || [
+      { category: "Defense", amount: nominalGDP * 0.04, percent: 20 },
+      { category: "Education", amount: nominalGDP * 0.035, percent: 17.5 },
+      { category: "Healthcare", amount: nominalGDP * 0.035, percent: 17.5 },
+      { category: "Infrastructure", amount: nominalGDP * 0.025, percent: 12.5 },
+      { category: "Social Security", amount: nominalGDP * 0.045, percent: 22.5 },
+      { category: "Other", amount: nominalGDP * 0.02, percent: 10 },
+    ]
+  );
 }
 
 /**
@@ -225,14 +236,14 @@ export function generateSpendingChartData(
 export function generateDebtCompositionData(fiscalData: FiscalSystemData): ChartDataItem[] {
   return [
     {
-      name: 'Internal Debt',
+      name: "Internal Debt",
       value: fiscalData.internalDebtGDPPercent,
-      color: FISCAL_CHART_COLORS[0]
+      color: FISCAL_CHART_COLORS[0],
     },
     {
-      name: 'External Debt',
+      name: "External Debt",
       value: fiscalData.externalDebtGDPPercent,
-      color: FISCAL_CHART_COLORS[1]
+      color: FISCAL_CHART_COLORS[1],
     },
   ];
 }
@@ -244,36 +255,36 @@ export function generateDebtCompositionData(fiscalData: FiscalSystemData): Chart
  * @param gdp - Nominal GDP
  * @returns Array of fiscal metrics with status indicators
  */
-export function calculateFiscalMetrics(
-  fiscalData: FiscalSystemData,
-  gdp: number
-): FiscalMetric[] {
+export function calculateFiscalMetrics(fiscalData: FiscalSystemData, gdp: number): FiscalMetric[] {
   return [
     {
       label: "Tax Revenue",
       value: fiscalData.taxRevenueGDPPercent,
       optimal: { min: 15, max: 30 },
-      color: fiscalData.taxRevenueGDPPercent >= 15 && fiscalData.taxRevenueGDPPercent <= 30
-        ? "text-green-600"
-        : "text-yellow-600",
+      color:
+        fiscalData.taxRevenueGDPPercent >= 15 && fiscalData.taxRevenueGDPPercent <= 30
+          ? "text-green-600"
+          : "text-yellow-600",
     },
     {
       label: "Gov Budget",
       value: fiscalData.governmentBudgetGDPPercent,
       optimal: { min: 18, max: 32 },
-      color: fiscalData.governmentBudgetGDPPercent >= 18 && fiscalData.governmentBudgetGDPPercent <= 32
-        ? "text-green-600"
-        : "text-yellow-600",
+      color:
+        fiscalData.governmentBudgetGDPPercent >= 18 && fiscalData.governmentBudgetGDPPercent <= 32
+          ? "text-green-600"
+          : "text-yellow-600",
     },
     {
       label: "Total Debt",
       value: fiscalData.totalDebtGDPRatio,
       optimal: { min: 20, max: 60 },
-      color: fiscalData.totalDebtGDPRatio <= 60
-        ? "text-green-600"
-        : fiscalData.totalDebtGDPRatio <= 90
-        ? "text-yellow-600"
-        : "text-red-600",
+      color:
+        fiscalData.totalDebtGDPRatio <= 60
+          ? "text-green-600"
+          : fiscalData.totalDebtGDPRatio <= 90
+            ? "text-yellow-600"
+            : "text-red-600",
     },
   ];
 }
@@ -370,40 +381,40 @@ export function assessFiscalSustainability(
   fiscalData: FiscalSystemData,
   gdp: number
 ): {
-  debtSustainability: 'sustainable' | 'moderate-risk' | 'high-risk';
-  revenueAdequacy: 'adequate' | 'moderate' | 'low';
-  budgetBalance: 'surplus' | 'balanced' | 'moderate-deficit' | 'high-deficit';
+  debtSustainability: "sustainable" | "moderate-risk" | "high-risk";
+  revenueAdequacy: "adequate" | "moderate" | "low";
+  budgetBalance: "surplus" | "balanced" | "moderate-deficit" | "high-deficit";
 } {
   // Assess debt sustainability
-  let debtSustainability: 'sustainable' | 'moderate-risk' | 'high-risk';
+  let debtSustainability: "sustainable" | "moderate-risk" | "high-risk";
   if (fiscalData.totalDebtGDPRatio <= 60) {
-    debtSustainability = 'sustainable';
+    debtSustainability = "sustainable";
   } else if (fiscalData.totalDebtGDPRatio <= 90) {
-    debtSustainability = 'moderate-risk';
+    debtSustainability = "moderate-risk";
   } else {
-    debtSustainability = 'high-risk';
+    debtSustainability = "high-risk";
   }
 
   // Assess revenue adequacy
-  let revenueAdequacy: 'adequate' | 'moderate' | 'low';
+  let revenueAdequacy: "adequate" | "moderate" | "low";
   if (fiscalData.taxRevenueGDPPercent >= 20) {
-    revenueAdequacy = 'adequate';
+    revenueAdequacy = "adequate";
   } else if (fiscalData.taxRevenueGDPPercent >= 15) {
-    revenueAdequacy = 'moderate';
+    revenueAdequacy = "moderate";
   } else {
-    revenueAdequacy = 'low';
+    revenueAdequacy = "low";
   }
 
   // Assess budget balance
-  let budgetBalance: 'surplus' | 'balanced' | 'moderate-deficit' | 'high-deficit';
+  let budgetBalance: "surplus" | "balanced" | "moderate-deficit" | "high-deficit";
   if (fiscalData.budgetDeficitSurplus > 0) {
-    budgetBalance = 'surplus';
+    budgetBalance = "surplus";
   } else if (fiscalData.budgetDeficitSurplus >= -0.02 * gdp) {
-    budgetBalance = 'balanced';
+    budgetBalance = "balanced";
   } else if (fiscalData.budgetDeficitSurplus >= -0.05 * gdp) {
-    budgetBalance = 'moderate-deficit';
+    budgetBalance = "moderate-deficit";
   } else {
-    budgetBalance = 'high-deficit';
+    budgetBalance = "high-deficit";
   }
 
   return {

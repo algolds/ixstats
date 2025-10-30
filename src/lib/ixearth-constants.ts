@@ -99,7 +99,7 @@ export const IXEARTH_TO_EARTH_RATIOS = {
   waterAreaRatio: 1.63,
 
   /** IxEarth has 1.80x the total surface area of Earth */
-  totalSurfaceRatio: 1.80,
+  totalSurfaceRatio: 1.8,
 
   /** IxEarth is more land-rich (36% vs 29.2%) */
   landPercentageDifference: 6.8,
@@ -117,10 +117,10 @@ export const IXMAPS_COORDINATE_SYSTEM = {
   primeMeridianOffset: 26.09,
 
   /** Projection type */
-  projectionType: 'Equidistant Cylindrical (Plate Carrée)',
+  projectionType: "Equidistant Cylindrical (Plate Carrée)",
 
   /** Base ellipsoid */
-  ellipsoid: 'WGS84',
+  ellipsoid: "WGS84",
 
   /** Source EPSG code (custom CRS) */
   sourceEpsg: null, // Custom CRS, not standard EPSG
@@ -186,7 +186,7 @@ export const POSTGIS_LAYER_METRICS = {
   lakesLayerSqMi: 494883.35,
 
   /** Rivers layer (water lines) - not measured as area */
-  riversLayer: 'Not measured (line features)',
+  riversLayer: "Not measured (line features)",
 } as const;
 
 // =============================================================================
@@ -216,29 +216,24 @@ export const MAPLIBRE_CONFIG = {
   tileBuffer: 64,
 
   /** Vector tile URL template */
-  vectorTileUrlTemplate: '/api/tiles/{layer}/{z}/{x}/{y}',
+  vectorTileUrlTemplate: "/api/tiles/{layer}/{z}/{x}/{y}",
 
   /** Available map layers */
   availableLayers: [
-    'political',
-    'background',
-    'altitudes',
-    'icecaps',
-    'lakes',
-    'rivers',
-    'climate',
+    "political",
+    "background",
+    "altitudes",
+    "icecaps",
+    "lakes",
+    "rivers",
+    "climate",
   ] as const,
 
   /** Default projection */
-  defaultProjection: 'naturalEarth',
+  defaultProjection: "naturalEarth",
 
   /** Available projections */
-  availableProjections: [
-    'naturalEarth',
-    'mercator',
-    'equalEarth',
-    'globe',
-  ] as const,
+  availableProjections: ["naturalEarth", "mercator", "equalEarth", "globe"] as const,
 } as const;
 
 // =============================================================================
@@ -277,7 +272,7 @@ export function calculateGdpDensity(totalGdp: number, areaSqMi: number): number 
  * Format large numbers with commas
  */
 export function formatNumber(num: number): string {
-  return num.toLocaleString('en-US');
+  return num.toLocaleString("en-US");
 }
 
 /**
@@ -291,15 +286,15 @@ export function formatCurrency(amount: number): string {
   } else if (amount >= 1000000) {
     return `$${(amount / 1000000).toFixed(2)} million`;
   }
-  return `$${amount.toLocaleString('en-US')}`;
+  return `$${amount.toLocaleString("en-US")}`;
 }
 
 // =============================================================================
 // TYPE EXPORTS
 // =============================================================================
 
-export type IxEarthLayer = typeof MAPLIBRE_CONFIG.availableLayers[number];
-export type IxEarthProjection = typeof MAPLIBRE_CONFIG.availableProjections[number];
+export type IxEarthLayer = (typeof MAPLIBRE_CONFIG.availableLayers)[number];
+export type IxEarthProjection = (typeof MAPLIBRE_CONFIG.availableProjections)[number];
 
 // =============================================================================
 // METADATA
@@ -309,16 +304,16 @@ export type IxEarthProjection = typeof MAPLIBRE_CONFIG.availableProjections[numb
  * Metadata about this constants file
  */
 export const IXEARTH_CONSTANTS_METADATA = {
-  version: '1.0.0',
-  lastUpdated: '2025-10-29',
-  dataSource: 'PostGIS complete map data + World-Roster.xlsx',
-  calculationMethod: 'Earth-scale PostGIS measurements × IxEarth Scale Factor (1.4777x)',
+  version: "1.0.0",
+  lastUpdated: "2025-10-29",
+  dataSource: "PostGIS complete map data + World-Roster.xlsx",
+  calculationMethod: "Earth-scale PostGIS measurements × IxEarth Scale Factor (1.4777x)",
   verified: true,
   notes: [
-    'All metrics calculated from actual map data stored in PostGIS',
-    'World Roster contains 82 claimed countries (34.8% of total land)',
-    '65.2% of IxEarth land is unclaimed wilderness/territories',
-    'Scale factor (1.4777x) reconciles IxMaps custom CRS with Earth WGS84',
-    'Total surface area matches screenshot approximation within 0.6%',
+    "All metrics calculated from actual map data stored in PostGIS",
+    "World Roster contains 82 claimed countries (34.8% of total land)",
+    "65.2% of IxEarth land is unclaimed wilderness/territories",
+    "Scale factor (1.4777x) reconciles IxMaps custom CRS with Earth WGS84",
+    "Total surface area matches screenshot approximation within 0.6%",
   ],
 } as const;

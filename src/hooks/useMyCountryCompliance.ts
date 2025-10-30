@@ -38,17 +38,15 @@ export function useMyCountryCompliance() {
   const { country, userProfile } = useCountryData();
   const countryId = country?.id ?? userProfile?.countryId ?? "";
 
-  const { data: government, isLoading: governmentLoading } =
-    api.government.getByCountryId.useQuery(
-      { countryId },
-      { enabled: Boolean(countryId) }
-    );
+  const { data: government, isLoading: governmentLoading } = api.government.getByCountryId.useQuery(
+    { countryId },
+    { enabled: Boolean(countryId) }
+  );
 
-  const { data: taxSystem, isLoading: taxSystemLoading } =
-    api.taxSystem.getByCountryId.useQuery(
-      { countryId },
-      { enabled: Boolean(countryId) }
-    );
+  const { data: taxSystem, isLoading: taxSystemLoading } = api.taxSystem.getByCountryId.useQuery(
+    { countryId },
+    { enabled: Boolean(countryId) }
+  );
 
   const sections = useMemo<ComplianceSectionStatus[]>(() => {
     if (!countryId || !country) {
@@ -133,9 +131,7 @@ export function useMyCountryCompliance() {
       } else if (
         Array.isArray(taxSystem.categories) &&
         !taxSystem.categories.some(
-          (category: any) =>
-            Array.isArray(category.taxBrackets) &&
-            category.taxBrackets.length > 0
+          (category: any) => Array.isArray(category.taxBrackets) && category.taxBrackets.length > 0
         )
       ) {
         missingTaxes.push("Tax brackets or rate structure");

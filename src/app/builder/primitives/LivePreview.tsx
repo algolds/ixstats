@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, Zap } from 'lucide-react';
-import { BlurFade } from '~/components/magicui/blur-fade';
-import { GlassCard, GlassCardContent, GlassCardHeader } from '../components/glass/GlassCard';
-import { CountryPreview } from './CountryPreview';
-import { CountrySelectionCard } from './CountrySelectionCard';
-import type { RealCountryData } from '../lib/economy-data-service';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Eye, Zap } from "lucide-react";
+import { BlurFade } from "~/components/magicui/blur-fade";
+import { GlassCard, GlassCardContent, GlassCardHeader } from "../components/glass/GlassCard";
+import { CountryPreview } from "./CountryPreview";
+import { CountrySelectionCard } from "./CountrySelectionCard";
+import type { RealCountryData } from "../lib/economy-data-service";
 
 interface LivePreviewProps {
   softSelectedCountry: RealCountryData | null;
@@ -24,7 +24,7 @@ export function LivePreview({
   isVisible,
   onCountrySelect,
   onCancel,
-  style
+  style,
 }: LivePreviewProps) {
   const [newCountryName, setNewCountryName] = useState("");
 
@@ -64,19 +64,17 @@ export function LivePreview({
                     onCancel={handleCancel}
                   />
                 ) : hoveredCountry ? (
-                  <CountryPreview
-                    key={hoveredCountry.name}
-                    country={hoveredCountry}
-                    size="small"
-                  />
+                  <CountryPreview key={hoveredCountry.name} country={hoveredCountry} size="small" />
                 ) : (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="text-center py-8"
+                    className="py-8 text-center"
                   >
-                    <Zap className="h-12 w-12 text-[var(--color-text-muted)]/50 mx-auto mb-4" />
-                    <p className="text-[var(--color-text-muted)]">Hover over a country to see detailed preview</p>
+                    <Zap className="mx-auto mb-4 h-12 w-12 text-[var(--color-text-muted)]/50" />
+                    <p className="text-[var(--color-text-muted)]">
+                      Hover over a country to see detailed preview
+                    </p>
                   </motion.div>
                 )}
               </AnimatePresence>

@@ -1,15 +1,28 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, ArrowLeft, ArrowRight, CheckCircle, BarChart3, Users, Coins, Building2, Heart, Crown, TrendingUp, Flag } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { Badge } from '~/components/ui/badge';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { cn } from '~/lib/utils';
-import type { EconomicInputs, RealCountryData } from '../../lib/economy-data-service';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Settings,
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle,
+  BarChart3,
+  Users,
+  Coins,
+  Building2,
+  Heart,
+  Crown,
+  TrendingUp,
+  Flag,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Badge } from "~/components/ui/badge";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { cn } from "~/lib/utils";
+import type { EconomicInputs, RealCountryData } from "../../lib/economy-data-service";
 
 // Import section components (using clean versions without glass)
 import {
@@ -20,12 +33,12 @@ import {
   GovernmentSpendingSection,
   DemographicsSection,
   GovernmentStructureSection,
-  EconomySection
-} from '../../sections';
+  EconomySection,
+} from "../../sections";
 
 // Import utilities
-import { sections } from '../../utils/sectionData';
-import type { Section } from '../../types/builder';
+import { sections } from "../../utils/sectionData";
+import type { Section } from "../../types/builder";
 
 interface EconomicCustomizationHubProps {
   inputs: EconomicInputs;
@@ -41,16 +54,16 @@ export function EconomicCustomizationHub({
   referenceCountry,
   onInputsChange,
   onPreview,
-  onBack
+  onBack,
 }: EconomicCustomizationHubProps) {
-  const [activeSection, setActiveSection] = useState('core'); // Start with Core Indicators
+  const [activeSection, setActiveSection] = useState("core"); // Start with Core Indicators
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleToggleAdvanced = () => {
     setShowAdvanced(!showAdvanced);
   };
 
-  const activeSectionData = sections.find(s => s.id === activeSection);
+  const activeSectionData = sections.find((s) => s.id === activeSection);
 
   const handleSectionChange = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -67,25 +80,25 @@ export function EconomicCustomizationHub({
       nominalGDP: inputs.coreIndicators.nominalGDP,
       gdpPerCapita: inputs.coreIndicators.gdpPerCapita,
       isReadOnly: false,
-      showComparison: true
+      showComparison: true,
     };
 
     switch (activeSection) {
-      case 'symbols':
+      case "symbols":
         return <NationalIdentitySection {...commonProps} />;
-      case 'core':
+      case "core":
         return <CoreIndicatorsSection {...commonProps} />;
-      case 'economy':
+      case "economy":
         return <EconomySection {...commonProps} />;
-      case 'labor':
+      case "labor":
         return <LaborEmploymentSection {...commonProps} />;
-      case 'fiscal':
+      case "fiscal":
         return <FiscalSystemSection {...commonProps} />;
-      case 'government':
+      case "government":
         return <GovernmentSpendingSection {...commonProps} />;
-      case 'structure':
+      case "structure":
         return <GovernmentStructureSection {...commonProps} />;
-      case 'demographics':
+      case "demographics":
         return <DemographicsSection {...commonProps} />;
       default:
         return <CoreIndicatorsSection {...commonProps} />;
@@ -94,15 +107,24 @@ export function EconomicCustomizationHub({
 
   const getSectionIcon = (sectionId: string) => {
     switch (sectionId) {
-      case 'symbols': return Flag;
-      case 'core': return BarChart3;
-      case 'economy': return TrendingUp;
-      case 'labor': return Users;
-      case 'fiscal': return Coins;
-      case 'government': return Building2;
-      case 'structure': return Crown;
-      case 'demographics': return Heart;
-      default: return BarChart3;
+      case "symbols":
+        return Flag;
+      case "core":
+        return BarChart3;
+      case "economy":
+        return TrendingUp;
+      case "labor":
+        return Users;
+      case "fiscal":
+        return Coins;
+      case "government":
+        return Building2;
+      case "structure":
+        return Crown;
+      case "demographics":
+        return Heart;
+      default:
+        return BarChart3;
     }
   };
 
@@ -128,8 +150,8 @@ export function EconomicCustomizationHub({
             onClick={handleToggleAdvanced}
             size="sm"
           >
-            <Settings className="h-4 w-4 mr-2" />
-            {showAdvanced ? 'Advanced' : 'Basic'}
+            <Settings className="mr-2 h-4 w-4" />
+            {showAdvanced ? "Advanced" : "Basic"}
           </Button>
           <Button onClick={onPreview} className="flex items-center gap-2">
             Preview
@@ -152,7 +174,11 @@ export function EconomicCustomizationHub({
               {sections.map((section) => {
                 const Icon = getSectionIcon(section.id);
                 return (
-                  <TabsTrigger key={section.id} value={section.id} className="flex flex-col items-center gap-1 p-3">
+                  <TabsTrigger
+                    key={section.id}
+                    value={section.id}
+                    className="flex flex-col items-center gap-1 p-3"
+                  >
                     <Icon className="h-4 w-4" />
                     <span className="text-xs">{section.name}</span>
                     <Badge variant="outline" className="text-xs">
@@ -187,7 +213,7 @@ export function EconomicCustomizationHub({
           <AlertDescription>
             <strong>{activeSectionData.name}:</strong> {activeSectionData.description}
             <br />
-            <span className="text-sm text-muted-foreground">
+            <span className="text-muted-foreground text-sm">
               Completeness: {activeSectionData.completeness}%
             </span>
           </AlertDescription>

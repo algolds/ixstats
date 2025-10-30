@@ -17,8 +17,8 @@ import {
   ATOMIC_ECONOMIC_COMPONENTS,
   type AtomicEconomicComponent,
   type EconomicComponentType,
-  type EconomicCategory
-} from './atomic-economic-data';
+  type EconomicCategory,
+} from "./atomic-economic-data";
 
 // ============================================================================
 // Synergy and Conflict Detection
@@ -54,8 +54,10 @@ export function checkEconomicConflict(component1Id: string, component2Id: string
 
   if (!component1 || !component2) return false;
 
-  return component1.conflicts.includes(component2Id as EconomicComponentType) ||
-         component2.conflicts.includes(component1Id as EconomicComponentType);
+  return (
+    component1.conflicts.includes(component2Id as EconomicComponentType) ||
+    component2.conflicts.includes(component1Id as EconomicComponentType)
+  );
 }
 
 /**
@@ -92,7 +94,7 @@ export function detectEconomicSynergies(selectedComponents: EconomicComponentTyp
           component1: comp1,
           component2: comp2,
           bonus,
-          description: `${component1?.name ?? ''} synergizes with ${component2?.name ?? ''}`
+          description: `${component1?.name ?? ""} synergizes with ${component2?.name ?? ""}`,
         });
       }
     }
@@ -134,7 +136,7 @@ export function detectEconomicConflicts(selectedComponents: EconomicComponentTyp
           component1: comp1,
           component2: comp2,
           penalty: 15,
-          description: `${component1?.name ?? ''} conflicts with ${component2?.name ?? ''}`
+          description: `${component1?.name ?? ""} conflicts with ${component2?.name ?? ""}`,
         });
       }
     }
@@ -159,7 +161,7 @@ export function filterEconomicComponents(
 ): EconomicComponentType[] {
   if (!category) return components;
 
-  return components.filter(compType => {
+  return components.filter((compType) => {
     const component = ATOMIC_ECONOMIC_COMPONENTS[compType];
     return component?.category === category;
   });
@@ -179,13 +181,15 @@ export function searchEconomicComponents(
 
   const lowerQuery = query.toLowerCase();
 
-  return components.filter(compType => {
+  return components.filter((compType) => {
     const component = ATOMIC_ECONOMIC_COMPONENTS[compType];
     if (!component) return false;
 
-    return component.name.toLowerCase().includes(lowerQuery) ||
-           component.description.toLowerCase().includes(lowerQuery) ||
-           component.category.toLowerCase().includes(lowerQuery);
+    return (
+      component.name.toLowerCase().includes(lowerQuery) ||
+      component.description.toLowerCase().includes(lowerQuery) ||
+      component.category.toLowerCase().includes(lowerQuery)
+    );
   });
 }
 
@@ -231,10 +235,11 @@ export function calculateEconomicEffectiveness(
   selectedComponents: EconomicComponentType[]
 ): EconomicEffectivenessResult {
   const components = selectedComponents
-    .map(id => ATOMIC_ECONOMIC_COMPONENTS[id])
+    .map((id) => ATOMIC_ECONOMIC_COMPONENTS[id])
     .filter((comp): comp is AtomicEconomicComponent => comp !== undefined);
 
-  const baseEffectiveness = components.reduce((sum, comp) => sum + comp.effectiveness, 0) / (components.length || 1);
+  const baseEffectiveness =
+    components.reduce((sum, comp) => sum + comp.effectiveness, 0) / (components.length || 1);
 
   let synergyBonus = 0;
   let synergyCount = 0;
@@ -261,7 +266,10 @@ export function calculateEconomicEffectiveness(
     }
   }
 
-  const totalEffectiveness = Math.max(0, Math.min(100, baseEffectiveness + synergyBonus - conflictPenalty));
+  const totalEffectiveness = Math.max(
+    0,
+    Math.min(100, baseEffectiveness + synergyBonus - conflictPenalty)
+  );
 
   return {
     baseEffectiveness,
@@ -269,7 +277,7 @@ export function calculateEconomicEffectiveness(
     conflictPenalty,
     totalEffectiveness,
     synergyCount,
-    conflictCount
+    conflictCount,
   };
 }
 
@@ -297,15 +305,17 @@ export interface SectorBalance {
  * @param selectedComponents Array of selected component types
  * @returns Array of sector impact percentages
  */
-export function calculateSectorBalance(selectedComponents: EconomicComponentType[]): SectorBalance[] {
+export function calculateSectorBalance(
+  selectedComponents: EconomicComponentType[]
+): SectorBalance[] {
   const components = selectedComponents
-    .map(id => ATOMIC_ECONOMIC_COMPONENTS[id])
+    .map((id) => ATOMIC_ECONOMIC_COMPONENTS[id])
     .filter((comp): comp is AtomicEconomicComponent => comp !== undefined);
 
   const sectorTotals: Record<string, number> = {};
 
   // Aggregate sector impacts
-  components.forEach(comp => {
+  components.forEach((comp) => {
     Object.entries(comp.sectorImpact).forEach(([sector, impact]) => {
       sectorTotals[sector] = (sectorTotals[sector] || 0) + impact;
     });
@@ -317,7 +327,7 @@ export function calculateSectorBalance(selectedComponents: EconomicComponentType
     .map(([sector, impact]) => ({
       sector,
       impact,
-      percentage: totalImpact > 0 ? (impact / totalImpact) * 100 : 0
+      percentage: totalImpact > 0 ? (impact / totalImpact) * 100 : 0,
     }))
     .sort((a, b) => b.impact - a.impact);
 }
@@ -330,7 +340,7 @@ export interface EconomicMetrics {
   sectorBalance: SectorBalance[];
   totalCost: number;
   maintenanceCost: number;
-  avgComplexity: 'Low' | 'Medium' | 'High';
+  avgComplexity: "Low" | "Medium" | "High";
   requiredCapacity: number;
   optimalTaxRates: {
     corporate: number;
@@ -350,7 +360,7 @@ export interface EconomicMetrics {
  */
 export function getEconomicMetrics(selectedComponents: EconomicComponentType[]): EconomicMetrics {
   const components = selectedComponents
-    .map(id => ATOMIC_ECONOMIC_COMPONENTS[id])
+    .map((id) => ATOMIC_ECONOMIC_COMPONENTS[id])
     .filter((comp): comp is AtomicEconomicComponent => comp !== undefined);
 
   const effectiveness = calculateEconomicEffectiveness(selectedComponents);
@@ -362,17 +372,30 @@ export function getEconomicMetrics(selectedComponents: EconomicComponentType[]):
 
   // Calculate average complexity
   const complexityMap = { Low: 1, Medium: 2, High: 3 };
-  const avgComplexityNum = components.reduce((sum, comp) => sum + complexityMap[comp.metadata.complexity], 0) / (components.length || 1);
-  const avgComplexity: 'Low' | 'Medium' | 'High' = avgComplexityNum < 1.5 ? 'Low' : avgComplexityNum < 2.5 ? 'Medium' : 'High';
+  const avgComplexityNum =
+    components.reduce((sum, comp) => sum + complexityMap[comp.metadata.complexity], 0) /
+    (components.length || 1);
+  const avgComplexity: "Low" | "Medium" | "High" =
+    avgComplexityNum < 1.5 ? "Low" : avgComplexityNum < 2.5 ? "Medium" : "High";
 
   // Calculate optimal tax rates (weighted average)
-  const optimalCorporateRate = components.reduce((sum, comp) => sum + comp.taxImpact.optimalCorporateRate, 0) / (components.length || 1);
-  const optimalIncomeRate = components.reduce((sum, comp) => sum + comp.taxImpact.optimalIncomeRate, 0) / (components.length || 1);
+  const optimalCorporateRate =
+    components.reduce((sum, comp) => sum + comp.taxImpact.optimalCorporateRate, 0) /
+    (components.length || 1);
+  const optimalIncomeRate =
+    components.reduce((sum, comp) => sum + comp.taxImpact.optimalIncomeRate, 0) /
+    (components.length || 1);
 
   // Calculate employment impact (average)
-  const unemployment = components.reduce((sum, comp) => sum + comp.employmentImpact.unemploymentModifier, 0) / (components.length || 1);
-  const participation = components.reduce((sum, comp) => sum + comp.employmentImpact.participationModifier, 0) / (components.length || 1);
-  const wageGrowth = components.reduce((sum, comp) => sum + comp.employmentImpact.wageGrowthModifier, 0) / (components.length || 1);
+  const unemployment =
+    components.reduce((sum, comp) => sum + comp.employmentImpact.unemploymentModifier, 0) /
+    (components.length || 1);
+  const participation =
+    components.reduce((sum, comp) => sum + comp.employmentImpact.participationModifier, 0) /
+    (components.length || 1);
+  const wageGrowth =
+    components.reduce((sum, comp) => sum + comp.employmentImpact.wageGrowthModifier, 0) /
+    (components.length || 1);
 
   return {
     effectiveness,
@@ -383,13 +406,13 @@ export function getEconomicMetrics(selectedComponents: EconomicComponentType[]):
     requiredCapacity,
     optimalTaxRates: {
       corporate: Math.round(optimalCorporateRate),
-      income: Math.round(optimalIncomeRate)
+      income: Math.round(optimalIncomeRate),
     },
     employmentImpact: {
       unemployment,
       participation,
-      wageGrowth
-    }
+      wageGrowth,
+    },
   };
 }
 
@@ -427,23 +450,25 @@ export function validateEconomicSelection(
   // Check for conflicts
   const conflicts = detectEconomicConflicts(selectedComponents);
   if (conflicts.length > 0) {
-    warnings.push(`${conflicts.length} conflicting component${conflicts.length > 1 ? 's' : ''} detected`);
+    warnings.push(
+      `${conflicts.length} conflicting component${conflicts.length > 1 ? "s" : ""} detected`
+    );
   }
 
   // Check for at least one economic model
-  const hasEconomicModel = selectedComponents.some(comp => {
+  const hasEconomicModel = selectedComponents.some((comp) => {
     const component = ATOMIC_ECONOMIC_COMPONENTS[comp];
-    return component?.category === 'Economic Model' as EconomicCategory;
+    return component?.category === ("Economic Model" as EconomicCategory);
   });
 
   if (!hasEconomicModel && selectedComponents.length > 0) {
-    warnings.push('No fundamental economic model selected');
+    warnings.push("No fundamental economic model selected");
   }
 
   return {
     valid: errors.length === 0,
     errors,
-    warnings
+    warnings,
   };
 }
 
@@ -458,15 +483,15 @@ export function validateEconomicSelection(
  */
 export function getCategoryColor(category: EconomicCategory): string {
   const colorMap: Record<EconomicCategory, string> = {
-    'Economic Model': 'emerald',
-    'Sector Focus': 'blue',
-    'Labor System': 'purple',
-    'Trade Policy': 'indigo',
-    'Innovation': 'amber',
-    'Resource Management': 'green'
+    "Economic Model": "emerald",
+    "Sector Focus": "blue",
+    "Labor System": "purple",
+    "Trade Policy": "indigo",
+    Innovation: "amber",
+    "Resource Management": "green",
   };
 
-  return colorMap[category] || 'gray';
+  return colorMap[category] || "gray";
 }
 
 /**
@@ -475,13 +500,13 @@ export function getCategoryColor(category: EconomicCategory): string {
  * @returns Tailwind color class
  */
 export function getEffectivenessColor(effectiveness: number): string {
-  if (effectiveness >= 90) return 'emerald';
-  if (effectiveness >= 80) return 'green';
-  if (effectiveness >= 70) return 'lime';
-  if (effectiveness >= 60) return 'yellow';
-  if (effectiveness >= 50) return 'amber';
-  if (effectiveness >= 40) return 'orange';
-  return 'red';
+  if (effectiveness >= 90) return "emerald";
+  if (effectiveness >= 80) return "green";
+  if (effectiveness >= 70) return "lime";
+  if (effectiveness >= 60) return "yellow";
+  if (effectiveness >= 50) return "amber";
+  if (effectiveness >= 40) return "orange";
+  return "red";
 }
 
 /**
@@ -539,7 +564,7 @@ export function getComponent(type: EconomicComponentType): AtomicEconomicCompone
  * @returns Array of component types in category
  */
 export function getComponentsByCategory(category: EconomicCategory): EconomicComponentType[] {
-  return getAllComponents().filter(type => {
+  return getAllComponents().filter((type) => {
     const component = ATOMIC_ECONOMIC_COMPONENTS[type];
     return component?.category === category;
   });
@@ -565,7 +590,7 @@ export function isComponentSelected(
  */
 export function calculateTotalCost(selectedComponents: EconomicComponentType[]): number {
   const components = selectedComponents
-    .map(id => ATOMIC_ECONOMIC_COMPONENTS[id])
+    .map((id) => ATOMIC_ECONOMIC_COMPONENTS[id])
     .filter((comp): comp is AtomicEconomicComponent => comp !== undefined);
 
   return components.reduce((sum, comp) => sum + comp.implementationCost, 0);
@@ -578,7 +603,7 @@ export function calculateTotalCost(selectedComponents: EconomicComponentType[]):
  */
 export function calculateMaintenanceCost(selectedComponents: EconomicComponentType[]): number {
   const components = selectedComponents
-    .map(id => ATOMIC_ECONOMIC_COMPONENTS[id])
+    .map((id) => ATOMIC_ECONOMIC_COMPONENTS[id])
     .filter((comp): comp is AtomicEconomicComponent => comp !== undefined);
 
   return components.reduce((sum, comp) => sum + comp.maintenanceCost, 0);

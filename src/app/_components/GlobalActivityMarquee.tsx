@@ -20,10 +20,7 @@ interface Country {
 }
 
 export const GlobalActivityMarquee = memo(function GlobalActivityMarquee() {
-  const {
-    data: allData,
-    isLoading: countriesLoading,
-  } = api.countries.getAll.useQuery(undefined, {
+  const { data: allData, isLoading: countriesLoading } = api.countries.getAll.useQuery(undefined, {
     staleTime: 10 * 60 * 1000, // 10 minutes - greatly reduce API calls
     refetchOnWindowFocus: false,
     refetchOnMount: false,
@@ -33,27 +30,30 @@ export const GlobalActivityMarquee = memo(function GlobalActivityMarquee() {
   const countries = allData?.countries ?? [];
 
   // Memoize processed countries to prevent unnecessary recalculations
-  const processedCountries: Country[] = useMemo(() => 
-    countries.map((country) => ({
-      id: country.id,
-      name: country.name,
-      currentPopulation: country.currentPopulation ?? 0,
-      currentGdpPerCapita: country.currentGdpPerCapita ?? 0,
-      currentTotalGdp: country.currentTotalGdp ?? 0,
-      economicTier: country.economicTier ?? "Unknown",
-      populationTier: country.populationTier ?? "Unknown", 
-      landArea: country.landArea ?? null,
-      populationDensity: country.populationDensity ?? null,
-      gdpDensity: country.gdpDensity ?? null,
-      adjustedGdpGrowth: country.adjustedGdpGrowth ?? 0,
-      populationGrowthRate: country.populationGrowthRate ?? 0,
-    })), [countries]);
+  const processedCountries: Country[] = useMemo(
+    () =>
+      countries.map((country) => ({
+        id: country.id,
+        name: country.name,
+        currentPopulation: country.currentPopulation ?? 0,
+        currentGdpPerCapita: country.currentGdpPerCapita ?? 0,
+        currentTotalGdp: country.currentTotalGdp ?? 0,
+        economicTier: country.economicTier ?? "Unknown",
+        populationTier: country.populationTier ?? "Unknown",
+        landArea: country.landArea ?? null,
+        populationDensity: country.populationDensity ?? null,
+        gdpDensity: country.gdpDensity ?? null,
+        adjustedGdpGrowth: country.adjustedGdpGrowth ?? 0,
+        populationGrowthRate: country.populationGrowthRate ?? 0,
+      })),
+    [countries]
+  );
 
   // Only render marquee if we have data and it's not loading
   if (countriesLoading || processedCountries.length === 0) {
     return (
-      <div className="w-full border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 relative z-[9000] h-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center h-full">
+      <div className="relative z-[9000] h-16 w-full border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        <div className="container mx-auto flex h-full items-center justify-center px-4 sm:px-6 lg:px-8">
           <div className="text-sm text-gray-500 dark:text-gray-400">
             {countriesLoading ? "Loading activities..." : "No activity data available"}
           </div>
@@ -63,7 +63,7 @@ export const GlobalActivityMarquee = memo(function GlobalActivityMarquee() {
   }
 
   return (
-    <div className="w-full border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 relative z-[9000]">
+    <div className="relative z-[9000] w-full border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <ActivityMarquee
           countries={processedCountries.slice(0, 10)} // Limit to 10 countries for better performance

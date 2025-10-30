@@ -45,10 +45,10 @@ export function LayerControlPanel({
   onShowProjectionInfo,
 }: LayerControlPanelProps) {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
       {/* Projection Switcher */}
-      <div className="p-4 border-b border-gray-200">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+      <div className="border-b border-gray-200 p-4">
+        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
           <RiEarthLine className="text-blue-500" />
           Map Type
         </h3>
@@ -58,14 +58,11 @@ export function LayerControlPanel({
               key={type}
               onClick={() => onProjectionChange(type)}
               disabled={!mapLoaded || isLoading}
-              className={`
-                px-3 py-2 rounded-md text-sm font-medium transition-all border
-                ${projectionType === type
-                  ? "bg-blue-50 text-blue-700 border-blue-300"
-                  : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-                }
-                ${(!mapLoaded || isLoading) ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
-              `}
+              className={`rounded-md border px-3 py-2 text-sm font-medium transition-all ${
+                projectionType === type
+                  ? "border-blue-300 bg-blue-50 text-blue-700"
+                  : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+              } ${!mapLoaded || isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer"} `}
             >
               {projectionLabels[type]}
             </button>
@@ -73,7 +70,7 @@ export function LayerControlPanel({
         </div>
         <button
           onClick={onShowProjectionInfo}
-          className="w-full mt-3 px-3 py-1.5 rounded-md text-xs font-medium bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors flex items-center justify-center gap-1.5"
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-100"
         >
           <RiInformationLine />
           About Map Projections
@@ -82,7 +79,7 @@ export function LayerControlPanel({
 
       {/* Layer Toggles */}
       <div className="p-4">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+        <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
           <RiStackLine className="text-blue-500" />
           Layers
         </h3>
@@ -90,16 +87,18 @@ export function LayerControlPanel({
           {(Object.keys(layerState) as (keyof LayerState)[]).map((key) => (
             <label
               key={key}
-              className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-50 cursor-pointer transition-colors group"
+              className="group flex cursor-pointer items-center gap-3 rounded-md p-2 transition-colors hover:bg-gray-50"
             >
               <input
                 type="checkbox"
                 checked={layerState[key]}
                 onChange={(e) => onLayerChange(key, e.target.checked)}
                 disabled={!mapLoaded || isLoading}
-                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 focus:ring-2 cursor-pointer disabled:opacity-50"
+                className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 disabled:opacity-50"
               />
-              <span className={`text-sm ${layerState[key] ? "text-gray-900 font-medium" : "text-gray-500"} group-hover:text-gray-900`}>
+              <span
+                className={`text-sm ${layerState[key] ? "font-medium text-gray-900" : "text-gray-500"} group-hover:text-gray-900`}
+              >
                 {layerLabels[key]}
               </span>
             </label>
@@ -109,9 +108,9 @@ export function LayerControlPanel({
 
       {/* Loading indicator */}
       {isLoading && (
-        <div className="px-4 py-3 bg-blue-50 border-t border-blue-100">
+        <div className="border-t border-blue-100 bg-blue-50 px-4 py-3">
           <div className="flex items-center gap-2 text-xs text-blue-700">
-            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
             Loading map tiles...
           </div>
         </div>

@@ -3,10 +3,10 @@
  * Provides centered, focused view for expanded cards with proper grid management
  */
 
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
-import { cn } from '~/lib/utils';
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X } from "lucide-react";
+import { cn } from "~/lib/utils";
 
 interface FocusedCardLayoutProps {
   isExpanded: boolean;
@@ -25,7 +25,7 @@ export const FocusedCardLayout: React.FC<FocusedCardLayoutProps> = ({
   children,
   onClose,
   className,
-  maxWidth = "4xl"
+  maxWidth = "4xl",
 }) => {
   return (
     <AnimatePresence>
@@ -39,17 +39,17 @@ export const FocusedCardLayout: React.FC<FocusedCardLayoutProps> = ({
         >
           {/* Backdrop */}
           <motion.div
-            className="absolute inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-lg"
+            className="absolute inset-0 bg-black/50 backdrop-blur-lg dark:bg-black/70"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
           />
-          
+
           {/* Focused Card Container */}
           <motion.div
             className={cn(
-              "relative w-full max-h-[90vh] overflow-y-auto",
+              "relative max-h-[90vh] w-full overflow-y-auto",
               `max-w-${maxWidth}`,
               "glass-modal glass-refraction border border-white/20 dark:border-white/10",
               "rounded-xl shadow-2xl",
@@ -58,21 +58,21 @@ export const FocusedCardLayout: React.FC<FocusedCardLayoutProps> = ({
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            transition={{ 
-              type: "spring", 
-              stiffness: 300, 
+            transition={{
+              type: "spring",
+              stiffness: 300,
               damping: 30,
-              duration: 0.4 
+              duration: 0.4,
             }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header with Close Button */}
-            <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border/50 p-4 rounded-t-xl">
+            <div className="bg-background/95 border/50 sticky top-0 z-10 rounded-t-xl border-b p-4 backdrop-blur-sm">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-foreground">{title}</h2>
+                <h2 className="text-foreground text-xl font-bold">{title}</h2>
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-full glass-surface glass-interactive hover:glass-depth-2 transition-all duration-200"
+                  className="glass-surface glass-interactive hover:glass-depth-2 rounded-full p-2 transition-all duration-200"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -80,9 +80,7 @@ export const FocusedCardLayout: React.FC<FocusedCardLayoutProps> = ({
             </div>
 
             {/* Content Area */}
-            <div className="p-6">
-              {children}
-            </div>
+            <div className="p-6">{children}</div>
           </motion.div>
         </motion.div>
       )}
@@ -113,15 +111,15 @@ export const ExpandableCard: React.FC<ExpandableCardProps> = ({
   children,
   expandedContent,
   className,
-  expandedMaxWidth = "6xl"
+  expandedMaxWidth = "6xl",
 }) => {
   return (
     <>
       {/* Collapsed Card */}
       <motion.div
         className={cn(
-          "glass-hierarchy-parent relative overflow-hidden group cursor-pointer",
-          "rounded-xl border border-neutral-200 dark:border-white/[0.2] transition-all duration-200",
+          "glass-hierarchy-parent group relative cursor-pointer overflow-hidden",
+          "rounded-xl border border-neutral-200 transition-all duration-200 dark:border-white/[0.2]",
           className
         )}
         onClick={onToggleExpand}
@@ -142,7 +140,7 @@ export const ExpandableCard: React.FC<ExpandableCardProps> = ({
         maxWidth={expandedMaxWidth}
       >
         {expandedContent || (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-muted-foreground py-8 text-center">
             <p>No expanded content provided for {title}</p>
           </div>
         )}

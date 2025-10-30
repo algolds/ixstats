@@ -3,14 +3,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import {
-  RefreshCw,
-  Users,
-  TrendingUp,
-  MapPin,
-  Scaling,
-  Flag,
-} from "lucide-react";
+import { RefreshCw, Users, TrendingUp, MapPin, Scaling, Flag } from "lucide-react";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { cn, getTierStyle } from "~/lib/theme-utils";
@@ -27,12 +20,7 @@ import {
 } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 
 interface CountryCardProps {
   country: CountryStats;
@@ -129,10 +117,7 @@ export function CountryCard({
     {
       icon: MapPin,
       label: "Land Area",
-      value:
-        country.landArea != null
-          ? `${formatPopulation(country.landArea)} km²`
-          : "N/A",
+      value: country.landArea != null ? `${formatPopulation(country.landArea)} km²` : "N/A",
       color: "text-orange-600 dark:text-orange-400",
     },
     {
@@ -147,35 +132,35 @@ export function CountryCard({
   ];
 
   return (
-    <Card className="flex flex-col h-full group transition-all hover:shadow-xl relative">
+    <Card className="group relative flex h-full flex-col transition-all hover:shadow-xl">
       {updateError && (
-        <div className="absolute inset-x-0 top-0 p-2 bg-destructive/10 text-destructive text-xs rounded-t-lg z-10 text-center">
+        <div className="bg-destructive/10 text-destructive absolute inset-x-0 top-0 z-10 rounded-t-lg p-2 text-center text-xs">
           Update failed: {updateError}
         </div>
       )}
 
-      <Link href={createUrl(`/countries/${country.slug}`)} className="flex flex-col h-full">
+      <Link href={createUrl(`/countries/${country.slug}`)} className="flex h-full flex-col">
         <CardHeader className="pb-4">
-          <div className="flex justify-between items-start">
-            <div className="flex items-center space-x-3 min-w-0">
-              <div className="flex-shrink-0 w-8 h-6 relative">
+          <div className="flex items-start justify-between">
+            <div className="flex min-w-0 items-center space-x-3">
+              <div className="relative h-6 w-8 flex-shrink-0">
                 {propFlagLoading ? (
                   <Skeleton className="h-full w-full rounded" />
                 ) : propFlagUrl ? (
                   <img
                     src={propFlagUrl}
                     alt={`Flag of ${country.name}`}
-                    className="h-full w-full object-cover rounded border-border"
+                    className="border-border h-full w-full rounded object-cover"
                   />
                 ) : (
-                  <div className="h-full w-full bg-muted rounded border-border flex items-center justify-center">
-                    <Flag className="h-4 w-4 text-muted-foreground" />
+                  <div className="bg-muted border-border flex h-full w-full items-center justify-center rounded">
+                    <Flag className="text-muted-foreground h-4 w-4" />
                   </div>
                 )}
               </div>
 
               <CardTitle
-                className="text-xl group-hover:text-primary transition-colors truncate"
+                className="group-hover:text-primary truncate text-xl transition-colors"
                 title={country.name}
               >
                 {country.name}
@@ -194,9 +179,7 @@ export function CountryCard({
                     aria-label={`Update ${country.name}`}
                   >
                     <RefreshCw
-                      className={`h-4 w-4 ${
-                        updateMutation.isPending ? "animate-spin" : ""
-                      }`}
+                      className={`h-4 w-4 ${updateMutation.isPending ? "animate-spin" : ""}`}
                     />
                   </Button>
                 </TooltipTrigger>
@@ -207,29 +190,22 @@ export function CountryCard({
             </TooltipProvider>
           </div>
 
-          <CardDescription className="text-xs mt-1">
+          <CardDescription className="mt-1 text-xs">
             {country.continent || "N/A Continent"}
             {country.region ? ` – ${country.region}` : ""}
           </CardDescription>
         </CardHeader>
 
         <CardContent className="flex-grow">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm mb-4">
+          <div className="mb-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
             {stats.map((stat) => {
               const Icon = stat.icon;
               return (
                 <div key={stat.label} className="flex items-start space-x-2">
-                  <Icon
-                    className={cn("h-4 w-4 mt-0.5 flex-shrink-0", stat.color)}
-                  />
+                  <Icon className={cn("mt-0.5 h-4 w-4 flex-shrink-0", stat.color)} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-muted-foreground truncate">
-                      {stat.label}
-                    </p>
-                    <p
-                      className="font-medium text-card-foreground truncate"
-                      title={stat.value}
-                    >
+                    <p className="text-muted-foreground truncate text-xs">{stat.label}</p>
+                    <p className="text-card-foreground truncate font-medium" title={stat.value}>
                       {stat.value}
                     </p>
                   </div>
@@ -238,17 +214,12 @@ export function CountryCard({
             })}
           </div>
 
-          <div className="flex justify-between items-center py-2 px-3 bg-muted/50 rounded-md">
-            <span className="text-xs text-muted-foreground">
-              Economic Efficiency
-            </span>
+          <div className="bg-muted/50 flex items-center justify-between rounded-md px-3 py-2">
+            <span className="text-muted-foreground text-xs">Economic Efficiency</span>
             <TooltipProvider delayDuration={100}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Badge
-                    variant="outline"
-                    className={`text-xs ${efficiency.color}`}
-                  >
+                  <Badge variant="outline" className={`text-xs ${efficiency.color}`}>
                     {efficiency.rating}
                   </Badge>
                 </TooltipTrigger>
@@ -260,8 +231,8 @@ export function CountryCard({
           </div>
         </CardContent>
 
-        <CardFooter className="text-xs pt-4">
-          <div className="flex justify-between items-center w-full">
+        <CardFooter className="pt-4 text-xs">
+          <div className="flex w-full items-center justify-between">
             <Badge
               className={cn(tierStyle.className, "!text-white")}
               style={{ backgroundColor: tierStyle.color }}
@@ -271,9 +242,7 @@ export function CountryCard({
 
             <span
               className="text-muted-foreground"
-              title={`Last calculation: ${new Date(
-                country.lastCalculated
-              ).toLocaleString()}`}
+              title={`Last calculation: ${new Date(country.lastCalculated).toLocaleString()}`}
             >
               Updated: {new Date(country.lastCalculated).toLocaleDateString()}
             </span>

@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useRef } from 'react';
-import RichTextEditor, { type RichTextEditorRef } from '~/components/thinkpages/RichTextEditor';
-import { Reply, X } from 'lucide-react';
+import React, { useRef } from "react";
+import RichTextEditor, { type RichTextEditorRef } from "~/components/thinkpages/RichTextEditor";
+import { Reply, X } from "lucide-react";
 
 interface ThinkshareMessage {
   id: string;
@@ -45,22 +45,22 @@ export function MessageInput({
   const richTextEditorRef = useRef<RichTextEditorRef>(null);
 
   return (
-    <div className="p-4 border-t border-border/50 bg-background/50">
+    <div className="border-border/50 bg-background/50 border-t p-4">
       {replyingToMessage && (
         <div className="mb-3">
-          <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-lg border-l-4 border-[#10b981]">
-            <Reply className="h-4 w-4 text-muted-foreground" />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground">
+          <div className="bg-muted/30 flex items-center gap-2 rounded-lg border-l-4 border-[#10b981] p-2">
+            <Reply className="text-muted-foreground h-4 w-4" />
+            <div className="min-w-0 flex-1">
+              <p className="text-muted-foreground text-xs">
                 Replying to {replyingToMessage.account.displayName}
               </p>
-              <p className="text-sm truncate">
-                {replyingToMessage.content.replace(/<[^>]*>/g, '').substring(0, 50)}...
+              <p className="truncate text-sm">
+                {replyingToMessage.content.replace(/<[^>]*>/g, "").substring(0, 50)}...
               </p>
             </div>
             <button
               onClick={() => setReplyingToMessage(null)}
-              className="p-1 hover:bg-accent rounded transition-colors"
+              className="hover:bg-accent rounded p-1 transition-colors"
             >
               <X className="h-3 w-3" />
             </button>

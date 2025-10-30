@@ -1,15 +1,10 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Check, ChevronsUpDown, Loader2 } from 'lucide-react';
-import { cn } from '~/lib/utils';
-import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from '~/components/ui/command';
-import { Badge } from '~/components/ui/badge';
+import React, { useState, useRef, useEffect } from "react";
+import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
+import { cn } from "~/lib/utils";
+import { Command, CommandGroup, CommandItem, CommandList } from "~/components/ui/command";
+import { Badge } from "~/components/ui/badge";
 
 interface AutocompleteSuggestion {
   id: string;
@@ -105,29 +100,29 @@ export function Autocomplete({
         disabled={disabled}
         placeholder={placeholder}
         className={cn(
-          "w-full px-4 py-3 pr-10 rounded-lg",
-          "border border-input bg-background text-foreground font-normal",
-          "focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring",
+          "w-full rounded-lg px-4 py-3 pr-10",
+          "border-input bg-background text-foreground border font-normal",
+          "focus:border-ring focus:ring-ring focus:ring-2 focus:outline-none",
           "transition-all duration-200",
-          disabled && "opacity-50 cursor-not-allowed",
+          disabled && "cursor-not-allowed opacity-50",
           className
         )}
       />
-      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+      <div className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2">
         {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          <Loader2 className="text-muted-foreground h-4 w-4 animate-spin" />
         ) : (
-          <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
+          <ChevronsUpDown className="text-muted-foreground h-4 w-4" />
         )}
       </div>
       {open && (globalSuggestions.length > 0 || userSuggestions.length > 0) && (
-        <div className="absolute z-[80] w-full mt-2 rounded-lg border border-border bg-popover shadow-lg">
+        <div className="border-border bg-popover absolute z-[80] mt-2 w-full rounded-lg border shadow-lg">
           <Command shouldFilter={false}>
             <CommandList className="max-h-[300px]">
               {isLoading ? (
                 <div className="flex items-center justify-center py-6">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="ml-2 text-sm text-muted-foreground">Loading...</span>
+                  <span className="text-muted-foreground ml-2 text-sm">Loading...</span>
                 </div>
               ) : (
                 <>

@@ -1,12 +1,15 @@
-import type { 
-  AchievementConstellation, 
-  DiplomaticAchievement, 
-  ConstellationLayout, 
+import type {
+  AchievementConstellation,
+  DiplomaticAchievement,
+  ConstellationLayout,
   ConstellationPosition,
   AchievementCategory,
-  ConstellationTheme
+  ConstellationTheme,
 } from "~/types/achievement-constellation";
-import { ACHIEVEMENT_TIER_CONFIG, ACHIEVEMENT_CATEGORY_CONFIG } from "~/types/achievement-constellation";
+import {
+  ACHIEVEMENT_TIER_CONFIG,
+  ACHIEVEMENT_CATEGORY_CONFIG,
+} from "~/types/achievement-constellation";
 
 export class ConstellationBuilder {
   private width: number;
@@ -24,41 +27,49 @@ export class ConstellationBuilder {
   /**
    * Build a complete constellation layout from achievements
    */
-  buildConstellation(achievements: DiplomaticAchievement[], theme: ConstellationTheme = 'classic_gold'): ConstellationLayout {
+  buildConstellation(
+    achievements: DiplomaticAchievement[],
+    theme: ConstellationTheme = "classic_gold"
+  ): ConstellationLayout {
     const layout: ConstellationLayout = {
       centerX: this.centerX,
       centerY: this.centerY,
       radius: Math.min(this.width, this.height) * 0.35,
       rotation: 0,
       theme,
-      customPositions: {}
+      customPositions: {},
     };
 
     // Group achievements by category for better organization
     const groupedAchievements = this.groupAchievementsByCategory(achievements);
-    
-    // Calculate positions for each category group
-    const categoryPositions = this.calculateCategoryPositions(Object.keys(groupedAchievements), layout.radius);
-    
-    // Position achievements within their categories
-    Object.entries(groupedAchievements).forEach(([category, categoryAchievements], categoryIndex) => {
-      const categoryCenter = categoryPositions[category as AchievementCategory];
-      const positions = this.positionAchievementsInCategory(
-        categoryAchievements, 
-        categoryCenter, 
-        layout.radius * 0.3
-      );
 
-      positions.forEach((position, index) => {
-        const achievement = categoryAchievements[index];
-        if (achievement) {
-          layout.customPositions![achievement.id] = {
-            ...position,
-            connections: this.calculateConnections(achievement, achievements)
-          };
-        }
-      });
-    });
+    // Calculate positions for each category group
+    const categoryPositions = this.calculateCategoryPositions(
+      Object.keys(groupedAchievements),
+      layout.radius
+    );
+
+    // Position achievements within their categories
+    Object.entries(groupedAchievements).forEach(
+      ([category, categoryAchievements], categoryIndex) => {
+        const categoryCenter = categoryPositions[category as AchievementCategory];
+        const positions = this.positionAchievementsInCategory(
+          categoryAchievements,
+          categoryCenter,
+          layout.radius * 0.3
+        );
+
+        positions.forEach((position, index) => {
+          const achievement = categoryAchievements[index];
+          if (achievement) {
+            layout.customPositions![achievement.id] = {
+              ...position,
+              connections: this.calculateConnections(achievement, achievements),
+            };
+          }
+        });
+      }
+    );
 
     return layout;
   }
@@ -66,10 +77,12 @@ export class ConstellationBuilder {
   /**
    * Group achievements by category
    */
-  private groupAchievementsByCategory(achievements: DiplomaticAchievement[]): Record<AchievementCategory, DiplomaticAchievement[]> {
+  private groupAchievementsByCategory(
+    achievements: DiplomaticAchievement[]
+  ): Record<AchievementCategory, DiplomaticAchievement[]> {
     const groups: Record<string, DiplomaticAchievement[]> = {};
 
-    achievements.forEach(achievement => {
+    achievements.forEach((achievement) => {
       if (!groups[achievement.category]) {
         groups[achievement.category] = [];
       }
@@ -77,15 +90,15 @@ export class ConstellationBuilder {
     });
 
     // Sort achievements within each category by tier and rarity
-    Object.values(groups).forEach(group => {
+    Object.values(groups).forEach((group) => {
       group.sort((a, b) => {
         const tierOrder = { bronze: 1, silver: 2, gold: 3, diamond: 4, legendary: 5 };
         const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5 };
-        
+
         if (tierOrder[a.tier] !== tierOrder[b.tier]) {
           return tierOrder[b.tier] - tierOrder[a.tier]; // Higher tiers first
         }
-        
+
         return rarityOrder[b.rarity] - rarityOrder[a.rarity]; // Rarer first
       });
     });
@@ -96,7 +109,10 @@ export class ConstellationBuilder {
   /**
    * Calculate positions for each category around the constellation center
    */
-  private calculateCategoryPositions(categories: string[], radius: number): Record<AchievementCategory, { x: number; y: number }> {
+  private calculateCategoryPositions(
+    categories: string[],
+    radius: number
+  ): Record<AchievementCategory, { x: number; y: number }> {
     const positions: Record<string, { x: number; y: number }> = {};
     const angleStep = (2 * Math.PI) / categories.length;
 
@@ -104,7 +120,7 @@ export class ConstellationBuilder {
       const angle = index * angleStep;
       positions[category] = {
         x: this.centerX + Math.cos(angle) * radius,
-        y: this.centerY + Math.sin(angle) * radius
+        y: this.centerY + Math.sin(angle) * radius,
       };
     });
 
@@ -115,12 +131,12 @@ export class ConstellationBuilder {
    * Position achievements within a category using constellation patterns
    */
   private positionAchievementsInCategory(
-    achievements: DiplomaticAchievement[], 
+    achievements: DiplomaticAchievement[],
     categoryCenter: { x: number; y: number },
     maxRadius: number
   ): ConstellationPosition[] {
     const positions: ConstellationPosition[] = [];
-    
+
     if (achievements.length === 1) {
       // Single achievement at category center
       const achievement = achievements[0];
@@ -130,7 +146,7 @@ export class ConstellationBuilder {
           y: categoryCenter.y,
           brightness: this.calculateBrightness(achievement),
           size: this.calculateSize(achievement),
-          layer: this.calculateLayer(achievement)
+          layer: this.calculateLayer(achievement),
         });
       }
     } else {
@@ -138,7 +154,9 @@ export class ConstellationBuilder {
       const firstAchievement = achievements[0];
       if (firstAchievement) {
         const shape = ACHIEVEMENT_CATEGORY_CONFIG[firstAchievement.category].constellationShape;
-        positions.push(...this.createConstellationShape(achievements, categoryCenter, maxRadius, shape));
+        positions.push(
+          ...this.createConstellationShape(achievements, categoryCenter, maxRadius, shape)
+        );
       }
     }
 
@@ -152,24 +170,24 @@ export class ConstellationBuilder {
     achievements: DiplomaticAchievement[],
     center: { x: number; y: number },
     radius: number,
-    shape: 'circle' | 'star' | 'diamond' | 'triangle' | 'hexagon'
+    shape: "circle" | "star" | "diamond" | "triangle" | "hexagon"
   ): ConstellationPosition[] {
     const positions: ConstellationPosition[] = [];
 
     switch (shape) {
-      case 'circle':
+      case "circle":
         positions.push(...this.createCirclePattern(achievements, center, radius));
         break;
-      case 'star':
+      case "star":
         positions.push(...this.createStarPattern(achievements, center, radius));
         break;
-      case 'diamond':
+      case "diamond":
         positions.push(...this.createDiamondPattern(achievements, center, radius));
         break;
-      case 'triangle':
+      case "triangle":
         positions.push(...this.createTrianglePattern(achievements, center, radius));
         break;
-      case 'hexagon':
+      case "hexagon":
         positions.push(...this.createHexagonPattern(achievements, center, radius));
         break;
     }
@@ -190,7 +208,7 @@ export class ConstellationBuilder {
 
     achievements.forEach((achievement, index) => {
       const angle = index * angleStep;
-      const distanceVariation = 0.8 + (Math.random() * 0.4); // Add some organic variation
+      const distanceVariation = 0.8 + Math.random() * 0.4; // Add some organic variation
       const actualRadius = radius * distanceVariation;
 
       positions.push({
@@ -198,7 +216,7 @@ export class ConstellationBuilder {
         y: center.y + Math.sin(angle) * actualRadius,
         brightness: this.calculateBrightness(achievement),
         size: this.calculateSize(achievement),
-        layer: this.calculateLayer(achievement)
+        layer: this.calculateLayer(achievement),
       });
     });
 
@@ -220,7 +238,7 @@ export class ConstellationBuilder {
     achievements.forEach((achievement, index) => {
       const pointIndex = index % points;
       const angle = pointIndex * angleStep;
-      
+
       // Alternate between outer and inner points
       const isOuterPoint = pointIndex % 2 === 0;
       const actualRadius = isOuterPoint ? radius : radius * 0.4;
@@ -230,7 +248,7 @@ export class ConstellationBuilder {
         y: center.y + Math.sin(angle) * actualRadius,
         brightness: this.calculateBrightness(achievement),
         size: this.calculateSize(achievement),
-        layer: this.calculateLayer(achievement)
+        layer: this.calculateLayer(achievement),
       });
     });
 
@@ -247,16 +265,16 @@ export class ConstellationBuilder {
   ): ConstellationPosition[] {
     const positions: ConstellationPosition[] = [];
     const diamondPoints = [
-      { x: 0, y: -radius },      // Top
-      { x: radius, y: 0 },       // Right
-      { x: 0, y: radius },       // Bottom
-      { x: -radius, y: 0 }       // Left
+      { x: 0, y: -radius }, // Top
+      { x: radius, y: 0 }, // Right
+      { x: 0, y: radius }, // Bottom
+      { x: -radius, y: 0 }, // Left
     ];
 
     achievements.forEach((achievement, index) => {
       const pointIndex = index % 4;
       const point = diamondPoints[pointIndex];
-      
+
       if (point) {
         // Add some variation for multiple achievements at same point
         const variation = Math.floor(index / 4) * 0.3;
@@ -268,7 +286,7 @@ export class ConstellationBuilder {
           y: center.y + point.y + yOffset,
           brightness: this.calculateBrightness(achievement),
           size: this.calculateSize(achievement),
-          layer: this.calculateLayer(achievement)
+          layer: this.calculateLayer(achievement),
         });
       }
     });
@@ -286,15 +304,15 @@ export class ConstellationBuilder {
   ): ConstellationPosition[] {
     const positions: ConstellationPosition[] = [];
     const trianglePoints = [
-      { x: 0, y: -radius },                           // Top
-      { x: radius * 0.866, y: radius * 0.5 },        // Bottom right
-      { x: -radius * 0.866, y: radius * 0.5 }        // Bottom left
+      { x: 0, y: -radius }, // Top
+      { x: radius * 0.866, y: radius * 0.5 }, // Bottom right
+      { x: -radius * 0.866, y: radius * 0.5 }, // Bottom left
     ];
 
     achievements.forEach((achievement, index) => {
       const pointIndex = index % 3;
       const point = trianglePoints[pointIndex];
-      
+
       if (point) {
         // Add variation for multiple achievements
         const variation = Math.floor(index / 3) * 0.4;
@@ -306,7 +324,7 @@ export class ConstellationBuilder {
           y: center.y + point.y + yOffset,
           brightness: this.calculateBrightness(achievement),
           size: this.calculateSize(achievement),
-          layer: this.calculateLayer(achievement)
+          layer: this.calculateLayer(achievement),
         });
       }
     });
@@ -328,7 +346,7 @@ export class ConstellationBuilder {
     achievements.forEach((achievement, index) => {
       const pointIndex = index % 6;
       const angle = pointIndex * angleStep;
-      
+
       // Add rings for more achievements
       const ring = Math.floor(index / 6);
       const actualRadius = radius * (0.7 + ring * 0.3);
@@ -338,7 +356,7 @@ export class ConstellationBuilder {
         y: center.y + Math.sin(angle) * actualRadius,
         brightness: this.calculateBrightness(achievement),
         size: this.calculateSize(achievement),
-        layer: this.calculateLayer(achievement)
+        layer: this.calculateLayer(achievement),
       });
     });
 
@@ -354,7 +372,7 @@ export class ConstellationBuilder {
       silver: 0.75,
       gold: 0.9,
       diamond: 1.0,
-      legendary: 1.2
+      legendary: 1.2,
     };
 
     const rarityMultiplier = {
@@ -362,11 +380,14 @@ export class ConstellationBuilder {
       uncommon: 1.1,
       rare: 1.25,
       epic: 1.5,
-      legendary: 2.0
+      legendary: 2.0,
     };
 
     const baseBrightness = 0.5;
-    return Math.min(1.0, baseBrightness * tierMultiplier[achievement.tier] * rarityMultiplier[achievement.rarity]);
+    return Math.min(
+      1.0,
+      baseBrightness * tierMultiplier[achievement.tier] * rarityMultiplier[achievement.rarity]
+    );
   }
 
   /**
@@ -385,7 +406,7 @@ export class ConstellationBuilder {
       silver: 2,
       gold: 3,
       diamond: 4,
-      legendary: 5
+      legendary: 5,
     };
 
     return tierLayer[achievement.tier];
@@ -394,7 +415,10 @@ export class ConstellationBuilder {
   /**
    * Calculate connections between related achievements
    */
-  private calculateConnections(achievement: DiplomaticAchievement, allAchievements: DiplomaticAchievement[]): string[] {
+  private calculateConnections(
+    achievement: DiplomaticAchievement,
+    allAchievements: DiplomaticAchievement[]
+  ): string[] {
     const connections: string[] = [];
 
     // Connect to dependencies
@@ -403,19 +427,18 @@ export class ConstellationBuilder {
     }
 
     // Connect achievements that depend on this one
-    allAchievements.forEach(other => {
+    allAchievements.forEach((other) => {
       if (other.dependsOn?.includes(achievement.id)) {
         connections.push(other.id);
       }
     });
 
     // Connect achievements in the same category (limited to avoid clutter)
-    const sameCategory = allAchievements.filter(other => 
-      other.category === achievement.category && 
-      other.id !== achievement.id
-    ).slice(0, 2); // Limit to 2 connections per category
+    const sameCategory = allAchievements
+      .filter((other) => other.category === achievement.category && other.id !== achievement.id)
+      .slice(0, 2); // Limit to 2 connections per category
 
-    connections.push(...sameCategory.map(a => a.id));
+    connections.push(...sameCategory.map((a) => a.id));
 
     return connections;
   }
@@ -437,10 +460,11 @@ export class ConstellationBuilder {
       path.push({
         x: fromPosition.x + (toPosition.x - fromPosition.x) * easeT,
         y: fromPosition.y + (toPosition.y - fromPosition.y) * easeT,
-        brightness: fromPosition.brightness + (toPosition.brightness - fromPosition.brightness) * easeT,
+        brightness:
+          fromPosition.brightness + (toPosition.brightness - fromPosition.brightness) * easeT,
         size: fromPosition.size + (toPosition.size - fromPosition.size) * easeT,
         layer: Math.round(fromPosition.layer + (toPosition.layer - fromPosition.layer) * easeT),
-        connections: toPosition.connections
+        connections: toPosition.connections,
       });
     }
 
@@ -457,7 +481,10 @@ export class ConstellationBuilder {
   /**
    * Optimize constellation layout to reduce overlapping
    */
-  optimizeLayout(layout: ConstellationLayout, achievements: DiplomaticAchievement[]): ConstellationLayout {
+  optimizeLayout(
+    layout: ConstellationLayout,
+    achievements: DiplomaticAchievement[]
+  ): ConstellationLayout {
     if (!layout.customPositions) return layout;
 
     const optimizedPositions = { ...layout.customPositions };
@@ -470,7 +497,7 @@ export class ConstellationBuilder {
 
       achievements.forEach((otherAchievement) => {
         if (achievement.id === otherAchievement.id) return;
-        
+
         const otherPos = optimizedPositions[otherAchievement.id];
         if (!otherPos) return;
 
@@ -481,7 +508,7 @@ export class ConstellationBuilder {
         if (distance < minDistance) {
           const force = (minDistance - distance) / minDistance;
           const angle = Math.atan2(dy, dx);
-          
+
           currentPos.x += Math.cos(angle) * force * 5;
           currentPos.y += Math.sin(angle) * force * 5;
         }
@@ -490,7 +517,7 @@ export class ConstellationBuilder {
 
     return {
       ...layout,
-      customPositions: optimizedPositions
+      customPositions: optimizedPositions,
     };
   }
 }

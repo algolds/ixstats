@@ -1,7 +1,7 @@
 // Comprehensive Economy Builder Types
 // Inspired by CAPHIRIA MASTER DATA economic structure
 
-import type { ComponentType } from '~/types/government';
+import type { ComponentType } from "~/types/government";
 
 // ==================== EMPLOYMENT & LABOR ====================
 
@@ -12,13 +12,13 @@ export interface EmploymentData {
   employmentRate: number; // percent
   unemploymentRate: number; // percent
   underemploymentRate: number; // percent
-  
+
   // Demographic breakdown
   youthUnemploymentRate: number; // ages 15-24
   seniorEmploymentRate: number; // ages 55+
   femaleParticipationRate: number; // percent
   maleParticipationRate: number; // percent
-  
+
   // Sector distribution (percent of workforce)
   sectorDistribution: {
     agriculture: number;
@@ -38,7 +38,7 @@ export interface EmploymentData {
     government: number;
     other: number;
   };
-  
+
   // Employment type breakdown
   employmentType: {
     fullTime: number; // percent
@@ -49,14 +49,14 @@ export interface EmploymentData {
     gig: number;
     informal: number;
   };
-  
+
   // Working conditions
   averageWorkweekHours: number;
   averageOvertimeHours: number;
   paidVacationDays: number;
   paidSickLeaveDays: number;
   parentalLeaveWeeks: number;
-  
+
   // Labor rights & protections
   unionizationRate: number; // percent
   collectiveBargainingCoverage: number; // percent
@@ -74,7 +74,7 @@ export interface IncomeData {
   nationalMeanIncome: number;
   nationalMedianWage: number;
   nationalMeanWage: number;
-  
+
   // Income distribution by percentile
   incomePercentiles: {
     p10: number;
@@ -86,7 +86,7 @@ export interface IncomeData {
     p99: number;
     p99_9: number;
   };
-  
+
   // Income by class (percent distribution)
   incomeClasses: {
     lowerClass: { percent: number; averageIncome: number; threshold: number };
@@ -96,7 +96,7 @@ export interface IncomeData {
     upperClass: { percent: number; averageIncome: number; threshold: number };
     wealthyClass: { percent: number; averageIncome: number; threshold: number };
   };
-  
+
   // Inequality metrics
   giniCoefficient: number; // 0-1 scale
   palmRatio: number; // ratio of top 10% to bottom 40%
@@ -106,14 +106,14 @@ export interface IncomeData {
     top10: number;
     top1: number;
   };
-  
+
   // Poverty metrics
   povertyLine: number;
   povertyRate: number; // percent
   extremePovertyRate: number; // percent
   childPovertyRate: number;
   seniorPovertyRate: number;
-  
+
   // Wage data by sector
   averageWageBySector: {
     agriculture: number;
@@ -132,12 +132,12 @@ export interface IncomeData {
     hospitality: number;
     government: number;
   };
-  
+
   // Gender and demographic gaps
   genderPayGap: number; // percent
   racialWageGap: number; // percent (if applicable)
   urbanRuralIncomeGap: number; // percent
-  
+
   // Social mobility
   socialMobilityIndex: number; // 0-100
   interGenerationalElasticity: number; // 0-1, lower is better
@@ -166,7 +166,7 @@ export interface SectorData {
     government: number;
     other: number;
   };
-  
+
   // Sector growth rates (annual percent change)
   sectorGrowthRates: {
     agriculture: number;
@@ -177,7 +177,7 @@ export interface SectorData {
     construction: number;
     retail: number;
   };
-  
+
   // Economic structure
   economicStructure: {
     primarySector: number; // agriculture, mining, extraction
@@ -185,7 +185,7 @@ export interface SectorData {
     tertiarySector: number; // services
     quaternarySector: number; // knowledge, research, IT
   };
-  
+
   // Productivity by sector (output per worker, indexed to 100)
   sectorProductivity: {
     agriculture: number;
@@ -194,7 +194,7 @@ export interface SectorData {
     technology: number;
     overall: number;
   };
-  
+
   // Innovation metrics
   researchDevelopmentGDPPercent: number;
   patentsPerCapita: number;
@@ -211,7 +211,7 @@ export interface TradeData {
   tradeBalance: number;
   exportsGDPPercent: number;
   importsGDPPercent: number;
-  
+
   // Trade composition
   exportComposition: {
     goods: number; // percent
@@ -221,7 +221,7 @@ export interface TradeData {
     technology: number;
     agricultural: number;
   };
-  
+
   importComposition: {
     goods: number; // percent
     services: number;
@@ -230,7 +230,7 @@ export interface TradeData {
     technology: number;
     agricultural: number;
   };
-  
+
   // Major trading partners (top 5)
   tradingPartners: Array<{
     country: string;
@@ -238,19 +238,19 @@ export interface TradeData {
     importsFrom: number;
     tradeBalance: number;
   }>;
-  
+
   // Trade agreements
   freeTradeAgreements: number;
   customsUnionMembership: boolean;
   wtoMembership: boolean;
-  
+
   // International metrics
   foreignDirectInvestmentInflow: number;
   foreignDirectInvestmentOutflow: number;
   foreignExchangeReserves: number;
   currentAccountBalance: number;
   currentAccountGDPPercent: number;
-  
+
   // Trade openness
   tradeOpennessIndex: number; // (exports + imports) / GDP
   economicComplexityIndex: number; // -3 to 3 scale
@@ -264,22 +264,22 @@ export interface ProductivityData {
   laborProductivityIndex: number; // GDP per hour worked, base 100
   laborProductivityGrowthRate: number; // annual percent
   multifactorProductivityGrowth: number; // annual percent
-  
+
   // Capital productivity
   capitalProductivity: number; // output per unit of capital
   capitalIntensity: number; // capital per worker
   returnOnInvestedCapital: number; // percent
-  
+
   // Efficiency metrics
   energyEfficiency: number; // GDP per unit of energy
   resourceProductivity: number; // GDP per ton of material
-  
+
   // Competitiveness
   globalCompetitivenessIndex: number; // 0-100
   innovationIndex: number; // 0-100
   infrastructureQualityIndex: number; // 0-100
   institutionalQualityIndex: number; // 0-100
-  
+
   // Human capital
   averageEducationYears: number;
   tertiaryEducationRate: number; // percent
@@ -297,25 +297,25 @@ export interface BusinessData {
   largeBusinesses: number; // >250
   startupFormationRate: number; // per 1000 people
   businessFailureRate: number; // percent
-  
+
   // Business environment
   easeOfDoingBusinessRank: number;
   timeToStartBusiness: number; // days
   costToStartBusiness: number; // percent of income per capita
   corporateRegistrationRate: number;
-  
+
   // Investment climate
   domesticInvestmentGDPPercent: number;
   foreignInvestmentGDPPercent: number;
   grossCapitalFormation: number;
   investmentGrowthRate: number;
-  
+
   // Credit and finance
   domesticCreditToPrivateSector: number; // percent of GDP
   interestRateCommercial: number;
   interestRateSavings: number;
   bankLendingRate: number;
-  
+
   // Entrepreneurship
   entrepreneurshipRate: number; // percent of adults
   venturCapitalAvailability: number; // 0-100 scale
@@ -331,30 +331,30 @@ export interface EconomicHealthData {
   gdpGrowthRate5YearAverage: number;
   potentialGDPGrowthRate: number;
   outputGap: number; // percent
-  
+
   // Price stability
   inflationRateCurrent: number;
   inflationRate5YearAverage: number;
   inflationTargetRate: number;
   coreInflationRate: number;
   priceStabilityIndex: number; // 0-100
-  
+
   // Economic stability
   economicVolatilityIndex: number; // 0-100, lower is better
   recessionRiskIndex: number; // 0-100
   financialStabilityIndex: number; // 0-100
-  
+
   // Fiscal health
   budgetBalanceGDPPercent: number;
   structuralBalanceGDPPercent: number;
   publicDebtGDPPercent: number;
   debtSustainabilityScore: number; // 0-100
-  
+
   // External health
   externalDebtGDPPercent: number;
   debtServiceRatio: number; // percent of exports
   reserveCoverMonths: number; // months of imports
-  
+
   // Overall health score
   economicHealthScore: number; // 0-100, composite metric
   sustainabilityScore: number; // 0-100, long-term viability
@@ -371,11 +371,11 @@ export interface ComprehensiveEconomyData {
   productivity: ProductivityData;
   business: BusinessData;
   health: EconomicHealthData;
-  
+
   // Meta information
   dataQuality: number; // 0-100 confidence score
   lastUpdated: Date;
-  sourceReliability: 'high' | 'medium' | 'low';
+  sourceReliability: "high" | "medium" | "low";
   coveragePeriod: {
     start: Date;
     end: Date;
@@ -386,7 +386,15 @@ export interface ComprehensiveEconomyData {
 
 export interface EconomyBuilderState {
   economyData: Partial<ComprehensiveEconomyData>;
-  activeView: 'overview' | 'employment' | 'income' | 'sectors' | 'trade' | 'productivity' | 'business' | 'health';
+  activeView:
+    | "overview"
+    | "employment"
+    | "income"
+    | "sectors"
+    | "trade"
+    | "productivity"
+    | "business"
+    | "health";
   showAdvanced: boolean;
   atomicComponents: ComponentType[];
   isValid: boolean;
@@ -399,13 +407,13 @@ export interface EconomyMetric {
   label: string;
   value: number | string;
   unit: string;
-  trend?: 'up' | 'down' | 'neutral';
+  trend?: "up" | "down" | "neutral";
   change?: number;
   compareValue?: number;
   description?: string;
   icon?: React.ComponentType;
   color?: string;
-  category: 'employment' | 'income' | 'sectors' | 'trade' | 'productivity' | 'business' | 'health';
+  category: "employment" | "income" | "sectors" | "trade" | "productivity" | "business" | "health";
 }
 
 export interface EconomySectionProps {
@@ -424,21 +432,21 @@ export interface EconomySectionProps {
 
 /**
  * RECOMMENDATION ON TAX SYSTEM PLACEMENT:
- * 
+ *
  * Based on analysis of the CAPHIRIA structure and modern economic modeling best practices:
- * 
+ *
  * OPTION 1: Keep Tax System Separate (RECOMMENDED)
  * - Taxes are a fiscal/government policy tool, not purely economic
  * - Allows for independent tax policy experimentation
  * - Clearer separation of concerns: Economy = outcomes, Fiscal = inputs
  * - Better aligns with real-world government structure (Treasury/Finance Ministry separate from Economic Development)
- * 
+ *
  * OPTION 2: Integrate Tax as Economy Sub-System
  * - Tax revenue directly impacts economy
  * - Could show real-time tax impact on economic metrics
  * - More holistic economic view
  * - May become overwhelming with too much data in one section
- * 
+ *
  * HYBRID APPROACH (IMPLEMENTED):
  * - Keep FiscalSystemSection for detailed tax configuration
  * - Include tax impact metrics and visualizations in EconomySection
@@ -452,13 +460,13 @@ export interface TaxEconomyIntegration {
   effectiveTaxRateCorporate: number;
   taxBurdenGDPPercent: number;
   taxWedge: number; // difference between labor cost and take-home pay
-  
+
   // Economic effects of taxation
   taxCompetitivenessIndex: number; // 0-100
   taxComplexityScore: number; // 0-100, lower is better
   taxComplianceRate: number; // percent
   taxRevenueEfficiency: number; // revenue collected vs potential
-  
+
   // Distributional effects
   taxProgressivityIndex: number; // 0-1, higher is more progressive
   taxIncidenceByIncome: {
@@ -470,4 +478,3 @@ export interface TaxEconomyIntegration {
 }
 
 export { type ComponentType };
-

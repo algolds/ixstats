@@ -3,13 +3,13 @@
 /**
  * Script to add a new user ID to the system owner list
  * This will update the centralized system owner constants
- * 
+ *
  * ⚠️  DEPRECATED: This script is no longer needed since we use centralized constants.
  * Use the centralized system-owner-constants.ts file instead.
  */
 
-import { readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, writeFileSync } from "fs";
+import { join } from "path";
 
 console.log("⚠️  DEPRECATED: This script is no longer needed!");
 console.log("   All system owner IDs are now centralized in src/lib/system-owner-constants.ts");
@@ -17,17 +17,17 @@ console.log("   To add a new system owner, edit that file directly.");
 console.log("");
 
 const SYSTEM_OWNER_FILES = [
-  'src/lib/system-owner-constants.ts' // Only file that needs updating now
+  "src/lib/system-owner-constants.ts", // Only file that needs updating now
 ];
 
 async function addSystemOwner() {
   try {
     console.log("🔐 Adding User ID to System Owner List");
     console.log("=====================================");
-    
+
     // Get user ID from command line argument
     const userId = process.argv[2];
-    
+
     if (!userId) {
       console.log("❌ Error: Please provide a user ID");
       console.log("");
@@ -45,7 +45,7 @@ async function addSystemOwner() {
     }
 
     // Validate user ID format
-    if (!userId.startsWith('user_')) {
+    if (!userId.startsWith("user_")) {
       console.log("❌ Error: User ID should start with 'user_'");
       console.log(`   Received: ${userId}`);
       process.exit(1);
@@ -59,9 +59,9 @@ async function addSystemOwner() {
     // Update each file
     for (const filePath of SYSTEM_OWNER_FILES) {
       const fullPath = join(process.cwd(), filePath);
-      
+
       try {
-        let content = readFileSync(fullPath, 'utf8');
+        let content = readFileSync(fullPath, "utf8");
         let updated = false;
 
         // Look for SYSTEM_OWNERS array and add the user ID
@@ -70,7 +70,7 @@ async function addSystemOwner() {
 
         if (match) {
           const [, prefix, existingIds, suffix] = match;
-          
+
           // Check if user ID already exists
           if (existingIds.includes(userId)) {
             console.log(`✅ ${filePath}: User ID already exists`);
@@ -83,14 +83,13 @@ async function addSystemOwner() {
             `${prefix}${existingIds.trim()}\n    '${userId}', // Added by script\n  ${suffix}`
           );
 
-          writeFileSync(fullPath, newContent, 'utf8');
+          writeFileSync(fullPath, newContent, "utf8");
           console.log(`✅ ${filePath}: Updated`);
           updated = true;
           filesUpdated++;
         } else {
           console.log(`⚠️  ${filePath}: SYSTEM_OWNERS array not found`);
         }
-
       } catch (error) {
         console.log(`❌ ${filePath}: Error updating file - ${error}`);
       }
@@ -98,7 +97,7 @@ async function addSystemOwner() {
 
     console.log("");
     console.log(`📊 Summary: Updated ${filesUpdated} files`);
-    
+
     if (filesUpdated > 0) {
       console.log("");
       console.log("✅ System owner setup complete!");
@@ -115,7 +114,6 @@ async function addSystemOwner() {
       console.log("");
       console.log("⚠️  No files were updated. Please check the file paths and try again.");
     }
-
   } catch (error) {
     console.error("❌ Error adding system owner:", error);
     process.exit(1);

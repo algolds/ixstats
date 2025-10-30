@@ -10,8 +10,8 @@
  */
 export function getNavUrl(path: string): string {
   // Ensure path starts with /
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
   // In production, basePath is handled by Next.js automatically
   // In development, no basePath is used
   return normalizedPath;
@@ -32,19 +32,19 @@ export function navigateToPath(path: string): void {
  */
 export function getBaseUrl(): string {
   const basePath = process.env.NODE_ENV === "production" ? "/projects/ixstats" : "";
-  
+
   if (typeof window !== "undefined") {
     return window.location.origin + basePath;
   }
-  
+
   // Server-side URL building
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}${basePath}`;
   }
-  
+
   if (process.env.NODE_ENV === "production") {
     return `https://ixwiki.com${basePath}`;
   }
-  
+
   return `http://localhost:${process.env.PORT ?? 3000}${basePath}`;
 }

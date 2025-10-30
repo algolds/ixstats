@@ -5,7 +5,7 @@
  * Returns undefined if user or user.id is invalid
  */
 export function getSafeUserId(user: { id?: string } | null | undefined): string | undefined {
-  if (!user?.id || user.id.trim() === '') {
+  if (!user?.id || user.id.trim() === "") {
     return undefined;
   }
   return user.id;
@@ -22,14 +22,14 @@ export function createUserProfileQueryParams(user: { id?: string } | null | unde
   // since enabled is false, but tRPC still validates the input schema
   if (!userId) {
     return {
-      input: { userId: 'placeholder-disabled' }, // Valid string that won't be used
-      enabled: false
+      input: { userId: "placeholder-disabled" }, // Valid string that won't be used
+      enabled: false,
     };
   }
 
   return {
     input: { userId },
-    enabled: true
+    enabled: true,
   };
 }
 
@@ -42,13 +42,13 @@ export function createSafeUserProfileQuery(user: { id?: string } | null | undefi
 
   if (!userId) {
     return {
-      input: { userId: 'placeholder-disabled' },
-      options: { enabled: false }
+      input: { userId: "placeholder-disabled" },
+      options: { enabled: false },
     };
   }
 
   return {
     input: { userId },
-    options: { enabled: true }
+    options: { enabled: true },
   };
 }

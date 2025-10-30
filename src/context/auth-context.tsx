@@ -1,14 +1,14 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useMemo } from "react";
 import {
   useUser as useClerkUser,
   useAuth as useClerkAuth,
   SignInButton as ClerkSignInButton,
   SignOutButton as ClerkSignOutButton,
   UserButton as ClerkUserButton,
-} from '@clerk/nextjs';
-import type { GetTokenOptions, SignOutOptions, UserResource } from '@clerk/types';
+} from "@clerk/nextjs";
+import type { GetTokenOptions, SignOutOptions, UserResource } from "@clerk/types";
 
 interface AuthContextType {
   user: UserResource | null;
@@ -19,25 +19,24 @@ interface AuthContextType {
 }
 
 // Clerk is the default auth provider - always use it when available
-const isClerkConfigured = Boolean(
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_')
-);
+const isClerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_"));
 
-const isDevEnvironment = process.env.NODE_ENV === 'development';
-const isProductionEnvironment = process.env.NODE_ENV === 'production';
-const isUsingTestKeys = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_test_');
-const isUsingLiveKeys = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith('pk_live_');
+const isDevEnvironment = process.env.NODE_ENV === "development";
+const isProductionEnvironment = process.env.NODE_ENV === "production";
+const isUsingTestKeys = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_test_");
+const isUsingLiveKeys = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_live_");
 
 // Production environment validation
 // Note: Clerk's built-in "development keys" warning is expected in development
 // and does not indicate an error - it's just Clerk reminding developers
 // not to use development keys in production environments.
-if (typeof window === 'undefined') { // Server-side only
+if (typeof window === "undefined") {
+  // Server-side only
   if (isProductionEnvironment && !isUsingLiveKeys && isClerkConfigured) {
-    console.warn('⚠️  PRODUCTION WARNING: Not using live Clerk keys in production environment');
+    console.warn("⚠️  PRODUCTION WARNING: Not using live Clerk keys in production environment");
   }
   if (isDevEnvironment && isUsingLiveKeys) {
-    console.warn('⚠️  DEVELOPMENT WARNING: Using live Clerk keys in development environment');
+    console.warn("⚠️  DEVELOPMENT WARNING: Using live Clerk keys in development environment");
   }
 }
 
@@ -67,15 +66,11 @@ function ClerkAuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [clerkUser, clerkAuth]);
 
-  return (
-    <AuthContext.Provider value={authValue}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={authValue}>{children}</AuthContext.Provider>;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  assertClerkConfigured('AuthProvider');
+  assertClerkConfigured("AuthProvider");
   return <ClerkAuthProvider>{children}</ClerkAuthProvider>;
 }
 
@@ -83,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useUser() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('[useUser] must be used within <AuthProvider>.');
+    throw new Error("[useUser] must be used within <AuthProvider>.");
   }
   return {
     user: context.user,
@@ -95,7 +90,7 @@ export function useUser() {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('[useAuth] must be used within <AuthProvider>.');
+    throw new Error("[useAuth] must be used within <AuthProvider>.");
   }
   return {
     isLoaded: context.isLoaded,
@@ -116,26 +111,22 @@ export function SignedOut({ children }: { children: React.ReactNode }) {
   return !isSignedIn ? <>{children}</> : null;
 }
 
-export function SignOutButton(
-  props: React.ComponentProps<typeof ClerkSignOutButton>
-) {
-  assertClerkConfigured('SignOutButton');
+export function SignOutButton(props: React.ComponentProps<typeof ClerkSignOutButton>) {
+  assertClerkConfigured("SignOutButton");
   return <ClerkSignOutButton {...props} />;
 }
 
-export function SignInButton(
-  props: React.ComponentProps<typeof ClerkSignInButton>
-) {
-  assertClerkConfigured('SignInButton');
+export function SignInButton(props: React.ComponentProps<typeof ClerkSignInButton>) {
+  assertClerkConfigured("SignInButton");
 
   useEffect(() => {
     if (isDevEnvironment && isUsingLiveKeys) {
       console.warn(
-        '⚠️ DEVELOPMENT WARNING: Using live Clerk keys in development. Switch to test keys (pk_test_*, sk_test_*) for development.'
+        "⚠️ DEVELOPMENT WARNING: Using live Clerk keys in development. Switch to test keys (pk_test_*, sk_test_*) for development."
       );
     } else if (isProductionEnvironment && isUsingTestKeys) {
       console.error(
-        '🚨 PRODUCTION ERROR: Using test Clerk keys in production! Switch to live keys (pk_live_*, sk_live_*) for production.'
+        "🚨 PRODUCTION ERROR: Using test Clerk keys in production! Switch to live keys (pk_live_*, sk_live_*) for production."
       );
     }
   }, []);
@@ -144,6 +135,6 @@ export function SignInButton(
 }
 
 export function UserButton(props: React.ComponentProps<typeof ClerkUserButton>) {
-  assertClerkConfigured('UserButton');
+  assertClerkConfigured("UserButton");
   return <ClerkUserButton {...props} />;
 }

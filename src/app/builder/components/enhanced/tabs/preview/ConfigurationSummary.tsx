@@ -1,11 +1,11 @@
 "use client";
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Building2, DollarSign, TrendingUp } from 'lucide-react';
-import type { EconomyBuilderState } from '~/types/economy-builder';
-import type { EconomicInputs } from '../../../../lib/economy-data-service';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Building2, DollarSign, TrendingUp } from "lucide-react";
+import type { EconomyBuilderState } from "~/types/economy-builder";
+import type { EconomicInputs } from "../../../../lib/economy-data-service";
 
 interface ConfigurationSummaryProps {
   economyBuilder: EconomyBuilderState;
@@ -14,7 +14,7 @@ interface ConfigurationSummaryProps {
 
 export function ConfigurationSummary({
   economyBuilder,
-  economicInputs
+  economicInputs,
 }: ConfigurationSummaryProps) {
   const { structure } = economyBuilder;
 
@@ -22,10 +22,8 @@ export function ConfigurationSummary({
     <>
       {/* Header */}
       <div className="text-center">
-        <h2 className="text-3xl font-bold mb-2">Economy Configuration Preview</h2>
-        <p className="text-muted-foreground">
-          Review your complete economic system configuration
-        </p>
+        <h2 className="mb-2 text-3xl font-bold">Economy Configuration Preview</h2>
+        <p className="text-muted-foreground">Review your complete economic system configuration</p>
       </div>
 
       {/* Economic Structure Card */}
@@ -60,7 +58,9 @@ export function ConfigurationSummary({
             <h4 className="font-medium">Primary Sectors:</h4>
             <div className="flex flex-wrap gap-1">
               {structure.primarySectors.map((sector, index) => (
-                <Badge key={index} variant="secondary">{sector}</Badge>
+                <Badge key={index} variant="secondary">
+                  {sector}
+                </Badge>
               ))}
             </div>
           </div>
@@ -69,7 +69,9 @@ export function ConfigurationSummary({
             <h4 className="font-medium">Secondary Sectors:</h4>
             <div className="flex flex-wrap gap-1">
               {structure.secondarySectors.map((sector, index) => (
-                <Badge key={index} variant="secondary">{sector}</Badge>
+                <Badge key={index} variant="secondary">
+                  {sector}
+                </Badge>
               ))}
             </div>
           </div>
@@ -78,7 +80,9 @@ export function ConfigurationSummary({
             <h4 className="font-medium">Tertiary Sectors:</h4>
             <div className="flex flex-wrap gap-1">
               {structure.tertiarySectors.map((sector, index) => (
-                <Badge key={index} variant="secondary">{sector}</Badge>
+                <Badge key={index} variant="secondary">
+                  {sector}
+                </Badge>
               ))}
             </div>
           </div>

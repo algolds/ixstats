@@ -2,13 +2,13 @@
 
 /**
  * User Management Verification Script
- * 
+ *
  * Comprehensive verification of user account system to ensure:
  * - No duplicate user records exist
  * - System owner IDs are properly configured
  * - All users have proper roles assigned
  * - UserManagementService is working correctly
- * 
+ *
  * Usage: npm run tsx scripts/verify-user-management.ts
  */
 
@@ -55,12 +55,12 @@ async function verifyUserManagement(): Promise<VerificationResult> {
     usersWithoutRoles: [],
     systemOwnerStatus: {
       dev: false,
-      prod: false
+      prod: false,
     },
     orphanedCountryLinks: [],
     userManagementServiceTest: {
-      success: false
-    }
+      success: false,
+    },
   };
 
   try {
@@ -69,9 +69,9 @@ async function verifyUserManagement(): Promise<VerificationResult> {
     const allUsers = await prisma.user.findMany({
       include: {
         role: true,
-        country: true
+        country: true,
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: "desc" },
     });
 
     result.totalUsers = allUsers.length;
@@ -79,7 +79,7 @@ async function verifyUserManagement(): Promise<VerificationResult> {
 
     // Group users by clerkUserId to find duplicates
     const userGroups = new Map<string, any[]>();
-    allUsers.forEach(user => {
+    allUsers.forEach((user) => {
       if (!userGroups.has(user.clerkUserId)) {
         userGroups.set(user.clerkUserId, []);
       }
@@ -92,21 +92,21 @@ async function verifyUserManagement(): Promise<VerificationResult> {
         const report: UserReport = {
           clerkUserId,
           count: users.length,
-          roles: users.map(u => u.role?.name || 'NO_ROLE'),
-          userIds: users.map(u => u.id),
-          countries: users.map(u => u.country?.name || 'NO_COUNTRY'),
-          issues: []
+          roles: users.map((u) => u.role?.name || "NO_ROLE"),
+          userIds: users.map((u) => u.id),
+          countries: users.map((u) => u.country?.name || "NO_COUNTRY"),
+          issues: [],
         };
 
         // Check for issues
-        if (users.some(u => !u.role)) {
-          report.issues.push('Some users have no role assigned');
+        if (users.some((u) => !u.role)) {
+          report.issues.push("Some users have no role assigned");
         }
-        if (users.some(u => !u.isActive)) {
-          report.issues.push('Some users are inactive');
+        if (users.some((u) => !u.isActive)) {
+          report.issues.push("Some users are inactive");
         }
-        if (new Set(users.map(u => u.countryId)).size > 1) {
-          report.issues.push('Users linked to different countries');
+        if (new Set(users.map((u) => u.countryId)).size > 1) {
+          report.issues.push("Users linked to different countries");
         }
 
         result.duplicateUsers.push(report);
@@ -117,10 +117,10 @@ async function verifyUserManagement(): Promise<VerificationResult> {
       console.log(`   ❌ Found ${result.duplicateUsers.length} duplicate user groups:`);
       result.duplicateUsers.forEach((dup, index) => {
         console.log(`   ${index + 1}. Clerk ID: ${dup.clerkUserId} (${dup.count} records)`);
-        console.log(`      Roles: ${dup.roles.join(', ')}`);
-        console.log(`      Countries: ${dup.countries.join(', ')}`);
+        console.log(`      Roles: ${dup.roles.join(", ")}`);
+        console.log(`      Countries: ${dup.countries.join(", ")}`);
         if (dup.issues.length > 0) {
-          console.log(`      Issues: ${dup.issues.join(', ')}`);
+          console.log(`      Issues: ${dup.issues.join(", ")}`);
         }
       });
     } else {
@@ -129,14 +129,14 @@ async function verifyUserManagement(): Promise<VerificationResult> {
 
     // 2. Check for users without roles
     console.log("\n📋 Step 2: Checking for users without roles...");
-    const usersWithoutRoles = allUsers.filter(user => !user.role);
+    const usersWithoutRoles = allUsers.filter((user) => !user.role);
     result.usersWithoutRoles = usersWithoutRoles;
 
     if (usersWithoutRoles.length > 0) {
       console.log(`   ❌ Found ${usersWithoutRoles.length} users without roles:`);
       usersWithoutRoles.forEach((user, index) => {
         console.log(`   ${index + 1}. ${user.clerkUserId} (ID: ${user.id})`);
-        console.log(`      Country: ${user.country?.name || 'None'}`);
+        console.log(`      Country: ${user.country?.name || "None"}`);
         console.log(`      Active: ${user.isActive}`);
         console.log(`      Created: ${user.createdAt.toISOString()}`);
       });
@@ -149,19 +149,21 @@ async function verifyUserManagement(): Promise<VerificationResult> {
     const devUserId = SYSTEM_OWNER_IDS[0];
     const prodUserId = SYSTEM_OWNER_IDS[1];
 
-    const devUser = allUsers.find(u => u.clerkUserId === devUserId);
-    const prodUser = allUsers.find(u => u.clerkUserId === prodUserId);
+    const devUser = allUsers.find((u) => u.clerkUserId === devUserId);
+    const prodUser = allUsers.find((u) => u.clerkUserId === prodUserId);
 
-    result.systemOwnerStatus.dev = !!devUser && devUser.role?.name === 'owner';
-    result.systemOwnerStatus.prod = !!prodUser && prodUser.role?.name === 'owner';
+    result.systemOwnerStatus.dev = !!devUser && devUser.role?.name === "owner";
+    result.systemOwnerStatus.prod = !!prodUser && prodUser.role?.name === "owner";
     result.systemOwnerStatus.devUser = devUser;
     result.systemOwnerStatus.prodUser = prodUser;
 
     console.log(`   Dev System Owner (${devUserId}):`);
     if (devUser) {
       console.log(`      ✅ Found in database`);
-      console.log(`      Role: ${devUser.role?.name || 'NO_ROLE'} (Level: ${devUser.role?.level || 'N/A'})`);
-      console.log(`      Country: ${devUser.country?.name || 'None'}`);
+      console.log(
+        `      Role: ${devUser.role?.name || "NO_ROLE"} (Level: ${devUser.role?.level || "N/A"})`
+      );
+      console.log(`      Country: ${devUser.country?.name || "None"}`);
       console.log(`      Active: ${devUser.isActive}`);
     } else {
       console.log(`      ❌ Not found in database`);
@@ -170,8 +172,10 @@ async function verifyUserManagement(): Promise<VerificationResult> {
     console.log(`   Prod System Owner (${prodUserId}):`);
     if (prodUser) {
       console.log(`      ✅ Found in database`);
-      console.log(`      Role: ${prodUser.role?.name || 'NO_ROLE'} (Level: ${prodUser.role?.level || 'N/A'})`);
-      console.log(`      Country: ${prodUser.country?.name || 'None'}`);
+      console.log(
+        `      Role: ${prodUser.role?.name || "NO_ROLE"} (Level: ${prodUser.role?.level || "N/A"})`
+      );
+      console.log(`      Country: ${prodUser.country?.name || "None"}`);
       console.log(`      Active: ${prodUser.isActive}`);
     } else {
       console.log(`      ❌ Not found in database`);
@@ -179,19 +183,21 @@ async function verifyUserManagement(): Promise<VerificationResult> {
 
     // 4. Check for orphaned country links
     console.log("\n🔗 Step 4: Checking for orphaned country links...");
-    const usersWithCountries = allUsers.filter(u => u.countryId);
+    const usersWithCountries = allUsers.filter((u) => u.countryId);
     const countryIds = await prisma.country.findMany({
-      select: { id: true }
+      select: { id: true },
     });
-    const validCountryIds = new Set(countryIds.map(c => c.id));
+    const validCountryIds = new Set(countryIds.map((c) => c.id));
 
-    const orphanedLinks = usersWithCountries.filter(u => !validCountryIds.has(u.countryId!));
+    const orphanedLinks = usersWithCountries.filter((u) => !validCountryIds.has(u.countryId!));
     result.orphanedCountryLinks = orphanedLinks;
 
     if (orphanedLinks.length > 0) {
       console.log(`   ❌ Found ${orphanedLinks.length} users with orphaned country links:`);
       orphanedLinks.forEach((user, index) => {
-        console.log(`   ${index + 1}. ${user.clerkUserId} -> Country ID: ${user.countryId} (not found)`);
+        console.log(
+          `   ${index + 1}. ${user.clerkUserId} -> Country ID: ${user.countryId} (not found)`
+        );
       });
     } else {
       console.log("   ✅ No orphaned country links found");
@@ -201,16 +207,16 @@ async function verifyUserManagement(): Promise<VerificationResult> {
     console.log("\n🧪 Step 5: Testing UserManagementService...");
     try {
       const userService = new UserManagementService(prisma);
-      
+
       // Test with a known system owner ID
       const testUserId = devUserId;
       const testUser = await userService.getOrCreateUser(testUserId);
-      
+
       if (testUser) {
         result.userManagementServiceTest.success = true;
         console.log(`   ✅ UserManagementService working correctly`);
         console.log(`      Retrieved user: ${testUser.clerkUserId}`);
-        console.log(`      Role: ${testUser.role?.name || 'NO_ROLE'}`);
+        console.log(`      Role: ${testUser.role?.name || "NO_ROLE"}`);
         console.log(`      Is System Owner: ${isSystemOwner(testUser.clerkUserId)}`);
       } else {
         result.userManagementServiceTest.success = false;
@@ -219,8 +225,11 @@ async function verifyUserManagement(): Promise<VerificationResult> {
       }
     } catch (error) {
       result.userManagementServiceTest.success = false;
-      result.userManagementServiceTest.error = error instanceof Error ? error.message : 'Unknown error';
-      console.log(`   ❌ UserManagementService test failed: ${result.userManagementServiceTest.error}`);
+      result.userManagementServiceTest.error =
+        error instanceof Error ? error.message : "Unknown error";
+      console.log(
+        `   ❌ UserManagementService test failed: ${result.userManagementServiceTest.error}`
+      );
     }
 
     // 6. Summary
@@ -229,17 +238,18 @@ async function verifyUserManagement(): Promise<VerificationResult> {
     console.log(`Total Users: ${result.totalUsers}`);
     console.log(`Duplicate Groups: ${result.duplicateUsers.length}`);
     console.log(`Users Without Roles: ${result.usersWithoutRoles.length}`);
-    console.log(`Dev System Owner: ${result.systemOwnerStatus.dev ? '✅' : '❌'}`);
-    console.log(`Prod System Owner: ${result.systemOwnerStatus.prod ? '✅' : '❌'}`);
+    console.log(`Dev System Owner: ${result.systemOwnerStatus.dev ? "✅" : "❌"}`);
+    console.log(`Prod System Owner: ${result.systemOwnerStatus.prod ? "✅" : "❌"}`);
     console.log(`Orphaned Country Links: ${result.orphanedCountryLinks.length}`);
-    console.log(`UserManagementService: ${result.userManagementServiceTest.success ? '✅' : '❌'}`);
+    console.log(`UserManagementService: ${result.userManagementServiceTest.success ? "✅" : "❌"}`);
 
-    const hasIssues = result.duplicateUsers.length > 0 || 
-                     result.usersWithoutRoles.length > 0 || 
-                     !result.systemOwnerStatus.dev || 
-                     !result.systemOwnerStatus.prod ||
-                     result.orphanedCountryLinks.length > 0 ||
-                     !result.userManagementServiceTest.success;
+    const hasIssues =
+      result.duplicateUsers.length > 0 ||
+      result.usersWithoutRoles.length > 0 ||
+      !result.systemOwnerStatus.dev ||
+      !result.systemOwnerStatus.prod ||
+      result.orphanedCountryLinks.length > 0 ||
+      !result.userManagementServiceTest.success;
 
     if (hasIssues) {
       console.log("\n⚠️  Issues found that need attention:");
@@ -261,7 +271,6 @@ async function verifyUserManagement(): Promise<VerificationResult> {
     } else {
       console.log("\n🎉 All user management systems are working correctly!");
     }
-
   } catch (error) {
     console.error("❌ Verification failed:", error);
     throw error;

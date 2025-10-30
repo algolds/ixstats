@@ -5,7 +5,13 @@ import { IxTime } from "~/lib/ixtime";
 
 export interface DiplomaticEvent {
   id: string;
-  type: 'embassy_established' | 'cultural_exchange_started' | 'achievement_unlocked' | 'diplomatic_crisis' | 'trade_agreement' | 'intelligence_briefing';
+  type:
+    | "embassy_established"
+    | "cultural_exchange_started"
+    | "achievement_unlocked"
+    | "diplomatic_crisis"
+    | "trade_agreement"
+    | "intelligence_briefing";
   countryId: string;
   countryName: string;
   targetCountryId?: string;
@@ -13,29 +19,29 @@ export interface DiplomaticEvent {
   data: Record<string, any>;
   timestamp: string;
   ixTimeContext: number;
-  classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
-  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL';
+  classification: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
+  priority: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
 }
 
 export interface LiveIntelligenceUpdate {
-  type: 'diplomatic_event' | 'achievement_notification' | 'status_change' | 'network_update';
+  type: "diplomatic_event" | "achievement_notification" | "status_change" | "network_update";
   event: DiplomaticEvent;
   affectedCountries: string[];
-  broadcastLevel: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
+  broadcastLevel: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
 }
 
 export interface WebSocketConnectionConfig {
   url: string;
   countryId?: string;
-  clearanceLevel: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
+  clearanceLevel: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
   subscriptions: DiplomaticEventSubscription[];
 }
 
 export interface DiplomaticEventSubscription {
-  eventTypes: DiplomaticEvent['type'][];
+  eventTypes: DiplomaticEvent["type"][];
   countries: string[]; // Countries to monitor
-  classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
-  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'CRITICAL';
+  classification: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
+  priority: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
 }
 
 export class DiplomaticWebSocket {
@@ -51,37 +57,37 @@ export class DiplomaticWebSocket {
   constructor(
     private config: WebSocketConnectionConfig,
     private onEvent: (event: LiveIntelligenceUpdate) => void,
-    private onStatusChange: (status: 'connecting' | 'connected' | 'disconnected' | 'error') => void
+    private onStatusChange: (status: "connecting" | "connected" | "disconnected" | "error") => void
   ) {}
 
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        this.onStatusChange('connecting');
-        
+        this.onStatusChange("connecting");
+
         // Validate WebSocket URL before attempting connection
         if (!this.isValidWebSocketUrl(this.config.url)) {
           const error = new Error(`Invalid WebSocket URL: ${this.config.url}`);
-          console.warn('Diplomatic WebSocket disabled: Invalid URL configuration');
-          this.onStatusChange('error');
+          console.warn("Diplomatic WebSocket disabled: Invalid URL configuration");
+          this.onStatusChange("error");
           reject(error);
           return;
         }
 
         // Use secure WebSocket in production
-        const protocol = this.config.url.startsWith('https') ? 'wss' : 'ws';
+        const protocol = this.config.url.startsWith("https") ? "wss" : "ws";
         const wsUrl = this.config.url.replace(/^https?/, protocol);
         const fullUrl = `${wsUrl}/diplomatic-intelligence`;
-        
-        console.log('Attempting diplomatic WebSocket connection to:', fullUrl);
-        
+
+        console.log("Attempting diplomatic WebSocket connection to:", fullUrl);
+
         // Set connection timeout
         const connectionTimeout = setTimeout(() => {
           if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
             this.ws.close();
-            const timeoutError = new Error('WebSocket connection timeout');
-            console.warn('Diplomatic WebSocket connection timed out');
-            this.onStatusChange('error');
+            const timeoutError = new Error("WebSocket connection timeout");
+            console.warn("Diplomatic WebSocket connection timed out");
+            this.onStatusChange("error");
             reject(timeoutError);
           }
         }, 10000); // 10 second timeout
@@ -92,16 +98,16 @@ export class DiplomaticWebSocket {
           clearTimeout(connectionTimeout);
           this.isConnected = true;
           this.reconnectAttempts = 0;
-          this.onStatusChange('connected');
-          
+          this.onStatusChange("connected");
+
           // Send authentication and subscription data
           this.authenticate();
           this.setupSubscriptions();
           this.startHeartbeat();
-          
+
           // Process queued messages
           this.processMessageQueue();
-          
+
           resolve();
         };
 
@@ -110,7 +116,7 @@ export class DiplomaticWebSocket {
             const data = JSON.parse(event.data);
             this.handleMessage(data);
           } catch (error) {
-            console.error('Failed to parse WebSocket message:', error);
+            console.error("Failed to parse WebSocket message:", error);
           }
         };
 
@@ -118,11 +124,14 @@ export class DiplomaticWebSocket {
           clearTimeout(connectionTimeout);
           const reason = this.getCloseReason(event.code);
           this.isConnected = false;
-          this.onStatusChange('disconnected');
+          this.onStatusChange("disconnected");
           this.stopHeartbeat();
-          
+
           // Only attempt reconnection for certain close codes
-          if (this.shouldReconnect(event.code) && this.reconnectAttempts < this.maxReconnectAttempts) {
+          if (
+            this.shouldReconnect(event.code) &&
+            this.reconnectAttempts < this.maxReconnectAttempts
+          ) {
             this.scheduleReconnect();
           }
         };
@@ -132,16 +141,15 @@ export class DiplomaticWebSocket {
           // Only log errors if we're not already closed/disconnected
           if (this.ws && this.ws.readyState !== WebSocket.CLOSED) {
             const errorMessage = this.getWebSocketErrorMessage(error);
-            console.error('Diplomatic WebSocket error:', errorMessage);
-            this.onStatusChange('error');
+            console.error("Diplomatic WebSocket error:", errorMessage);
+            this.onStatusChange("error");
             reject(new Error(errorMessage));
           }
         };
-
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown WebSocket error';
-        console.error('Failed to create diplomatic WebSocket:', errorMessage);
-        this.onStatusChange('error');
+        const errorMessage = error instanceof Error ? error.message : "Unknown WebSocket error";
+        console.error("Failed to create diplomatic WebSocket:", errorMessage);
+        this.onStatusChange("error");
         reject(new Error(errorMessage));
       }
     });
@@ -151,50 +159,61 @@ export class DiplomaticWebSocket {
     try {
       // Check if URL is a valid format
       const urlObj = new URL(url);
-      return ['http:', 'https:', 'ws:', 'wss:'].includes(urlObj.protocol);
+      return ["http:", "https:", "ws:", "wss:"].includes(urlObj.protocol);
     } catch {
       return false;
     }
   }
 
   private getWebSocketErrorMessage(error: Event): string {
-    if (!error || typeof error !== 'object') {
-      return 'WebSocket connection failed - server may be unavailable';
+    if (!error || typeof error !== "object") {
+      return "WebSocket connection failed - server may be unavailable";
     }
-    
+
     // WebSocket errors in browsers typically don't provide detailed information
     const target = error.target as WebSocket | null;
     if (target) {
       switch (target.readyState) {
         case WebSocket.CONNECTING:
-          return 'WebSocket connection failed during handshake';
+          return "WebSocket connection failed during handshake";
         case WebSocket.OPEN:
-          return 'WebSocket error on active connection';
+          return "WebSocket error on active connection";
         case WebSocket.CLOSING:
-          return 'WebSocket error while closing connection';
+          return "WebSocket error while closing connection";
         case WebSocket.CLOSED:
-          return 'WebSocket error on closed connection';
+          return "WebSocket error on closed connection";
         default:
-          return 'Unknown WebSocket error';
+          return "Unknown WebSocket error";
       }
     }
-    
-    return 'WebSocket connection error - check server availability';
+
+    return "WebSocket connection error - check server availability";
   }
 
   private getCloseReason(code: number): string {
     switch (code) {
-      case 1000: return 'Normal closure';
-      case 1001: return 'Going away';
-      case 1002: return 'Protocol error';
-      case 1003: return 'Unsupported data';
-      case 1006: return 'Connection lost';
-      case 1007: return 'Invalid data';
-      case 1008: return 'Policy violation';
-      case 1009: return 'Message too big';
-      case 1011: return 'Server error';
-      case 1015: return 'TLS handshake failure';
-      default: return `Unknown reason (${code})`;
+      case 1000:
+        return "Normal closure";
+      case 1001:
+        return "Going away";
+      case 1002:
+        return "Protocol error";
+      case 1003:
+        return "Unsupported data";
+      case 1006:
+        return "Connection lost";
+      case 1007:
+        return "Invalid data";
+      case 1008:
+        return "Policy violation";
+      case 1009:
+        return "Message too big";
+      case 1011:
+        return "Server error";
+      case 1015:
+        return "TLS handshake failure";
+      default:
+        return `Unknown reason (${code})`;
     }
   }
 
@@ -206,12 +225,12 @@ export class DiplomaticWebSocket {
 
   disconnect(): void {
     this.stopHeartbeat();
-    
+
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
-    
+
     this.isConnected = false;
     this.subscriptions.clear();
     this.messageQueue = [];
@@ -219,39 +238,39 @@ export class DiplomaticWebSocket {
 
   private authenticate(): void {
     this.sendMessage({
-      type: 'authenticate',
+      type: "authenticate",
       payload: {
         countryId: this.config.countryId,
         clearanceLevel: this.config.clearanceLevel,
         timestamp: new Date().toISOString(),
-        ixTimeContext: IxTime.getCurrentIxTime()
-      }
+        ixTimeContext: IxTime.getCurrentIxTime(),
+      },
     });
   }
 
   private setupSubscriptions(): void {
-    this.config.subscriptions.forEach(subscription => {
+    this.config.subscriptions.forEach((subscription) => {
       this.subscribe(subscription);
     });
   }
 
   subscribe(subscription: DiplomaticEventSubscription): void {
     const subscriptionId = this.generateSubscriptionId(subscription);
-    
+
     if (this.subscriptions.has(subscriptionId)) {
       return; // Already subscribed
     }
 
     this.sendMessage({
-      type: 'subscribe',
+      type: "subscribe",
       payload: {
         subscriptionId,
         eventTypes: subscription.eventTypes,
         countries: subscription.countries,
         classification: subscription.classification,
         priority: subscription.priority,
-        clearanceLevel: this.config.clearanceLevel
-      }
+        clearanceLevel: this.config.clearanceLevel,
+      },
     });
 
     this.subscriptions.add(subscriptionId);
@@ -259,23 +278,23 @@ export class DiplomaticWebSocket {
 
   unsubscribe(subscription: DiplomaticEventSubscription): void {
     const subscriptionId = this.generateSubscriptionId(subscription);
-    
+
     if (!this.subscriptions.has(subscriptionId)) {
       return; // Not subscribed
     }
 
     this.sendMessage({
-      type: 'unsubscribe',
+      type: "unsubscribe",
       payload: {
-        subscriptionId
-      }
+        subscriptionId,
+      },
     });
 
     this.subscriptions.delete(subscriptionId);
   }
 
   private generateSubscriptionId(subscription: DiplomaticEventSubscription): string {
-    return `${subscription.eventTypes.join(',')}-${subscription.countries.join(',')}-${subscription.classification}`;
+    return `${subscription.eventTypes.join(",")}-${subscription.countries.join(",")}-${subscription.classification}`;
   }
 
   private sendMessage(message: any): void {
@@ -296,35 +315,35 @@ export class DiplomaticWebSocket {
 
   private handleMessage(data: any): void {
     switch (data.type) {
-      case 'diplomatic_event':
+      case "diplomatic_event":
         this.handleDiplomaticEvent(data);
         break;
-      case 'achievement_notification':
+      case "achievement_notification":
         this.handleAchievementNotification(data);
         break;
-      case 'status_change':
+      case "status_change":
         this.handleStatusChange(data);
         break;
-      case 'network_update':
+      case "network_update":
         this.handleNetworkUpdate(data);
         break;
-      case 'pong':
+      case "pong":
         // Heartbeat response
         break;
-      case 'error':
-        console.error('WebSocket server error:', data.error);
+      case "error":
+        console.error("WebSocket server error:", data.error);
         break;
       default:
-        console.warn('Unknown message type:', data.type);
+        console.warn("Unknown message type:", data.type);
     }
   }
 
   private handleDiplomaticEvent(data: any): void {
     const update: LiveIntelligenceUpdate = {
-      type: 'diplomatic_event',
+      type: "diplomatic_event",
       event: data.event,
       affectedCountries: data.affectedCountries || [],
-      broadcastLevel: data.broadcastLevel || 'PUBLIC'
+      broadcastLevel: data.broadcastLevel || "PUBLIC",
     };
 
     // Check if user has clearance for this event
@@ -335,10 +354,10 @@ export class DiplomaticWebSocket {
 
   private handleAchievementNotification(data: any): void {
     const update: LiveIntelligenceUpdate = {
-      type: 'achievement_notification',
+      type: "achievement_notification",
       event: data.event,
       affectedCountries: data.affectedCountries || [],
-      broadcastLevel: 'PUBLIC' // Achievements are usually public
+      broadcastLevel: "PUBLIC", // Achievements are usually public
     };
 
     this.onEvent(update);
@@ -346,10 +365,10 @@ export class DiplomaticWebSocket {
 
   private handleStatusChange(data: any): void {
     const update: LiveIntelligenceUpdate = {
-      type: 'status_change',
+      type: "status_change",
       event: data.event,
       affectedCountries: data.affectedCountries || [],
-      broadcastLevel: data.broadcastLevel || 'PUBLIC'
+      broadcastLevel: data.broadcastLevel || "PUBLIC",
     };
 
     if (this.hasRequiredClearance(update.broadcastLevel)) {
@@ -359,10 +378,10 @@ export class DiplomaticWebSocket {
 
   private handleNetworkUpdate(data: any): void {
     const update: LiveIntelligenceUpdate = {
-      type: 'network_update',
+      type: "network_update",
       event: data.event,
       affectedCountries: data.affectedCountries || [],
-      broadcastLevel: data.broadcastLevel || 'RESTRICTED'
+      broadcastLevel: data.broadcastLevel || "RESTRICTED",
     };
 
     if (this.hasRequiredClearance(update.broadcastLevel)) {
@@ -370,17 +389,17 @@ export class DiplomaticWebSocket {
     }
   }
 
-  private hasRequiredClearance(requiredLevel: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL'): boolean {
-    const clearanceLevels = ['PUBLIC', 'RESTRICTED', 'CONFIDENTIAL'];
+  private hasRequiredClearance(requiredLevel: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL"): boolean {
+    const clearanceLevels = ["PUBLIC", "RESTRICTED", "CONFIDENTIAL"];
     const userLevel = clearanceLevels.indexOf(this.config.clearanceLevel);
     const requiredLevelIndex = clearanceLevels.indexOf(requiredLevel);
-    
+
     return userLevel >= requiredLevelIndex;
   }
 
   private startHeartbeat(): void {
     this.pingInterval = setInterval(() => {
-      this.sendMessage({ type: 'ping', timestamp: new Date().toISOString() });
+      this.sendMessage({ type: "ping", timestamp: new Date().toISOString() });
     }, 30000); // Ping every 30 seconds
   }
 
@@ -394,12 +413,14 @@ export class DiplomaticWebSocket {
   private scheduleReconnect(): void {
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1); // Exponential backoff
-    
-    console.log(`Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
-    
+
+    console.log(
+      `Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`
+    );
+
     setTimeout(() => {
-      this.connect().catch(error => {
-        console.error('Reconnection failed:', error);
+      this.connect().catch((error) => {
+        console.error("Reconnection failed:", error);
       });
     }, delay);
   }
@@ -408,59 +429,59 @@ export class DiplomaticWebSocket {
   broadcastEmbassyEstablishment(targetCountryId: string, relationshipType: string): void {
     const event: DiplomaticEvent = {
       id: `embassy-${Date.now()}`,
-      type: 'embassy_established',
+      type: "embassy_established",
       countryId: this.config.countryId!,
-      countryName: '', // Will be filled by server
+      countryName: "", // Will be filled by server
       targetCountryId,
-      targetCountryName: '', // Will be filled by server
+      targetCountryName: "", // Will be filled by server
       data: { relationshipType },
       timestamp: new Date().toISOString(),
       ixTimeContext: IxTime.getCurrentIxTime(),
-      classification: 'PUBLIC',
-      priority: 'NORMAL'
+      classification: "PUBLIC",
+      priority: "NORMAL",
     };
 
     this.sendMessage({
-      type: 'broadcast_event',
-      payload: event
+      type: "broadcast_event",
+      payload: event,
     });
   }
 
   broadcastCulturalExchange(exchangeId: string, exchangeType: string): void {
     const event: DiplomaticEvent = {
       id: `cultural-${Date.now()}`,
-      type: 'cultural_exchange_started',
+      type: "cultural_exchange_started",
       countryId: this.config.countryId!,
-      countryName: '',
+      countryName: "",
       data: { exchangeId, exchangeType },
       timestamp: new Date().toISOString(),
       ixTimeContext: IxTime.getCurrentIxTime(),
-      classification: 'PUBLIC',
-      priority: 'NORMAL'
+      classification: "PUBLIC",
+      priority: "NORMAL",
     };
 
     this.sendMessage({
-      type: 'broadcast_event',
-      payload: event
+      type: "broadcast_event",
+      payload: event,
     });
   }
 
   broadcastAchievementUnlock(achievementId: string, achievementTier: string): void {
     const event: DiplomaticEvent = {
       id: `achievement-${Date.now()}`,
-      type: 'achievement_unlocked',
+      type: "achievement_unlocked",
       countryId: this.config.countryId!,
-      countryName: '',
+      countryName: "",
       data: { achievementId, achievementTier },
       timestamp: new Date().toISOString(),
       ixTimeContext: IxTime.getCurrentIxTime(),
-      classification: 'PUBLIC',
-      priority: achievementTier === 'legendary' ? 'HIGH' : 'NORMAL'
+      classification: "PUBLIC",
+      priority: achievementTier === "legendary" ? "HIGH" : "NORMAL",
     };
 
     this.sendMessage({
-      type: 'broadcast_event',
-      payload: event
+      type: "broadcast_event",
+      payload: event,
     });
   }
 }
@@ -500,7 +521,7 @@ export class DiplomaticWebSocketManager {
         this.connection.disconnect();
         this.connection = null;
       }
-      
+
       // Re-throw error to be handled by calling code
       throw error;
     }
@@ -531,11 +552,11 @@ export class DiplomaticWebSocketManager {
   }
 
   private broadcastEvent(event: LiveIntelligenceUpdate): void {
-    this.eventListeners.forEach(listener => listener(event));
+    this.eventListeners.forEach((listener) => listener(event));
   }
 
   private broadcastStatus(status: string): void {
-    this.statusListeners.forEach(listener => listener(status));
+    this.statusListeners.forEach((listener) => listener(status));
   }
 
   disconnect(): void {
@@ -562,7 +583,7 @@ export const useDiplomaticWebSocket = (
     if (onEvent) {
       manager.addEventListener(onEvent);
     }
-    
+
     if (onStatusChange) {
       manager.addStatusListener(onStatusChange);
     }
@@ -572,7 +593,7 @@ export const useDiplomaticWebSocket = (
       if (onEvent) {
         manager.removeEventListener(onEvent);
       }
-      
+
       if (onStatusChange) {
         manager.removeStatusListener(onStatusChange);
       }
@@ -582,6 +603,6 @@ export const useDiplomaticWebSocket = (
   return {
     subscribe: (subscription: DiplomaticEventSubscription) => manager.subscribe(subscription),
     unsubscribe: (subscription: DiplomaticEventSubscription) => manager.unsubscribe(subscription),
-    disconnect: () => manager.disconnect()
+    disconnect: () => manager.disconnect(),
   };
 };

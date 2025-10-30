@@ -2,23 +2,26 @@
  * Tests for Real-time Atomic Effects Integration
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { 
-  calculateRealTimeAtomicEffects, 
+import { describe, it, expect, beforeEach } from "vitest";
+import {
+  calculateRealTimeAtomicEffects,
   applyRealTimeEffects,
-  type AtomicComponentData 
-} from '../real-time-atomic-effects';
-import { ComponentType, EconomicComponentType, TaxComponentType } from '@prisma/client';
+  type AtomicComponentData,
+} from "../real-time-atomic-effects";
+import { ComponentType, EconomicComponentType, TaxComponentType } from "@prisma/client";
 
-describe('Real-time Atomic Effects Integration', () => {
+describe("Real-time Atomic Effects Integration", () => {
   let mockComponents: AtomicComponentData;
   let mockBaseEconomicData: any;
 
   beforeEach(() => {
     mockComponents = {
       government: [ComponentType.DEMOCRACY, ComponentType.CENTRAL_BANK],
-      economic: [EconomicComponentType.FREE_MARKET_SYSTEM, EconomicComponentType.PRIVATE_PROPERTY_RIGHTS],
-      tax: [TaxComponentType.PROGRESSIVE_TAX, TaxComponentType.CORPORATE_TAX]
+      economic: [
+        EconomicComponentType.FREE_MARKET_SYSTEM,
+        EconomicComponentType.PRIVATE_PROPERTY_RIGHTS,
+      ],
+      tax: [TaxComponentType.PROGRESSIVE_TAX, TaxComponentType.CORPORATE_TAX],
     };
 
     mockBaseEconomicData = {
@@ -28,12 +31,12 @@ describe('Real-time Atomic Effects Integration', () => {
       taxRevenueGDPPercent: 20,
       unemploymentRate: 5.0,
       inflationRate: 2.0,
-      population: 20000000
+      population: 20000000,
     };
   });
 
-  describe('calculateRealTimeAtomicEffects', () => {
-    it('should calculate effects for all component types', () => {
+  describe("calculateRealTimeAtomicEffects", () => {
+    it("should calculate effects for all component types", () => {
       const effects = calculateRealTimeAtomicEffects(mockComponents, mockBaseEconomicData);
 
       expect(effects).toBeDefined();
@@ -46,7 +49,7 @@ describe('Real-time Atomic Effects Integration', () => {
       expect(effects.conflicts).toBeDefined();
     });
 
-    it('should return valid modifier values', () => {
+    it("should return valid modifier values", () => {
       const effects = calculateRealTimeAtomicEffects(mockComponents, mockBaseEconomicData);
 
       // GDP modifiers should be positive numbers
@@ -64,11 +67,11 @@ describe('Real-time Atomic Effects Integration', () => {
       expect(effects.employmentModifiers.productivityMultiplier).toBeGreaterThan(0);
     });
 
-    it('should handle empty component arrays', () => {
+    it("should handle empty component arrays", () => {
       const emptyComponents: AtomicComponentData = {
         government: [],
         economic: [],
-        tax: []
+        tax: [],
       };
 
       const effects = calculateRealTimeAtomicEffects(emptyComponents, mockBaseEconomicData);
@@ -80,8 +83,8 @@ describe('Real-time Atomic Effects Integration', () => {
     });
   });
 
-  describe('applyRealTimeEffects', () => {
-    it('should apply effects to economic data', () => {
+  describe("applyRealTimeEffects", () => {
+    it("should apply effects to economic data", () => {
       const effects = calculateRealTimeAtomicEffects(mockComponents, mockBaseEconomicData);
       const enhancedData = applyRealTimeEffects(mockBaseEconomicData, effects);
 
@@ -94,7 +97,7 @@ describe('Real-time Atomic Effects Integration', () => {
       expect(enhancedData.enhancedInflationRate).toBeDefined();
     });
 
-    it('should maintain data integrity', () => {
+    it("should maintain data integrity", () => {
       const effects = calculateRealTimeAtomicEffects(mockComponents, mockBaseEconomicData);
       const enhancedData = applyRealTimeEffects(mockBaseEconomicData, effects);
 
@@ -110,56 +113,56 @@ describe('Real-time Atomic Effects Integration', () => {
       expect(enhancedData.enhancedPopulation).toBe(mockBaseEconomicData.population);
     });
 
-    it('should calculate synergy and conflict bonuses', () => {
+    it("should calculate synergy and conflict bonuses", () => {
       const effects = calculateRealTimeAtomicEffects(mockComponents, mockBaseEconomicData);
       const enhancedData = applyRealTimeEffects(mockBaseEconomicData, effects);
 
       expect(enhancedData.totalSynergyBonus).toBeDefined();
       expect(enhancedData.totalConflictPenalty).toBeDefined();
-      expect(typeof enhancedData.totalSynergyBonus).toBe('number');
-      expect(typeof enhancedData.totalConflictPenalty).toBe('number');
+      expect(typeof enhancedData.totalSynergyBonus).toBe("number");
+      expect(typeof enhancedData.totalConflictPenalty).toBe("number");
     });
   });
 
-  describe('Cross-builder synergies', () => {
-    it('should detect democracy and free market synergy', () => {
+  describe("Cross-builder synergies", () => {
+    it("should detect democracy and free market synergy", () => {
       const synergyComponents: AtomicComponentData = {
         government: [ComponentType.DEMOCRACY],
         economic: [EconomicComponentType.FREE_MARKET_SYSTEM],
-        tax: []
+        tax: [],
       };
 
       const effects = calculateRealTimeAtomicEffects(synergyComponents, mockBaseEconomicData);
-      
+
       // Should have cross-builder synergies
       expect(effects.synergies.crossBuilderSynergies.length).toBeGreaterThan(0);
-      
+
       const democracyFreeMarketSynergy = effects.synergies.crossBuilderSynergies.find(
-        s => s.id === 'democracy-free-market'
+        (s) => s.id === "democracy-free-market"
       );
       expect(democracyFreeMarketSynergy).toBeDefined();
       expect(democracyFreeMarketSynergy?.effectivenessBonus).toBeGreaterThan(0);
     });
 
-    it('should detect central bank and progressive tax synergy', () => {
+    it("should detect central bank and progressive tax synergy", () => {
       const synergyComponents: AtomicComponentData = {
         government: [ComponentType.CENTRAL_BANK],
         economic: [],
-        tax: [TaxComponentType.PROGRESSIVE_TAX]
+        tax: [TaxComponentType.PROGRESSIVE_TAX],
       };
 
       const effects = calculateRealTimeAtomicEffects(synergyComponents, mockBaseEconomicData);
-      
+
       const centralBankProgressiveTaxSynergy = effects.synergies.crossBuilderSynergies.find(
-        s => s.id === 'central-bank-progressive-tax'
+        (s) => s.id === "central-bank-progressive-tax"
       );
       expect(centralBankProgressiveTaxSynergy).toBeDefined();
       expect(centralBankProgressiveTaxSynergy?.effectivenessBonus).toBeGreaterThan(0);
     });
   });
 
-  describe('Edge cases', () => {
-    it('should handle undefined base economic data gracefully', () => {
+  describe("Edge cases", () => {
+    it("should handle undefined base economic data gracefully", () => {
       const undefinedData = {
         gdpGrowthRate: undefined as any,
         nominalGDP: undefined as any,
@@ -167,7 +170,7 @@ describe('Real-time Atomic Effects Integration', () => {
         taxRevenueGDPPercent: undefined as any,
         unemploymentRate: undefined as any,
         inflationRate: undefined as any,
-        population: undefined as any
+        population: undefined as any,
       };
 
       expect(() => {
@@ -175,7 +178,7 @@ describe('Real-time Atomic Effects Integration', () => {
       }).not.toThrow();
     });
 
-    it('should handle extreme values', () => {
+    it("should handle extreme values", () => {
       const extremeData = {
         gdpGrowthRate: 1000, // Very high growth
         nominalGDP: 0, // Zero GDP
@@ -183,7 +186,7 @@ describe('Real-time Atomic Effects Integration', () => {
         taxRevenueGDPPercent: 200, // Very high tax rate
         unemploymentRate: 0, // No unemployment
         inflationRate: -5, // Deflation
-        population: 1 // Very small population
+        population: 1, // Very small population
       };
 
       expect(() => {
@@ -193,4 +196,3 @@ describe('Real-time Atomic Effects Integration', () => {
     });
   });
 });
-

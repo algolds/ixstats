@@ -4,12 +4,9 @@
 
 "use client";
 
-import React, { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
-import {
-  EnhancedBarChart,
-  MetricCard
-} from '../../primitives/enhanced';
+import React, { useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { EnhancedBarChart, MetricCard } from "../../primitives/enhanced";
 import {
   Target,
   AlertTriangle,
@@ -18,11 +15,11 @@ import {
   Zap,
   CheckCircle,
   Clock,
-  Network
-} from 'lucide-react';
-import { SPENDING_POLICIES } from '../../data/government-spending-policies';
-import { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
-import { Badge } from '~/components/ui/badge';
+  Network,
+} from "lucide-react";
+import { SPENDING_POLICIES } from "../../data/government-spending-policies";
+import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { Badge } from "~/components/ui/badge";
 
 interface PolicyAnalysisProps {
   selectedPolicies: Set<string>;
@@ -42,12 +39,12 @@ interface PolicyAnalysisProps {
 export function PolicyAnalysis({
   selectedPolicies,
   selectedAtomicComponents,
-  className
+  className,
 }: PolicyAnalysisProps) {
   // Get selected policy details
   const selectedPolicyDetails = useMemo(() => {
     return Array.from(selectedPolicies)
-      .map(policyId => SPENDING_POLICIES.find(p => p.id === policyId))
+      .map((policyId) => SPENDING_POLICIES.find((p) => p.id === policyId))
       .filter(Boolean);
   }, [selectedPolicies]);
 
@@ -59,24 +56,32 @@ export function PolicyAnalysis({
     const totalPolicies = selectedPolicyDetails.length;
 
     // Check for component-policy alignment
-    selectedPolicyDetails.forEach(policy => {
+    selectedPolicyDetails.forEach((policy) => {
       if (!policy) return;
 
       // Policies align with specific atomic components
-      if (selectedAtomicComponents.includes(ComponentType.WELFARE_STATE) &&
-          ['universalBasicServices', 'universalHealthcare', 'freeEducation'].includes(policy.id)) {
+      if (
+        selectedAtomicComponents.includes(ComponentType.WELFARE_STATE) &&
+        ["universalBasicServices", "universalHealthcare", "freeEducation"].includes(policy.id)
+      ) {
         synergyCount++;
       }
-      if (selectedAtomicComponents.includes(ComponentType.ENVIRONMENTAL_PROTECTION) &&
-          ['greenInvestmentPriority', 'carbonTax', 'carbonNeutrality'].includes(policy.id)) {
+      if (
+        selectedAtomicComponents.includes(ComponentType.ENVIRONMENTAL_PROTECTION) &&
+        ["greenInvestmentPriority", "carbonTax", "carbonNeutrality"].includes(policy.id)
+      ) {
         synergyCount++;
       }
-      if (selectedAtomicComponents.includes(ComponentType.DIGITAL_INFRASTRUCTURE) &&
-          ['digitalGovernmentInitiative', 'smartCityInitiative'].includes(policy.id)) {
+      if (
+        selectedAtomicComponents.includes(ComponentType.DIGITAL_INFRASTRUCTURE) &&
+        ["digitalGovernmentInitiative", "smartCityInitiative"].includes(policy.id)
+      ) {
         synergyCount++;
       }
-      if (selectedAtomicComponents.includes(ComponentType.PERFORMANCE_LEGITIMACY) &&
-          ['performanceBasedBudgeting', 'zeroBasedBudgeting'].includes(policy.id)) {
+      if (
+        selectedAtomicComponents.includes(ComponentType.PERFORMANCE_LEGITIMACY) &&
+        ["performanceBasedBudgeting", "zeroBasedBudgeting"].includes(policy.id)
+      ) {
         synergyCount++;
       }
     });
@@ -94,7 +99,7 @@ export function PolicyAnalysis({
 
     return {
       totalImplementationCost: implementation,
-      totalMaintenanceCost: maintenance
+      totalMaintenanceCost: maintenance,
     };
   }, [selectedPolicyDetails]);
 
@@ -103,18 +108,23 @@ export function PolicyAnalysis({
     let count = 0;
 
     // Tax system synergies
-    if (selectedPolicies.has('progressiveTaxation') || selectedPolicies.has('carbonTax')) {
+    if (selectedPolicies.has("progressiveTaxation") || selectedPolicies.has("carbonTax")) {
       count++;
     }
 
     // Economic system synergies
-    if (selectedPolicies.has('startupIncubators') || selectedPolicies.has('researchDevelopmentFund')) {
+    if (
+      selectedPolicies.has("startupIncubators") ||
+      selectedPolicies.has("researchDevelopmentFund")
+    ) {
       count++;
     }
 
     // Government structure synergies
-    if (selectedPolicies.has('digitalGovernmentInitiative') &&
-        selectedAtomicComponents.includes(ComponentType.DIGITAL_INFRASTRUCTURE)) {
+    if (
+      selectedPolicies.has("digitalGovernmentInitiative") &&
+      selectedAtomicComponents.includes(ComponentType.DIGITAL_INFRASTRUCTURE)
+    ) {
       count++;
     }
 
@@ -126,14 +136,24 @@ export function PolicyAnalysis({
     const conflicts: string[] = [];
 
     // Check for conflicting policies
-    if (selectedPolicies.has('zeroBasedBudgeting') && selectedPolicies.has('universalBasicIncome')) {
-      conflicts.push('Zero-based budgeting conflicts with universal basic income funding stability');
+    if (
+      selectedPolicies.has("zeroBasedBudgeting") &&
+      selectedPolicies.has("universalBasicIncome")
+    ) {
+      conflicts.push(
+        "Zero-based budgeting conflicts with universal basic income funding stability"
+      );
     }
-    if (selectedPolicies.has('publicPrivatePartnerships') && selectedPolicies.has('universalBasicServices')) {
-      conflicts.push('PPPs may conflict with universal public service delivery');
+    if (
+      selectedPolicies.has("publicPrivatePartnerships") &&
+      selectedPolicies.has("universalBasicServices")
+    ) {
+      conflicts.push("PPPs may conflict with universal public service delivery");
     }
-    if (selectedPolicies.has('carbonTax') && !selectedPolicies.has('renewableEnergyTransition')) {
-      conflicts.push('Carbon tax should be paired with renewable energy transition for effectiveness');
+    if (selectedPolicies.has("carbonTax") && !selectedPolicies.has("renewableEnergyTransition")) {
+      conflicts.push(
+        "Carbon tax should be paired with renewable energy transition for effectiveness"
+      );
     }
 
     return conflicts;
@@ -143,7 +163,7 @@ export function PolicyAnalysis({
   const policyImpactData = useMemo(() => {
     const impactAggregation: Record<string, number> = {};
 
-    selectedPolicyDetails.forEach(policy => {
+    selectedPolicyDetails.forEach((policy) => {
       if (!policy) return;
 
       Object.entries(policy.impact).forEach(([metric, value]) => {
@@ -157,7 +177,7 @@ export function PolicyAnalysis({
     return Object.entries(impactAggregation)
       .map(([metric, value]) => ({
         name: metric.charAt(0).toUpperCase() + metric.slice(1),
-        value: Math.round(value)
+        value: Math.round(value),
       }))
       .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
       .slice(0, 10); // Top 10 impacts
@@ -165,18 +185,41 @@ export function PolicyAnalysis({
 
   // Effectiveness timeline (short vs long-term)
   const effectivenessTimeline = useMemo(() => {
-    const shortTermPolicies = selectedPolicyDetails.filter(p =>
-      p && ['emergencyReserveFund', 'performanceBasedBudgeting', 'publicPrivatePartnerships'].includes(p.id)
+    const shortTermPolicies = selectedPolicyDetails.filter(
+      (p) =>
+        p &&
+        ["emergencyReserveFund", "performanceBasedBudgeting", "publicPrivatePartnerships"].includes(
+          p.id
+        )
     ).length;
 
-    const longTermPolicies = selectedPolicyDetails.filter(p =>
-      p && ['freeEducation', 'researchDevelopmentFund', 'carbonNeutrality', 'infrastructureBankFund'].includes(p.id)
+    const longTermPolicies = selectedPolicyDetails.filter(
+      (p) =>
+        p &&
+        [
+          "freeEducation",
+          "researchDevelopmentFund",
+          "carbonNeutrality",
+          "infrastructureBankFund",
+        ].includes(p.id)
     ).length;
 
     return [
-      { period: 'Short-term (0-2 years)', policies: shortTermPolicies, effectiveness: shortTermPolicies * 15 },
-      { period: 'Mid-term (2-5 years)', policies: selectedPolicyDetails.length - shortTermPolicies - longTermPolicies, effectiveness: (selectedPolicyDetails.length - shortTermPolicies - longTermPolicies) * 20 },
-      { period: 'Long-term (5+ years)', policies: longTermPolicies, effectiveness: longTermPolicies * 25 }
+      {
+        period: "Short-term (0-2 years)",
+        policies: shortTermPolicies,
+        effectiveness: shortTermPolicies * 15,
+      },
+      {
+        period: "Mid-term (2-5 years)",
+        policies: selectedPolicyDetails.length - shortTermPolicies - longTermPolicies,
+        effectiveness: (selectedPolicyDetails.length - shortTermPolicies - longTermPolicies) * 20,
+      },
+      {
+        period: "Long-term (5+ years)",
+        policies: longTermPolicies,
+        effectiveness: longTermPolicies * 25,
+      },
     ];
   }, [selectedPolicyDetails]);
 
@@ -184,20 +227,45 @@ export function PolicyAnalysis({
   const policySynergyPairs = useMemo(() => {
     const synergies: Array<{ policy1: string; policy2: string; strength: string }> = [];
 
-    if (selectedPolicies.has('universalHealthcare') && selectedPolicies.has('preventiveCareEmphasis')) {
-      synergies.push({ policy1: 'Universal Healthcare', policy2: 'Preventive Care', strength: 'Strong' });
+    if (
+      selectedPolicies.has("universalHealthcare") &&
+      selectedPolicies.has("preventiveCareEmphasis")
+    ) {
+      synergies.push({
+        policy1: "Universal Healthcare",
+        policy2: "Preventive Care",
+        strength: "Strong",
+      });
     }
-    if (selectedPolicies.has('freeEducation') && selectedPolicies.has('stemEducationFocus')) {
-      synergies.push({ policy1: 'Free Education', policy2: 'STEM Focus', strength: 'Strong' });
+    if (selectedPolicies.has("freeEducation") && selectedPolicies.has("stemEducationFocus")) {
+      synergies.push({ policy1: "Free Education", policy2: "STEM Focus", strength: "Strong" });
     }
-    if (selectedPolicies.has('carbonTax') && selectedPolicies.has('renewableEnergyTransition')) {
-      synergies.push({ policy1: 'Carbon Tax', policy2: 'Renewable Energy', strength: 'Very Strong' });
+    if (selectedPolicies.has("carbonTax") && selectedPolicies.has("renewableEnergyTransition")) {
+      synergies.push({
+        policy1: "Carbon Tax",
+        policy2: "Renewable Energy",
+        strength: "Very Strong",
+      });
     }
-    if (selectedPolicies.has('digitalGovernmentInitiative') && selectedPolicies.has('smartCityInitiative')) {
-      synergies.push({ policy1: 'Digital Government', policy2: 'Smart Cities', strength: 'Strong' });
+    if (
+      selectedPolicies.has("digitalGovernmentInitiative") &&
+      selectedPolicies.has("smartCityInitiative")
+    ) {
+      synergies.push({
+        policy1: "Digital Government",
+        policy2: "Smart Cities",
+        strength: "Strong",
+      });
     }
-    if (selectedPolicies.has('startupIncubators') && selectedPolicies.has('researchDevelopmentFund')) {
-      synergies.push({ policy1: 'Startup Incubators', policy2: 'R&D Funding', strength: 'Very Strong' });
+    if (
+      selectedPolicies.has("startupIncubators") &&
+      selectedPolicies.has("researchDevelopmentFund")
+    ) {
+      synergies.push({
+        policy1: "Startup Incubators",
+        policy2: "R&D Funding",
+        strength: "Very Strong",
+      });
     }
 
     return synergies;
@@ -209,10 +277,11 @@ export function PolicyAnalysis({
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <AlertTriangle className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Policies Selected</h3>
-              <p className="text-sm text-muted-foreground max-w-md">
-                Select policies from the Policies tab to view their impact analysis, synergies, and effectiveness metrics.
+              <AlertTriangle className="text-muted-foreground mb-4 h-12 w-12" />
+              <h3 className="mb-2 text-lg font-semibold">No Policies Selected</h3>
+              <p className="text-muted-foreground max-w-md text-sm">
+                Select policies from the Policies tab to view their impact analysis, synergies, and
+                effectiveness metrics.
               </p>
             </div>
           </CardContent>
@@ -225,13 +294,15 @@ export function PolicyAnalysis({
     <div className={className}>
       <div className="space-y-6">
         {/* Key Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <MetricCard
             label="Policy Efficiency"
             value={`${policyEfficiencyScore.toFixed(0)}%`}
             description="Component alignment"
             icon={Target}
-            trend={policyEfficiencyScore >= 70 ? 'up' : policyEfficiencyScore >= 40 ? 'neutral' : 'down'}
+            trend={
+              policyEfficiencyScore >= 70 ? "up" : policyEfficiencyScore >= 40 ? "neutral" : "down"
+            }
             sectionId="spending"
           />
           <MetricCard
@@ -254,7 +325,7 @@ export function PolicyAnalysis({
             value={policyConflicts.length}
             description="Policy tensions"
             icon={AlertTriangle}
-            trend={policyConflicts.length === 0 ? 'up' : 'down'}
+            trend={policyConflicts.length === 0 ? "up" : "down"}
             sectionId="spending"
           />
         </div>
@@ -277,10 +348,8 @@ export function PolicyAnalysis({
                 sectionId="spending"
               />
             ) : (
-              <div className="h-[300px] flex items-center justify-center">
-                <p className="text-sm text-muted-foreground">
-                  No impact data available
-                </p>
+              <div className="flex h-[300px] items-center justify-center">
+                <p className="text-muted-foreground text-sm">No impact data available</p>
               </div>
             )}
           </CardContent>
@@ -296,9 +365,9 @@ export function PolicyAnalysis({
           </CardHeader>
           <CardContent>
             <EnhancedBarChart
-              data={effectivenessTimeline.map(t => ({
+              data={effectivenessTimeline.map((t) => ({
                 name: t.period,
-                value: t.effectiveness
+                value: t.effectiveness,
               }))}
               xKey="name"
               yKey="value"
@@ -309,8 +378,8 @@ export function PolicyAnalysis({
               {effectivenessTimeline.map((period) => (
                 <div key={period.period} className="text-center">
                   <div className="text-2xl font-bold">{period.policies}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {period.period.split(' ')[0]} policies
+                  <div className="text-muted-foreground text-xs">
+                    {period.period.split(" ")[0]} policies
                   </div>
                 </div>
               ))}
@@ -318,7 +387,7 @@ export function PolicyAnalysis({
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Policy Synergies */}
           <Card>
             <CardHeader>
@@ -336,13 +405,13 @@ export function PolicyAnalysis({
                   {policySynergyPairs.map((synergy, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-green-500/20"
+                      className="bg-muted/50 flex items-center justify-between rounded-lg border border-green-500/20 p-3"
                     >
                       <div className="flex flex-col gap-1">
                         <div className="text-sm font-medium">
                           {synergy.policy1} + {synergy.policy2}
                         </div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-muted-foreground text-xs">
                           Synergy strength: {synergy.strength}
                         </div>
                       </div>
@@ -352,7 +421,7 @@ export function PolicyAnalysis({
                 </div>
               ) : (
                 <div className="flex items-center justify-center py-8 text-center">
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     No strong synergies detected. Try selecting complementary policies.
                   </p>
                 </div>
@@ -367,30 +436,32 @@ export function PolicyAnalysis({
                 <DollarSign className="h-5 w-5 text-blue-500" />
                 Cost Analysis
               </CardTitle>
-              <CardDescription>
-                Financial requirements for policy implementation
-              </CardDescription>
+              <CardDescription>Financial requirements for policy implementation</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div className="bg-muted/50 flex items-center justify-between rounded-lg p-3">
                   <div className="flex flex-col gap-1">
                     <div className="text-sm font-medium">Implementation Cost</div>
-                    <div className="text-xs text-muted-foreground">One-time setup expenses</div>
+                    <div className="text-muted-foreground text-xs">One-time setup expenses</div>
                   </div>
-                  <div className="text-lg font-bold">${(totalImplementationCost / 1000000).toFixed(1)}M</div>
+                  <div className="text-lg font-bold">
+                    ${(totalImplementationCost / 1000000).toFixed(1)}M
+                  </div>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <div className="bg-muted/50 flex items-center justify-between rounded-lg p-3">
                   <div className="flex flex-col gap-1">
                     <div className="text-sm font-medium">Annual Maintenance</div>
-                    <div className="text-xs text-muted-foreground">Yearly operational costs</div>
+                    <div className="text-muted-foreground text-xs">Yearly operational costs</div>
                   </div>
-                  <div className="text-lg font-bold">${(totalMaintenanceCost / 1000000).toFixed(1)}M</div>
+                  <div className="text-lg font-bold">
+                    ${(totalMaintenanceCost / 1000000).toFixed(1)}M
+                  </div>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                <div className="flex items-center justify-between rounded-lg border border-blue-500/20 bg-blue-500/10 p-3">
                   <div className="flex flex-col gap-1">
                     <div className="text-sm font-medium">Cost per Policy</div>
-                    <div className="text-xs text-muted-foreground">Average investment</div>
+                    <div className="text-muted-foreground text-xs">Average investment</div>
                   </div>
                   <div className="text-lg font-bold">
                     ${(totalImplementationCost / selectedPolicies.size / 1000).toFixed(0)}K
@@ -418,9 +489,9 @@ export function PolicyAnalysis({
                 {policyConflicts.map((conflict, index) => (
                   <div
                     key={index}
-                    className="flex items-start gap-3 p-3 rounded-lg bg-orange-500/10 border border-orange-500/20"
+                    className="flex items-start gap-3 rounded-lg border border-orange-500/20 bg-orange-500/10 p-3"
                   >
-                    <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                    <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange-500" />
                     <p className="text-sm text-orange-700 dark:text-orange-400">{conflict}</p>
                   </div>
                 ))}
@@ -433,9 +504,7 @@ export function PolicyAnalysis({
         <Card>
           <CardHeader>
             <CardTitle>Selected Policies</CardTitle>
-            <CardDescription>
-              Complete list of active policies with impact details
-            </CardDescription>
+            <CardDescription>Complete list of active policies with impact details</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -445,26 +514,29 @@ export function PolicyAnalysis({
                 return (
                   <div
                     key={policy.id}
-                    className="flex items-start gap-4 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                    className="bg-muted/50 hover:bg-muted flex items-start gap-4 rounded-lg p-4 transition-colors"
                   >
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Icon className="h-5 w-5 text-primary" />
+                    <div className="bg-primary/10 rounded-lg p-2">
+                      <Icon className="text-primary h-5 w-5" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-center gap-2">
                         <h4 className="text-sm font-semibold">{policy.name}</h4>
                       </div>
-                      <p className="text-xs text-muted-foreground mb-2">{policy.description}</p>
+                      <p className="text-muted-foreground mb-2 text-xs">{policy.description}</p>
                       <div className="flex flex-wrap gap-1">
-                        {Object.entries(policy.impact).slice(0, 4).map(([key, value]) => (
-                          <Badge
-                            key={key}
-                            variant={value > 0 ? 'default' : 'destructive'}
-                            className="text-xs"
-                          >
-                            {key}: {value > 0 ? '+' : ''}{value}
-                          </Badge>
-                        ))}
+                        {Object.entries(policy.impact)
+                          .slice(0, 4)
+                          .map(([key, value]) => (
+                            <Badge
+                              key={key}
+                              variant={value > 0 ? "default" : "destructive"}
+                              className="text-xs"
+                            >
+                              {key}: {value > 0 ? "+" : ""}
+                              {value}
+                            </Badge>
+                          ))}
                       </div>
                     </div>
                   </div>

@@ -16,7 +16,7 @@ import { IxTime } from "~/lib/ixtime";
 export interface EconomicEvent {
   id: string;
   timestamp: number;
-  type: 'dm_input' | 'policy_change' | 'economic_shift' | 'external_event';
+  type: "dm_input" | "policy_change" | "economic_shift" | "external_event";
   category: string;
   title: string;
   description: string;
@@ -27,8 +27,8 @@ export interface EconomicEvent {
     sector?: string;
   };
   duration?: number;
-  severity: 'minor' | 'moderate' | 'major' | 'critical';
-  source: 'dm' | 'system' | 'player';
+  severity: "minor" | "moderate" | "major" | "critical";
+  source: "dm" | "system" | "player";
   isActive: boolean;
 }
 
@@ -75,7 +75,7 @@ export interface EventMarker {
  * Economic trend analysis result
  */
 export interface EconomicTrend {
-  trend: 'improving' | 'declining' | 'stable';
+  trend: "improving" | "declining" | "stable";
   value: number;
 }
 
@@ -85,7 +85,7 @@ export interface EconomicTrend {
 export interface VolatilityMetrics {
   standardDeviation: number;
   coefficientOfVariation: number;
-  volatilityLevel: 'low' | 'moderate' | 'high';
+  volatilityLevel: "low" | "moderate" | "high";
 }
 
 /**
@@ -123,12 +123,12 @@ export interface CyclicalPattern {
 /**
  * Time series aggregation period
  */
-export type AggregationPeriod = 'daily' | 'monthly' | 'quarterly' | 'yearly';
+export type AggregationPeriod = "daily" | "monthly" | "quarterly" | "yearly";
 
 /**
  * Export format type
  */
-export type ExportFormat = 'csv' | 'json';
+export type ExportFormat = "csv" | "json";
 
 /**
  * Transforms raw historical data into chart-ready format with metadata
@@ -139,9 +139,7 @@ export type ExportFormat = 'csv' | 'json';
  * @example
  * const chartData = transformHistoricalGdpData(historicalPoints);
  */
-export function transformHistoricalGdpData(
-  rawData: HistoricalDataPoint[]
-): ChartDataPoint[] {
+export function transformHistoricalGdpData(rawData: HistoricalDataPoint[]): ChartDataPoint[] {
   return rawData.map((point, index) => ({
     timestamp: point.timestamp,
     date: IxTime.formatIxTime(point.timestamp),
@@ -169,7 +167,7 @@ export function transformHistoricalGdpData(
  */
 export function calculateGrowthRates(
   timeSeries: ChartDataPoint[],
-  metric: keyof Pick<ChartDataPoint, 'gdpPerCapita' | 'population' | 'totalGdp'> = 'gdpPerCapita'
+  metric: keyof Pick<ChartDataPoint, "gdpPerCapita" | "population" | "totalGdp"> = "gdpPerCapita"
 ): number[] {
   if (timeSeries.length < 2) return [0];
 
@@ -200,10 +198,7 @@ export function calculateGrowthRates(
  * @example
  * const smoothed = smoothTimeSeriesData(values, 5);
  */
-export function smoothTimeSeriesData(
-  data: number[],
-  windowSize: number = 3
-): number[] {
+export function smoothTimeSeriesData(data: number[], windowSize: number = 3): number[] {
   if (data.length < windowSize) return [...data];
 
   const smoothed: number[] = [];
@@ -237,28 +232,28 @@ export function detectEconomicTrends(
   olderPeriods: number = 3
 ): EconomicTrend {
   if (timeSeries.length < recentPeriods + olderPeriods) {
-    return { trend: 'stable', value: 0 };
+    return { trend: "stable", value: 0 };
   }
 
   const recent = timeSeries.slice(-recentPeriods);
   const older = timeSeries.slice(-(recentPeriods + olderPeriods), -recentPeriods);
 
   if (recent.length === 0 || older.length === 0) {
-    return { trend: 'stable', value: 0 };
+    return { trend: "stable", value: 0 };
   }
 
   const recentAvg = recent.reduce((sum, point) => sum + point.gdpPerCapita, 0) / recent.length;
   const olderAvg = older.reduce((sum, point) => sum + point.gdpPerCapita, 0) / older.length;
 
-  if (olderAvg === 0) return { trend: 'stable', value: 0 };
+  if (olderAvg === 0) return { trend: "stable", value: 0 };
 
   const change = ((recentAvg - olderAvg) / olderAvg) * 100;
 
   if (Math.abs(change) < 1) {
-    return { trend: 'stable', value: change };
+    return { trend: "stable", value: change };
   }
 
-  return { trend: change > 0 ? 'improving' : 'declining', value: change };
+  return { trend: change > 0 ? "improving" : "declining", value: change };
 }
 
 /**
@@ -273,30 +268,30 @@ export function detectEconomicTrends(
  */
 export function calculateVolatility(
   timeSeries: ChartDataPoint[],
-  metric: keyof Pick<ChartDataPoint, 'gdpPerCapita' | 'unemploymentRate'> = 'gdpPerCapita'
+  metric: keyof Pick<ChartDataPoint, "gdpPerCapita" | "unemploymentRate"> = "gdpPerCapita"
 ): VolatilityMetrics {
   if (timeSeries.length < 2) {
     return {
       standardDeviation: 0,
       coefficientOfVariation: 0,
-      volatilityLevel: 'low',
+      volatilityLevel: "low",
     };
   }
 
-  const values = timeSeries.map(point => point[metric] as number);
+  const values = timeSeries.map((point) => point[metric] as number);
   const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
 
-  const squaredDiffs = values.map(val => Math.pow(val - mean, 2));
+  const squaredDiffs = values.map((val) => Math.pow(val - mean, 2));
   const variance = squaredDiffs.reduce((sum, val) => sum + val, 0) / values.length;
   const standardDeviation = Math.sqrt(variance);
 
   const coefficientOfVariation = mean !== 0 ? (standardDeviation / mean) * 100 : 0;
 
-  let volatilityLevel: 'low' | 'moderate' | 'high' = 'low';
+  let volatilityLevel: "low" | "moderate" | "high" = "low";
   if (coefficientOfVariation > 15) {
-    volatilityLevel = 'high';
+    volatilityLevel = "high";
   } else if (coefficientOfVariation > 5) {
-    volatilityLevel = 'moderate';
+    volatilityLevel = "moderate";
   }
 
   return {
@@ -320,7 +315,10 @@ export function calculateVolatility(
 export function comparePeriodsData(
   period1: ChartDataPoint[],
   period2: ChartDataPoint[],
-  metric: keyof Pick<ChartDataPoint, 'gdpPerCapita' | 'population' | 'unemploymentRate'> = 'gdpPerCapita'
+  metric: keyof Pick<
+    ChartDataPoint,
+    "gdpPerCapita" | "population" | "unemploymentRate"
+  > = "gdpPerCapita"
 ): PeriodComparison {
   if (period1.length === 0 || period2.length === 0) {
     return {
@@ -331,8 +329,10 @@ export function comparePeriodsData(
     };
   }
 
-  const period1Avg = period1.reduce((sum, point) => sum + (point[metric] as number), 0) / period1.length;
-  const period2Avg = period2.reduce((sum, point) => sum + (point[metric] as number), 0) / period2.length;
+  const period1Avg =
+    period1.reduce((sum, point) => sum + (point[metric] as number), 0) / period1.length;
+  const period2Avg =
+    period2.reduce((sum, point) => sum + (point[metric] as number), 0) / period2.length;
 
   const change = period1Avg - period2Avg;
   const changePercent = period2Avg !== 0 ? (change / period2Avg) * 100 : 0;
@@ -359,12 +359,12 @@ export function comparePeriodsData(
 export function generateForecastData(
   historical: ChartDataPoint[],
   periods: number,
-  metric: keyof Pick<ChartDataPoint, 'gdpPerCapita' | 'population'> = 'gdpPerCapita'
+  metric: keyof Pick<ChartDataPoint, "gdpPerCapita" | "population"> = "gdpPerCapita"
 ): ForecastDataPoint[] {
   if (historical.length < 2 || periods <= 0) return [];
 
   // Calculate linear trend
-  const values = historical.map(point => point[metric] as number);
+  const values = historical.map((point) => point[metric] as number);
   const n = values.length;
   const xValues = Array.from({ length: n }, (_, i) => i);
 
@@ -378,20 +378,22 @@ export function generateForecastData(
 
   // Calculate standard error for confidence interval
   const residuals = values.map((y, i) => y - (slope * i + intercept));
-  const squaredResiduals = residuals.map(r => r * r);
+  const squaredResiduals = residuals.map((r) => r * r);
   const standardError = Math.sqrt(squaredResiduals.reduce((sum, r) => sum + r, 0) / (n - 2));
 
   const lastTimestamp = historical[historical.length - 1]!.timestamp;
-  const timestampIncrement = historical.length > 1
-    ? historical[historical.length - 1]!.timestamp - historical[historical.length - 2]!.timestamp
-    : 86400000; // Default to 1 day
+  const timestampIncrement =
+    historical.length > 1
+      ? historical[historical.length - 1]!.timestamp - historical[historical.length - 2]!.timestamp
+      : 86400000; // Default to 1 day
 
   const forecast: ForecastDataPoint[] = [];
 
   for (let i = 1; i <= periods; i++) {
     const x = n + i - 1;
     const predictedValue = slope * x + intercept;
-    const confidenceMargin = 1.96 * standardError * Math.sqrt(1 + 1 / n + Math.pow(x - sumX / n, 2) / sumX2);
+    const confidenceMargin =
+      1.96 * standardError * Math.sqrt(1 + 1 / n + Math.pow(x - sumX / n, 2) / sumX2);
 
     forecast.push({
       timestamp: lastTimestamp + timestampIncrement * i,
@@ -421,21 +423,21 @@ export function aggregateDataByPeriod(
   period: AggregationPeriod
 ): ChartDataPoint[] {
   if (data.length === 0) return [];
-  if (period === 'daily') return data;
+  if (period === "daily") return data;
 
   const groupedData = new Map<string, ChartDataPoint[]>();
 
-  data.forEach(point => {
+  data.forEach((point) => {
     let key: string;
 
     switch (period) {
-      case 'monthly':
+      case "monthly":
         key = `${point.gameYear}-${Math.floor((IxTime.getMonthFromTimestamp(point.timestamp) - 1) / 1)}`;
         break;
-      case 'quarterly':
+      case "quarterly":
         key = `${point.gameYear}-Q${Math.floor((IxTime.getMonthFromTimestamp(point.timestamp) - 1) / 3) + 1}`;
         break;
-      case 'yearly':
+      case "yearly":
         key = `${point.gameYear}`;
         break;
       default:
@@ -461,7 +463,7 @@ export function aggregateDataByPeriod(
       unemploymentRate: points.reduce((sum, p) => sum + p.unemploymentRate, 0) / points.length,
       inflationRate: points.reduce((sum, p) => sum + p.inflationRate, 0) / points.length,
       eventsCount: points.reduce((sum, p) => sum + p.eventsCount, 0),
-      hasEvent: points.some(p => p.hasEvent),
+      hasEvent: points.some((p) => p.hasEvent),
       uniqueKey: key,
     };
     aggregated.push(avgPoint);
@@ -482,7 +484,7 @@ export function aggregateDataByPeriod(
  */
 export function calculateCyclicalPatterns(
   data: ChartDataPoint[],
-  metric: keyof Pick<ChartDataPoint, 'gdpPerCapita' | 'unemploymentRate'> = 'gdpPerCapita'
+  metric: keyof Pick<ChartDataPoint, "gdpPerCapita" | "unemploymentRate"> = "gdpPerCapita"
 ): CyclicalPattern {
   if (data.length < 4) {
     return {
@@ -493,7 +495,7 @@ export function calculateCyclicalPatterns(
     };
   }
 
-  const values = data.map(point => point[metric] as number);
+  const values = data.map((point) => point[metric] as number);
   const peaks: number[] = [];
   const troughs: number[] = [];
 
@@ -517,12 +519,13 @@ export function calculateCyclicalPatterns(
     cycleLength = peakIntervals.reduce((sum, interval) => sum + interval, 0) / peakIntervals.length;
   } else if (troughs.length > 1) {
     const troughIntervals = troughs.slice(1).map((trough, i) => trough - troughs[i]!);
-    cycleLength = troughIntervals.reduce((sum, interval) => sum + interval, 0) / troughIntervals.length;
+    cycleLength =
+      troughIntervals.reduce((sum, interval) => sum + interval, 0) / troughIntervals.length;
   }
 
   // Calculate amplitude
-  const peakValues = peaks.map(i => values[i]!);
-  const troughValues = troughs.map(i => values[i]!);
+  const peakValues = peaks.map((i) => values[i]!);
+  const troughValues = troughs.map((i) => values[i]!);
   const maxPeak = peakValues.length > 0 ? Math.max(...peakValues) : 0;
   const minTrough = troughValues.length > 0 ? Math.min(...troughValues) : 0;
   const amplitude = maxPeak - minTrough;
@@ -549,11 +552,14 @@ export function calculateCyclicalPatterns(
 export function exportToTimeSeries(
   data: ChartDataPoint[],
   format: ExportFormat,
-  metric?: keyof Pick<ChartDataPoint, 'gdpPerCapita' | 'population' | 'unemploymentRate' | 'totalGdp'>
+  metric?: keyof Pick<
+    ChartDataPoint,
+    "gdpPerCapita" | "population" | "unemploymentRate" | "totalGdp"
+  >
 ): string {
-  if (format === 'json') {
+  if (format === "json") {
     if (metric) {
-      const filtered = data.map(point => ({
+      const filtered = data.map((point) => ({
         timestamp: point.timestamp,
         date: point.date,
         gameYear: point.gameYear,
@@ -566,38 +572,37 @@ export function exportToTimeSeries(
 
   // CSV format
   if (metric) {
-    const headers = ['Timestamp', 'Date', 'Game Year', metric];
-    const rows = data.map(point => [
-      point.timestamp,
-      point.date,
-      point.gameYear,
-      point[metric],
-    ].join(','));
-    return [headers.join(','), ...rows].join('\n');
+    const headers = ["Timestamp", "Date", "Game Year", metric];
+    const rows = data.map((point) =>
+      [point.timestamp, point.date, point.gameYear, point[metric]].join(",")
+    );
+    return [headers.join(","), ...rows].join("\n");
   }
 
   const headers = [
-    'Timestamp',
-    'Date',
-    'Game Year',
-    'Population',
-    'GDP per Capita',
-    'Total GDP',
-    'Unemployment Rate',
-    'Inflation Rate',
-    'Events Count',
+    "Timestamp",
+    "Date",
+    "Game Year",
+    "Population",
+    "GDP per Capita",
+    "Total GDP",
+    "Unemployment Rate",
+    "Inflation Rate",
+    "Events Count",
   ];
-  const rows = data.map(point => [
-    point.timestamp,
-    point.date,
-    point.gameYear,
-    point.population,
-    point.gdpPerCapita,
-    point.totalGdp,
-    point.unemploymentRate,
-    point.inflationRate,
-    point.eventsCount,
-  ].join(','));
+  const rows = data.map((point) =>
+    [
+      point.timestamp,
+      point.date,
+      point.gameYear,
+      point.population,
+      point.gdpPerCapita,
+      point.totalGdp,
+      point.unemploymentRate,
+      point.inflationRate,
+      point.eventsCount,
+    ].join(",")
+  );
 
-  return [headers.join(','), ...rows].join('\n');
+  return [headers.join(","), ...rows].join("\n");
 }

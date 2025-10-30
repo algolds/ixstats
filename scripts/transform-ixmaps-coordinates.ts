@@ -8,13 +8,13 @@
  * WGS84_lat = IxMaps_lat (unchanged)
  */
 
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 const PRIME_MERIDIAN_SHIFT = 26.09;
 
-const SOURCE_DIR = '/ixwiki/public/projects/maps/scripting/geojson_4326';
-const OUTPUT_DIR = '/ixwiki/public/projects/ixstats/scripts/geojson_wgs84';
+const SOURCE_DIR = "/ixwiki/public/projects/maps/scripting/geojson_4326";
+const OUTPUT_DIR = "/ixwiki/public/projects/ixstats/scripts/geojson_wgs84";
 
 interface GeoJSONFeature {
   type: string;
@@ -32,7 +32,7 @@ interface GeoJSONFeatureCollection {
 
 // Recursively transform coordinates
 function transformCoordinates(coords: any): any {
-  if (typeof coords[0] === 'number') {
+  if (typeof coords[0] === "number") {
     // This is a single coordinate pair [lng, lat]
     return [coords[0] + PRIME_MERIDIAN_SHIFT, coords[1]];
   } else {
@@ -51,7 +51,7 @@ async function transformLayer(layerName: string) {
   }
 
   // Read source GeoJSON
-  const sourceData = JSON.parse(fs.readFileSync(inputPath, 'utf-8')) as GeoJSONFeatureCollection;
+  const sourceData = JSON.parse(fs.readFileSync(inputPath, "utf-8")) as GeoJSONFeatureCollection;
 
   // Transform all features
   const transformedFeatures = sourceData.features.map((feature) => ({
@@ -64,7 +64,7 @@ async function transformLayer(layerName: string) {
 
   // Write output GeoJSON
   const outputData: GeoJSONFeatureCollection = {
-    type: 'FeatureCollection',
+    type: "FeatureCollection",
     features: transformedFeatures,
   };
 
@@ -77,18 +77,20 @@ async function transformLayer(layerName: string) {
     const geom = transformedFeatures[0].geometry;
     let sampleCoord: [number, number] | null = null;
 
-    if (geom.type === 'Point') {
+    if (geom.type === "Point") {
       sampleCoord = geom.coordinates;
-    } else if (geom.type === 'Polygon' && geom.coordinates[0][0]) {
+    } else if (geom.type === "Polygon" && geom.coordinates[0][0]) {
       sampleCoord = geom.coordinates[0][0];
-    } else if (geom.type === 'MultiPolygon' && geom.coordinates[0][0][0]) {
+    } else if (geom.type === "MultiPolygon" && geom.coordinates[0][0][0]) {
       sampleCoord = geom.coordinates[0][0][0];
-    } else if (geom.type === 'LineString' && geom.coordinates[0]) {
+    } else if (geom.type === "LineString" && geom.coordinates[0]) {
       sampleCoord = geom.coordinates[0];
     }
 
     if (sampleCoord) {
-      console.log(`     Sample coordinate: [${sampleCoord[0].toFixed(4)}, ${sampleCoord[1].toFixed(4)}]`);
+      console.log(
+        `     Sample coordinate: [${sampleCoord[0].toFixed(4)}, ${sampleCoord[1].toFixed(4)}]`
+      );
     }
   }
 }
@@ -99,27 +101,31 @@ async function main() {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   }
 
-  console.log('🗺️  Transforming IxMaps coordinates to WGS84...');
+  console.log("🗺️  Transforming IxMaps coordinates to WGS84...");
   console.log(`   Prime meridian shift: +${PRIME_MERIDIAN_SHIFT}°\n`);
 
-  const layers = ['political', 'climate', 'altitudes', 'rivers', 'lakes', 'icecaps', 'background'];
+  const layers = ["political", "climate", "altitudes", "rivers", "lakes", "icecaps", "background"];
 
   for (const layer of layers) {
     await transformLayer(layer);
   }
 
-  console.log('\n✅ Transformation complete! Files saved to:', OUTPUT_DIR);
-  console.log('\nNext steps:');
-  console.log('1. Import political boundaries to PostgreSQL:');
-  console.log(`   ogr2ogr -f "PostgreSQL" PG:"host=localhost port=5433 dbname=ixstats user=postgres password=postgres" \\`);
+  console.log("\n✅ Transformation complete! Files saved to:", OUTPUT_DIR);
+  console.log("\nNext steps:");
+  console.log("1. Import political boundaries to PostgreSQL:");
+  console.log(
+    `   ogr2ogr -f "PostgreSQL" PG:"host=localhost port=5433 dbname=ixstats user=postgres password=postgres" \\`
+  );
   console.log(`     ${OUTPUT_DIR}/political.geojson \\`);
   console.log(`     -nln temp_political_import -overwrite`);
-  console.log('');
-  console.log('2. Run the import script:');
-  console.log('   DATABASE_URL="postgresql://postgres:postgres@localhost:5433/ixstats" npx tsx scripts/import-geographic-boundaries.ts');
+  console.log("");
+  console.log("2. Run the import script:");
+  console.log(
+    '   DATABASE_URL="postgresql://postgres:postgres@localhost:5433/ixstats" npx tsx scripts/import-geographic-boundaries.ts'
+  );
 }
 
 main().catch((error) => {
-  console.error('Error:', error);
+  console.error("Error:", error);
   process.exit(1);
 });

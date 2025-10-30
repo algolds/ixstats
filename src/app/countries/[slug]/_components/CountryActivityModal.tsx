@@ -41,7 +41,7 @@ export function CountryActivityModal({
   countryId,
   countryName,
 }: CountryActivityModalProps) {
-  const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
+  const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d">("30d");
 
   const { data, isLoading } = api.activities.getCountryActivity.useQuery(
     {
@@ -56,13 +56,13 @@ export function CountryActivityModal({
 
   const getActivityIcon = (type: string) => {
     switch (type) {
-      case 'achievement':
+      case "achievement":
         return <Trophy className="h-4 w-4" />;
-      case 'economic':
+      case "economic":
         return <TrendingUp className="h-4 w-4" />;
-      case 'diplomatic':
+      case "diplomatic":
         return <Users className="h-4 w-4" />;
-      case 'social':
+      case "social":
         return <MessageSquare className="h-4 w-4" />;
       default:
         return <Activity className="h-4 w-4" />;
@@ -71,26 +71,26 @@ export function CountryActivityModal({
 
   const getActivityColor = (type: string) => {
     switch (type) {
-      case 'achievement':
-        return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
-      case 'economic':
-        return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-      case 'diplomatic':
-        return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
-      case 'social':
-        return 'bg-green-500/10 text-green-500 border-green-500/20';
+      case "achievement":
+        return "bg-yellow-500/10 text-yellow-500 border-yellow-500/20";
+      case "economic":
+        return "bg-blue-500/10 text-blue-500 border-blue-500/20";
+      case "diplomatic":
+        return "bg-purple-500/10 text-purple-500 border-purple-500/20";
+      case "social":
+        return "bg-green-500/10 text-green-500 border-green-500/20";
       default:
-        return 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+        return "bg-gray-500/10 text-gray-500 border-gray-500/20";
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[85vh] backdrop-blur-sm bg-card/95">
+      <DialogContent className="bg-card/95 max-h-[85vh] max-w-3xl backdrop-blur-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Activity className="h-5 w-5" />
-            Recent Activity - {countryName.replace(/_/g, ' ')}
+            Recent Activity - {countryName.replace(/_/g, " ")}
           </DialogTitle>
           <DialogDescription>
             Track major milestones, ThinkPages posts, and country developments
@@ -98,28 +98,28 @@ export function CountryActivityModal({
         </DialogHeader>
 
         {/* Time Range Filter */}
-        <div className="flex items-center gap-2 pb-4 border-b">
-          <Filter className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">Time Range:</span>
+        <div className="flex items-center gap-2 border-b pb-4">
+          <Filter className="text-muted-foreground h-4 w-4" />
+          <span className="text-muted-foreground text-sm">Time Range:</span>
           <div className="flex gap-2">
             <Button
-              variant={timeRange === '7d' ? 'default' : 'outline'}
+              variant={timeRange === "7d" ? "default" : "outline"}
               size="sm"
-              onClick={() => setTimeRange('7d')}
+              onClick={() => setTimeRange("7d")}
             >
               7 Days
             </Button>
             <Button
-              variant={timeRange === '30d' ? 'default' : 'outline'}
+              variant={timeRange === "30d" ? "default" : "outline"}
               size="sm"
-              onClick={() => setTimeRange('30d')}
+              onClick={() => setTimeRange("30d")}
             >
               30 Days
             </Button>
             <Button
-              variant={timeRange === '90d' ? 'default' : 'outline'}
+              variant={timeRange === "90d" ? "default" : "outline"}
               size="sm"
-              onClick={() => setTimeRange('90d')}
+              onClick={() => setTimeRange("90d")}
             >
               90 Days
             </Button>
@@ -130,13 +130,13 @@ export function CountryActivityModal({
         <ScrollArea className="h-[50vh]">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
             </div>
           ) : !data?.activities || data.activities.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <Activity className="h-12 w-12 text-muted-foreground/50 mb-3" />
+              <Activity className="text-muted-foreground/50 mb-3 h-12 w-12" />
               <p className="text-muted-foreground">No recent activity found</p>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="text-muted-foreground mt-1 text-xs">
                 Try selecting a different time range
               </p>
             </div>
@@ -145,33 +145,31 @@ export function CountryActivityModal({
               {data.activities.map((activity) => (
                 <div
                   key={activity.id}
-                  className="group p-4 rounded-lg border border-border/50 hover:border-border hover:bg-muted/30 transition-all"
+                  className="group border-border/50 hover:border-border hover:bg-muted/30 rounded-lg border p-4 transition-all"
                 >
                   <div className="flex items-start gap-3">
                     {/* Activity Icon */}
                     <div
-                      className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${getActivityColor(activity.type)}`}
+                      className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${getActivityColor(activity.type)}`}
                     >
                       {getActivityIcon(activity.type)}
                     </div>
 
                     {/* Activity Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <h4 className="font-semibold text-sm leading-tight">
-                          {activity.title}
-                        </h4>
-                        <Badge variant="outline" className="text-xs flex-shrink-0">
-                          {activity.source === 'thinkpages' ? 'ThinkPages' : 'Milestone'}
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-start justify-between gap-2">
+                        <h4 className="text-sm leading-tight font-semibold">{activity.title}</h4>
+                        <Badge variant="outline" className="flex-shrink-0 text-xs">
+                          {activity.source === "thinkpages" ? "ThinkPages" : "Milestone"}
                         </Badge>
                       </div>
 
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                      <p className="text-muted-foreground mb-2 line-clamp-2 text-sm">
                         {activity.description}
                       </p>
 
                       {/* Metadata */}
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <div className="text-muted-foreground flex items-center gap-4 text-xs">
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {formatDistanceToNow(new Date(activity.timestamp), {
@@ -205,7 +203,7 @@ export function CountryActivityModal({
 
                       {/* Additional metadata badges */}
                       {activity.metadata && (
-                        <div className="flex flex-wrap gap-1 mt-2">
+                        <div className="mt-2 flex flex-wrap gap-1">
                           {activity.metadata.tier && (
                             <Badge variant="secondary" className="text-xs">
                               {activity.metadata.tier}
@@ -217,7 +215,7 @@ export function CountryActivityModal({
                             </Badge>
                           )}
                           {activity.metadata.trending && (
-                            <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                            <Badge variant="secondary" className="flex items-center gap-1 text-xs">
                               <TrendingUp className="h-3 w-3" />
                               Trending
                             </Badge>
@@ -233,11 +231,11 @@ export function CountryActivityModal({
         </ScrollArea>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-4 border-t">
-          <p className="text-xs text-muted-foreground">
+        <div className="flex items-center justify-between border-t pt-4">
+          <p className="text-muted-foreground text-xs">
             {data?.activities && data.activities.length > 0
               ? `Showing ${data.activities.length} activities`
-              : 'No activities to display'}
+              : "No activities to display"}
           </p>
           <Button variant="outline" onClick={onClose}>
             Close

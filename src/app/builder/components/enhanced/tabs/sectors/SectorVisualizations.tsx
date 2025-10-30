@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { PieChart, BarChart3, Zap } from 'lucide-react';
-import { GlassBarChart, GlassPieChart } from '~/components/charts/RechartsIntegration';
-import { getColorsFromData } from '~/lib/chart-colors';
-import { SECTOR_TEMPLATES } from '../utils/sectorCalculations';
-import type { SectorConfiguration } from '~/types/economy-builder';
+import React, { useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { PieChart, BarChart3, Zap } from "lucide-react";
+import { GlassBarChart, GlassPieChart } from "~/components/charts/RechartsIntegration";
+import { getColorsFromData } from "~/lib/chart-colors";
+import { SECTOR_TEMPLATES } from "../utils/sectorCalculations";
+import type { SectorConfiguration } from "~/types/economy-builder";
 
 interface SectorVisualizationsProps {
   sectors: SectorConfiguration[];
@@ -18,11 +18,11 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
   // Prepare GDP chart data
   const sectorChartData = useMemo(() => {
     return sectors.map((sector) => {
-      const sectorType = sector.id.split('_')[0] as keyof typeof SECTOR_TEMPLATES;
+      const sectorType = sector.id.split("_")[0] as keyof typeof SECTOR_TEMPLATES;
       return {
         name: sector.name,
         value: sector.gdpContribution,
-        color: SECTOR_TEMPLATES[sectorType]?.color || 'gray'
+        color: SECTOR_TEMPLATES[sectorType]?.color || "gray",
       };
     });
   }, [sectors]);
@@ -30,11 +30,11 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
   // Prepare employment chart data
   const employmentChartData = useMemo(() => {
     return sectors.map((sector) => {
-      const sectorType = sector.id.split('_')[0] as keyof typeof SECTOR_TEMPLATES;
+      const sectorType = sector.id.split("_")[0] as keyof typeof SECTOR_TEMPLATES;
       return {
         name: sector.name,
         value: sector.employmentShare,
-        color: SECTOR_TEMPLATES[sectorType]?.color || 'gray'
+        color: SECTOR_TEMPLATES[sectorType]?.color || "gray",
       };
     });
   }, [sectors]);
@@ -51,7 +51,7 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
         </CardHeader>
         <CardContent>
           {sectorChartData.length === 0 ? (
-            <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+            <div className="text-muted-foreground flex h-[300px] items-center justify-center">
               Add sectors to see GDP composition
             </div>
           ) : (
@@ -76,7 +76,7 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
         </CardHeader>
         <CardContent>
           {employmentChartData.length === 0 ? (
-            <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+            <div className="text-muted-foreground flex h-[250px] items-center justify-center">
               Add sectors to see employment distribution
             </div>
           ) : (
@@ -109,14 +109,14 @@ export function SectorVisualizations({ sectors, sectorImpacts }: SectorVisualiza
               return (
                 <div
                   key={sectorId}
-                  className="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-gray-800"
+                  className="flex items-center justify-between rounded bg-gray-50 p-2 dark:bg-gray-800"
                 >
                   <div className="flex items-center space-x-2">
                     <template.icon className="h-4 w-4" />
                     <span className="text-sm">{template.name}</span>
                   </div>
-                  <Badge variant={impact > 1 ? 'default' : 'secondary'}>
-                    {impact > 1 ? '+' : ''}
+                  <Badge variant={impact > 1 ? "default" : "secondary"}>
+                    {impact > 1 ? "+" : ""}
                     {((impact - 1) * 100).toFixed(1)}%
                   </Badge>
                 </div>

@@ -15,8 +15,8 @@
  * @module useMilitaryEquipmentCatalog
  */
 
-import { useMemo } from 'react';
-import { api } from '~/trpc/react';
+import { useMemo } from "react";
+import { api } from "~/trpc/react";
 import {
   MILITARY_AIRCRAFT,
   MILITARY_SHIPS,
@@ -24,19 +24,19 @@ import {
   WEAPON_SYSTEMS,
   DEFENSE_MANUFACTURERS,
   MILITARY_ERAS,
-} from '~/lib/military-equipment';
+} from "~/lib/military-equipment";
 import {
   EXPANDED_MILITARY_DATABASE,
   getTotalEquipmentCount,
-} from '~/lib/military-equipment-extended';
+} from "~/lib/military-equipment-extended";
 
 /**
  * Equipment filters interface
  */
 export interface EquipmentFilters {
-  category?: 'infantry' | 'vehicle' | 'aircraft' | 'naval' | 'missile' | 'support';
+  category?: "infantry" | "vehicle" | "aircraft" | "naval" | "missile" | "support";
   subcategory?: string;
-  era?: 'wwi' | 'wwii' | 'cold-war' | 'modern' | 'future';
+  era?: "wwi" | "wwii" | "cold-war" | "modern" | "future";
   manufacturer?: string;
   minTechLevel?: number;
   maxTechLevel?: number;
@@ -126,7 +126,11 @@ export interface MilitaryEquipmentItem {
  */
 export function useMilitaryEquipmentCatalog(filters?: EquipmentFilters) {
   // ==================== DATABASE QUERY ====================
-  const { data: dbResponse, isLoading, error } = api.militaryEquipment.getCatalogEquipment.useQuery(
+  const {
+    data: dbResponse,
+    isLoading,
+    error,
+  } = api.militaryEquipment.getCatalogEquipment.useQuery(
     {
       category: filters?.category,
       subcategory: filters?.subcategory,
@@ -155,8 +159,8 @@ export function useMilitaryEquipmentCatalog(filters?: EquipmentFilters) {
   // Track equipment selection for analytics
   const { mutate: incrementUsage } = api.militaryEquipment.incrementEquipmentUsage.useMutation({
     onError: (err) => {
-      console.warn('[useMilitaryEquipmentCatalog] Failed to track equipment usage:', err);
-    }
+      console.warn("[useMilitaryEquipmentCatalog] Failed to track equipment usage:", err);
+    },
   });
 
   // ==================== PROCESS EQUIPMENT WITH FALLBACK ====================
@@ -169,13 +173,15 @@ export function useMilitaryEquipmentCatalog(filters?: EquipmentFilters) {
         total: dbTotal,
         hasMore: dbHasMore,
         isUsingFallback: false,
-        dataSource: 'database' as const,
+        dataSource: "database" as const,
       };
     }
 
     // Fallback to hardcoded data
     if (!isLoading) {
-      console.warn('[useMilitaryEquipmentCatalog] Database empty or unavailable, falling back to hardcoded equipment');
+      console.warn(
+        "[useMilitaryEquipmentCatalog] Database empty or unavailable, falling back to hardcoded equipment"
+      );
     }
 
     const fallbackEquipment = getFallbackEquipment(filters);
@@ -185,7 +191,7 @@ export function useMilitaryEquipmentCatalog(filters?: EquipmentFilters) {
       total: fallbackEquipment.length,
       hasMore: false,
       isUsingFallback: true,
-      dataSource: 'fallback' as const,
+      dataSource: "fallback" as const,
     };
   }, [dbEquipment, dbTotal, dbHasMore, filters, isLoading]);
 
@@ -200,7 +206,7 @@ export function useMilitaryEquipmentCatalog(filters?: EquipmentFilters) {
     hasMore,
     incrementUsage: (equipmentId: string) => {
       incrementUsage({ equipmentId });
-    }
+    },
   };
 }
 
@@ -217,37 +223,40 @@ function getFallbackEquipment(filters?: EquipmentFilters): MilitaryEquipmentItem
   const allEquipment: MilitaryEquipmentItem[] = [];
 
   // Map era constants to database enum values
-  const eraMapping: Record<string, 'wwi' | 'wwii' | 'cold-war' | 'modern' | 'future'> = {
-    'COLD_WAR': 'cold-war',
-    'MODERN': 'modern',
-    'CONTEMPORARY': 'modern',
-    'ADVANCED': 'future',
-    'NEXT_GEN': 'future',
+  const eraMapping: Record<string, "wwi" | "wwii" | "cold-war" | "modern" | "future"> = {
+    COLD_WAR: "cold-war",
+    MODERN: "modern",
+    CONTEMPORARY: "modern",
+    ADVANCED: "future",
+    NEXT_GEN: "future",
   };
 
   // Helper to transform hardcoded equipment to database format
   function transformEquipment(
     key: string,
     item: any,
-    category: 'aircraft' | 'naval' | 'vehicle' | 'missile',
+    category: "aircraft" | "naval" | "vehicle" | "missile",
     subcategory: string
   ): MilitaryEquipmentItem {
     const manufacturerKey = item.manufacturer;
-    const manufacturerData = DEFENSE_MANUFACTURERS[manufacturerKey as keyof typeof DEFENSE_MANUFACTURERS];
+    const manufacturerData =
+      DEFENSE_MANUFACTURERS[manufacturerKey as keyof typeof DEFENSE_MANUFACTURERS];
 
     return {
       id: key.toLowerCase(),
       name: item.name,
       category,
       subcategory,
-      era: eraMapping[item.era] || 'modern',
+      era: eraMapping[item.era] || "modern",
       manufacturerId: manufacturerKey,
-      manufacturer: manufacturerData ? {
-        id: manufacturerKey,
-        name: manufacturerData.name,
-        country: manufacturerData.country,
-        specialty: manufacturerData.specialty.join(', '),
-      } : undefined,
+      manufacturer: manufacturerData
+        ? {
+            id: manufacturerKey,
+            name: manufacturerData.name,
+            country: manufacturerData.country,
+            specialty: manufacturerData.specialty.join(", "),
+          }
+        : undefined,
       specifications: {
         crew: item.crew,
         speed: item.speed,
@@ -278,96 +287,96 @@ function getFallbackEquipment(filters?: EquipmentFilters): MilitaryEquipmentItem
 
   // Process MILITARY_AIRCRAFT
   Object.entries(MILITARY_AIRCRAFT).forEach(([key, item]) => {
-    allEquipment.push(transformEquipment(key, item, 'aircraft', item.category));
+    allEquipment.push(transformEquipment(key, item, "aircraft", item.category));
   });
 
   // Process MILITARY_SHIPS
   Object.entries(MILITARY_SHIPS).forEach(([key, item]) => {
-    allEquipment.push(transformEquipment(key, item, 'naval', item.category));
+    allEquipment.push(transformEquipment(key, item, "naval", item.category));
   });
 
   // Process MILITARY_VEHICLES
   Object.entries(MILITARY_VEHICLES).forEach(([key, item]) => {
-    allEquipment.push(transformEquipment(key, item, 'vehicle', item.category));
+    allEquipment.push(transformEquipment(key, item, "vehicle", item.category));
   });
 
   // Process WEAPON_SYSTEMS
   Object.entries(WEAPON_SYSTEMS).forEach(([key, item]) => {
-    allEquipment.push(transformEquipment(key, item, 'missile', item.category));
+    allEquipment.push(transformEquipment(key, item, "missile", item.category));
   });
 
   // Process EXPANDED_MILITARY_DATABASE
   Object.entries(EXPANDED_MILITARY_DATABASE.fighters_gen5).forEach(([key, item]) => {
-    allEquipment.push(transformEquipment(key, item, 'aircraft', item.category));
+    allEquipment.push(transformEquipment(key, item, "aircraft", item.category));
   });
 
   Object.entries(EXPANDED_MILITARY_DATABASE.fighters_gen4_5).forEach(([key, item]) => {
-    allEquipment.push(transformEquipment(key, item, 'aircraft', item.category));
+    allEquipment.push(transformEquipment(key, item, "aircraft", item.category));
   });
 
   Object.entries(EXPANDED_MILITARY_DATABASE.attack_aircraft).forEach(([key, item]) => {
-    allEquipment.push(transformEquipment(key, item, 'aircraft', item.category));
+    allEquipment.push(transformEquipment(key, item, "aircraft", item.category));
   });
 
   Object.entries(EXPANDED_MILITARY_DATABASE.bombers).forEach(([key, item]) => {
-    allEquipment.push(transformEquipment(key, item, 'aircraft', item.category));
+    allEquipment.push(transformEquipment(key, item, "aircraft", item.category));
   });
 
   Object.entries(EXPANDED_MILITARY_DATABASE.transport).forEach(([key, item]) => {
-    allEquipment.push(transformEquipment(key, item, 'aircraft', item.category));
+    allEquipment.push(transformEquipment(key, item, "aircraft", item.category));
   });
 
   Object.entries(EXPANDED_MILITARY_DATABASE.helicopters).forEach(([key, item]) => {
-    allEquipment.push(transformEquipment(key, item, 'aircraft', item.category));
+    allEquipment.push(transformEquipment(key, item, "aircraft", item.category));
   });
 
   Object.entries(EXPANDED_MILITARY_DATABASE.naval_ships).forEach(([key, item]) => {
-    allEquipment.push(transformEquipment(key, item, 'naval', item.category));
+    allEquipment.push(transformEquipment(key, item, "naval", item.category));
   });
 
   Object.entries(EXPANDED_MILITARY_DATABASE.ground_vehicles).forEach(([key, item]) => {
-    allEquipment.push(transformEquipment(key, item, 'vehicle', item.category));
+    allEquipment.push(transformEquipment(key, item, "vehicle", item.category));
   });
 
   Object.entries(EXPANDED_MILITARY_DATABASE.weapon_systems).forEach(([key, item]) => {
-    allEquipment.push(transformEquipment(key, item, 'missile', item.category));
+    allEquipment.push(transformEquipment(key, item, "missile", item.category));
   });
 
   // Apply filters
   let filtered = allEquipment;
 
   if (filters?.category) {
-    filtered = filtered.filter(eq => eq.category === filters.category);
+    filtered = filtered.filter((eq) => eq.category === filters.category);
   }
 
   if (filters?.subcategory) {
-    filtered = filtered.filter(eq =>
+    filtered = filtered.filter((eq) =>
       eq.subcategory?.toLowerCase().includes(filters.subcategory!.toLowerCase())
     );
   }
 
   if (filters?.era) {
-    filtered = filtered.filter(eq => eq.era === filters.era);
+    filtered = filtered.filter((eq) => eq.era === filters.era);
   }
 
   if (filters?.manufacturer) {
-    filtered = filtered.filter(eq => eq.manufacturerId === filters.manufacturer);
+    filtered = filtered.filter((eq) => eq.manufacturerId === filters.manufacturer);
   }
 
   if (filters?.minTechLevel !== undefined) {
-    filtered = filtered.filter(eq => eq.technologyTier >= filters.minTechLevel!);
+    filtered = filtered.filter((eq) => eq.technologyTier >= filters.minTechLevel!);
   }
 
   if (filters?.maxTechLevel !== undefined) {
-    filtered = filtered.filter(eq => eq.technologyTier <= filters.maxTechLevel!);
+    filtered = filtered.filter((eq) => eq.technologyTier <= filters.maxTechLevel!);
   }
 
   if (filters?.minCost !== undefined) {
-    filtered = filtered.filter(eq => eq.procurementCost >= filters.minCost!);
+    filtered = filtered.filter((eq) => eq.procurementCost >= filters.minCost!);
   }
 
   if (filters?.maxCost !== undefined) {
-    filtered = filtered.filter(eq => eq.procurementCost <= filters.maxCost!);
+    filtered = filtered.filter((eq) => eq.procurementCost <= filters.maxCost!);
   }
 
   return filtered;
@@ -379,11 +388,11 @@ function getFallbackEquipment(filters?: EquipmentFilters): MilitaryEquipmentItem
  */
 function calculateTechTier(item: any): number {
   const eraTiers: Record<string, number> = {
-    'COLD_WAR': 5,
-    'MODERN': 7,
-    'CONTEMPORARY': 8,
-    'ADVANCED': 9,
-    'NEXT_GEN': 10,
+    COLD_WAR: 5,
+    MODERN: 7,
+    CONTEMPORARY: 8,
+    ADVANCED: 9,
+    NEXT_GEN: 10,
   };
 
   const baseTier = eraTiers[item.era] || 7;
@@ -392,8 +401,10 @@ function calculateTechTier(item: any): number {
   const cost = item.acquisitionCost || 0;
   let costModifier = 0;
 
-  if (cost > 1000000000) costModifier = 1; // Billion+ = advanced tech
-  else if (cost > 100000000) costModifier = 0.5; // 100M+ = modern tech
+  if (cost > 1000000000)
+    costModifier = 1; // Billion+ = advanced tech
+  else if (cost > 100000000)
+    costModifier = 0.5; // 100M+ = modern tech
   else if (cost < 10000000) costModifier = -1; // <10M = older/simpler tech
 
   return Math.min(10, Math.max(1, Math.round(baseTier + costModifier)));
@@ -407,7 +418,7 @@ export function useMilitaryCategories() {
 
   const categories = useMemo(() => {
     const categorySet = new Set<string>();
-    equipment.forEach(eq => {
+    equipment.forEach((eq) => {
       if (eq.category) {
         categorySet.add(eq.category);
       }
@@ -426,7 +437,7 @@ export function useMilitaryManufacturers() {
 
   const manufacturers = useMemo(() => {
     const manufacturerMap = new Map<string, { id: string; name: string; country: string }>();
-    equipment.forEach(eq => {
+    equipment.forEach((eq) => {
       if (eq.manufacturer && !manufacturerMap.has(eq.manufacturer.id)) {
         manufacturerMap.set(eq.manufacturer.id, {
           id: eq.manufacturer.id,
@@ -445,7 +456,11 @@ export function useMilitaryManufacturers() {
  * Get equipment by ID
  */
 export function useMilitaryEquipmentById(equipmentId: string) {
-  const { data: equipment, isLoading, error } = api.militaryEquipment.getEquipmentById.useQuery(
+  const {
+    data: equipment,
+    isLoading,
+    error,
+  } = api.militaryEquipment.getEquipmentById.useQuery(
     { id: equipmentId },
     {
       staleTime: 10 * 60 * 1000,
@@ -465,9 +480,13 @@ export function useMilitaryEquipmentById(equipmentId: string) {
  */
 export function useMilitaryEquipmentByCategory(options?: {
   isActive?: boolean;
-  era?: 'wwi' | 'wwii' | 'cold-war' | 'modern' | 'future';
+  era?: "wwi" | "wwii" | "cold-war" | "modern" | "future";
 }) {
-  const { data: groupedEquipment, isLoading, error } = api.militaryEquipment.getEquipmentByCategory.useQuery(
+  const {
+    data: groupedEquipment,
+    isLoading,
+    error,
+  } = api.militaryEquipment.getEquipmentByCategory.useQuery(
     {
       isActive: options?.isActive ?? true,
       era: options?.era,

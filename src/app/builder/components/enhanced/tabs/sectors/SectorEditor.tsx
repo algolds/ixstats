@@ -1,9 +1,9 @@
 "use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
+import React from "react";
+import { motion } from "framer-motion";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
 import {
   Settings,
   Minus,
@@ -13,11 +13,11 @@ import {
   Globe,
   Zap,
   Leaf,
-  Target
-} from 'lucide-react';
-import { EnhancedSlider } from '../../../../primitives/enhanced';
-import { SECTOR_TEMPLATES } from '../utils/sectorCalculations';
-import type { SectorConfiguration } from '~/types/economy-builder';
+  Target,
+} from "lucide-react";
+import { EnhancedSlider } from "../../../../primitives/enhanced";
+import { SECTOR_TEMPLATES } from "../utils/sectorCalculations";
+import type { SectorConfiguration } from "~/types/economy-builder";
 
 interface SectorEditorProps {
   sector: SectorConfiguration;
@@ -44,9 +44,9 @@ export function SectorEditor({
   effectiveEmployment,
   onToggleSelect,
   onRemove,
-  onChange
+  onChange,
 }: SectorEditorProps) {
-  const sectorType = sector.id.split('_')[0] as keyof typeof SECTOR_TEMPLATES;
+  const sectorType = sector.id.split("_")[0] as keyof typeof SECTOR_TEMPLATES;
   const template = SECTOR_TEMPLATES[sectorType];
   const Icon = template?.icon || Target;
 
@@ -60,23 +60,23 @@ export function SectorEditor({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
-      className={`p-4 rounded-lg border-2 transition-all ${
+      className={`rounded-lg border-2 p-4 transition-all ${
         isSelected
-          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-          : 'border-gray-200 dark:border-gray-700'
+          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+          : "border-gray-200 dark:border-gray-700"
       }`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div
-            className={`p-2 rounded-lg bg-${template?.color || 'gray'}-100 dark:bg-${
-              template?.color || 'gray'
+            className={`rounded-lg p-2 bg-${template?.color || "gray"}-100 dark:bg-${
+              template?.color || "gray"
             }-900/20`}
           >
             <Icon
-              className={`h-5 w-5 text-${template?.color || 'gray'}-600 dark:text-${
-                template?.color || 'gray'
+              className={`h-5 w-5 text-${template?.color || "gray"}-600 dark:text-${
+                template?.color || "gray"
               }-400`}
             />
           </div>
@@ -85,22 +85,22 @@ export function SectorEditor({
               <h3 className="font-semibold">{sector.name}</h3>
               {isAffected && (
                 <Badge
-                  variant={isBoosted ? 'default' : 'secondary'}
+                  variant={isBoosted ? "default" : "secondary"}
                   className={
                     isBoosted
-                      ? 'bg-emerald-500 text-white'
+                      ? "bg-emerald-500 text-white"
                       : isPenalized
-                      ? 'bg-amber-500 text-white'
-                      : ''
+                        ? "bg-amber-500 text-white"
+                        : ""
                   }
                 >
-                  <Zap className="h-3 w-3 mr-1" />
-                  {isBoosted ? '+' : ''}
+                  <Zap className="mr-1 h-3 w-3" />
+                  {isBoosted ? "+" : ""}
                   {((componentImpact - 1) * 100).toFixed(0)}%
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">{template?.description}</p>
+            <p className="text-muted-foreground text-sm">{template?.description}</p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
@@ -117,27 +117,27 @@ export function SectorEditor({
       {/* Component Impact Indicator */}
       {isAffected && (
         <div
-          className={`mb-3 p-3 rounded-lg border ${
+          className={`mb-3 rounded-lg border p-3 ${
             isBoosted
-              ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800'
+              ? "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20"
               : isPenalized
-              ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
-              : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                ? "border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20"
+                : "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20"
           }`}
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="mb-2 flex items-center justify-between">
             <div className="flex items-center space-x-2 text-sm font-medium">
               <Zap
                 className={`h-4 w-4 ${
                   isBoosted
-                    ? 'text-emerald-600 dark:text-emerald-400'
+                    ? "text-emerald-600 dark:text-emerald-400"
                     : isPenalized
-                    ? 'text-amber-600 dark:text-amber-400'
-                    : 'text-blue-600 dark:text-blue-400'
+                      ? "text-amber-600 dark:text-amber-400"
+                      : "text-blue-600 dark:text-blue-400"
                 }`}
               />
               <span>
-                Atomic Component Impact: {isBoosted ? '+' : ''}
+                Atomic Component Impact: {isBoosted ? "+" : ""}
                 {((componentImpact - 1) * 100).toFixed(1)}%
               </span>
             </div>
@@ -149,19 +149,19 @@ export function SectorEditor({
               {affectingComponents.map((comp, idx) => (
                 <div
                   key={idx}
-                  className="text-xs flex items-center justify-between py-1 px-2 rounded bg-white/50 dark:bg-black/20"
+                  className="flex items-center justify-between rounded bg-white/50 px-2 py-1 text-xs dark:bg-black/20"
                 >
                   <span className="font-medium">{comp.name}</span>
                   <span
                     className={`font-semibold ${
                       comp.impact > 1
-                        ? 'text-emerald-700 dark:text-emerald-400'
+                        ? "text-emerald-700 dark:text-emerald-400"
                         : comp.impact < 1
-                        ? 'text-amber-700 dark:text-amber-400'
-                        : 'text-gray-700 dark:text-gray-400'
+                          ? "text-amber-700 dark:text-amber-400"
+                          : "text-gray-700 dark:text-gray-400"
                     }`}
                   >
-                    {comp.impact > 1 ? '+' : ''}
+                    {comp.impact > 1 ? "+" : ""}
                     {((comp.impact - 1) * 100).toFixed(0)}%
                   </span>
                 </div>
@@ -171,7 +171,7 @@ export function SectorEditor({
 
           {/* Effective values display */}
           {(effectiveGDP !== undefined || effectiveEmployment !== undefined) && (
-            <div className="mt-2 pt-2 border-t border-current/20 text-xs space-y-1">
+            <div className="mt-2 space-y-1 border-t border-current/20 pt-2 text-xs">
               {effectiveGDP !== undefined && sector.gdpContribution !== effectiveGDP && (
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Effective GDP Contribution:</span>
@@ -199,7 +199,7 @@ export function SectorEditor({
         <EnhancedSlider
           label="GDP Contribution"
           value={sector.gdpContribution}
-          onChange={(value: number) => onChange('gdpContribution', value)}
+          onChange={(value: number) => onChange("gdpContribution", value)}
           min={0}
           max={50}
           step={0.1}
@@ -213,7 +213,7 @@ export function SectorEditor({
         <EnhancedSlider
           label="Employment Share"
           value={sector.employmentShare}
-          onChange={(value: number) => onChange('employmentShare', value)}
+          onChange={(value: number) => onChange("employmentShare", value)}
           min={0}
           max={50}
           step={0.1}
@@ -229,15 +229,15 @@ export function SectorEditor({
       {isSelected && showAdvanced && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
+          animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
-          className="mt-4 pt-4 border-t space-y-4"
+          className="mt-4 space-y-4 border-t pt-4"
         >
           <div className="grid grid-cols-2 gap-4">
             <EnhancedSlider
               label="Productivity"
               value={sector.productivity}
-              onChange={(value: number) => onChange('productivity', value)}
+              onChange={(value: number) => onChange("productivity", value)}
               min={0}
               max={100}
               step={1}
@@ -250,7 +250,7 @@ export function SectorEditor({
             <EnhancedSlider
               label="Growth Rate"
               value={sector.growthRate}
-              onChange={(value: number) => onChange('growthRate', value)}
+              onChange={(value: number) => onChange("growthRate", value)}
               min={-5}
               max={15}
               step={0.1}
@@ -265,7 +265,7 @@ export function SectorEditor({
             <EnhancedSlider
               label="Export Ratio"
               value={sector.exports}
-              onChange={(value: number) => onChange('exports', value)}
+              onChange={(value: number) => onChange("exports", value)}
               min={0}
               max={80}
               step={1}
@@ -278,7 +278,7 @@ export function SectorEditor({
             <EnhancedSlider
               label="Automation Level"
               value={sector.automation}
-              onChange={(value: number) => onChange('automation', value)}
+              onChange={(value: number) => onChange("automation", value)}
               min={0}
               max={100}
               step={1}
@@ -293,7 +293,7 @@ export function SectorEditor({
             <EnhancedSlider
               label="Innovation"
               value={sector.innovation}
-              onChange={(value: number) => onChange('innovation', value)}
+              onChange={(value: number) => onChange("innovation", value)}
               min={0}
               max={100}
               step={1}
@@ -306,7 +306,7 @@ export function SectorEditor({
             <EnhancedSlider
               label="Sustainability"
               value={sector.sustainability}
-              onChange={(value: number) => onChange('sustainability', value)}
+              onChange={(value: number) => onChange("sustainability", value)}
               min={0}
               max={100}
               step={1}
@@ -319,7 +319,7 @@ export function SectorEditor({
             <EnhancedSlider
               label="Competitiveness"
               value={sector.competitiveness}
-              onChange={(value: number) => onChange('competitiveness', value)}
+              onChange={(value: number) => onChange("competitiveness", value)}
               min={0}
               max={100}
               step={1}

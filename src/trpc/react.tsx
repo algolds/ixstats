@@ -52,7 +52,10 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
             const isError = op.direction === "down" && op.result instanceof Error;
             if (!isError) return false;
             // Suppress unifiedIntelligence.getAnalytics errors in the client console
-            if (typeof op.path === "string" && op.path.startsWith("unifiedIntelligence.getAnalytics")) {
+            if (
+              typeof op.path === "string" &&
+              op.path.startsWith("unifiedIntelligence.getAnalytics")
+            ) {
               return false;
             }
             return true;
@@ -77,7 +80,7 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
           },
         }),
       ],
-    }),
+    })
   );
 
   return (

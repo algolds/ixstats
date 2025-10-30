@@ -198,12 +198,18 @@ class Logger {
    */
   private getLevelEmoji(level: LogLevel): string {
     switch (level) {
-      case LogLevel.DEBUG: return "🔍";
-      case LogLevel.INFO: return "ℹ️";
-      case LogLevel.WARN: return "⚠️";
-      case LogLevel.ERROR: return "❌";
-      case LogLevel.CRITICAL: return "🚨";
-      default: return "📝";
+      case LogLevel.DEBUG:
+        return "🔍";
+      case LogLevel.INFO:
+        return "ℹ️";
+      case LogLevel.WARN:
+        return "⚠️";
+      case LogLevel.ERROR:
+        return "❌";
+      case LogLevel.CRITICAL:
+        return "🚨";
+      default:
+        return "📝";
     }
   }
 
@@ -212,19 +218,29 @@ class Logger {
    */
   private getConsoleMethod(level: LogLevel): "debug" | "log" | "warn" | "error" {
     switch (level) {
-      case LogLevel.DEBUG: return "debug";
-      case LogLevel.INFO: return "log";
-      case LogLevel.WARN: return "warn";
+      case LogLevel.DEBUG:
+        return "debug";
+      case LogLevel.INFO:
+        return "log";
+      case LogLevel.WARN:
+        return "warn";
       case LogLevel.ERROR:
-      case LogLevel.CRITICAL: return "error";
-      default: return "log";
+      case LogLevel.CRITICAL:
+        return "error";
+      default:
+        return "log";
     }
   }
 
   /**
    * Log a message with context
    */
-  private log(level: LogLevel, category: LogCategory, message: string, context: Partial<LogEntry> = {}) {
+  private log(
+    level: LogLevel,
+    category: LogCategory,
+    message: string,
+    context: Partial<LogEntry> = {}
+  ) {
     const entry = this.createLogEntry(level, category, message, context);
 
     // Console output
@@ -261,7 +277,7 @@ class Logger {
 
     try {
       // Persist to database
-      const dbEntries = entries.filter(e => e.level >= this.config.persistToDatabaseLevel);
+      const dbEntries = entries.filter((e) => e.level >= this.config.persistToDatabaseLevel);
       if (dbEntries.length > 0) {
         await this.persistToDatabase(dbEntries);
       }
@@ -283,7 +299,7 @@ class Logger {
 
     try {
       await db.systemLog.createMany({
-        data: entries.map(entry => ({
+        data: entries.map((entry) => ({
           level: LogLevel[entry.level],
           category: entry.category,
           message: entry.message,
@@ -302,7 +318,7 @@ class Logger {
           endpoint: entry.endpoint || null,
           method: entry.method || null,
           timestamp: entry.timestamp,
-        }))
+        })),
       });
     } catch (error) {
       console.error("[Logger] Database persistence failed:", error);
@@ -330,37 +346,40 @@ class Logger {
     if (entry.userId) fields.push({ name: "User ID", value: entry.userId, inline: true });
     if (entry.countryId) fields.push({ name: "Country ID", value: entry.countryId, inline: true });
     if (entry.requestId) fields.push({ name: "Request ID", value: entry.requestId, inline: true });
-    if (entry.duration) fields.push({ name: "Duration", value: `${entry.duration}ms`, inline: true });
+    if (entry.duration)
+      fields.push({ name: "Duration", value: `${entry.duration}ms`, inline: true });
 
     if (entry.error) {
       fields.push({
         name: "Error",
         value: `${entry.error.name}: ${entry.error.message}`.slice(0, 1024),
-        inline: false
+        inline: false,
       });
 
       if (entry.error.stack) {
         fields.push({
           name: "Stack Trace",
           value: entry.error.stack.slice(0, 1024),
-          inline: false
+          inline: false,
         });
       }
     }
 
-    const color = entry.level === LogLevel.CRITICAL ? 0xFF0000 : 0xFF6600;
+    const color = entry.level === LogLevel.CRITICAL ? 0xff0000 : 0xff6600;
 
     await discordWebhook.send({
-      embeds: [{
-        title: `${emoji} ${levelName}: ${entry.message}`,
-        description: entry.component ? `Component: ${entry.component}` : undefined,
-        color,
-        fields,
-        timestamp: entry.timestamp.toISOString(),
-        footer: {
-          text: `IxStats ${process.env.NODE_ENV || 'unknown'} environment`
-        }
-      }]
+      embeds: [
+        {
+          title: `${emoji} ${levelName}: ${entry.message}`,
+          description: entry.component ? `Component: ${entry.component}` : undefined,
+          color,
+          fields,
+          timestamp: entry.timestamp.toISOString(),
+          footer: {
+            text: `IxStats ${process.env.NODE_ENV || "unknown"} environment`,
+          },
+        },
+      ],
     });
   }
 
@@ -451,7 +470,11 @@ class Logger {
   /**
    * Log security event
    */
-  security(event: string, severity: "low" | "medium" | "high" | "critical", context?: Partial<LogEntry>) {
+  security(
+    event: string,
+    severity: "low" | "medium" | "high" | "critical",
+    context?: Partial<LogEntry>
+  ) {
     const levelMap = {
       low: LogLevel.INFO,
       medium: LogLevel.WARN,

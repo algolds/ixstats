@@ -1,14 +1,14 @@
 "use client";
 
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { AtomicEconomicComponentSelector } from '~/components/economy/atoms/AtomicEconomicComponents';
+import React from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { AtomicEconomicComponentSelector } from "~/components/economy/atoms/AtomicEconomicComponents";
 import {
   EconomicEffectiveness,
-  EconomicImpactPreview
-} from '~/components/economy/atoms/AtomicEconomicUI';
-import type { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
+  EconomicImpactPreview,
+} from "~/components/economy/atoms/AtomicEconomicUI";
+import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 
 interface ComponentSelectionStepProps {
   selectedComponents: EconomicComponentType[];
@@ -24,9 +24,7 @@ export function ComponentSelectionStep({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-foreground">
-          Economic Atomic Components
-        </h2>
+        <h2 className="text-foreground text-2xl font-semibold">Economic Atomic Components</h2>
         <Badge variant="outline">
           {selectedComponents.length} / {maxComponents} selected
         </Badge>
@@ -36,8 +34,9 @@ export function ComponentSelectionStep({
         <CardHeader>
           <CardTitle>Select Your Economic Building Blocks</CardTitle>
           <CardDescription>
-            Choose up to {maxComponents} atomic components that best represent your nation's economic structure.
-            These components will integrate with your government and tax systems.
+            Choose up to {maxComponents} atomic components that best represent your nation's
+            economic structure. These components will integrate with your government and tax
+            systems.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -66,9 +65,7 @@ export function ComponentSelectionStep({
           <Card>
             <CardHeader>
               <CardTitle>Economic Impact Preview</CardTitle>
-              <CardDescription>
-                Estimated impact on key economic indicators
-              </CardDescription>
+              <CardDescription>Estimated impact on key economic indicators</CardDescription>
             </CardHeader>
             <CardContent>
               <EconomicImpactPreview selectedComponents={selectedComponents} />

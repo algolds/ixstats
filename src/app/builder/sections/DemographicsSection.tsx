@@ -1,29 +1,39 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import { Users, Heart, Building2, GraduationCap, Globe, Baby, UserCheck, Home, MapPin } from 'lucide-react';
+import React, { useState, useMemo } from "react";
+import {
+  Users,
+  Heart,
+  Building2,
+  GraduationCap,
+  Globe,
+  Baby,
+  UserCheck,
+  Home,
+  MapPin,
+} from "lucide-react";
 import {
   EnhancedSlider,
   EnhancedNumberInput,
   EnhancedToggle,
   MetricCard,
-} from '../primitives/enhanced';
-import type { EconomicInputs, DemographicData } from '../lib/economy-data-service';
-import type { SectionContentProps } from '../types/builder';
-import { 
-  SectionBase, 
-  SectionLayout, 
-  sectionConfigs, 
+} from "../primitives/enhanced";
+import type { EconomicInputs, DemographicData } from "../lib/economy-data-service";
+import type { SectionContentProps } from "../types/builder";
+import {
+  SectionBase,
+  SectionLayout,
+  sectionConfigs,
   sectionUtils,
-  type ExtendedSectionProps 
-} from '../components/glass/SectionBase';
-import { FormGrid } from '../components/glass/ProgressiveViews';
-import { NumberFlowDisplay } from '~/components/ui/number-flow';
+  type ExtendedSectionProps,
+} from "../components/glass/SectionBase";
+import { FormGrid } from "../components/glass/ProgressiveViews";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
 
 interface DemographicsSectionProps extends ExtendedSectionProps {
   onToggleAdvanced?: () => void;
-  mode?: 'create' | 'edit';
-  fieldLocks?: Record<string, import('../components/enhanced/builderConfig').FieldLockConfig>;
+  mode?: "create" | "edit";
+  fieldLocks?: Record<string, import("../components/enhanced/builderConfig").FieldLockConfig>;
 }
 
 export function DemographicsSection({
@@ -33,52 +43,63 @@ export function DemographicsSection({
   onToggleAdvanced,
   referenceCountry,
   className,
-  mode = 'create',
-  fieldLocks
+  mode = "create",
+  fieldLocks,
 }: DemographicsSectionProps) {
-  const isEditMode = mode === 'edit';
-  const { EDIT_MODE_FIELD_LOCKS } = require('../components/enhanced/builderConfig');
+  const isEditMode = mode === "edit";
+  const { EDIT_MODE_FIELD_LOCKS } = require("../components/enhanced/builderConfig");
   const locks = fieldLocks || (isEditMode ? EDIT_MODE_FIELD_LOCKS : {});
 
-  const [selectedView, setSelectedView] = useState<'age' | 'geographic' | 'social'>('age');
-  
+  const [selectedView, setSelectedView] = useState<"age" | "geographic" | "social">("age");
+
   const demographics = inputs.demographics;
   const totalPopulation = inputs.coreIndicators.totalPopulation;
-  
+
   // Calculate metrics for overview
-  const metrics = useMemo(() => [
-    {
-      label: "Total Population",
-      value: sectionUtils.formatNumber(totalPopulation, 1),
-      icon: Users,
-      theme: 'gold' as const
-    },
-    {
-      label: "Life Expectancy",
-      value: demographics.lifeExpectancy,
-      unit: " years",
-      icon: Heart,
-      theme: 'red' as const,
-      trend: demographics.lifeExpectancy > 75 ? 'up' as const : 
-             demographics.lifeExpectancy > 65 ? 'neutral' as const : 'down' as const
-    },
-    {
-      label: "Literacy Rate",
-      value: demographics.literacyRate,
-      unit: "%",
-      icon: GraduationCap,
-      theme: 'blue' as const,
-      trend: demographics.literacyRate > 90 ? 'up' as const : 
-             demographics.literacyRate > 75 ? 'neutral' as const : 'down' as const
-    },
-    {
-      label: "Urban Population",
-      value: demographics.urbanRuralSplit.urban,
-      unit: "%",
-      icon: Building2,
-      theme: 'emerald' as const
-    }
-  ], [demographics, totalPopulation]);
+  const metrics = useMemo(
+    () => [
+      {
+        label: "Total Population",
+        value: sectionUtils.formatNumber(totalPopulation, 1),
+        icon: Users,
+        theme: "gold" as const,
+      },
+      {
+        label: "Life Expectancy",
+        value: demographics.lifeExpectancy,
+        unit: " years",
+        icon: Heart,
+        theme: "red" as const,
+        trend:
+          demographics.lifeExpectancy > 75
+            ? ("up" as const)
+            : demographics.lifeExpectancy > 65
+              ? ("neutral" as const)
+              : ("down" as const),
+      },
+      {
+        label: "Literacy Rate",
+        value: demographics.literacyRate,
+        unit: "%",
+        icon: GraduationCap,
+        theme: "blue" as const,
+        trend:
+          demographics.literacyRate > 90
+            ? ("up" as const)
+            : demographics.literacyRate > 75
+              ? ("neutral" as const)
+              : ("down" as const),
+      },
+      {
+        label: "Urban Population",
+        value: demographics.urbanRuralSplit.urban,
+        unit: "%",
+        icon: Building2,
+        theme: "emerald" as const,
+      },
+    ],
+    [demographics, totalPopulation]
+  );
 
   // Handle input changes with proper type safety
   const handleDemographicChange = (field: keyof DemographicData, value: any) => {
@@ -88,13 +109,15 @@ export function DemographicsSection({
 
   const handleAgeDistributionChange = (index: number, value: number) => {
     const newAgeGroups = [...demographics.ageDistribution];
-    const totalOthers = newAgeGroups.reduce((sum, group, idx) => 
-      idx !== index ? sum + group.percent : sum, 0);
+    const totalOthers = newAgeGroups.reduce(
+      (sum, group, idx) => (idx !== index ? sum + group.percent : sum),
+      0
+    );
     const adjustedValue = Math.min(value, 100 - totalOthers);
-    
+
     if (newAgeGroups[index]) {
       newAgeGroups[index] = { ...newAgeGroups[index], percent: adjustedValue };
-      
+
       // Normalize other values to ensure total is 100%
       const remainingPercent = 100 - adjustedValue;
       const normalizedGroups = newAgeGroups.map((group, idx) => {
@@ -102,54 +125,60 @@ export function DemographicsSection({
         const normalizedPercent = (group.percent / totalOthers) * remainingPercent;
         return { ...group, percent: normalizedPercent };
       });
-      
-      handleDemographicChange('ageDistribution', normalizedGroups);
+
+      handleDemographicChange("ageDistribution", normalizedGroups);
     }
   };
 
   const handleEducationLevelChange = (index: number, value: number) => {
     const newLevels = [...demographics.educationLevels];
-    const totalOthers = newLevels.reduce((sum, level, idx) => 
-      idx !== index ? sum + level.percent : sum, 0);
+    const totalOthers = newLevels.reduce(
+      (sum, level, idx) => (idx !== index ? sum + level.percent : sum),
+      0
+    );
     const adjustedValue = Math.min(value, 100 - totalOthers);
-    
+
     if (newLevels[index]) {
       newLevels[index] = { ...newLevels[index], percent: adjustedValue };
-      
+
       const remainingPercent = 100 - adjustedValue;
       const normalizedLevels = newLevels.map((level, idx) => {
         if (idx === index) return level;
         const normalizedPercent = (level.percent / totalOthers) * remainingPercent;
         return { ...level, percent: normalizedPercent };
       });
-      
-      handleDemographicChange('educationLevels', normalizedLevels);
+
+      handleDemographicChange("educationLevels", normalizedLevels);
     }
   };
 
-  const handleRegionChange = (index: number, field: 'population' | 'urbanPercent', value: number) => {
+  const handleRegionChange = (
+    index: number,
+    field: "population" | "urbanPercent",
+    value: number
+  ) => {
     const newRegions = [...demographics.regions];
     if (newRegions[index]) {
       newRegions[index] = { ...newRegions[index], [field]: value };
-      handleDemographicChange('regions', newRegions);
+      handleDemographicChange("regions", newRegions);
     }
   };
 
   // Prepare chart data
-  const ageData = demographics.ageDistribution.map(group => ({
+  const ageData = demographics.ageDistribution.map((group) => ({
     name: group.group,
     value: group.percent,
-    category: group.group === '0-15' ? 'youth' : group.group === '65+' ? 'elderly' : 'working'
+    category: group.group === "0-15" ? "youth" : group.group === "65+" ? "elderly" : "working",
   }));
 
-  const educationData = demographics.educationLevels.map(level => ({
+  const educationData = demographics.educationLevels.map((level) => ({
     name: level.level,
-    value: level.percent
+    value: level.percent,
   }));
 
   const urbanRuralData = [
-    { name: 'Urban', value: demographics.urbanRuralSplit.urban, color: 'blue' },
-    { name: 'Rural', value: demographics.urbanRuralSplit.rural, color: 'emerald' }
+    { name: "Urban", value: demographics.urbanRuralSplit.urban, color: "blue" },
+    { name: "Rural", value: demographics.urbanRuralSplit.rural, color: "emerald" },
   ];
 
   // Basic view content - Essential demographics
@@ -158,7 +187,7 @@ export function DemographicsSection({
       <EnhancedNumberInput
         label="Life Expectancy"
         value={Number(demographics.lifeExpectancy) || 0}
-        onChange={(value) => handleDemographicChange('lifeExpectancy', Number(value))}
+        onChange={(value) => handleDemographicChange("lifeExpectancy", Number(value))}
         min={50}
         max={90}
         step={0.1}
@@ -171,7 +200,7 @@ export function DemographicsSection({
       <EnhancedSlider
         label="Literacy Rate"
         value={Number(demographics.literacyRate) || 0}
-        onChange={(value) => handleDemographicChange('literacyRate', Number(value))}
+        onChange={(value) => handleDemographicChange("literacyRate", Number(value))}
         min={40}
         max={100}
         step={0.1}
@@ -186,9 +215,9 @@ export function DemographicsSection({
         label="Urbanization Rate"
         value={Number(demographics.urbanRuralSplit.urban) || 0}
         onChange={(value) => {
-          handleDemographicChange('urbanRuralSplit', {
+          handleDemographicChange("urbanRuralSplit", {
             urban: Number(value),
-            rural: 100 - Number(value)
+            rural: 100 - Number(value),
           });
         }}
         min={20}
@@ -202,8 +231,8 @@ export function DemographicsSection({
       />
 
       {/* Basic visualization */}
-      <div className="md:col-span-2 space-y-4">
-        <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+      <div className="space-y-4 md:col-span-2">
+        <h4 className="text-foreground flex items-center gap-2 text-sm font-bold">
           <Building2 className="h-4 w-4" />
           Population Distribution
         </h4>
@@ -232,28 +261,28 @@ export function DemographicsSection({
     <>
       {/* View Selector */}
       <div className="md:col-span-2">
-        <div className="flex bg-card rounded-lg p-1 border border-border">
-          {(['age', 'geographic', 'social'] as const).map((view) => (
+        <div className="bg-card border-border flex rounded-lg border p-1">
+          {(["age", "geographic", "social"] as const).map((view) => (
             <button
               key={view}
               onClick={() => setSelectedView(view)}
-              className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 capitalize ${
+              className={`flex-1 rounded-md px-3 py-2 text-sm font-medium capitalize transition-all duration-200 ${
                 selectedView === view
-                  ? 'bg-accent text-accent-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/10'
+                  ? "bg-accent text-accent-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/10"
               }`}
             >
-              {view === 'age' ? 'Age Groups' : view === 'geographic' ? 'Geography' : 'Social'}
+              {view === "age" ? "Age Groups" : view === "geographic" ? "Geography" : "Social"}
             </button>
           ))}
         </div>
       </div>
 
       {/* Age Distribution */}
-      {selectedView === 'age' && (
+      {selectedView === "age" && (
         <>
-          <div className="md:col-span-2 space-y-4">
-            <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+          <div className="space-y-4 md:col-span-2">
+            <h4 className="text-foreground flex items-center gap-2 text-sm font-bold">
               <Users className="h-4 w-4" />
               Age Distribution
             </h4>
@@ -292,11 +321,11 @@ export function DemographicsSection({
       )}
 
       {/* Geographic Distribution */}
-      {selectedView === 'geographic' && (
+      {selectedView === "geographic" && (
         <>
           {demographics.regions.map((region, index) => (
-            <div key={region.name} className="md:col-span-2 space-y-4">
-              <h5 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <div key={region.name} className="space-y-4 md:col-span-2">
+              <h5 className="text-foreground flex items-center gap-2 text-sm font-bold">
                 <MapPin className="h-4 w-4" />
                 {region.name}
               </h5>
@@ -304,7 +333,7 @@ export function DemographicsSection({
                 <EnhancedSlider
                   label="Population"
                   value={Number(region.population) || 0}
-                  onChange={(value) => handleRegionChange(index, 'population', Number(value))}
+                  onChange={(value) => handleRegionChange(index, "population", Number(value))}
                   min={Number(totalPopulation) * 0.01}
                   max={Number(totalPopulation) * 0.8}
                   step={Number(totalPopulation) * 0.01}
@@ -315,7 +344,7 @@ export function DemographicsSection({
                 <EnhancedSlider
                   label="Urban %"
                   value={Number(region.urbanPercent) || 0}
-                  onChange={(value) => handleRegionChange(index, 'urbanPercent', Number(value))}
+                  onChange={(value) => handleRegionChange(index, "urbanPercent", Number(value))}
                   min={0}
                   max={100}
                   step={0.1}
@@ -330,10 +359,10 @@ export function DemographicsSection({
       )}
 
       {/* Social/Education */}
-      {selectedView === 'social' && (
+      {selectedView === "social" && (
         <>
-          <div className="md:col-span-2 space-y-4">
-            <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+          <div className="space-y-4 md:col-span-2">
+            <h4 className="text-foreground flex items-center gap-2 text-sm font-bold">
               <GraduationCap className="h-4 w-4" />
               Education Levels
             </h4>
@@ -370,8 +399,8 @@ export function DemographicsSection({
           ))}
 
           {/* Social Policies */}
-          <div className="md:col-span-2 space-y-4">
-            <h5 className="text-sm font-bold text-foreground flex items-center gap-2">
+          <div className="space-y-4 md:col-span-2">
+            <h5 className="text-foreground flex items-center gap-2 text-sm font-bold">
               <Home className="h-4 w-4" />
               Social Policies
             </h5>
@@ -405,30 +434,32 @@ export function DemographicsSection({
   );
 
   // Calculate dependency ratios for insights
-  const youthDependency = demographics.ageDistribution.find(g => g.group === '0-15')?.percent || 0;
-  const elderlyDependency = demographics.ageDistribution.find(g => g.group === '65+')?.percent || 0;
+  const youthDependency =
+    demographics.ageDistribution.find((g) => g.group === "0-15")?.percent || 0;
+  const elderlyDependency =
+    demographics.ageDistribution.find((g) => g.group === "65+")?.percent || 0;
   const totalDependency = youthDependency + elderlyDependency;
 
   // Generate contextual insights
   const generateInsights = () => {
     const insights = [];
-    
+
     if (demographics.urbanRuralSplit.urban > 70) {
       insights.push("Highly urbanized nation requiring strong urban infrastructure and services");
     } else if (demographics.urbanRuralSplit.urban < 50) {
       insights.push("Predominantly rural society with dispersed service delivery challenges");
     }
-    
+
     if (demographics.literacyRate < 70) {
       insights.push("Low literacy rates may limit economic development potential");
     } else if (demographics.literacyRate > 95) {
       insights.push("Excellent education foundation supporting knowledge economy development");
     }
-    
+
     if (totalDependency > 50) {
       insights.push("High dependency ratio places pressure on working-age population");
     }
-    
+
     return insights;
   };
 
@@ -436,12 +467,14 @@ export function DemographicsSection({
 
   return (
     <SectionBase
-      config={sectionConfigs.demographics || { 
-        id: 'demographics', 
-        title: 'Demographics', 
-        icon: Users, 
-        theme: 'red' as const
-      }}
+      config={
+        sectionConfigs.demographics || {
+          id: "demographics",
+          title: "Demographics",
+          icon: Users,
+          theme: "red" as const,
+        }
+      }
       inputs={inputs}
       onInputsChange={onInputsChange}
       isReadOnly={false}
@@ -454,8 +487,8 @@ export function DemographicsSection({
         errors: [],
         warnings: insights,
         info: [
-          `Total dependency ratio: ${totalDependency.toFixed(1)}% (Youth: ${youthDependency.toFixed(1)}%, Elderly: ${elderlyDependency.toFixed(1)}%)`
-        ]
+          `Total dependency ratio: ${totalDependency.toFixed(1)}% (Youth: ${youthDependency.toFixed(1)}%, Elderly: ${elderlyDependency.toFixed(1)}%)`,
+        ],
       }}
       className={className}
     >

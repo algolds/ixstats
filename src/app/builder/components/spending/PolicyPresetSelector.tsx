@@ -4,20 +4,20 @@
 
 "use client";
 
-import React from 'react';
+import React from "react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
-} from '~/components/ui/dialog';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Sparkles } from 'lucide-react';
-import { POLICY_PRESETS, type PolicyPresetKey } from '../../data/government-spending-policies';
-import { toast } from 'sonner';
+  DialogTrigger,
+} from "~/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Sparkles } from "lucide-react";
+import { POLICY_PRESETS, type PolicyPresetKey } from "../../data/government-spending-policies";
+import { toast } from "sonner";
 
 interface PolicyPresetSelectorProps {
   onApplyPreset: (policyIds: string[]) => void;
@@ -32,7 +32,7 @@ interface PolicyPresetSelectorProps {
 export function PolicyPresetSelector({
   onApplyPreset,
   open,
-  onOpenChange
+  onOpenChange,
 }: PolicyPresetSelectorProps) {
   const [isOpen, setIsOpen] = React.useState(open ?? false);
 
@@ -49,7 +49,7 @@ export function PolicyPresetSelector({
     handleOpenChange(false);
 
     toast.success(`Applied ${preset.name} policy preset`, {
-      description: `${preset.policies.length} policies selected`
+      description: `${preset.policies.length} policies selected`,
     });
   };
 
@@ -57,7 +57,7 @@ export function PolicyPresetSelector({
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button size="sm" variant="outline">
-          <Sparkles className="h-4 w-4 mr-2" />
+          <Sparkles className="mr-2 h-4 w-4" />
           Policy Presets
         </Button>
       </DialogTrigger>
@@ -68,7 +68,7 @@ export function PolicyPresetSelector({
             Select a preset policy configuration to quickly set up your government's priorities
           </DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {(Object.keys(POLICY_PRESETS) as PolicyPresetKey[]).map((presetKey) => {
             const preset = POLICY_PRESETS[presetKey];
             const Icon = preset.icon;
@@ -100,7 +100,7 @@ function PresetCard({
   icon: Icon,
   color,
   policyCount,
-  onClick
+  onClick,
 }: {
   name: string;
   description: string;
@@ -110,30 +110,30 @@ function PresetCard({
   onClick: () => void;
 }) {
   const colorClasses = {
-    blue: 'hover:border-blue-500 text-blue-500',
-    pink: 'hover:border-pink-500 text-pink-500',
-    red: 'hover:border-red-500 text-red-500',
-    green: 'hover:border-green-500 text-green-500',
-    purple: 'hover:border-purple-500 text-purple-500'
+    blue: "hover:border-blue-500 text-blue-500",
+    pink: "hover:border-pink-500 text-pink-500",
+    red: "hover:border-red-500 text-red-500",
+    green: "hover:border-green-500 text-green-500",
+    purple: "hover:border-purple-500 text-purple-500",
   };
 
   return (
     <Card
-      className={`cursor-pointer hover:shadow-lg transition-all ${colorClasses[color as keyof typeof colorClasses] || 'hover:border-primary'}`}
+      className={`cursor-pointer transition-all hover:shadow-lg ${colorClasses[color as keyof typeof colorClasses] || "hover:border-primary"}`}
       onClick={onClick}
     >
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <Icon className={`h-5 w-5 ${colorClasses[color as keyof typeof colorClasses]?.split(' ')[1] || 'text-primary'}`} />
+          <Icon
+            className={`h-5 w-5 ${colorClasses[color as keyof typeof colorClasses]?.split(" ")[1] || "text-primary"}`}
+          />
           {name}
         </CardTitle>
-        <CardDescription className="text-xs">
-          {description}
-        </CardDescription>
+        <CardDescription className="text-xs">{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="text-xs text-muted-foreground">
-          {policyCount} {policyCount === 1 ? 'policy' : 'policies'} included
+        <p className="text-muted-foreground text-xs">
+          {policyCount} {policyCount === 1 ? "policy" : "policies"} included
         </p>
       </CardContent>
     </Card>

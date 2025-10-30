@@ -335,10 +335,10 @@ export function transformCountryMetrics(country: {
           (country.adjustedGdpGrowth || 0) > 0.05
             ? "Strong growth"
             : (country.adjustedGdpGrowth || 0) > 0.02
-            ? "Moderate growth"
-            : (country.adjustedGdpGrowth || 0) > 0
-            ? "Slow growth"
-            : "Declining",
+              ? "Moderate growth"
+              : (country.adjustedGdpGrowth || 0) > 0
+                ? "Slow growth"
+                : "Declining",
         ],
       },
     },

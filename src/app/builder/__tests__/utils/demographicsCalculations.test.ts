@@ -5,65 +5,65 @@
 import {
   calculateDerivedDemographics,
   getRegionColor,
-} from '../../components/enhanced/tabs/utils/demographicsCalculations';
-import { mockDemographics } from '../fixtures';
+} from "../../components/enhanced/tabs/utils/demographicsCalculations";
+import { mockDemographics } from "../fixtures";
 
-describe('Demographics Calculations', () => {
-  describe('calculateDerivedDemographics', () => {
-    it('calculates working age population correctly', () => {
+describe("Demographics Calculations", () => {
+  describe("calculateDerivedDemographics", () => {
+    it("calculates working age population correctly", () => {
       const result = calculateDerivedDemographics(mockDemographics);
 
       // 10M * 65% = 6.5M
       expect(result.workingAge).toBe(6500000);
     });
 
-    it('calculates youth population correctly', () => {
+    it("calculates youth population correctly", () => {
       const result = calculateDerivedDemographics(mockDemographics);
 
       // 10M * 25% = 2.5M
       expect(result.youthPop).toBe(2500000);
     });
 
-    it('calculates elderly population correctly', () => {
+    it("calculates elderly population correctly", () => {
       const result = calculateDerivedDemographics(mockDemographics);
 
       // 10M * 10% = 1M
       expect(result.elderlyPop).toBe(1000000);
     });
 
-    it('calculates urban population correctly', () => {
+    it("calculates urban population correctly", () => {
       const result = calculateDerivedDemographics(mockDemographics);
 
       // 10M * 70% = 7M
       expect(result.urbanPop).toBe(7000000);
     });
 
-    it('calculates rural population correctly', () => {
+    it("calculates rural population correctly", () => {
       const result = calculateDerivedDemographics(mockDemographics);
 
       // 10M - 7M = 3M
       expect(result.ruralPop).toBe(3000000);
     });
 
-    it('returns correct dependency ratio', () => {
+    it("returns correct dependency ratio", () => {
       const result = calculateDerivedDemographics(mockDemographics);
 
       expect(result.dependencyRatio).toBe(53.9);
     });
 
-    it('returns correct working age share', () => {
+    it("returns correct working age share", () => {
       const result = calculateDerivedDemographics(mockDemographics);
 
       expect(result.workingAgeShare).toBe(65);
     });
 
-    it('returns correct urban share', () => {
+    it("returns correct urban share", () => {
       const result = calculateDerivedDemographics(mockDemographics);
 
       expect(result.urbanShare).toBe(70);
     });
 
-    it('handles zero population gracefully', () => {
+    it("handles zero population gracefully", () => {
       const zeroPop = {
         ...mockDemographics,
         totalPopulation: 0,
@@ -78,7 +78,7 @@ describe('Demographics Calculations', () => {
       expect(result.ruralPop).toBe(0);
     });
 
-    it('rounds population values to nearest integer', () => {
+    it("rounds population values to nearest integer", () => {
       const oddPop = {
         ...mockDemographics,
         totalPopulation: 10000001,
@@ -96,7 +96,7 @@ describe('Demographics Calculations', () => {
       expect(Number.isInteger(result.elderlyPop)).toBe(true);
     });
 
-    it('handles large population numbers', () => {
+    it("handles large population numbers", () => {
       const largePop = {
         ...mockDemographics,
         totalPopulation: 1000000000, // 1 billion
@@ -109,7 +109,7 @@ describe('Demographics Calculations', () => {
       expect(result.elderlyPop).toBe(100000000);
     });
 
-    it('maintains precision for percentage calculations', () => {
+    it("maintains precision for percentage calculations", () => {
       const result = calculateDerivedDemographics(mockDemographics);
 
       expect(result.workingAgeShare).toBe(mockDemographics.ageDistribution.age15to64);
@@ -117,13 +117,13 @@ describe('Demographics Calculations', () => {
     });
   });
 
-  describe('getRegionColor', () => {
-    it('returns first color for index 0', () => {
+  describe("getRegionColor", () => {
+    it("returns first color for index 0", () => {
       const color = getRegionColor(0);
-      expect(color).toBe('blue');
+      expect(color).toBe("blue");
     });
 
-    it('returns different colors for sequential indices', () => {
+    it("returns different colors for sequential indices", () => {
       const color0 = getRegionColor(0);
       const color1 = getRegionColor(1);
       const color2 = getRegionColor(2);
@@ -133,7 +133,7 @@ describe('Demographics Calculations', () => {
       expect(color0).not.toBe(color2);
     });
 
-    it('cycles through color palette', () => {
+    it("cycles through color palette", () => {
       const colors = Array.from({ length: 10 }, (_, i) => getRegionColor(i));
 
       // Should have 10 unique colors
@@ -141,7 +141,7 @@ describe('Demographics Calculations', () => {
       expect(uniqueColors.size).toBe(10);
     });
 
-    it('wraps around after 10 colors', () => {
+    it("wraps around after 10 colors", () => {
       const color0 = getRegionColor(0);
       const color10 = getRegionColor(10);
       const color20 = getRegionColor(20);
@@ -150,32 +150,32 @@ describe('Demographics Calculations', () => {
       expect(color10).toBe(color20);
     });
 
-    it('handles negative indices', () => {
+    it("handles negative indices", () => {
       // JavaScript modulo with negative numbers
       const color = getRegionColor(-1);
       expect(color).toBeDefined();
-      expect(typeof color).toBe('string');
+      expect(typeof color).toBe("string");
     });
 
-    it('returns consistent colors for same index', () => {
+    it("returns consistent colors for same index", () => {
       const color1 = getRegionColor(5);
       const color2 = getRegionColor(5);
 
       expect(color1).toBe(color2);
     });
 
-    it('returns valid color names', () => {
+    it("returns valid color names", () => {
       const validColors = [
-        'blue',
-        'green',
-        'orange',
-        'purple',
-        'cyan',
-        'pink',
-        'yellow',
-        'red',
-        'indigo',
-        'teal',
+        "blue",
+        "green",
+        "orange",
+        "purple",
+        "cyan",
+        "pink",
+        "yellow",
+        "red",
+        "indigo",
+        "teal",
       ];
 
       for (let i = 0; i < 10; i++) {
@@ -184,15 +184,15 @@ describe('Demographics Calculations', () => {
       }
     });
 
-    it('handles large index values', () => {
+    it("handles large index values", () => {
       const color = getRegionColor(9999);
       expect(color).toBeDefined();
-      expect(typeof color).toBe('string');
+      expect(typeof color).toBe("string");
     });
   });
 
-  describe('Edge Cases', () => {
-    it('handles 100% working age population', () => {
+  describe("Edge Cases", () => {
+    it("handles 100% working age population", () => {
       const allWorkingAge = {
         ...mockDemographics,
         ageDistribution: {
@@ -209,7 +209,7 @@ describe('Demographics Calculations', () => {
       expect(result.elderlyPop).toBe(0);
     });
 
-    it('handles 100% urban population', () => {
+    it("handles 100% urban population", () => {
       const allUrban = {
         ...mockDemographics,
         urbanRuralSplit: {
@@ -224,7 +224,7 @@ describe('Demographics Calculations', () => {
       expect(result.ruralPop).toBe(0);
     });
 
-    it('handles 100% rural population', () => {
+    it("handles 100% rural population", () => {
       const allRural = {
         ...mockDemographics,
         urbanRuralSplit: {
@@ -240,21 +240,21 @@ describe('Demographics Calculations', () => {
     });
   });
 
-  describe('Integration Tests', () => {
-    it('calculates all metrics in single pass', () => {
+  describe("Integration Tests", () => {
+    it("calculates all metrics in single pass", () => {
       const result = calculateDerivedDemographics(mockDemographics);
 
-      expect(result).toHaveProperty('workingAge');
-      expect(result).toHaveProperty('youthPop');
-      expect(result).toHaveProperty('elderlyPop');
-      expect(result).toHaveProperty('urbanPop');
-      expect(result).toHaveProperty('ruralPop');
-      expect(result).toHaveProperty('dependencyRatio');
-      expect(result).toHaveProperty('workingAgeShare');
-      expect(result).toHaveProperty('urbanShare');
+      expect(result).toHaveProperty("workingAge");
+      expect(result).toHaveProperty("youthPop");
+      expect(result).toHaveProperty("elderlyPop");
+      expect(result).toHaveProperty("urbanPop");
+      expect(result).toHaveProperty("ruralPop");
+      expect(result).toHaveProperty("dependencyRatio");
+      expect(result).toHaveProperty("workingAgeShare");
+      expect(result).toHaveProperty("urbanShare");
     });
 
-    it('maintains mathematical consistency', () => {
+    it("maintains mathematical consistency", () => {
       const result = calculateDerivedDemographics(mockDemographics);
 
       // Total population should equal sum of age groups

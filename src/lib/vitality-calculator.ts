@@ -5,7 +5,7 @@
  * These scores are stored in the database for fast access
  */
 
-import type { Country } from '@prisma/client';
+import type { Country } from "@prisma/client";
 
 export interface VitalityScores {
   economicVitality: number;
@@ -51,11 +51,11 @@ export function calculateEconomicVitality(country: Partial<Country>): number {
   }
 
   // Economic Tier contribution (0-15 points)
-  const tier = country.economicTier || '';
-  if (tier.includes('Very Strong')) score += 15;
-  else if (tier.includes('Strong')) score += 12;
-  else if (tier.includes('Stable')) score += 9;
-  else if (tier.includes('Developing')) score += 6;
+  const tier = country.economicTier || "";
+  if (tier.includes("Very Strong")) score += 15;
+  else if (tier.includes("Strong")) score += 12;
+  else if (tier.includes("Stable")) score += 9;
+  else if (tier.includes("Developing")) score += 6;
   else score += 3;
 
   // Trade Balance contribution (0-10 points)
@@ -66,7 +66,8 @@ export function calculateEconomicVitality(country: Partial<Country>): number {
 
   // Inflation control (0-5 points or -10 penalty)
   const inflation = country.inflationRate || 2;
-  if (inflation >= 0 && inflation <= 3) score += 5; // Healthy inflation
+  if (inflation >= 0 && inflation <= 3)
+    score += 5; // Healthy inflation
   else if (inflation <= 5) score += 2;
   else if (inflation > 10) score -= 10; // High inflation penalty
 
@@ -95,7 +96,8 @@ export function calculatePopulationWellbeing(country: Partial<Country>): number 
 
   // Income Inequality contribution (0-20 points, inverted)
   const gini = country.incomeInequalityGini || 0.35;
-  if (gini <= 0.25) score += 20; // Very equal
+  if (gini <= 0.25)
+    score += 20; // Very equal
   else if (gini <= 0.35) score += 15;
   else if (gini <= 0.45) score += 10;
   else if (gini <= 0.55) score += 5;
@@ -111,9 +113,12 @@ export function calculatePopulationWellbeing(country: Partial<Country>): number 
 
   // Population Growth (0-10 points)
   const popGrowth = country.populationGrowthRate || 0;
-  if (popGrowth >= 0.5 && popGrowth <= 2) score += 10; // Healthy growth
-  else if (popGrowth >= 0 && popGrowth < 0.5) score += 7; // Slow growth
-  else if (popGrowth > 2 && popGrowth <= 3) score += 5; // High growth
+  if (popGrowth >= 0.5 && popGrowth <= 2)
+    score += 10; // Healthy growth
+  else if (popGrowth >= 0 && popGrowth < 0.5)
+    score += 7; // Slow growth
+  else if (popGrowth > 2 && popGrowth <= 3)
+    score += 5; // High growth
   else if (popGrowth < 0) score += 3; // Declining population
   // Very high growth (>3%) gets no points
 
@@ -149,12 +154,12 @@ export function calculateDiplomaticStanding(country: Partial<Country>): number {
   else score += treaties * 2;
 
   // Diplomatic Reputation contribution (0-30 points)
-  const reputation = country.diplomaticReputation || 'Neutral';
-  if (reputation === 'Excellent' || reputation === 'Rising') score += 30;
-  else if (reputation === 'Good' || reputation === 'Stable') score += 20;
-  else if (reputation === 'Neutral') score += 10;
-  else if (reputation === 'Declining') score += 5;
-  else if (reputation === 'Poor') score += 0;
+  const reputation = country.diplomaticReputation || "Neutral";
+  if (reputation === "Excellent" || reputation === "Rising") score += 30;
+  else if (reputation === "Good" || reputation === "Stable") score += 20;
+  else if (reputation === "Neutral") score += 10;
+  else if (reputation === "Declining") score += 5;
+  else if (reputation === "Poor") score += 0;
   // Negative reputations get no points
 
   // Regional influence (based on economic and population size) (0-15 points)
@@ -162,10 +167,14 @@ export function calculateDiplomaticStanding(country: Partial<Country>): number {
   const population = country.currentPopulation || 0;
   const totalGdp = gdpPerCapita * population;
 
-  if (totalGdp >= 5000000000000) score += 15; // $5T+ GDP
-  else if (totalGdp >= 1000000000000) score += 12; // $1T+ GDP
-  else if (totalGdp >= 500000000000) score += 9; // $500B+ GDP
-  else if (totalGdp >= 100000000000) score += 6; // $100B+ GDP
+  if (totalGdp >= 5000000000000)
+    score += 15; // $5T+ GDP
+  else if (totalGdp >= 1000000000000)
+    score += 12; // $1T+ GDP
+  else if (totalGdp >= 500000000000)
+    score += 9; // $500B+ GDP
+  else if (totalGdp >= 100000000000)
+    score += 6; // $100B+ GDP
   else score += Math.min(6, (totalGdp / 100000000000) * 6);
 
   return Math.max(0, Math.min(100, score));
@@ -183,19 +192,19 @@ export function calculateGovernmentalEfficiency(country: Partial<Country>): numb
   score += Math.min(30, ((approval - 50) / 50) * 30);
 
   // Political Stability contribution (0-25 points)
-  const stability = country.politicalStability || 'Stable';
-  if (stability === 'Very Stable') score += 25;
-  else if (stability === 'Stable') score += 20;
-  else if (stability === 'Moderate' || stability === 'Monitored') score += 10;
-  else if (stability === 'Unstable') score += 0;
-  else if (stability === 'Critical') score -= 10;
+  const stability = country.politicalStability || "Stable";
+  if (stability === "Very Stable") score += 25;
+  else if (stability === "Stable") score += 20;
+  else if (stability === "Moderate" || stability === "Monitored") score += 10;
+  else if (stability === "Unstable") score += 0;
+  else if (stability === "Critical") score -= 10;
 
   // Government Efficiency Rating contribution (0-20 points)
-  const efficiency = country.governmentEfficiency || 'Moderate';
-  if (efficiency === 'Excellent' || efficiency === 'Very High') score += 20;
-  else if (efficiency === 'Good' || efficiency === 'High') score += 15;
-  else if (efficiency === 'Moderate') score += 10;
-  else if (efficiency === 'Low') score += 5;
+  const efficiency = country.governmentEfficiency || "Moderate";
+  if (efficiency === "Excellent" || efficiency === "Very High") score += 20;
+  else if (efficiency === "Good" || efficiency === "High") score += 15;
+  else if (efficiency === "Moderate") score += 10;
+  else if (efficiency === "Low") score += 5;
   else score += 0;
 
   // Infrastructure Rating contribution (0-15 points)
@@ -207,9 +216,12 @@ export function calculateGovernmentalEfficiency(country: Partial<Country>): numb
   const gdp = (country.currentGdpPerCapita || 0) * (country.currentPopulation || 1);
   const balancePercent = gdp > 0 ? (budgetBalance / gdp) * 100 : 0;
 
-  if (balancePercent > 0) score += 10; // Surplus
-  else if (balancePercent > -3) score += 7; // Small deficit
-  else if (balancePercent > -5) score += 4; // Moderate deficit
+  if (balancePercent > 0)
+    score += 10; // Surplus
+  else if (balancePercent > -3)
+    score += 7; // Small deficit
+  else if (balancePercent > -5)
+    score += 4; // Moderate deficit
   else if (balancePercent > -10) score += 1; // Large deficit
   // Very large deficit (>10%) gets no points
 
@@ -228,10 +240,10 @@ export function calculateOverallNationalHealth(scores: {
 }): number {
   // Weighted average
   const weights = {
-    economic: 0.35,      // 35% weight
-    population: 0.30,    // 30% weight
-    governmental: 0.20,  // 20% weight
-    diplomatic: 0.15     // 15% weight
+    economic: 0.35, // 35% weight
+    population: 0.3, // 30% weight
+    governmental: 0.2, // 20% weight
+    diplomatic: 0.15, // 15% weight
   };
 
   const overall =
@@ -256,7 +268,7 @@ export function calculateAllVitalityScores(country: Partial<Country>): VitalityS
     economic: economicVitality,
     population: populationWellbeing,
     diplomatic: diplomaticStanding,
-    governmental: governmentalEfficiency
+    governmental: governmentalEfficiency,
   });
 
   return {
@@ -264,6 +276,6 @@ export function calculateAllVitalityScores(country: Partial<Country>): VitalityS
     populationWellbeing,
     diplomaticStanding,
     governmentalEfficiency,
-    overallNationalHealth
+    overallNationalHealth,
   };
 }

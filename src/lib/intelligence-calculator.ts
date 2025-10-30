@@ -17,72 +17,72 @@ interface CalculateIntelligenceOptions {
 // Helper to convert string to enum
 function mapBriefingType(type: string): BriefingType {
   const mapping: Record<string, BriefingType> = {
-    'hot_issue': 'HOT_ISSUE',
-    'opportunity': 'OPPORTUNITY',
-    'risk_mitigation': 'RISK_MITIGATION',
-    'strategic_initiative': 'STRATEGIC_INITIATIVE'
+    hot_issue: "HOT_ISSUE",
+    opportunity: "OPPORTUNITY",
+    risk_mitigation: "RISK_MITIGATION",
+    strategic_initiative: "STRATEGIC_INITIATIVE",
   };
-  return mapping[type] || 'STRATEGIC_INITIATIVE';
+  return mapping[type] || "STRATEGIC_INITIATIVE";
 }
 
 function mapPriority(priority: string): Priority {
   const mapping: Record<string, Priority> = {
-    'critical': 'critical',
-    'high': 'high',
-    'medium': 'medium',
-    'low': 'low',
-    'CRITICAL': 'critical',
-    'HIGH': 'high',
-    'MEDIUM': 'medium',
-    'LOW': 'low'
+    critical: "critical",
+    high: "high",
+    medium: "medium",
+    low: "low",
+    CRITICAL: "critical",
+    HIGH: "high",
+    MEDIUM: "medium",
+    LOW: "low",
   };
-  return mapping[priority] || 'medium';
+  return mapping[priority] || "medium";
 }
 
 function mapUrgency(urgency: string): Urgency {
   const mapping: Record<string, Urgency> = {
-    'immediate': 'IMMEDIATE',
-    'this_week': 'THIS_WEEK',
-    'this_month': 'THIS_MONTH',
-    'this_quarter': 'THIS_QUARTER'
+    immediate: "IMMEDIATE",
+    this_week: "THIS_WEEK",
+    this_month: "THIS_MONTH",
+    this_quarter: "THIS_QUARTER",
   };
-  return mapping[urgency] || 'THIS_MONTH';
+  return mapping[urgency] || "THIS_MONTH";
 }
 
 function mapCategory(category: string): Category {
   const mapping: Record<string, Category> = {
-    'economic': 'economic',
-    'population': 'social',
-    'diplomatic': 'diplomatic',
-    'governance': 'governance',
-    'ECONOMIC': 'economic',
-    'SOCIAL': 'social',
-    'DIPLOMATIC': 'diplomatic',
-    'GOVERNANCE': 'governance'
+    economic: "economic",
+    population: "social",
+    diplomatic: "diplomatic",
+    governance: "governance",
+    ECONOMIC: "economic",
+    SOCIAL: "social",
+    DIPLOMATIC: "diplomatic",
+    GOVERNANCE: "governance",
   };
-  return mapping[category] || 'governance';
+  return mapping[category] || "governance";
 }
 
 function mapDifficulty(difficulty: string): Difficulty {
   const mapping: Record<string, Difficulty> = {
-    'minor': 'MINOR',
-    'moderate': 'MODERATE',
-    'major': 'MAJOR',
-    'transformational': 'TRANSFORMATIONAL'
+    minor: "MINOR",
+    moderate: "MODERATE",
+    major: "MAJOR",
+    transformational: "TRANSFORMATIONAL",
   };
-  return mapping[difficulty] || 'MODERATE';
+  return mapping[difficulty] || "MODERATE";
 }
 
 function mapTrend(trend: string): Trend {
   const mapping: Record<string, Trend> = {
-    'up': 'up',
-    'down': 'down',
-    'stable': 'stable',
-    'UP': 'up',
-    'DOWN': 'down',
-    'STABLE': 'stable'
+    up: "up",
+    down: "down",
+    stable: "stable",
+    UP: "up",
+    DOWN: "down",
+    STABLE: "stable",
   };
-  return mapping[trend] || 'stable';
+  return mapping[trend] || "stable";
 }
 
 // Helper to get quarter info from IxTime
@@ -107,9 +107,9 @@ async function calculateCountryIntelligence(countryId: string) {
     include: {
       dmInputs: {
         where: { isActive: true },
-        orderBy: { ixTimeTimestamp: 'desc' }
-      }
-    }
+        orderBy: { ixTimeTimestamp: "desc" },
+      },
+    },
   });
 
   if (!country) {
@@ -125,46 +125,57 @@ async function calculateCountryIntelligence(countryId: string) {
     // Fetch REAL historical data from database
     const historicalRecords = await db.historicalDataPoint.findMany({
       where: { countryId },
-      orderBy: { ixTimeTimestamp: 'desc' },
-      take: 12
+      orderBy: { ixTimeTimestamp: "desc" },
+      take: 12,
     });
 
     // Use actual historical data, or fall back to current values if no history exists
-    const gdpHistory = historicalRecords.length > 0
-      ? historicalRecords.map(h => h.gdpPerCapita).reverse()
-      : [country.currentGdpPerCapita];
+    const gdpHistory =
+      historicalRecords.length > 0
+        ? historicalRecords.map((h) => h.gdpPerCapita).reverse()
+        : [country.currentGdpPerCapita];
 
-    const populationHistory = historicalRecords.length > 0
-      ? historicalRecords.map(h => h.population).reverse()
-      : [country.currentPopulation];
+    const populationHistory =
+      historicalRecords.length > 0
+        ? historicalRecords.map((h) => h.population).reverse()
+        : [country.currentPopulation];
 
-    const unemploymentHistory = historicalRecords.length > 0
-      ? historicalRecords.map(h => country.unemploymentRate || 5.0).reverse()
-      : [country.unemploymentRate || 5.0];
+    const unemploymentHistory =
+      historicalRecords.length > 0
+        ? historicalRecords.map((h) => country.unemploymentRate || 5.0).reverse()
+        : [country.unemploymentRate || 5.0];
 
     // Calculate REAL peer averages from database
     const peerCountries = await db.country.findMany({
       where: {
         economicTier: country.economicTier,
-        id: { not: countryId }
+        id: { not: countryId },
       },
       select: {
         currentGdpPerCapita: true,
         currentPopulation: true,
-        unemploymentRate: true
+        unemploymentRate: true,
       },
-      take: 10
+      take: 10,
     });
 
-    const peerAverages = peerCountries.length > 0 ? {
-      gdpPerCapita: peerCountries.reduce((sum, c) => sum + c.currentGdpPerCapita, 0) / peerCountries.length,
-      population: peerCountries.reduce((sum, c) => sum + c.currentPopulation, 0) / peerCountries.length,
-      unemployment: peerCountries.reduce((sum, c) => sum + (c.unemploymentRate || 5.0), 0) / peerCountries.length
-    } : {
-      gdpPerCapita: country.currentGdpPerCapita,
-      population: country.currentPopulation,
-      unemployment: country.unemploymentRate || 5.0
-    };
+    const peerAverages =
+      peerCountries.length > 0
+        ? {
+            gdpPerCapita:
+              peerCountries.reduce((sum, c) => sum + c.currentGdpPerCapita, 0) /
+              peerCountries.length,
+            population:
+              peerCountries.reduce((sum, c) => sum + c.currentPopulation, 0) / peerCountries.length,
+            unemployment:
+              peerCountries.reduce((sum, c) => sum + (c.unemploymentRate || 5.0), 0) /
+              peerCountries.length,
+          }
+        : {
+            gdpPerCapita: country.currentGdpPerCapita,
+            population: country.currentPopulation,
+            unemployment: country.unemploymentRate || 5.0,
+          };
 
     const advancedIntelligenceReport = generateIntelligenceReport(
       country as any,
@@ -175,9 +186,16 @@ async function calculateCountryIntelligence(countryId: string) {
     // ===== GENERATE VITALITY INTELLIGENCE =====
     const apiCountryData = {
       ...country,
-      currentTotalGdp: country.currentTotalGdp || (country.currentPopulation * country.currentGdpPerCapita),
-      lastCalculated: typeof country.lastCalculated === 'number' ? country.lastCalculated : country.lastCalculated.getTime(),
-      baselineDate: typeof country.baselineDate === 'number' ? country.baselineDate : country.baselineDate.getTime()
+      currentTotalGdp:
+        country.currentTotalGdp || country.currentPopulation * country.currentGdpPerCapita,
+      lastCalculated:
+        typeof country.lastCalculated === "number"
+          ? country.lastCalculated
+          : country.lastCalculated.getTime(),
+      baselineDate:
+        typeof country.baselineDate === "number"
+          ? country.baselineDate
+          : country.baselineDate.getTime(),
     };
 
     const vitalityIntelligence = transformApiDataToVitalityIntelligence(apiCountryData as any);
@@ -199,8 +217,8 @@ async function calculateCountryIntelligence(countryId: string) {
           rank: vitality.comparisons.rank,
           totalCountries: vitality.comparisons.totalCountries,
           criticalAlertsCount: vitality.criticalAlerts.length,
-          ixTime: currentIxTime
-        }
+          ixTime: currentIxTime,
+        },
       });
     }
 
@@ -208,27 +226,42 @@ async function calculateCountryIntelligence(countryId: string) {
     await db.intelligenceBriefing.updateMany({
       where: {
         countryId,
-        isActive: true
+        isActive: true,
       },
       data: {
-        isActive: false
-      }
+        isActive: false,
+      },
     });
 
     // ===== CREATE BRIEFINGS FROM ADVANCED INTELLIGENCE =====
     if (advancedIntelligenceReport) {
       for (const alert of advancedIntelligenceReport.alerts) {
-        const urgency = alert.severity === 'critical' ? 'immediate' :
-                       alert.severity === 'high' ? 'this_week' :
-                       alert.severity === 'medium' ? 'this_month' : 'this_quarter';
+        const urgency =
+          alert.severity === "critical"
+            ? "immediate"
+            : alert.severity === "high"
+              ? "this_week"
+              : alert.severity === "medium"
+                ? "this_month"
+                : "this_quarter";
 
-        const briefingType = alert.type === 'opportunity' ? 'opportunity' :
-                            alert.type === 'anomaly' || alert.type === 'threshold' ? 'hot_issue' :
-                            alert.type === 'risk' ? 'risk_mitigation' : 'strategic_initiative';
+        const briefingType =
+          alert.type === "opportunity"
+            ? "opportunity"
+            : alert.type === "anomaly" || alert.type === "threshold"
+              ? "hot_issue"
+              : alert.type === "risk"
+                ? "risk_mitigation"
+                : "strategic_initiative";
 
-        const timeframe = urgency === 'immediate' ? 'Immediate' :
-                         urgency === 'this_week' ? '1 week' :
-                         urgency === 'this_month' ? '1 month' : getQuarterInfo();
+        const timeframe =
+          urgency === "immediate"
+            ? "Immediate"
+            : urgency === "this_week"
+              ? "1 week"
+              : urgency === "this_month"
+                ? "1 month"
+                : getQuarterInfo();
 
         // Create briefing
         const briefing = await db.intelligenceBriefing.create({
@@ -237,28 +270,38 @@ async function calculateCountryIntelligence(countryId: string) {
             title: alert.title,
             description: alert.description,
             type: mapBriefingType(briefingType),
-            priority: mapPriority(alert.severity === 'critical' || alert.severity === 'high' ? alert.severity : 'medium'),
+            priority: mapPriority(
+              alert.severity === "critical" || alert.severity === "high" ? alert.severity : "medium"
+            ),
             area: mapCategory(alert.category),
             confidence: alert.confidence,
             urgency: mapUrgency(urgency),
             impactMagnitude: JSON.stringify({
-              magnitude: alert.severity === 'critical' ? 'critical' : alert.severity === 'high' ? 'high' : 'medium',
+              magnitude:
+                alert.severity === "critical"
+                  ? "critical"
+                  : alert.severity === "high"
+                    ? "high"
+                    : "medium",
               scope: alert.factors,
-              timeframe
+              timeframe,
             }),
             evidence: JSON.stringify({
               metrics: [
                 `Current: ${alert.metrics.current.toFixed(2)}`,
                 `Expected: ${alert.metrics.expected.toFixed(2)}`,
                 `Deviation: ${alert.metrics.deviation.toFixed(2)}%`,
-                `Z-Score: ${alert.metrics.zScore.toFixed(2)}`
+                `Z-Score: ${alert.metrics.zScore.toFixed(2)}`,
               ],
               trends: [`Detected via ${alert.type} analysis`],
-              comparisons: alert.factors.map(f => `Factor: ${f}`)
+              comparisons: alert.factors.map((f) => `Factor: ${f}`),
             }),
             generatedAt: new Date(alert.detected),
-            expiresAt: new Date(alert.detected + (urgency === 'immediate' ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000))
-          }
+            expiresAt: new Date(
+              alert.detected +
+                (urgency === "immediate" ? 7 * 24 * 60 * 60 * 1000 : 30 * 24 * 60 * 60 * 1000)
+            ),
+          },
         });
 
         // Create associated alert
@@ -277,8 +320,8 @@ async function calculateCountryIntelligence(countryId: string) {
             zScore: alert.metrics.zScore,
             factors: JSON.stringify(alert.factors),
             confidence: alert.confidence,
-            detectedAt: new Date(alert.detected)
-          }
+            detectedAt: new Date(alert.detected),
+          },
         });
 
         // Create recommendations
@@ -290,18 +333,20 @@ async function calculateCountryIntelligence(countryId: string) {
               title: rec,
               description: `Recommendation based on ${alert.type} detection`,
               category: mapCategory(alert.category),
-              urgency: alert.severity === 'critical' ? 'urgent' : 'important',
-              difficulty: mapDifficulty(alert.severity === 'critical' ? 'major' : 'moderate'),
-              estimatedDuration: urgency === 'immediate' ? '1-2 weeks' : '1-2 months',
-              estimatedCost: alert.severity === 'critical' ? 'High' : 'Medium',
+              urgency: alert.severity === "critical" ? "urgent" : "important",
+              difficulty: mapDifficulty(alert.severity === "critical" ? "major" : "moderate"),
+              estimatedDuration: urgency === "immediate" ? "1-2 weeks" : "1-2 months",
+              estimatedCost: alert.severity === "critical" ? "High" : "Medium",
               estimatedBenefit: `${Math.abs(alert.metrics.deviation / 2).toFixed(2)}% improvement`,
               prerequisites: JSON.stringify([]),
-              risks: JSON.stringify([`Potential ${alert.severity} impact if not implemented correctly`]),
+              risks: JSON.stringify([
+                `Potential ${alert.severity} impact if not implemented correctly`,
+              ]),
               successProbability: Math.min(95, alert.confidence + 10),
-              economicImpact: alert.category === 'economic' ? alert.metrics.deviation / 2 : 0,
-              socialImpact: alert.category === 'population' ? alert.metrics.deviation / 3 : 0,
-              diplomaticImpact: alert.category === 'diplomatic' ? alert.metrics.deviation / 3 : 0
-            }
+              economicImpact: alert.category === "economic" ? alert.metrics.deviation / 2 : 0,
+              socialImpact: alert.category === "population" ? alert.metrics.deviation / 3 : 0,
+              diplomaticImpact: alert.category === "diplomatic" ? alert.metrics.deviation / 3 : 0,
+            },
           });
         }
       }
@@ -315,27 +360,33 @@ async function calculateCountryIntelligence(countryId: string) {
           data: {
             countryId,
             title: `Critical ${vitality.area.charAt(0).toUpperCase() + vitality.area.slice(1)} Issues`,
-            description: `${vitality.criticalAlerts.length} critical alert${vitality.criticalAlerts.length !== 1 ? 's' : ''} requiring immediate action`,
-            type: 'HOT_ISSUE',
-            priority: 'critical',
+            description: `${vitality.criticalAlerts.length} critical alert${vitality.criticalAlerts.length !== 1 ? "s" : ""} requiring immediate action`,
+            type: "HOT_ISSUE",
+            priority: "critical",
             area: mapCategory(vitality.area),
             confidence: 95,
-            urgency: 'IMMEDIATE',
+            urgency: "IMMEDIATE",
             impactMagnitude: JSON.stringify({
-              magnitude: 'critical',
-              scope: [vitality.area, 'overall stability'],
-              timeframe: 'immediate'
+              magnitude: "critical",
+              scope: [vitality.area, "overall stability"],
+              timeframe: "immediate",
             }),
             evidence: JSON.stringify({
-              metrics: vitality.keyMetrics.slice(0, 3).map(m => `${m.label}: ${m.value}${m.unit || ''}`),
+              metrics: vitality.keyMetrics
+                .slice(0, 3)
+                .map((m) => `${m.label}: ${m.value}${m.unit || ""}`),
               trends: [`Score: ${vitality.score}/100 (${vitality.trend})`],
-              comparisons: [`Rank: #${vitality.comparisons.rank}/${vitality.comparisons.totalCountries}`]
-            })
-          }
+              comparisons: [
+                `Rank: #${vitality.comparisons.rank}/${vitality.comparisons.totalCountries}`,
+              ],
+            }),
+          },
         });
 
         // Create recommendations
-        for (const rec of vitality.recommendations.filter(r => r.urgency === 'urgent').slice(0, 2)) {
+        for (const rec of vitality.recommendations
+          .filter((r) => r.urgency === "urgent")
+          .slice(0, 2)) {
           await db.intelligenceRecommendation.create({
             data: {
               briefingId: briefing.id,
@@ -353,16 +404,16 @@ async function calculateCountryIntelligence(countryId: string) {
               successProbability: rec.successProbability,
               economicImpact: rec.impact.economic || 0,
               socialImpact: rec.impact.social || 0,
-              diplomaticImpact: rec.impact.diplomatic || 0
-            }
+              diplomaticImpact: rec.impact.diplomatic || 0,
+            },
           });
         }
       }
 
       // Opportunities from strong performance
-      if (vitality.score > 75 && vitality.trend === 'up') {
+      if (vitality.score > 75 && vitality.trend === "up") {
         const topRecommendations = vitality.recommendations
-          .filter(r => r.urgency === 'important')
+          .filter((r) => r.urgency === "important")
           .sort((a, b) => b.successProbability - a.successProbability)
           .slice(0, 2);
 
@@ -372,22 +423,26 @@ async function calculateCountryIntelligence(countryId: string) {
               countryId,
               title: `${vitality.area.charAt(0).toUpperCase() + vitality.area.slice(1)} Growth Opportunity`,
               description: `Strong performance and positive trends create favorable conditions for strategic advancement`,
-              type: 'OPPORTUNITY',
-              priority: 'high',
+              type: "OPPORTUNITY",
+              priority: "high",
               area: mapCategory(vitality.area),
               confidence: 85,
-              urgency: 'THIS_WEEK',
+              urgency: "THIS_WEEK",
               impactMagnitude: JSON.stringify({
-                magnitude: 'high',
-                scope: [vitality.area, 'regional standing'],
-                timeframe: '3-6 months'
+                magnitude: "high",
+                scope: [vitality.area, "regional standing"],
+                timeframe: "3-6 months",
               }),
               evidence: JSON.stringify({
-                metrics: vitality.keyMetrics.slice(0, 2).map(m => `${m.label}: ${m.value}${m.unit || ''} (${m.trend})`),
-                trends: [`Score improving: ${vitality.change.value > 0 ? '+' : ''}${vitality.change.value.toFixed(2)}% points`],
-                comparisons: [`Above peer average: ${vitality.comparisons.peerAverage.toFixed(2)}`]
-              })
-            }
+                metrics: vitality.keyMetrics
+                  .slice(0, 2)
+                  .map((m) => `${m.label}: ${m.value}${m.unit || ""} (${m.trend})`),
+                trends: [
+                  `Score improving: ${vitality.change.value > 0 ? "+" : ""}${vitality.change.value.toFixed(2)}% points`,
+                ],
+                comparisons: [`Above peer average: ${vitality.comparisons.peerAverage.toFixed(2)}`],
+              }),
+            },
           });
 
           // Create recommendations
@@ -409,40 +464,44 @@ async function calculateCountryIntelligence(countryId: string) {
                 successProbability: rec.successProbability,
                 economicImpact: rec.impact.economic || 0,
                 socialImpact: rec.impact.social || 0,
-                diplomaticImpact: rec.impact.diplomatic || 0
-              }
+                diplomaticImpact: rec.impact.diplomatic || 0,
+              },
             });
           }
         }
       }
 
       // Risk Mitigation for declining areas
-      if (vitality.score < 60 && vitality.trend === 'down') {
+      if (vitality.score < 60 && vitality.trend === "down") {
         const briefing = await db.intelligenceBriefing.create({
           data: {
             countryId,
             title: `${vitality.area.charAt(0).toUpperCase() + vitality.area.slice(1)} Risk Assessment`,
             description: `Declining performance indicators suggest preventive measures are needed`,
-            type: 'RISK_MITIGATION',
-            priority: 'high',
+            type: "RISK_MITIGATION",
+            priority: "high",
             area: mapCategory(vitality.area),
             confidence: 80,
-            urgency: 'THIS_WEEK',
+            urgency: "THIS_WEEK",
             impactMagnitude: JSON.stringify({
-              magnitude: 'medium',
+              magnitude: "medium",
               scope: [vitality.area],
-              timeframe: '1-3 months'
+              timeframe: "1-3 months",
             }),
             evidence: JSON.stringify({
-              metrics: vitality.keyMetrics.filter(m => m.trend === 'down').map(m => `${m.label}: ${m.value}${m.unit || ''} (declining)`),
+              metrics: vitality.keyMetrics
+                .filter((m) => m.trend === "down")
+                .map((m) => `${m.label}: ${m.value}${m.unit || ""} (declining)`),
               trends: [`Score declining: ${vitality.change.value.toFixed(2)} points`],
-              comparisons: [`Below peer average: ${vitality.comparisons.peerAverage.toFixed(2)}`]
-            })
-          }
+              comparisons: [`Below peer average: ${vitality.comparisons.peerAverage.toFixed(2)}`],
+            }),
+          },
         });
 
         // Create recommendations
-        for (const rec of vitality.recommendations.filter(r => r.difficulty !== 'major').slice(0, 2)) {
+        for (const rec of vitality.recommendations
+          .filter((r) => r.difficulty !== "major")
+          .slice(0, 2)) {
           await db.intelligenceRecommendation.create({
             data: {
               briefingId: briefing.id,
@@ -460,8 +519,8 @@ async function calculateCountryIntelligence(countryId: string) {
               successProbability: rec.successProbability,
               economicImpact: rec.impact.economic || 0,
               socialImpact: rec.impact.social || 0,
-              diplomaticImpact: rec.impact.diplomatic || 0
-            }
+              diplomaticImpact: rec.impact.diplomatic || 0,
+            },
           });
         }
       }
@@ -487,7 +546,7 @@ export async function calculateIntelligence(options: CalculateIntelligenceOption
     } else {
       // Calculate for all countries
       const countries = await db.country.findMany({
-        select: { id: true, name: true }
+        select: { id: true, name: true },
       });
 
       console.log(`[Intelligence] Calculating intelligence for ${countries.length} countries`);
@@ -496,7 +555,10 @@ export async function calculateIntelligence(options: CalculateIntelligenceOption
         try {
           await calculateCountryIntelligence(country.id);
         } catch (error) {
-          console.error(`[Intelligence] Failed to calculate intelligence for ${country.name}:`, error);
+          console.error(
+            `[Intelligence] Failed to calculate intelligence for ${country.name}:`,
+            error
+          );
           // Continue with other countries even if one fails
         }
       }
@@ -504,7 +566,7 @@ export async function calculateIntelligence(options: CalculateIntelligenceOption
       console.log(`[Intelligence] Finished calculating intelligence for all countries`);
     }
   } catch (error) {
-    console.error('[Intelligence] Error in calculateIntelligence:', error);
+    console.error("[Intelligence] Error in calculateIntelligence:", error);
     throw error;
   }
 }

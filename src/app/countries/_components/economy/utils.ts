@@ -1,4 +1,8 @@
-import type { EconomyData, CoreEconomicIndicatorsData, LaborEmploymentData } from "~/types/economics";
+import type {
+  EconomyData,
+  CoreEconomicIndicatorsData,
+  LaborEmploymentData,
+} from "~/types/economics";
 import {
   formatCurrency as formatCurrencyUtil,
   formatPopulation as formatPopulationUtil,
@@ -10,7 +14,7 @@ import {
  * Legacy wrapper for backward compatibility
  */
 export function formatCurrency(amount: number | null | undefined, precision = 1): string {
-  return formatCurrencyUtil(amount ?? 0, 'USD', precision > 0);
+  return formatCurrencyUtil(amount ?? 0, "USD", precision > 0);
 }
 
 /**
@@ -26,15 +30,17 @@ export function formatPopulation(population: number | null | undefined): string 
  * Legacy wrapper for backward compatibility
  */
 export function formatPercentage(value: number | null | undefined, precision = 1): string {
-  if (value === null || value === undefined) return 'N/A';
+  if (value === null || value === undefined) return "N/A";
   return formatPercent(value, precision);
 }
 
-export function getEconomicTier(gdpPerCapita: number): 'Developing' | 'Emerging' | 'Developed' | 'Advanced' {
-  if (gdpPerCapita >= 40000) return 'Advanced';
-  if (gdpPerCapita >= 20000) return 'Developed';
-  if (gdpPerCapita >= 5000) return 'Emerging';
-  return 'Developing';
+export function getEconomicTier(
+  gdpPerCapita: number
+): "Developing" | "Emerging" | "Developed" | "Advanced" {
+  if (gdpPerCapita >= 40000) return "Advanced";
+  if (gdpPerCapita >= 20000) return "Developed";
+  if (gdpPerCapita >= 5000) return "Emerging";
+  return "Developing";
 }
 
 export function getEconomicHealthScore(economyData: EconomyData): {
@@ -51,7 +57,10 @@ export function getEconomicHealthScore(economyData: EconomyData): {
   else score -= 5;
 
   // Unemployment factor (skip if null)
-  if (economyData.labor.unemploymentRate !== null && economyData.labor.unemploymentRate !== undefined) {
+  if (
+    economyData.labor.unemploymentRate !== null &&
+    economyData.labor.unemploymentRate !== undefined
+  ) {
     if (economyData.labor.unemploymentRate <= 5) score += 10;
     else if (economyData.labor.unemploymentRate <= 10) score += 5;
     else if (economyData.labor.unemploymentRate >= 20) score -= 15;
@@ -59,13 +68,27 @@ export function getEconomicHealthScore(economyData: EconomyData): {
   }
 
   // Fiscal health factor (skip if null)
-  if (economyData.fiscal.taxRevenueGDPPercent !== null && economyData.fiscal.taxRevenueGDPPercent !== undefined) {
-    if (economyData.fiscal.taxRevenueGDPPercent >= 15 && economyData.fiscal.taxRevenueGDPPercent <= 30) score += 5;
-    else if (economyData.fiscal.taxRevenueGDPPercent < 10 || economyData.fiscal.taxRevenueGDPPercent > 40) score -= 5;
+  if (
+    economyData.fiscal.taxRevenueGDPPercent !== null &&
+    economyData.fiscal.taxRevenueGDPPercent !== undefined
+  ) {
+    if (
+      economyData.fiscal.taxRevenueGDPPercent >= 15 &&
+      economyData.fiscal.taxRevenueGDPPercent <= 30
+    )
+      score += 5;
+    else if (
+      economyData.fiscal.taxRevenueGDPPercent < 10 ||
+      economyData.fiscal.taxRevenueGDPPercent > 40
+    )
+      score -= 5;
   }
 
   // Debt factor (skip if null)
-  if (economyData.fiscal.totalDebtGDPRatio !== null && economyData.fiscal.totalDebtGDPRatio !== undefined) {
+  if (
+    economyData.fiscal.totalDebtGDPRatio !== null &&
+    economyData.fiscal.totalDebtGDPRatio !== undefined
+  ) {
     if (economyData.fiscal.totalDebtGDPRatio <= 60) score += 5;
     else if (economyData.fiscal.totalDebtGDPRatio >= 150) score -= 10;
     else if (economyData.fiscal.totalDebtGDPRatio >= 100) score -= 5;
@@ -82,20 +105,20 @@ export function getEconomicHealthScore(economyData: EconomyData): {
   let color: string;
 
   if (finalScore >= 85) {
-    label = 'Excellent';
-    color = 'text-green-600';
+    label = "Excellent";
+    color = "text-green-600";
   } else if (finalScore >= 70) {
-    label = 'Good';
-    color = 'text-blue-600';
+    label = "Good";
+    color = "text-blue-600";
   } else if (finalScore >= 55) {
-    label = 'Fair';
-    color = 'text-yellow-600';
+    label = "Fair";
+    color = "text-yellow-600";
   } else if (finalScore >= 40) {
-    label = 'Poor';
-    color = 'text-orange-600';
+    label = "Poor";
+    color = "text-orange-600";
   } else {
-    label = 'Critical';
-    color = 'text-red-600';
+    label = "Critical";
+    color = "text-red-600";
   }
 
   return { score: finalScore, label, color };
@@ -143,8 +166,14 @@ export function validateEconomicData(data: EconomyData): {
       errors.push("Unemployment rate must be between 0-100%");
     }
   }
-  if (data.labor.laborForceParticipationRate !== null && data.labor.laborForceParticipationRate !== undefined) {
-    if (data.labor.laborForceParticipationRate < 0 || data.labor.laborForceParticipationRate > 100) {
+  if (
+    data.labor.laborForceParticipationRate !== null &&
+    data.labor.laborForceParticipationRate !== undefined
+  ) {
+    if (
+      data.labor.laborForceParticipationRate < 0 ||
+      data.labor.laborForceParticipationRate > 100
+    ) {
       errors.push("Labor force participation rate must be between 0-100%");
     }
   }
@@ -164,6 +193,6 @@ export function validateEconomicData(data: EconomyData): {
   return {
     isValid: errors.length === 0,
     errors,
-    warnings
+    warnings,
   };
-} 
+}

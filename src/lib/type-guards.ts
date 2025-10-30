@@ -3,9 +3,9 @@
  * Bulk solution for undefined/null checking and type safety
  */
 
-import type { CountryWithEconomicData } from '~/types/ixstats';
-import type { IntelligenceItem } from '~/types/intelligence-unified';
-import type { ExecutiveAction, QuickAction } from '~/types/actions';
+import type { CountryWithEconomicData } from "~/types/ixstats";
+import type { IntelligenceItem } from "~/types/intelligence-unified";
+import type { ExecutiveAction, QuickAction } from "~/types/actions";
 
 /**
  * Normalize country name for consistent storage and lookups
@@ -21,11 +21,11 @@ import type { ExecutiveAction, QuickAction } from '~/types/actions';
  * normalizeCountryName("North  America") // "North America"
  */
 export function normalizeCountryName(name: string | null | undefined): string {
-  if (!name) return '';
+  if (!name) return "";
 
   return name
-    .trim()                    // Remove leading/trailing whitespace
-    .replace(/\s+/g, ' ');    // Normalize multiple spaces to single space
+    .trim() // Remove leading/trailing whitespace
+    .replace(/\s+/g, " "); // Normalize multiple spaces to single space
 }
 
 // Null/undefined safety utilities (fixes 23+ "possibly undefined" errors)
@@ -34,14 +34,14 @@ export function isDefined<T>(value: T | null | undefined): value is T {
 }
 
 export function isString(value: unknown): value is string {
-  return typeof value === 'string' && value.length > 0;
+  return typeof value === "string" && value.length > 0;
 }
 
 export function isNumber(value: unknown): value is number {
-  return typeof value === 'number' && !isNaN(value);
+  return typeof value === "number" && !isNaN(value);
 }
 
-export function safeString(value: string | undefined | null, fallback = ''): string {
+export function safeString(value: string | undefined | null, fallback = ""): string {
   return isDefined(value) ? value : fallback;
 }
 
@@ -55,24 +55,26 @@ export function safeArray<T>(value: T[] | undefined | null): T[] {
 
 // Country data validation (fixes "currentPopulation does not exist" errors)
 export function isValidCountryData(data: any): data is CountryWithEconomicData {
-  return data && 
-    typeof data === 'object' &&
+  return (
+    data &&
+    typeof data === "object" &&
     isString(data.id) &&
     isString(data.name) &&
     isNumber(data.currentPopulation) &&
     isNumber(data.currentGdpPerCapita) &&
-    isNumber(data.currentTotalGdp);
+    isNumber(data.currentTotalGdp)
+  );
 }
 
 export function ensureCountryData(data: CountryWithEconomicData | undefined | null): any {
   const baseData = data || {
-    id: '',
-    name: 'Unknown Country',
+    id: "",
+    name: "Unknown Country",
     currentPopulation: 0,
     currentGdpPerCapita: 0,
     currentTotalGdp: 0,
-    economicTier: 'Developing',
-    populationTier: 'Small',
+    economicTier: "Developing",
+    populationTier: "Small",
     adjustedGdpGrowth: 0,
     populationGrowthRate: 0,
     lastCalculated: new Date(),
@@ -80,18 +82,18 @@ export function ensureCountryData(data: CountryWithEconomicData | undefined | nu
     realGDPGrowthRate: 0,
     flagUrl: undefined as string | undefined,
   };
-  
+
   // Calculate vitality properties from actual economic data
   const gdpPerCapita = baseData.currentGdpPerCapita || 0;
   const gdpGrowth = baseData.adjustedGdpGrowth || baseData.realGDPGrowthRate || 0;
   const population = baseData.currentPopulation || 1;
-  
+
   const baseFlagUrl = (baseData as { flagUrl?: string | null }).flagUrl;
   const fallbackFlag = (baseData as { flag?: string | null }).flag;
   const normalizedFlagUrl =
-    typeof baseFlagUrl === 'string' && baseFlagUrl.trim().length > 0
+    typeof baseFlagUrl === "string" && baseFlagUrl.trim().length > 0
       ? baseFlagUrl
-      : typeof fallbackFlag === 'string' && fallbackFlag.trim().length > 0
+      : typeof fallbackFlag === "string" && fallbackFlag.trim().length > 0
         ? fallbackFlag
         : undefined;
 
@@ -99,52 +101,64 @@ export function ensureCountryData(data: CountryWithEconomicData | undefined | nu
     ...baseData,
     flagUrl: normalizedFlagUrl,
     // Economic vitality based on GDP per capita and growth rate
-    economicVitality: Math.min(100, Math.max(0, 
-      (gdpPerCapita / 1000) * 10 + (gdpGrowth * 20) + 30
-    )),
+    economicVitality: Math.min(100, Math.max(0, (gdpPerCapita / 1000) * 10 + gdpGrowth * 20 + 30)),
     // Population wellbeing correlates with GDP per capita
-    populationWellbeing: Math.min(100, Math.max(0, 
-      (gdpPerCapita / 800) * 8 + (population > 50000000 ? -5 : 5) + 40
-    )),
+    populationWellbeing: Math.min(
+      100,
+      Math.max(0, (gdpPerCapita / 800) * 8 + (population > 50000000 ? -5 : 5) + 40)
+    ),
     // Diplomatic standing based on economic tier and stability
-    diplomaticStanding: Math.min(100, Math.max(0,
-      (baseData.economicTier === 'Developed' ? 70 : 
-       baseData.economicTier === 'Advanced' ? 85 : 50) +
-      (Math.abs(gdpGrowth) < 5 ? 10 : -10)
-    )),
+    diplomaticStanding: Math.min(
+      100,
+      Math.max(
+        0,
+        (baseData.economicTier === "Developed"
+          ? 70
+          : baseData.economicTier === "Advanced"
+            ? 85
+            : 50) + (Math.abs(gdpGrowth) < 5 ? 10 : -10)
+      )
+    ),
     // Governmental efficiency based on economic performance
-    governmentalEfficiency: Math.min(100, Math.max(0,
-      60 + (gdpGrowth > 2 ? 20 : gdpGrowth < -2 ? -20 : 0) +
-      (gdpPerCapita > 30000 ? 15 : gdpPerCapita > 15000 ? 5 : -5)
-    ))
+    governmentalEfficiency: Math.min(
+      100,
+      Math.max(
+        0,
+        60 +
+          (gdpGrowth > 2 ? 20 : gdpGrowth < -2 ? -20 : 0) +
+          (gdpPerCapita > 30000 ? 15 : gdpPerCapita > 15000 ? 5 : -5)
+      )
+    ),
   };
 }
 
 // Intelligence item validation
 export function isValidIntelligenceItem(item: any): item is IntelligenceItem {
-  return item &&
-    typeof item === 'object' &&
+  return (
+    item &&
+    typeof item === "object" &&
     isString(item.id) &&
     isString(item.title) &&
-    isString(item.description);
+    isString(item.description)
+  );
 }
 
 // Action validation
 export function isExecutiveAction(action: any): action is ExecutiveAction {
-  return action && action.type === 'executive' && isString(action.id);
+  return action && action.type === "executive" && isString(action.id);
 }
 
 export function isQuickAction(action: any): action is QuickAction {
-  return action && action.type === 'quick' && isString(action.id);
+  return action && action.type === "quick" && isString(action.id);
 }
 
 // Safe object property access
 export function safeAccess<T, K extends keyof T>(
-  obj: T | undefined | null, 
-  key: K, 
+  obj: T | undefined | null,
+  key: K,
   fallback: T[K]
 ): T[K] {
-  return (obj && isDefined(obj[key])) ? obj[key] : fallback;
+  return obj && isDefined(obj[key]) ? obj[key] : fallback;
 }
 
 // Batch property validation for objects
@@ -153,14 +167,14 @@ export function validateObjectProperties<T extends Record<string, any>>(
   requiredProps: Array<keyof T>,
   defaultValues: Partial<T> = {}
 ): T {
-  if (!obj || typeof obj !== 'object') {
+  if (!obj || typeof obj !== "object") {
     return { ...defaultValues } as T;
   }
 
   const result = { ...obj };
-  
+
   // Ensure all required properties exist
-  requiredProps.forEach(prop => {
+  requiredProps.forEach((prop) => {
     if (!(prop in result) || result[prop] === undefined || result[prop] === null) {
       result[prop] = defaultValues[prop] as T[typeof prop];
     }
@@ -183,7 +197,7 @@ export function filterDefined<T>(array: (T | undefined | null)[]): T[] {
 // Date/timestamp utilities
 export function safeDate(value: Date | string | number | undefined | null): Date {
   if (value instanceof Date && !isNaN(value.getTime())) return value;
-  if (typeof value === 'string' || typeof value === 'number') {
+  if (typeof value === "string" || typeof value === "number") {
     const date = new Date(value);
     if (!isNaN(date.getTime())) return date;
   }
@@ -201,7 +215,7 @@ export function safeObjectMerge<T extends Record<string, any>>(
   defaults: Partial<T> = {}
 ): T {
   const baseObject = { ...defaults } as T;
-  if (target && typeof target === 'object') Object.assign(baseObject, target);
-  if (source && typeof source === 'object') Object.assign(baseObject, source);
+  if (target && typeof target === "object") Object.assign(baseObject, target);
+  if (source && typeof source === "object") Object.assign(baseObject, source);
   return baseObject;
 }

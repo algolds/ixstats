@@ -1,21 +1,18 @@
 "use client";
 
-import React, { useMemo } from 'react';
-import { DollarSign, Users, Zap, CheckCircle, AlertTriangle } from 'lucide-react';
-import { MetricCard } from '../../../primitives/enhanced';
-import type {
-  EconomyBuilderState,
-  EconomicHealthMetrics
-} from '~/types/economy-builder';
-import type { EconomicInputs } from '../../../lib/economy-data-service';
-import type { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
+import React, { useMemo } from "react";
+import { DollarSign, Users, Zap, CheckCircle, AlertTriangle } from "lucide-react";
+import { MetricCard } from "../../../primitives/enhanced";
+import type { EconomyBuilderState, EconomicHealthMetrics } from "~/types/economy-builder";
+import type { EconomicInputs } from "../../../lib/economy-data-service";
+import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 
 // Sub-components
-import { ConfigurationSummary } from './preview/ConfigurationSummary';
-import { EffectivenessPanel } from './preview/EffectivenessPanel';
-import { ValidationResults } from './preview/ValidationResults';
-import { SectorSummaryCards } from './preview/SectorSummaryCards';
-import { LaborDemographicsSummary } from './preview/LaborDemographicsSummary';
+import { ConfigurationSummary } from "./preview/ConfigurationSummary";
+import { EffectivenessPanel } from "./preview/EffectivenessPanel";
+import { ValidationResults } from "./preview/ValidationResults";
+import { SectorSummaryCards } from "./preview/SectorSummaryCards";
+import { LaborDemographicsSummary } from "./preview/LaborDemographicsSummary";
 
 // Utilities
 import {
@@ -23,8 +20,8 @@ import {
   calculateSectorSummary,
   calculateLaborSummary,
   calculateDemographicsSummary,
-  validateConfiguration
-} from './utils/previewCalculations';
+  validateConfiguration,
+} from "./utils/previewCalculations";
 
 /**
  * Props for the EconomyPreviewTab component
@@ -85,9 +82,8 @@ export function EconomyPreviewTab({
   economyBuilder,
   economicHealthMetrics,
   selectedComponents,
-  economicInputs
+  economicInputs,
 }: EconomyPreviewTabProps) {
-
   // Calculate summaries using utility functions
   const componentEffectiveness = useMemo(
     () => calculateComponentEffectiveness(selectedComponents),
@@ -117,29 +113,28 @@ export function EconomyPreviewTab({
   return (
     <div className="space-y-6">
       {/* Configuration Summary with Header */}
-      <ConfigurationSummary
-        economyBuilder={economyBuilder}
-        economicInputs={economicInputs}
-      />
+      <ConfigurationSummary economyBuilder={economyBuilder} economicInputs={economicInputs} />
 
       {/* Validation Status */}
       <ValidationResults validationStatus={validationStatus} />
 
       {/* Key Metrics Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <MetricCard
           label="Economic Health"
           value={`${(economicHealthMetrics?.economicHealthScore ?? 0).toFixed(0)}/100`}
-          icon={(economicHealthMetrics?.economicHealthScore ?? 0) >= 80 ? CheckCircle : AlertTriangle}
+          icon={
+            (economicHealthMetrics?.economicHealthScore ?? 0) >= 80 ? CheckCircle : AlertTriangle
+          }
           sectionId="preview"
-          trend={(economicHealthMetrics?.economicHealthScore ?? 0) >= 80 ? 'up' : 'neutral'}
+          trend={(economicHealthMetrics?.economicHealthScore ?? 0) >= 80 ? "up" : "neutral"}
         />
         <MetricCard
           label="Component Effectiveness"
           value={`${componentEffectiveness.toFixed(0)}%`}
           icon={Zap}
           sectionId="preview"
-          trend={componentEffectiveness >= 80 ? 'up' : 'neutral'}
+          trend={componentEffectiveness >= 80 ? "up" : "neutral"}
         />
         <MetricCard
           label="GDP Per Capita"

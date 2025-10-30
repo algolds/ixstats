@@ -40,13 +40,15 @@ interface FlagServiceStats {
 
 // Get base path for production deployments
 const getBasePath = () => {
-  if (typeof window !== 'undefined') {
-    return (window as any).__NEXT_DATA__?.props?.pageProps?.basePath ||
-           process.env.NEXT_PUBLIC_BASE_PATH ||
-           process.env.BASE_PATH ||
-           '';
+  if (typeof window !== "undefined") {
+    return (
+      (window as any).__NEXT_DATA__?.props?.pageProps?.basePath ||
+      process.env.NEXT_PUBLIC_BASE_PATH ||
+      process.env.BASE_PATH ||
+      ""
+    );
   }
-  return process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || '';
+  return process.env.NEXT_PUBLIC_BASE_PATH || process.env.BASE_PATH || "";
 };
 
 class UnifiedFlagService {
@@ -87,16 +89,16 @@ class UnifiedFlagService {
   // Wiki sources - ONLY Wikimedia Commons for real country flags
   // Fictional wikis should only be used for fictional nations
   private readonly wikiSources: WikiSource[] = [
-    { name: 'WikiCommons', baseUrl: 'https://commons.wikimedia.org', priority: 1 },
+    { name: "WikiCommons", baseUrl: "https://commons.wikimedia.org", priority: 1 },
   ];
 
   private sourceStats: Record<string, { found: number; failed: number; cached: number }> = {};
 
   // Cache TTL settings - PERMANENT caching to prevent API spam
   private readonly CACHE_TTL = {
-    memory: Infinity,     // Never expire cached flags in memory
+    memory: Infinity, // Never expire cached flags in memory
     localStorage: Infinity, // Never expire cached flags in localStorage
-    failed: 24 * 60 * 60 * 1000,      // 24 hours for failed attempts
+    failed: 24 * 60 * 60 * 1000, // 24 hours for failed attempts
   };
 
   constructor() {
@@ -106,16 +108,15 @@ class UnifiedFlagService {
     this.FLAGS_BASE_URL = `${basePath}/flags`;
 
     // Initialize source statistics
-    this.wikiSources.forEach(source => {
+    this.wikiSources.forEach((source) => {
       this.sourceStats[source.name] = { found: 0, failed: 0, cached: 0 };
     });
 
     // Auto-initialize in both browser and server environment
-    this.loadLocalMetadata().catch(error => {
-      console.warn('[UnifiedFlagService] Failed to load metadata:', error);
+    this.loadLocalMetadata().catch((error) => {
+      console.warn("[UnifiedFlagService] Failed to load metadata:", error);
     });
   }
-
 
   /**
    * Normalize country name for consistent cache key generation
@@ -123,9 +124,9 @@ class UnifiedFlagService {
    */
   private normalizeCountryName(countryName: string): string {
     return countryName
-      .trim()                    // Remove leading/trailing whitespace
-      .toLowerCase()             // Normalize case
-      .replace(/\s+/g, ' ');    // Normalize multiple spaces to single space
+      .trim() // Remove leading/trailing whitespace
+      .toLowerCase() // Normalize case
+      .replace(/\s+/g, " "); // Normalize multiple spaces to single space
   }
 
   /**
@@ -230,7 +231,7 @@ class UnifiedFlagService {
     // Cache in memory with database source
     this.memoryCache[cacheKey] = {
       url: flagUrl,
-      source: { name: 'Database', baseUrl: '', priority: 0 },
+      source: { name: "Database", baseUrl: "", priority: 0 },
       cachedAt: Date.now(),
       lastAccessed: Date.now(),
     };
@@ -284,7 +285,9 @@ class UnifiedFlagService {
     // If we have too many uncached countries, prioritize and defer the rest
     const MAX_IMMEDIATE_FETCH = 10;
     if (uncachedCountries.length > MAX_IMMEDIATE_FETCH) {
-      console.log(`[UnifiedFlagService] Batch request for ${uncachedCountries.length} flags - fetching top ${MAX_IMMEDIATE_FETCH} now, deferring rest`);
+      console.log(
+        `[UnifiedFlagService] Batch request for ${uncachedCountries.length} flags - fetching top ${MAX_IMMEDIATE_FETCH} now, deferring rest`
+      );
 
       // Return placeholders for the rest, they'll be loaded lazily
       for (let i = MAX_IMMEDIATE_FETCH; i < uncachedCountries.length; i++) {
@@ -320,7 +323,7 @@ class UnifiedFlagService {
       const batchResults = await Promise.allSettled(batchPromises);
       batchResults.forEach((result, index) => {
         const countryName = batch[index];
-        if (result.status === 'fulfilled') {
+        if (result.status === "fulfilled") {
           results[result.value.countryName] = result.value.flagUrl;
         } else {
           results[countryName!] = null;
@@ -356,7 +359,7 @@ class UnifiedFlagService {
       this.requestsSinceLastReset = 0;
       this.lastRateLimitReset = now;
       // Also reset error count if it's been a while
-      if (this.apiErrorCount > 0 && this.lastApiError && (now - this.lastApiError) > 120000) {
+      if (this.apiErrorCount > 0 && this.lastApiError && now - this.lastApiError > 120000) {
         this.apiErrorCount = 0;
       }
     }
@@ -365,7 +368,9 @@ class UnifiedFlagService {
     if (this.requestsSinceLastReset >= this.MAX_REQUESTS_PER_MINUTE) {
       // Only log occasionally to avoid console spam
       if (this.requestsSinceLastReset === this.MAX_REQUESTS_PER_MINUTE) {
-        console.log('[UnifiedFlagService] Rate limit reached, throttling new requests for 1 minute');
+        console.log(
+          "[UnifiedFlagService] Rate limit reached, throttling new requests for 1 minute"
+        );
       }
       return true;
     }
@@ -378,7 +383,9 @@ class UnifiedFlagService {
       if (timeSinceError < backoffTime) {
         // Only log the first throttle event
         if (timeSinceError < 1000) {
-          console.log(`[UnifiedFlagService] Backing off for ${backoffTime / 1000}s due to ${this.apiErrorCount} recent errors`);
+          console.log(
+            `[UnifiedFlagService] Backing off for ${backoffTime / 1000}s due to ${this.apiErrorCount} recent errors`
+          );
         }
         return true;
       }
@@ -395,7 +402,11 @@ class UnifiedFlagService {
     const now = Date.now();
 
     // Check if global fetch is disabled but should be re-enabled
-    if (this.globalFetchDisabled && this.globalFetchReenableTime && now >= this.globalFetchReenableTime) {
+    if (
+      this.globalFetchDisabled &&
+      this.globalFetchReenableTime &&
+      now >= this.globalFetchReenableTime
+    ) {
       console.log(`[UnifiedFlagService] Re-enabling fetch after cooldown period`);
       this.globalFetchDisabled = false;
       this.globalFetchReenableTime = null;
@@ -436,7 +447,7 @@ class UnifiedFlagService {
         // Cache the successful result
         const cachedFlag: CachedFlag = {
           url: flagUrl,
-          source: { name: 'WikiCommons', baseUrl: 'https://commons.wikimedia.org', priority: 1 },
+          source: { name: "WikiCommons", baseUrl: "https://commons.wikimedia.org", priority: 1 },
           cachedAt: Date.now(),
           lastAccessed: Date.now(),
         };
@@ -455,9 +466,11 @@ class UnifiedFlagService {
 
       // Only enable global disable for severe error bursts
       if (this.apiErrorCount >= 10) {
-        console.warn(`[UnifiedFlagService] Too many errors (${this.apiErrorCount}), pausing fetches for 2 minutes`);
+        console.warn(
+          `[UnifiedFlagService] Too many errors (${this.apiErrorCount}), pausing fetches for 2 minutes`
+        );
         this.globalFetchDisabled = true;
-        this.globalFetchReenableTime = now + (2 * 60 * 1000);
+        this.globalFetchReenableTime = now + 2 * 60 * 1000;
       }
     }
 
@@ -470,11 +483,14 @@ class UnifiedFlagService {
   /**
    * Fetch flag from MediaWiki-based wikis (IxWiki, IiWiki, AlthistoryWiki)
    */
-  private async fetchFromMediaWiki(countryName: string, source: WikiSource): Promise<string | null> {
+  private async fetchFromMediaWiki(
+    countryName: string,
+    source: WikiSource
+  ): Promise<string | null> {
     try {
       // Get page content from wiki
       const apiUrl = `${source.baseUrl}/api.php?action=query&format=json&formatversion=2&origin=*&titles=${encodeURIComponent(countryName)}&prop=revisions&rvprop=content&rvslots=main&rvsection=0`;
-      
+
       const response = await fetch(apiUrl, {
         signal: AbortSignal.timeout(8000),
       });
@@ -483,34 +499,35 @@ class UnifiedFlagService {
 
       const data = await response.json();
       const pages = data.query?.pages || [];
-      
+
       if (pages.length > 0 && pages[0].revisions?.[0]?.slots?.main?.content) {
         const content = pages[0].revisions[0].slots.main.content;
-        
+
         // Extract flag filename from infobox (supports multiple patterns)
         const flagPatterns = [
           /\|\s*(?:flag|image_flag)\s*=\s*([^\|\}\n]+)/i,
           /\|\s*(?:flag_image|national_flag)\s*=\s*([^\|\}\n]+)/i,
           /{{flag\|([^}]+)}}/i,
         ];
-        
+
         for (const pattern of flagPatterns) {
           const flagMatch = content.match(pattern);
           if (flagMatch) {
-            let flagFilename = flagMatch[1].trim()
-              .replace(/^\[\[File:/, '')
-              .replace(/\]\]$/, '')
-              .replace(/^\[\[/, '')
-              .replace(/\]\]$/, '')
-              .replace(/^File:/, '');
-            
-            if (flagFilename && !flagFilename.includes('{{') && !flagFilename.includes('|')) {
+            let flagFilename = flagMatch[1]
+              .trim()
+              .replace(/^\[\[File:/, "")
+              .replace(/\]\]$/, "")
+              .replace(/^\[\[/, "")
+              .replace(/\]\]$/, "")
+              .replace(/^File:/, "");
+
+            if (flagFilename && !flagFilename.includes("{{") && !flagFilename.includes("|")) {
               // Get actual image URL
               const fileInfoUrl = `${source.baseUrl}/api.php?action=query&format=json&formatversion=2&origin=*&titles=File:${encodeURIComponent(flagFilename)}&prop=imageinfo&iiprop=url`;
               const fileResponse = await fetch(fileInfoUrl, {
                 signal: AbortSignal.timeout(8000),
               });
-              
+
               if (fileResponse.ok) {
                 const fileData = await fileResponse.json();
                 if (fileData.query?.pages?.[0]?.imageinfo?.[0]?.url) {
@@ -521,10 +538,13 @@ class UnifiedFlagService {
           }
         }
       }
-      
+
       return null;
     } catch (error) {
-      console.warn(`[UnifiedFlagService] MediaWiki fetch error for ${countryName} from ${source.name}:`, error);
+      console.warn(
+        `[UnifiedFlagService] MediaWiki fetch error for ${countryName} from ${source.name}:`,
+        error
+      );
       return null;
     }
   }
@@ -536,34 +556,34 @@ class UnifiedFlagService {
     try {
       // Handle special country name mappings
       const countryMappings: Record<string, string> = {
-        'korea, dem. people\'s rep.': 'North Korea',
-        'korea, rep.': 'South Korea',
-        'czech republic': 'the Czech Republic',
-        'bahamas, the': 'the Bahamas',
-        'gambia, the': 'the Gambia',
-        'congo, dem. rep.': 'the Democratic Republic of the Congo',
-        'congo, rep.': 'the Republic of the Congo',
-        'egypt, arab rep.': 'Egypt',
-        'iran, islamic rep.': 'Iran',
-        'venezuela, rb': 'Venezuela',
-        'yemen, rep.': 'Yemen',
-        'syria': 'Syria',
-        'lao pdr': 'Laos',
-        'vietnam': 'Vietnam',
-        'bolivia': 'Bolivia',
-        'russia': 'Russia',
-        'moldova': 'Moldova',
-        'tanzania': 'Tanzania',
-        'united states': 'the United States',
-        'united kingdom': 'the United Kingdom',
-        'netherlands': 'the Netherlands',
-        'philippines': 'the Philippines',
-        'maldives': 'the Maldives',
-        'solomon islands': 'the Solomon Islands',
-        'marshall islands': 'the Marshall Islands',
-        'central african republic': 'the Central African Republic',
-        'dominican republic': 'the Dominican Republic',
-        'united arab emirates': 'the United Arab Emirates',
+        "korea, dem. people's rep.": "North Korea",
+        "korea, rep.": "South Korea",
+        "czech republic": "the Czech Republic",
+        "bahamas, the": "the Bahamas",
+        "gambia, the": "the Gambia",
+        "congo, dem. rep.": "the Democratic Republic of the Congo",
+        "congo, rep.": "the Republic of the Congo",
+        "egypt, arab rep.": "Egypt",
+        "iran, islamic rep.": "Iran",
+        "venezuela, rb": "Venezuela",
+        "yemen, rep.": "Yemen",
+        syria: "Syria",
+        "lao pdr": "Laos",
+        vietnam: "Vietnam",
+        bolivia: "Bolivia",
+        russia: "Russia",
+        moldova: "Moldova",
+        tanzania: "Tanzania",
+        "united states": "the United States",
+        "united kingdom": "the United Kingdom",
+        netherlands: "the Netherlands",
+        philippines: "the Philippines",
+        maldives: "the Maldives",
+        "solomon islands": "the Solomon Islands",
+        "marshall islands": "the Marshall Islands",
+        "central african republic": "the Central African Republic",
+        "dominican republic": "the Dominican Republic",
+        "united arab emirates": "the United Arab Emirates",
       };
 
       // Check if we need to use a mapped name
@@ -573,12 +593,12 @@ class UnifiedFlagService {
       const flagPatterns = [
         `Flag of ${searchName}.svg`,
         `Flag of ${searchName}.png`,
-        `Flag_of_${searchName.replace(/ /g, '_')}.svg`,
+        `Flag_of_${searchName.replace(/ /g, "_")}.svg`,
       ];
 
       // OPTIMIZATION: Query all patterns in ONE API call using the pipe separator
       // This reduces 5 API calls to 1 call per country
-      const titlesParam = flagPatterns.map(f => `File:${f}`).join('|');
+      const titlesParam = flagPatterns.map((f) => `File:${f}`).join("|");
       const batchUrl = `https://commons.wikimedia.org/w/api.php?action=query&format=json&formatversion=2&origin=*&titles=${encodeURIComponent(titlesParam)}&prop=imageinfo&iiprop=url`;
 
       const response = await fetch(batchUrl, {
@@ -637,10 +657,10 @@ class UnifiedFlagService {
     // With permanent caching, we don't clean up successful entries
     // Only clear the failed countries set periodically
     const now = Date.now();
-    if (this.lastApiError && (now - this.lastApiError) > this.CACHE_TTL.failed) {
+    if (this.lastApiError && now - this.lastApiError > this.CACHE_TTL.failed) {
       this.failedCountries.clear();
       this.apiErrorCount = 0;
-      console.log('[UnifiedFlagService] Cleared failed countries list for retry');
+      console.log("[UnifiedFlagService] Cleared failed countries list for retry");
     }
   }
 
@@ -651,8 +671,8 @@ class UnifiedFlagService {
     if (this.isUpdating) return;
 
     // Non-blocking background prefetch
-    this.backgroundPrefetch(countryNames).catch(error => {
-      console.warn('[UnifiedFlagService] Background prefetch failed:', error);
+    this.backgroundPrefetch(countryNames).catch((error) => {
+      console.warn("[UnifiedFlagService] Background prefetch failed:", error);
     });
   }
 
@@ -661,14 +681,16 @@ class UnifiedFlagService {
    */
   private async backgroundPrefetch(countryNames: string[]): Promise<void> {
     this.isUpdating = true;
-    console.log(`[UnifiedFlagService] Starting background prefetch for ${countryNames.length} countries`);
+    console.log(
+      `[UnifiedFlagService] Starting background prefetch for ${countryNames.length} countries`
+    );
 
     try {
       // Clean up expired cache first
       this.cleanupExpiredCache();
-      
+
       // Prioritize countries that aren't cached yet or have expired cache
-      const uncachedCountries = countryNames.filter(name => {
+      const uncachedCountries = countryNames.filter((name) => {
         const cacheKey = name.toLowerCase();
         const cachedFlag = this.memoryCache[cacheKey];
         return !this.hasLocalFlag(name) && (!cachedFlag || !this.isCacheValid(cachedFlag));
@@ -676,12 +698,16 @@ class UnifiedFlagService {
 
       // Don't prefetch if there are too many uncached - this indicates we're hitting rate limits
       if (uncachedCountries.length > 50) {
-        console.log(`[UnifiedFlagService] Skipping prefetch of ${uncachedCountries.length} flags - too many to fetch safely`);
+        console.log(
+          `[UnifiedFlagService] Skipping prefetch of ${uncachedCountries.length} flags - too many to fetch safely`
+        );
         this.isUpdating = false;
         return;
       }
 
-      console.log(`[UnifiedFlagService] Prefetching ${uncachedCountries.length} uncached flags from multiple wikis`);
+      console.log(
+        `[UnifiedFlagService] Prefetching ${uncachedCountries.length} uncached flags from multiple wikis`
+      );
 
       // Process in small batches to avoid overwhelming APIs
       const batchSize = 2; // Very small batches to stay under rate limits
@@ -695,7 +721,7 @@ class UnifiedFlagService {
         const batch = uncachedCountries.slice(i, i + batchSize);
 
         await Promise.allSettled(
-          batch.map(countryName => this.fetchFlagFromMultipleWikis(countryName))
+          batch.map((countryName) => this.fetchFlagFromMultipleWikis(countryName))
         );
 
         // Longer delay between batches to respect rate limits
@@ -706,10 +732,12 @@ class UnifiedFlagService {
 
       this.lastUpdateTime = Date.now();
       this.saveLocalMetadata(); // Debounced save
-      
-      const successfulFlags = Object.values(this.memoryCache).filter(f => f && f.url).length;
-      console.log(`[UnifiedFlagService] Background prefetch completed. Cached flags: ${successfulFlags}`);
-      console.log('[UnifiedFlagService] Source stats:', this.sourceStats);
+
+      const successfulFlags = Object.values(this.memoryCache).filter((f) => f && f.url).length;
+      console.log(
+        `[UnifiedFlagService] Background prefetch completed. Cached flags: ${successfulFlags}`
+      );
+      console.log("[UnifiedFlagService] Source stats:", this.sourceStats);
     } finally {
       this.isUpdating = false;
     }
@@ -722,12 +750,13 @@ class UnifiedFlagService {
    * Get service statistics with multi-wiki source breakdown
    */
   getStats(): FlagServiceStats {
-    const hitRate = this.stats.totalRequests > 0 
-      ? Math.round((this.stats.cacheHits / this.stats.totalRequests) * 100) 
-      : 0;
+    const hitRate =
+      this.stats.totalRequests > 0
+        ? Math.round((this.stats.cacheHits / this.stats.totalRequests) * 100)
+        : 0;
 
-    const validCachedFlags = Object.values(this.memoryCache).filter(cachedFlag => 
-      cachedFlag && cachedFlag.url && this.isCacheValid(cachedFlag)
+    const validCachedFlags = Object.values(this.memoryCache).filter(
+      (cachedFlag) => cachedFlag && cachedFlag.url && this.isCacheValid(cachedFlag)
     ).length;
 
     return {
@@ -751,33 +780,33 @@ class UnifiedFlagService {
     this.requestQueue.clear();
     this.stats = { totalRequests: 0, cacheHits: 0, cacheMisses: 0 };
     this.localMetadata = {};
-    
+
     // Reset source statistics
-    this.wikiSources.forEach(source => {
+    this.wikiSources.forEach((source) => {
       this.sourceStats[source.name] = { found: 0, failed: 0, cached: 0 };
     });
-    
-    console.log('[UnifiedFlagService] All caches and statistics cleared');
+
+    console.log("[UnifiedFlagService] All caches and statistics cleared");
   }
 
   /**
    * Check if URL is a placeholder
    */
   isPlaceholderFlag(url: string): boolean {
-    return url === this.PLACEHOLDER_FLAG || url.includes('placeholder');
+    return url === this.PLACEHOLDER_FLAG || url.includes("placeholder");
   }
 
   // Utility methods
   private async loadLocalMetadata(): Promise<void> {
     // In browser environment, try localStorage first
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem('flag-service-metadata');
+        const stored = localStorage.getItem("flag-service-metadata");
         if (stored) {
           const parsed = JSON.parse(stored);
           this.localMetadata = parsed.flags || {};
           this.lastUpdateTime = parsed.lastUpdateTime || null;
-          
+
           // Load memory cache from localStorage (no TTL validation - permanent cache)
           if (parsed.memoryCache) {
             Object.entries(parsed.memoryCache).forEach(([key, cachedFlag]: [string, any]) => {
@@ -796,25 +825,27 @@ class UnifiedFlagService {
               this.failedCountries.add(country);
             });
           }
-          
+
           // Load source statistics
           if (parsed.sourceStats) {
             Object.assign(this.sourceStats, parsed.sourceStats);
           }
-          
+
           const cacheCount = Object.keys(this.memoryCache).length;
           const localCount = Object.keys(this.localMetadata).length;
-          console.log(`[UnifiedFlagService] Loaded from localStorage: ${localCount} local flags, ${cacheCount} cached flags`);
+          console.log(
+            `[UnifiedFlagService] Loaded from localStorage: ${localCount} local flags, ${cacheCount} cached flags`
+          );
         }
       } catch (error) {
-        console.log('[UnifiedFlagService] No existing localStorage metadata found');
+        console.log("[UnifiedFlagService] No existing localStorage metadata found");
       }
     }
 
     // Always try to load server metadata file (both client and server)
     try {
       let metadataPath;
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         // Client-side: fetch from public URL with base path
         const basePath = getBasePath();
         metadataPath = `${basePath}/flags/metadata.json`;
@@ -824,28 +855,32 @@ class UnifiedFlagService {
           if (serverMetadata.flags) {
             // Merge server metadata with any existing local metadata
             Object.assign(this.localMetadata, serverMetadata.flags);
-            console.log(`[UnifiedFlagService] Loaded server metadata: ${Object.keys(serverMetadata.flags).length} server flags`);
+            console.log(
+              `[UnifiedFlagService] Loaded server metadata: ${Object.keys(serverMetadata.flags).length} server flags`
+            );
           }
         }
       } else {
         // Server-side: read file directly
-        const fs = await import('fs/promises');
-        const path = await import('path');
-        metadataPath = path.join(process.cwd(), 'public', 'flags', 'metadata.json');
-        
+        const fs = await import("fs/promises");
+        const path = await import("path");
+        metadataPath = path.join(process.cwd(), "public", "flags", "metadata.json");
+
         try {
-          const metadataContent = await fs.readFile(metadataPath, 'utf-8');
+          const metadataContent = await fs.readFile(metadataPath, "utf-8");
           const serverMetadata = JSON.parse(metadataContent);
           if (serverMetadata.flags) {
             this.localMetadata = serverMetadata.flags;
-            console.log(`[UnifiedFlagService] Loaded server metadata: ${Object.keys(serverMetadata.flags).length} flags`);
+            console.log(
+              `[UnifiedFlagService] Loaded server metadata: ${Object.keys(serverMetadata.flags).length} flags`
+            );
           }
         } catch (fsError) {
-          console.log('[UnifiedFlagService] Server metadata file not found, starting fresh');
+          console.log("[UnifiedFlagService] Server metadata file not found, starting fresh");
         }
       }
     } catch (error) {
-      console.warn('[UnifiedFlagService] Failed to load server metadata:', error);
+      console.warn("[UnifiedFlagService] Failed to load server metadata:", error);
     }
   }
 
@@ -858,7 +893,7 @@ class UnifiedFlagService {
     this.pendingSave = true;
 
     // Save to localStorage immediately (cheap operation)
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       try {
         const metadata = {
           lastUpdateTime: this.lastUpdateTime,
@@ -866,11 +901,11 @@ class UnifiedFlagService {
           memoryCache: this.memoryCache,
           sourceStats: this.sourceStats,
           failedCountries: Array.from(this.failedCountries), // Save failed attempts too
-          version: '2.1',
+          version: "2.1",
         };
-        localStorage.setItem('flag-service-metadata', JSON.stringify(metadata));
+        localStorage.setItem("flag-service-metadata", JSON.stringify(metadata));
       } catch (error) {
-        console.warn('[UnifiedFlagService] Failed to save to localStorage:', error);
+        console.warn("[UnifiedFlagService] Failed to save to localStorage:", error);
       }
     }
 
@@ -880,63 +915,72 @@ class UnifiedFlagService {
 
       this.pendingSave = false;
 
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         try {
           const basePath = getBasePath();
           await fetch(`${basePath}/api/flags/save-metadata`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               flags: this.localMetadata,
-              lastUpdateTime: this.lastUpdateTime
-            })
+              lastUpdateTime: this.lastUpdateTime,
+            }),
           });
-          console.log('[UnifiedFlagService] Metadata batch saved to server');
+          console.log("[UnifiedFlagService] Metadata batch saved to server");
         } catch (serverError) {
-          console.warn('[UnifiedFlagService] Failed to save metadata to server:', serverError);
+          console.warn("[UnifiedFlagService] Failed to save metadata to server:", serverError);
         }
       }
     }, this.SAVE_DEBOUNCE_DELAY);
   }
 
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
    * Download flag image to local storage
    */
-  private async downloadFlagToLocal(countryName: string, flagUrl: string, source: WikiSource): Promise<void> {
+  private async downloadFlagToLocal(
+    countryName: string,
+    flagUrl: string,
+    source: WikiSource
+  ): Promise<void> {
     try {
       const cacheKey = this.normalizeCountryName(countryName);
-      
+
       // Skip if already downloaded
       if (this.localMetadata[cacheKey]) {
         return;
       }
-      
+
       // Extract file extension from URL
-      const urlParts = flagUrl.split('.');
-      const extension = urlParts[urlParts.length - 1]?.toLowerCase() || 'png';
-      const safeExtension = ['png', 'jpg', 'jpeg', 'svg', 'gif'].includes(extension) ? extension : 'png';
-      
+      const urlParts = flagUrl.split(".");
+      const extension = urlParts[urlParts.length - 1]?.toLowerCase() || "png";
+      const safeExtension = ["png", "jpg", "jpeg", "svg", "gif"].includes(extension)
+        ? extension
+        : "png";
+
       // Generate safe filename
-      const safeCountryName = countryName.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '_').toLowerCase();
+      const safeCountryName = countryName
+        .replace(/[^a-zA-Z0-9\s-]/g, "")
+        .replace(/\s+/g, "_")
+        .toLowerCase();
       const fileName = `${safeCountryName}.${safeExtension}`;
 
       // Download the image via our API endpoint
       const basePath = getBasePath();
       const downloadResponse = await fetch(`${basePath}/api/flags/download`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           countryName,
           flagUrl,
           fileName,
-          source: source.name
-        })
+          source: source.name,
+        }),
       });
-      
+
       if (downloadResponse.ok) {
         const result = await downloadResponse.json();
         if (result.success) {
@@ -946,10 +990,12 @@ class UnifiedFlagService {
             originalUrl: flagUrl,
             downloadedAt: Date.now(),
             fileSize: result.fileSize || 0,
-            source: source
+            source: source,
           };
-          
-          console.log(`[UnifiedFlagService] Downloaded flag for ${countryName} to ${result.fileName}`);
+
+          console.log(
+            `[UnifiedFlagService] Downloaded flag for ${countryName} to ${result.fileName}`
+          );
 
           // Schedule metadata save (debounced)
           this.saveLocalMetadata();
@@ -968,7 +1014,7 @@ class UnifiedFlagService {
     return {
       completed: stats.localFiles,
       total: stats.cachedFlags,
-      inProgress: this.isUpdating
+      inProgress: this.isUpdating,
     };
   }
 }

@@ -12,11 +12,11 @@ import { api } from "~/trpc/react";
 
 export function useUserProfiles(userIds: string[]) {
   // Fetch all user profiles in parallel
-  const queries = userIds.map(userId =>
+  const queries = userIds.map((userId) =>
     api.users.getProfileById.useQuery(
       { userId },
       {
-        enabled: !!userId && userId.trim() !== '',
+        enabled: !!userId && userId.trim() !== "",
         retry: 1,
         staleTime: 60000, // Cache for 1 minute
       }
@@ -38,8 +38,8 @@ export function useUserProfiles(userIds: string[]) {
     }
   });
 
-  const isLoading = queries.some(q => q.isLoading);
-  const hasErrors = queries.some(q => q.error);
+  const isLoading = queries.some((q) => q.isLoading);
+  const hasErrors = queries.some((q) => q.error);
 
   return {
     userDisplayNames,
@@ -58,15 +58,16 @@ export function useUserProfiles(userIds: string[]) {
  */
 export function useUserProfile(userId: string | null | undefined) {
   const { data, isLoading, error } = api.users.getProfileById.useQuery(
-    { userId: userId || '' },
+    { userId: userId || "" },
     {
-      enabled: !!userId && userId.trim() !== '',
+      enabled: !!userId && userId.trim() !== "",
       retry: 1,
       staleTime: 60000, // Cache for 1 minute
     }
   );
 
-  const displayName = data?.country?.name || (userId ? `User ${userId.substring(0, 8)}` : 'Unknown User');
+  const displayName =
+    data?.country?.name || (userId ? `User ${userId.substring(0, 8)}` : "Unknown User");
 
   return {
     displayName,

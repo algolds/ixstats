@@ -5,10 +5,10 @@
  * Provides unified access, categorization, and helper functions for archetype management.
  */
 
-import { modernArchetypes } from './modern';
-import { historicalArchetypes } from './historical';
-import type { EconomicArchetype } from '../archetype-types';
-import { ArchetypeCategory } from '../archetype-types';
+import { modernArchetypes } from "./modern";
+import { historicalArchetypes } from "./historical";
+import type { EconomicArchetype } from "../archetype-types";
+import { ArchetypeCategory } from "../archetype-types";
 
 // ============================================================================
 // Combined Collections
@@ -31,36 +31,35 @@ export const allArchetypes = new Map<string, EconomicArchetype>([
  * Archetypes organized by geographic region
  */
 export const archetypesByRegion = {
-  northAmerica: Array.from(allArchetypes.values()).filter(a =>
-    a.region.includes('United States') || a.region.includes('Canada')
+  northAmerica: Array.from(allArchetypes.values()).filter(
+    (a) => a.region.includes("United States") || a.region.includes("Canada")
   ),
-  europe: Array.from(allArchetypes.values()).filter(a =>
-    a.region.includes('Germany') ||
-    a.region.includes('Scandinavia') ||
-    a.region.includes('Switzerland') ||
-    a.region.includes('Netherlands') ||
-    a.region.includes('France') ||
-    a.region.includes('Italy') ||
-    a.region.includes('Northern Europe') ||
-    a.region.includes('Great Britain') ||
-    a.region.includes('British Empire')
+  europe: Array.from(allArchetypes.values()).filter(
+    (a) =>
+      a.region.includes("Germany") ||
+      a.region.includes("Scandinavia") ||
+      a.region.includes("Switzerland") ||
+      a.region.includes("Netherlands") ||
+      a.region.includes("France") ||
+      a.region.includes("Italy") ||
+      a.region.includes("Northern Europe") ||
+      a.region.includes("Great Britain") ||
+      a.region.includes("British Empire")
   ),
-  asia: Array.from(allArchetypes.values()).filter(a =>
-    a.region.includes('East Asia') ||
-    a.region.includes('Japan') ||
-    a.region.includes('Singapore') ||
-    a.region.includes('China')
+  asia: Array.from(allArchetypes.values()).filter(
+    (a) =>
+      a.region.includes("East Asia") ||
+      a.region.includes("Japan") ||
+      a.region.includes("Singapore") ||
+      a.region.includes("China")
   ),
-  oceania: Array.from(allArchetypes.values()).filter(a =>
-    a.region.includes('Australia')
-  ),
-  latinAmerica: Array.from(allArchetypes.values()).filter(a =>
-    a.region.includes('Brazil')
-  ),
-  multiRegional: Array.from(allArchetypes.values()).filter(a =>
-    a.region.includes('Global') ||
-    a.region.includes('Multi-continental') ||
-    a.region.includes('Baltic')
+  oceania: Array.from(allArchetypes.values()).filter((a) => a.region.includes("Australia")),
+  latinAmerica: Array.from(allArchetypes.values()).filter((a) => a.region.includes("Brazil")),
+  multiRegional: Array.from(allArchetypes.values()).filter(
+    (a) =>
+      a.region.includes("Global") ||
+      a.region.includes("Multi-continental") ||
+      a.region.includes("Baltic")
   ),
 };
 
@@ -70,32 +69,36 @@ export const archetypesByRegion = {
 export const archetypesByEra = {
   modern: Array.from(modernArchetypes.values()),
   historical: Array.from(historicalArchetypes.values()),
-  contemporary: Array.from(modernArchetypes.values()).filter(a =>
-    a.id === 'silicon-valley' ||
-    a.id === 'singapore' ||
-    a.id === 'nordic' ||
-    a.id === 'asian-tiger'
+  contemporary: Array.from(modernArchetypes.values()).filter(
+    (a) =>
+      a.id === "silicon-valley" ||
+      a.id === "singapore" ||
+      a.id === "nordic" ||
+      a.id === "asian-tiger"
   ),
-  industrial: Array.from(historicalArchetypes.values()).filter(a =>
-    a.id === 'industrial-revolution' ||
-    a.id === 'american-gilded-age' ||
-    a.id === 'british-empire'
+  industrial: Array.from(historicalArchetypes.values()).filter(
+    (a) =>
+      a.id === "industrial-revolution" ||
+      a.id === "american-gilded-age" ||
+      a.id === "british-empire"
   ),
-  preindustrial: Array.from(historicalArchetypes.values()).filter(a =>
-    a.id === 'venetian-republic' ||
-    a.id === 'hanseatic-league' ||
-    a.id === 'dutch-golden-age' ||
-    a.id === 'french-mercantilism' ||
-    a.id === 'ottoman-empire' ||
-    a.id === 'chinese-ming-dynasty'
+  preindustrial: Array.from(historicalArchetypes.values()).filter(
+    (a) =>
+      a.id === "venetian-republic" ||
+      a.id === "hanseatic-league" ||
+      a.id === "dutch-golden-age" ||
+      a.id === "french-mercantilism" ||
+      a.id === "ottoman-empire" ||
+      a.id === "chinese-ming-dynasty"
   ),
-  twentiethCentury: Array.from(allArchetypes.values()).filter(a =>
-    a.id === 'soviet-command' ||
-    a.id === 'japanese' ||
-    a.id === 'german-social-market' ||
-    a.id === 'brazilian' ||
-    a.id === 'australian' ||
-    a.id === 'canadian'
+  twentiethCentury: Array.from(allArchetypes.values()).filter(
+    (a) =>
+      a.id === "soviet-command" ||
+      a.id === "japanese" ||
+      a.id === "german-social-market" ||
+      a.id === "brazilian" ||
+      a.id === "australian" ||
+      a.id === "canadian"
   ),
 };
 
@@ -103,54 +106,42 @@ export const archetypesByEra = {
  * Archetypes organized by development level/complexity
  */
 export const archetypesByDevelopmentLevel = {
-  high: Array.from(allArchetypes.values()).filter(a =>
-    a.implementationComplexity === 'high'
-  ),
-  medium: Array.from(allArchetypes.values()).filter(a =>
-    a.implementationComplexity === 'medium'
-  ),
-  low: Array.from(allArchetypes.values()).filter(a =>
-    a.implementationComplexity === 'low'
-  ),
+  high: Array.from(allArchetypes.values()).filter((a) => a.implementationComplexity === "high"),
+  medium: Array.from(allArchetypes.values()).filter((a) => a.implementationComplexity === "medium"),
+  low: Array.from(allArchetypes.values()).filter((a) => a.implementationComplexity === "low"),
 };
 
 /**
  * Archetypes organized by economic focus
  */
 export const archetypesByEconomicFocus = {
-  technology: Array.from(allArchetypes.values()).filter(a =>
-    a.economicComponents.some(c =>
-      c.toString().includes('INNOVATION') ||
-      c.toString().includes('TECHNOLOGY') ||
-      c.toString().includes('KNOWLEDGE')
+  technology: Array.from(allArchetypes.values()).filter((a) =>
+    a.economicComponents.some(
+      (c) =>
+        c.toString().includes("INNOVATION") ||
+        c.toString().includes("TECHNOLOGY") ||
+        c.toString().includes("KNOWLEDGE")
     )
   ),
-  manufacturing: Array.from(allArchetypes.values()).filter(a =>
-    a.economicComponents.some(c =>
-      c.toString().includes('MANUFACTURING')
+  manufacturing: Array.from(allArchetypes.values()).filter((a) =>
+    a.economicComponents.some((c) => c.toString().includes("MANUFACTURING"))
+  ),
+  services: Array.from(allArchetypes.values()).filter((a) =>
+    a.economicComponents.some((c) => c.toString().includes("SERVICE"))
+  ),
+  trade: Array.from(allArchetypes.values()).filter((a) =>
+    a.economicComponents.some(
+      (c) => c.toString().includes("TRADE") || c.toString().includes("EXPORT")
     )
   ),
-  services: Array.from(allArchetypes.values()).filter(a =>
-    a.economicComponents.some(c =>
-      c.toString().includes('SERVICE')
+  resources: Array.from(allArchetypes.values()).filter((a) =>
+    a.economicComponents.some(
+      (c) => c.toString().includes("RESOURCE") || c.toString().includes("EXTRACTION")
     )
   ),
-  trade: Array.from(allArchetypes.values()).filter(a =>
-    a.economicComponents.some(c =>
-      c.toString().includes('TRADE') ||
-      c.toString().includes('EXPORT')
-    )
-  ),
-  resources: Array.from(allArchetypes.values()).filter(a =>
-    a.economicComponents.some(c =>
-      c.toString().includes('RESOURCE') ||
-      c.toString().includes('EXTRACTION')
-    )
-  ),
-  social: Array.from(allArchetypes.values()).filter(a =>
-    a.economicComponents.some(c =>
-      c.toString().includes('SOCIAL') ||
-      c.toString().includes('WELFARE')
+  social: Array.from(allArchetypes.values()).filter((a) =>
+    a.economicComponents.some(
+      (c) => c.toString().includes("SOCIAL") || c.toString().includes("WELFARE")
     )
   ),
 };
@@ -159,27 +150,21 @@ export const archetypesByEconomicFocus = {
  * Archetypes organized by government style
  */
 export const archetypesByGovernmentStyle = {
-  democratic: Array.from(allArchetypes.values()).filter(a =>
-    a.governmentComponents.some(c =>
-      c.toString().includes('DEMOCRATIC')
+  democratic: Array.from(allArchetypes.values()).filter((a) =>
+    a.governmentComponents.some((c) => c.toString().includes("DEMOCRATIC"))
+  ),
+  authoritarian: Array.from(allArchetypes.values()).filter((a) =>
+    a.governmentComponents.some(
+      (c) => c.toString().includes("AUTOCRATIC") || c.toString().includes("CENTRALIZED")
     )
   ),
-  authoritarian: Array.from(allArchetypes.values()).filter(a =>
-    a.governmentComponents.some(c =>
-      c.toString().includes('AUTOCRATIC') ||
-      c.toString().includes('CENTRALIZED')
+  mixed: Array.from(allArchetypes.values()).filter((a) =>
+    a.governmentComponents.some(
+      (c) => c.toString().includes("MIXED") || c.toString().includes("HYBRID")
     )
   ),
-  mixed: Array.from(allArchetypes.values()).filter(a =>
-    a.governmentComponents.some(c =>
-      c.toString().includes('MIXED') ||
-      c.toString().includes('HYBRID')
-    )
-  ),
-  minimal: Array.from(allArchetypes.values()).filter(a =>
-    a.governmentComponents.some(c =>
-      c.toString().includes('MINIMAL')
-    )
+  minimal: Array.from(allArchetypes.values()).filter((a) =>
+    a.governmentComponents.some((c) => c.toString().includes("MINIMAL"))
   ),
 };
 
@@ -222,17 +207,13 @@ export function getArchetypesByCategory(category: ArchetypeCategory): EconomicAr
         ...archetypesByRegion.latinAmerica,
       ];
     case ArchetypeCategory.EMERGING:
-      return Array.from(allArchetypes.values()).filter(a =>
-        a.id === 'asian-tiger' ||
-        a.id === 'brazilian' ||
-        a.id === 'singapore'
+      return Array.from(allArchetypes.values()).filter(
+        (a) => a.id === "asian-tiger" || a.id === "brazilian" || a.id === "singapore"
       );
     case ArchetypeCategory.TRADITIONAL:
       return archetypesByEra.preindustrial;
     case ArchetypeCategory.EXPERIMENTAL:
-      return Array.from(allArchetypes.values()).filter(a =>
-        a.id === 'soviet-command'
-      );
+      return Array.from(allArchetypes.values()).filter((a) => a.id === "soviet-command");
     default:
       return [];
   }
@@ -255,7 +236,7 @@ export function searchArchetypes(query: string): EconomicArchetype[] {
 
   const searchTerm = query.toLowerCase().trim();
 
-  return Array.from(allArchetypes.values()).filter(archetype => {
+  return Array.from(allArchetypes.values()).filter((archetype) => {
     // Search in name
     if (archetype.name.toLowerCase().includes(searchTerm)) {
       return true;
@@ -272,12 +253,12 @@ export function searchArchetypes(query: string): EconomicArchetype[] {
     }
 
     // Search in characteristics
-    if (archetype.characteristics.some(c => c.toLowerCase().includes(searchTerm))) {
+    if (archetype.characteristics.some((c) => c.toLowerCase().includes(searchTerm))) {
       return true;
     }
 
     // Search in strengths
-    if (archetype.strengths.some(s => s.toLowerCase().includes(searchTerm))) {
+    if (archetype.strengths.some((s) => s.toLowerCase().includes(searchTerm))) {
       return true;
     }
 
@@ -287,7 +268,7 @@ export function searchArchetypes(query: string): EconomicArchetype[] {
     }
 
     // Search in modern examples
-    if (archetype.modernExamples.some(e => e.toLowerCase().includes(searchTerm))) {
+    if (archetype.modernExamples.some((e) => e.toLowerCase().includes(searchTerm))) {
       return true;
     }
 
@@ -310,14 +291,14 @@ export function searchArchetypes(query: string): EconomicArchetype[] {
  */
 export function filterArchetypes(filters: {
   region?: string;
-  complexity?: 'low' | 'medium' | 'high';
+  complexity?: "low" | "medium" | "high";
   minGdpGrowth?: number;
   maxGdpGrowth?: number;
   minInnovation?: number;
   hasEconomicComponent?: string;
   hasGovernmentComponent?: string;
 }): EconomicArchetype[] {
-  return Array.from(allArchetypes.values()).filter(archetype => {
+  return Array.from(allArchetypes.values()).filter((archetype) => {
     // Filter by region
     if (filters.region && !archetype.region.toLowerCase().includes(filters.region.toLowerCase())) {
       return false;
@@ -329,23 +310,32 @@ export function filterArchetypes(filters: {
     }
 
     // Filter by minimum GDP growth
-    if (filters.minGdpGrowth !== undefined && archetype.growthMetrics.gdpGrowth < filters.minGdpGrowth) {
+    if (
+      filters.minGdpGrowth !== undefined &&
+      archetype.growthMetrics.gdpGrowth < filters.minGdpGrowth
+    ) {
       return false;
     }
 
     // Filter by maximum GDP growth
-    if (filters.maxGdpGrowth !== undefined && archetype.growthMetrics.gdpGrowth > filters.maxGdpGrowth) {
+    if (
+      filters.maxGdpGrowth !== undefined &&
+      archetype.growthMetrics.gdpGrowth > filters.maxGdpGrowth
+    ) {
       return false;
     }
 
     // Filter by minimum innovation index
-    if (filters.minInnovation !== undefined && archetype.growthMetrics.innovationIndex < filters.minInnovation) {
+    if (
+      filters.minInnovation !== undefined &&
+      archetype.growthMetrics.innovationIndex < filters.minInnovation
+    ) {
       return false;
     }
 
     // Filter by economic component presence
     if (filters.hasEconomicComponent) {
-      const hasComponent = archetype.economicComponents.some(c =>
+      const hasComponent = archetype.economicComponents.some((c) =>
         c.toString().toLowerCase().includes(filters.hasEconomicComponent!.toLowerCase())
       );
       if (!hasComponent) return false;
@@ -353,7 +343,7 @@ export function filterArchetypes(filters: {
 
     // Filter by government component presence
     if (filters.hasGovernmentComponent) {
-      const hasComponent = archetype.governmentComponents.some(c =>
+      const hasComponent = archetype.governmentComponents.some((c) =>
         c.toString().toLowerCase().includes(filters.hasGovernmentComponent!.toLowerCase())
       );
       if (!hasComponent) return false;
@@ -377,8 +367,8 @@ export function filterArchetypes(filters: {
  * });
  */
 export function getRecommendedArchetypes(criteria: {
-  focusArea?: 'technology' | 'manufacturing' | 'services' | 'trade' | 'resources' | 'social';
-  preferredComplexity?: 'low' | 'medium' | 'high';
+  focusArea?: "technology" | "manufacturing" | "services" | "trade" | "resources" | "social";
+  preferredComplexity?: "low" | "medium" | "high";
   region?: string;
   modernOnly?: boolean;
 }): EconomicArchetype[] {
@@ -391,7 +381,7 @@ export function getRecommendedArchetypes(criteria: {
 
   // Filter by region
   if (criteria.region) {
-    candidates = candidates.filter(a =>
+    candidates = candidates.filter((a) =>
       a.region.toLowerCase().includes(criteria.region!.toLowerCase())
     );
   }
@@ -400,8 +390,8 @@ export function getRecommendedArchetypes(criteria: {
   if (criteria.focusArea) {
     const focusMap = archetypesByEconomicFocus;
     const focusArchetypes = focusMap[criteria.focusArea] || [];
-    const focusIds = new Set(focusArchetypes.map(a => a.id));
-    candidates = candidates.filter(a => focusIds.has(a.id));
+    const focusIds = new Set(focusArchetypes.map((a) => a.id));
+    candidates = candidates.filter((a) => focusIds.has(a.id));
   }
 
   // Sort by complexity preference (exact match first, then others)
@@ -415,12 +405,10 @@ export function getRecommendedArchetypes(criteria: {
 
   // Sort by relevance metrics (GDP growth, innovation, stability)
   candidates.sort((a, b) => {
-    const aScore = a.growthMetrics.gdpGrowth +
-                   a.growthMetrics.innovationIndex +
-                   a.growthMetrics.stability;
-    const bScore = b.growthMetrics.gdpGrowth +
-                   b.growthMetrics.innovationIndex +
-                   b.growthMetrics.stability;
+    const aScore =
+      a.growthMetrics.gdpGrowth + a.growthMetrics.innovationIndex + a.growthMetrics.stability;
+    const bScore =
+      b.growthMetrics.gdpGrowth + b.growthMetrics.innovationIndex + b.growthMetrics.stability;
     return bScore - aScore;
   });
 
@@ -455,7 +443,7 @@ export function compareArchetypes(archetypeIds: string[]): {
   };
 } {
   const archetypes = archetypeIds
-    .map(id => getArchetypeById(id))
+    .map((id) => getArchetypeById(id))
     .filter((a): a is EconomicArchetype => a !== undefined);
 
   const metrics = {
@@ -467,13 +455,13 @@ export function compareArchetypes(archetypeIds: string[]): {
     taxEfficiency: {} as Record<string, number>,
   };
 
-  let highestGrowth = { id: '', value: -Infinity };
-  let mostInnovative = { id: '', value: -Infinity };
-  let mostStable = { id: '', value: -Infinity };
-  let lowestUnemployment = { id: '', value: Infinity };
-  let mostEfficient = { id: '', value: -Infinity };
+  let highestGrowth = { id: "", value: -Infinity };
+  let mostInnovative = { id: "", value: -Infinity };
+  let mostStable = { id: "", value: -Infinity };
+  let lowestUnemployment = { id: "", value: Infinity };
+  let mostEfficient = { id: "", value: -Infinity };
 
-  archetypes.forEach(archetype => {
+  archetypes.forEach((archetype) => {
     const id = archetype.id;
 
     metrics.gdpGrowth[id] = archetype.growthMetrics.gdpGrowth;
@@ -518,5 +506,5 @@ export function compareArchetypes(archetypeIds: string[]): {
 // ============================================================================
 
 export { modernArchetypes, historicalArchetypes };
-export type { EconomicArchetype } from '../archetype-types';
-export { ArchetypeCategory } from '../archetype-types';
+export type { EconomicArchetype } from "../archetype-types";
+export { ArchetypeCategory } from "../archetype-types";

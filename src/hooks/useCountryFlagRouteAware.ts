@@ -1,7 +1,11 @@
 // Route-aware country flag hook that uses appropriate service based on current route
-import { useState, useEffect, useCallback } from 'react';
-import { usePathname } from 'next/navigation';
-import { countryFlagService, countryFlagServiceCommonsOnly, type CountryFlag } from '~/lib/country-flag-service';
+import { useState, useEffect, useCallback } from "react";
+import { usePathname } from "next/navigation";
+import {
+  countryFlagService,
+  countryFlagServiceCommonsOnly,
+  type CountryFlag,
+} from "~/lib/country-flag-service";
 
 /**
  * Hook for a single country flag with route-aware service selection
@@ -16,7 +20,7 @@ export function useCountryFlagRouteAware(countryName: string) {
 
   // Determine which service to use based on current route
   const getService = useCallback(() => {
-    if (pathname?.includes('/builder/import')) {
+    if (pathname?.includes("/builder/import")) {
       // Use full service with IIWiki fallback on import page
       return countryFlagService;
     } else {
@@ -36,7 +40,7 @@ export function useCountryFlagRouteAware(countryName: string) {
       const flagResult = await service.getCountryFlag(countryName);
       setFlag(flagResult);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch country flag';
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch country flag";
       setError(errorMessage);
       console.error(`[useCountryFlagRouteAware] Error fetching flag for ${countryName}:`, err);
     } finally {
@@ -52,7 +56,7 @@ export function useCountryFlagRouteAware(countryName: string) {
     flag,
     loading,
     error,
-    refetch: fetchFlag
+    refetch: fetchFlag,
   };
 }
 
@@ -67,7 +71,7 @@ export function useCountryFlagsRouteAware(countries: string[], preload = true, b
 
   // Determine which service to use based on current route
   const getService = useCallback(() => {
-    if (pathname?.includes('/builder/import')) {
+    if (pathname?.includes("/builder/import")) {
       // Use full service with IIWiki fallback on import page
       return countryFlagService;
     } else {
@@ -76,50 +80,57 @@ export function useCountryFlagsRouteAware(countries: string[], preload = true, b
     }
   }, [pathname]);
 
-  const fetchFlags = useCallback(async (countryList: string[]) => {
-    if (countryList.length === 0) return;
+  const fetchFlags = useCallback(
+    async (countryList: string[]) => {
+      if (countryList.length === 0) return;
 
-    setLoading(true);
-    setError(null);
+      setLoading(true);
+      setError(null);
 
-    try {
-      
-      const service = getService();
-      const flagResults = await service.batchGetCountryFlags(countryList);
-      
-      setFlags(flagResults);
-      
-      const stats = service.getCacheStats();
-      
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch country flags';
-      setError(errorMessage);
-      console.error('[useCountryFlagsRouteAware] Error fetching flags:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [getService, pathname]);
+      try {
+        const service = getService();
+        const flagResults = await service.batchGetCountryFlags(countryList);
+
+        setFlags(flagResults);
+
+        const stats = service.getCacheStats();
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Failed to fetch country flags";
+        setError(errorMessage);
+        console.error("[useCountryFlagsRouteAware] Error fetching flags:", err);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [getService, pathname]
+  );
 
   /**
    * Fetch a single flag
    */
-  const refetchFlag = useCallback(async (countryName: string) => {
-    try {
-      const service = getService();
-      const flag = await service.getCountryFlag(countryName);
-      
-      setFlags(prev => new Map(prev).set(countryName, flag));
-    } catch (err) {
-      console.error(`[useCountryFlagsRouteAware] Error refetching flag for ${countryName}:`, err);
-    }
-  }, [getService]);
+  const refetchFlag = useCallback(
+    async (countryName: string) => {
+      try {
+        const service = getService();
+        const flag = await service.getCountryFlag(countryName);
+
+        setFlags((prev) => new Map(prev).set(countryName, flag));
+      } catch (err) {
+        console.error(`[useCountryFlagsRouteAware] Error refetching flag for ${countryName}:`, err);
+      }
+    },
+    [getService]
+  );
 
   /**
    * Get a flag from the current state
    */
-  const getFlag = useCallback((countryName: string): CountryFlag | null => {
-    return flags.get(countryName) || null;
-  }, [flags]);
+  const getFlag = useCallback(
+    (countryName: string): CountryFlag | null => {
+      return flags.get(countryName) || null;
+    },
+    [flags]
+  );
 
   /**
    * Clear the flag cache
@@ -136,9 +147,13 @@ export function useCountryFlagsRouteAware(countries: string[], preload = true, b
    */
   const stats = {
     total: flags.size,
-    successful: Array.from(flags.values()).filter(flag => flag.flagUrl !== null).length,
-    failed: flags.size - Array.from(flags.values()).filter(flag => flag.flagUrl !== null).length,
-    hitRate: flags.size > 0 ? (Array.from(flags.values()).filter(flag => flag.flagUrl !== null).length / flags.size) * 100 : 0
+    successful: Array.from(flags.values()).filter((flag) => flag.flagUrl !== null).length,
+    failed: flags.size - Array.from(flags.values()).filter((flag) => flag.flagUrl !== null).length,
+    hitRate:
+      flags.size > 0
+        ? (Array.from(flags.values()).filter((flag) => flag.flagUrl !== null).length / flags.size) *
+          100
+        : 0,
   };
 
   // Fetch flags when countries change
@@ -155,6 +170,6 @@ export function useCountryFlagsRouteAware(countries: string[], preload = true, b
     getFlag,
     refetchFlag,
     clearCache,
-    stats
+    stats,
   };
 }

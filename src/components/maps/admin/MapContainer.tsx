@@ -7,21 +7,22 @@
 
 "use client";
 
-import React, { forwardRef } from 'react';
+import React, { forwardRef } from "react";
 
 interface MapContainerProps {
   height?: number;
   className?: string;
 }
 
-export const MapContainer = forwardRef<HTMLDivElement, MapContainerProps>(
-  function MapContainer({ height, className = '' }, ref) {
-    return (
-      <div
-        ref={ref}
-        className={`w-full h-full ${className}`}
-        style={height ? { height: `${height}px` } : undefined}
-      />
-    );
-  }
-);
+export const MapContainer = forwardRef<HTMLDivElement, MapContainerProps>(function MapContainer(
+  { height, className = "" },
+  ref
+) {
+  return (
+    <div
+      ref={ref}
+      className={`h-full w-full ${className}`}
+      style={height ? { height: `${height}px` } : undefined}
+    />
+  );
+});

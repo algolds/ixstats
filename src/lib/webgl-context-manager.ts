@@ -22,7 +22,7 @@ class WebGLContextManager {
 
   registerContext(): string | null {
     if (!this.canCreateContext()) {
-      console.warn('WebGL context limit reached, using fallback');
+      console.warn("WebGL context limit reached, using fallback");
       return null;
     }
 
@@ -42,8 +42,8 @@ class WebGLContextManager {
   // Check if WebGL is supported
   isWebGLSupported(): boolean {
     try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      const canvas = document.createElement("canvas");
+      const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
       return !!gl;
     } catch {
       return false;
@@ -53,8 +53,8 @@ class WebGLContextManager {
   // Check if WebGL2 is supported
   isWebGL2Supported(): boolean {
     try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl2');
+      const canvas = document.createElement("canvas");
+      const gl = canvas.getContext("webgl2");
       return !!gl;
     } catch {
       return false;
@@ -64,23 +64,25 @@ class WebGLContextManager {
   // Get WebGL context info
   getWebGLInfo(): { supported: boolean; version: string; vendor: string; renderer: string } {
     try {
-      const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl') as WebGLRenderingContext;
-      
+      const canvas = document.createElement("canvas");
+      const gl =
+        canvas.getContext("webgl") ||
+        (canvas.getContext("experimental-webgl") as WebGLRenderingContext);
+
       if (!gl) {
-        return { supported: false, version: '', vendor: '', renderer: '' };
+        return { supported: false, version: "", vendor: "", renderer: "" };
       }
 
       return {
         supported: true,
-        version: gl.getParameter(gl.VERSION) || '',
-        vendor: gl.getParameter(gl.VENDOR) || '',
-        renderer: gl.getParameter(gl.RENDERER) || ''
+        version: gl.getParameter(gl.VERSION) || "",
+        vendor: gl.getParameter(gl.VENDOR) || "",
+        renderer: gl.getParameter(gl.RENDERER) || "",
       };
     } catch {
-      return { supported: false, version: '', vendor: '', renderer: '' };
+      return { supported: false, version: "", vendor: "", renderer: "" };
     }
   }
 }
 
-export const webglContextManager = WebGLContextManager.getInstance(); 
+export const webglContextManager = WebGLContextManager.getInstance();

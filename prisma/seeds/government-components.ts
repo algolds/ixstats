@@ -7,8 +7,8 @@
  * Run with: npx tsx prisma/seeds/government-components.ts
  */
 
-import { PrismaClient } from '@prisma/client';
-import { ATOMIC_COMPONENTS } from '../../src/lib/atomic-government-data';
+import { PrismaClient } from "@prisma/client";
+import { ATOMIC_COMPONENTS } from "../../src/lib/atomic-government-data";
 
 const prisma = new PrismaClient();
 
@@ -18,26 +18,26 @@ const prisma = new PrismaClient();
  */
 function getIconName(iconComponent: React.ComponentType<{ className?: string }>): string {
   // Try to get the display name or function name
-  if ('displayName' in iconComponent && iconComponent.displayName) {
+  if ("displayName" in iconComponent && iconComponent.displayName) {
     return iconComponent.displayName as string;
   }
-  if ('name' in iconComponent && iconComponent.name) {
+  if ("name" in iconComponent && iconComponent.name) {
     return iconComponent.name as string;
   }
   // Fallback to parsing the function string
   const iconString = iconComponent.toString();
   const match = iconString.match(/function\s+(\w+)/);
-  return match ? match[1] : 'Settings';
+  return match ? match[1] : "Settings";
 }
 
 async function main() {
-  console.log('\n🏛️  Starting Government Components seed...\n');
+  console.log("\n🏛️  Starting Government Components seed...\n");
 
   let createdCount = 0;
   let updatedCount = 0;
   let errorCount = 0;
 
-  const components = Object.values(ATOMIC_COMPONENTS).filter(c => c !== undefined);
+  const components = Object.values(ATOMIC_COMPONENTS).filter((c) => c !== undefined);
   console.log(`📊 Found ${components.length} components to process\n`);
 
   for (const component of components) {
@@ -100,7 +100,7 @@ async function main() {
     }
   }
 
-  console.log('\n📈 Seed Summary:');
+  console.log("\n📈 Seed Summary:");
   console.log(`  ✅ Created: ${createdCount}`);
   console.log(`  🔄 Updated: ${updatedCount}`);
   console.log(`  ❌ Errors: ${errorCount}`);
@@ -112,21 +112,21 @@ async function main() {
 
   // Show category breakdown
   const categories = await prisma.governmentComponentData.groupBy({
-    by: ['category'],
+    by: ["category"],
     _count: true,
   });
 
-  console.log('\n📂 Components by category:');
+  console.log("\n📂 Components by category:");
   for (const cat of categories) {
     console.log(`  ${cat.category}: ${cat._count}`);
   }
 
-  console.log('\n✨ Government Components seed completed!\n');
+  console.log("\n✨ Government Components seed completed!\n");
 }
 
 main()
   .catch((e) => {
-    console.error('💥 Fatal error during seed:', e);
+    console.error("💥 Fatal error during seed:", e);
     process.exit(1);
   })
   .finally(async () => {

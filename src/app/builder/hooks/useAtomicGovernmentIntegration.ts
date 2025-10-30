@@ -7,13 +7,13 @@
  * calculation, and automatic builder generation.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import type { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
-import type { GovernmentBuilderState } from '~/types/government';
-import type { EconomicInputs } from '../lib/economy-data-service';
-import { atomicIntegrationService } from '../services/AtomicIntegrationService';
-import { generateGovernmentBuilderFromAtomicComponents } from '../utils/atomicGovernmentIntegration';
-import { validateGovernmentSpendingSource } from '../utils/governmentValidation';
+import { useState, useEffect, useCallback, useRef } from "react";
+import type { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import type { GovernmentBuilderState } from "~/types/government";
+import type { EconomicInputs } from "../lib/economy-data-service";
+import { atomicIntegrationService } from "../services/AtomicIntegrationService";
+import { generateGovernmentBuilderFromAtomicComponents } from "../utils/atomicGovernmentIntegration";
+import { validateGovernmentSpendingSource } from "../utils/governmentValidation";
 
 /**
  * Return value interface for useAtomicGovernmentIntegration hook.
@@ -193,8 +193,12 @@ export function useAtomicGovernmentIntegration(
   initialEconomicInputs: EconomicInputs | null = null
 ): UseAtomicGovernmentIntegrationResult {
   const [selectedComponents, setSelectedComponents] = useState<ComponentType[]>(initialComponents);
-  const [governmentBuilder, setGovernmentBuilder] = useState<GovernmentBuilderState | null>(initialGovernmentBuilder);
-  const [economicInputs, setEconomicInputs] = useState<EconomicInputs | null>(initialEconomicInputs);
+  const [governmentBuilder, setGovernmentBuilder] = useState<GovernmentBuilderState | null>(
+    initialGovernmentBuilder
+  );
+  const [economicInputs, setEconomicInputs] = useState<EconomicInputs | null>(
+    initialEconomicInputs
+  );
   const [integrationState, setIntegrationState] = useState(atomicIntegrationService.getState());
 
   // Track last sent values to prevent redundant updates
@@ -211,22 +215,28 @@ export function useAtomicGovernmentIntegration(
   // Consolidated effect for updating service with guards
   useEffect(() => {
     // Update components if changed
-    if (selectedComponents.length > 0 && 
-        JSON.stringify(selectedComponents) !== JSON.stringify(lastSentComponentsRef.current)) {
+    if (
+      selectedComponents.length > 0 &&
+      JSON.stringify(selectedComponents) !== JSON.stringify(lastSentComponentsRef.current)
+    ) {
       lastSentComponentsRef.current = [...selectedComponents];
       atomicIntegrationService.updateComponents(selectedComponents);
     }
 
     // Update government builder if changed
-    if (governmentBuilder && 
-        JSON.stringify(governmentBuilder) !== JSON.stringify(lastSentGovernmentBuilderRef.current)) {
+    if (
+      governmentBuilder &&
+      JSON.stringify(governmentBuilder) !== JSON.stringify(lastSentGovernmentBuilderRef.current)
+    ) {
       lastSentGovernmentBuilderRef.current = governmentBuilder;
       atomicIntegrationService.updateGovernmentBuilder(governmentBuilder);
     }
 
     // Update economic inputs if changed
-    if (economicInputs && 
-        JSON.stringify(economicInputs) !== JSON.stringify(lastSentEconomicInputsRef.current)) {
+    if (
+      economicInputs &&
+      JSON.stringify(economicInputs) !== JSON.stringify(lastSentEconomicInputsRef.current)
+    ) {
       lastSentEconomicInputsRef.current = economicInputs;
       atomicIntegrationService.updateEconomicInputs(economicInputs);
     }
@@ -240,7 +250,7 @@ export function useAtomicGovernmentIntegration(
         hasGovernmentBuilder: !!governmentBuilder,
         hasDepartments: false,
         hasBudgetAllocations: false,
-        errorMessage: 'Economic inputs are required'
+        errorMessage: "Economic inputs are required",
       };
 
   // Computed values
@@ -261,7 +271,7 @@ export function useAtomicGovernmentIntegration(
 
       setGovernmentBuilder(generated);
     } catch (error) {
-      console.error('Failed to generate government builder from atomic components:', error);
+      console.error("Failed to generate government builder from atomic components:", error);
     }
   }, [selectedComponents, economicInputs, canGenerateBuilder]);
 
@@ -295,6 +305,6 @@ export function useAtomicGovernmentIntegration(
     // Computed values
     hasAtomicComponents,
     needsGovernmentBuilder,
-    canGenerateBuilder
+    canGenerateBuilder,
   };
 }

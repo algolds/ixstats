@@ -5,19 +5,19 @@
  * Tests the flag service to ensure all database countries can load their flags
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 // Mock DOM APIs for Node environment
-if (typeof window === 'undefined') {
+if (typeof window === "undefined") {
   (global as any).window = {
     __NEXT_DATA__: {},
     Image: class Image {
-      src = '';
+      src = "";
       onload: (() => void) | null = null;
       onerror: (() => void) | null = null;
-      crossOrigin = '';
+      crossOrigin = "";
     },
   };
   (global as any).localStorage = {
@@ -28,7 +28,7 @@ if (typeof window === 'undefined') {
 }
 
 async function main() {
-  console.log('🧪 Testing flag loading for database countries...\n');
+  console.log("🧪 Testing flag loading for database countries...\n");
 
   try {
     // Get all countries from database
@@ -37,17 +37,17 @@ async function main() {
         name: true,
       },
       orderBy: {
-        name: 'asc',
+        name: "asc",
       },
     });
 
     console.log(`📊 Total countries in database: ${countries.length}\n`);
 
     // Load metadata.json
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    const metadataPath = path.join(process.cwd(), 'public', 'flags', 'metadata.json');
-    const metadataContent = await fs.readFile(metadataPath, 'utf-8');
+    const fs = await import("fs/promises");
+    const path = await import("path");
+    const metadataPath = path.join(process.cwd(), "public", "flags", "metadata.json");
+    const metadataContent = await fs.readFile(metadataPath, "utf-8");
     const metadata = JSON.parse(metadataContent);
     const flagKeys = Object.keys(metadata.flags);
 
@@ -58,7 +58,7 @@ async function main() {
     const missingFlags: string[] = [];
 
     for (const country of countries) {
-      const normalizedName = country.name.trim().toLowerCase().replace(/\s+/g, ' ');
+      const normalizedName = country.name.trim().toLowerCase().replace(/\s+/g, " ");
 
       if (metadata.flags[normalizedName]) {
         foundFlags.push(country.name);
@@ -72,8 +72,8 @@ async function main() {
     console.log(`❌ Countries without flags: ${missingFlags.length}\n`);
 
     if (missingFlags.length > 0) {
-      console.log('❌ Missing flags for:');
-      missingFlags.forEach(name => {
+      console.log("❌ Missing flags for:");
+      missingFlags.forEach((name) => {
         console.log(`   - ${name}`);
       });
       console.log();
@@ -85,16 +85,15 @@ async function main() {
 
     // Show sample of working flags
     if (foundFlags.length > 0) {
-      console.log('\n✅ Sample of working flags:');
-      foundFlags.slice(0, 10).forEach(name => {
-        const normalizedName = name.trim().toLowerCase().replace(/\s+/g, ' ');
+      console.log("\n✅ Sample of working flags:");
+      foundFlags.slice(0, 10).forEach((name) => {
+        const normalizedName = name.trim().toLowerCase().replace(/\s+/g, " ");
         const flagInfo = metadata.flags[normalizedName];
         console.log(`   - ${name} → /flags/${flagInfo.fileName}`);
       });
     }
-
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error("❌ Error:", error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();
@@ -103,10 +102,10 @@ async function main() {
 
 main()
   .then(() => {
-    console.log('\n✅ Test complete!');
+    console.log("\n✅ Test complete!");
     process.exit(0);
   })
   .catch((error) => {
-    console.error('❌ Fatal error:', error);
+    console.error("❌ Fatal error:", error);
     process.exit(1);
   });

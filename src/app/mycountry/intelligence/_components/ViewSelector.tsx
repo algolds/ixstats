@@ -1,7 +1,7 @@
-import { Button } from '~/components/ui/button';
-import { Activity, FileText, Target, BarChart3 } from 'lucide-react';
+import { Button } from "~/components/ui/button";
+import { Activity, FileText, Target, BarChart3 } from "lucide-react";
 
-type ViewType = 'overview' | 'briefings' | 'focus' | 'analytics';
+type ViewType = "overview" | "briefings" | "focus" | "analytics";
 
 interface ViewSelectorProps {
   activeView: ViewType;
@@ -11,37 +11,37 @@ interface ViewSelectorProps {
 
 export function ViewSelector({ activeView, onViewChange, briefingsCount }: ViewSelectorProps) {
   return (
-    <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b">
+    <div className="flex items-center gap-2 overflow-x-auto border-b pb-2">
       <Button
-        variant={activeView === 'overview' ? 'default' : 'ghost'}
+        variant={activeView === "overview" ? "default" : "ghost"}
         size="sm"
-        onClick={() => onViewChange('overview')}
+        onClick={() => onViewChange("overview")}
       >
-        <Activity className="h-4 w-4 mr-2" />
+        <Activity className="mr-2 h-4 w-4" />
         Overview
       </Button>
       <Button
-        variant={activeView === 'briefings' ? 'default' : 'ghost'}
+        variant={activeView === "briefings" ? "default" : "ghost"}
         size="sm"
-        onClick={() => onViewChange('briefings')}
+        onClick={() => onViewChange("briefings")}
       >
-        <FileText className="h-4 w-4 mr-2" />
+        <FileText className="mr-2 h-4 w-4" />
         Briefings ({briefingsCount})
       </Button>
       <Button
-        variant={activeView === 'focus' ? 'default' : 'ghost'}
+        variant={activeView === "focus" ? "default" : "ghost"}
         size="sm"
-        onClick={() => onViewChange('focus')}
+        onClick={() => onViewChange("focus")}
       >
-        <Target className="h-4 w-4 mr-2" />
+        <Target className="mr-2 h-4 w-4" />
         Focus Areas
       </Button>
       <Button
-        variant={activeView === 'analytics' ? 'default' : 'ghost'}
+        variant={activeView === "analytics" ? "default" : "ghost"}
         size="sm"
-        onClick={() => onViewChange('analytics')}
+        onClick={() => onViewChange("analytics")}
       >
-        <BarChart3 className="h-4 w-4 mr-2" />
+        <BarChart3 className="mr-2 h-4 w-4" />
         Analytics
       </Button>
     </div>

@@ -22,7 +22,7 @@ export const useClearanceAccess = ({ viewerClearanceLevel }: UseClearanceAccessP
 
   const filterByAccess = useCallback(
     <T extends { classification: ClassificationLevel }>(items: T[]): T[] => {
-      return items.filter(item => hasAccess(item.classification));
+      return items.filter((item) => hasAccess(item.classification));
     },
     [hasAccess]
   );

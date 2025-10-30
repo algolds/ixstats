@@ -243,34 +243,28 @@ export function BorderEditor({
   /**
    * Enable/disable drawing mode
    */
-  const toggleDrawMode = useCallback(
-    (enable: boolean) => {
-      if (!controlsRef.current) return;
+  const toggleDrawMode = useCallback((enable: boolean) => {
+    if (!controlsRef.current) return;
 
-      if (enable) {
-        controlsRef.current.enableDraw("Polygon");
-      } else {
-        controlsRef.current.disableDraw();
-      }
-    },
-    []
-  );
+    if (enable) {
+      controlsRef.current.enableDraw("Polygon");
+    } else {
+      controlsRef.current.disableDraw();
+    }
+  }, []);
 
   /**
    * Enable/disable edit mode
    */
-  const toggleEditMode = useCallback(
-    (enable: boolean) => {
-      if (!controlsRef.current) return;
+  const toggleEditMode = useCallback((enable: boolean) => {
+    if (!controlsRef.current) return;
 
-      if (enable) {
-        controlsRef.current.enableGlobalEditMode();
-      } else {
-        controlsRef.current.disableGlobalEditMode();
-      }
-    },
-    []
-  );
+    if (enable) {
+      controlsRef.current.enableGlobalEditMode();
+    } else {
+      controlsRef.current.disableGlobalEditMode();
+    }
+  }, []);
 
   /**
    * Split a polygon (for territorial division)

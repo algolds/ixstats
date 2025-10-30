@@ -1,9 +1,9 @@
 "use client";
 
-import React from 'react';
-import { DialogHeader, DialogTitle } from '~/components/ui/dialog';
-import { Button } from '~/components/ui/button';
-import { Building2, X, Save } from 'lucide-react';
+import React from "react";
+import { DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { Button } from "~/components/ui/button";
+import { Building2, X, Save } from "lucide-react";
 
 interface ModalHeaderProps {
   overallEffectiveness: number;
@@ -18,18 +18,18 @@ export function ModalHeader({
   isValid,
   isSaving,
   onClose,
-  onSave
+  onSave,
 }: ModalHeaderProps) {
   return (
-    <DialogHeader className="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+    <DialogHeader className="border-b bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 dark:from-blue-900/20 dark:to-indigo-900/20">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/20">
+          <div className="rounded-lg bg-blue-100 p-2 dark:bg-blue-900/20">
             <Building2 className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           </div>
           <div>
             <DialogTitle className="text-xl font-semibold">Economy Builder</DialogTitle>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Configure your economic system with atomic components
             </p>
           </div>
@@ -42,10 +42,10 @@ export function ModalHeader({
               <div className="text-lg font-bold text-green-600 dark:text-green-400">
                 {overallEffectiveness.toFixed(0)}%
               </div>
-              <div className="text-xs text-muted-foreground">Effectiveness</div>
+              <div className="text-muted-foreground text-xs">Effectiveness</div>
             </div>
-            <div className="w-12 h-12 relative">
-              <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 100 100">
+            <div className="relative h-12 w-12">
+              <svg className="h-12 w-12 -rotate-90 transform" viewBox="0 0 100 100">
                 <circle
                   cx="50"
                   cy="50"
@@ -63,7 +63,7 @@ export function ModalHeader({
                   strokeWidth="8"
                   fill="none"
                   strokeDasharray={`${overallEffectiveness * 2.51} 251`}
-                  className="text-green-600 dark:text-green-400 transition-all duration-500"
+                  className="text-green-600 transition-all duration-500 dark:text-green-400"
                   strokeLinecap="round"
                 />
               </svg>
@@ -73,7 +73,7 @@ export function ModalHeader({
           {/* Action Buttons */}
           <div className="flex items-center space-x-2">
             <Button variant="outline" onClick={onClose}>
-              <X className="h-4 w-4 mr-2" />
+              <X className="mr-2 h-4 w-4" />
               Cancel
             </Button>
             <Button
@@ -82,9 +82,9 @@ export function ModalHeader({
               className="bg-blue-600 hover:bg-blue-700"
             >
               {isSaving ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
               ) : (
-                <Save className="h-4 w-4 mr-2" />
+                <Save className="mr-2 h-4 w-4" />
               )}
               Save Economy
             </Button>

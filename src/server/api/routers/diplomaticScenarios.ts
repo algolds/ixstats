@@ -28,37 +28,43 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Supports filtering by type, relationship level, difficulty, timeFrame, and active status
    */
   getAllScenarios: publicProcedure
-    .input(z.object({
-      type: z.enum([
-        'border_dispute',
-        'trade_renegotiation',
-        'cultural_misunderstanding',
-        'intelligence_breach',
-        'humanitarian_crisis',
-        'alliance_pressure',
-        'economic_sanctions_debate',
-        'technology_transfer_request',
-        'diplomatic_incident',
-        'mediation_opportunity',
-        'embassy_security_threat',
-        'treaty_renewal'
-      ]).optional(),
-      relationshipLevel: z.enum(['hostile', 'tense', 'neutral', 'friendly', 'allied']).optional(),
-      difficulty: z.enum(['trivial', 'moderate', 'challenging', 'critical', 'legendary']).optional(),
-      timeFrame: z.enum(['urgent', 'time_sensitive', 'strategic', 'long_term']).optional(),
-      isActive: z.boolean().optional().default(true),
-      country1Id: z.string().optional(),
-      country2Id: z.string().optional(),
-      limit: z.number().int().min(1).max(100).optional().default(50),
-      offset: z.number().int().min(0).optional().default(0),
-    }))
+    .input(
+      z.object({
+        type: z
+          .enum([
+            "border_dispute",
+            "trade_renegotiation",
+            "cultural_misunderstanding",
+            "intelligence_breach",
+            "humanitarian_crisis",
+            "alliance_pressure",
+            "economic_sanctions_debate",
+            "technology_transfer_request",
+            "diplomatic_incident",
+            "mediation_opportunity",
+            "embassy_security_threat",
+            "treaty_renewal",
+          ])
+          .optional(),
+        relationshipLevel: z.enum(["hostile", "tense", "neutral", "friendly", "allied"]).optional(),
+        difficulty: z
+          .enum(["trivial", "moderate", "challenging", "critical", "legendary"])
+          .optional(),
+        timeFrame: z.enum(["urgent", "time_sensitive", "strategic", "long_term"]).optional(),
+        isActive: z.boolean().optional().default(true),
+        country1Id: z.string().optional(),
+        country2Id: z.string().optional(),
+        limit: z.number().int().min(1).max(100).optional().default(50),
+        offset: z.number().int().min(0).optional().default(0),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         const where: any = {};
 
         // Status filter (default to active only)
         if (input.isActive) {
-          where.status = { in: ['active', 'pending'] };
+          where.status = { in: ["active", "pending"] };
           where.expiresAt = { gt: new Date() }; // Only non-expired scenarios
         }
 
@@ -76,32 +82,36 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           ctx.db.culturalScenario.findMany({
             where,
             orderBy: [
-              { expiresAt: 'asc' }, // Most urgent first
-              { culturalImpact: 'desc' }, // Higher impact second
-              { createdAt: 'desc' } // Newest third
+              { expiresAt: "asc" }, // Most urgent first
+              { culturalImpact: "desc" }, // Higher impact second
+              { createdAt: "desc" }, // Newest third
             ],
             take: input.limit,
             skip: input.offset,
           }),
-          ctx.db.culturalScenario.count({ where })
+          ctx.db.culturalScenario.count({ where }),
         ]);
 
         // Parse JSON fields and filter by difficulty/timeFrame (stored in responseOptions JSON)
-        const parsedScenarios = scenarios.map(scenario => {
-          const responseOptions = scenario.responseOptions ? JSON.parse(scenario.responseOptions) : [];
-          const tags = scenario.tags ? JSON.parse(scenario.tags) : [];
+        const parsedScenarios = scenarios
+          .map((scenario) => {
+            const responseOptions = scenario.responseOptions
+              ? JSON.parse(scenario.responseOptions)
+              : [];
+            const tags = scenario.tags ? JSON.parse(scenario.tags) : [];
 
-          return {
-            ...scenario,
-            responseOptions,
-            tags,
-          };
-        }).filter(scenario => {
-          // Client-side filtering for fields stored in JSON
-          if (input.difficulty && !scenario.tags.includes(input.difficulty)) return false;
-          if (input.timeFrame && !scenario.tags.includes(input.timeFrame)) return false;
-          return true;
-        });
+            return {
+              ...scenario,
+              responseOptions,
+              tags,
+            };
+          })
+          .filter((scenario) => {
+            // Client-side filtering for fields stored in JSON
+            if (input.difficulty && !scenario.tags.includes(input.difficulty)) return false;
+            if (input.timeFrame && !scenario.tags.includes(input.timeFrame)) return false;
+            return true;
+          });
 
         return {
           scenarios: parsedScenarios,
@@ -109,10 +119,10 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           hasMore: input.offset + parsedScenarios.length < total,
         };
       } catch (error) {
-        console.error('[DIPLOMATIC_SCENARIOS] Failed to get scenarios:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Failed to get scenarios:", error);
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to retrieve diplomatic scenarios',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to retrieve diplomatic scenarios",
           cause: error,
         });
       }
@@ -122,9 +132,11 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Get single scenario by ID with full details including parsed choices
    */
   getScenarioById: publicProcedure
-    .input(z.object({
-      id: z.string().cuid(),
-    }))
+    .input(
+      z.object({
+        id: z.string().cuid(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         const scenario = await ctx.db.culturalScenario.findUnique({
@@ -132,15 +144,15 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           include: {
             relatedExchanges: {
               take: 5,
-              orderBy: { proposedAt: 'desc' },
-            }
-          }
+              orderBy: { proposedAt: "desc" },
+            },
+          },
         });
 
         if (!scenario) {
           throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Scenario not found',
+            code: "NOT_FOUND",
+            message: "Scenario not found",
           });
         }
 
@@ -153,10 +165,10 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         };
       } catch (error) {
         if (error instanceof TRPCError) throw error;
-        console.error('[DIPLOMATIC_SCENARIOS] Failed to get scenario by ID:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Failed to get scenario by ID:", error);
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to retrieve scenario',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to retrieve scenario",
           cause: error,
         });
       }
@@ -166,16 +178,18 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Get scenarios grouped by type
    */
   getScenariosByType: publicProcedure
-    .input(z.object({
-      isActive: z.boolean().optional().default(true),
-      country1Id: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        isActive: z.boolean().optional().default(true),
+        country1Id: z.string().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         const where: any = {};
 
         if (input.isActive) {
-          where.status = { in: ['active', 'pending'] };
+          where.status = { in: ["active", "pending"] };
           where.expiresAt = { gt: new Date() };
         }
 
@@ -183,35 +197,34 @@ export const diplomaticScenariosRouter = createTRPCRouter({
 
         const scenarios = await ctx.db.culturalScenario.findMany({
           where,
-          orderBy: [
-            { type: 'asc' },
-            { culturalImpact: 'desc' },
-            { expiresAt: 'asc' }
-          ],
+          orderBy: [{ type: "asc" }, { culturalImpact: "desc" }, { expiresAt: "asc" }],
         });
 
         // Parse JSON and group by type
-        const grouped = scenarios.reduce((acc, scenario) => {
-          const type = scenario.type;
-          if (!acc[type]) {
-            acc[type] = [];
-          }
+        const grouped = scenarios.reduce(
+          (acc, scenario) => {
+            const type = scenario.type;
+            if (!acc[type]) {
+              acc[type] = [];
+            }
 
-          acc[type].push({
-            ...scenario,
-            responseOptions: scenario.responseOptions ? JSON.parse(scenario.responseOptions) : [],
-            tags: scenario.tags ? JSON.parse(scenario.tags) : [],
-          });
+            acc[type].push({
+              ...scenario,
+              responseOptions: scenario.responseOptions ? JSON.parse(scenario.responseOptions) : [],
+              tags: scenario.tags ? JSON.parse(scenario.tags) : [],
+            });
 
-          return acc;
-        }, {} as Record<string, any[]>);
+            return acc;
+          },
+          {} as Record<string, any[]>
+        );
 
         return grouped;
       } catch (error) {
-        console.error('[DIPLOMATIC_SCENARIOS] Failed to get scenarios by type:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Failed to get scenarios by type:", error);
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to retrieve scenarios by type',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to retrieve scenarios by type",
           cause: error,
         });
       }
@@ -222,26 +235,32 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Uses diplomatic-scenario-generator utility for context-aware generation
    */
   generateScenario: publicProcedure
-    .input(z.object({
-      countryId: z.string().cuid(),
-      targetCountryId: z.string().cuid().optional(),
-      scenarioType: z.enum([
-        'border_dispute',
-        'trade_renegotiation',
-        'cultural_misunderstanding',
-        'intelligence_breach',
-        'humanitarian_crisis',
-        'alliance_pressure',
-        'economic_sanctions_debate',
-        'technology_transfer_request',
-        'diplomatic_incident',
-        'mediation_opportunity',
-        'embassy_security_threat',
-        'treaty_renewal'
-      ]).optional(),
-      difficulty: z.enum(['trivial', 'moderate', 'challenging', 'critical', 'legendary']).optional(),
-      timeFrame: z.enum(['urgent', 'time_sensitive', 'strategic', 'long_term']).optional(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string().cuid(),
+        targetCountryId: z.string().cuid().optional(),
+        scenarioType: z
+          .enum([
+            "border_dispute",
+            "trade_renegotiation",
+            "cultural_misunderstanding",
+            "intelligence_breach",
+            "humanitarian_crisis",
+            "alliance_pressure",
+            "economic_sanctions_debate",
+            "technology_transfer_request",
+            "diplomatic_incident",
+            "mediation_opportunity",
+            "embassy_security_threat",
+            "treaty_renewal",
+          ])
+          .optional(),
+        difficulty: z
+          .enum(["trivial", "moderate", "challenging", "critical", "legendary"])
+          .optional(),
+        timeFrame: z.enum(["urgent", "time_sensitive", "strategic", "long_term"]).optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         // Get country data
@@ -251,8 +270,8 @@ export const diplomaticScenariosRouter = createTRPCRouter({
 
         if (!country) {
           throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Country not found',
+            code: "NOT_FOUND",
+            message: "Country not found",
           });
         }
 
@@ -266,19 +285,17 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           // Find countries with existing diplomatic relations
           const relations = await ctx.db.diplomaticRelation.findMany({
             where: {
-              OR: [
-                { country1: input.countryId },
-                { country2: input.countryId },
-              ]
+              OR: [{ country1: input.countryId }, { country2: input.countryId }],
             },
             take: 10,
           });
 
           if (relations.length > 0) {
             const randomRelation = relations[Math.floor(Math.random() * relations.length)];
-            const targetId = randomRelation.country1 === input.countryId
-              ? randomRelation.country2
-              : randomRelation.country1;
+            const targetId =
+              randomRelation.country1 === input.countryId
+                ? randomRelation.country2
+                : randomRelation.country1;
 
             targetCountry = await ctx.db.country.findUnique({
               where: { id: targetId },
@@ -288,8 +305,8 @@ export const diplomaticScenariosRouter = createTRPCRouter({
 
         if (!targetCountry) {
           throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Target country not found or no existing relationships',
+            code: "BAD_REQUEST",
+            message: "Target country not found or no existing relationships",
           });
         }
 
@@ -299,18 +316,18 @@ export const diplomaticScenariosRouter = createTRPCRouter({
             OR: [
               { country1: input.countryId, country2: targetCountry.id },
               { country1: targetCountry.id, country2: input.countryId },
-            ]
-          }
+            ],
+          },
         });
 
         // Generate scenario type based on relationship if not provided
         const types: Array<typeof input.scenarioType> = [
-          'trade_renegotiation',
-          'cultural_misunderstanding',
-          'diplomatic_incident',
-          'alliance_pressure',
-          'mediation_opportunity',
-          'treaty_renewal'
+          "trade_renegotiation",
+          "cultural_misunderstanding",
+          "diplomatic_incident",
+          "alliance_pressure",
+          "mediation_opportunity",
+          "treaty_renewal",
         ];
         const scenarioType = input.scenarioType || types[Math.floor(Math.random() * types.length)]!;
 
@@ -321,7 +338,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           strategic: 14, // 2 weeks
           long_term: 30, // 1 month
         };
-        const daysToExpiry = timeFrameMap[input.timeFrame || 'strategic'];
+        const daysToExpiry = timeFrameMap[input.timeFrame || "strategic"];
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + daysToExpiry);
 
@@ -338,23 +355,25 @@ export const diplomaticScenariosRouter = createTRPCRouter({
             country2Id: targetCountry.id,
             country1Name: country.name,
             country2Name: targetCountry.name,
-            relationshipState: relationship?.status || 'neutral',
+            relationshipState: relationship?.status || "neutral",
             relationshipStrength: relationship?.strength || 50,
             responseOptions: JSON.stringify(responseOptions),
             tags: JSON.stringify([
               scenarioType,
-              input.difficulty || 'moderate',
-              input.timeFrame || 'strategic',
+              input.difficulty || "moderate",
+              input.timeFrame || "strategic",
             ]),
             culturalImpact: Math.floor(Math.random() * 30) + 40, // 40-70 range
             diplomaticRisk: Math.floor(Math.random() * 40) + 30, // 30-70 range
             economicCost: Math.floor(Math.random() * 50) + 20, // 20-70 range
-            status: 'active',
+            status: "active",
             expiresAt,
-          }
+          },
         });
 
-        console.log(`[DIPLOMATIC_SCENARIOS] Generated scenario ${scenario.id} (${scenarioType}) for ${country.name} <-> ${targetCountry.name}`);
+        console.log(
+          `[DIPLOMATIC_SCENARIOS] Generated scenario ${scenario.id} (${scenarioType}) for ${country.name} <-> ${targetCountry.name}`
+        );
 
         return {
           success: true,
@@ -366,10 +385,10 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         };
       } catch (error) {
         if (error instanceof TRPCError) throw error;
-        console.error('[DIPLOMATIC_SCENARIOS] Failed to generate scenario:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Failed to generate scenario:", error);
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to generate scenario',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to generate scenario",
           cause: error,
         });
       }
@@ -380,40 +399,38 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Selects most relevant scenario based on current diplomatic state
    */
   getScenarioForCountry: publicProcedure
-    .input(z.object({
-      countryId: z.string().cuid(),
-      preferredType: z.enum([
-        'border_dispute',
-        'trade_renegotiation',
-        'cultural_misunderstanding',
-        'intelligence_breach',
-        'humanitarian_crisis',
-        'alliance_pressure',
-        'economic_sanctions_debate',
-        'technology_transfer_request',
-        'diplomatic_incident',
-        'mediation_opportunity',
-        'embassy_security_threat',
-        'treaty_renewal'
-      ]).optional(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string().cuid(),
+        preferredType: z
+          .enum([
+            "border_dispute",
+            "trade_renegotiation",
+            "cultural_misunderstanding",
+            "intelligence_breach",
+            "humanitarian_crisis",
+            "alliance_pressure",
+            "economic_sanctions_debate",
+            "technology_transfer_request",
+            "diplomatic_incident",
+            "mediation_opportunity",
+            "embassy_security_threat",
+            "treaty_renewal",
+          ])
+          .optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         // Find active scenarios involving this country
         const scenarios = await ctx.db.culturalScenario.findMany({
           where: {
-            OR: [
-              { country1Id: input.countryId },
-              { country2Id: input.countryId },
-            ],
-            status: { in: ['active', 'pending'] },
+            OR: [{ country1Id: input.countryId }, { country2Id: input.countryId }],
+            status: { in: ["active", "pending"] },
             expiresAt: { gt: new Date() },
             ...(input.preferredType ? { type: input.preferredType } : {}),
           },
-          orderBy: [
-            { culturalImpact: 'desc' },
-            { expiresAt: 'asc' },
-          ],
+          orderBy: [{ culturalImpact: "desc" }, { expiresAt: "asc" }],
           take: 10,
         });
 
@@ -427,22 +444,19 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         // Get diplomatic context for relevance scoring
         const relations = await ctx.db.diplomaticRelation.findMany({
           where: {
-            OR: [
-              { country1: input.countryId },
-              { country2: input.countryId },
-            ]
-          }
+            OR: [{ country1: input.countryId }, { country2: input.countryId }],
+          },
         });
 
         // Calculate relevance scores for each scenario
-        const scoredScenarios = scenarios.map(scenario => {
-          const otherCountryId = scenario.country1Id === input.countryId
-            ? scenario.country2Id
-            : scenario.country1Id;
+        const scoredScenarios = scenarios.map((scenario) => {
+          const otherCountryId =
+            scenario.country1Id === input.countryId ? scenario.country2Id : scenario.country1Id;
 
-          const relation = relations.find(r =>
-            (r.country1 === input.countryId && r.country2 === otherCountryId) ||
-            (r.country1 === otherCountryId && r.country2 === input.countryId)
+          const relation = relations.find(
+            (r) =>
+              (r.country1 === input.countryId && r.country2 === otherCountryId) ||
+              (r.country1 === otherCountryId && r.country2 === input.countryId)
           );
 
           // Relevance scoring algorithm (0-100)
@@ -458,7 +472,8 @@ export const diplomaticScenariosRouter = createTRPCRouter({
 
           // Relationship strength factor
           if (relation) {
-            if (relation.strength > 75) relevance += 10; // Strong relationships = more attention
+            if (relation.strength > 75)
+              relevance += 10; // Strong relationships = more attention
             else if (relation.strength < 25) relevance += 15; // Weak relationships = crisis potential
           }
 
@@ -482,10 +497,10 @@ export const diplomaticScenariosRouter = createTRPCRouter({
 
         return scoredScenarios[0];
       } catch (error) {
-        console.error('[DIPLOMATIC_SCENARIOS] Failed to get scenario for country:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Failed to get scenario for country:", error);
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to get scenario for country',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to get scenario for country",
           cause: error,
         });
       }
@@ -496,12 +511,14 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Creates ScenarioGeneration record for historical tracking
    */
   recordChoice: publicProcedure
-    .input(z.object({
-      scenarioId: z.string().cuid(),
-      countryId: z.string().cuid(),
-      choiceId: z.string(),
-      choiceLabel: z.string(),
-    }))
+    .input(
+      z.object({
+        scenarioId: z.string().cuid(),
+        countryId: z.string().cuid(),
+        choiceId: z.string(),
+        choiceLabel: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         const scenario = await ctx.db.culturalScenario.findUnique({
@@ -510,34 +527,36 @@ export const diplomaticScenariosRouter = createTRPCRouter({
 
         if (!scenario) {
           throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Scenario not found',
+            code: "NOT_FOUND",
+            message: "Scenario not found",
           });
         }
 
         // Check if scenario is still active
-        if (scenario.status !== 'active' && scenario.status !== 'pending') {
+        if (scenario.status !== "active" && scenario.status !== "pending") {
           throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Scenario is no longer active',
+            code: "BAD_REQUEST",
+            message: "Scenario is no longer active",
           });
         }
 
         if (scenario.expiresAt < new Date()) {
           throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Scenario has expired',
+            code: "BAD_REQUEST",
+            message: "Scenario has expired",
           });
         }
 
         // Parse response options to find selected choice
-        const responseOptions = scenario.responseOptions ? JSON.parse(scenario.responseOptions) : [];
+        const responseOptions = scenario.responseOptions
+          ? JSON.parse(scenario.responseOptions)
+          : [];
         const selectedChoice = responseOptions.find((opt: any) => opt.id === input.choiceId);
 
         if (!selectedChoice) {
           throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Invalid choice ID',
+            code: "BAD_REQUEST",
+            message: "Invalid choice ID",
           });
         }
 
@@ -545,7 +564,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         const updatedScenario = await ctx.db.culturalScenario.update({
           where: { id: input.scenarioId },
           data: {
-            status: 'completed',
+            status: "completed",
             resolvedAt: new Date(),
             chosenOption: input.choiceId,
             actualCulturalImpact: selectedChoice.effects?.culturalImpact || 0,
@@ -556,18 +575,17 @@ export const diplomaticScenariosRouter = createTRPCRouter({
               timestamp: new Date().toISOString(),
               countryId: input.countryId,
             }),
-          }
+          },
         });
 
         // Create CulturalExchange record for historical tracking
         await ctx.db.culturalExchange.create({
           data: {
             initiatingCountryId: input.countryId,
-            participatingCountryId: scenario.country1Id === input.countryId
-              ? scenario.country2Id
-              : scenario.country1Id,
+            participatingCountryId:
+              scenario.country1Id === input.countryId ? scenario.country2Id : scenario.country1Id,
             exchangeType: scenario.type,
-            status: 'completed',
+            status: "completed",
             culturalImpact: selectedChoice.effects?.culturalImpact || 0,
             economicCost: selectedChoice.effects?.economicImpact || 0,
             scenarioId: input.scenarioId,
@@ -575,10 +593,12 @@ export const diplomaticScenariosRouter = createTRPCRouter({
             proposedAt: scenario.createdAt,
             approvedAt: new Date(),
             completedAt: new Date(),
-          }
+          },
         });
 
-        console.log(`[DIPLOMATIC_SCENARIOS] Recorded choice ${input.choiceId} for scenario ${input.scenarioId} by country ${input.countryId}`);
+        console.log(
+          `[DIPLOMATIC_SCENARIOS] Recorded choice ${input.choiceId} for scenario ${input.scenarioId} by country ${input.countryId}`
+        );
 
         return {
           success: true,
@@ -591,10 +611,10 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         };
       } catch (error) {
         if (error instanceof TRPCError) throw error;
-        console.error('[DIPLOMATIC_SCENARIOS] Failed to record choice:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Failed to record choice:", error);
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to record choice',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to record choice",
           cause: error,
         });
       }
@@ -604,39 +624,35 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Get player's scenario history
    */
   getPlayerScenarioHistory: publicProcedure
-    .input(z.object({
-      countryId: z.string().cuid(),
-      limit: z.number().int().min(1).max(100).optional().default(20),
-      offset: z.number().int().min(0).optional().default(0),
-    }))
+    .input(
+      z.object({
+        countryId: z.string().cuid(),
+        limit: z.number().int().min(1).max(100).optional().default(20),
+        offset: z.number().int().min(0).optional().default(0),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         const [scenarios, total] = await Promise.all([
           ctx.db.culturalScenario.findMany({
             where: {
-              OR: [
-                { country1Id: input.countryId },
-                { country2Id: input.countryId },
-              ],
-              status: 'completed',
+              OR: [{ country1Id: input.countryId }, { country2Id: input.countryId }],
+              status: "completed",
             },
-            orderBy: { resolvedAt: 'desc' },
+            orderBy: { resolvedAt: "desc" },
             take: input.limit,
             skip: input.offset,
           }),
           ctx.db.culturalScenario.count({
             where: {
-              OR: [
-                { country1Id: input.countryId },
-                { country2Id: input.countryId },
-              ],
-              status: 'completed',
-            }
-          })
+              OR: [{ country1Id: input.countryId }, { country2Id: input.countryId }],
+              status: "completed",
+            },
+          }),
         ]);
 
         return {
-          scenarios: scenarios.map(s => ({
+          scenarios: scenarios.map((s) => ({
             ...s,
             responseOptions: s.responseOptions ? JSON.parse(s.responseOptions) : [],
             tags: s.tags ? JSON.parse(s.tags) : [],
@@ -646,10 +662,10 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           hasMore: input.offset + scenarios.length < total,
         };
       } catch (error) {
-        console.error('[DIPLOMATIC_SCENARIOS] Failed to get scenario history:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Failed to get scenario history:", error);
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to retrieve scenario history',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to retrieve scenario history",
           cause: error,
         });
       }
@@ -659,10 +675,12 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Calculate relevance score for a specific scenario
    */
   calculateRelevance: publicProcedure
-    .input(z.object({
-      scenarioId: z.string().cuid(),
-      countryId: z.string().cuid(),
-    }))
+    .input(
+      z.object({
+        scenarioId: z.string().cuid(),
+        countryId: z.string().cuid(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         const scenario = await ctx.db.culturalScenario.findUnique({
@@ -671,22 +689,21 @@ export const diplomaticScenariosRouter = createTRPCRouter({
 
         if (!scenario) {
           throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Scenario not found',
+            code: "NOT_FOUND",
+            message: "Scenario not found",
           });
         }
 
-        const otherCountryId = scenario.country1Id === input.countryId
-          ? scenario.country2Id
-          : scenario.country1Id;
+        const otherCountryId =
+          scenario.country1Id === input.countryId ? scenario.country2Id : scenario.country1Id;
 
         const relation = await ctx.db.diplomaticRelation.findFirst({
           where: {
             OR: [
               { country1: input.countryId, country2: otherCountryId },
               { country1: otherCountryId, country2: input.countryId },
-            ]
-          }
+            ],
+          },
         });
 
         // Relevance scoring algorithm (0-100)
@@ -712,15 +729,21 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           factors: {
             impactScore: (scenario.culturalImpact / 100) * 20,
             urgencyScore: hoursToExpiry < 24 ? 20 : hoursToExpiry < 72 ? 10 : 0,
-            relationshipScore: relation ? (relation.strength > 75 ? 10 : relation.strength < 25 ? 15 : 5) : 0,
-          }
+            relationshipScore: relation
+              ? relation.strength > 75
+                ? 10
+                : relation.strength < 25
+                  ? 15
+                  : 5
+              : 0,
+          },
         };
       } catch (error) {
         if (error instanceof TRPCError) throw error;
-        console.error('[DIPLOMATIC_SCENARIOS] Failed to calculate relevance:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Failed to calculate relevance:", error);
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to calculate relevance score',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to calculate relevance score",
           cause: error,
         });
       }
@@ -730,36 +753,32 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Get active unexpired scenarios for country
    */
   getActiveScenarios: publicProcedure
-    .input(z.object({
-      countryId: z.string().cuid(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string().cuid(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         const scenarios = await ctx.db.culturalScenario.findMany({
           where: {
-            OR: [
-              { country1Id: input.countryId },
-              { country2Id: input.countryId },
-            ],
-            status: { in: ['active', 'pending'] },
+            OR: [{ country1Id: input.countryId }, { country2Id: input.countryId }],
+            status: { in: ["active", "pending"] },
             expiresAt: { gt: new Date() },
           },
-          orderBy: [
-            { expiresAt: 'asc' },
-            { culturalImpact: 'desc' },
-          ],
+          orderBy: [{ expiresAt: "asc" }, { culturalImpact: "desc" }],
         });
 
-        return scenarios.map(s => ({
+        return scenarios.map((s) => ({
           ...s,
           responseOptions: s.responseOptions ? JSON.parse(s.responseOptions) : [],
           tags: s.tags ? JSON.parse(s.tags) : [],
         }));
       } catch (error) {
-        console.error('[DIPLOMATIC_SCENARIOS] Failed to get active scenarios:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Failed to get active scenarios:", error);
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to retrieve active scenarios',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to retrieve active scenarios",
           cause: error,
         });
       }
@@ -769,10 +788,12 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Preview consequences for a specific choice
    */
   getChoiceOutcomes: publicProcedure
-    .input(z.object({
-      scenarioId: z.string().cuid(),
-      choiceId: z.string(),
-    }))
+    .input(
+      z.object({
+        scenarioId: z.string().cuid(),
+        choiceId: z.string(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         const scenario = await ctx.db.culturalScenario.findUnique({
@@ -781,18 +802,20 @@ export const diplomaticScenariosRouter = createTRPCRouter({
 
         if (!scenario) {
           throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Scenario not found',
+            code: "NOT_FOUND",
+            message: "Scenario not found",
           });
         }
 
-        const responseOptions = scenario.responseOptions ? JSON.parse(scenario.responseOptions) : [];
+        const responseOptions = scenario.responseOptions
+          ? JSON.parse(scenario.responseOptions)
+          : [];
         const choice = responseOptions.find((opt: any) => opt.id === input.choiceId);
 
         if (!choice) {
           throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Invalid choice ID',
+            code: "BAD_REQUEST",
+            message: "Invalid choice ID",
           });
         }
 
@@ -802,15 +825,15 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           description: choice.description,
           effects: choice.effects || {},
           predictedOutcomes: choice.predictedOutcomes || {},
-          riskLevel: choice.riskLevel || 'medium',
-          skillRequired: choice.skillRequired || 'negotiation',
+          riskLevel: choice.riskLevel || "medium",
+          skillRequired: choice.skillRequired || "negotiation",
         };
       } catch (error) {
         if (error instanceof TRPCError) throw error;
-        console.error('[DIPLOMATIC_SCENARIOS] Failed to get choice outcomes:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Failed to get choice outcomes:", error);
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to retrieve choice outcomes',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to retrieve choice outcomes",
           cause: error,
         });
       }
@@ -820,9 +843,11 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Increment scenario usage count (analytics tracking)
    */
   incrementScenarioUsage: publicProcedure
-    .input(z.object({
-      scenarioId: z.string().cuid(),
-    }))
+    .input(
+      z.object({
+        scenarioId: z.string().cuid(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         // Note: CulturalScenario doesn't have usageCount field in current schema
@@ -831,13 +856,13 @@ export const diplomaticScenariosRouter = createTRPCRouter({
 
         const scenario = await ctx.db.culturalScenario.findUnique({
           where: { id: input.scenarioId },
-          select: { id: true, type: true, title: true }
+          select: { id: true, type: true, title: true },
         });
 
         if (!scenario) {
           throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Scenario not found',
+            code: "NOT_FOUND",
+            message: "Scenario not found",
           });
         }
 
@@ -847,10 +872,10 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         };
       } catch (error) {
         if (error instanceof TRPCError) throw error;
-        console.error('[DIPLOMATIC_SCENARIOS] Failed to increment usage:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Failed to increment usage:", error);
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to track scenario usage',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to track scenario usage",
           cause: error,
         });
       }
@@ -864,18 +889,20 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Admin: Get all scenarios including inactive and expired
    */
   getAllScenariosAdmin: adminProcedure
-    .input(z.object({
-      includeInactive: z.boolean().optional().default(true),
-      includeExpired: z.boolean().optional().default(true),
-      search: z.string().optional(),
-      type: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        includeInactive: z.boolean().optional().default(true),
+        includeExpired: z.boolean().optional().default(true),
+        search: z.string().optional(),
+        type: z.string().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         const where: any = {};
 
         if (!input.includeInactive) {
-          where.status = { in: ['active', 'pending'] };
+          where.status = { in: ["active", "pending"] };
         }
 
         if (!input.includeExpired) {
@@ -886,32 +913,29 @@ export const diplomaticScenariosRouter = createTRPCRouter({
 
         if (input.search) {
           where.OR = [
-            { title: { contains: input.search, mode: 'insensitive' } },
-            { narrative: { contains: input.search, mode: 'insensitive' } },
-            { country1Name: { contains: input.search, mode: 'insensitive' } },
-            { country2Name: { contains: input.search, mode: 'insensitive' } },
+            { title: { contains: input.search, mode: "insensitive" } },
+            { narrative: { contains: input.search, mode: "insensitive" } },
+            { country1Name: { contains: input.search, mode: "insensitive" } },
+            { country2Name: { contains: input.search, mode: "insensitive" } },
           ];
         }
 
         const scenarios = await ctx.db.culturalScenario.findMany({
           where,
-          orderBy: [
-            { status: 'asc' },
-            { createdAt: 'desc' },
-          ],
+          orderBy: [{ status: "asc" }, { createdAt: "desc" }],
         });
 
-        return scenarios.map(s => ({
+        return scenarios.map((s) => ({
           ...s,
           responseOptions: s.responseOptions ? JSON.parse(s.responseOptions) : [],
           tags: s.tags ? JSON.parse(s.tags) : [],
           outcomeNotes: s.outcomeNotes ? JSON.parse(s.outcomeNotes) : null,
         }));
       } catch (error) {
-        console.error('[DIPLOMATIC_SCENARIOS] Admin failed to get all scenarios:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Admin failed to get all scenarios:", error);
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to retrieve scenarios',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to retrieve scenarios",
           cause: error,
         });
       }
@@ -921,22 +945,27 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Admin: Create new scenario with full control
    */
   createScenario: adminProcedure
-    .input(z.object({
-      type: z.string().min(1),
-      title: z.string().min(1).max(500),
-      narrative: z.string().min(1),
-      country1Id: z.string().cuid(),
-      country2Id: z.string().cuid(),
-      relationshipState: z.string().optional().default('neutral'),
-      relationshipStrength: z.number().min(0).max(100).optional().default(50),
-      responseOptions: z.array(z.any()),
-      tags: z.array(z.string()).optional().default([]),
-      culturalImpact: z.number().min(0).max(100),
-      diplomaticRisk: z.number().min(0).max(100),
-      economicCost: z.number().min(0).max(100),
-      expiresAt: z.date(),
-      status: z.enum(['active', 'pending', 'completed', 'expired', 'declined']).optional().default('active'),
-    }))
+    .input(
+      z.object({
+        type: z.string().min(1),
+        title: z.string().min(1).max(500),
+        narrative: z.string().min(1),
+        country1Id: z.string().cuid(),
+        country2Id: z.string().cuid(),
+        relationshipState: z.string().optional().default("neutral"),
+        relationshipStrength: z.number().min(0).max(100).optional().default(50),
+        responseOptions: z.array(z.any()),
+        tags: z.array(z.string()).optional().default([]),
+        culturalImpact: z.number().min(0).max(100),
+        diplomaticRisk: z.number().min(0).max(100),
+        economicCost: z.number().min(0).max(100),
+        expiresAt: z.date(),
+        status: z
+          .enum(["active", "pending", "completed", "expired", "declined"])
+          .optional()
+          .default("active"),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         // Verify countries exist
@@ -947,8 +976,8 @@ export const diplomaticScenariosRouter = createTRPCRouter({
 
         if (!country1 || !country2) {
           throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'One or both countries not found',
+            code: "BAD_REQUEST",
+            message: "One or both countries not found",
           });
         }
 
@@ -970,14 +999,14 @@ export const diplomaticScenariosRouter = createTRPCRouter({
             economicCost: input.economicCost,
             status: input.status,
             expiresAt: input.expiresAt,
-          }
+          },
         });
 
         // Audit log
         await ctx.db.auditLog.create({
           data: {
             userId: ctx.auth.userId,
-            action: 'diplomatic_scenario.create',
+            action: "diplomatic_scenario.create",
             details: JSON.stringify({
               scenarioId: scenario.id,
               type: scenario.type,
@@ -986,10 +1015,12 @@ export const diplomaticScenariosRouter = createTRPCRouter({
             }),
             success: true,
             timestamp: new Date(),
-          }
+          },
         });
 
-        console.log(`[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth.userId} created scenario: ${scenario.title} (${scenario.id})`);
+        console.log(
+          `[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth.userId} created scenario: ${scenario.title} (${scenario.id})`
+        );
 
         return {
           success: true,
@@ -1000,24 +1031,26 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           },
         };
       } catch (error) {
-        console.error('[DIPLOMATIC_SCENARIOS] Admin failed to create scenario:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Admin failed to create scenario:", error);
 
         // Audit log failure
-        await ctx.db.auditLog.create({
-          data: {
-            userId: ctx.auth.userId,
-            action: 'diplomatic_scenario.create',
-            details: JSON.stringify({ input }),
-            success: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
-            timestamp: new Date(),
-          }
-        }).catch(() => {});
+        await ctx.db.auditLog
+          .create({
+            data: {
+              userId: ctx.auth.userId,
+              action: "diplomatic_scenario.create",
+              details: JSON.stringify({ input }),
+              success: false,
+              error: error instanceof Error ? error.message : "Unknown error",
+              timestamp: new Date(),
+            },
+          })
+          .catch(() => {});
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create scenario',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create scenario",
           cause: error,
         });
       }
@@ -1027,21 +1060,23 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Admin: Update existing scenario
    */
   updateScenario: adminProcedure
-    .input(z.object({
-      id: z.string().cuid(),
-      type: z.string().optional(),
-      title: z.string().min(1).max(500).optional(),
-      narrative: z.string().optional(),
-      relationshipState: z.string().optional(),
-      relationshipStrength: z.number().min(0).max(100).optional(),
-      responseOptions: z.array(z.any()).optional(),
-      tags: z.array(z.string()).optional(),
-      culturalImpact: z.number().min(0).max(100).optional(),
-      diplomaticRisk: z.number().min(0).max(100).optional(),
-      economicCost: z.number().min(0).max(100).optional(),
-      expiresAt: z.date().optional(),
-      status: z.enum(['active', 'pending', 'completed', 'expired', 'declined']).optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string().cuid(),
+        type: z.string().optional(),
+        title: z.string().min(1).max(500).optional(),
+        narrative: z.string().optional(),
+        relationshipState: z.string().optional(),
+        relationshipStrength: z.number().min(0).max(100).optional(),
+        responseOptions: z.array(z.any()).optional(),
+        tags: z.array(z.string()).optional(),
+        culturalImpact: z.number().min(0).max(100).optional(),
+        diplomaticRisk: z.number().min(0).max(100).optional(),
+        economicCost: z.number().min(0).max(100).optional(),
+        expiresAt: z.date().optional(),
+        status: z.enum(["active", "pending", "completed", "expired", "declined"]).optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         const existing = await ctx.db.culturalScenario.findUnique({
@@ -1050,8 +1085,8 @@ export const diplomaticScenariosRouter = createTRPCRouter({
 
         if (!existing) {
           throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Scenario not found',
+            code: "NOT_FOUND",
+            message: "Scenario not found",
           });
         }
 
@@ -1059,9 +1094,12 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         if (input.type !== undefined) updateData.type = input.type;
         if (input.title !== undefined) updateData.title = input.title;
         if (input.narrative !== undefined) updateData.narrative = input.narrative;
-        if (input.relationshipState !== undefined) updateData.relationshipState = input.relationshipState;
-        if (input.relationshipStrength !== undefined) updateData.relationshipStrength = input.relationshipStrength;
-        if (input.responseOptions !== undefined) updateData.responseOptions = JSON.stringify(input.responseOptions);
+        if (input.relationshipState !== undefined)
+          updateData.relationshipState = input.relationshipState;
+        if (input.relationshipStrength !== undefined)
+          updateData.relationshipStrength = input.relationshipStrength;
+        if (input.responseOptions !== undefined)
+          updateData.responseOptions = JSON.stringify(input.responseOptions);
         if (input.tags !== undefined) updateData.tags = JSON.stringify(input.tags);
         if (input.culturalImpact !== undefined) updateData.culturalImpact = input.culturalImpact;
         if (input.diplomaticRisk !== undefined) updateData.diplomaticRisk = input.diplomaticRisk;
@@ -1078,7 +1116,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         await ctx.db.auditLog.create({
           data: {
             userId: ctx.auth.userId,
-            action: 'diplomatic_scenario.update',
+            action: "diplomatic_scenario.update",
             details: JSON.stringify({
               scenarioId: scenario.id,
               title: scenario.title,
@@ -1086,10 +1124,12 @@ export const diplomaticScenariosRouter = createTRPCRouter({
             }),
             success: true,
             timestamp: new Date(),
-          }
+          },
         });
 
-        console.log(`[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth.userId} updated scenario: ${scenario.title} (${scenario.id})`);
+        console.log(
+          `[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth.userId} updated scenario: ${scenario.title} (${scenario.id})`
+        );
 
         return {
           success: true,
@@ -1100,24 +1140,26 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           },
         };
       } catch (error) {
-        console.error('[DIPLOMATIC_SCENARIOS] Admin failed to update scenario:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Admin failed to update scenario:", error);
 
         // Audit log failure
-        await ctx.db.auditLog.create({
-          data: {
-            userId: ctx.auth.userId,
-            action: 'diplomatic_scenario.update',
-            details: JSON.stringify({ input }),
-            success: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
-            timestamp: new Date(),
-          }
-        }).catch(() => {});
+        await ctx.db.auditLog
+          .create({
+            data: {
+              userId: ctx.auth.userId,
+              action: "diplomatic_scenario.update",
+              details: JSON.stringify({ input }),
+              success: false,
+              error: error instanceof Error ? error.message : "Unknown error",
+              timestamp: new Date(),
+            },
+          })
+          .catch(() => {});
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to update scenario',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update scenario",
           cause: error,
         });
       }
@@ -1127,61 +1169,67 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Admin: Delete scenario (soft delete - sets status to expired)
    */
   deleteScenario: adminProcedure
-    .input(z.object({
-      id: z.string().cuid(),
-    }))
+    .input(
+      z.object({
+        id: z.string().cuid(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         const scenario = await ctx.db.culturalScenario.update({
           where: { id: input.id },
           data: {
-            status: 'expired',
+            status: "expired",
           },
           select: {
             id: true,
             type: true,
             title: true,
-          }
+          },
         });
 
         // Audit log
         await ctx.db.auditLog.create({
           data: {
             userId: ctx.auth.userId,
-            action: 'diplomatic_scenario.delete',
+            action: "diplomatic_scenario.delete",
             details: JSON.stringify({
               scenarioId: scenario.id,
               title: scenario.title,
             }),
             success: true,
             timestamp: new Date(),
-          }
+          },
         });
 
-        console.log(`[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth.userId} deleted scenario: ${scenario.title} (${scenario.id})`);
+        console.log(
+          `[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth.userId} deleted scenario: ${scenario.title} (${scenario.id})`
+        );
 
         return {
           success: true,
           scenario,
         };
       } catch (error) {
-        console.error('[DIPLOMATIC_SCENARIOS] Admin failed to delete scenario:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Admin failed to delete scenario:", error);
 
         // Audit log failure
-        await ctx.db.auditLog.create({
-          data: {
-            userId: ctx.auth.userId,
-            action: 'diplomatic_scenario.delete',
-            details: JSON.stringify({ input }),
-            success: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
-            timestamp: new Date(),
-          }
-        }).catch(() => {});
+        await ctx.db.auditLog
+          .create({
+            data: {
+              userId: ctx.auth.userId,
+              action: "diplomatic_scenario.delete",
+              details: JSON.stringify({ input }),
+              success: false,
+              error: error instanceof Error ? error.message : "Unknown error",
+              timestamp: new Date(),
+            },
+          })
+          .catch(() => {});
 
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to delete scenario',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete scenario",
           cause: error,
         });
       }
@@ -1192,19 +1240,21 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Note: Choices are stored as JSON in responseOptions field
    */
   createChoice: adminProcedure
-    .input(z.object({
-      scenarioId: z.string().cuid(),
-      choice: z.object({
-        id: z.string(),
-        label: z.string(),
-        description: z.string(),
-        skillRequired: z.string().optional(),
-        skillLevel: z.number().optional(),
-        riskLevel: z.enum(['low', 'medium', 'high', 'extreme']).optional(),
-        effects: z.record(z.string(), z.any()).optional(),
-        predictedOutcomes: z.record(z.string(), z.any()).optional(),
+    .input(
+      z.object({
+        scenarioId: z.string().cuid(),
+        choice: z.object({
+          id: z.string(),
+          label: z.string(),
+          description: z.string(),
+          skillRequired: z.string().optional(),
+          skillLevel: z.number().optional(),
+          riskLevel: z.enum(["low", "medium", "high", "extreme"]).optional(),
+          effects: z.record(z.string(), z.any()).optional(),
+          predictedOutcomes: z.record(z.string(), z.any()).optional(),
+        }),
       })
-    }))
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         const scenario = await ctx.db.culturalScenario.findUnique({
@@ -1213,26 +1263,28 @@ export const diplomaticScenariosRouter = createTRPCRouter({
 
         if (!scenario) {
           throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Scenario not found',
+            code: "NOT_FOUND",
+            message: "Scenario not found",
           });
         }
 
-        const responseOptions = scenario.responseOptions ? JSON.parse(scenario.responseOptions) : [];
+        const responseOptions = scenario.responseOptions
+          ? JSON.parse(scenario.responseOptions)
+          : [];
         responseOptions.push(input.choice);
 
         const updated = await ctx.db.culturalScenario.update({
           where: { id: input.scenarioId },
           data: {
             responseOptions: JSON.stringify(responseOptions),
-          }
+          },
         });
 
         // Audit log
         await ctx.db.auditLog.create({
           data: {
             userId: ctx.auth.userId,
-            action: 'diplomatic_scenario.create_choice',
+            action: "diplomatic_scenario.create_choice",
             details: JSON.stringify({
               scenarioId: input.scenarioId,
               choiceId: input.choice.id,
@@ -1240,10 +1292,12 @@ export const diplomaticScenariosRouter = createTRPCRouter({
             }),
             success: true,
             timestamp: new Date(),
-          }
+          },
         });
 
-        console.log(`[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth.userId} added choice ${input.choice.id} to scenario ${input.scenarioId}`);
+        console.log(
+          `[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth.userId} added choice ${input.choice.id} to scenario ${input.scenarioId}`
+        );
 
         return {
           success: true,
@@ -1253,23 +1307,25 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           },
         };
       } catch (error) {
-        console.error('[DIPLOMATIC_SCENARIOS] Admin failed to create choice:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Admin failed to create choice:", error);
 
-        await ctx.db.auditLog.create({
-          data: {
-            userId: ctx.auth.userId,
-            action: 'diplomatic_scenario.create_choice',
-            details: JSON.stringify({ input }),
-            success: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
-            timestamp: new Date(),
-          }
-        }).catch(() => {});
+        await ctx.db.auditLog
+          .create({
+            data: {
+              userId: ctx.auth.userId,
+              action: "diplomatic_scenario.create_choice",
+              details: JSON.stringify({ input }),
+              success: false,
+              error: error instanceof Error ? error.message : "Unknown error",
+              timestamp: new Date(),
+            },
+          })
+          .catch(() => {});
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create choice',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create choice",
           cause: error,
         });
       }
@@ -1279,19 +1335,21 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Admin: Update choice/response option
    */
   updateChoice: adminProcedure
-    .input(z.object({
-      scenarioId: z.string().cuid(),
-      choiceId: z.string(),
-      updates: z.object({
-        label: z.string().optional(),
-        description: z.string().optional(),
-        skillRequired: z.string().optional(),
-        skillLevel: z.number().optional(),
-        riskLevel: z.enum(['low', 'medium', 'high', 'extreme']).optional(),
-        effects: z.record(z.string(), z.any()).optional(),
-        predictedOutcomes: z.record(z.string(), z.any()).optional(),
+    .input(
+      z.object({
+        scenarioId: z.string().cuid(),
+        choiceId: z.string(),
+        updates: z.object({
+          label: z.string().optional(),
+          description: z.string().optional(),
+          skillRequired: z.string().optional(),
+          skillLevel: z.number().optional(),
+          riskLevel: z.enum(["low", "medium", "high", "extreme"]).optional(),
+          effects: z.record(z.string(), z.any()).optional(),
+          predictedOutcomes: z.record(z.string(), z.any()).optional(),
+        }),
       })
-    }))
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         const scenario = await ctx.db.culturalScenario.findUnique({
@@ -1300,18 +1358,20 @@ export const diplomaticScenariosRouter = createTRPCRouter({
 
         if (!scenario) {
           throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Scenario not found',
+            code: "NOT_FOUND",
+            message: "Scenario not found",
           });
         }
 
-        const responseOptions = scenario.responseOptions ? JSON.parse(scenario.responseOptions) : [];
+        const responseOptions = scenario.responseOptions
+          ? JSON.parse(scenario.responseOptions)
+          : [];
         const choiceIndex = responseOptions.findIndex((opt: any) => opt.id === input.choiceId);
 
         if (choiceIndex === -1) {
           throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Choice not found',
+            code: "NOT_FOUND",
+            message: "Choice not found",
           });
         }
 
@@ -1324,14 +1384,14 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           where: { id: input.scenarioId },
           data: {
             responseOptions: JSON.stringify(responseOptions),
-          }
+          },
         });
 
         // Audit log
         await ctx.db.auditLog.create({
           data: {
             userId: ctx.auth.userId,
-            action: 'diplomatic_scenario.update_choice',
+            action: "diplomatic_scenario.update_choice",
             details: JSON.stringify({
               scenarioId: input.scenarioId,
               choiceId: input.choiceId,
@@ -1339,10 +1399,12 @@ export const diplomaticScenariosRouter = createTRPCRouter({
             }),
             success: true,
             timestamp: new Date(),
-          }
+          },
         });
 
-        console.log(`[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth.userId} updated choice ${input.choiceId} in scenario ${input.scenarioId}`);
+        console.log(
+          `[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth.userId} updated choice ${input.choiceId} in scenario ${input.scenarioId}`
+        );
 
         return {
           success: true,
@@ -1352,23 +1414,25 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           },
         };
       } catch (error) {
-        console.error('[DIPLOMATIC_SCENARIOS] Admin failed to update choice:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Admin failed to update choice:", error);
 
-        await ctx.db.auditLog.create({
-          data: {
-            userId: ctx.auth.userId,
-            action: 'diplomatic_scenario.update_choice',
-            details: JSON.stringify({ input }),
-            success: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
-            timestamp: new Date(),
-          }
-        }).catch(() => {});
+        await ctx.db.auditLog
+          .create({
+            data: {
+              userId: ctx.auth.userId,
+              action: "diplomatic_scenario.update_choice",
+              details: JSON.stringify({ input }),
+              success: false,
+              error: error instanceof Error ? error.message : "Unknown error",
+              timestamp: new Date(),
+            },
+          })
+          .catch(() => {});
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to update choice',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update choice",
           cause: error,
         });
       }
@@ -1378,10 +1442,12 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Admin: Delete choice (removes from responseOptions array)
    */
   deleteChoice: adminProcedure
-    .input(z.object({
-      scenarioId: z.string().cuid(),
-      choiceId: z.string(),
-    }))
+    .input(
+      z.object({
+        scenarioId: z.string().cuid(),
+        choiceId: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         const scenario = await ctx.db.culturalScenario.findUnique({
@@ -1390,18 +1456,20 @@ export const diplomaticScenariosRouter = createTRPCRouter({
 
         if (!scenario) {
           throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Scenario not found',
+            code: "NOT_FOUND",
+            message: "Scenario not found",
           });
         }
 
-        const responseOptions = scenario.responseOptions ? JSON.parse(scenario.responseOptions) : [];
+        const responseOptions = scenario.responseOptions
+          ? JSON.parse(scenario.responseOptions)
+          : [];
         const filteredOptions = responseOptions.filter((opt: any) => opt.id !== input.choiceId);
 
         if (responseOptions.length === filteredOptions.length) {
           throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Choice not found',
+            code: "NOT_FOUND",
+            message: "Choice not found",
           });
         }
 
@@ -1409,24 +1477,26 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           where: { id: input.scenarioId },
           data: {
             responseOptions: JSON.stringify(filteredOptions),
-          }
+          },
         });
 
         // Audit log
         await ctx.db.auditLog.create({
           data: {
             userId: ctx.auth.userId,
-            action: 'diplomatic_scenario.delete_choice',
+            action: "diplomatic_scenario.delete_choice",
             details: JSON.stringify({
               scenarioId: input.scenarioId,
               choiceId: input.choiceId,
             }),
             success: true,
             timestamp: new Date(),
-          }
+          },
         });
 
-        console.log(`[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth.userId} deleted choice ${input.choiceId} from scenario ${input.scenarioId}`);
+        console.log(
+          `[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth.userId} deleted choice ${input.choiceId} from scenario ${input.scenarioId}`
+        );
 
         return {
           success: true,
@@ -1436,23 +1506,25 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           },
         };
       } catch (error) {
-        console.error('[DIPLOMATIC_SCENARIOS] Admin failed to delete choice:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Admin failed to delete choice:", error);
 
-        await ctx.db.auditLog.create({
-          data: {
-            userId: ctx.auth.userId,
-            action: 'diplomatic_scenario.delete_choice',
-            details: JSON.stringify({ input }),
-            success: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
-            timestamp: new Date(),
-          }
-        }).catch(() => {});
+        await ctx.db.auditLog
+          .create({
+            data: {
+              userId: ctx.auth.userId,
+              action: "diplomatic_scenario.delete_choice",
+              details: JSON.stringify({ input }),
+              success: false,
+              error: error instanceof Error ? error.message : "Unknown error",
+              timestamp: new Date(),
+            },
+          })
+          .catch(() => {});
 
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to delete choice',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete choice",
           cause: error,
         });
       }
@@ -1465,84 +1537,85 @@ export const diplomaticScenariosRouter = createTRPCRouter({
   /**
    * Get scenario usage statistics
    */
-  getScenarioUsageStats: publicProcedure
-    .query(async ({ ctx }) => {
-      try {
-        // Total scenario counts by status
-        const statusCounts = await ctx.db.culturalScenario.groupBy({
-          by: ['status'],
-          _count: { id: true },
-        });
+  getScenarioUsageStats: publicProcedure.query(async ({ ctx }) => {
+    try {
+      // Total scenario counts by status
+      const statusCounts = await ctx.db.culturalScenario.groupBy({
+        by: ["status"],
+        _count: { id: true },
+      });
 
-        // Total generations (active + completed)
-        const totalGenerations = statusCounts.reduce((sum, stat) => sum + stat._count.id, 0);
+      // Total generations (active + completed)
+      const totalGenerations = statusCounts.reduce((sum, stat) => sum + stat._count.id, 0);
 
-        // Completion rate
-        const completed = statusCounts.find(s => s.status === 'completed')?._count.id || 0;
-        const completionRate = totalGenerations > 0 ? (completed / totalGenerations) * 100 : 0;
+      // Completion rate
+      const completed = statusCounts.find((s) => s.status === "completed")?._count.id || 0;
+      const completionRate = totalGenerations > 0 ? (completed / totalGenerations) * 100 : 0;
 
-        // Top scenarios by completion
-        const topScenarios = await ctx.db.culturalScenario.findMany({
-          where: { status: 'completed' },
-          select: {
-            id: true,
-            type: true,
-            title: true,
-            culturalImpact: true,
-            diplomaticRisk: true,
-            _count: {
-              select: {
-                relatedExchanges: true,
-              }
-            }
+      // Top scenarios by completion
+      const topScenarios = await ctx.db.culturalScenario.findMany({
+        where: { status: "completed" },
+        select: {
+          id: true,
+          type: true,
+          title: true,
+          culturalImpact: true,
+          diplomaticRisk: true,
+          _count: {
+            select: {
+              relatedExchanges: true,
+            },
           },
-          orderBy: {
-            relatedExchanges: {
-              _count: 'desc'
-            }
+        },
+        orderBy: {
+          relatedExchanges: {
+            _count: "desc",
           },
-          take: 10,
-        });
+        },
+        take: 10,
+      });
 
-        // Usage by type
-        const typeStats = await ctx.db.culturalScenario.groupBy({
-          by: ['type'],
-          _count: { id: true },
-          _avg: {
-            culturalImpact: true,
-            diplomaticRisk: true,
-          }
-        });
+      // Usage by type
+      const typeStats = await ctx.db.culturalScenario.groupBy({
+        by: ["type"],
+        _count: { id: true },
+        _avg: {
+          culturalImpact: true,
+          diplomaticRisk: true,
+        },
+      });
 
-        return {
-          totalGenerations,
-          completions: completed,
-          completionRate: Math.round(completionRate * 10) / 10,
-          byStatus: statusCounts,
-          byType: typeStats,
-          topScenarios,
-        };
-      } catch (error) {
-        console.error('[DIPLOMATIC_SCENARIOS] Failed to get usage stats:', error);
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to retrieve usage statistics',
-          cause: error,
-        });
-      }
-    }),
+      return {
+        totalGenerations,
+        completions: completed,
+        completionRate: Math.round(completionRate * 10) / 10,
+        byStatus: statusCounts,
+        byType: typeStats,
+        topScenarios,
+      };
+    } catch (error) {
+      console.error("[DIPLOMATIC_SCENARIOS] Failed to get usage stats:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to retrieve usage statistics",
+        cause: error,
+      });
+    }
+  }),
 
   /**
    * Get choice distribution for scenarios
    */
   getChoiceDistribution: publicProcedure
-    .input(z.object({
-      scenarioId: z.string().cuid().optional(),
-      scenarioType: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        scenarioId: z.string().cuid().optional(),
+        scenarioType: z.string().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
-        const where: any = { status: 'completed', chosenOption: { not: null } };
+        const where: any = { status: "completed", chosenOption: { not: null } };
 
         if (input.scenarioId) where.id = input.scenarioId;
         if (input.scenarioType) where.type = input.scenarioType;
@@ -1555,14 +1628,19 @@ export const diplomaticScenariosRouter = createTRPCRouter({
             title: true,
             chosenOption: true,
             responseOptions: true,
-          }
+          },
         });
 
         // Count choice selections
-        const choiceFrequency: Record<string, { count: number; label: string; scenarioType: string }> = {};
+        const choiceFrequency: Record<
+          string,
+          { count: number; label: string; scenarioType: string }
+        > = {};
 
-        scenarios.forEach(scenario => {
-          const responseOptions = scenario.responseOptions ? JSON.parse(scenario.responseOptions) : [];
+        scenarios.forEach((scenario) => {
+          const responseOptions = scenario.responseOptions
+            ? JSON.parse(scenario.responseOptions)
+            : [];
           const chosenChoice = responseOptions.find((opt: any) => opt.id === scenario.chosenOption);
 
           if (chosenChoice) {
@@ -1583,9 +1661,8 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           .map(([choiceId, data]) => ({
             choiceId,
             ...data,
-            percentage: scenarios.length > 0
-              ? Math.round((data.count / scenarios.length) * 1000) / 10
-              : 0,
+            percentage:
+              scenarios.length > 0 ? Math.round((data.count / scenarios.length) * 1000) / 10 : 0,
           }))
           .sort((a, b) => b.count - a.count);
 
@@ -1595,10 +1672,10 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           uniqueChoices: distribution.length,
         };
       } catch (error) {
-        console.error('[DIPLOMATIC_SCENARIOS] Failed to get choice distribution:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Failed to get choice distribution:", error);
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to retrieve choice distribution',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to retrieve choice distribution",
           cause: error,
         });
       }
@@ -1608,12 +1685,14 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Get scenario performance metrics (outcome success rates)
    */
   getScenarioPerformance: publicProcedure
-    .input(z.object({
-      scenarioType: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        scenarioType: z.string().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
-        const where: any = { status: 'completed' };
+        const where: any = { status: "completed" };
         if (input.scenarioType) where.type = input.scenarioType;
 
         const scenarios = await ctx.db.culturalScenario.findMany({
@@ -1626,19 +1705,22 @@ export const diplomaticScenariosRouter = createTRPCRouter({
             actualDiplomaticImpact: true,
             actualEconomicCost: true,
             relationshipStrength: true,
-          }
+          },
         });
 
         // Calculate performance by type
-        const performanceByType: Record<string, {
-          count: number;
-          avgPredictedImpact: number;
-          avgActualImpact: number;
-          accuracyScore: number;
-          avgRisk: number;
-        }> = {};
+        const performanceByType: Record<
+          string,
+          {
+            count: number;
+            avgPredictedImpact: number;
+            avgActualImpact: number;
+            accuracyScore: number;
+            avgRisk: number;
+          }
+        > = {};
 
-        scenarios.forEach(scenario => {
+        scenarios.forEach((scenario) => {
           if (!performanceByType[scenario.type]) {
             performanceByType[scenario.type] = {
               count: 0,
@@ -1657,7 +1739,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         });
 
         // Calculate averages and accuracy
-        Object.keys(performanceByType).forEach(type => {
+        Object.keys(performanceByType).forEach((type) => {
           const stats = performanceByType[type];
           stats.avgPredictedImpact = Math.round((stats.avgPredictedImpact / stats.count) * 10) / 10;
           stats.avgActualImpact = Math.round((stats.avgActualImpact / stats.count) * 10) / 10;
@@ -1673,10 +1755,10 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           totalScenarios: scenarios.length,
         };
       } catch (error) {
-        console.error('[DIPLOMATIC_SCENARIOS] Failed to get performance metrics:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Failed to get performance metrics:", error);
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to retrieve performance metrics',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to retrieve performance metrics",
           cause: error,
         });
       }
@@ -1686,10 +1768,12 @@ export const diplomaticScenariosRouter = createTRPCRouter({
    * Get completion rates and time metrics
    */
   getCompletionRates: publicProcedure
-    .input(z.object({
-      scenarioType: z.string().optional(),
-      timeRange: z.enum(['week', 'month', 'quarter', 'year']).optional().default('month'),
-    }))
+    .input(
+      z.object({
+        scenarioType: z.string().optional(),
+        timeRange: z.enum(["week", "month", "quarter", "year"]).optional().default("month"),
+      })
+    )
     .query(async ({ ctx, input }) => {
       try {
         // Calculate time window
@@ -1717,38 +1801,44 @@ export const diplomaticScenariosRouter = createTRPCRouter({
             createdAt: true,
             resolvedAt: true,
             expiresAt: true,
-          }
+          },
         });
 
         // Calculate metrics
         const total = scenarios.length;
-        const completed = scenarios.filter(s => s.status === 'completed').length;
-        const expired = scenarios.filter(s => s.status === 'expired').length;
-        const active = scenarios.filter(s => s.status === 'active' || s.status === 'pending').length;
+        const completed = scenarios.filter((s) => s.status === "completed").length;
+        const expired = scenarios.filter((s) => s.status === "expired").length;
+        const active = scenarios.filter(
+          (s) => s.status === "active" || s.status === "pending"
+        ).length;
 
         // Average time to completion (in hours)
-        const completedScenarios = scenarios.filter(s => s.status === 'completed' && s.resolvedAt);
-        const avgTimeToComplete = completedScenarios.length > 0
-          ? completedScenarios.reduce((sum, s) => {
-              const hours = (s.resolvedAt!.getTime() - s.createdAt.getTime()) / (1000 * 60 * 60);
-              return sum + hours;
-            }, 0) / completedScenarios.length
-          : 0;
+        const completedScenarios = scenarios.filter(
+          (s) => s.status === "completed" && s.resolvedAt
+        );
+        const avgTimeToComplete =
+          completedScenarios.length > 0
+            ? completedScenarios.reduce((sum, s) => {
+                const hours = (s.resolvedAt!.getTime() - s.createdAt.getTime()) / (1000 * 60 * 60);
+                return sum + hours;
+              }, 0) / completedScenarios.length
+            : 0;
 
         // Completion rate by type
         const byType: Record<string, { total: number; completed: number; rate: number }> = {};
-        scenarios.forEach(s => {
+        scenarios.forEach((s) => {
           if (!byType[s.type]) {
             byType[s.type] = { total: 0, completed: 0, rate: 0 };
           }
           byType[s.type].total++;
-          if (s.status === 'completed') byType[s.type].completed++;
+          if (s.status === "completed") byType[s.type].completed++;
         });
 
-        Object.keys(byType).forEach(type => {
-          byType[type].rate = byType[type].total > 0
-            ? Math.round((byType[type].completed / byType[type].total) * 1000) / 10
-            : 0;
+        Object.keys(byType).forEach((type) => {
+          byType[type].rate =
+            byType[type].total > 0
+              ? Math.round((byType[type].completed / byType[type].total) * 1000) / 10
+              : 0;
         });
 
         return {
@@ -1762,10 +1852,10 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           byType,
         };
       } catch (error) {
-        console.error('[DIPLOMATIC_SCENARIOS] Failed to get completion rates:', error);
+        console.error("[DIPLOMATIC_SCENARIOS] Failed to get completion rates:", error);
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to retrieve completion rates',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to retrieve completion rates",
           cause: error,
         });
       }
@@ -1782,11 +1872,11 @@ function generateResponseOptions(scenarioType: string, relationshipStrength: num
   const baseOptions = [
     {
       id: `${scenarioType}_aggressive`,
-      label: 'Take aggressive stance',
-      description: 'Assert dominance and demand concessions',
-      skillRequired: 'intimidation',
+      label: "Take aggressive stance",
+      description: "Assert dominance and demand concessions",
+      skillRequired: "intimidation",
       skillLevel: 7,
-      riskLevel: 'high',
+      riskLevel: "high",
       effects: {
         relationshipChange: -15,
         economicImpact: -5,
@@ -1794,18 +1884,18 @@ function generateResponseOptions(scenarioType: string, relationshipStrength: num
         securityImpact: 10,
       },
       predictedOutcomes: {
-        shortTerm: 'Immediate tension, possible retaliation',
-        mediumTerm: 'Strained relations, reduced cooperation',
-        longTerm: 'Potential for escalation or grudge-holding',
-      }
+        shortTerm: "Immediate tension, possible retaliation",
+        mediumTerm: "Strained relations, reduced cooperation",
+        longTerm: "Potential for escalation or grudge-holding",
+      },
     },
     {
       id: `${scenarioType}_diplomatic`,
-      label: 'Pursue diplomatic resolution',
-      description: 'Negotiate a mutually beneficial solution',
-      skillRequired: 'negotiation',
+      label: "Pursue diplomatic resolution",
+      description: "Negotiate a mutually beneficial solution",
+      skillRequired: "negotiation",
       skillLevel: 5,
-      riskLevel: 'medium',
+      riskLevel: "medium",
       effects: {
         relationshipChange: 5,
         economicImpact: 0,
@@ -1813,18 +1903,18 @@ function generateResponseOptions(scenarioType: string, relationshipStrength: num
         securityImpact: 0,
       },
       predictedOutcomes: {
-        shortTerm: 'Constructive dialogue, goodwill gestures',
-        mediumTerm: 'Improved cooperation, trust building',
-        longTerm: 'Strengthened alliance potential',
-      }
+        shortTerm: "Constructive dialogue, goodwill gestures",
+        mediumTerm: "Improved cooperation, trust building",
+        longTerm: "Strengthened alliance potential",
+      },
     },
     {
       id: `${scenarioType}_compromise`,
-      label: 'Offer compromise',
-      description: 'Meet halfway with balanced concessions',
-      skillRequired: 'compromise',
+      label: "Offer compromise",
+      description: "Meet halfway with balanced concessions",
+      skillRequired: "compromise",
       skillLevel: 4,
-      riskLevel: 'low',
+      riskLevel: "low",
       effects: {
         relationshipChange: 10,
         economicImpact: -2,
@@ -1832,10 +1922,10 @@ function generateResponseOptions(scenarioType: string, relationshipStrength: num
         securityImpact: -3,
       },
       predictedOutcomes: {
-        shortTerm: 'De-escalation, mutual satisfaction',
-        mediumTerm: 'Stable relations, fair outcome',
-        longTerm: 'Precedent for future cooperation',
-      }
+        shortTerm: "De-escalation, mutual satisfaction",
+        mediumTerm: "Stable relations, fair outcome",
+        longTerm: "Precedent for future cooperation",
+      },
     },
   ];
 
@@ -1843,11 +1933,11 @@ function generateResponseOptions(scenarioType: string, relationshipStrength: num
   if (relationshipStrength > 70) {
     baseOptions.push({
       id: `${scenarioType}_friendly`,
-      label: 'Leverage friendship',
-      description: 'Use strong relationship to find creative solution',
-      skillRequired: 'empathy',
+      label: "Leverage friendship",
+      description: "Use strong relationship to find creative solution",
+      skillRequired: "empathy",
       skillLevel: 3,
-      riskLevel: 'low',
+      riskLevel: "low",
       effects: {
         relationshipChange: 15,
         economicImpact: 5,
@@ -1855,10 +1945,10 @@ function generateResponseOptions(scenarioType: string, relationshipStrength: num
         securityImpact: 5,
       },
       predictedOutcomes: {
-        shortTerm: 'Swift resolution, mutual benefit',
-        mediumTerm: 'Deepened trust and cooperation',
-        longTerm: 'Model alliance for other nations',
-      }
+        shortTerm: "Swift resolution, mutual benefit",
+        mediumTerm: "Deepened trust and cooperation",
+        longTerm: "Model alliance for other nations",
+      },
     });
   }
 
@@ -1890,5 +1980,8 @@ function generateScenarioNarrative(type: string, country1: string, country2: str
     treaty_renewal: `The landmark treaty between ${country1} and ${country2} is approaching its renewal date. Both nations must decide whether to renew, renegotiate, or allow it to expire. This treaty has been a cornerstone of bilateral relations for years.`,
   };
 
-  return templates[type] || `A diplomatic situation has emerged between ${country1} and ${country2} requiring careful consideration and strategic decision-making.`;
+  return (
+    templates[type] ||
+    `A diplomatic situation has emerged between ${country1} and ${country2} requiring careful consideration and strategic decision-making.`
+  );
 }

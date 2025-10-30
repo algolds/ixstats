@@ -18,10 +18,7 @@ export const customTypesRouter = createTRPCRouter({
       where: {
         userId: ctx.user.id,
       },
-      orderBy: [
-        { usageCount: 'desc' },
-        { lastUsedAt: 'desc' },
-      ],
+      orderBy: [{ usageCount: "desc" }, { lastUsedAt: "desc" }],
     });
 
     return customTypes;
@@ -97,7 +94,7 @@ export const customTypesRouter = createTRPCRouter({
       if (searchQuery && searchQuery.length > 0) {
         where.value = {
           contains: searchQuery,
-          mode: 'insensitive' as const,
+          mode: "insensitive" as const,
         };
       }
 
@@ -108,7 +105,7 @@ export const customTypesRouter = createTRPCRouter({
           isGlobal: true,
         },
         orderBy: {
-          usageCount: 'desc',
+          usageCount: "desc",
         },
         take: Math.floor(limit / 2), // Half the limit for global values
       });
@@ -119,10 +116,7 @@ export const customTypesRouter = createTRPCRouter({
           ...where,
           userId: ctx.user.id,
         },
-        orderBy: [
-          { usageCount: 'desc' },
-          { lastUsedAt: 'desc' },
-        ],
+        orderBy: [{ usageCount: "desc" }, { lastUsedAt: "desc" }],
         take: Math.ceil(limit / 2), // Other half for user values
       });
 
@@ -194,13 +188,10 @@ export const customTypesRouter = createTRPCRouter({
       return ctx.db.customFieldValue.findMany({
         where: {
           fieldName: input.fieldName,
-          OR: [
-            { isGlobal: true },
-            { userId: ctx.user.id },
-          ],
+          OR: [{ isGlobal: true }, { userId: ctx.user.id }],
         },
         orderBy: {
-          usageCount: 'desc',
+          usageCount: "desc",
         },
       });
     }),

@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, publicProcedure, protectedProcedure, premiumProcedure, adminProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  premiumProcedure,
+  adminProcedure,
+} from "~/server/api/trpc";
 import { standardize } from "~/lib/interface-standardizer";
 import { unifyIntelligenceItem } from "~/lib/transformers/interface-adapters";
 import { calculateIntelligence } from "~/lib/intelligence-calculator";
@@ -11,8 +17,8 @@ export const intelligenceRouter = createTRPCRouter({
     // Get real intelligence items from database
     const items = await ctx.db.intelligenceItem.findMany({
       where: { isActive: true },
-      orderBy: { timestamp: 'desc' },
-      take: 50
+      orderBy: { timestamp: "desc" },
+      take: 50,
     });
 
     // Transform to unified intelligence format
@@ -23,8 +29,8 @@ export const intelligenceRouter = createTRPCRouter({
     // Get latest intelligence items with additional filtering
     const items = await ctx.db.intelligenceItem.findMany({
       where: { isActive: true },
-      orderBy: { timestamp: 'desc' },
-      take: 20
+      orderBy: { timestamp: "desc" },
+      take: 20,
     });
 
     // Transform to unified intelligence format
@@ -32,15 +38,17 @@ export const intelligenceRouter = createTRPCRouter({
   }),
 
   createIntelligenceItem: protectedProcedure
-    .input(z.object({
-      title: z.string().min(1).max(200),
-      content: z.string().min(1),
-      category: z.string(),
-      priority: z.enum(['low', 'medium', 'high', 'critical']),
-      source: z.string(),
-      region: z.string().optional(),
-      affectedCountries: z.string().optional()
-    }))
+    .input(
+      z.object({
+        title: z.string().min(1).max(200),
+        content: z.string().min(1),
+        category: z.string(),
+        priority: z.enum(["low", "medium", "high", "critical"]),
+        source: z.string(),
+        region: z.string().optional(),
+        affectedCountries: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const item = await ctx.db.intelligenceItem.create({
         data: {
@@ -52,52 +60,70 @@ export const intelligenceRouter = createTRPCRouter({
           region: input.region,
           affectedCountries: input.affectedCountries,
           timestamp: new Date(),
-          isActive: true
-        }
+          isActive: true,
+        },
       });
 
       // 🔔 Notify affected countries (or global if none specified)
       try {
-        const priorityMap: Record<string, 'high' | 'medium' | 'low'> = {
-          'critical': 'high',
-          'high': 'high',
-          'medium': 'medium',
-          'low': 'low'
+        const priorityMap: Record<string, "high" | "medium" | "low"> = {
+          critical: "high",
+          high: "high",
+          medium: "medium",
+          low: "low",
         };
 
         if (input.affectedCountries) {
           // Parse affected countries and notify each
-          const countryIds = input.affectedCountries.split(',').map(c => c.trim());
+          const countryIds = input.affectedCountries.split(",").map((c) => c.trim());
           for (const countryId of countryIds) {
             await notificationAPI.create({
-              title: '🔍 Intelligence Alert',
+              title: "🔍 Intelligence Alert",
               message: `${input.title} - ${input.priority.toUpperCase()} priority`,
               countryId,
-              category: 'intelligence',
-              priority: priorityMap[input.priority] || 'medium',
-              type: input.priority === 'critical' ? 'error' : input.priority === 'high' ? 'warning' : 'info',
-              href: '/intelligence',
-              source: 'intelligence-system',
+              category: "intelligence",
+              priority: priorityMap[input.priority] || "medium",
+              type:
+                input.priority === "critical"
+                  ? "error"
+                  : input.priority === "high"
+                    ? "warning"
+                    : "info",
+              href: "/intelligence",
+              source: "intelligence-system",
               actionable: true,
-              metadata: { intelligenceItemId: item.id, category: input.category, region: input.region },
+              metadata: {
+                intelligenceItemId: item.id,
+                category: input.category,
+                region: input.region,
+              },
             });
           }
         } else {
           // Global intelligence notification
           await notificationAPI.create({
-            title: '🔍 Global Intelligence Alert',
+            title: "🔍 Global Intelligence Alert",
             message: `${input.title} - ${input.priority.toUpperCase()} priority`,
-            category: 'intelligence',
-            priority: priorityMap[input.priority] || 'medium',
-            type: input.priority === 'critical' ? 'error' : input.priority === 'high' ? 'warning' : 'info',
-            href: '/intelligence',
-            source: 'intelligence-system',
+            category: "intelligence",
+            priority: priorityMap[input.priority] || "medium",
+            type:
+              input.priority === "critical"
+                ? "error"
+                : input.priority === "high"
+                  ? "warning"
+                  : "info",
+            href: "/intelligence",
+            source: "intelligence-system",
             actionable: true,
-            metadata: { intelligenceItemId: item.id, category: input.category, region: input.region },
+            metadata: {
+              intelligenceItemId: item.id,
+              category: input.category,
+              region: input.region,
+            },
           });
         }
       } catch (error) {
-        console.error('[Intelligence] Failed to send intelligence notification:', error);
+        console.error("[Intelligence] Failed to send intelligence notification:", error);
       }
 
       return item;
@@ -109,13 +135,13 @@ export const intelligenceRouter = createTRPCRouter({
       // Get secure messages from SystemConfig table (using same pattern as ECI)
       const messages = await ctx.db.systemConfig.findMany({
         where: {
-          key: { contains: `secure_message_${input.userId}` }
+          key: { contains: `secure_message_${input.userId}` },
         },
-        orderBy: { updatedAt: 'desc' },
-        take: 20
+        orderBy: { updatedAt: "desc" },
+        take: 20,
       });
 
-      return messages.map(msg => {
+      return messages.map((msg) => {
         const data = JSON.parse(msg.value);
         return {
           id: msg.id,
@@ -124,20 +150,24 @@ export const intelligenceRouter = createTRPCRouter({
           timestamp: data.timestamp ? new Date(data.timestamp) : msg.createdAt,
           priority: data.priority || "Medium",
           classification: data.classification || "RESTRICTED",
-          content: data.content
+          content: data.content,
         };
       });
     }),
 
   sendSecureMessage: premiumProcedure
-    .input(z.object({
-      recipientUserId: z.string(),
-      subject: z.string().min(1).max(200),
-      content: z.string().min(1),
-      priority: z.enum(['low', 'medium', 'high', 'critical']).default('medium'),
-      classification: z.enum(['UNCLASSIFIED', 'RESTRICTED', 'CONFIDENTIAL', 'SECRET', 'TOP_SECRET']).default('RESTRICTED'),
-      senderUserId: z.string()
-    }))
+    .input(
+      z.object({
+        recipientUserId: z.string(),
+        subject: z.string().min(1).max(200),
+        content: z.string().min(1),
+        priority: z.enum(["low", "medium", "high", "critical"]).default("medium"),
+        classification: z
+          .enum(["UNCLASSIFIED", "RESTRICTED", "CONFIDENTIAL", "SECRET", "TOP_SECRET"])
+          .default("RESTRICTED"),
+        senderUserId: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       return ctx.db.systemConfig.create({
         data: {
@@ -149,55 +179,58 @@ export const intelligenceRouter = createTRPCRouter({
             priority: input.priority,
             classification: input.classification,
             timestamp: new Date(),
-            read: false
+            read: false,
           }),
-          description: `Secure message: ${input.subject}`
-        }
+          description: `Secure message: ${input.subject}`,
+        },
       });
     }),
 
   // Initialize some sample intelligence data if database is empty (development only)
   initializeSampleData: adminProcedure.mutation(async ({ ctx }) => {
     const count = await ctx.db.intelligenceItem.count();
-    
+
     if (count === 0) {
       const sampleData = [
         {
           title: "Global Economic Indicators Show Stabilization",
-          content: "Economic analysis indicates stabilizing trends across major markets following recent policy implementations.",
+          content:
+            "Economic analysis indicates stabilizing trends across major markets following recent policy implementations.",
           category: "Economic",
           priority: "medium",
           source: "Economic Intelligence Division",
           region: "Global",
-          timestamp: new Date(Date.now() - 1000 * 60 * 30)
+          timestamp: new Date(Date.now() - 1000 * 60 * 30),
         },
         {
           title: "Diplomatic Relations Update",
-          content: "Recent diplomatic initiatives showing positive outcomes in inter-regional cooperation frameworks.",
+          content:
+            "Recent diplomatic initiatives showing positive outcomes in inter-regional cooperation frameworks.",
           category: "Diplomatic",
           priority: "low",
           source: "Diplomatic Intelligence Service",
           region: "Multi-Regional",
-          timestamp: new Date(Date.now() - 1000 * 60 * 120)
+          timestamp: new Date(Date.now() - 1000 * 60 * 120),
         },
         {
           title: "Crisis Response Coordination Success",
-          content: "International crisis response mechanisms demonstrate improved coordination and effectiveness.",
+          content:
+            "International crisis response mechanisms demonstrate improved coordination and effectiveness.",
           category: "Crisis",
           priority: "high",
           source: "Crisis Management Center",
           region: "International",
-          timestamp: new Date(Date.now() - 1000 * 60 * 45)
-        }
+          timestamp: new Date(Date.now() - 1000 * 60 * 45),
+        },
       ];
 
       await ctx.db.intelligenceItem.createMany({
-        data: sampleData.map(item => ({
+        data: sampleData.map((item) => ({
           ...item,
           category: item.category.toUpperCase() as any,
           priority: item.priority.toUpperCase() as any,
-          isActive: true
-        }))
+          isActive: true,
+        })),
       });
 
       return { message: "Sample intelligence data initialized", count: sampleData.length };
@@ -212,10 +245,7 @@ export const intelligenceRouter = createTRPCRouter({
   getAllTemplates: publicProcedure.query(async ({ ctx }) => {
     return ctx.db.intelligenceTemplate.findMany({
       where: { isActive: true },
-      orderBy: [
-        { reportType: 'asc' },
-        { minimumLevel: 'asc' }
-      ]
+      orderBy: [{ reportType: "asc" }, { minimumLevel: "asc" }],
     });
   }),
 
@@ -224,13 +254,13 @@ export const intelligenceRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const template = await ctx.db.intelligenceTemplate.findUnique({
-        where: { id: input.id }
+        where: { id: input.id },
       });
 
       if (!template) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Intelligence template not found'
+          code: "NOT_FOUND",
+          message: "Intelligence template not found",
         });
       }
 
@@ -239,38 +269,40 @@ export const intelligenceRouter = createTRPCRouter({
 
   // Get templates by report type
   getTemplatesByType: publicProcedure
-    .input(z.object({ reportType: z.enum(['economic', 'political', 'security']) }))
+    .input(z.object({ reportType: z.enum(["economic", "political", "security"]) }))
     .query(async ({ ctx, input }) => {
       return ctx.db.intelligenceTemplate.findMany({
         where: {
           reportType: input.reportType,
-          isActive: true
+          isActive: true,
         },
-        orderBy: { minimumLevel: 'asc' }
+        orderBy: { minimumLevel: "asc" },
       });
     }),
 
   // Create template (admin only)
   createTemplate: adminProcedure
-    .input(z.object({
-      reportType: z.enum(['economic', 'political', 'security']),
-      classification: z.enum(['PUBLIC', 'RESTRICTED']),
-      summaryTemplate: z.string().min(1),
-      findingsTemplate: z.string(), // JSON string array
-      minimumLevel: z.number().min(1).max(5),
-      confidenceBase: z.number().min(0).max(100)
-    }))
+    .input(
+      z.object({
+        reportType: z.enum(["economic", "political", "security"]),
+        classification: z.enum(["PUBLIC", "RESTRICTED"]),
+        summaryTemplate: z.string().min(1),
+        findingsTemplate: z.string(), // JSON string array
+        minimumLevel: z.number().min(1).max(5),
+        confidenceBase: z.number().min(0).max(100),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Validate findings template is valid JSON
       try {
         const findings = JSON.parse(input.findingsTemplate);
         if (!Array.isArray(findings)) {
-          throw new Error('Findings template must be a JSON array');
+          throw new Error("Findings template must be a JSON array");
         }
       } catch (error) {
         throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Invalid findings template format'
+          code: "BAD_REQUEST",
+          message: "Invalid findings template format",
         });
       }
 
@@ -282,8 +314,8 @@ export const intelligenceRouter = createTRPCRouter({
           findingsTemplate: input.findingsTemplate,
           minimumLevel: input.minimumLevel,
           confidenceBase: input.confidenceBase,
-          isActive: true
-        }
+          isActive: true,
+        },
       });
 
       // Audit log
@@ -291,18 +323,18 @@ export const intelligenceRouter = createTRPCRouter({
         await ctx.db.auditLog.create({
           data: {
             userId: ctx.auth?.userId || null,
-            action: 'INTELLIGENCE_TEMPLATE_CREATED',
+            action: "INTELLIGENCE_TEMPLATE_CREATED",
             target: template.id,
             details: JSON.stringify({
               reportType: template.reportType,
               classification: template.classification,
-              minimumLevel: template.minimumLevel
+              minimumLevel: template.minimumLevel,
             }),
-            success: true
-          }
+            success: true,
+          },
         });
       } catch (logError) {
-        console.error('Failed to create audit log:', logError);
+        console.error("Failed to create audit log:", logError);
       }
 
       return { success: true, template };
@@ -310,15 +342,17 @@ export const intelligenceRouter = createTRPCRouter({
 
   // Update template (admin only)
   updateTemplate: adminProcedure
-    .input(z.object({
-      id: z.string(),
-      reportType: z.enum(['economic', 'political', 'security']).optional(),
-      classification: z.enum(['PUBLIC', 'RESTRICTED']).optional(),
-      summaryTemplate: z.string().min(1).optional(),
-      findingsTemplate: z.string().optional(),
-      minimumLevel: z.number().min(1).max(5).optional(),
-      confidenceBase: z.number().min(0).max(100).optional()
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        reportType: z.enum(["economic", "political", "security"]).optional(),
+        classification: z.enum(["PUBLIC", "RESTRICTED"]).optional(),
+        summaryTemplate: z.string().min(1).optional(),
+        findingsTemplate: z.string().optional(),
+        minimumLevel: z.number().min(1).max(5).optional(),
+        confidenceBase: z.number().min(0).max(100).optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { id, ...updateData } = input;
 
@@ -327,12 +361,12 @@ export const intelligenceRouter = createTRPCRouter({
         try {
           const findings = JSON.parse(updateData.findingsTemplate);
           if (!Array.isArray(findings)) {
-            throw new Error('Findings template must be a JSON array');
+            throw new Error("Findings template must be a JSON array");
           }
         } catch (error) {
           throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Invalid findings template format'
+            code: "BAD_REQUEST",
+            message: "Invalid findings template format",
           });
         }
       }
@@ -341,8 +375,8 @@ export const intelligenceRouter = createTRPCRouter({
         where: { id },
         data: {
           ...updateData,
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       });
 
       // Audit log
@@ -350,17 +384,17 @@ export const intelligenceRouter = createTRPCRouter({
         await ctx.db.auditLog.create({
           data: {
             userId: ctx.auth?.userId || null,
-            action: 'INTELLIGENCE_TEMPLATE_UPDATED',
+            action: "INTELLIGENCE_TEMPLATE_UPDATED",
             target: template.id,
             details: JSON.stringify({
               reportType: template.reportType,
-              updatedFields: Object.keys(updateData)
+              updatedFields: Object.keys(updateData),
             }),
-            success: true
-          }
+            success: true,
+          },
         });
       } catch (logError) {
-        console.error('Failed to create audit log:', logError);
+        console.error("Failed to create audit log:", logError);
       }
 
       return { success: true, template };
@@ -372,7 +406,7 @@ export const intelligenceRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const template = await ctx.db.intelligenceTemplate.update({
         where: { id: input.id },
-        data: { isActive: false }
+        data: { isActive: false },
       });
 
       // Audit log
@@ -380,66 +414,69 @@ export const intelligenceRouter = createTRPCRouter({
         await ctx.db.auditLog.create({
           data: {
             userId: ctx.auth?.userId || null,
-            action: 'INTELLIGENCE_TEMPLATE_DELETED',
+            action: "INTELLIGENCE_TEMPLATE_DELETED",
             target: template.id,
             details: JSON.stringify({
               reportType: template.reportType,
-              classification: template.classification
+              classification: template.classification,
             }),
-            success: true
-          }
+            success: true,
+          },
         });
       } catch (logError) {
-        console.error('Failed to create audit log:', logError);
+        console.error("Failed to create audit log:", logError);
       }
 
       return { success: true };
-    })
+    }),
 });
 
 // Only allow initializeSampleData in development
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === "development") {
   intelligenceRouter.initializeSampleData = adminProcedure.mutation(async ({ ctx }) => {
     const count = await ctx.db.intelligenceItem.count();
-    
+
     if (count === 0) {
       const sampleData = [
         {
           title: "Global Economic Indicators Show Stabilization",
-          content: "Economic analysis indicates stabilizing trends across major markets following recent policy implementations.",
+          content:
+            "Economic analysis indicates stabilizing trends across major markets following recent policy implementations.",
           category: "Economic",
           priority: "medium",
           source: "Economic Intelligence Division",
           region: "Global",
-          timestamp: new Date(Date.now() - 1000 * 60 * 30)
+          timestamp: new Date(Date.now() - 1000 * 60 * 30),
         },
         {
           title: "Diplomatic Relations Update",
-          content: "Recent diplomatic initiatives showing positive outcomes in inter-regional cooperation frameworks.",
+          content:
+            "Recent diplomatic initiatives showing positive outcomes in inter-regional cooperation frameworks.",
           category: "Diplomatic",
           priority: "low",
           source: "Diplomatic Intelligence Service",
           region: "Multi-Regional",
-          timestamp: new Date(Date.now() - 1000 * 60 * 120)
+          timestamp: new Date(Date.now() - 1000 * 60 * 120),
         },
         {
           title: "Crisis Response Coordination Success",
-          content: "International crisis response mechanisms demonstrate improved coordination and effectiveness.",
+          content:
+            "International crisis response mechanisms demonstrate improved coordination and effectiveness.",
           category: "Crisis",
           priority: "high",
           source: "Crisis Management Center",
           region: "International",
-          timestamp: new Date(Date.now() - 1000 * 60 * 45)
-        }
+          timestamp: new Date(Date.now() - 1000 * 60 * 45),
+        },
       ];
 
       await ctx.db.intelligenceItem.createMany({
-        data: sampleData.map(item => ({
+        data: sampleData.map((item) => ({
           ...item,
           category: item.category.toUpperCase() as any,
           priority: item.priority.toUpperCase() as any,
-          isActive: true
-        }))
+          isActive: true,
+        })),
       });
 
       return { message: "Sample intelligence data initialized", count: sampleData.length };
@@ -465,22 +502,19 @@ export const intelligenceBriefingRouter = createTRPCRouter({
       return ctx.db.intelligenceBriefing.findMany({
         where: {
           countryId: input.countryId,
-          isActive: true
+          isActive: true,
         },
         include: {
           recommendations: {
             where: { isActive: true },
-            orderBy: { urgency: 'asc' }
+            orderBy: { urgency: "asc" },
           },
           alerts: {
             where: { isActive: true },
-            orderBy: { severity: 'desc' }
-          }
+            orderBy: { severity: "desc" },
+          },
         },
-        orderBy: [
-          { priority: 'desc' },
-          { generatedAt: 'desc' }
-        ]
+        orderBy: [{ priority: "desc" }, { generatedAt: "desc" }],
       });
     }),
 
@@ -490,10 +524,10 @@ export const intelligenceBriefingRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       return ctx.db.vitalitySnapshot.findMany({
         where: {
-          countryId: input.countryId
+          countryId: input.countryId,
         },
-        orderBy: { calculatedAt: 'desc' },
-        take: 4 // Latest snapshot for each area
+        orderBy: { calculatedAt: "desc" },
+        take: 4, // Latest snapshot for each area
       });
     }),
 
@@ -505,12 +539,9 @@ export const intelligenceBriefingRouter = createTRPCRouter({
         where: {
           countryId: input.countryId,
           isActive: true,
-          isImplemented: false
+          isImplemented: false,
         },
-        orderBy: [
-          { urgency: 'asc' },
-          { successProbability: 'desc' }
-        ]
+        orderBy: [{ urgency: "asc" }, { successProbability: "desc" }],
       });
     }),
 
@@ -522,8 +553,8 @@ export const intelligenceBriefingRouter = createTRPCRouter({
         where: { id: input.recommendationId },
         data: {
           isImplemented: true,
-          implementedAt: new Date()
-        }
+          implementedAt: new Date(),
+        },
       });
     }),
 
@@ -536,49 +567,48 @@ export const intelligenceBriefingRouter = createTRPCRouter({
     }),
 
   // Recalculate intelligence for all countries (admin only)
-  recalculateAll: publicProcedure
-    .mutation(async ({ ctx }) => {
-      await calculateIntelligence({ forceRecalculate: true });
-      return { success: true, message: 'Intelligence recalculated for all countries' };
-    }),
+  recalculateAll: publicProcedure.mutation(async ({ ctx }) => {
+    await calculateIntelligence({ forceRecalculate: true });
+    return { success: true, message: "Intelligence recalculated for all countries" };
+  }),
 
   // Get global intelligence summary for dashboard
   getGlobalSummary: publicProcedure.query(async ({ ctx }) => {
     // Get active crises from SDI system
     const activeCrises = await ctx.db.crisisEvent.count({
-      where: { responseStatus: { not: 'resolved' } }
+      where: { responseStatus: { not: "resolved" } },
     });
 
     // Get critical crises
     const criticalCrises = await ctx.db.crisisEvent.count({
       where: {
-        responseStatus: { not: 'resolved' },
-        severity: 'critical'
-      }
+        responseStatus: { not: "resolved" },
+        severity: "critical",
+      },
     });
 
     // Get active diplomatic missions
     const diplomaticMissions = await ctx.db.diplomaticEvent.count({
       where: {
-        status: 'active',
-        eventType: { in: ['summit', 'trade_mission', 'state_visit'] }
-      }
+        status: "active",
+        eventType: { in: ["summit", "trade_mission", "state_visit"] },
+      },
     });
 
     // Get intelligence items from last 7 days
     const recentIntelligence = await ctx.db.intelligenceItem.count({
       where: {
         isActive: true,
-        timestamp: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
-      }
+        timestamp: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+      },
     });
 
     // Get high priority intelligence
     const intelligenceAlerts = await ctx.db.intelligenceItem.count({
       where: {
         isActive: true,
-        priority: { in: ['HIGH', 'CRITICAL'] }
-      }
+        priority: { in: ["HIGH", "CRITICAL"] },
+      },
     });
 
     return {
@@ -587,7 +617,7 @@ export const intelligenceBriefingRouter = createTRPCRouter({
       diplomaticMissions,
       recentIntelligence,
       intelligenceAlerts,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
-  })
+  }),
 });

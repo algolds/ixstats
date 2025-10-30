@@ -3,26 +3,23 @@
  * Detailed check for duplicate countries
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 // Note: Uses DATABASE_URL from environment (PostgreSQL, October 2025)
 const prisma = new PrismaClient();
 
 async function checkDuplicates() {
-  console.log('🔍 Checking for duplicate countries in production database...\n');
+  console.log("🔍 Checking for duplicate countries in production database...\n");
 
   try {
     // Get all countries with full details
     const allCountries = await prisma.country.findMany({
-      orderBy: [
-        { name: 'asc' },
-        { createdAt: 'desc' }
-      ],
+      orderBy: [{ name: "asc" }, { createdAt: "desc" }],
       select: {
         id: true,
         name: true,
         createdAt: true,
-      }
+      },
     });
 
     console.log(`📊 Total countries: ${allCountries.length}\n`);
@@ -44,9 +41,9 @@ async function checkDuplicates() {
       .sort((a, b) => b[1].length - a[1].length);
 
     if (duplicateGroups.length === 0) {
-      console.log('✅ No duplicates found!\n');
-      console.log('Showing first 20 countries:');
-      allCountries.slice(0, 20).forEach(c => {
+      console.log("✅ No duplicates found!\n");
+      console.log("Showing first 20 countries:");
+      allCountries.slice(0, 20).forEach((c) => {
         console.log(`  - ${c.name} (${c.id.slice(0, 8)}...)`);
       });
       return;
@@ -57,7 +54,9 @@ async function checkDuplicates() {
     for (const [name, countries] of duplicateGroups) {
       console.log(`\n📍 "${countries[0].name}" (${countries.length} entries):`);
       countries.forEach((c, i) => {
-        console.log(`   ${i + 1}. ID: ${c.id.slice(0, 12)}... | Created: ${c.createdAt.toISOString().split('T')[0]} | Updated: ${c.updatedAt.toISOString().split('T')[0]}`);
+        console.log(
+          `   ${i + 1}. ID: ${c.id.slice(0, 12)}... | Created: ${c.createdAt.toISOString().split("T")[0]} | Updated: ${c.updatedAt.toISOString().split("T")[0]}`
+        );
       });
     }
 
@@ -66,16 +65,15 @@ async function checkDuplicates() {
     console.log(`   Total entries: ${allCountries.length}`);
     console.log(`   Duplicate groups: ${duplicateGroups.length}`);
     console.log(`   Total duplicates to remove: ${allCountries.length - grouped.size}`);
-
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error("❌ Error:", error);
     throw error;
   } finally {
     await prisma.$disconnect();
   }
 }
 
-checkDuplicates().catch(error => {
-  console.error('Fatal error:', error);
+checkDuplicates().catch((error) => {
+  console.error("Fatal error:", error);
   process.exit(1);
 });

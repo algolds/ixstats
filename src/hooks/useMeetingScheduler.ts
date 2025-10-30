@@ -7,9 +7,9 @@
  * @module useMeetingScheduler
  */
 
-import { useState, useMemo, useCallback } from 'react';
-import { api } from '~/trpc/react';
-import { toast } from 'sonner';
+import { useState, useMemo, useCallback } from "react";
+import { api } from "~/trpc/react";
+import { toast } from "sonner";
 import {
   filterMeetingsByDate,
   sortMeetingsByTime,
@@ -24,7 +24,7 @@ import {
   type Decision as SchedulerDecision,
   type ActionItem as SchedulerActionItem,
   type Attendance as SchedulerAttendance,
-} from '~/lib/meeting-scheduler-utils';
+} from "~/lib/meeting-scheduler-utils";
 
 // ============================================================================
 // Types
@@ -35,14 +35,14 @@ export interface AgendaItemForm {
   description: string;
   order: number;
   estimatedDuration: number;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
 }
 
 export interface DecisionForm {
   title: string;
   description: string;
-  decisionType: 'policy' | 'budget' | 'personnel' | 'strategic' | 'other';
-  outcome: 'approved' | 'rejected' | 'deferred' | 'requires_review';
+  decisionType: "policy" | "budget" | "personnel" | "strategic" | "other";
+  outcome: "approved" | "rejected" | "deferred" | "requires_review";
   votesFor?: number;
   votesAgainst?: number;
   votesAbstain?: number;
@@ -53,7 +53,7 @@ export interface ActionItemForm {
   description: string;
   assignedToId: string;
   dueDate: Date;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
 }
 
 export interface MeetingForm {
@@ -68,19 +68,17 @@ export interface MeetingForm {
 // ============================================================================
 
 const ensureString = (value: unknown, fallback: string): string =>
-  typeof value === 'string' && value.trim().length > 0
-    ? value
-    : fallback;
+  typeof value === "string" && value.trim().length > 0 ? value : fallback;
 
 const ensureNumber = (value: unknown): number | null =>
-  typeof value === 'number' && !Number.isNaN(value) ? value : null;
+  typeof value === "number" && !Number.isNaN(value) ? value : null;
 
 const parseDate = (value: unknown): Date => {
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
     return value;
   }
 
-  if (typeof value === 'string' || typeof value === 'number') {
+  if (typeof value === "string" || typeof value === "number") {
     const parsed = new Date(value);
     if (!Number.isNaN(parsed.getTime())) {
       return parsed;
@@ -90,33 +88,29 @@ const parseDate = (value: unknown): Date => {
   return new Date();
 };
 
-const normalizeAgendaItems = (
-  items: any[] | undefined,
-): SchedulerAgendaItem[] => {
+const normalizeAgendaItems = (items: any[] | undefined): SchedulerAgendaItem[] => {
   if (!Array.isArray(items)) return [];
 
   return items.map((item, index) => ({
     id: ensureString(item?.id, `agenda-${index}`),
     title: ensureString(item?.title, `Agenda Item ${index + 1}`),
     description: item?.description ?? null,
-    order: typeof item?.order === 'number' ? item.order : index,
+    order: typeof item?.order === "number" ? item.order : index,
     duration: ensureNumber(item?.duration),
     estimatedDuration: ensureNumber(item?.estimatedDuration ?? item?.duration) ?? undefined,
-    priority: typeof item?.priority === 'string' ? item.priority : undefined,
+    priority: typeof item?.priority === "string" ? item.priority : undefined,
     status: item?.status ?? null,
   }));
 };
 
-const normalizeDecisions = (
-  decisions: any[] | undefined,
-): SchedulerDecision[] => {
+const normalizeDecisions = (decisions: any[] | undefined): SchedulerDecision[] => {
   if (!Array.isArray(decisions)) return [];
 
   return decisions.map((decision, index) => ({
     id: ensureString(decision?.id, `decision-${index}`),
     title: ensureString(decision?.title, `Decision ${index + 1}`),
     description: decision?.description ?? null,
-    decisionType: ensureString(decision?.decisionType, 'general'),
+    decisionType: ensureString(decision?.decisionType, "general"),
     outcome: decision?.outcome ?? undefined,
     votesFor: ensureNumber(decision?.votesFor) ?? undefined,
     votesAgainst: ensureNumber(decision?.votesAgainst) ?? undefined,
@@ -124,9 +118,7 @@ const normalizeDecisions = (
   }));
 };
 
-const normalizeActionItems = (
-  items: any[] | undefined,
-): SchedulerActionItem[] => {
+const normalizeActionItems = (items: any[] | undefined): SchedulerActionItem[] => {
   if (!Array.isArray(items)) return [];
 
   return items.map((action, index) => ({
@@ -142,7 +134,7 @@ const normalizeActionItems = (
 
 const normalizeAttendances = (
   attendances: any[] | undefined,
-  meetingId: string,
+  meetingId: string
 ): SchedulerAttendance[] => {
   if (!Array.isArray(attendances)) return [];
 
@@ -162,33 +154,33 @@ const normalizeAttendances = (
       return {
         id: ensureString(attendance?.id, `attendance-${meetingId}-${index}`),
         userId: ensureString(userId, `user-${meetingId}-${index}`),
-        status: ensureString(
-          attendance?.status ?? attendance?.attendanceStatus,
-          'pending',
-        ),
+        status: ensureString(attendance?.status ?? attendance?.attendanceStatus, "pending"),
       } as SchedulerAttendance;
     })
     .filter((attendance): attendance is SchedulerAttendance => attendance !== null);
 };
 
 const normalizeMeeting = (meeting: any): Meeting => {
-  const id = ensureString(meeting?.id ?? meeting?.meetingId, `meeting-${Math.random().toString(36).slice(2, 10)}`);
+  const id = ensureString(
+    meeting?.id ?? meeting?.meetingId,
+    `meeting-${Math.random().toString(36).slice(2, 10)}`
+  );
   const scheduledDate = parseDate(
     meeting?.scheduledDate ??
       meeting?.scheduledFor ??
       meeting?.scheduledIxTime ??
-      meeting?.createdAt,
+      meeting?.createdAt
   );
 
   return {
     id,
-    title: ensureString(meeting?.title, 'Untitled Meeting'),
+    title: ensureString(meeting?.title, "Untitled Meeting"),
     description: meeting?.description ?? null,
     scheduledDate,
     duration: ensureNumber(meeting?.duration ?? meeting?.meetingDuration),
     status: meeting?.status ?? meeting?.meetingStatus ?? null,
     scheduledIxTime:
-      typeof meeting?.scheduledIxTime === 'number'
+      typeof meeting?.scheduledIxTime === "number"
         ? meeting.scheduledIxTime
         : convertToIxTime(scheduledDate),
     agendaItems: normalizeAgendaItems(meeting?.agendaItems),
@@ -203,7 +195,7 @@ const normalizeMeetings = (meetings: unknown): Meeting[] => {
   return meetings.map(normalizeMeeting);
 };
 
-export type ActiveTab = 'calendar' | 'agenda' | 'minutes' | 'actions';
+export type ActiveTab = "calendar" | "agenda" | "minutes" | "actions";
 
 // ============================================================================
 // Hook
@@ -221,49 +213,49 @@ export function useMeetingScheduler(
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [createMeetingOpen, setCreateMeetingOpen] = useState(false);
   const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<ActiveTab>('calendar');
+  const [activeTab, setActiveTab] = useState<ActiveTab>("calendar");
   const [expandedMeetings, setExpandedMeetings] = useState<Set<string>>(new Set());
 
   // Form states
   const [meetingForm, setMeetingForm] = useState<MeetingForm>({
-    title: '',
-    description: '',
+    title: "",
+    description: "",
     scheduledDate: new Date(),
     duration: 60,
   });
 
   const [agendaForm, setAgendaForm] = useState<AgendaItemForm>({
-    title: '',
-    description: '',
+    title: "",
+    description: "",
     order: 0,
     estimatedDuration: 15,
-    priority: 'medium',
+    priority: "medium",
   });
 
   const [decisionForm, setDecisionForm] = useState<DecisionForm>({
-    title: '',
-    description: '',
-    decisionType: 'policy',
-    outcome: 'approved',
+    title: "",
+    description: "",
+    decisionType: "policy",
+    outcome: "approved",
   });
 
   const [actionForm, setActionForm] = useState<ActionItemForm>({
-    title: '',
-    description: '',
-    assignedToId: '',
+    title: "",
+    description: "",
+    assignedToId: "",
     dueDate: new Date(),
-    priority: 'medium',
+    priority: "medium",
   });
 
   // ============================================================================
   // Queries
   // ============================================================================
 
-  const { data: meetings, refetch: refetchMeetings, isLoading: meetingsLoading } =
-    api.meetings.getMeetings.useQuery(
-      { countryId },
-      { enabled: !!countryId }
-    );
+  const {
+    data: meetings,
+    refetch: refetchMeetings,
+    isLoading: meetingsLoading,
+  } = api.meetings.getMeetings.useQuery({ countryId }, { enabled: !!countryId });
 
   const { data: selectedMeeting } = api.meetings.getMeeting.useQuery(
     { id: selectedMeetingId! },
@@ -286,7 +278,7 @@ export function useMeetingScheduler(
 
   const createMeeting = api.meetings.createMeeting.useMutation({
     onSuccess: () => {
-      toast.success('Meeting created successfully');
+      toast.success("Meeting created successfully");
       void refetchMeetings();
       setCreateMeetingOpen(false);
       resetMeetingForm();
@@ -298,7 +290,7 @@ export function useMeetingScheduler(
 
   const updateMeeting = api.meetings.updateMeeting.useMutation({
     onSuccess: () => {
-      toast.success('Meeting updated successfully');
+      toast.success("Meeting updated successfully");
       void refetchMeetings();
     },
     onError: (error) => {
@@ -308,7 +300,7 @@ export function useMeetingScheduler(
 
   const deleteMeeting = api.meetings.deleteMeeting.useMutation({
     onSuccess: () => {
-      toast.success('Meeting deleted successfully');
+      toast.success("Meeting deleted successfully");
       void refetchMeetings();
       setSelectedMeetingId(null);
     },
@@ -319,7 +311,7 @@ export function useMeetingScheduler(
 
   const addAgendaItem = api.meetings.addAgendaItem.useMutation({
     onSuccess: () => {
-      toast.success('Agenda item added');
+      toast.success("Agenda item added");
       void refetchMeetings();
       resetAgendaForm();
     },
@@ -330,7 +322,7 @@ export function useMeetingScheduler(
 
   const recordAttendance = api.meetings.recordAttendance.useMutation({
     onSuccess: () => {
-      toast.success('Attendance recorded');
+      toast.success("Attendance recorded");
       void refetchMeetings();
     },
     onError: (error) => {
@@ -340,7 +332,7 @@ export function useMeetingScheduler(
 
   const recordDecision = api.meetings.recordDecision.useMutation({
     onSuccess: () => {
-      toast.success('Decision recorded');
+      toast.success("Decision recorded");
       void refetchMeetings();
       resetDecisionForm();
     },
@@ -351,7 +343,7 @@ export function useMeetingScheduler(
 
   const createActionItem = api.meetings.createActionItem.useMutation({
     onSuccess: () => {
-      toast.success('Action item created');
+      toast.success("Action item created");
       void refetchMeetings();
       resetActionForm();
     },
@@ -364,10 +356,7 @@ export function useMeetingScheduler(
   // Computed Values (Memoized)
   // ============================================================================
 
-  const normalizedMeetings = useMemo(
-    () => normalizeMeetings(meetings),
-    [meetings]
-  );
+  const normalizedMeetings = useMemo(() => normalizeMeetings(meetings), [meetings]);
 
   const normalizedSelectedMeeting = useMemo(
     () => (selectedMeeting ? normalizeMeeting(selectedMeeting) : null),
@@ -393,8 +382,8 @@ export function useMeetingScheduler(
 
   const resetMeetingForm = useCallback(() => {
     setMeetingForm({
-      title: '',
-      description: '',
+      title: "",
+      description: "",
       scheduledDate: new Date(),
       duration: 60,
     });
@@ -402,30 +391,30 @@ export function useMeetingScheduler(
 
   const resetAgendaForm = useCallback(() => {
     setAgendaForm({
-      title: '',
-      description: '',
+      title: "",
+      description: "",
       order: 0,
       estimatedDuration: 15,
-      priority: 'medium',
+      priority: "medium",
     });
   }, []);
 
   const resetDecisionForm = useCallback(() => {
     setDecisionForm({
-      title: '',
-      description: '',
-      decisionType: 'policy',
-      outcome: 'approved',
+      title: "",
+      description: "",
+      decisionType: "policy",
+      outcome: "approved",
     });
   }, []);
 
   const resetActionForm = useCallback(() => {
     setActionForm({
-      title: '',
-      description: '',
-      assignedToId: '',
+      title: "",
+      description: "",
+      assignedToId: "",
       dueDate: new Date(),
-      priority: 'medium',
+      priority: "medium",
     });
   }, []);
 
@@ -434,10 +423,7 @@ export function useMeetingScheduler(
   // ============================================================================
 
   const handleCreateMeeting = useCallback(() => {
-    const validation = validateMeetingData(
-      meetingForm.title,
-      meetingForm.scheduledDate
-    );
+    const validation = validateMeetingData(meetingForm.title, meetingForm.scheduledDate);
 
     if (!validation.valid) {
       toast.error(validation.error);
@@ -459,14 +445,11 @@ export function useMeetingScheduler(
 
   const handleAddAgendaItem = useCallback(() => {
     if (!selectedMeetingId) {
-      toast.error('Please select a meeting first');
+      toast.error("Please select a meeting first");
       return;
     }
 
-    const validation = validateAgendaItemData(
-      agendaForm.title,
-      agendaForm.estimatedDuration
-    );
+    const validation = validateAgendaItemData(agendaForm.title, agendaForm.estimatedDuration);
 
     if (!validation.valid) {
       toast.error(validation.error);
@@ -485,7 +468,7 @@ export function useMeetingScheduler(
 
   const handleRecordDecision = useCallback(() => {
     if (!selectedMeetingId) {
-      toast.error('Please select a meeting first');
+      toast.error("Please select a meeting first");
       return;
     }
 
@@ -510,7 +493,7 @@ export function useMeetingScheduler(
 
   const handleCreateActionItem = useCallback(() => {
     if (!selectedMeetingId) {
-      toast.error('Please select a meeting first');
+      toast.error("Please select a meeting first");
       return;
     }
 
@@ -535,14 +518,17 @@ export function useMeetingScheduler(
     });
   }, [selectedMeetingId, actionForm, createActionItem]);
 
-  const handleDeleteMeeting = useCallback((meetingId: string) => {
-    if (confirm('Delete this meeting?')) {
-      deleteMeeting.mutate({ id: meetingId });
-    }
-  }, [deleteMeeting]);
+  const handleDeleteMeeting = useCallback(
+    (meetingId: string) => {
+      if (confirm("Delete this meeting?")) {
+        deleteMeeting.mutate({ id: meetingId });
+      }
+    },
+    [deleteMeeting]
+  );
 
   const toggleMeetingExpanded = useCallback((meetingId: string) => {
-    setExpandedMeetings(prev => {
+    setExpandedMeetings((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(meetingId)) {
         newSet.delete(meetingId);

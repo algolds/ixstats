@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '~/lib/utils';
+import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "~/lib/utils";
 import {
   TrendingUp,
   TrendingDown,
@@ -14,11 +14,11 @@ import {
   ShieldAlert,
   Building2,
   Zap,
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
-import { api } from '~/trpc/react';
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { api } from "~/trpc/react";
 
 interface LiveEventsFeedProps {
   countryId: string;
@@ -40,24 +40,24 @@ export function LiveEventsFeed({ countryId, onEventClick }: LiveEventsFeedProps)
 
   const getEventIcon = (type: string) => {
     switch (type) {
-      case 'economic_growth':
-      case 'population_growth':
+      case "economic_growth":
+      case "population_growth":
         return TrendingUp;
-      case 'economic_decline':
+      case "economic_decline":
         return TrendingDown;
-      case 'crisis':
+      case "crisis":
         return AlertTriangle;
-      case 'diplomatic':
+      case "diplomatic":
         return Globe;
-      case 'industrial':
+      case "industrial":
         return Factory;
-      case 'government':
+      case "government":
         return Crown;
-      case 'cabinet_meeting':
+      case "cabinet_meeting":
         return Calendar;
-      case 'embassy_mission':
+      case "embassy_mission":
         return Building2;
-      case 'security':
+      case "security":
         return ShieldAlert;
       default:
         return Zap;
@@ -66,24 +66,34 @@ export function LiveEventsFeed({ countryId, onEventClick }: LiveEventsFeedProps)
 
   const getEventColor = (type: string, severity?: string) => {
     switch (type) {
-      case 'economic_growth': return 'text-green-400 bg-green-500/20 border-green-500/30';
-      case 'economic_decline': return 'text-red-400 bg-red-500/20 border-red-500/30';
-      case 'crisis': 
+      case "economic_growth":
+        return "text-green-400 bg-green-500/20 border-green-500/30";
+      case "economic_decline":
+        return "text-red-400 bg-red-500/20 border-red-500/30";
+      case "crisis":
         switch (severity) {
-          case 'high': return 'text-red-400 bg-red-500/20 border-red-500/30';
-          case 'medium': return 'text-orange-400 bg-orange-500/20 border-orange-500/30';
-          default: return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/30';
+          case "high":
+            return "text-red-400 bg-red-500/20 border-red-500/30";
+          case "medium":
+            return "text-orange-400 bg-orange-500/20 border-orange-500/30";
+          default:
+            return "text-yellow-400 bg-yellow-500/20 border-yellow-500/30";
         }
-      case 'diplomatic': return 'text-blue-400 bg-blue-500/20 border-blue-500/30';
-      case 'embassy_mission': return 'text-purple-300 bg-purple-500/20 border-purple-500/30';
-      case 'cabinet_meeting': return 'text-sky-300 bg-sky-500/20 border-sky-500/30';
-      case 'security':
-        if (severity && ['critical', 'existential'].includes(severity.toLowerCase())) {
-          return 'text-red-300 bg-red-600/20 border-red-600/40';
+      case "diplomatic":
+        return "text-blue-400 bg-blue-500/20 border-blue-500/30";
+      case "embassy_mission":
+        return "text-purple-300 bg-purple-500/20 border-purple-500/30";
+      case "cabinet_meeting":
+        return "text-sky-300 bg-sky-500/20 border-sky-500/30";
+      case "security":
+        if (severity && ["critical", "existential"].includes(severity.toLowerCase())) {
+          return "text-red-300 bg-red-600/20 border-red-600/40";
         }
-        return 'text-amber-300 bg-amber-500/20 border-amber-500/30';
-      case 'industrial': return 'text-purple-400 bg-purple-500/20 border-purple-500/30';
-      default: return 'text-gray-400 bg-gray-500/20 border-gray-500/30';
+        return "text-amber-300 bg-amber-500/20 border-amber-500/30";
+      case "industrial":
+        return "text-purple-400 bg-purple-500/20 border-purple-500/30";
+      default:
+        return "text-gray-400 bg-gray-500/20 border-gray-500/30";
     }
   };
 
@@ -94,7 +104,7 @@ export function LiveEventsFeed({ countryId, onEventClick }: LiveEventsFeedProps)
     const diffMinutes = Math.floor(Math.abs(diffMs) / (1000 * 60));
     const diffHours = Math.floor(diffMinutes / 60);
 
-    if (Math.abs(diffMinutes) < 1) return 'Just now';
+    if (Math.abs(diffMinutes) < 1) return "Just now";
 
     if (diffMs >= 0) {
       if (diffMinutes < 60) return `${diffMinutes}m ago`;
@@ -111,27 +121,24 @@ export function LiveEventsFeed({ countryId, onEventClick }: LiveEventsFeedProps)
   return (
     <Card className="glass-hierarchy-child">
       <CardHeader>
-        <CardTitle className="text-cyan-400 flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-cyan-400">
           <Zap className="h-5 w-5" />
-           Events Feed
+          Events Feed
         </CardTitle>
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            Real-time diplomatic events
-          </p>
-        
+          <p className="text-muted-foreground text-sm">Real-time diplomatic events</p>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3 max-h-96 overflow-y-auto">
+      <CardContent className="max-h-96 space-y-3 overflow-y-auto">
         <AnimatePresence>
           {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-b-2 border-primary" />
+            <div className="text-muted-foreground py-8 text-center">
+              <div className="border-primary mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-b-2" />
               <p className="text-sm">Loading recent activity…</p>
             </div>
           ) : allEvents.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Zap className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <div className="text-muted-foreground py-8 text-center">
+              <Zap className="mx-auto mb-4 h-12 w-12 opacity-50" />
               <p className="text-sm">No recent events</p>
               <p className="text-xs">Events will appear as they occur</p>
             </div>
@@ -147,30 +154,30 @@ export function LiveEventsFeed({ countryId, onEventClick }: LiveEventsFeedProps)
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
                   className={cn(
-                    "p-3 rounded-lg border cursor-pointer transition-all hover:scale-105",
+                    "cursor-pointer rounded-lg border p-3 transition-all hover:scale-105",
                     colorClasses
                   )}
                   onClick={() => onEventClick?.(event.id)}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 p-2 rounded-lg bg-white/10">
+                    <div className="flex-shrink-0 rounded-lg bg-white/10 p-2">
                       <Icon className="h-4 w-4" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="font-medium text-sm truncate">{event.title}</h4>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-center justify-between">
+                        <h4 className="truncate text-sm font-medium">{event.title}</h4>
                         <div className="flex items-center gap-2">
                           {event.severity && (
                             <Badge variant="outline" className="text-xs">
                               {event.severity.toUpperCase()}
                             </Badge>
                           )}
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          <span className="text-muted-foreground text-xs whitespace-nowrap">
                             {formatTimeAgo(event.timestamp)}
                           </span>
                         </div>
                       </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">
+                      <p className="text-muted-foreground line-clamp-2 text-xs">
                         {event.description}
                       </p>
                       {(() => {
@@ -183,42 +190,45 @@ export function LiveEventsFeed({ countryId, onEventClick }: LiveEventsFeedProps)
                         return (
                           <div className="mt-2 flex flex-wrap gap-1">
                             {event.tags?.map((tag) => (
-                              <span key={tag} className="text-xs px-2 py-1 bg-white/10 rounded">
+                              <span key={tag} className="rounded bg-white/10 px-2 py-1 text-xs">
                                 {tag}
                               </span>
                             ))}
-                            {'value' in metadata && metadata.value && (
-                              <span className="text-xs px-2 py-1 bg-white/10 rounded">
-                                {metadata.value > 0 ? '+' : ''}{(metadata.value * 100).toFixed(1)}%
+                            {"value" in metadata && metadata.value && (
+                              <span className="rounded bg-white/10 px-2 py-1 text-xs">
+                                {metadata.value > 0 ? "+" : ""}
+                                {(metadata.value * 100).toFixed(1)}%
                               </span>
                             )}
-                            {'economicImpact' in metadata && metadata.economicImpact && (
-                              <span className="text-xs px-2 py-1 bg-white/10 rounded">
+                            {"economicImpact" in metadata && metadata.economicImpact && (
+                              <span className="rounded bg-white/10 px-2 py-1 text-xs">
                                 Impact: ${metadata.economicImpact.toLocaleString()}
                               </span>
                             )}
-                            {'status' in metadata && metadata.status && (
-                              <span className="text-xs px-2 py-1 bg-white/10 rounded">
+                            {"status" in metadata && metadata.status && (
+                              <span className="rounded bg-white/10 px-2 py-1 text-xs">
                                 {String(metadata.status)}
                               </span>
                             )}
-                            {'relatedCountry' in metadata && metadata.relatedCountry && (
-                              <span className="text-xs px-2 py-1 bg-white/10 rounded">
+                            {"relatedCountry" in metadata && metadata.relatedCountry && (
+                              <span className="rounded bg-white/10 px-2 py-1 text-xs">
                                 {String(metadata.relatedCountry)}
                               </span>
                             )}
-                            {'relatedCountries' in metadata && Array.isArray(metadata.relatedCountries) && metadata.relatedCountries.length > 0 && (
-                              <span className="text-xs px-2 py-1 bg-white/10 rounded">
-                                {metadata.relatedCountries.join(', ')}
-                              </span>
-                            )}
-                            {'scheduledDate' in metadata && metadata.scheduledDate && (
-                              <span className="text-xs px-2 py-1 bg-white/10 rounded">
+                            {"relatedCountries" in metadata &&
+                              Array.isArray(metadata.relatedCountries) &&
+                              metadata.relatedCountries.length > 0 && (
+                                <span className="rounded bg-white/10 px-2 py-1 text-xs">
+                                  {metadata.relatedCountries.join(", ")}
+                                </span>
+                              )}
+                            {"scheduledDate" in metadata && metadata.scheduledDate && (
+                              <span className="rounded bg-white/10 px-2 py-1 text-xs">
                                 {`Starts ${formatTimeAgo(metadata.scheduledDate as string)}`}
                               </span>
                             )}
-                            {'category' in metadata && metadata.category && (
-                              <span className="text-xs px-2 py-1 bg-white/10 rounded">
+                            {"category" in metadata && metadata.category && (
+                              <span className="rounded bg-white/10 px-2 py-1 text-xs">
                                 {metadata.category}
                               </span>
                             )}
@@ -232,7 +242,7 @@ export function LiveEventsFeed({ countryId, onEventClick }: LiveEventsFeedProps)
             })
           )}
         </AnimatePresence>
-        
+
         {allEvents.length > 10 && (
           <Button variant="outline" size="sm" className="w-full">
             View All Events ({allEvents.length})

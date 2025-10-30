@@ -1,12 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { ComponentType } from '@prisma/client';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import { ComponentType } from "@prisma/client";
 import { api } from "~/trpc/react";
-import { 
-  UnifiedAtomicStateManager, 
-  type UnifiedAtomicState 
-} from '~/lib/unified-atomic-state';
+import { UnifiedAtomicStateManager, type UnifiedAtomicState } from "~/lib/unified-atomic-state";
 
 interface AtomicStateContextValue {
   state: UnifiedAtomicState;
@@ -26,7 +23,7 @@ interface AtomicStateContextValue {
     structureImpact: string[];
   };
   getSystemHealth: () => {
-    overall: 'excellent' | 'good' | 'fair' | 'poor';
+    overall: "excellent" | "good" | "fair" | "poor";
     scores: {
       effectiveness: number;
       economicPerformance: number;
@@ -46,11 +43,7 @@ interface AtomicStateProviderProps {
   userId?: string;
 }
 
-export function AtomicStateProvider({ 
-  children, 
-  countryId,
-  userId 
-}: AtomicStateProviderProps) {
+export function AtomicStateProvider({ children, countryId, userId }: AtomicStateProviderProps) {
   const [manager] = useState(() => new UnifiedAtomicStateManager());
   const [state, setState] = useState<UnifiedAtomicState>(manager.getState());
   const [isLoading, setIsLoading] = useState(true);
@@ -62,20 +55,17 @@ export function AtomicStateProvider({
     { enabled: !!countryId }
   );
 
-  const { data: synergies, isLoading: isLoadingSynergies } = api.unifiedAtomic.detectSynergies.useQuery(
-    { countryId },
-    { enabled: !!countryId }
-  );
+  const { data: synergies, isLoading: isLoadingSynergies } =
+    api.unifiedAtomic.detectSynergies.useQuery({ countryId }, { enabled: !!countryId });
 
-  const { data: combinedEffectiveness, isLoading: isLoadingEffectiveness } = api.unifiedAtomic.calculateCombinedEffectiveness.useQuery(
-    { countryId },
-    { enabled: !!countryId }
-  );
+  const { data: combinedEffectiveness, isLoading: isLoadingEffectiveness } =
+    api.unifiedAtomic.calculateCombinedEffectiveness.useQuery(
+      { countryId },
+      { enabled: !!countryId }
+    );
 
-  const { data: countryData, isLoading: isLoadingCountry } = api.countries.getByIdWithEconomicData.useQuery(
-    { id: countryId },
-    { enabled: !!countryId }
-  );
+  const { data: countryData, isLoading: isLoadingCountry } =
+    api.countries.getByIdWithEconomicData.useQuery({ id: countryId }, { enabled: !!countryId });
 
   // Subscribe to state manager changes
   useEffect(() => {
@@ -91,20 +81,24 @@ export function AtomicStateProvider({
     if (!isLoadingComponents && !isLoadingCountry && countryData && allComponents) {
       try {
         // Extract components from unified atomic data
-        const governmentComponents: ComponentType[] = allComponents.government?.map(comp => comp.componentType) || [];
-        const economicComponents = allComponents.economic?.map(comp => comp.componentType) || [];
-        const taxComponents = allComponents.tax?.map(comp => comp.componentType) || [];
+        const governmentComponents: ComponentType[] =
+          allComponents.government?.map((comp) => comp.componentType) || [];
+        const economicComponents = allComponents.economic?.map((comp) => comp.componentType) || [];
+        const taxComponents = allComponents.tax?.map((comp) => comp.componentType) || [];
 
         // Set country context
-        const population = countryData.currentPopulation || countryData.baselinePopulation || 10000000;
-        const gdpPerCapita = countryData.currentGdpPerCapita || countryData.baselineGdpPerCapita || 15000;
+        const population =
+          countryData.currentPopulation || countryData.baselinePopulation || 10000000;
+        const gdpPerCapita =
+          countryData.currentGdpPerCapita || countryData.baselineGdpPerCapita || 15000;
 
         manager.setCountryContext({
           countryId,
-          size: population < 10000000 ? 'small' : population > 100000000 ? 'large' : 'medium',
-          developmentLevel: gdpPerCapita < 5000 ? 'developing' : gdpPerCapita > 25000 ? 'developed' : 'emerging',
-          politicalTradition: 'mixed', // Could be inferred from government type
-          primaryChallenges: [] // Could be computed from country metrics
+          size: population < 10000000 ? "small" : population > 100000000 ? "large" : "medium",
+          developmentLevel:
+            gdpPerCapita < 5000 ? "developing" : gdpPerCapita > 25000 ? "developed" : "emerging",
+          politicalTradition: "mixed", // Could be inferred from government type
+          primaryChallenges: [], // Could be computed from country metrics
         });
 
         // Set components
@@ -125,13 +119,22 @@ export function AtomicStateProvider({
 
         setError(null);
       } catch (err) {
-        console.error('Error initializing atomic state:', err);
-        setError(err instanceof Error ? err.message : 'Failed to initialize atomic state');
+        console.error("Error initializing atomic state:", err);
+        setError(err instanceof Error ? err.message : "Failed to initialize atomic state");
       } finally {
         setIsLoading(false);
       }
     }
-  }, [allComponents, countryData, isLoadingComponents, isLoadingCountry, manager, countryId, synergies, combinedEffectiveness]);
+  }, [
+    allComponents,
+    countryData,
+    isLoadingComponents,
+    isLoadingCountry,
+    manager,
+    countryId,
+    synergies,
+    combinedEffectiveness,
+  ]);
 
   // Mutations to save atomic components
   // Note: bulkUpdate is not available in atomicGovernment router, using individual updates instead
@@ -168,10 +171,10 @@ export function AtomicStateProvider({
   // State management methods
   const setSelectedComponents = (components: ComponentType[]) => {
     manager.setSelectedComponents(components);
-    
+
     // Save to database if user owns the country
     if (userId && countryId) {
-      const componentData = components.map(componentType => ({
+      const componentData = components.map((componentType) => ({
         componentType,
         effectivenessScore: manager.getComponentContribution(componentType).effectiveness,
         isActive: true,
@@ -205,7 +208,7 @@ export function AtomicStateProvider({
 
     // Save to database
     if (userId) {
-      const updatedComponents = state.selectedComponents.filter(c => c !== component);
+      const updatedComponents = state.selectedComponents.filter((c) => c !== component);
       setSelectedComponents(updatedComponents);
     }
   };
@@ -222,7 +225,7 @@ export function AtomicStateProvider({
       effectiveness: 0,
       economicImpact: 0,
       taxImpact: 0,
-      structureImpact: []
+      structureImpact: [],
     };
   };
 
@@ -230,15 +233,15 @@ export function AtomicStateProvider({
     // Note: getSystemHealth method may not exist
     // return manager.getSystemHealth();
     return {
-      overall: 'good' as const,
+      overall: "good" as const,
       scores: {
         effectiveness: 0,
         economicPerformance: 0,
         governmentCapacity: 0,
-        stability: 0
+        stability: 0,
       },
       issues: [],
-      recommendations: []
+      recommendations: [],
     };
   };
 
@@ -259,20 +262,16 @@ export function AtomicStateProvider({
     removeComponent,
     refreshCalculations,
     getComponentContribution,
-    getSystemHealth
+    getSystemHealth,
   };
 
-  return (
-    <AtomicStateContext.Provider value={contextValue}>
-      {children}
-    </AtomicStateContext.Provider>
-  );
+  return <AtomicStateContext.Provider value={contextValue}>{children}</AtomicStateContext.Provider>;
 }
 
 export function useAtomicState(): AtomicStateContextValue {
   const context = useContext(AtomicStateContext);
   if (!context) {
-    throw new Error('useAtomicState must be used within an AtomicStateProvider');
+    throw new Error("useAtomicState must be used within an AtomicStateProvider");
   }
   return context;
 }
@@ -288,7 +287,7 @@ export function useAtomicComponents() {
     conflicts: state.conflicts,
     setSelectedComponents,
     addComponent,
-    removeComponent
+    removeComponent,
   };
 }
 
@@ -298,7 +297,7 @@ export function useAtomicEconomics() {
     economicModifiers: state.economicModifiers,
     economicPerformance: state.economicPerformance,
     taxEffectiveness: state.taxEffectiveness,
-    realTimeMetrics: state.realTimeMetrics
+    realTimeMetrics: state.realTimeMetrics,
   };
 }
 
@@ -307,7 +306,7 @@ export function useAtomicGovernment() {
   return {
     traditionalStructure: state.traditionalStructure,
     realTimeMetrics: state.realTimeMetrics,
-    effectivenessScore: state.effectivenessScore
+    effectivenessScore: state.effectivenessScore,
   };
 }
 
@@ -316,7 +315,7 @@ export function useAtomicIntelligence() {
   return {
     intelligenceFeeds: state.intelligenceFeeds,
     realTimeMetrics: state.realTimeMetrics,
-    performanceAnalytics: state.performanceAnalytics
+    performanceAnalytics: state.performanceAnalytics,
   };
 }
 
@@ -326,6 +325,6 @@ export function useAtomicAnalytics() {
     performanceAnalytics: state.performanceAnalytics,
     realTimeMetrics: state.realTimeMetrics,
     systemHealth: getSystemHealth(),
-    historicalData: state.performanceAnalytics.historicalEffectiveness
+    historicalData: state.performanceAnalytics.historicalEffectiveness,
   };
 }

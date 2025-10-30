@@ -42,26 +42,26 @@ export function CountryHeader({
   onCountryActionsClick,
 }: CountryHeaderProps) {
   return (
-    <div className="relative w-full h-64 md:h-80 lg:h-96 overflow-hidden">
+    <div className="relative h-64 w-full overflow-hidden md:h-80 lg:h-96">
       {/* Background Image */}
       {unsplashImageUrl ? (
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${unsplashImageUrl})` }}
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-background" />
+          <div className="to-background absolute inset-0 bg-gradient-to-b from-black/50 via-black/30" />
         </div>
       ) : (
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-pink-600/20">
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background" />
+          <div className="to-background absolute inset-0 bg-gradient-to-b from-transparent" />
         </div>
       )}
 
       {/* Country Header Content */}
-      <div className="relative container mx-auto px-4 h-full flex flex-col justify-end pb-8">
+      <div className="relative container mx-auto flex h-full flex-col justify-end px-4 pb-8">
         <div className="flex items-end gap-4 md:gap-6">
           {/* Flag */}
-          <div className="flex-shrink-0 mb-2">
+          <div className="mb-2 flex-shrink-0">
             <UnifiedCountryFlag
               countryName={country.name}
               size="xl"
@@ -70,22 +70,22 @@ export function CountryHeader({
               rounded={true}
               shadow={true}
               border={true}
-              className="w-20 h-20 md:w-24 md:h-24 lg:w-32 lg:h-32"
+              className="h-20 w-20 md:h-24 md:w-24 lg:h-32 lg:w-32"
             />
           </div>
 
           {/* Country Name and Basic Info */}
-          <div className="flex-1 min-w-0">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white drop-shadow-lg mb-2">
+          <div className="min-w-0 flex-1">
+            <h1 className="mb-2 text-3xl font-bold text-white drop-shadow-lg md:text-4xl lg:text-5xl">
               {country.name.replace(/_/g, " ")}
             </h1>
-            <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2">
+            <div className="mb-2 flex flex-wrap items-center gap-2 md:gap-3">
               {/* Population Badge - Clickable to toggle between formatted and full */}
               <Badge
-                className="bg-blue-600/90 backdrop-blur-sm text-white border-blue-400/30 font-semibold cursor-pointer hover:bg-blue-500/90 transition-colors"
+                className="cursor-pointer border-blue-400/30 bg-blue-600/90 font-semibold text-white backdrop-blur-sm transition-colors hover:bg-blue-500/90"
                 onClick={onTogglePopulationDisplay}
               >
-                <Users className="h-3 w-3 mr-1.5" />
+                <Users className="mr-1.5 h-3 w-3" />
                 {showFullPopulation
                   ? country.currentPopulation.toLocaleString()
                   : formatPopulation(country.currentPopulation)}
@@ -93,10 +93,10 @@ export function CountryHeader({
 
               {/* GDP Badge - Clickable to toggle between per capita and total */}
               <Badge
-                className="bg-green-600/90 backdrop-blur-sm text-white border-green-400/30 font-semibold cursor-pointer hover:bg-green-500/90 transition-colors"
+                className="cursor-pointer border-green-400/30 bg-green-600/90 font-semibold text-white backdrop-blur-sm transition-colors hover:bg-green-500/90"
                 onClick={onToggleGdpDisplay}
               >
-                <TrendingUp className="h-3 w-3 mr-1.5" />
+                <TrendingUp className="mr-1.5 h-3 w-3" />
                 {showGdpPerCapita
                   ? `${formatCurrency(country.currentGdpPerCapita)}/capita`
                   : formatCurrency(country.currentTotalGdp)}
@@ -104,21 +104,21 @@ export function CountryHeader({
 
               {/* Land Area Badge */}
               {country.landArea && (
-                <Badge className="bg-purple-600/90 backdrop-blur-sm text-white border-purple-400/30 font-semibold">
-                  <MapPin className="h-3 w-3 mr-1.5" />
+                <Badge className="border-purple-400/30 bg-purple-600/90 font-semibold text-white backdrop-blur-sm">
+                  <MapPin className="mr-1.5 h-3 w-3" />
                   {country.landArea.toLocaleString()} km²
                 </Badge>
               )}
 
               {/* Growth Rate Badge */}
               <Badge
-                className={`backdrop-blur-sm text-white font-semibold ${
+                className={`font-semibold text-white backdrop-blur-sm ${
                   (country.adjustedGdpGrowth ?? 0) > 0
-                    ? "bg-emerald-600/90 border-emerald-400/30"
-                    : "bg-red-600/90 border-red-400/30"
+                    ? "border-emerald-400/30 bg-emerald-600/90"
+                    : "border-red-400/30 bg-red-600/90"
                 }`}
               >
-                <Activity className="h-3 w-3 mr-1.5" />
+                <Activity className="mr-1.5 h-3 w-3" />
                 {((country.adjustedGdpGrowth ?? 0) * 100).toFixed(2)}% growth
               </Badge>
 
@@ -126,9 +126,9 @@ export function CountryHeader({
               {country.continent && (
                 <Badge
                   variant="outline"
-                  className="bg-black/30 backdrop-blur-sm text-white border-white/20"
+                  className="border-white/20 bg-black/30 text-white backdrop-blur-sm"
                 >
-                  <Globe className="h-3 w-3 mr-1" />
+                  <Globe className="mr-1 h-3 w-3" />
                   {country.continent}
                 </Badge>
               )}
@@ -136,7 +136,7 @@ export function CountryHeader({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-end gap-2 flex-shrink-0">
+          <div className="flex flex-shrink-0 items-end gap-2">
             <Button
               size="lg"
               variant={isOwnCountry ? "default" : "outline"}
@@ -144,10 +144,10 @@ export function CountryHeader({
               className={
                 isOwnCountry
                   ? "shadow-lg"
-                  : "shadow-lg bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm"
+                  : "bg-white/90 shadow-lg backdrop-blur-sm dark:bg-gray-900/90"
               }
             >
-              <Users className="h-4 w-4 mr-2" />
+              <Users className="mr-2 h-4 w-4" />
               <span className="hidden md:inline">
                 {isOwnCountry ? "Country Management" : "Country Actions"}
               </span>

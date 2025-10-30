@@ -1,9 +1,13 @@
 "use client";
 
-import React from 'react';
-import { EconomyPreviewTab } from '../tabs/EconomyPreviewTab';
-import type { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
-import type { EconomicInputs, EconomyBuilderState, EconomicHealthMetrics } from '~/types/economy-builder';
+import React from "react";
+import { EconomyPreviewTab } from "../tabs/EconomyPreviewTab";
+import type { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
+import type {
+  EconomicInputs,
+  EconomyBuilderState,
+  EconomicHealthMetrics,
+} from "~/types/economy-builder";
 
 interface PreviewStepProps {
   economyBuilder: EconomyBuilderState;
@@ -21,9 +25,7 @@ export function PreviewStep({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold text-foreground">
-          Economy Preview
-        </h2>
+        <h2 className="text-foreground text-2xl font-semibold">Economy Preview</h2>
       </div>
 
       <EconomyPreviewTab

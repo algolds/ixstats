@@ -12,27 +12,27 @@
  * - Integration with NPC personality system for realistic responses
  */
 
-import type { RelationshipState } from './diplomatic-markov-engine';
-import type { DiplomaticChoice, CumulativeEffects } from './diplomatic-choice-tracker';
+import type { RelationshipState } from "./diplomatic-markov-engine";
+import type { DiplomaticChoice, CumulativeEffects } from "./diplomatic-choice-tracker";
 
 // ============================================================================
 // TYPE DEFINITIONS
 // ============================================================================
 
 export type CulturalScenarioType =
-  | 'festival_collaboration'
-  | 'artifact_repatriation'
-  | 'cultural_appropriation'
-  | 'exhibition_censorship'
-  | 'student_visa_crisis'
-  | 'heritage_restoration'
-  | 'language_preservation'
-  | 'knowledge_sharing'
-  | 'festival_security'
-  | 'artistic_freedom';
+  | "festival_collaboration"
+  | "artifact_repatriation"
+  | "cultural_appropriation"
+  | "exhibition_censorship"
+  | "student_visa_crisis"
+  | "heritage_restoration"
+  | "language_preservation"
+  | "knowledge_sharing"
+  | "festival_security"
+  | "artistic_freedom";
 
 export type ResponseRequirement = {
-  skill: 'negotiation' | 'cultural_sensitivity' | 'economic' | 'legal' | 'security';
+  skill: "negotiation" | "cultural_sensitivity" | "economic" | "legal" | "security";
   level: number; // 0-100
 };
 
@@ -95,7 +95,10 @@ export interface ResponseOption {
   npcsLikelyToChoose: string[]; // Personality archetypes
 }
 
-export type CulturalScenarioRecentAction = Pick<DiplomaticChoice, 'id' | 'type' | 'targetCountry' | 'targetCountryId' | 'timestamp' | 'ixTimeTimestamp'>;
+export type CulturalScenarioRecentAction = Pick<
+  DiplomaticChoice,
+  "id" | "type" | "targetCountry" | "targetCountryId" | "timestamp" | "ixTimeTimestamp"
+>;
 
 export interface CulturalScenarioMetadata {
   triggeredBy: string;
@@ -124,114 +127,116 @@ export interface CulturalScenario {
 
 export const CULTURAL_SCENARIO_TEMPLATES: Record<CulturalScenarioType, CulturalScenarioTemplate> = {
   festival_collaboration: {
-    type: 'festival_collaboration',
-    name: 'Festival Collaboration Conflict',
-    description: 'Disagreements arise over the organization and representation in a joint cultural festival',
-    minimumRelationship: 'neutral',
+    type: "festival_collaboration",
+    name: "Festival Collaboration Conflict",
+    description:
+      "Disagreements arise over the organization and representation in a joint cultural festival",
+    minimumRelationship: "neutral",
     culturalImpact: 65,
     diplomaticRisk: 45,
     economicCost: 30,
-    tags: ['festival', 'collaboration', 'cultural_identity', 'public_event']
+    tags: ["festival", "collaboration", "cultural_identity", "public_event"],
   },
 
   artifact_repatriation: {
-    type: 'artifact_repatriation',
-    name: 'Cultural Artifact Repatriation Request',
-    description: 'One country formally requests the return of significant cultural artifacts',
-    minimumRelationship: 'neutral',
+    type: "artifact_repatriation",
+    name: "Cultural Artifact Repatriation Request",
+    description: "One country formally requests the return of significant cultural artifacts",
+    minimumRelationship: "neutral",
     culturalImpact: 85,
     diplomaticRisk: 70,
     economicCost: 20,
-    tags: ['artifacts', 'heritage', 'historical_claims', 'legal']
+    tags: ["artifacts", "heritage", "historical_claims", "legal"],
   },
 
   cultural_appropriation: {
-    type: 'cultural_appropriation',
-    name: 'Cultural Appropriation Dispute',
-    description: 'Controversy emerges over the use of cultural symbols or practices',
-    minimumRelationship: 'tense',
+    type: "cultural_appropriation",
+    name: "Cultural Appropriation Dispute",
+    description: "Controversy emerges over the use of cultural symbols or practices",
+    minimumRelationship: "tense",
     culturalImpact: 75,
     diplomaticRisk: 60,
     economicCost: 15,
-    tags: ['cultural_sensitivity', 'symbols', 'identity', 'controversy']
+    tags: ["cultural_sensitivity", "symbols", "identity", "controversy"],
   },
 
   exhibition_censorship: {
-    type: 'exhibition_censorship',
-    name: 'Joint Exhibition Censorship Crisis',
-    description: 'Disagreement over what content can be displayed in a collaborative exhibition',
-    minimumRelationship: 'neutral',
+    type: "exhibition_censorship",
+    name: "Joint Exhibition Censorship Crisis",
+    description: "Disagreement over what content can be displayed in a collaborative exhibition",
+    minimumRelationship: "neutral",
     culturalImpact: 70,
     diplomaticRisk: 55,
     economicCost: 25,
-    tags: ['art', 'censorship', 'freedom', 'controversy']
+    tags: ["art", "censorship", "freedom", "controversy"],
   },
 
   student_visa_crisis: {
-    type: 'student_visa_crisis',
-    name: 'Student Exchange Visa Crisis',
-    description: 'Visa processing delays or denials threaten to derail student exchange programs',
-    minimumRelationship: 'friendly',
+    type: "student_visa_crisis",
+    name: "Student Exchange Visa Crisis",
+    description: "Visa processing delays or denials threaten to derail student exchange programs",
+    minimumRelationship: "friendly",
     culturalImpact: 60,
     diplomaticRisk: 50,
     economicCost: 40,
-    tags: ['education', 'visa', 'students', 'bureaucracy']
+    tags: ["education", "visa", "students", "bureaucracy"],
   },
 
   heritage_restoration: {
-    type: 'heritage_restoration',
-    name: 'Cultural Heritage Restoration Project',
-    description: 'Opportunity for joint restoration of significant cultural heritage sites',
-    minimumRelationship: 'friendly',
+    type: "heritage_restoration",
+    name: "Cultural Heritage Restoration Project",
+    description: "Opportunity for joint restoration of significant cultural heritage sites",
+    minimumRelationship: "friendly",
     culturalImpact: 80,
     diplomaticRisk: 30,
     economicCost: 70,
-    tags: ['heritage', 'restoration', 'cooperation', 'investment']
+    tags: ["heritage", "restoration", "cooperation", "investment"],
   },
 
   language_preservation: {
-    type: 'language_preservation',
-    name: 'Language Preservation Initiative',
-    description: 'Collaborative effort to preserve and promote endangered languages or dialects',
-    minimumRelationship: 'friendly',
+    type: "language_preservation",
+    name: "Language Preservation Initiative",
+    description: "Collaborative effort to preserve and promote endangered languages or dialects",
+    minimumRelationship: "friendly",
     culturalImpact: 75,
     diplomaticRisk: 25,
     economicCost: 45,
-    tags: ['language', 'preservation', 'education', 'cultural_identity']
+    tags: ["language", "preservation", "education", "cultural_identity"],
   },
 
   knowledge_sharing: {
-    type: 'knowledge_sharing',
-    name: 'Traditional Knowledge Sharing Agreement',
-    description: 'Negotiating terms for sharing indigenous or traditional knowledge',
-    minimumRelationship: 'neutral',
+    type: "knowledge_sharing",
+    name: "Traditional Knowledge Sharing Agreement",
+    description: "Negotiating terms for sharing indigenous or traditional knowledge",
+    minimumRelationship: "neutral",
     culturalImpact: 85,
     diplomaticRisk: 40,
     economicCost: 35,
-    tags: ['indigenous', 'knowledge', 'intellectual_property', 'tradition']
+    tags: ["indigenous", "knowledge", "intellectual_property", "tradition"],
   },
 
   festival_security: {
-    type: 'festival_security',
-    name: 'Cultural Festival Security Incident',
-    description: 'Security concerns emerge at a major cultural festival threatening its continuation',
-    minimumRelationship: 'friendly',
+    type: "festival_security",
+    name: "Cultural Festival Security Incident",
+    description:
+      "Security concerns emerge at a major cultural festival threatening its continuation",
+    minimumRelationship: "friendly",
     culturalImpact: 55,
     diplomaticRisk: 65,
     economicCost: 50,
-    tags: ['security', 'festival', 'safety', 'crisis_management']
+    tags: ["security", "festival", "safety", "crisis_management"],
   },
 
   artistic_freedom: {
-    type: 'artistic_freedom',
-    name: 'Artistic Freedom Controversy',
-    description: 'Artists face censorship or controversy over provocative cultural expressions',
-    minimumRelationship: 'tense',
+    type: "artistic_freedom",
+    name: "Artistic Freedom Controversy",
+    description: "Artists face censorship or controversy over provocative cultural expressions",
+    minimumRelationship: "tense",
     culturalImpact: 80,
     diplomaticRisk: 75,
     economicCost: 20,
-    tags: ['art', 'freedom', 'censorship', 'controversy']
-  }
+    tags: ["art", "freedom", "censorship", "controversy"],
+  },
 };
 
 // ============================================================================
@@ -257,7 +262,7 @@ export class CulturalScenarioGenerator {
       relevanceScore: Math.round((template.culturalImpact + template.diplomaticRisk) / 2),
       playerReputation: options.playerReputation,
       recentPlayerActions: options.recentPlayerActions
-        ? options.recentPlayerActions.slice(-5).map(action => ({
+        ? options.recentPlayerActions.slice(-5).map((action) => ({
             id: action.id,
             type: action.type,
             targetCountry: action.targetCountry,
@@ -279,7 +284,7 @@ export class CulturalScenarioGenerator {
       timestamp: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
       tags: template.tags,
-      metadata
+      metadata,
     };
   }
 
@@ -300,7 +305,7 @@ export class CulturalScenarioGenerator {
       language_preservation: `Collaborative Language Preservation Proposal`,
       knowledge_sharing: `Traditional Knowledge Sharing Negotiation`,
       festival_security: `Security Incident at ${context.country1.name} Cultural Festival`,
-      artistic_freedom: `Artistic Censorship Controversy Erupts`
+      artistic_freedom: `Artistic Censorship Controversy Erupts`,
     };
 
     return titleTemplates[template.type];
@@ -314,7 +319,8 @@ export class CulturalScenarioGenerator {
     context: ScenarioContext
   ): string {
     const narrativeTemplates: Record<CulturalScenarioType, (ctx: ScenarioContext) => string> = {
-      festival_collaboration: (ctx) => `
+      festival_collaboration: (ctx) =>
+        `
 The much-anticipated ${ctx.exchangeType} festival, jointly organized by ${ctx.country1.name} and ${ctx.country2.name}, has encountered significant organizational challenges that threaten to overshadow its cultural objectives. What began as an ambitious collaboration to celebrate shared cultural heritage has devolved into heated disputes over representation, funding allocation, and the festival's core messaging.
 
 ${ctx.country1.name}'s organizing committee has expressed frustration over what they perceive as unequal representation of their cultural contributions in the festival's programming. They argue that ${ctx.country2.name} has dominated the planning process and allocated premium time slots and venues to their own performers while relegating ${ctx.country1.name}'s artists to secondary status. The funding dispute adds another layer of complexity, with both sides claiming they've contributed more resources than originally agreed upon.
@@ -326,7 +332,8 @@ With the festival's opening ceremony just weeks away, both governments face a cr
 Your diplomatic team must navigate this delicate situation, balancing cultural pride with pragmatic collaboration, while ensuring that the original spirit of cultural exchange is not lost in bureaucratic disputes and nationalist posturing.
       `.trim(),
 
-      artifact_repatriation: (ctx) => `
+      artifact_repatriation: (ctx) =>
+        `
 ${ctx.country2.name} has formally submitted a request to ${ctx.country1.name} for the repatriation of a collection of significant cultural artifacts currently housed in ${ctx.country1.name}'s National Museum. These artifacts, which include sacred religious items, royal regalia, and irreplaceable historical documents, were acquired during a period of colonial administration over a century ago. The request has ignited a passionate debate about cultural heritage, historical responsibility, and the role of museums in preserving global culture.
 
 The artifacts in question hold profound cultural and spiritual significance for ${ctx.country2.name}. Religious leaders argue that sacred items are incomplete outside their proper cultural context and that their display in a foreign museum amounts to continued cultural violation. Historians in ${ctx.country2.name} emphasize that these artifacts are essential for understanding their national identity and teaching future generations about their heritage. A grassroots movement has emerged, with thousands of ${ctx.country2.name} citizens petitioning for the artifacts' return.
@@ -338,7 +345,8 @@ The legal framework is murky. The artifacts were acquired under colonial-era law
 Your diplomatic team must weigh cultural sensitivity, legal precedent, preservation concerns, and the broader implications for bilateral relations while the world watches how this dispute unfolds.
       `.trim(),
 
-      cultural_appropriation: (ctx) => `
+      cultural_appropriation: (ctx) =>
+        `
 A controversy has erupted over the use of traditional ${ctx.country1.name} cultural symbols in a commercial venture by ${ctx.country2.name} fashion designers. What began as a "cultural fusion" fashion line intended to celebrate ${ctx.country1.name}'s rich textile heritage has been denounced by ${ctx.country1.name} cultural advocates as exploitative appropriation that commodifies sacred symbols for profit without proper understanding or respect.
 
 The fashion collection features patterns and designs drawn from ${ctx.country1.name}'s indigenous communities, including symbols with religious and ceremonial significance. ${ctx.country2.name} designers claim they conducted research and worked with ${ctx.country1.name} consultants, viewing their work as appreciation and cultural bridge-building. However, ${ctx.country1.name} indigenous leaders counter that the consultants lacked authority to authorize commercial use of sacred symbols and that the designs have been altered in ways that distort their original meanings and violate cultural protocols.
@@ -350,7 +358,8 @@ The dispute threatens the broader cultural exchange program between the two nati
 Your diplomatic team must address complex questions about cultural ownership, the boundaries of cultural exchange, intellectual property rights for traditional knowledge, and how to move forward in ways that respect both cultural integrity and creative freedom.
       `.trim(),
 
-      exhibition_censorship: (ctx) => `
+      exhibition_censorship: (ctx) =>
+        `
 The upcoming joint ${ctx.exchangeType} exhibition between ${ctx.country1.name} and ${ctx.country2.name}, months in the making, faces cancellation over irreconcilable disagreements about content inclusion. The exhibition was designed to showcase contemporary artistic responses to shared historical experiences, but several pieces have sparked intense controversy about censorship, artistic freedom, and the limits of cultural dialogue.
 
 ${ctx.country2.name}'s curatorial team has demanded the removal of three artworks by ${ctx.country1.name} artists that they claim present historical events in an offensive and one-sided manner. They argue that including these pieces would cause public outrage in ${ctx.country2.name} and betray the exhibition's stated goal of promoting mutual understanding. The works in question address sensitive historical episodes, including periods of conflict and cultural tension between the two nations, from perspectives that ${ctx.country2.name} officials find unacceptable.
@@ -362,7 +371,8 @@ The controversy has exposed deeper differences in how the two nations approach f
 With the exhibition's opening date approaching, international art critics watching the dispute, and both governments under pressure from domestic constituencies, your diplomatic team must find a path forward that either bridges these differences or gracefully manages the exhibition's cancellation without derailing the broader cultural relationship.
       `.trim(),
 
-      student_visa_crisis: (ctx) => `
+      student_visa_crisis: (ctx) =>
+        `
 The flagship student exchange program between ${ctx.country1.name} and ${ctx.country2.name}, celebrating its tenth year, faces an unprecedented crisis. ${ctx.country2.name}'s immigration authorities have abruptly delayed or denied visas for over 60% of ${ctx.country1.name} students accepted into the program, citing new security protocols. With the academic term starting in weeks, hundreds of students face shattered plans while universities scramble to respond.
 
 The visa denials appear concentrated among students from specific regions of ${ctx.country1.name} and those pursuing certain fields of study, particularly technology and social sciences. ${ctx.country2.name} officials cryptically reference "enhanced security screening requirements" without providing detailed explanations, leading ${ctx.country1.name} officials to suspect political motivations. Some ${ctx.country1.name} commentators have characterized the situation as discriminatory profiling disguised as security protocol.
@@ -374,7 +384,8 @@ ${ctx.country1.name} is considering reciprocal measures, which could affect ${ct
 Your diplomatic team must urgently address the immediate crisis—getting students processed in time for the academic term—while investigating the root causes of the visa problems and ensuring such disruptions don't recur. The broader implications for people-to-people ties, youth perceptions of the partner country, and the future of institutional cooperation hang in the balance.
       `.trim(),
 
-      heritage_restoration: (ctx) => `
+      heritage_restoration: (ctx) =>
+        `
 An extraordinary opportunity for cultural cooperation has emerged: ${ctx.country1.name} has proposed a joint heritage restoration project focusing on historically significant sites connected to both nations' shared past. The proposal involves restoring a complex of temples, monuments, and cultural sites that represent a golden age of cultural exchange between the two civilizations, predating modern nation-states. If successful, the project could become a powerful symbol of reconciliation and cooperation.
 
 The scope is ambitious. The sites have deteriorated significantly, requiring extensive archaeological work, structural restoration, and careful preservation of deteriorating artwork and inscriptions. ${ctx.country1.name} proposes a partnership where ${ctx.country2.name} provides technical expertise and restoration technology while ${ctx.country1.name} contributes archaeological knowledge and site access. The project would employ hundreds of workers, create opportunities for joint research, and produce a restored heritage site that could attract international tourism and scholarly attention.
@@ -386,7 +397,8 @@ Financial considerations are substantial. The project requires an estimated inve
 Your diplomatic team must evaluate this opportunity's potential to advance cultural understanding and bilateral relations against the financial, political, and historical complexities it presents. The decision will signal whether both nations are ready for deep, long-term cultural cooperation or prefer more limited, safer forms of exchange.
       `.trim(),
 
-      language_preservation: (ctx) => `
+      language_preservation: (ctx) =>
+        `
 A coalition of linguists and cultural advocates from ${ctx.country1.name} and ${ctx.country2.name} has proposed an ambitious collaborative initiative to preserve and revitalize endangered languages and dialects that exist in border regions and diaspora communities in both countries. The proposal has captured public imagination but raised complex questions about cultural identity, educational policy, and the politics of language.
 
 The languages targeted for preservation are spoken by minority communities with historical and cultural connections spanning both nations. Some are ancient tongues predating modern borders; others are creole languages that evolved through historical migration and trade. All are endangered, with declining numbers of fluent speakers as younger generations adopt dominant national languages for economic advancement. Without intervention, linguists warn these languages could disappear within two generations, taking with them irreplaceable cultural knowledge and identity.
@@ -400,7 +412,8 @@ The educational and political establishments in both countries are wary. Incorpo
 Your diplomatic team must navigate the intersection of cultural preservation, national identity politics, minority rights, and practical educational policy. Success could set a model for linguistic preservation globally; failure could damage relations with minority communities and between the two countries.
       `.trim(),
 
-      knowledge_sharing: (ctx) => `
+      knowledge_sharing: (ctx) =>
+        `
 ${ctx.country1.name} indigenous communities possess extensive traditional knowledge about medicinal plants, agricultural practices, and ecological management that has sustained them for millennia. ${ctx.country2.name} research institutions have proposed a partnership to document, study, and potentially develop this knowledge for broader application, offering resources, scientific expertise, and revenue-sharing arrangements. The proposal has ignited a complex debate about traditional knowledge rights, biopiracy concerns, and the terms of ethical knowledge exchange.
 
 The traditional knowledge in question includes sophisticated understanding of plant properties, sustainable farming techniques adapted to challenging environments, and ecological practices that maintain biodiversity. ${ctx.country2.name} researchers argue that combining this traditional wisdom with modern scientific methods could yield breakthroughs in sustainable agriculture, medical treatments, and environmental conservation that benefit humanity globally while providing economic opportunities for knowledge-holding communities.
@@ -414,7 +427,8 @@ Cultural concerns intersect with practical ones. Some knowledge is considered sa
 Your diplomatic team must broker an agreement that respects indigenous knowledge sovereignty while enabling beneficial research collaboration, sets appropriate precedents for traditional knowledge rights, and ensures that cultural exchange genuinely benefits knowledge-holding communities rather than merely extracting value from them.
       `.trim(),
 
-      festival_security: (ctx) => `
+      festival_security: (ctx) =>
+        `
 The annual International Cultural Festival in ${ctx.country1.name}, a flagship event featuring performers and artists from ${ctx.country2.name} and dozens of other countries, has been disrupted by a serious security incident. A group of protesters managed to reach the main stage during a ${ctx.country2.name} cultural performance, unfurling banners with political messages and briefly halting the event before security intervened. While no one was injured, the incident has raised urgent questions about security protocols, political expression, and whether the festival can continue.
 
 The protesters were ${ctx.country1.name} citizens demonstrating against ${ctx.country2.name} government policies they view as oppressive. Their action was non-violent but disruptive, and they've framed it as legitimate political expression protected by ${ctx.country1.name}'s free speech principles. Civil liberties organizations have defended their right to protest, arguing that cultural events with governmental sponsorship are appropriate venues for political expression.
@@ -428,7 +442,8 @@ The incident has also exposed deeper tensions about the relationship between cul
 Your diplomatic team must immediately address ${ctx.country2.name}'s security concerns and decide whether the festival can continue this year. Beyond that, you must develop a framework for balancing security, free expression, and cultural exchange that can sustain the festival's future while navigating these tensions.
       `.trim(),
 
-      artistic_freedom: (ctx) => `
+      artistic_freedom: (ctx) =>
+        `
 A group of ${ctx.country1.name} artists participating in a cultural exchange residency in ${ctx.country2.name} has created an artistic installation that ${ctx.country2.name} authorities have deemed unacceptable for public display. The work addresses themes of political authority, individual freedom, and social conformity through provocative imagery that ${ctx.country2.name} officials argue crosses from artistic expression into illegal political propaganda. The artists refuse to modify their work, and the confrontation has become an international cause célèbre about artistic freedom.
 
 The installation uses symbolic imagery that references ${ctx.country2.name}'s political system, historical events, and contemporary social issues in ways the artists describe as "critical engagement" but authorities characterize as "disrespectful provocation." The work does not explicitly violate any laws ${ctx.country1.name} artists were briefed about before the residency, but ${ctx.country2.name} authorities argue that its overall message and context create an illegal critique of the government. They have demanded the installation be dismantled or the artists will face legal consequences.
@@ -440,7 +455,7 @@ ${ctx.country2.name} counters that the residency program had clear parameters, t
 The dispute has drawn international attention, with global artistic communities, free expression organizations, and cultural institutions weighing in. The controversy threatens to overshadow all other aspects of the cultural exchange program. Several ${ctx.country1.name} artists have withdrawn from upcoming exchanges in solidarity, while ${ctx.country2.name} has suspended new cultural exchange approvals pending review of program protocols.
 
 Your diplomatic team must navigate this highly public confrontation between artistic freedom principles and host country sovereignty, manage pressure from vocal constituencies in both countries, and determine whether the cultural exchange program can continue under terms acceptable to both nations or whether fundamental differences about expression and creativity make such programs unsustainable.
-      `.trim()
+      `.trim(),
     };
 
     return narrativeTemplates[template.type](context);
@@ -453,362 +468,402 @@ Your diplomatic team must navigate this highly public confrontation between arti
     template: CulturalScenarioTemplate,
     context: ScenarioContext
   ): ResponseOption[] {
-    const optionGenerators: Record<CulturalScenarioType, (ctx: ScenarioContext) => ResponseOption[]> = {
+    const optionGenerators: Record<
+      CulturalScenarioType,
+      (ctx: ScenarioContext) => ResponseOption[]
+    > = {
       festival_collaboration: (ctx) => [
         {
-          id: 'mediation',
-          label: 'Hire Independent Mediator',
-          description: 'Bring in a neutral third-party cultural organization to mediate disputes and restructure the festival collaboratively',
+          id: "mediation",
+          label: "Hire Independent Mediator",
+          description:
+            "Bring in a neutral third-party cultural organization to mediate disputes and restructure the festival collaboratively",
           requirements: [
-            { skill: 'negotiation', level: 70 },
-            { skill: 'cultural_sensitivity', level: 65 }
+            { skill: "negotiation", level: 70 },
+            { skill: "cultural_sensitivity", level: 65 },
           ],
           predictedOutcomes: {
             immediate: {
               culturalImpact: 15,
               diplomaticChange: 20,
               economicCost: 35,
-              relationshipStateChange: null
+              relationshipStateChange: null,
             },
             shortTerm: {
-              description: 'Mediation resolves immediate disputes, festival proceeds with revised format emphasizing equal partnership',
+              description:
+                "Mediation resolves immediate disputes, festival proceeds with revised format emphasizing equal partnership",
               culturalBenefit: 60,
-              diplomaticBenefit: 45
+              diplomaticBenefit: 45,
             },
             longTerm: {
-              description: 'Establishes collaborative framework for future cultural events, strengthens institutional ties',
+              description:
+                "Establishes collaborative framework for future cultural events, strengthens institutional ties",
               culturalBenefit: 75,
-              diplomaticBenefit: 70
-            }
+              diplomaticBenefit: 70,
+            },
           },
-          npcsLikelyToChoose: ['Cultural Diplomat', 'Pragmatic Realist']
+          npcsLikelyToChoose: ["Cultural Diplomat", "Pragmatic Realist"],
         },
         {
-          id: 'assert_dominance',
-          label: 'Assert Your Rights',
-          description: 'Stand firm on your original agreements and demand the partner country honor commitments',
+          id: "assert_dominance",
+          label: "Assert Your Rights",
+          description:
+            "Stand firm on your original agreements and demand the partner country honor commitments",
           requirements: [
-            { skill: 'negotiation', level: 80 },
-            { skill: 'legal', level: 60 }
+            { skill: "negotiation", level: 80 },
+            { skill: "legal", level: 60 },
           ],
           predictedOutcomes: {
             immediate: {
               culturalImpact: -10,
               diplomaticChange: -25,
               economicCost: 20,
-              relationshipStateChange: 'tense'
+              relationshipStateChange: "tense",
             },
             shortTerm: {
-              description: 'Festival proceeds but tensions remain high, partner country feels disrespected',
+              description:
+                "Festival proceeds but tensions remain high, partner country feels disrespected",
               culturalBenefit: 30,
-              diplomaticBenefit: -20
+              diplomaticBenefit: -20,
             },
             longTerm: {
-              description: 'Sets precedent for contract enforcement but damages trust for future collaborations',
+              description:
+                "Sets precedent for contract enforcement but damages trust for future collaborations",
               culturalBenefit: 40,
-              diplomaticBenefit: -30
-            }
+              diplomaticBenefit: -30,
+            },
           },
-          npcsLikelyToChoose: ['Aggressive Expansionist', 'Ideological Hardliner']
+          npcsLikelyToChoose: ["Aggressive Expansionist", "Ideological Hardliner"],
         },
         {
-          id: 'compromise',
-          label: 'Propose Balanced Compromise',
-          description: 'Offer specific concessions on representation and funding in exchange for partner concessions',
+          id: "compromise",
+          label: "Propose Balanced Compromise",
+          description:
+            "Offer specific concessions on representation and funding in exchange for partner concessions",
           requirements: [
-            { skill: 'negotiation', level: 75 },
-            { skill: 'cultural_sensitivity', level: 70 },
-            { skill: 'economic', level: 50 }
+            { skill: "negotiation", level: 75 },
+            { skill: "cultural_sensitivity", level: 70 },
+            { skill: "economic", level: 50 },
           ],
           predictedOutcomes: {
             immediate: {
               culturalImpact: 10,
               diplomaticChange: 15,
               economicCost: 25,
-              relationshipStateChange: null
+              relationshipStateChange: null,
             },
             shortTerm: {
-              description: 'Both sides accept compromise, festival proceeds with slight modifications to program',
+              description:
+                "Both sides accept compromise, festival proceeds with slight modifications to program",
               culturalBenefit: 55,
-              diplomaticBenefit: 50
+              diplomaticBenefit: 50,
             },
             longTerm: {
-              description: 'Demonstrates flexibility and willingness to find middle ground, moderately strengthens relationship',
+              description:
+                "Demonstrates flexibility and willingness to find middle ground, moderately strengthens relationship",
               culturalBenefit: 65,
-              diplomaticBenefit: 60
-            }
+              diplomaticBenefit: 60,
+            },
           },
-          npcsLikelyToChoose: ['Pragmatic Realist', 'Peaceful Merchant', 'Cultural Diplomat']
+          npcsLikelyToChoose: ["Pragmatic Realist", "Peaceful Merchant", "Cultural Diplomat"],
         },
         {
-          id: 'postpone',
-          label: 'Postpone Festival',
-          description: 'Delay the festival to allow time for proper resolution rather than proceeding under contentious circumstances',
+          id: "postpone",
+          label: "Postpone Festival",
+          description:
+            "Delay the festival to allow time for proper resolution rather than proceeding under contentious circumstances",
           requirements: [
-            { skill: 'negotiation', level: 60 },
-            { skill: 'economic', level: 65 }
+            { skill: "negotiation", level: 60 },
+            { skill: "economic", level: 65 },
           ],
           predictedOutcomes: {
             immediate: {
               culturalImpact: -15,
               diplomaticChange: -5,
               economicCost: 60,
-              relationshipStateChange: null
+              relationshipStateChange: null,
             },
             shortTerm: {
-              description: 'Disappointment from public and performers, but tensions de-escalate with time',
+              description:
+                "Disappointment from public and performers, but tensions de-escalate with time",
               culturalBenefit: 20,
-              diplomaticBenefit: 30
+              diplomaticBenefit: 30,
             },
             longTerm: {
-              description: 'If disputes are truly resolved, future festival could be stronger; if not, program may languish',
+              description:
+                "If disputes are truly resolved, future festival could be stronger; if not, program may languish",
               culturalBenefit: 50,
-              diplomaticBenefit: 45
-            }
+              diplomaticBenefit: 45,
+            },
           },
-          npcsLikelyToChoose: ['Cautious Isolationist', 'Pragmatic Realist']
-        }
+          npcsLikelyToChoose: ["Cautious Isolationist", "Pragmatic Realist"],
+        },
       ],
 
       artifact_repatriation: (ctx) => [
         {
-          id: 'full_repatriation',
-          label: 'Full Repatriation',
-          description: 'Return all requested artifacts unconditionally, acknowledging historical injustice',
+          id: "full_repatriation",
+          label: "Full Repatriation",
+          description:
+            "Return all requested artifacts unconditionally, acknowledging historical injustice",
           requirements: [
-            { skill: 'cultural_sensitivity', level: 85 },
-            { skill: 'legal', level: 60 }
+            { skill: "cultural_sensitivity", level: 85 },
+            { skill: "legal", level: 60 },
           ],
           predictedOutcomes: {
             immediate: {
               culturalImpact: 40,
               diplomaticChange: 50,
               economicCost: 15,
-              relationshipStateChange: 'friendly'
+              relationshipStateChange: "friendly",
             },
             shortTerm: {
-              description: 'Massive goodwill from partner country, sets global precedent for repatriation',
+              description:
+                "Massive goodwill from partner country, sets global precedent for repatriation",
               culturalBenefit: 85,
-              diplomaticBenefit: 90
+              diplomaticBenefit: 90,
             },
             longTerm: {
-              description: 'Transforms bilateral relationship into model partnership, but may trigger other repatriation requests',
+              description:
+                "Transforms bilateral relationship into model partnership, but may trigger other repatriation requests",
               culturalBenefit: 90,
-              diplomaticBenefit: 95
-            }
+              diplomaticBenefit: 95,
+            },
           },
-          npcsLikelyToChoose: ['Cultural Diplomat', 'Ideological Hardliner']
+          npcsLikelyToChoose: ["Cultural Diplomat", "Ideological Hardliner"],
         },
         {
-          id: 'joint_custody',
-          label: 'Joint Custody Agreement',
-          description: 'Propose rotating custody where artifacts spend time in both countries with shared preservation responsibilities',
+          id: "joint_custody",
+          label: "Joint Custody Agreement",
+          description:
+            "Propose rotating custody where artifacts spend time in both countries with shared preservation responsibilities",
           requirements: [
-            { skill: 'negotiation', level: 80 },
-            { skill: 'cultural_sensitivity', level: 75 },
-            { skill: 'legal', level: 70 }
+            { skill: "negotiation", level: 80 },
+            { skill: "cultural_sensitivity", level: 75 },
+            { skill: "legal", level: 70 },
           ],
           predictedOutcomes: {
             immediate: {
               culturalImpact: 25,
               diplomaticChange: 30,
               economicCost: 45,
-              relationshipStateChange: null
+              relationshipStateChange: null,
             },
             shortTerm: {
-              description: 'Innovative solution satisfies both sides partially, creates logistical complexity',
+              description:
+                "Innovative solution satisfies both sides partially, creates logistical complexity",
               culturalBenefit: 70,
-              diplomaticBenefit: 65
+              diplomaticBenefit: 65,
             },
             longTerm: {
-              description: 'Ongoing collaboration on artifact care strengthens institutional ties, serves as model for similar disputes',
+              description:
+                "Ongoing collaboration on artifact care strengthens institutional ties, serves as model for similar disputes",
               culturalBenefit: 80,
-              diplomaticBenefit: 75
-            }
+              diplomaticBenefit: 75,
+            },
           },
-          npcsLikelyToChoose: ['Pragmatic Realist', 'Cultural Diplomat', 'Peaceful Merchant']
+          npcsLikelyToChoose: ["Pragmatic Realist", "Cultural Diplomat", "Peaceful Merchant"],
         },
         {
-          id: 'conditional_return',
-          label: 'Conditional Return',
-          description: 'Return artifacts contingent on verified preservation capacity and public access guarantees',
+          id: "conditional_return",
+          label: "Conditional Return",
+          description:
+            "Return artifacts contingent on verified preservation capacity and public access guarantees",
           requirements: [
-            { skill: 'negotiation', level: 75 },
-            { skill: 'legal', level: 80 }
+            { skill: "negotiation", level: 75 },
+            { skill: "legal", level: 80 },
           ],
           predictedOutcomes: {
             immediate: {
               culturalImpact: 15,
               diplomaticChange: 10,
               economicCost: 25,
-              relationshipStateChange: null
+              relationshipStateChange: null,
             },
             shortTerm: {
-              description: 'Partner country views conditions as paternalistic but accepts to secure return',
+              description:
+                "Partner country views conditions as paternalistic but accepts to secure return",
               culturalBenefit: 50,
-              diplomaticBenefit: 35
+              diplomaticBenefit: 35,
             },
             longTerm: {
-              description: 'Artifacts returned but relationship strained by perceived distrust implied by conditions',
+              description:
+                "Artifacts returned but relationship strained by perceived distrust implied by conditions",
               culturalBenefit: 60,
-              diplomaticBenefit: 45
-            }
+              diplomaticBenefit: 45,
+            },
           },
-          npcsLikelyToChoose: ['Cautious Isolationist', 'Pragmatic Realist']
+          npcsLikelyToChoose: ["Cautious Isolationist", "Pragmatic Realist"],
         },
         {
-          id: 'maintain_status',
-          label: 'Maintain Current Status',
-          description: 'Refuse repatriation while offering enhanced collaboration on exhibition and research',
+          id: "maintain_status",
+          label: "Maintain Current Status",
+          description:
+            "Refuse repatriation while offering enhanced collaboration on exhibition and research",
           requirements: [
-            { skill: 'negotiation', level: 70 },
-            { skill: 'legal', level: 85 }
+            { skill: "negotiation", level: 70 },
+            { skill: "legal", level: 85 },
           ],
           predictedOutcomes: {
             immediate: {
               culturalImpact: -30,
               diplomaticChange: -45,
               economicCost: 10,
-              relationshipStateChange: 'tense'
+              relationshipStateChange: "tense",
             },
             shortTerm: {
-              description: 'Significant public backlash in partner country, cultural exchange programs suspended',
+              description:
+                "Significant public backlash in partner country, cultural exchange programs suspended",
               culturalBenefit: 20,
-              diplomaticBenefit: -40
+              diplomaticBenefit: -40,
             },
             longTerm: {
-              description: 'Long-term damage to cultural relations, potential international criticism',
+              description:
+                "Long-term damage to cultural relations, potential international criticism",
               culturalBenefit: 25,
-              diplomaticBenefit: -50
-            }
+              diplomaticBenefit: -50,
+            },
           },
-          npcsLikelyToChoose: ['Aggressive Expansionist', 'Cautious Isolationist', 'Ideological Hardliner']
-        }
+          npcsLikelyToChoose: [
+            "Aggressive Expansionist",
+            "Cautious Isolationist",
+            "Ideological Hardliner",
+          ],
+        },
       ],
 
       cultural_appropriation: (ctx) => [
         {
-          id: 'withdraw_collection',
-          label: 'Demand Collection Withdrawal',
-          description: 'Publicly demand the fashion company withdraw the collection and issue formal apology',
+          id: "withdraw_collection",
+          label: "Demand Collection Withdrawal",
+          description:
+            "Publicly demand the fashion company withdraw the collection and issue formal apology",
           requirements: [
-            { skill: 'cultural_sensitivity', level: 80 },
-            { skill: 'negotiation', level: 65 }
+            { skill: "cultural_sensitivity", level: 80 },
+            { skill: "negotiation", level: 65 },
           ],
           predictedOutcomes: {
             immediate: {
               culturalImpact: 20,
               diplomaticChange: -15,
               economicCost: 35,
-              relationshipStateChange: null
+              relationshipStateChange: null,
             },
             shortTerm: {
-              description: 'Indigenous communities feel heard, but partner country perceives overreach',
+              description:
+                "Indigenous communities feel heard, but partner country perceives overreach",
               culturalBenefit: 60,
-              diplomaticBenefit: -10
+              diplomaticBenefit: -10,
             },
             longTerm: {
-              description: 'Sets strong precedent for cultural protection but may chill future creative collaborations',
+              description:
+                "Sets strong precedent for cultural protection but may chill future creative collaborations",
               culturalBenefit: 70,
-              diplomaticBenefit: 20
-            }
+              diplomaticBenefit: 20,
+            },
           },
-          npcsLikelyToChoose: ['Ideological Hardliner', 'Cultural Diplomat']
+          npcsLikelyToChoose: ["Ideological Hardliner", "Cultural Diplomat"],
         },
         {
-          id: 'collaborative_redesign',
-          label: 'Collaborative Redesign',
-          description: 'Work with designers and indigenous communities to respectfully redesign the collection',
+          id: "collaborative_redesign",
+          label: "Collaborative Redesign",
+          description:
+            "Work with designers and indigenous communities to respectfully redesign the collection",
           requirements: [
-            { skill: 'cultural_sensitivity', level: 85 },
-            { skill: 'negotiation', level: 80 },
-            { skill: 'economic', level: 60 }
+            { skill: "cultural_sensitivity", level: 85 },
+            { skill: "negotiation", level: 80 },
+            { skill: "economic", level: 60 },
           ],
           predictedOutcomes: {
             immediate: {
               culturalImpact: 30,
               diplomaticChange: 25,
               economicCost: 50,
-              relationshipStateChange: null
+              relationshipStateChange: null,
             },
             shortTerm: {
-              description: 'Difficult negotiations but produces culturally appropriate collection with indigenous participation',
+              description:
+                "Difficult negotiations but produces culturally appropriate collection with indigenous participation",
               culturalBenefit: 80,
-              diplomaticBenefit: 70
+              diplomaticBenefit: 70,
             },
             longTerm: {
-              description: 'Creates model for ethical cultural collaboration in commercial contexts, strengthens relationship',
+              description:
+                "Creates model for ethical cultural collaboration in commercial contexts, strengthens relationship",
               culturalBenefit: 90,
-              diplomaticBenefit: 85
-            }
+              diplomaticBenefit: 85,
+            },
           },
-          npcsLikelyToChoose: ['Cultural Diplomat', 'Pragmatic Realist', 'Peaceful Merchant']
+          npcsLikelyToChoose: ["Cultural Diplomat", "Pragmatic Realist", "Peaceful Merchant"],
         },
         {
-          id: 'educational_campaign',
-          label: 'Launch Educational Campaign',
-          description: 'Use controversy as opportunity for public education about cultural symbols while allowing collection',
+          id: "educational_campaign",
+          label: "Launch Educational Campaign",
+          description:
+            "Use controversy as opportunity for public education about cultural symbols while allowing collection",
           requirements: [
-            { skill: 'cultural_sensitivity', level: 70 },
-            { skill: 'negotiation', level: 65 }
+            { skill: "cultural_sensitivity", level: 70 },
+            { skill: "negotiation", level: 65 },
           ],
           predictedOutcomes: {
             immediate: {
               culturalImpact: 15,
               diplomaticChange: 5,
               economicCost: 30,
-              relationshipStateChange: null
+              relationshipStateChange: null,
             },
             shortTerm: {
-              description: 'Raises awareness about cultural sensitivity, but does not address core grievance',
+              description:
+                "Raises awareness about cultural sensitivity, but does not address core grievance",
               culturalBenefit: 45,
-              diplomaticBenefit: 40
+              diplomaticBenefit: 40,
             },
             longTerm: {
-              description: 'Modest improvement in cultural understanding, but indigenous communities may feel unheard',
+              description:
+                "Modest improvement in cultural understanding, but indigenous communities may feel unheard",
               culturalBenefit: 55,
-              diplomaticBenefit: 50
-            }
+              diplomaticBenefit: 50,
+            },
           },
-          npcsLikelyToChoose: ['Pragmatic Realist', 'Peaceful Merchant']
+          npcsLikelyToChoose: ["Pragmatic Realist", "Peaceful Merchant"],
         },
         {
-          id: 'non_intervention',
-          label: 'Non-Intervention',
-          description: 'Take position that this is commercial matter outside government purview',
-          requirements: [
-            { skill: 'legal', level: 60 }
-          ],
+          id: "non_intervention",
+          label: "Non-Intervention",
+          description: "Take position that this is commercial matter outside government purview",
+          requirements: [{ skill: "legal", level: 60 }],
           predictedOutcomes: {
             immediate: {
               culturalImpact: -25,
               diplomaticChange: -10,
               economicCost: 5,
-              relationshipStateChange: null
+              relationshipStateChange: null,
             },
             shortTerm: {
-              description: 'Indigenous communities feel abandoned, controversy continues to damage cultural exchange reputation',
+              description:
+                "Indigenous communities feel abandoned, controversy continues to damage cultural exchange reputation",
               culturalBenefit: -20,
-              diplomaticBenefit: -15
+              diplomaticBenefit: -15,
             },
             longTerm: {
-              description: 'Missed opportunity to address cultural protection, potential for recurring similar controversies',
+              description:
+                "Missed opportunity to address cultural protection, potential for recurring similar controversies",
               culturalBenefit: -10,
-              diplomaticBenefit: -20
-            }
+              diplomaticBenefit: -20,
+            },
           },
-          npcsLikelyToChoose: ['Cautious Isolationist', 'Aggressive Expansionist']
-        }
+          npcsLikelyToChoose: ["Cautious Isolationist", "Aggressive Expansionist"],
+        },
       ],
 
       // Simplified option generators for remaining scenarios (space considerations)
-      exhibition_censorship: (ctx) => this.generateGenericResponseOptions('censorship', ctx),
-      student_visa_crisis: (ctx) => this.generateGenericResponseOptions('visa_crisis', ctx),
-      heritage_restoration: (ctx) => this.generateGenericResponseOptions('restoration', ctx),
-      language_preservation: (ctx) => this.generateGenericResponseOptions('language', ctx),
-      knowledge_sharing: (ctx) => this.generateGenericResponseOptions('knowledge', ctx),
-      festival_security: (ctx) => this.generateGenericResponseOptions('security', ctx),
-      artistic_freedom: (ctx) => this.generateGenericResponseOptions('artistic', ctx)
+      exhibition_censorship: (ctx) => this.generateGenericResponseOptions("censorship", ctx),
+      student_visa_crisis: (ctx) => this.generateGenericResponseOptions("visa_crisis", ctx),
+      heritage_restoration: (ctx) => this.generateGenericResponseOptions("restoration", ctx),
+      language_preservation: (ctx) => this.generateGenericResponseOptions("language", ctx),
+      knowledge_sharing: (ctx) => this.generateGenericResponseOptions("knowledge", ctx),
+      festival_security: (ctx) => this.generateGenericResponseOptions("security", ctx),
+      artistic_freedom: (ctx) => this.generateGenericResponseOptions("artistic", ctx),
     };
 
     return optionGenerators[template.type](context);
@@ -825,49 +880,88 @@ Your diplomatic team must navigate this highly public confrontation between arti
     return [
       {
         id: `${scenarioSubtype}_cooperative`,
-        label: 'Cooperative Approach',
-        description: 'Work collaboratively to find mutually beneficial solution',
+        label: "Cooperative Approach",
+        description: "Work collaboratively to find mutually beneficial solution",
         requirements: [
-          { skill: 'negotiation', level: 70 },
-          { skill: 'cultural_sensitivity', level: 65 }
+          { skill: "negotiation", level: 70 },
+          { skill: "cultural_sensitivity", level: 65 },
         ],
         predictedOutcomes: {
-          immediate: { culturalImpact: 20, diplomaticChange: 25, economicCost: 40, relationshipStateChange: null },
-          shortTerm: { description: 'Collaborative solution strengthens working relationship', culturalBenefit: 65, diplomaticBenefit: 70 },
-          longTerm: { description: 'Establishes pattern of effective cooperation on complex issues', culturalBenefit: 75, diplomaticBenefit: 80 }
+          immediate: {
+            culturalImpact: 20,
+            diplomaticChange: 25,
+            economicCost: 40,
+            relationshipStateChange: null,
+          },
+          shortTerm: {
+            description: "Collaborative solution strengthens working relationship",
+            culturalBenefit: 65,
+            diplomaticBenefit: 70,
+          },
+          longTerm: {
+            description: "Establishes pattern of effective cooperation on complex issues",
+            culturalBenefit: 75,
+            diplomaticBenefit: 80,
+          },
         },
-        npcsLikelyToChoose: ['Cultural Diplomat', 'Pragmatic Realist', 'Peaceful Merchant']
+        npcsLikelyToChoose: ["Cultural Diplomat", "Pragmatic Realist", "Peaceful Merchant"],
       },
       {
         id: `${scenarioSubtype}_assertive`,
-        label: 'Assertive Position',
-        description: 'Stand firm on your interests while remaining open to negotiation',
+        label: "Assertive Position",
+        description: "Stand firm on your interests while remaining open to negotiation",
         requirements: [
-          { skill: 'negotiation', level: 75 },
-          { skill: 'economic', level: 60 }
+          { skill: "negotiation", level: 75 },
+          { skill: "economic", level: 60 },
         ],
         predictedOutcomes: {
-          immediate: { culturalImpact: 10, diplomaticChange: 5, economicCost: 25, relationshipStateChange: null },
-          shortTerm: { description: 'Protects your interests but may create tension', culturalBenefit: 50, diplomaticBenefit: 40 },
-          longTerm: { description: 'Establishes boundaries but limits depth of cooperation', culturalBenefit: 55, diplomaticBenefit: 50 }
+          immediate: {
+            culturalImpact: 10,
+            diplomaticChange: 5,
+            economicCost: 25,
+            relationshipStateChange: null,
+          },
+          shortTerm: {
+            description: "Protects your interests but may create tension",
+            culturalBenefit: 50,
+            diplomaticBenefit: 40,
+          },
+          longTerm: {
+            description: "Establishes boundaries but limits depth of cooperation",
+            culturalBenefit: 55,
+            diplomaticBenefit: 50,
+          },
         },
-        npcsLikelyToChoose: ['Aggressive Expansionist', 'Pragmatic Realist']
+        npcsLikelyToChoose: ["Aggressive Expansionist", "Pragmatic Realist"],
       },
       {
         id: `${scenarioSubtype}_cautious`,
-        label: 'Cautious Approach',
-        description: 'Proceed slowly with thorough evaluation and risk mitigation',
+        label: "Cautious Approach",
+        description: "Proceed slowly with thorough evaluation and risk mitigation",
         requirements: [
-          { skill: 'legal', level: 70 },
-          { skill: 'security', level: 65 }
+          { skill: "legal", level: 70 },
+          { skill: "security", level: 65 },
         ],
         predictedOutcomes: {
-          immediate: { culturalImpact: 5, diplomaticChange: 10, economicCost: 35, relationshipStateChange: null },
-          shortTerm: { description: 'Minimizes risks but may be perceived as overly cautious', culturalBenefit: 45, diplomaticBenefit: 50 },
-          longTerm: { description: 'Protects against negative outcomes but limits potential gains', culturalBenefit: 50, diplomaticBenefit: 55 }
+          immediate: {
+            culturalImpact: 5,
+            diplomaticChange: 10,
+            economicCost: 35,
+            relationshipStateChange: null,
+          },
+          shortTerm: {
+            description: "Minimizes risks but may be perceived as overly cautious",
+            culturalBenefit: 45,
+            diplomaticBenefit: 50,
+          },
+          longTerm: {
+            description: "Protects against negative outcomes but limits potential gains",
+            culturalBenefit: 50,
+            diplomaticBenefit: 55,
+          },
         },
-        npcsLikelyToChoose: ['Cautious Isolationist', 'Pragmatic Realist']
-      }
+        npcsLikelyToChoose: ["Cautious Isolationist", "Pragmatic Realist"],
+      },
     ];
   }
 
@@ -879,8 +973,14 @@ Your diplomatic team must navigate this highly public confrontation between arti
     preferredTypes?: CulturalScenarioType[]
   ): CulturalScenarioTemplate {
     // Filter templates by relationship state compatibility
-    const compatibleTemplates = Object.values(CULTURAL_SCENARIO_TEMPLATES).filter(template => {
-      const relationshipOrder: RelationshipState[] = ['hostile', 'tense', 'neutral', 'friendly', 'allied'];
+    const compatibleTemplates = Object.values(CULTURAL_SCENARIO_TEMPLATES).filter((template) => {
+      const relationshipOrder: RelationshipState[] = [
+        "hostile",
+        "tense",
+        "neutral",
+        "friendly",
+        "allied",
+      ];
       const currentIndex = relationshipOrder.indexOf(context.relationshipState);
       const minIndex = relationshipOrder.indexOf(template.minimumRelationship);
 
@@ -889,14 +989,14 @@ Your diplomatic team must navigate this highly public confrontation between arti
 
     // If preferred types specified, prioritize those
     if (preferredTypes && preferredTypes.length > 0) {
-      const preferred = compatibleTemplates.filter(t => preferredTypes.includes(t.type));
+      const preferred = compatibleTemplates.filter((t) => preferredTypes.includes(t.type));
       if (preferred.length > 0) {
         return preferred[Math.floor(Math.random() * preferred.length)]!;
       }
     }
 
     // Select based on context factors
-    let weights = compatibleTemplates.map(template => {
+    let weights = compatibleTemplates.map((template) => {
       let weight = 1.0;
 
       // Weight based on cultural openness
@@ -910,7 +1010,7 @@ Your diplomatic team must navigate this highly public confrontation between arti
       }
 
       // Weight based on historical tensions
-      if (context.historicalTensions && template.type === 'artifact_repatriation') {
+      if (context.historicalTensions && template.type === "artifact_repatriation") {
         weight *= 1.5;
       }
 

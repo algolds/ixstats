@@ -28,7 +28,7 @@ import {
   RiArrowDownLine,
   RiMapLine,
   RiInformationLine,
-  RiMapPinLine
+  RiMapPinLine,
 } from "react-icons/ri";
 
 // Intelligence Glyph System
@@ -66,7 +66,11 @@ interface IntelligenceGlyphProps {
   className?: string;
 }
 
-export const IntelligenceGlyph: React.FC<IntelligenceGlyphProps> = ({ type, size = 5, className }) => {
+export const IntelligenceGlyph: React.FC<IntelligenceGlyphProps> = ({
+  type,
+  size = 5,
+  className,
+}) => {
   const Icon = INTELLIGENCE_GLYPHS[type];
   return <Icon className={cn(`h-${size} w-${size} text-[--intel-gold]`, className)} />;
 };

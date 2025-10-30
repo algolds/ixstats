@@ -45,14 +45,18 @@ import { RiAlertLine, RiRefreshLine } from "react-icons/ri";
 export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
   countryName,
   countryData,
-  viewerClearanceLevel = 'PUBLIC',
-  flagColors = { primary: '#3b82f6', secondary: '#6366f1', accent: '#8b5cf6' }
+  viewerClearanceLevel = "PUBLIC",
+  flagColors = { primary: "#3b82f6", secondary: "#6366f1", accent: "#8b5cf6" },
 }) => {
   // State for active view
-  const [activeView, setActiveView] = useState<'sections' | 'conflicts' | 'settings'>('sections');
+  const [activeView, setActiveView] = useState<"sections" | "conflicts" | "settings">("sections");
 
   // State for modal
-  const [modalSection, setModalSection] = useState<{ title: string; content: string; id: string } | null>(null);
+  const [modalSection, setModalSection] = useState<{
+    title: string;
+    content: string;
+    id: string;
+  } | null>(null);
 
   // Use custom hook for data management
   const {
@@ -65,23 +69,23 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
     handleRefresh,
     isLoading,
     isRefreshing,
-    hasAccess
+    hasAccess,
   } = useWikiIntelligence({
     countryName,
-    countryData
+    countryData,
   });
 
   // Handle wiki link clicks
   const handleWikiLinkClick = useCallback((pageName: string) => {
     console.log(`[WikiIntelligence] Wiki link clicked: ${pageName}`);
     const wikiUrl = `https://ixwiki.com/wiki/${encodeURIComponent(pageName)}`;
-    window.open(wikiUrl, '_blank', 'noopener,noreferrer');
+    window.open(wikiUrl, "_blank", "noopener,noreferrer");
   }, []);
 
   // Handle settings apply
   const handleApplySettings = useCallback(async () => {
-    console.log('[WikiIntelligence] Applying advanced settings:', wikiSettings);
-    console.log('[WikiIntelligence] Custom pages:', wikiSettings.customPages);
+    console.log("[WikiIntelligence] Applying advanced settings:", wikiSettings);
+    console.log("[WikiIntelligence] Custom pages:", wikiSettings.customPages);
     await handleRefresh();
   }, [wikiSettings, handleRefresh]);
 
@@ -110,11 +114,11 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
     return (
       <Card className="glass-hierarchy-child">
         <CardContent className="p-8 text-center">
-          <RiAlertLine className="h-12 w-12 mx-auto mb-4 text-red-600 dark:text-red-400" />
-          <h3 className="text-lg font-semibold mb-2">Wiki Intelligence Unavailable</h3>
+          <RiAlertLine className="mx-auto mb-4 h-12 w-12 text-red-600 dark:text-red-400" />
+          <h3 className="mb-2 text-lg font-semibold">Wiki Intelligence Unavailable</h3>
           <p className="text-muted-foreground mb-4">{wikiData.error}</p>
           <Button onClick={handleRefresh} variant="outline">
-            <RiRefreshLine className="h-4 w-4 mr-2" />
+            <RiRefreshLine className="mr-2 h-4 w-4" />
             Retry
           </Button>
         </CardContent>
@@ -123,9 +127,10 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
   }
 
   // Get flag image URL for header background
-  const flagImageUrl = wikiData.infobox?.image_flag || wikiData.infobox?.flag
-    ? `https://ixwiki.com/wiki/Special:Filepath/${wikiData.infobox.image_flag || wikiData.infobox.flag}`
-    : undefined;
+  const flagImageUrl =
+    wikiData.infobox?.image_flag || wikiData.infobox?.flag
+      ? `https://ixwiki.com/wiki/Special:Filepath/${wikiData.infobox.image_flag || wikiData.infobox.flag}`
+      : undefined;
 
   return (
     <>
@@ -153,12 +158,14 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
             transition={{ duration: 0.3 }}
           >
             {/* Sections View (Dossier) */}
-            {activeView === 'sections' && (
-              <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+            {activeView === "sections" && (
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-4">
                 {/* Main Content - Dossier Sections */}
-                <div className="xl:col-span-3 space-y-4">
+                <div className="space-y-4 xl:col-span-3">
                   {wikiData.sections
-                    .filter(section => hasAccess(section.classification) && section.id !== 'overview')
+                    .filter(
+                      (section) => hasAccess(section.classification) && section.id !== "overview"
+                    )
                     .map((section) => (
                       <WikiSectionCard
                         key={section.id}
@@ -187,12 +194,10 @@ export const WikiIntelligenceTab: React.FC<WikiIntelligenceTabProps> = ({
             )}
 
             {/* Conflicts View (Analysis) */}
-            {activeView === 'conflicts' && (
-              <WikiConflictsView dataConflicts={dataConflicts} />
-            )}
+            {activeView === "conflicts" && <WikiConflictsView dataConflicts={dataConflicts} />}
 
             {/* Settings View */}
-            {activeView === 'settings' && (
+            {activeView === "settings" && (
               <WikiSettingsView
                 wikiSettings={wikiSettings}
                 setWikiSettings={setWikiSettings}

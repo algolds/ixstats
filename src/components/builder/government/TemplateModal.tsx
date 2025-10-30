@@ -4,11 +4,11 @@
  * Modal for selecting government templates
  */
 
-import React from 'react';
-import { Button } from '~/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import type { GovernmentTemplate } from '~/types/government';
+import React from "react";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import type { GovernmentTemplate } from "~/types/government";
 
 export interface TemplateModalProps {
   templates: GovernmentTemplate[];
@@ -22,24 +22,21 @@ export const TemplateModal = React.memo(function TemplateModal({
   onClose,
 }: TemplateModalProps) {
   return (
-    <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-background border border-border rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto shadow-xl">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-foreground">Government Templates</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70">
+      <div className="bg-background border-border mx-4 max-h-[80vh] w-full max-w-4xl overflow-y-auto rounded-lg border p-6 shadow-xl">
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-foreground text-2xl font-semibold">Government Templates</h2>
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {templates.map((template, index) => (
-            <Card
-              key={index}
-              className="hover:shadow-lg transition-shadow cursor-pointer"
-            >
+            <Card key={index} className="cursor-pointer transition-shadow hover:shadow-lg">
               <CardHeader>
                 <CardTitle>{template.name}</CardTitle>
-                <p className="text-sm text-muted-foreground">{template.description}</p>
+                <p className="text-muted-foreground text-sm">{template.description}</p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -51,7 +48,7 @@ export const TemplateModal = React.memo(function TemplateModal({
                   </div>
                   <div className="text-sm">
                     <strong>Departments:</strong>
-                    <ul className="mt-1 text-muted-foreground">
+                    <ul className="text-muted-foreground mt-1">
                       {template.departments.slice(0, 3).map((dept) => (
                         <li key={dept.name}>• {dept.name}</li>
                       ))}

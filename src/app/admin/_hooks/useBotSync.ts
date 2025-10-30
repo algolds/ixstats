@@ -37,32 +37,43 @@ export function useBotSync({
 
     // If bot multiplier differs from what we expect, sync from bot
     if (botMultiplier && botMultiplier !== dashboardMultiplier) {
-      console.log(`Bot multiplier (${botMultiplier}) differs from dashboard (${dashboardMultiplier}), syncing...`);
+      console.log(
+        `Bot multiplier (${botMultiplier}) differs from dashboard (${dashboardMultiplier}), syncing...`
+      );
 
-      setActionState(prev => ({ ...prev, autoSyncPending: true }));
+      setActionState((prev) => ({ ...prev, autoSyncPending: true }));
 
       // Sync from bot to admin panel
-      fetch(withBasePath('/api/ixtime/sync-from-bot'), { method: 'POST' })
-        .then(response => response.json())
-        .then(result => {
+      fetch(withBasePath("/api/ixtime/sync-from-bot"), { method: "POST" })
+        .then((response) => response.json())
+        .then((result) => {
           if (result.success) {
-            console.log('Successfully synced from Discord bot:', result.message);
+            console.log("Successfully synced from Discord bot:", result.message);
             // Update local config to match bot
             setTimeMultiplier(botMultiplier);
-            setActionState(prev => ({ ...prev, lastBotSync: new Date() }));
+            setActionState((prev) => ({ ...prev, lastBotSync: new Date() }));
             // Refresh status data
             refetchStatus();
             refetchBotStatus();
           } else {
-            console.warn('Failed to sync from Discord bot:', result.error);
+            console.warn("Failed to sync from Discord bot:", result.error);
           }
         })
-        .catch(error => {
-          console.warn('Error syncing from Discord bot:', error);
+        .catch((error) => {
+          console.warn("Error syncing from Discord bot:", error);
         })
         .finally(() => {
-          setActionState(prev => ({ ...prev, autoSyncPending: false }));
+          setActionState((prev) => ({ ...prev, autoSyncPending: false }));
         });
     }
-  }, [botStatus, timeMultiplier, botSyncEnabled, autoSyncPending, setActionState, setTimeMultiplier, refetchStatus, refetchBotStatus]);
+  }, [
+    botStatus,
+    timeMultiplier,
+    botSyncEnabled,
+    autoSyncPending,
+    setActionState,
+    setTimeMultiplier,
+    refetchStatus,
+    refetchBotStatus,
+  ]);
 }

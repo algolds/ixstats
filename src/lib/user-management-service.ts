@@ -1,6 +1,6 @@
 /**
  * Centralized User Management Service
- * 
+ *
  * Provides a single source of truth for user creation and retrieval with:
  * - Database transaction locking to prevent race conditions
  * - System owner role detection and preservation
@@ -22,8 +22,8 @@ export class UserManagementService {
    * Uses database transactions to prevent race conditions
    */
   async getOrCreateUser(clerkUserId: string): Promise<UserWithRole | null> {
-    if (!clerkUserId || clerkUserId.trim() === '') {
-      console.warn('[UserManagementService] Invalid clerkUserId provided');
+    if (!clerkUserId || clerkUserId.trim() === "") {
+      console.warn("[UserManagementService] Invalid clerkUserId provided");
       return null;
     }
 
@@ -37,13 +37,15 @@ export class UserManagementService {
       });
 
       if (existingUser) {
-        console.log(`[UserManagementService] Found existing user: ${clerkUserId}, role: ${existingUser.role?.name || 'NO_ROLE'}`);
+        console.log(
+          `[UserManagementService] Found existing user: ${clerkUserId}, role: ${existingUser.role?.name || "NO_ROLE"}`
+        );
         return existingUser as UserWithRole;
       }
 
       // User doesn't exist - create with proper role assignment
       console.log(`[UserManagementService] Creating new user: ${clerkUserId}`);
-      
+
       // Use transaction to prevent race conditions during creation
       return await this.db.$transaction(async (tx) => {
         // Double-check user doesn't exist (race condition protection)
@@ -62,8 +64,8 @@ export class UserManagementService {
 
         // Determine role assignment
         const isSystemOwnerUser = isSystemOwner(clerkUserId);
-        const roleName = isSystemOwnerUser ? 'owner' : 'user';
-        
+        const roleName = isSystemOwnerUser ? "owner" : "user";
+
         const role = await tx.role.findUnique({
           where: { name: roleName },
         });
@@ -84,28 +86,31 @@ export class UserManagementService {
           },
         });
 
-        console.log(`[UserManagementService] Created user: ${clerkUserId}, role: ${newUser.role?.name || 'NO_ROLE'}, isSystemOwner: ${isSystemOwnerUser}`);
+        console.log(
+          `[UserManagementService] Created user: ${clerkUserId}, role: ${newUser.role?.name || "NO_ROLE"}, isSystemOwner: ${isSystemOwnerUser}`
+        );
         return newUser as UserWithRole;
       });
-
     } catch (error) {
       console.error(`[UserManagementService] Failed to get/create user ${clerkUserId}:`, error);
-      
+
       // Try one more time to fetch existing user in case of race condition
       try {
         const fallbackUser = await this.db.user.findUnique({
           where: { clerkUserId },
           include: { role: true },
         });
-        
+
         if (fallbackUser) {
-          console.log(`[UserManagementService] Retrieved user after creation failure: ${clerkUserId}`);
+          console.log(
+            `[UserManagementService] Retrieved user after creation failure: ${clerkUserId}`
+          );
           return fallbackUser as UserWithRole;
         }
       } catch (fallbackError) {
         console.error(`[UserManagementService] Fallback user fetch failed:`, fallbackError);
       }
-      
+
       return null;
     }
   }
@@ -118,12 +123,12 @@ export class UserManagementService {
 
     // Create owner role
     await db.role.upsert({
-      where: { name: 'owner' },
+      where: { name: "owner" },
       update: {}, // Don't update existing
       create: {
-        name: 'owner',
-        displayName: 'System Owner',
-        description: 'Full system access and control',
+        name: "owner",
+        displayName: "System Owner",
+        description: "Full system access and control",
         level: 0,
         isSystem: true,
         isActive: true,
@@ -132,12 +137,12 @@ export class UserManagementService {
 
     // Create admin role
     await db.role.upsert({
-      where: { name: 'admin' },
+      where: { name: "admin" },
       update: {}, // Don't update existing
       create: {
-        name: 'admin',
-        displayName: 'Administrator',
-        description: 'Administrative access',
+        name: "admin",
+        displayName: "Administrator",
+        description: "Administrative access",
         level: 10,
         isSystem: true,
         isActive: true,
@@ -146,12 +151,12 @@ export class UserManagementService {
 
     // Create user role
     await db.role.upsert({
-      where: { name: 'user' },
+      where: { name: "user" },
       update: {}, // Don't update existing
       create: {
-        name: 'user',
-        displayName: 'Member',
-        description: 'Standard user access',
+        name: "user",
+        displayName: "Member",
+        description: "Standard user access",
         level: 100,
         isSystem: true,
         isActive: true,

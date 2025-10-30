@@ -26,7 +26,7 @@ import { useSharedDataModal } from "~/hooks/useSharedDataModal";
 import {
   NetworkOverviewCard,
   EmbassyGrid,
-  EmptyState
+  EmptyState,
 } from "~/components/diplomatic/embassy-network";
 
 interface EnhancedEmbassyNetworkProps {
@@ -38,7 +38,7 @@ interface EnhancedEmbassyNetworkProps {
 export function EnhancedEmbassyNetwork({
   countryId,
   countryName,
-  isOwner
+  isOwner,
 }: EnhancedEmbassyNetworkProps) {
   // Data layer: Fetch and process embassy data with synergies
   const { embassiesWithSynergies, isLoading, refetch } = useEmbassyNetworkData(countryId, isOwner);
@@ -54,9 +54,7 @@ export function EnhancedEmbassyNetwork({
     return (
       <Card>
         <CardContent className="py-12">
-          <div className="text-center text-muted-foreground">
-            Loading embassy network...
-          </div>
+          <div className="text-muted-foreground text-center">Loading embassy network...</div>
         </CardContent>
       </Card>
     );
@@ -65,9 +63,7 @@ export function EnhancedEmbassyNetwork({
   return (
     <div className="space-y-6">
       {/* Network Overview Metrics */}
-      {networkMetrics && (
-        <NetworkOverviewCard networkMetrics={networkMetrics} />
-      )}
+      {networkMetrics && <NetworkOverviewCard networkMetrics={networkMetrics} />}
 
       {/* Embassy Grid */}
       {embassiesWithSynergies.length > 0 && (
@@ -80,20 +76,13 @@ export function EnhancedEmbassyNetwork({
 
       {/* Empty State */}
       {embassiesWithSynergies.length === 0 && (
-        <EmptyState
-          isOwner={isOwner}
-          onEstablishEmbassy={() => setShowEstablishModal(true)}
-        />
+        <EmptyState isOwner={isOwner} onEstablishEmbassy={() => setShowEstablishModal(true)} />
       )}
 
       {/* Shared Data Modal */}
       <AnimatePresence>
         {showSharedData && (
-          <SharedDataModal
-            embassyId={showSharedData}
-            onClose={closeModal}
-            isOwner={isOwner}
-          />
+          <SharedDataModal embassyId={showSharedData} onClose={closeModal} isOwner={isOwner} />
         )}
       </AnimatePresence>
 
@@ -108,4 +97,3 @@ export function EnhancedEmbassyNetwork({
     </div>
   );
 }
-

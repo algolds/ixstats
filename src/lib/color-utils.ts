@@ -14,7 +14,9 @@ type Color = {
 
 // Mock parseColor function - replace with actual implementation
 const parseColor = (value: string): Color => {
-  throw new Error("parseColor not implemented - install react-aria-components or use alternative color library");
+  throw new Error(
+    "parseColor not implemented - install react-aria-components or use alternative color library"
+  );
 };
 
 export type ColorFormat = "hex" | "rgb" | "hsl" | "hsv" | "oklch" | "lab";
@@ -156,7 +158,7 @@ export function formatColorValue(color: Color, format: ColorFormat): string {
 
       if (alpha < 1) {
         return `oklch(${(L * 100).toFixed(1)}% ${C.toFixed(3)} ${H.toFixed(
-          1,
+          1
         )} / ${alpha.toFixed(2)})`;
       }
       return `oklch(${(L * 100).toFixed(1)}% ${C.toFixed(3)} ${H.toFixed(1)})`;
@@ -172,9 +174,7 @@ export function formatColorValue(color: Color, format: ColorFormat): string {
       const [L, a, b_lab] = xyzToLab(x, y, z);
 
       if (alpha < 1) {
-        return `lab(${L.toFixed(1)}% ${a.toFixed(1)} ${b_lab.toFixed(
-          1,
-        )} / ${alpha.toFixed(2)})`;
+        return `lab(${L.toFixed(1)}% ${a.toFixed(1)} ${b_lab.toFixed(1)} / ${alpha.toFixed(2)})`;
       }
       return `lab(${L.toFixed(1)}% ${a.toFixed(1)} ${b_lab.toFixed(1)})`;
     }
@@ -186,10 +186,7 @@ export function formatColorValue(color: Color, format: ColorFormat): string {
 /**
  * Parses a color string in the specified format
  */
-export function parseColorFromFormat(
-  value: string,
-  format: ColorFormat,
-): Color | null {
+export function parseColorFromFormat(value: string, format: ColorFormat): Color | null {
   try {
     // For formats that react-aria-components supports directly
     if (format === "hex" || format === "rgb" || format === "hsl") {
@@ -225,9 +222,7 @@ export function parseColorFromFormat(
         const alpha = parts[3] ? parseFloat(parts[3]) : 1;
 
         // Simplified conversion back to HSL
-        return parseColor(
-          `hsla(${H}, ${Math.min(C * 100, 100)}%, ${L}%, ${alpha})`,
-        );
+        return parseColor(`hsla(${H}, ${Math.min(C * 100, 100)}%, ${L}%, ${alpha})`);
       }
     }
 
@@ -246,10 +241,7 @@ export function parseColorFromFormat(
         const hue = (Math.atan2(b, a) * 180) / Math.PI;
 
         return parseColor(
-          `hsla(${hue < 0 ? hue + 360 : hue}, ${Math.min(
-            chroma,
-            100,
-          )}%, ${L}%, ${alpha})`,
+          `hsla(${hue < 0 ? hue + 360 : hue}, ${Math.min(chroma, 100)}%, ${L}%, ${alpha})`
         );
       }
     }
@@ -264,10 +256,7 @@ export function parseColorFromFormat(
 /**
  * Validates if a color string is valid for the given format
  */
-export function isValidColorFormat(
-  value: string,
-  format: ColorFormat,
-): boolean {
+export function isValidColorFormat(value: string, format: ColorFormat): boolean {
   const parsed = parseColorFromFormat(value, format);
   return parsed !== null;
 }

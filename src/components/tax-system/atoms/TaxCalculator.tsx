@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
-import { Badge } from '~/components/ui/badge';
-import { Progress } from '~/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { Alert, AlertDescription } from '~/components/ui/alert';
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Badge } from "~/components/ui/badge";
+import { Progress } from "~/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Alert, AlertDescription } from "~/components/ui/alert";
 import {
   Calculator,
   DollarSign,
@@ -24,8 +24,8 @@ import {
   Building,
   Info,
   Loader2,
-  Zap
-} from 'lucide-react';
+  Zap,
+} from "lucide-react";
 
 import type {
   TaxSystem,
@@ -36,18 +36,18 @@ import type {
   TaxCalculationRequest,
   TaxCalculationResult,
   TaxDeductionAmount,
-  TaxExemptionAmount
-} from '~/types/tax-system';
-import type { CoreEconomicIndicatorsData } from '~/types/economics';
-import type { GovernmentBuilderState } from '~/types/government';
-import { TaxCalculatorEngine } from '~/lib/tax-calculator';
-import { ComponentType } from '@prisma/client';
-import { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
+  TaxExemptionAmount,
+} from "~/types/tax-system";
+import type { CoreEconomicIndicatorsData } from "~/types/economics";
+import type { GovernmentBuilderState } from "~/types/government";
+import { TaxCalculatorEngine } from "~/lib/tax-calculator";
+import { ComponentType } from "@prisma/client";
+import { EconomicComponentType } from "~/components/economy/atoms/AtomicEconomicComponents";
 import {
   calculateUnifiedAtomicModifiers,
-  calculateClientAtomicEconomicImpact
-} from '~/lib/atomic-client-calculations';
-import { api } from '~/trpc/react';
+  calculateClientAtomicEconomicImpact,
+} from "~/lib/atomic-client-calculations";
+import { api } from "~/trpc/react";
 
 interface TaxCalculatorProps {
   taxSystem: TaxSystem;
@@ -58,7 +58,7 @@ interface TaxCalculatorProps {
   onCalculationChange?: (result: TaxCalculationResult | null) => void;
   economicData?: CoreEconomicIndicatorsData;
   governmentData?: GovernmentBuilderState;
-  calculationMode?: 'individual' | 'corporate' | 'both';
+  calculationMode?: "individual" | "corporate" | "both";
   // Atomic component integration
   governmentComponents?: ComponentType[];
   economicComponents?: EconomicComponentType[];
@@ -83,22 +83,30 @@ export function TaxCalculator({
   onCalculationChange,
   economicData,
   governmentData,
-  calculationMode: initialCalculationMode = 'individual',
+  calculationMode: initialCalculationMode = "individual",
   governmentComponents = [],
   economicComponents = [],
   sectorData = [],
   countryId,
-  enableLiveCalculation = false
+  enableLiveCalculation = false,
 }: TaxCalculatorProps) {
-  const [income, setIncome] = useState<string>('100000');
-  const [corporateIncome, setCorporateIncome] = useState<string>('500000');
+  const [income, setIncome] = useState<string>("100000");
+  const [corporateIncome, setCorporateIncome] = useState<string>("500000");
   const [taxYear, setTaxYear] = useState<number>(new Date().getFullYear());
   const [selectedDeductions, setSelectedDeductions] = useState<TaxDeductionAmount[]>([]);
   const [selectedExemptions, setSelectedExemptions] = useState<TaxExemptionAmount[]>([]);
-  const [selectedCorporateDeductions, setSelectedCorporateDeductions] = useState<TaxDeductionAmount[]>([]);
-  const [selectedCorporateExemptions, setSelectedCorporateExemptions] = useState<TaxExemptionAmount[]>([]);
-  const [activeTab, setActiveTab] = useState<'calculator' | 'breakdown' | 'suggestions'>('calculator');
-  const [calculatorMode, setCalculatorMode] = useState<'individual' | 'corporate' | 'both'>(initialCalculationMode);
+  const [selectedCorporateDeductions, setSelectedCorporateDeductions] = useState<
+    TaxDeductionAmount[]
+  >([]);
+  const [selectedCorporateExemptions, setSelectedCorporateExemptions] = useState<
+    TaxExemptionAmount[]
+  >([]);
+  const [activeTab, setActiveTab] = useState<"calculator" | "breakdown" | "suggestions">(
+    "calculator"
+  );
+  const [calculatorMode, setCalculatorMode] = useState<"individual" | "corporate" | "both">(
+    initialCalculationMode
+  );
   const [calculationTimestamp, setCalculationTimestamp] = useState<string | null>(null);
   const [liveCalculationResult, setLiveCalculationResult] = useState<any>(null);
 
@@ -112,19 +120,13 @@ export function TaxCalculator({
       }
     },
     onError: (error) => {
-      console.error('Live tax calculation error:', error);
-    }
+      console.error("Live tax calculation error:", error);
+    },
   });
 
   // Create calculator engine
   const calculatorEngine = useMemo(() => {
-    return new TaxCalculatorEngine(
-      taxSystem,
-      categories,
-      brackets,
-      exemptions,
-      deductions
-    );
+    return new TaxCalculatorEngine(taxSystem, categories, brackets, exemptions, deductions);
   }, [taxSystem, categories, brackets, exemptions, deductions]);
 
   // Debounced live calculation trigger
@@ -143,13 +145,21 @@ export function TaxCalculator({
         deductions: selectedDeductions,
         exemptions: selectedExemptions,
         taxYear,
-        sectorData
+        sectorData,
       });
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [income, corporateIncome, selectedDeductions, selectedExemptions, taxYear, enableLiveCalculation, countryId]);
+  }, [
+    income,
+    corporateIncome,
+    selectedDeductions,
+    selectedExemptions,
+    taxYear,
+    enableLiveCalculation,
+    countryId,
+  ]);
 
   // Calculate dynamic atomic component modifiers
   const atomicModifiers = useMemo(() => {
@@ -163,7 +173,7 @@ export function TaxCalculator({
         baseRateModifier: serverMods.economicTierMultiplier || 1.0,
         effectiveRateMultiplier: serverMods.taxCollectionEfficiency || 1.0,
         synergies: [],
-        conflicts: []
+        conflicts: [],
       };
     }
 
@@ -176,7 +186,7 @@ export function TaxCalculator({
         baseRateModifier: 1.0,
         effectiveRateMultiplier: 1.0,
         synergies: [],
-        conflicts: []
+        conflicts: [],
       };
     }
 
@@ -184,34 +194,37 @@ export function TaxCalculator({
     const unified = calculateUnifiedAtomicModifiers(
       governmentComponents,
       economicComponents,
-      []  // Tax components would go here if needed
+      [] // Tax components would go here if needed
     );
 
     // Calculate economic modifier from economic components
-    const economicModifier = economicComponents.reduce((sum, comp) => {
-      // Use ATOMIC_ECONOMIC_COMPONENTS to get taxImpact.revenueEfficiency
-      // This comes from the AtomicEconomicComponents file
-      return sum + 0.05; // Default 5% boost per economic component
-    }, 0) / Math.max(economicComponents.length, 1);
+    const economicModifier =
+      economicComponents.reduce((sum, comp) => {
+        // Use ATOMIC_ECONOMIC_COMPONENTS to get taxImpact.revenueEfficiency
+        // This comes from the AtomicEconomicComponents file
+        return sum + 0.05; // Default 5% boost per economic component
+      }, 0) / Math.max(economicComponents.length, 1);
 
     // Calculate government modifier from government components
-    const validGovernmentComponents = governmentComponents
-      .filter((ct): ct is ComponentType => Object.values(ComponentType).includes(ct as ComponentType));
+    const validGovernmentComponents = governmentComponents.filter((ct): ct is ComponentType =>
+      Object.values(ComponentType).includes(ct as ComponentType)
+    );
 
-    const governmentModifier = validGovernmentComponents.reduce((sum, comp) => {
-      // Government components that boost tax collection efficiency
-      const taxBoostComponents: ComponentType[] = [
-        ComponentType.PROFESSIONAL_BUREAUCRACY,
-        ComponentType.RULE_OF_LAW,
-        ComponentType.TECHNOCRATIC_AGENCIES,
-        ComponentType.DIGITAL_GOVERNMENT
-      ];
+    const governmentModifier =
+      validGovernmentComponents.reduce((sum, comp) => {
+        // Government components that boost tax collection efficiency
+        const taxBoostComponents: ComponentType[] = [
+          ComponentType.PROFESSIONAL_BUREAUCRACY,
+          ComponentType.RULE_OF_LAW,
+          ComponentType.TECHNOCRATIC_AGENCIES,
+          ComponentType.DIGITAL_GOVERNMENT,
+        ];
 
-      if (taxBoostComponents.includes(comp)) {
-        return sum + 0.08; // 8% boost for tax-efficient components
-      }
-      return sum + 0.02; // 2% baseline boost
-    }, 0) / Math.max(validGovernmentComponents.length, 1);
+        if (taxBoostComponents.includes(comp)) {
+          return sum + 0.08; // 8% boost for tax-efficient components
+        }
+        return sum + 0.02; // 2% baseline boost
+      }, 0) / Math.max(validGovernmentComponents.length, 1);
 
     return {
       taxCollectionEfficiency: unified.taxCollectionMultiplier,
@@ -220,7 +233,7 @@ export function TaxCalculator({
       baseRateModifier: unified.gdpGrowthModifier,
       effectiveRateMultiplier: 1 + economicModifier + governmentModifier,
       synergies: [],
-      conflicts: []
+      conflicts: [],
     };
   }, [governmentComponents, economicComponents, enableLiveCalculation, liveCalculationResult]);
 
@@ -240,7 +253,7 @@ export function TaxCalculator({
       taxYear,
       income: incomeValue,
       deductions: selectedDeductions,
-      exemptions: selectedExemptions
+      exemptions: selectedExemptions,
     };
 
     try {
@@ -255,19 +268,29 @@ export function TaxCalculator({
           ...baseResult,
           taxOwed: modifiedTaxOwed,
           effectiveRate: modifiedEffectiveRate,
-          breakdown: baseResult.breakdown.map(category => ({
+          breakdown: baseResult.breakdown.map((category) => ({
             ...category,
-            taxOwed: category.taxOwed * atomicModifiers.taxCollectionEfficiency
-          }))
+            taxOwed: category.taxOwed * atomicModifiers.taxCollectionEfficiency,
+          })),
         };
       }
 
       return baseResult;
     } catch (error) {
-      console.error('Tax calculation error:', error);
+      console.error("Tax calculation error:", error);
       return null;
     }
-  }, [income, taxYear, selectedDeductions, selectedExemptions, calculatorEngine, taxSystem.id, atomicModifiers, enableLiveCalculation, liveCalculationResult]);
+  }, [
+    income,
+    taxYear,
+    selectedDeductions,
+    selectedExemptions,
+    calculatorEngine,
+    taxSystem.id,
+    atomicModifiers,
+    enableLiveCalculation,
+    liveCalculationResult,
+  ]);
 
   // Calculate tax result for corporations with sector data integration
   const corporateCalculationResult = useMemo(() => {
@@ -279,7 +302,7 @@ export function TaxCalculator({
       taxYear,
       income: corporateIncomeValue,
       deductions: selectedCorporateDeductions,
-      exemptions: selectedCorporateExemptions
+      exemptions: selectedCorporateExemptions,
     };
 
     try {
@@ -288,7 +311,7 @@ export function TaxCalculator({
       // Apply sector-specific tax calculations if sector data is available
       if (sectorData.length > 0 && economicData?.nominalGDP) {
         // Calculate weighted tax based on sector distribution
-        const sectorTaxContributions = sectorData.map(sector => {
+        const sectorTaxContributions = sectorData.map((sector) => {
           const sectorGDP = (economicData.nominalGDP * sector.gdpContribution) / 100;
           const sectorIncome = (corporateIncomeValue * sector.gdpContribution) / 100;
           const sectorTaxRate = sector.taxRate || baseResult.effectiveRate;
@@ -297,7 +320,7 @@ export function TaxCalculator({
             sector: sector.name,
             income: sectorIncome,
             taxOwed: (sectorIncome * sectorTaxRate) / 100,
-            effectiveRate: sectorTaxRate
+            effectiveRate: sectorTaxRate,
           };
         });
 
@@ -312,11 +335,11 @@ export function TaxCalculator({
           ...baseResult,
           taxOwed: modifiedTaxOwed,
           effectiveRate: modifiedEffectiveRate,
-          breakdown: baseResult.breakdown.map(category => ({
+          breakdown: baseResult.breakdown.map((category) => ({
             ...category,
-            taxOwed: category.taxOwed * atomicModifiers.taxCollectionEfficiency
+            taxOwed: category.taxOwed * atomicModifiers.taxCollectionEfficiency,
           })),
-          sectorBreakdown: sectorTaxContributions
+          sectorBreakdown: sectorTaxContributions,
         } as TaxCalculationResult & { sectorBreakdown?: typeof sectorTaxContributions };
       }
 
@@ -329,19 +352,29 @@ export function TaxCalculator({
           ...baseResult,
           taxOwed: modifiedTaxOwed,
           effectiveRate: modifiedEffectiveRate,
-          breakdown: baseResult.breakdown.map(category => ({
+          breakdown: baseResult.breakdown.map((category) => ({
             ...category,
-            taxOwed: category.taxOwed * atomicModifiers.taxCollectionEfficiency
-          }))
+            taxOwed: category.taxOwed * atomicModifiers.taxCollectionEfficiency,
+          })),
         };
       }
 
       return baseResult;
     } catch (error) {
-      console.error('Corporate tax calculation error:', error);
+      console.error("Corporate tax calculation error:", error);
       return null;
     }
-  }, [corporateIncome, taxYear, selectedCorporateDeductions, selectedCorporateExemptions, calculatorEngine, taxSystem.id, sectorData, economicData, atomicModifiers]);
+  }, [
+    corporateIncome,
+    taxYear,
+    selectedCorporateDeductions,
+    selectedCorporateExemptions,
+    calculatorEngine,
+    taxSystem.id,
+    sectorData,
+    economicData,
+    atomicModifiers,
+  ]);
 
   useEffect(() => {
     if (onCalculationChange) {
@@ -358,7 +391,7 @@ export function TaxCalculator({
       taxYear,
       income: incomeValue,
       deductions: selectedDeductions,
-      exemptions: selectedExemptions
+      exemptions: selectedExemptions,
     };
 
     return calculatorEngine.validateCalculationRequest(request);
@@ -367,24 +400,32 @@ export function TaxCalculator({
   // Generate suggestions
   const suggestions = useMemo(() => {
     if (!calculationResult) return [];
-    
+
     const incomeValue = parseFloat(income) || 0;
     const request: TaxCalculationRequest = {
       taxSystemId: taxSystem.id,
       taxYear,
       income: incomeValue,
       deductions: selectedDeductions,
-      exemptions: selectedExemptions
+      exemptions: selectedExemptions,
     };
 
     return calculatorEngine.generateOptimizationSuggestions(request, calculationResult);
-  }, [calculationResult, income, taxYear, selectedDeductions, selectedExemptions, calculatorEngine, taxSystem.id]);
+  }, [
+    calculationResult,
+    income,
+    taxYear,
+    selectedDeductions,
+    selectedExemptions,
+    calculatorEngine,
+    taxSystem.id,
+  ]);
 
   const addDeduction = (deductionId: string) => {
-    const deduction = deductions.find(d => d.id === deductionId);
+    const deduction = deductions.find((d) => d.id === deductionId);
     if (!deduction) return;
 
-    const existing = selectedDeductions.find(d => d.deductionId === deductionId);
+    const existing = selectedDeductions.find((d) => d.deductionId === deductionId);
     if (existing) return;
 
     setSelectedDeductions([
@@ -392,26 +433,26 @@ export function TaxCalculator({
       {
         deductionId,
         amount: deduction.maximumAmount || 5000,
-        description: deduction.deductionName
-      }
+        description: deduction.deductionName,
+      },
     ]);
   };
 
   const removeDeduction = (deductionId: string) => {
-    setSelectedDeductions(selectedDeductions.filter(d => d.deductionId !== deductionId));
+    setSelectedDeductions(selectedDeductions.filter((d) => d.deductionId !== deductionId));
   };
 
   const updateDeductionAmount = (deductionId: string, amount: number) => {
-    setSelectedDeductions(selectedDeductions.map(d => 
-      d.deductionId === deductionId ? { ...d, amount } : d
-    ));
+    setSelectedDeductions(
+      selectedDeductions.map((d) => (d.deductionId === deductionId ? { ...d, amount } : d))
+    );
   };
 
   const addExemption = (exemptionId: string) => {
-    const exemption = exemptions.find(e => e.id === exemptionId);
+    const exemption = exemptions.find((e) => e.id === exemptionId);
     if (!exemption) return;
 
-    const existing = selectedExemptions.find(e => e.exemptionId === exemptionId);
+    const existing = selectedExemptions.find((e) => e.exemptionId === exemptionId);
     if (existing) return;
 
     setSelectedExemptions([
@@ -419,27 +460,27 @@ export function TaxCalculator({
       {
         exemptionId,
         amount: exemption.exemptionAmount || 10000,
-        description: exemption.exemptionName
-      }
+        description: exemption.exemptionName,
+      },
     ]);
   };
 
   const removeExemption = (exemptionId: string) => {
-    setSelectedExemptions(selectedExemptions.filter(e => e.exemptionId !== exemptionId));
+    setSelectedExemptions(selectedExemptions.filter((e) => e.exemptionId !== exemptionId));
   };
 
   const updateExemptionAmount = (exemptionId: string, amount: number) => {
-    setSelectedExemptions(selectedExemptions.map(e => 
-      e.exemptionId === exemptionId ? { ...e, amount } : e
-    ));
+    setSelectedExemptions(
+      selectedExemptions.map((e) => (e.exemptionId === exemptionId ? { ...e, amount } : e))
+    );
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
@@ -452,14 +493,17 @@ export function TaxCalculator({
       <CardHeader>
         <div className="space-y-4">
           <CardTitle className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
+            <div className="rounded-lg bg-blue-100 p-2">
               <Calculator className="h-5 w-5 text-blue-600" />
             </div>
             Tax Calculator
             <Badge variant="outline">{taxSystem.taxSystemName}</Badge>
             {enableLiveCalculation && (
-              <Badge variant="secondary" className="ml-auto bg-gradient-to-r from-purple-500 to-blue-500 text-white">
-                <Zap className="h-3 w-3 mr-1" />
+              <Badge
+                variant="secondary"
+                className="ml-auto bg-gradient-to-r from-purple-500 to-blue-500 text-white"
+              >
+                <Zap className="mr-1 h-3 w-3" />
                 Live Calculation
               </Badge>
             )}
@@ -471,7 +515,11 @@ export function TaxCalculator({
           {/* Calculator Mode Selector */}
           <div className="flex items-center gap-2">
             <Label className="text-sm font-medium">Calculator Mode:</Label>
-            <Tabs value={calculatorMode} onValueChange={(value) => setCalculatorMode(value as 'individual' | 'corporate')} className="w-auto">
+            <Tabs
+              value={calculatorMode}
+              onValueChange={(value) => setCalculatorMode(value as "individual" | "corporate")}
+              className="w-auto"
+            >
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="individual">Individual</TabsTrigger>
                 <TabsTrigger value="corporate">Corporate</TabsTrigger>
@@ -479,7 +527,11 @@ export function TaxCalculator({
             </Tabs>
             {economicData && (
               <Badge variant="secondary" className="ml-auto">
-                GDP/capita: ${(economicData.gdpPerCapita || (economicData.nominalGDP / economicData.totalPopulation)).toFixed(0)}
+                GDP/capita: $
+                {(
+                  economicData.gdpPerCapita ||
+                  economicData.nominalGDP / economicData.totalPopulation
+                ).toFixed(0)}
               </Badge>
             )}
           </div>
@@ -487,7 +539,11 @@ export function TaxCalculator({
       </CardHeader>
 
       <CardContent>
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="space-y-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as any)}
+          className="space-y-6"
+        >
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="calculator">Calculator</TabsTrigger>
             <TabsTrigger value="breakdown">Breakdown</TabsTrigger>
@@ -498,22 +554,27 @@ export function TaxCalculator({
           <TabsContent value="calculator" className="space-y-6">
             {/* Input Section */}
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="income">
-                    {calculatorMode === 'individual' ? 'Annual Income' : 'Corporate Revenue'}
+                    {calculatorMode === "individual" ? "Annual Income" : "Corporate Revenue"}
                   </Label>
                   <Input
                     id="income"
                     type="number"
                     value={income}
                     onChange={(e) => setIncome(e.target.value)}
-                    placeholder={calculatorMode === 'individual' ? 'Enter annual income' : 'Enter corporate revenue'}
+                    placeholder={
+                      calculatorMode === "individual"
+                        ? "Enter annual income"
+                        : "Enter corporate revenue"
+                    }
                     className="text-lg"
                   />
                   {governmentData && (
-                    <p className="text-xs text-muted-foreground">
-                      Government revenue target: ${(governmentData.structure?.totalBudget || 0).toLocaleString()}
+                    <p className="text-muted-foreground text-xs">
+                      Government revenue target: $
+                      {(governmentData.structure?.totalBudget || 0).toLocaleString()}
                     </p>
                   )}
                 </div>
@@ -539,30 +600,34 @@ export function TaxCalculator({
                     onChange={(e) => {
                       if (e.target.value) {
                         addDeduction(e.target.value);
-                        e.target.value = '';
+                        e.target.value = "";
                       }
                     }}
-                    className="text-sm border rounded px-2 py-1"
+                    className="rounded border px-2 py-1 text-sm"
                   >
                     <option value="">Add Deduction</option>
                     {deductions
-                      .filter(d => !selectedDeductions.find(sd => sd.deductionId === d.id))
-                      .map(d => (
-                        <option key={d.id} value={d.id}>{d.deductionName}</option>
-                      ))
-                    }
+                      .filter((d) => !selectedDeductions.find((sd) => sd.deductionId === d.id))
+                      .map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.deductionName}
+                        </option>
+                      ))}
                   </select>
                 </div>
 
                 <div className="space-y-3">
                   {selectedDeductions.map((deduction) => {
-                    const deductionDef = deductions.find(d => d.id === deduction.deductionId);
+                    const deductionDef = deductions.find((d) => d.id === deduction.deductionId);
                     return (
-                      <div key={deduction.deductionId} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                      <div
+                        key={deduction.deductionId}
+                        className="bg-muted flex items-center gap-3 rounded-lg p-3"
+                      >
                         <div className="flex-1">
                           <div className="font-medium">{deduction.description}</div>
                           {deductionDef?.maximumAmount && (
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-muted-foreground text-sm">
                               Max: {formatCurrency(deductionDef.maximumAmount)}
                             </div>
                           )}
@@ -570,7 +635,12 @@ export function TaxCalculator({
                         <Input
                           type="number"
                           value={deduction.amount}
-                          onChange={(e) => updateDeductionAmount(deduction.deductionId, parseFloat(e.target.value) || 0)}
+                          onChange={(e) =>
+                            updateDeductionAmount(
+                              deduction.deductionId,
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
                           className="w-32"
                         />
                         <Button
@@ -594,30 +664,34 @@ export function TaxCalculator({
                     onChange={(e) => {
                       if (e.target.value) {
                         addExemption(e.target.value);
-                        e.target.value = '';
+                        e.target.value = "";
                       }
                     }}
-                    className="text-sm border rounded px-2 py-1"
+                    className="rounded border px-2 py-1 text-sm"
                   >
                     <option value="">Add Exemption</option>
                     {exemptions
-                      .filter(e => !selectedExemptions.find(se => se.exemptionId === e.id))
-                      .map(e => (
-                        <option key={e.id} value={e.id}>{e.exemptionName}</option>
-                      ))
-                    }
+                      .filter((e) => !selectedExemptions.find((se) => se.exemptionId === e.id))
+                      .map((e) => (
+                        <option key={e.id} value={e.id}>
+                          {e.exemptionName}
+                        </option>
+                      ))}
                   </select>
                 </div>
 
                 <div className="space-y-3">
                   {selectedExemptions.map((exemption) => {
-                    const exemptionDef = exemptions.find(e => e.id === exemption.exemptionId);
+                    const exemptionDef = exemptions.find((e) => e.id === exemption.exemptionId);
                     return (
-                      <div key={exemption.exemptionId} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                      <div
+                        key={exemption.exemptionId}
+                        className="bg-muted flex items-center gap-3 rounded-lg p-3"
+                      >
                         <div className="flex-1">
                           <div className="font-medium">{exemption.description}</div>
                           {exemptionDef?.exemptionAmount && (
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-muted-foreground text-sm">
                               Standard: {formatCurrency(exemptionDef.exemptionAmount)}
                             </div>
                           )}
@@ -625,7 +699,12 @@ export function TaxCalculator({
                         <Input
                           type="number"
                           value={exemption.amount}
-                          onChange={(e) => updateExemptionAmount(exemption.exemptionId, parseFloat(e.target.value) || 0)}
+                          onChange={(e) =>
+                            updateExemptionAmount(
+                              exemption.exemptionId,
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
                           className="w-32"
                         />
                         <Button
@@ -647,7 +726,7 @@ export function TaxCalculator({
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  <ul className="list-disc list-inside space-y-1">
+                  <ul className="list-inside list-disc space-y-1">
                     {validation.errors.map((error, index) => (
                       <li key={index}>{error}</li>
                     ))}
@@ -658,20 +737,21 @@ export function TaxCalculator({
 
             {/* Live Calculation Status */}
             {enableLiveCalculation && liveCalculationResult && (
-              <Alert className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-purple-200 dark:border-purple-800">
+              <Alert className="border-purple-200 bg-gradient-to-r from-purple-50 to-blue-50 dark:border-purple-800 dark:from-purple-950/20 dark:to-blue-950/20">
                 <Zap className="h-4 w-4 text-purple-600" />
                 <AlertDescription className="text-sm">
                   <div className="flex items-center justify-between">
                     <span className="font-semibold">Real-time server calculation active</span>
                     {calculationTimestamp && (
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         Updated: {new Date(calculationTimestamp).toLocaleTimeString()}
                       </span>
                     )}
                   </div>
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    Calculations include live data from government components ({liveCalculationResult.atomicModifiers?.governmentComponents || 0}),
-                    economic components ({liveCalculationResult.atomicModifiers?.economicComponents || 0}),
+                  <div className="text-muted-foreground mt-2 text-xs">
+                    Calculations include live data from government components (
+                    {liveCalculationResult.atomicModifiers?.governmentComponents || 0}), economic
+                    components ({liveCalculationResult.atomicModifiers?.economicComponents || 0}),
                     and real-time economic indicators.
                   </div>
                 </AlertDescription>
@@ -679,28 +759,31 @@ export function TaxCalculator({
             )}
 
             {/* Atomic Component Impact Display */}
-            {(governmentComponents.length > 0 || economicComponents.length > 0 || (liveCalculationResult?.atomicModifiers && enableLiveCalculation)) && (
-              <Card className="p-4 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20">
-                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+            {(governmentComponents.length > 0 ||
+              economicComponents.length > 0 ||
+              (liveCalculationResult?.atomicModifiers && enableLiveCalculation)) && (
+              <Card className="bg-gradient-to-br from-purple-50 to-blue-50 p-4 dark:from-purple-950/20 dark:to-blue-950/20">
+                <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold">
                   <Lightbulb className="h-4 w-4 text-purple-600" />
-                  Atomic Component Impact {enableLiveCalculation && '(Live)'}
+                  Atomic Component Impact {enableLiveCalculation && "(Live)"}
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                   <div className="space-y-1">
-                    <div className="text-xs text-muted-foreground">Tax Collection Efficiency</div>
+                    <div className="text-muted-foreground text-xs">Tax Collection Efficiency</div>
                     <div className="text-lg font-semibold text-purple-700 dark:text-purple-300">
                       {(atomicModifiers.taxCollectionEfficiency * 100).toFixed(1)}%
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-muted-foreground text-xs">
                       {atomicModifiers.taxCollectionEfficiency > 1 ? (
-                        <span className="text-green-600 flex items-center gap-1">
-                          <TrendingUp className="h-3 w-3" />
-                          +{((atomicModifiers.taxCollectionEfficiency - 1) * 100).toFixed(1)}% boost
+                        <span className="flex items-center gap-1 text-green-600">
+                          <TrendingUp className="h-3 w-3" />+
+                          {((atomicModifiers.taxCollectionEfficiency - 1) * 100).toFixed(1)}% boost
                         </span>
                       ) : atomicModifiers.taxCollectionEfficiency < 1 ? (
-                        <span className="text-red-600 flex items-center gap-1">
+                        <span className="flex items-center gap-1 text-red-600">
                           <TrendingDown className="h-3 w-3" />
-                          {((atomicModifiers.taxCollectionEfficiency - 1) * 100).toFixed(1)}% penalty
+                          {((atomicModifiers.taxCollectionEfficiency - 1) * 100).toFixed(1)}%
+                          penalty
                         </span>
                       ) : (
                         <span className="text-gray-600">Neutral</span>
@@ -709,33 +792,37 @@ export function TaxCalculator({
                   </div>
 
                   <div className="space-y-1">
-                    <div className="text-xs text-muted-foreground">Economic Component Impact</div>
+                    <div className="text-muted-foreground text-xs">Economic Component Impact</div>
                     <div className="text-lg font-semibold text-blue-700 dark:text-blue-300">
                       {(atomicModifiers.economicModifier * 100).toFixed(1)}%
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {economicComponents.length} component{economicComponents.length !== 1 ? 's' : ''} active
+                    <div className="text-muted-foreground text-xs">
+                      {economicComponents.length} component
+                      {economicComponents.length !== 1 ? "s" : ""} active
                     </div>
                   </div>
 
                   <div className="space-y-1">
-                    <div className="text-xs text-muted-foreground">Government Component Impact</div>
+                    <div className="text-muted-foreground text-xs">Government Component Impact</div>
                     <div className="text-lg font-semibold text-green-700 dark:text-green-300">
                       {(atomicModifiers.governmentModifier * 100).toFixed(1)}%
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {governmentComponents.length} component{governmentComponents.length !== 1 ? 's' : ''} active
+                    <div className="text-muted-foreground text-xs">
+                      {governmentComponents.length} component
+                      {governmentComponents.length !== 1 ? "s" : ""} active
                     </div>
                   </div>
                 </div>
 
                 {economicComponents.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-800">
-                    <div className="text-xs text-muted-foreground mb-2">Active Economic Components:</div>
+                  <div className="mt-3 border-t border-purple-200 pt-3 dark:border-purple-800">
+                    <div className="text-muted-foreground mb-2 text-xs">
+                      Active Economic Components:
+                    </div>
                     <div className="flex flex-wrap gap-1">
                       {economicComponents.map((comp, idx) => (
                         <Badge key={idx} variant="secondary" className="text-xs">
-                          {comp.replace(/_/g, ' ')}
+                          {comp.replace(/_/g, " ")}
                         </Badge>
                       ))}
                     </div>
@@ -743,12 +830,14 @@ export function TaxCalculator({
                 )}
 
                 {governmentComponents.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-blue-200 dark:border-blue-800">
-                    <div className="text-xs text-muted-foreground mb-2">Active Government Components:</div>
+                  <div className="mt-3 border-t border-blue-200 pt-3 dark:border-blue-800">
+                    <div className="text-muted-foreground mb-2 text-xs">
+                      Active Government Components:
+                    </div>
                     <div className="flex flex-wrap gap-1">
                       {governmentComponents.map((comp, idx) => (
                         <Badge key={idx} variant="outline" className="text-xs">
-                          {comp.replace(/_/g, ' ')}
+                          {comp.replace(/_/g, " ")}
                         </Badge>
                       ))}
                     </div>
@@ -760,13 +849,15 @@ export function TaxCalculator({
             {/* Results */}
             {calculationResult && validation.isValid && (
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                   <Card className="p-4">
                     <div className="flex items-center gap-3">
                       <DollarSign className="h-5 w-5 text-green-600" />
                       <div>
-                        <div className="text-sm text-muted-foreground">Gross Income</div>
-                        <div className="font-semibold text-lg">{formatCurrency(parseFloat(income))}</div>
+                        <div className="text-muted-foreground text-sm">Gross Income</div>
+                        <div className="text-lg font-semibold">
+                          {formatCurrency(parseFloat(income))}
+                        </div>
                       </div>
                     </div>
                   </Card>
@@ -775,8 +866,10 @@ export function TaxCalculator({
                     <div className="flex items-center gap-3">
                       <TrendingDown className="h-5 w-5 text-blue-600" />
                       <div>
-                        <div className="text-sm text-muted-foreground">Taxable Income</div>
-                        <div className="font-semibold text-lg">{formatCurrency(calculationResult.taxableIncome)}</div>
+                        <div className="text-muted-foreground text-sm">Taxable Income</div>
+                        <div className="text-lg font-semibold">
+                          {formatCurrency(calculationResult.taxableIncome)}
+                        </div>
                       </div>
                     </div>
                   </Card>
@@ -785,8 +878,10 @@ export function TaxCalculator({
                     <div className="flex items-center gap-3">
                       <Calculator className="h-5 w-5 text-red-600" />
                       <div>
-                        <div className="text-sm text-muted-foreground">Tax Owed</div>
-                        <div className="font-semibold text-lg text-red-600">{formatCurrency(calculationResult.taxOwed)}</div>
+                        <div className="text-muted-foreground text-sm">Tax Owed</div>
+                        <div className="text-lg font-semibold text-red-600">
+                          {formatCurrency(calculationResult.taxOwed)}
+                        </div>
                       </div>
                     </div>
                   </Card>
@@ -795,11 +890,17 @@ export function TaxCalculator({
                     <div className="flex items-center gap-3">
                       <TrendingUp className="h-5 w-5 text-purple-600" />
                       <div className="flex-1">
-                        <div className="text-sm text-muted-foreground">Effective Rate</div>
-                        <div className="font-semibold text-lg">{formatPercentage(calculationResult.effectiveRate)}</div>
+                        <div className="text-muted-foreground text-sm">Effective Rate</div>
+                        <div className="text-lg font-semibold">
+                          {formatPercentage(calculationResult.effectiveRate)}
+                        </div>
                         {atomicModifiers.taxCollectionEfficiency !== 1.0 && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Base: {formatPercentage(calculationResult.effectiveRate / atomicModifiers.taxCollectionEfficiency)}
+                          <div className="text-muted-foreground mt-1 text-xs">
+                            Base:{" "}
+                            {formatPercentage(
+                              calculationResult.effectiveRate /
+                                atomicModifiers.taxCollectionEfficiency
+                            )}
                           </div>
                         )}
                       </div>
@@ -815,13 +916,15 @@ export function TaxCalculator({
                         {formatCurrency(parseFloat(income) - calculationResult.taxOwed)}
                       </span>
                     </div>
-                    <Progress 
-                      value={(1 - calculationResult.effectiveRate / 100) * 100} 
-                      className="h-2" 
+                    <Progress
+                      value={(1 - calculationResult.effectiveRate / 100) * 100}
+                      className="h-2"
                     />
-                    <div className="flex justify-between text-sm text-muted-foreground">
+                    <div className="text-muted-foreground flex justify-between text-sm">
                       <span>Tax: {formatPercentage(calculationResult.effectiveRate)}</span>
-                      <span>Take-home: {formatPercentage(100 - calculationResult.effectiveRate)}</span>
+                      <span>
+                        Take-home: {formatPercentage(100 - calculationResult.effectiveRate)}
+                      </span>
                     </div>
                   </div>
                 </Card>
@@ -835,30 +938,30 @@ export function TaxCalculator({
               <div className="space-y-6">
                 {/* Category Breakdown */}
                 <div className="space-y-4">
-                  <h4 className="text-lg font-semibold flex items-center gap-2">
+                  <h4 className="flex items-center gap-2 text-lg font-semibold">
                     <PieChart className="h-5 w-5" />
                     Tax by Category
                   </h4>
-                  
+
                   <div className="space-y-3">
                     {calculationResult.breakdown.map((category, index) => (
                       <Card key={category.categoryId} className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="font-medium">{category.categoryName}</div>
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-muted-foreground text-sm">
                               Rate: {formatPercentage(category.rate)}
                             </div>
                           </div>
                           <div className="text-right">
                             <div className="font-semibold">{formatCurrency(category.taxOwed)}</div>
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-muted-foreground text-sm">
                               on {formatCurrency(category.taxableAmount)}
                             </div>
                           </div>
                         </div>
                         {(category.exemptions > 0 || category.deductions > 0) && (
-                          <div className="mt-2 pt-2 border-t text-sm text-muted-foreground">
+                          <div className="text-muted-foreground mt-2 border-t pt-2 text-sm">
                             {category.exemptions > 0 && (
                               <span>Exemptions: {formatCurrency(category.exemptions)} </span>
                             )}
@@ -875,7 +978,7 @@ export function TaxCalculator({
                 {/* Bracket Breakdown */}
                 {calculationResult.appliedBrackets.length > 0 && (
                   <div className="space-y-4">
-                    <h4 className="text-lg font-semibold flex items-center gap-2">
+                    <h4 className="flex items-center gap-2 text-lg font-semibold">
                       <BarChart3 className="h-5 w-5" />
                       Tax Brackets Applied
                     </h4>
@@ -888,15 +991,15 @@ export function TaxCalculator({
                               <div className="font-medium">
                                 {bracket.bracketName || `Bracket ${index + 1}`}
                               </div>
-                              <div className="text-sm text-muted-foreground">
-                                {formatCurrency(bracket.minIncome)} - {
-                                  bracket.maxIncome ? formatCurrency(bracket.maxIncome) : 'No Limit'
-                                } • {formatPercentage(bracket.rate)}
+                              <div className="text-muted-foreground text-sm">
+                                {formatCurrency(bracket.minIncome)} -{" "}
+                                {bracket.maxIncome ? formatCurrency(bracket.maxIncome) : "No Limit"}{" "}
+                                • {formatPercentage(bracket.rate)}
                               </div>
                             </div>
                             <div className="text-right">
                               <div className="font-semibold">{formatCurrency(bracket.taxOwed)}</div>
-                              <div className="text-sm text-muted-foreground">
+                              <div className="text-muted-foreground text-sm">
                                 on {formatCurrency(bracket.taxableAmount)}
                               </div>
                             </div>
@@ -908,48 +1011,54 @@ export function TaxCalculator({
                 )}
 
                 {/* Sector Breakdown for Corporate Taxes */}
-                {calculatorMode === 'corporate' && corporateCalculationResult &&
-                 'sectorBreakdown' in corporateCalculationResult &&
-                 (corporateCalculationResult as any).sectorBreakdown && (
-                  <div className="space-y-4 mt-6">
-                    <h4 className="text-lg font-semibold flex items-center gap-2">
-                      <Building className="h-5 w-5" />
-                      Corporate Tax by Sector
-                    </h4>
+                {calculatorMode === "corporate" &&
+                  corporateCalculationResult &&
+                  "sectorBreakdown" in corporateCalculationResult &&
+                  (corporateCalculationResult as any).sectorBreakdown && (
+                    <div className="mt-6 space-y-4">
+                      <h4 className="flex items-center gap-2 text-lg font-semibold">
+                        <Building className="h-5 w-5" />
+                        Corporate Tax by Sector
+                      </h4>
 
-                    <div className="space-y-3">
-                      {(corporateCalculationResult as any).sectorBreakdown.map((sector: any, index: number) => (
-                        <Card key={index} className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="font-medium">{sector.sector}</div>
-                              <div className="text-sm text-muted-foreground">
-                                Sector Income: {formatCurrency(sector.income)}
+                      <div className="space-y-3">
+                        {(corporateCalculationResult as any).sectorBreakdown.map(
+                          (sector: any, index: number) => (
+                            <Card key={index} className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="font-medium">{sector.sector}</div>
+                                  <div className="text-muted-foreground text-sm">
+                                    Sector Income: {formatCurrency(sector.income)}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="font-semibold">
+                                    {formatCurrency(sector.taxOwed)}
+                                  </div>
+                                  <div className="text-muted-foreground text-sm">
+                                    Rate: {formatPercentage(sector.effectiveRate)}
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="font-semibold">{formatCurrency(sector.taxOwed)}</div>
-                              <div className="text-sm text-muted-foreground">
-                                Rate: {formatPercentage(sector.effectiveRate)}
-                              </div>
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
+                            </Card>
+                          )
+                        )}
+                      </div>
+
+                      <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/20">
+                        <Info className="h-4 w-4 text-blue-600" />
+                        <AlertDescription className="text-sm">
+                          Corporate taxes are distributed across sectors based on their GDP
+                          contribution. Each sector's tax rate reflects its specific economic
+                          characteristics and component modifiers.
+                        </AlertDescription>
+                      </Alert>
                     </div>
-
-                    <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-                      <Info className="h-4 w-4 text-blue-600" />
-                      <AlertDescription className="text-sm">
-                        Corporate taxes are distributed across sectors based on their GDP contribution.
-                        Each sector's tax rate reflects its specific economic characteristics and component modifiers.
-                      </AlertDescription>
-                    </Alert>
-                  </div>
-                )}
+                  )}
               </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-muted-foreground py-8 text-center">
                 Enter income in the Calculator tab to see breakdown
               </div>
             )}
@@ -958,7 +1067,7 @@ export function TaxCalculator({
           {/* Suggestions Tab */}
           <TabsContent value="suggestions" className="space-y-6">
             <div className="space-y-4">
-              <h4 className="text-lg font-semibold flex items-center gap-2">
+              <h4 className="flex items-center gap-2 text-lg font-semibold">
                 <Lightbulb className="h-5 w-5" />
                 Tax Optimization Suggestions
               </h4>
@@ -980,7 +1089,7 @@ export function TaxCalculator({
                   </AlertDescription>
                 </Alert>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
+                <div className="text-muted-foreground py-8 text-center">
                   Complete the calculation to see optimization suggestions
                 </div>
               )}

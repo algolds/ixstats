@@ -48,7 +48,7 @@ export function CountryDiplomaticPanel({
             onClick={() => setShowDiplomaticActions(true)}
             className="bg-purple-600 hover:bg-purple-700"
           >
-            <Activity className="h-4 w-4 mr-2" />
+            <Activity className="mr-2 h-4 w-4" />
             Diplomatic Actions
           </Button>
         )}
@@ -72,7 +72,7 @@ export function CountryDiplomaticPanel({
           onClick={() => setActiveDiplomacyTab("embassy-network")}
           className="rounded-b-none"
         >
-          <Building className="h-4 w-4 mr-2" />
+          <Building className="mr-2 h-4 w-4" />
           Embassy Network
         </Button>
         <Button
@@ -80,7 +80,7 @@ export function CountryDiplomaticPanel({
           onClick={() => setActiveDiplomacyTab("secure-channels")}
           className="rounded-b-none"
         >
-          <Globe className="h-4 w-4 mr-2" />
+          <Globe className="mr-2 h-4 w-4" />
           Secure Channels
         </Button>
         <Button
@@ -88,7 +88,7 @@ export function CountryDiplomaticPanel({
           onClick={() => setActiveDiplomacyTab("cultural-exchange")}
           className="rounded-b-none"
         >
-          <Heart className="h-4 w-4 mr-2" />
+          <Heart className="mr-2 h-4 w-4" />
           Cultural Exchange
         </Button>
       </div>

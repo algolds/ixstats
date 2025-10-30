@@ -3,25 +3,25 @@
 
 // FIXED: Economic Tier Enums per user specifications
 export enum EconomicTier {
-  IMPOVERISHED = "Impoverished",    // $0-$9,999 (10% max growth)
-  DEVELOPING = "Developing",        // $10,000-$24,999 (7.50% max growth)
-  DEVELOPED = "Developed",          // $25,000-$34,999 (5% max growth)
-  HEALTHY = "Healthy",              // $35,000-$44,999 (3.50% max growth)
-  STRONG = "Strong",                // $45,000-$54,999 (2.75% max growth)
-  VERY_STRONG = "Very Strong",      // $55,000-$64,999 (1.50% max growth)
-  EXTRAVAGANT = "Extravagant"       // $65,000+ (0.50% max growth)
+  IMPOVERISHED = "Impoverished", // $0-$9,999 (10% max growth)
+  DEVELOPING = "Developing", // $10,000-$24,999 (7.50% max growth)
+  DEVELOPED = "Developed", // $25,000-$34,999 (5% max growth)
+  HEALTHY = "Healthy", // $35,000-$44,999 (3.50% max growth)
+  STRONG = "Strong", // $45,000-$54,999 (2.75% max growth)
+  VERY_STRONG = "Very Strong", // $55,000-$64,999 (1.50% max growth)
+  EXTRAVAGANT = "Extravagant", // $65,000+ (0.50% max growth)
 }
 
 // FIXED: Population Tier Enums per user specifications
 export enum PopulationTier {
-  TIER_1 = "1",    // 0-9,999,999
-  TIER_2 = "2",    // 10,000,000-29,999,999
-  TIER_3 = "3",    // 30,000,000-49,999,999
-  TIER_4 = "4",    // 50,000,000-79,999,999
-  TIER_5 = "5",    // 80,000,000-119,999,999
-  TIER_6 = "6",    // 120,000,000-349,999,999
-  TIER_7 = "7",    // 350,000,000-499,999,999
-  TIER_X = "X"     // 500,000,000+
+  TIER_1 = "1", // 0-9,999,999
+  TIER_2 = "2", // 10,000,000-29,999,999
+  TIER_3 = "3", // 30,000,000-49,999,999
+  TIER_4 = "4", // 50,000,000-79,999,999
+  TIER_5 = "5", // 80,000,000-119,999,999
+  TIER_6 = "6", // 120,000,000-349,999,999
+  TIER_7 = "7", // 350,000,000-499,999,999
+  TIER_X = "X", // 500,000,000+
 }
 
 // DM Input Types
@@ -32,7 +32,7 @@ export enum DmInputType {
   SPECIAL_EVENT = "special_event",
   TRADE_AGREEMENT = "trade_agreement",
   NATURAL_DISASTER = "natural_disaster",
-  ECONOMIC_POLICY = "economic_policy"
+  ECONOMIC_POLICY = "economic_policy",
 }
 
 // Base country data from Excel roster
@@ -47,18 +47,18 @@ export interface BaseCountryData {
   gdpPerCapita: number; // From Excel "GDP PC"
   landArea?: number | null; // From Excel "Area (km²)"
   areaSqMi?: number | null; // From Excel "Area (sq mi)"
-  
+
   // FIXED: Growth rates stored as decimals (0.005 for 0.5%)
   maxGdpGrowthRate: number; // From Excel "Max GDPPC Grow Rt" - as decimal
   adjustedGdpGrowth: number; // From Excel "Adj GDPPC Growth" - as decimal
   populationGrowthRate: number; // From Excel "Pop Growth Rate" - as decimal
   actualGdpGrowth: number; // Calculated or from Excel - as decimal
-  
+
   // Projection fields
   projected2040Population: number;
   projected2040Gdp: number;
   projected2040GdpPerCapita: number;
-  
+
   localGrowthFactor: number;
 }
 
@@ -136,30 +136,30 @@ export interface DmInputs {
 export interface EconomicConfig {
   globalGrowthFactor: number;
   baseInflationRate: number;
-  
+
   // FIXED: Economic tier thresholds per user specifications
   economicTierThresholds: {
-    impoverished: number;    // $0-$9,999
-    developing: number;      // $10,000-$24,999
-    developed: number;       // $25,000-$34,999
-    healthy: number;         // $35,000-$44,999
-    strong: number;          // $45,000-$54,999
-    veryStrong: number;      // $55,000-$64,999
-    extravagant: number;     // $65,000+
+    impoverished: number; // $0-$9,999
+    developing: number; // $10,000-$24,999
+    developed: number; // $25,000-$34,999
+    healthy: number; // $35,000-$44,999
+    strong: number; // $45,000-$54,999
+    veryStrong: number; // $55,000-$64,999
+    extravagant: number; // $65,000+
   };
-  
+
   // FIXED: Population tier thresholds per user specifications
   populationTierThresholds: {
-    tier1: number;          // 0-9,999,999
-    tier2: number;          // 10,000,000-29,999,999
-    tier3: number;          // 30,000,000-49,999,999
-    tier4: number;          // 50,000,000-79,999,999
-    tier5: number;          // 80,000,000-119,999,999
-    tier6: number;          // 120,000,000-349,999,999
-    tier7: number;          // 350,000,000-499,999,999
-    tierX: number;          // 500,000,000+
+    tier1: number; // 0-9,999,999
+    tier2: number; // 10,000,000-29,999,999
+    tier3: number; // 30,000,000-49,999,999
+    tier4: number; // 50,000,000-79,999,999
+    tier5: number; // 80,000,000-119,999,999
+    tier6: number; // 120,000,000-349,999,999
+    tier7: number; // 350,000,000-499,999,999
+    tierX: number; // 500,000,000+
   };
-  
+
   tierGrowthModifiers: Record<string, number>;
   calculationIntervalMs: number;
   ixTimeUpdateFrequency: number;
@@ -299,7 +299,7 @@ export interface ImportAnalysis {
   updatedCountries: number;
   unchangedCountries: number;
   changes: Array<{
-    type: 'new' | 'update';
+    type: "new" | "update";
     country: BaseCountryData;
     existingData?: BaseCountryData;
     changes?: Array<{
@@ -410,12 +410,12 @@ export interface TableColumn<T = unknown> {
   label: string;
   sortable?: boolean;
   width?: string;
-  align?: 'left' | 'center' | 'right';
+  align?: "left" | "center" | "right";
   render?: (value: T, row: T) => React.ReactNode;
 }
 
 // Theme types
-export type ThemeMode = 'light' | 'dark' | 'system';
+export type ThemeMode = "light" | "dark" | "system";
 
 export interface ThemeConfig {
   mode: ThemeMode;
@@ -479,8 +479,11 @@ export interface CalculationLog {
 }
 
 // FIXED: Tier mapping utilities
-export const ECONOMIC_TIER_INFO: Record<EconomicTier, { min: number; max: number; maxGrowth: number }> = {
-  [EconomicTier.IMPOVERISHED]: { min: 0, max: 9999, maxGrowth: 0.10 },
+export const ECONOMIC_TIER_INFO: Record<
+  EconomicTier,
+  { min: number; max: number; maxGrowth: number }
+> = {
+  [EconomicTier.IMPOVERISHED]: { min: 0, max: 9999, maxGrowth: 0.1 },
   [EconomicTier.DEVELOPING]: { min: 10000, max: 24999, maxGrowth: 0.075 },
   [EconomicTier.DEVELOPED]: { min: 25000, max: 34999, maxGrowth: 0.05 },
   [EconomicTier.HEALTHY]: { min: 35000, max: 44999, maxGrowth: 0.035 },
@@ -666,7 +669,7 @@ export interface CountryWithEconomicData {
   localGrowthFactor: number;
   createdAt: Date;
   updatedAt: Date;
-  
+
   // Economic data
   calculatedStats: CalculatedStats;
   projections: Projection[];
@@ -676,7 +679,7 @@ export interface CountryWithEconomicData {
   realGDPGrowthRate: number;
   inflationRate: number;
   currencyExchangeRate: number;
-  
+
   // Labor market data
   laborForceParticipationRate?: number;
   employmentRate?: number;
@@ -685,7 +688,7 @@ export interface CountryWithEconomicData {
   averageWorkweekHours?: number;
   minimumWage?: number;
   averageAnnualIncome?: number;
-  
+
   // Fiscal and debt data
   governmentRevenueTotal?: number | null;
   taxRevenueGDPPercent?: number;
@@ -698,23 +701,23 @@ export interface CountryWithEconomicData {
   debtPerCapita?: number;
   interestRates?: number;
   debtServiceCosts?: number;
-  
+
   // Income distribution
   povertyRate?: number;
   incomeInequalityGini?: number;
   socialMobilityIndex?: number;
-  
+
   // Government spending
   totalGovernmentSpending?: number;
   spendingGDPPercent?: number;
   spendingPerCapita?: number;
-  
+
   // Demographics
   lifeExpectancy?: number;
   urbanPopulationPercent?: number | null;
   ruralPopulationPercent?: number | null;
   literacyRate?: number;
-  
+
   // Complex objects
   economicProfile?: EconomicProfile;
   laborMarket?: LaborMarket;
@@ -724,7 +727,7 @@ export interface CountryWithEconomicData {
   demographics?: Demographics;
   // National identity relation (if included by API)
   nationalIdentity?: NationalIdentity | null;
-  
+
   // Analytics
   analytics: {
     growthTrends: {
@@ -742,9 +745,21 @@ export interface CountryWithEconomicData {
 }
 
 // Economic Policy Types
-export type PolicyCategory = 'fiscal' | 'monetary' | 'trade' | 'investment' | 'labor' | 'infrastructure';
+export type PolicyCategory =
+  | "fiscal"
+  | "monetary"
+  | "trade"
+  | "investment"
+  | "labor"
+  | "infrastructure";
 
-export type PolicyStatus = 'draft' | 'proposed' | 'under_review' | 'approved' | 'rejected' | 'implemented';
+export type PolicyStatus =
+  | "draft"
+  | "proposed"
+  | "under_review"
+  | "approved"
+  | "rejected"
+  | "implemented";
 
 export interface EconomicPolicy {
   id: string;

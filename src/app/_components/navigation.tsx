@@ -25,25 +25,25 @@ import {
   Trophy,
   Users,
   X,
-  Zap
+  Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { CommandPalette } from "~/components/DynamicIsland";
 import {
   NavigationMenu,
   NavigationMenuList,
-  NavigationMenuItem
+  NavigationMenuItem,
 } from "~/components/ui/navigation-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator
+  DropdownMenuSeparator,
 } from "~/components/ui/dropdown-menu";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import { createUserProfileQueryParams } from '~/lib/user-utils';
+import { createUserProfileQueryParams } from "~/lib/user-utils";
 import { useHasRoleLevel } from "~/hooks/usePermissions";
 import { usePremium } from "~/hooks/usePremium";
 import { ThinkPagesIcon } from "~/components/icons/ThinkPagesIcon";
@@ -103,18 +103,38 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
       {
         title: "Executive Oversight",
         items: [
-          { name: "Analytics Overview", href: "/dashboard", icon: BarChart3, description: "Live performance metrics for your country." },
-          { name: "Executive Command", href: "/dashboard?panel=command-center", icon: Activity, description: "Jump directly into decision workflows." }
-        ]
+          {
+            name: "Analytics Overview",
+            href: "/dashboard",
+            icon: BarChart3,
+            description: "Live performance metrics for your country.",
+          },
+          {
+            name: "Executive Command",
+            href: "/dashboard?panel=command-center",
+            icon: Activity,
+            description: "Jump directly into decision workflows.",
+          },
+        ],
       },
       {
         title: "Global Context",
         items: [
-          { name: "World Leaderboards", href: "/leaderboards", icon: Trophy, description: "See how nations compare across metrics." },
-          { name: "Explore Countries", href: "/countries", icon: Globe, description: "Research nations and benchmark progress." }
-        ]
-      }
-    ]
+          {
+            name: "World Leaderboards",
+            href: "/leaderboards",
+            icon: Trophy,
+            description: "See how nations compare across metrics.",
+          },
+          {
+            name: "Explore Countries",
+            href: "/countries",
+            icon: Globe,
+            description: "Research nations and benchmark progress.",
+          },
+        ],
+      },
+    ],
   },
   mycountry: {
     title: "MyCountry Operations",
@@ -123,18 +143,38 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
       {
         title: "Executive Systems",
         items: [
-          { name: "National Overview", href: "/mycountry", icon: Crown, description: "Core KPIs and operational status at a glance." },
-          { name: "Policy Studio", href: "/mycountry/editor", icon: Settings, description: "Adjust governance, culture, and growth levers." }
-        ]
+          {
+            name: "National Overview",
+            href: "/mycountry",
+            icon: Crown,
+            description: "Core KPIs and operational status at a glance.",
+          },
+          {
+            name: "Policy Studio",
+            href: "/mycountry/editor",
+            icon: Settings,
+            description: "Adjust governance, culture, and growth levers.",
+          },
+        ],
       },
       {
         title: "Security & Intelligence",
         items: [
-          { name: "Intelligence Center", href: "/mycountry/intelligence", icon: Shield, description: "Context-aware briefs and data synthesis." },
-          { name: "Defense Readiness", href: "/mycountry/defense", icon: Layers, description: "Force posture, stability, and risk mitigations." }
-        ]
-      }
-    ]
+          {
+            name: "Intelligence Center",
+            href: "/mycountry/intelligence",
+            icon: Shield,
+            description: "Context-aware briefs and data synthesis.",
+          },
+          {
+            name: "Defense Readiness",
+            href: "/mycountry/defense",
+            icon: Layers,
+            description: "Force posture, stability, and risk mitigations.",
+          },
+        ],
+      },
+    ],
   },
   thinkpages: {
     title: "ThinkPages Workspace",
@@ -143,19 +183,44 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
       {
         title: "Primary Views",
         items: [
-          { name: "Social Feed", href: "/thinkpages?view=feed", icon: Rss, description: "Broadcast updates and follow communities." },
-          { name: "ThinkTanks", href: "/thinkpages?view=thinktanks", icon: Users, description: "Coordinate collaborative research groups." },
-          { name: "ThinkShare Messaging", href: "/thinkpages?view=messages", icon: MessageSquare, description: "Direct conversations with your teams." }
-        ]
+          {
+            name: "Social Feed",
+            href: "/thinkpages?view=feed",
+            icon: Rss,
+            description: "Broadcast updates and follow communities.",
+          },
+          {
+            name: "ThinkTanks",
+            href: "/thinkpages?view=thinktanks",
+            icon: Users,
+            description: "Coordinate collaborative research groups.",
+          },
+          {
+            name: "ThinkShare Messaging",
+            href: "/thinkpages?view=messages",
+            icon: MessageSquare,
+            description: "Direct conversations with your teams.",
+          },
+        ],
       },
       {
         title: "Account Tools",
         items: [
-          { name: "Account Manager", href: "/thinkpages?panel=account-manager", icon: Settings, description: "Switch and configure ThinkPages identities." },
-          { name: "Workspace Settings", href: "/thinkpages?panel=settings", icon: SlidersHorizontal, description: "Tune notifications and collaboration defaults." }
-        ]
-      }
-    ]
+          {
+            name: "Account Manager",
+            href: "/thinkpages?panel=account-manager",
+            icon: Settings,
+            description: "Switch and configure ThinkPages identities.",
+          },
+          {
+            name: "Workspace Settings",
+            href: "/thinkpages?panel=settings",
+            icon: SlidersHorizontal,
+            description: "Tune notifications and collaboration defaults.",
+          },
+        ],
+      },
+    ],
   },
   admin: {
     title: "Platform Administration",
@@ -164,18 +229,38 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
       {
         title: "Core Panels",
         items: [
-          { name: "Admin Overview", href: "/admin", icon: Settings, description: "Configure feature flags and admin tooling." },
-          { name: "Audit & Activity", href: "/dashboard", icon: Activity, description: "Monitor platform-wide actions and alerts." }
-        ]
+          {
+            name: "Admin Overview",
+            href: "/admin",
+            icon: Settings,
+            description: "Configure feature flags and admin tooling.",
+          },
+          {
+            name: "Audit & Activity",
+            href: "/dashboard",
+            icon: Activity,
+            description: "Monitor platform-wide actions and alerts.",
+          },
+        ],
       },
       {
         title: "Navigation & Structure",
         items: [
-          { name: "Navigation Settings", href: "/admin?tab=navigation", icon: Layers, description: "Reorder tabs and adjust visibility." },
-          { name: "User Management", href: "/admin?tab=users", icon: Users, description: "Review roles, permissions, and onboarding." }
-        ]
-      }
-    ]
+          {
+            name: "Navigation Settings",
+            href: "/admin?tab=navigation",
+            icon: Layers,
+            description: "Reorder tabs and adjust visibility.",
+          },
+          {
+            name: "User Management",
+            href: "/admin?tab=users",
+            icon: Users,
+            description: "Review roles, permissions, and onboarding.",
+          },
+        ],
+      },
+    ],
   },
   builder: {
     title: "Builder Suite",
@@ -184,11 +269,21 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
       {
         title: "Nation Lifecycle",
         items: [
-          { name: "Create Nation", href: "/builder", icon: Layers, description: "Start from scratch with guided setup." },
-          { name: "Import Scenario", href: "/builder/import", icon: Database, description: "Bring in external data or legacy nations." }
-        ]
-      }
-    ]
+          {
+            name: "Create Nation",
+            href: "/builder",
+            icon: Layers,
+            description: "Start from scratch with guided setup.",
+          },
+          {
+            name: "Import Scenario",
+            href: "/builder/import",
+            icon: Database,
+            description: "Bring in external data or legacy nations.",
+          },
+        ],
+      },
+    ],
   },
   explore: {
     title: "Explore Nations",
@@ -197,11 +292,21 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
       {
         title: "World Explorer",
         items: [
-          { name: "Countries Directory", href: "/countries", icon: Globe, description: "Browse nations, stats, and intelligence." },
-          { name: "Leaderboards", href: "/leaderboards", icon: Trophy, description: "Rankings across economy, stability, and more." }
-        ]
-      }
-    ]
+          {
+            name: "Countries Directory",
+            href: "/countries",
+            icon: Globe,
+            description: "Browse nations, stats, and intelligence.",
+          },
+          {
+            name: "Leaderboards",
+            href: "/leaderboards",
+            icon: Trophy,
+            description: "Rankings across economy, stability, and more.",
+          },
+        ],
+      },
+    ],
   },
   leaderboards: {
     title: "Leaderboards",
@@ -210,11 +315,21 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
       {
         title: "Platform Rankings",
         items: [
-          { name: "Global Leaderboards", href: "/leaderboards", icon: Trophy, description: "Full leaderboard experience with filters." },
-          { name: "Dashboard Highlights", href: "/dashboard#leaderboards", icon: BarChart3, description: "Snapshot of rankings inside your dashboard." }
-        ]
-      }
-    ]
+          {
+            name: "Global Leaderboards",
+            href: "/leaderboards",
+            icon: Trophy,
+            description: "Full leaderboard experience with filters.",
+          },
+          {
+            name: "Dashboard Highlights",
+            href: "/dashboard#leaderboards",
+            icon: BarChart3,
+            description: "Snapshot of rankings inside your dashboard.",
+          },
+        ],
+      },
+    ],
   },
   default: {
     title: "IxStats Platform",
@@ -223,14 +338,34 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
       {
         title: "Primary Areas",
         items: [
-          { name: "Dashboard", href: "/dashboard", icon: BarChart3, description: "Your command center home." },
-          { name: "MyCountry®", href: "/mycountry", icon: Crown, description: "Operate your nation from anywhere." },
-          { name: "ThinkPages", href: "/thinkpages", icon: Rss, description: "Collaborate and publish across the network." },
-          { name: "Explore Nations", href: "/countries", icon: Globe, description: "Research and compare global data." }
-        ]
-      }
-    ]
-  }
+          {
+            name: "Dashboard",
+            href: "/dashboard",
+            icon: BarChart3,
+            description: "Your command center home.",
+          },
+          {
+            name: "MyCountry®",
+            href: "/mycountry",
+            icon: Crown,
+            description: "Operate your nation from anywhere.",
+          },
+          {
+            name: "ThinkPages",
+            href: "/thinkpages",
+            icon: Rss,
+            description: "Collaborate and publish across the network.",
+          },
+          {
+            name: "Explore Nations",
+            href: "/countries",
+            icon: Globe,
+            description: "Research and compare global data.",
+          },
+        ],
+      },
+    ],
+  },
 };
 
 function getContextKey(path: string): keyof typeof contextualMenus {
@@ -318,33 +453,33 @@ export function Navigation() {
     }
   }, [isMobile, mobileMenuOpen]);
 
-
   // Enhanced scroll detection with ultra-smooth transitions
   useEffect(() => {
     let rafId: number | undefined;
     let isScrolling = false;
     let lastScrollY = window.scrollY;
     let lastTimestamp = performance.now();
-    
+
     const handleScroll = () => {
       if (!isScrolling) {
         isScrolling = true;
         rafId = requestAnimationFrame((timestamp) => {
           const currentScrollY = window.scrollY;
           const deltaTime = timestamp - lastTimestamp;
-          const direction = currentScrollY > lastScrollY ? 'down' : 'up';
-          
+          const direction = currentScrollY > lastScrollY ? "down" : "up";
+
           // Smooth interpolation for scroll position updates
-          const smoothScrollY = lastScrollY + (currentScrollY - lastScrollY) * Math.min(deltaTime / 16, 1);
-          
+          const smoothScrollY =
+            lastScrollY + (currentScrollY - lastScrollY) * Math.min(deltaTime / 16, 1);
+
           // Update scroll position for ultra-smooth transitions
           setScrollY(smoothScrollY);
-          
+
           // Determine sticky state with smooth transition zone and hysteresis
-          const stickyThreshold = direction === 'down' ? 60 : 40;
+          const stickyThreshold = direction === "down" ? 60 : 40;
           const newStickyState = currentScrollY > stickyThreshold;
           setIsSticky(newStickyState);
-          
+
           lastScrollY = currentScrollY;
           lastTimestamp = timestamp;
           isScrolling = false;
@@ -352,9 +487,9 @@ export function Navigation() {
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener("scroll", handleScroll);
       if (rafId) {
         cancelAnimationFrame(rafId);
       }
@@ -409,21 +544,21 @@ export function Navigation() {
           name: "Social Feed",
           href: "/thinkpages?view=feed",
           icon: MessageSquare,
-          description: "Broadcast updates and follow communities"
+          description: "Broadcast updates and follow communities",
         },
         {
           name: "ThinkTanks",
           href: "/thinkpages?view=thinktanks",
           icon: Users,
-          description: "Coordinate collaborative research groups"
+          description: "Coordinate collaborative research groups",
         },
         {
           name: "ThinkShare Messages",
           href: "/thinkpages?view=messages",
           icon: Send,
-          description: "Direct conversations with your teams"
-        }
-      ]
+          description: "Direct conversations with your teams",
+        },
+      ],
     },
     {
       name: "Admin",
@@ -455,34 +590,34 @@ export function Navigation() {
           name: "Vexel",
           href: "/labs/vexel",
           icon: GiVibratingShield,
-          description: "Heraldry generator"
+          description: "Heraldry generator",
         },
         {
           name: "Onoma",
           href: "/labs/onoma",
           icon: Database,
-          description: "Markov name generator"
+          description: "Markov name generator",
         },
         {
           name: "Strata",
           href: "/labs/strata",
           icon: FaTreeCity,
-          description: "City/roadmap generator"
+          description: "City/roadmap generator",
         },
         {
           name: "Dynas",
           href: "/labs/dynas",
           icon: GiFamilyTree,
-          description: "Family/Dynasty Generator"
+          description: "Family/Dynasty Generator",
         },
         {
           name: "Nomora",
           href: "/labs/nomora",
           icon: FaLanguage,
-          description: "Conlang Generator"
-        }
-      ]
-    }
+          description: "Conlang Generator",
+        },
+      ],
+    },
   ];
 
   const isCurrentPage = (href: string) => {
@@ -493,91 +628,95 @@ export function Navigation() {
   };
 
   const getSetupStatus = () => {
-    if (!isLoaded || profileLoading) return 'loading';
-    if (!user) return 'unauthenticated';
-    if (!userProfile?.countryId) return 'needs-setup';
-    return 'complete';
+    if (!isLoaded || profileLoading) return "loading";
+    if (!user) return "unauthenticated";
+    if (!userProfile?.countryId) return "needs-setup";
+    return "complete";
   };
 
   const setupStatus = getSetupStatus();
 
   // Debug logging for navigation visibility
-  console.log('[Navigation] Debug info:', {
+  console.log("[Navigation] Debug info:", {
     isLoaded,
     user: !!user,
     profileLoading,
-    userProfile: userProfile ? { countryId: userProfile.countryId, hasCountry: !!userProfile.countryId } : null,
+    userProfile: userProfile
+      ? { countryId: userProfile.countryId, hasCountry: !!userProfile.countryId }
+      : null,
     setupStatus,
     isAdmin,
-    isPremium
+    isPremium,
   });
 
   // Filter visible navigation items based on user state and admin settings
-  const visibleNavItems = navigationItems.filter(item => {
-    if (item.requiresAuth && !user) return false;
-    
-    // Special handling for MyCountry - show it even if setup is incomplete
-    // so users can access the setup flow or see their country page
-    if (item.name === "MyCountry®" && item.requiresCountry) {
-      // Show MyCountry if user is authenticated, regardless of setup status
-      if (!user) return false;
+  const visibleNavItems = navigationItems
+    .filter((item) => {
+      if (item.requiresAuth && !user) return false;
+
+      // Special handling for MyCountry - show it even if setup is incomplete
+      // so users can access the setup flow or see their country page
+      if (item.name === "MyCountry®" && item.requiresCountry) {
+        // Show MyCountry if user is authenticated, regardless of setup status
+        if (!user) return false;
+        return true;
+      }
+
+      if (item.requiresCountry && setupStatus !== "complete") return false;
+      if (item.adminOnly && !isAdmin) return false;
+      if (item.premiumOnly && !isPremium) return false;
+
+      if (item.name === "Intelligence") {
+        const showIntelligence = navigationSettings?.showIntelligenceTab ?? false;
+        if (!showIntelligence) return false;
+      }
+
+      // Check admin navigation settings
+      if (navigationSettings) {
+        if (item.name === "Wiki" && !navigationSettings.showWikiTab) return false;
+        if (item.name === "Cards" && !navigationSettings.showCardsTab) return false;
+        if (item.name === "Labs" && !navigationSettings.showLabsTab) return false;
+      }
+
       return true;
-    }
-    
-    if (item.requiresCountry && setupStatus !== 'complete') return false;
-    if (item.adminOnly && !isAdmin) return false;
-    if (item.premiumOnly && !isPremium) return false;
-
-    if (item.name === "Intelligence") {
-      const showIntelligence = navigationSettings?.showIntelligenceTab ?? false;
-      if (!showIntelligence) return false;
-    }
-
-    // Check admin navigation settings
-    if (navigationSettings) {
-      if (item.name === "Wiki" && !navigationSettings.showWikiTab) return false;
-      if (item.name === "Cards" && !navigationSettings.showCardsTab) return false;
-      if (item.name === "Labs" && !navigationSettings.showLabsTab) return false;
-    }
-
-    return true;
-  }).map(item => {
-    // Also filter dropdown items based on premium access
-    if (item.isDropdown && item.dropdownItems) {
-      return {
-        ...item,
-        dropdownItems: item.dropdownItems.filter(dropdownItem => {
-          if (dropdownItem.premiumOnly && !isPremium) return false;
-          return true;
-        })
-      };
-    }
-    return item;
-  });
+    })
+    .map((item) => {
+      // Also filter dropdown items based on premium access
+      if (item.isDropdown && item.dropdownItems) {
+        return {
+          ...item,
+          dropdownItems: item.dropdownItems.filter((dropdownItem) => {
+            if (dropdownItem.premiumOnly && !isPremium) return false;
+            return true;
+          }),
+        };
+      }
+      return item;
+    });
 
   const contextKey = getContextKey(normalizedPathname);
   const contextMenu = contextualMenus[contextKey] ?? contextualMenus.default;
 
   // Intelligent balancing: ensure visual symmetry around dynamic island
   const totalItems = visibleNavItems.length;
-  
+
   // For better visual balance, try to keep sides equal or left-heavy by 1
   const leftCount = Math.ceil(totalItems / 2);
   const rightCount = totalItems - leftCount;
-  
+
   // Create balanced arrays ensuring both sides have similar visual weight
   const leftNavItems = visibleNavItems.slice(0, leftCount);
   const rightNavItems = visibleNavItems.slice(leftCount);
 
   return (
     <>
-      <nav className="navigation-bar relative z-[10005] bg-gradient-to-r from-background/95 via-secondary/95 to-background/95 backdrop-blur-xl border-b border-border shadow-2xl">
-        <div className="absolute bottom-0 left-0 right-0 h-2 bg-gradient-to-b from-transparent to-background/20 rounded-b-3xl" />
+      <nav className="navigation-bar from-background/95 via-secondary/95 to-background/95 border-border relative z-[10005] border-b bg-gradient-to-r shadow-2xl backdrop-blur-xl">
+        <div className="to-background/20 absolute right-0 bottom-0 left-0 h-2 rounded-b-3xl bg-gradient-to-b from-transparent" />
 
-        <div className="max-w-none mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="hidden lg:flex items-center justify-between h-16 w-full relative">
+        <div className="mx-auto max-w-none px-4 sm:px-6 lg:px-8">
+          <div className="relative hidden h-16 w-full items-center justify-between lg:flex">
             {/* Left Side Navigation */}
-            <div className="flex items-center justify-start gap-3 z-[9995] flex-1">
+            <div className="z-[9995] flex flex-1 items-center justify-start gap-3">
               <NavigationMenu>
                 <NavigationMenuList className="flex items-center gap-2">
                   {leftNavItems.map((item) => {
@@ -588,8 +727,8 @@ export function Navigation() {
                       return (
                         <NavigationMenuItem key={item.name}>
                           <DropdownMenu>
-                            <DropdownMenuTrigger className="relative group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 will-change-auto hover:bg-accent/10 text-muted-foreground overflow-hidden">
-                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                            <DropdownMenuTrigger className="group hover:bg-accent/10 text-muted-foreground relative flex items-center gap-2 overflow-hidden rounded-lg px-3 py-2 transition-colors duration-200 will-change-auto">
+                              <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                                 <ShineBorder
                                   shineColor={["#8b5cf6", "#7c3aed", "#a78bfa"]}
                                   duration={30}
@@ -598,14 +737,19 @@ export function Navigation() {
                                 />
                               </div>
                               <div className="relative">
-                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md">
+                                <div className="absolute inset-0 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100">
                                   <Icon className="h-4 w-4 text-purple-400" />
                                 </div>
-                                <Icon className="h-4 w-4 relative z-10 transition-all duration-300 group-hover:animate-[spin_2s_linear_infinite] group-hover:scale-110 group-hover:text-purple-400" aria-hidden="true" />
+                                <Icon
+                                  className="relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] group-hover:text-purple-400"
+                                  aria-hidden="true"
+                                />
                               </div>
-                              <span className="hidden lg:block relative overflow-hidden">
-                                <span className="group-hover:opacity-0 transition-opacity duration-300">{item.name}</span>
-                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                              <span className="relative hidden overflow-hidden lg:block">
+                                <span className="transition-opacity duration-300 group-hover:opacity-0">
+                                  {item.name}
+                                </span>
+                                <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                                   <AnimatedShinyText shimmerWidth={60}>
                                     {item.name}
                                   </AnimatedShinyText>
@@ -613,23 +757,30 @@ export function Navigation() {
                               </span>
                               <ChevronDown className="h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" className="w-56 glass-panel">
+                            <DropdownMenuContent align="start" className="glass-panel w-56">
                               {item.dropdownItems.map((subItem, index) => {
                                 const SubIcon = subItem.icon;
                                 return (
                                   <div key={subItem.name}>
                                     <DropdownMenuItem>
-                                      <Link href={subItem.href} className="flex items-center gap-3 px-3 py-3 cursor-pointer">
-                                        <SubIcon className="h-4 w-4 text-muted-foreground" />
+                                      <Link
+                                        href={subItem.href}
+                                        className="flex cursor-pointer items-center gap-3 px-3 py-3"
+                                      >
+                                        <SubIcon className="text-muted-foreground h-4 w-4" />
                                         <div className="flex flex-col">
                                           <span className="font-medium">{subItem.name}</span>
                                           {subItem.description && (
-                                            <span className="text-xs text-muted-foreground">{subItem.description}</span>
+                                            <span className="text-muted-foreground text-xs">
+                                              {subItem.description}
+                                            </span>
                                           )}
                                         </div>
                                       </Link>
                                     </DropdownMenuItem>
-                                    {index < item.dropdownItems!.length - 1 && <DropdownMenuSeparator />}
+                                    {index < item.dropdownItems!.length - 1 && (
+                                      <DropdownMenuSeparator />
+                                    )}
                                   </div>
                                 );
                               })}
@@ -644,58 +795,84 @@ export function Navigation() {
                         {current ? (
                           <Link
                             href={item.href}
-                            className="relative group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 will-change-auto text-foreground bg-accent/20 overflow-hidden"
+                            className="group text-foreground bg-accent/20 relative flex items-center gap-2 overflow-hidden rounded-lg px-3 py-2 transition-colors duration-200 will-change-auto"
                             aria-current="page"
                           >
                             <div className="relative">
-                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md">
-                                <Icon className={`h-4 w-4 ${
-                                  item.name === "MyCountry®" ? "text-amber-400" :
-                                  item.name === "ThinkPages" ? "text-blue-400" :
-                                  item.name === "Dashboard" ? "text-emerald-400" :
-                                  item.name === "Explore" ? "text-purple-400" :
-                                  item.name === "Intelligence" ? "text-indigo-400" :
-                                  item.name === "Admin" ? "text-red-400" :
-                                  item.name === "Cards" ? "text-cyan-400" :
-                                  "text-blue-400"
-                                }`} />
+                              <div className="absolute inset-0 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100">
+                                <Icon
+                                  className={`h-4 w-4 ${
+                                    item.name === "MyCountry®"
+                                      ? "text-amber-400"
+                                      : item.name === "ThinkPages"
+                                        ? "text-blue-400"
+                                        : item.name === "Dashboard"
+                                          ? "text-emerald-400"
+                                          : item.name === "Explore"
+                                            ? "text-purple-400"
+                                            : item.name === "Intelligence"
+                                              ? "text-indigo-400"
+                                              : item.name === "Admin"
+                                                ? "text-red-400"
+                                                : item.name === "Cards"
+                                                  ? "text-cyan-400"
+                                                  : "text-blue-400"
+                                  }`}
+                                />
                               </div>
-                              <Icon className={`h-4 w-4 relative z-10 transition-all duration-300 group-hover:animate-[spin_2s_linear_infinite] group-hover:scale-110 ${
-                                item.name === "MyCountry®" ? "group-hover:text-amber-400" :
-                                item.name === "ThinkPages" ? "group-hover:text-blue-400" :
-                                item.name === "Dashboard" ? "group-hover:text-emerald-400" :
-                                item.name === "Countries" ? "group-hover:text-purple-400" :
-                                item.name === "Admin" ? "group-hover:text-red-400" :
-                                item.name === "Dossier" ? "group-hover:text-orange-400" :
-                                item.name === "Cards" ? "group-hover:text-cyan-400" :
-                                "group-hover:text-blue-400"
-                              }`} aria-hidden="true" />
+                              <Icon
+                                className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${
+                                  item.name === "MyCountry®"
+                                    ? "group-hover:text-amber-400"
+                                    : item.name === "ThinkPages"
+                                      ? "group-hover:text-blue-400"
+                                      : item.name === "Dashboard"
+                                        ? "group-hover:text-emerald-400"
+                                        : item.name === "Countries"
+                                          ? "group-hover:text-purple-400"
+                                          : item.name === "Admin"
+                                            ? "group-hover:text-red-400"
+                                            : item.name === "Dossier"
+                                              ? "group-hover:text-orange-400"
+                                              : item.name === "Cards"
+                                                ? "group-hover:text-cyan-400"
+                                                : "group-hover:text-blue-400"
+                                }`}
+                                aria-hidden="true"
+                              />
                             </div>
-                            <span className="hidden lg:block relative overflow-hidden">
-                              <span className="group-hover:opacity-0 transition-opacity duration-300">{item.name}</span>
-                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <AnimatedShinyText shimmerWidth={60}>
-                                  {item.name}
-                                </AnimatedShinyText>
+                            <span className="relative hidden overflow-hidden lg:block">
+                              <span className="transition-opacity duration-300 group-hover:opacity-0">
+                                {item.name}
+                              </span>
+                              <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                                <AnimatedShinyText shimmerWidth={60}>{item.name}</AnimatedShinyText>
                               </div>
                             </span>
                           </Link>
                         ) : (
                           <Link
                             href={item.href}
-                            className="relative group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 will-change-auto hover:bg-accent/10 text-muted-foreground overflow-hidden"
+                            className="group hover:bg-accent/10 text-muted-foreground relative flex items-center gap-2 overflow-hidden rounded-lg px-3 py-2 transition-colors duration-200 will-change-auto"
                           >
-                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                            <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                               <ShineBorder
                                 shineColor={
-                                  item.name === "MyCountry®" ? ["#f59e0b", "#eab308", "#fbbf24"] :
-                                  item.name === "ThinkPages" ? ["#3b82f6", "#1d4ed8", "#60a5fa"] :
-                                  item.name === "Dashboard" ? ["#10b981", "#059669", "#34d399"] :
-                                  item.name === "Explore" ? ["#8b5cf6", "#7c3aed", "#a78bfa"] :
-                                  item.name === "Intelligence" ? ["#6366f1", "#4f46e5", "#818cf8"] :
-                                  item.name === "Admin" ? ["#ef4444", "#dc2626", "#f87171"] :
-                                  item.name === "Cards" ? ["#06b6d4", "#0891b2", "#22d3ee"] :
-                                  ["#3b82f6", "#8b5cf6", "#06b6d4"]
+                                  item.name === "MyCountry®"
+                                    ? ["#f59e0b", "#eab308", "#fbbf24"]
+                                    : item.name === "ThinkPages"
+                                      ? ["#3b82f6", "#1d4ed8", "#60a5fa"]
+                                      : item.name === "Dashboard"
+                                        ? ["#10b981", "#059669", "#34d399"]
+                                        : item.name === "Explore"
+                                          ? ["#8b5cf6", "#7c3aed", "#a78bfa"]
+                                          : item.name === "Intelligence"
+                                            ? ["#6366f1", "#4f46e5", "#818cf8"]
+                                            : item.name === "Admin"
+                                              ? ["#ef4444", "#dc2626", "#f87171"]
+                                              : item.name === "Cards"
+                                                ? ["#06b6d4", "#0891b2", "#22d3ee"]
+                                                : ["#3b82f6", "#8b5cf6", "#06b6d4"]
                                 }
                                 duration={30}
                                 borderWidth={1}
@@ -703,35 +880,54 @@ export function Navigation() {
                               />
                             </div>
                             <div className="relative">
-                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md">
-                                <Icon className={`h-4 w-4 ${
-                                  item.name === "MyCountry®" ? "text-amber-400" :
-                                  item.name === "ThinkPages" ? "text-blue-400" :
-                                  item.name === "Dashboard" ? "text-emerald-400" :
-                                  item.name === "Explore" ? "text-purple-400" :
-                                  item.name === "Intelligence" ? "text-indigo-400" :
-                                  item.name === "Admin" ? "text-red-400" :
-                                  item.name === "Cards" ? "text-cyan-400" :
-                                  "text-blue-400"
-                                }`} />
+                              <div className="absolute inset-0 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100">
+                                <Icon
+                                  className={`h-4 w-4 ${
+                                    item.name === "MyCountry®"
+                                      ? "text-amber-400"
+                                      : item.name === "ThinkPages"
+                                        ? "text-blue-400"
+                                        : item.name === "Dashboard"
+                                          ? "text-emerald-400"
+                                          : item.name === "Explore"
+                                            ? "text-purple-400"
+                                            : item.name === "Intelligence"
+                                              ? "text-indigo-400"
+                                              : item.name === "Admin"
+                                                ? "text-red-400"
+                                                : item.name === "Cards"
+                                                  ? "text-cyan-400"
+                                                  : "text-blue-400"
+                                  }`}
+                                />
                               </div>
-                              <Icon className={`h-4 w-4 relative z-10 transition-all duration-300 group-hover:animate-[spin_2s_linear_infinite] group-hover:scale-110 ${
-                                item.name === "MyCountry®" ? "group-hover:text-amber-400" :
-                                item.name === "ThinkPages" ? "group-hover:text-blue-400" :
-                                item.name === "Dashboard" ? "group-hover:text-emerald-400" :
-                                item.name === "Countries" ? "group-hover:text-purple-400" :
-                                item.name === "Admin" ? "group-hover:text-red-400" :
-                                item.name === "Dossier" ? "group-hover:text-orange-400" :
-                                item.name === "Cards" ? "group-hover:text-cyan-400" :
-                                "group-hover:text-blue-400"
-                              }`} aria-hidden="true" />
+                              <Icon
+                                className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${
+                                  item.name === "MyCountry®"
+                                    ? "group-hover:text-amber-400"
+                                    : item.name === "ThinkPages"
+                                      ? "group-hover:text-blue-400"
+                                      : item.name === "Dashboard"
+                                        ? "group-hover:text-emerald-400"
+                                        : item.name === "Countries"
+                                          ? "group-hover:text-purple-400"
+                                          : item.name === "Admin"
+                                            ? "group-hover:text-red-400"
+                                            : item.name === "Dossier"
+                                              ? "group-hover:text-orange-400"
+                                              : item.name === "Cards"
+                                                ? "group-hover:text-cyan-400"
+                                                : "group-hover:text-blue-400"
+                                }`}
+                                aria-hidden="true"
+                              />
                             </div>
-                            <span className="hidden lg:block relative overflow-hidden">
-                              <span className="group-hover:opacity-0 transition-opacity duration-300">{item.name}</span>
-                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <AnimatedShinyText shimmerWidth={60}>
-                                  {item.name}
-                                </AnimatedShinyText>
+                            <span className="relative hidden overflow-hidden lg:block">
+                              <span className="transition-opacity duration-300 group-hover:opacity-0">
+                                {item.name}
+                              </span>
+                              <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                                <AnimatedShinyText shimmerWidth={60}>{item.name}</AnimatedShinyText>
                               </div>
                             </span>
                           </Link>
@@ -744,13 +940,13 @@ export function Navigation() {
             </div>
 
             {/* Desktop Command Palette */}
-            <div className="absolute left-1/2 top-1/2 z-[10010] -translate-x-1/2 -translate-y-1/2 transform">
-              <div className="absolute inset-0 scale-150 rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 blur-3xl opacity-60 pointer-events-none" />
+            <div className="absolute top-1/2 left-1/2 z-[10010] -translate-x-1/2 -translate-y-1/2 transform">
+              <div className="pointer-events-none absolute inset-0 scale-150 rounded-full bg-gradient-to-r from-blue-500/10 via-purple-500/15 to-blue-500/10 opacity-60 blur-3xl" />
               {!isSticky && <CommandPalette isSticky={false} scrollY={scrollY} />}
             </div>
 
             {/* Right Side Navigation */}
-            <div className="flex items-center justify-end gap-3 z-[9995] flex-1">
+            <div className="z-[9995] flex flex-1 items-center justify-end gap-3">
               <NavigationMenu>
                 <NavigationMenuList className="flex items-center gap-2">
                   {rightNavItems.map((item) => {
@@ -761,8 +957,8 @@ export function Navigation() {
                       return (
                         <NavigationMenuItem key={item.name}>
                           <DropdownMenu>
-                            <DropdownMenuTrigger className="relative group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 will-change-auto hover:bg-accent/10 text-muted-foreground overflow-hidden">
-                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                            <DropdownMenuTrigger className="group hover:bg-accent/10 text-muted-foreground relative flex items-center gap-2 overflow-hidden rounded-lg px-3 py-2 transition-colors duration-200 will-change-auto">
+                              <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                                 <ShineBorder
                                   shineColor={["#8b5cf6", "#7c3aed", "#a78bfa"]}
                                   duration={30}
@@ -771,14 +967,19 @@ export function Navigation() {
                                 />
                               </div>
                               <div className="relative">
-                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md">
+                                <div className="absolute inset-0 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100">
                                   <Icon className="h-4 w-4 text-purple-400" />
                                 </div>
-                                <Icon className="h-4 w-4 relative z-10 transition-all duration-300 group-hover:animate-[spin_2s_linear_infinite] group-hover:scale-110 group-hover:text-purple-400" aria-hidden="true" />
+                                <Icon
+                                  className="relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] group-hover:text-purple-400"
+                                  aria-hidden="true"
+                                />
                               </div>
-                              <span className="hidden lg:block relative overflow-hidden">
-                                <span className="group-hover:opacity-0 transition-opacity duration-300">{item.name}</span>
-                                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                              <span className="relative hidden overflow-hidden lg:block">
+                                <span className="transition-opacity duration-300 group-hover:opacity-0">
+                                  {item.name}
+                                </span>
+                                <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                                   <AnimatedShinyText shimmerWidth={60}>
                                     {item.name}
                                   </AnimatedShinyText>
@@ -786,23 +987,30 @@ export function Navigation() {
                               </span>
                               <ChevronDown className="h-3 w-3 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56 glass-panel">
+                            <DropdownMenuContent align="end" className="glass-panel w-56">
                               {item.dropdownItems.map((subItem, index) => {
                                 const SubIcon = subItem.icon;
                                 return (
                                   <div key={subItem.name}>
                                     <DropdownMenuItem>
-                                      <Link href={subItem.href} className="flex items-center gap-3 px-3 py-3 cursor-pointer">
-                                        <SubIcon className="h-4 w-4 text-muted-foreground" />
+                                      <Link
+                                        href={subItem.href}
+                                        className="flex cursor-pointer items-center gap-3 px-3 py-3"
+                                      >
+                                        <SubIcon className="text-muted-foreground h-4 w-4" />
                                         <div className="flex flex-col">
                                           <span className="font-medium">{subItem.name}</span>
                                           {subItem.description && (
-                                            <span className="text-xs text-muted-foreground">{subItem.description}</span>
+                                            <span className="text-muted-foreground text-xs">
+                                              {subItem.description}
+                                            </span>
                                           )}
                                         </div>
                                       </Link>
                                     </DropdownMenuItem>
-                                    {index < item.dropdownItems!.length - 1 && <DropdownMenuSeparator />}
+                                    {index < item.dropdownItems!.length - 1 && (
+                                      <DropdownMenuSeparator />
+                                    )}
                                   </div>
                                 );
                               })}
@@ -817,58 +1025,84 @@ export function Navigation() {
                         {current ? (
                           <Link
                             href={item.href}
-                            className="relative group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 will-change-auto text-foreground bg-accent/20 overflow-hidden"
+                            className="group text-foreground bg-accent/20 relative flex items-center gap-2 overflow-hidden rounded-lg px-3 py-2 transition-colors duration-200 will-change-auto"
                             aria-current="page"
                           >
                             <div className="relative">
-                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md">
-                                <Icon className={`h-4 w-4 ${
-                                  item.name === "MyCountry®" ? "text-amber-400" :
-                                  item.name === "ThinkPages" ? "text-blue-400" :
-                                  item.name === "Dashboard" ? "text-emerald-400" :
-                                  item.name === "Explore" ? "text-purple-400" :
-                                  item.name === "Intelligence" ? "text-indigo-400" :
-                                  item.name === "Admin" ? "text-red-400" :
-                                  item.name === "Cards" ? "text-cyan-400" :
-                                  "text-blue-400"
-                                }`} />
+                              <div className="absolute inset-0 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100">
+                                <Icon
+                                  className={`h-4 w-4 ${
+                                    item.name === "MyCountry®"
+                                      ? "text-amber-400"
+                                      : item.name === "ThinkPages"
+                                        ? "text-blue-400"
+                                        : item.name === "Dashboard"
+                                          ? "text-emerald-400"
+                                          : item.name === "Explore"
+                                            ? "text-purple-400"
+                                            : item.name === "Intelligence"
+                                              ? "text-indigo-400"
+                                              : item.name === "Admin"
+                                                ? "text-red-400"
+                                                : item.name === "Cards"
+                                                  ? "text-cyan-400"
+                                                  : "text-blue-400"
+                                  }`}
+                                />
                               </div>
-                              <Icon className={`h-4 w-4 relative z-10 transition-all duration-300 group-hover:animate-[spin_2s_linear_infinite] group-hover:scale-110 ${
-                                item.name === "MyCountry®" ? "group-hover:text-amber-400" :
-                                item.name === "ThinkPages" ? "group-hover:text-blue-400" :
-                                item.name === "Dashboard" ? "group-hover:text-emerald-400" :
-                                item.name === "Countries" ? "group-hover:text-purple-400" :
-                                item.name === "Admin" ? "group-hover:text-red-400" :
-                                item.name === "Dossier" ? "group-hover:text-orange-400" :
-                                item.name === "Cards" ? "group-hover:text-cyan-400" :
-                                "group-hover:text-blue-400"
-                              }`} aria-hidden="true" />
+                              <Icon
+                                className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${
+                                  item.name === "MyCountry®"
+                                    ? "group-hover:text-amber-400"
+                                    : item.name === "ThinkPages"
+                                      ? "group-hover:text-blue-400"
+                                      : item.name === "Dashboard"
+                                        ? "group-hover:text-emerald-400"
+                                        : item.name === "Countries"
+                                          ? "group-hover:text-purple-400"
+                                          : item.name === "Admin"
+                                            ? "group-hover:text-red-400"
+                                            : item.name === "Dossier"
+                                              ? "group-hover:text-orange-400"
+                                              : item.name === "Cards"
+                                                ? "group-hover:text-cyan-400"
+                                                : "group-hover:text-blue-400"
+                                }`}
+                                aria-hidden="true"
+                              />
                             </div>
-                            <span className="hidden lg:block relative overflow-hidden">
-                              <span className="group-hover:opacity-0 transition-opacity duration-300">{item.name}</span>
-                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <AnimatedShinyText shimmerWidth={60}>
-                                  {item.name}
-                                </AnimatedShinyText>
+                            <span className="relative hidden overflow-hidden lg:block">
+                              <span className="transition-opacity duration-300 group-hover:opacity-0">
+                                {item.name}
+                              </span>
+                              <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                                <AnimatedShinyText shimmerWidth={60}>{item.name}</AnimatedShinyText>
                               </div>
                             </span>
                           </Link>
                         ) : (
                           <Link
                             href={item.href}
-                            className="relative group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors duration-200 will-change-auto hover:bg-accent/10 text-muted-foreground overflow-hidden"
+                            className="group hover:bg-accent/10 text-muted-foreground relative flex items-center gap-2 overflow-hidden rounded-lg px-3 py-2 transition-colors duration-200 will-change-auto"
                           >
-                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                            <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                               <ShineBorder
                                 shineColor={
-                                  item.name === "MyCountry®" ? ["#f59e0b", "#eab308", "#fbbf24"] :
-                                  item.name === "ThinkPages" ? ["#3b82f6", "#1d4ed8", "#60a5fa"] :
-                                  item.name === "Dashboard" ? ["#10b981", "#059669", "#34d399"] :
-                                  item.name === "Explore" ? ["#8b5cf6", "#7c3aed", "#a78bfa"] :
-                                  item.name === "Intelligence" ? ["#6366f1", "#4f46e5", "#818cf8"] :
-                                  item.name === "Admin" ? ["#ef4444", "#dc2626", "#f87171"] :
-                                  item.name === "Cards" ? ["#06b6d4", "#0891b2", "#22d3ee"] :
-                                  ["#3b82f6", "#8b5cf6", "#06b6d4"]
+                                  item.name === "MyCountry®"
+                                    ? ["#f59e0b", "#eab308", "#fbbf24"]
+                                    : item.name === "ThinkPages"
+                                      ? ["#3b82f6", "#1d4ed8", "#60a5fa"]
+                                      : item.name === "Dashboard"
+                                        ? ["#10b981", "#059669", "#34d399"]
+                                        : item.name === "Explore"
+                                          ? ["#8b5cf6", "#7c3aed", "#a78bfa"]
+                                          : item.name === "Intelligence"
+                                            ? ["#6366f1", "#4f46e5", "#818cf8"]
+                                            : item.name === "Admin"
+                                              ? ["#ef4444", "#dc2626", "#f87171"]
+                                              : item.name === "Cards"
+                                                ? ["#06b6d4", "#0891b2", "#22d3ee"]
+                                                : ["#3b82f6", "#8b5cf6", "#06b6d4"]
                                 }
                                 duration={30}
                                 borderWidth={1}
@@ -876,35 +1110,54 @@ export function Navigation() {
                               />
                             </div>
                             <div className="relative">
-                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-md">
-                                <Icon className={`h-4 w-4 ${
-                                  item.name === "MyCountry®" ? "text-amber-400" :
-                                  item.name === "ThinkPages" ? "text-blue-400" :
-                                  item.name === "Dashboard" ? "text-emerald-400" :
-                                  item.name === "Explore" ? "text-purple-400" :
-                                  item.name === "Intelligence" ? "text-indigo-400" :
-                                  item.name === "Admin" ? "text-red-400" :
-                                  item.name === "Cards" ? "text-cyan-400" :
-                                  "text-blue-400"
-                                }`} />
+                              <div className="absolute inset-0 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100">
+                                <Icon
+                                  className={`h-4 w-4 ${
+                                    item.name === "MyCountry®"
+                                      ? "text-amber-400"
+                                      : item.name === "ThinkPages"
+                                        ? "text-blue-400"
+                                        : item.name === "Dashboard"
+                                          ? "text-emerald-400"
+                                          : item.name === "Explore"
+                                            ? "text-purple-400"
+                                            : item.name === "Intelligence"
+                                              ? "text-indigo-400"
+                                              : item.name === "Admin"
+                                                ? "text-red-400"
+                                                : item.name === "Cards"
+                                                  ? "text-cyan-400"
+                                                  : "text-blue-400"
+                                  }`}
+                                />
                               </div>
-                              <Icon className={`h-4 w-4 relative z-10 transition-all duration-300 group-hover:animate-[spin_2s_linear_infinite] group-hover:scale-110 ${
-                                item.name === "MyCountry®" ? "group-hover:text-amber-400" :
-                                item.name === "ThinkPages" ? "group-hover:text-blue-400" :
-                                item.name === "Dashboard" ? "group-hover:text-emerald-400" :
-                                item.name === "Countries" ? "group-hover:text-purple-400" :
-                                item.name === "Admin" ? "group-hover:text-red-400" :
-                                item.name === "Dossier" ? "group-hover:text-orange-400" :
-                                item.name === "Cards" ? "group-hover:text-cyan-400" :
-                                "group-hover:text-blue-400"
-                              }`} aria-hidden="true" />
+                              <Icon
+                                className={`relative z-10 h-4 w-4 transition-all duration-300 group-hover:scale-110 group-hover:animate-[spin_2s_linear_infinite] ${
+                                  item.name === "MyCountry®"
+                                    ? "group-hover:text-amber-400"
+                                    : item.name === "ThinkPages"
+                                      ? "group-hover:text-blue-400"
+                                      : item.name === "Dashboard"
+                                        ? "group-hover:text-emerald-400"
+                                        : item.name === "Countries"
+                                          ? "group-hover:text-purple-400"
+                                          : item.name === "Admin"
+                                            ? "group-hover:text-red-400"
+                                            : item.name === "Dossier"
+                                              ? "group-hover:text-orange-400"
+                                              : item.name === "Cards"
+                                                ? "group-hover:text-cyan-400"
+                                                : "group-hover:text-blue-400"
+                                }`}
+                                aria-hidden="true"
+                              />
                             </div>
-                            <span className="hidden lg:block relative overflow-hidden">
-                              <span className="group-hover:opacity-0 transition-opacity duration-300">{item.name}</span>
-                              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <AnimatedShinyText shimmerWidth={60}>
-                                  {item.name}
-                                </AnimatedShinyText>
+                            <span className="relative hidden overflow-hidden lg:block">
+                              <span className="transition-opacity duration-300 group-hover:opacity-0">
+                                {item.name}
+                              </span>
+                              <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                                <AnimatedShinyText shimmerWidth={60}>{item.name}</AnimatedShinyText>
                               </div>
                             </span>
                           </Link>
@@ -918,14 +1171,18 @@ export function Navigation() {
           </div>
 
           {/* Mobile Title Bar */}
-          <div className="flex items-center justify-between h-14 w-full py-2 lg:hidden">
+          <div className="flex h-14 w-full items-center justify-between py-2 lg:hidden">
             <div className="flex flex-col">
-              <span className="text-[11px] uppercase tracking-wide text-muted-foreground/80">IxStats</span>
-              <span className="text-base font-semibold text-foreground line-clamp-1">{contextMenu.title}</span>
+              <span className="text-muted-foreground/80 text-[11px] tracking-wide uppercase">
+                IxStats
+              </span>
+              <span className="text-foreground line-clamp-1 text-base font-semibold">
+                {contextMenu.title}
+              </span>
             </div>
             <button
               type="button"
-              className="inline-flex items-center justify-center rounded-lg border border-border/60 bg-background/80 p-2 text-foreground shadow-sm backdrop-blur"
+              className="border-border/60 bg-background/80 text-foreground inline-flex items-center justify-center rounded-lg border p-2 shadow-sm backdrop-blur"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
               aria-expanded={mobileMenuOpen}
               aria-controls="ixstats-mobile-navigation"
@@ -956,7 +1213,7 @@ export function Navigation() {
               id="ixstats-mobile-navigation"
               role="dialog"
               aria-modal="true"
-              className="absolute left-0 top-0 h-full w-[min(88vw,360px)] max-w-[360px] overflow-y-auto border-r border-border/40 bg-background/98 px-5 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-[calc(env(safe-area-inset-top)+1rem)] shadow-2xl backdrop-blur-xl"
+              className="border-border/40 bg-background/98 absolute top-0 left-0 h-full w-[min(88vw,360px)] max-w-[360px] overflow-y-auto border-r px-5 pt-[calc(env(safe-area-inset-top)+1rem)] pb-[calc(env(safe-area-inset-bottom)+1.5rem)] shadow-2xl backdrop-blur-xl"
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
@@ -964,15 +1221,19 @@ export function Navigation() {
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
-                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground/80">Currently viewing</p>
-                  <h2 className="text-lg font-semibold text-foreground">{contextMenu.title}</h2>
+                  <p className="text-muted-foreground/80 text-[11px] tracking-wide uppercase">
+                    Currently viewing
+                  </p>
+                  <h2 className="text-foreground text-lg font-semibold">{contextMenu.title}</h2>
                   {contextMenu.description && (
-                    <p className="text-sm leading-snug text-muted-foreground">{contextMenu.description}</p>
+                    <p className="text-muted-foreground text-sm leading-snug">
+                      {contextMenu.description}
+                    </p>
                   )}
                 </div>
                 <button
                   type="button"
-                  className="rounded-full border border-border/50 p-2 text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
+                  className="border-border/50 text-muted-foreground hover:border-foreground/40 hover:text-foreground rounded-full border p-2 transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                   aria-label="Close navigation menu"
                 >
@@ -982,7 +1243,9 @@ export function Navigation() {
 
               <div className="mt-6 space-y-5">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground/80">Global navigation</p>
+                  <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
+                    Global navigation
+                  </p>
                   <div className="mt-3 space-y-2">
                     {visibleNavItems.map((item) => {
                       const Icon = item.icon;
@@ -992,15 +1255,17 @@ export function Navigation() {
                         return (
                           <div
                             key={item.name}
-                            className="rounded-2xl border border-border/50 bg-card/60 px-3 py-3 shadow-sm"
+                            className="border-border/50 bg-card/60 rounded-2xl border px-3 py-3 shadow-sm"
                           >
                             <div className="flex items-center gap-3">
-                              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                              <span className="bg-primary/10 text-primary flex h-9 w-9 items-center justify-center rounded-xl">
                                 <Icon className="h-5 w-5" />
                               </span>
                               <div className="flex-1">
-                                <p className="text-sm font-semibold text-foreground">{item.name}</p>
-                                <p className="text-xs text-muted-foreground">Select a lab to jump in.</p>
+                                <p className="text-foreground text-sm font-semibold">{item.name}</p>
+                                <p className="text-muted-foreground text-xs">
+                                  Select a lab to jump in.
+                                </p>
                               </div>
                             </div>
                             <div className="mt-3 space-y-2">
@@ -1010,10 +1275,10 @@ export function Navigation() {
                                   <Link
                                     key={subItem.name}
                                     href={subItem.href}
-                                    className="flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-sm text-muted-foreground transition-colors hover:border-border/60 hover:text-foreground"
+                                    className="text-muted-foreground hover:border-border/60 hover:text-foreground flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 text-sm transition-colors"
                                     onClick={() => setMobileMenuOpen(false)}
                                   >
-                                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50">
+                                    <span className="bg-muted/50 flex h-8 w-8 items-center justify-center rounded-lg">
                                       <SubIcon className="h-4 w-4" />
                                     </span>
                                     <span className="flex-1">{subItem.name}</span>
@@ -1038,19 +1303,23 @@ export function Navigation() {
                         >
                           <span
                             className={`flex h-9 w-9 items-center justify-center rounded-xl ${
-                              current ? "bg-primary text-primary-foreground" : "bg-muted/60 text-foreground"
+                              current
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted/60 text-foreground"
                             }`}
                           >
                             <Icon className="h-5 w-5" />
                           </span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold leading-snug">{item.name}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm leading-snug font-semibold">{item.name}</p>
                             {item.description && (
-                              <p className="text-xs leading-tight text-muted-foreground">{item.description}</p>
+                              <p className="text-muted-foreground text-xs leading-tight">
+                                {item.description}
+                              </p>
                             )}
                           </div>
                           {current && (
-                            <span className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+                            <span className="text-primary text-[11px] font-semibold tracking-wide uppercase">
                               Active
                             </span>
                           )}
@@ -1062,7 +1331,7 @@ export function Navigation() {
 
                 {contextMenu.groups.map((group) => (
                   <div key={group.title}>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground/80">
+                    <p className="text-muted-foreground/80 text-xs font-semibold tracking-wide uppercase">
                       {group.title}
                     </p>
                     <div className="mt-3 space-y-2">
@@ -1091,10 +1360,12 @@ export function Navigation() {
                             >
                               <Icon className="h-4 w-4" />
                             </span>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium leading-snug">{item.name}</p>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm leading-snug font-medium">{item.name}</p>
                               {item.description && (
-                                <p className="text-xs leading-tight text-muted-foreground">{item.description}</p>
+                                <p className="text-muted-foreground text-xs leading-tight">
+                                  {item.description}
+                                </p>
                               )}
                             </div>
                           </Link>
@@ -1105,8 +1376,9 @@ export function Navigation() {
                 ))}
               </div>
 
-              <div className="mt-8 rounded-2xl border border-dashed border-border/60 bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
-                Menus adapt to the page you are working on. Use this drawer for rapid jumps across IxStats systems.
+              <div className="border-border/60 bg-muted/40 text-muted-foreground mt-8 rounded-2xl border border-dashed px-4 py-3 text-xs">
+                Menus adapt to the page you are working on. Use this drawer for rapid jumps across
+                IxStats systems.
               </div>
             </motion.aside>
           </motion.div>
@@ -1116,7 +1388,7 @@ export function Navigation() {
       {!isMobile && (
         <div
           className={`fixed z-[10020] will-change-transform ${
-            isSticky ? "opacity-100" : "opacity-0 pointer-events-none"
+            isSticky ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
           style={{
             top: isSticky ? "8px" : "64px",

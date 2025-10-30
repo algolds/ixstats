@@ -14,15 +14,15 @@ interface SimpleFlagProps {
 
 const sizeClasses = {
   sm: "h-4 w-6",
-  md: "h-6 w-8", 
-  lg: "h-8 w-12"
+  md: "h-6 w-8",
+  lg: "h-8 w-12",
 };
 
-export function SimpleFlag({ 
-  countryName, 
-  size = "md", 
+export function SimpleFlag({
+  countryName,
+  size = "md",
   className = "",
-  showPlaceholder = true 
+  showPlaceholder = true,
 }: SimpleFlagProps) {
   const { flagUrl, isLoading, error } = useSimpleFlag(countryName);
 
@@ -30,7 +30,9 @@ export function SimpleFlag({
 
   if (isLoading) {
     return (
-      <div className={`${sizeClasses[size]} ${className} animate-pulse bg-muted rounded border-border`} />
+      <div
+        className={`${sizeClasses[size]} ${className} bg-muted border-border animate-pulse rounded`}
+      />
     );
   }
 
@@ -38,10 +40,12 @@ export function SimpleFlag({
     if (!showPlaceholder) {
       return null;
     }
-    
+
     return (
-      <div className={`${sizeClasses[size]} ${className} bg-muted rounded border-border flex items-center justify-center`}>
-        <Flag className="h-3 w-3 text-muted-foreground" />
+      <div
+        className={`${sizeClasses[size]} ${className} bg-muted border-border flex items-center justify-center rounded`}
+      >
+        <Flag className="text-muted-foreground h-3 w-3" />
       </div>
     );
   }

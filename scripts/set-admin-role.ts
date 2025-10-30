@@ -9,22 +9,22 @@ async function setAdminRole() {
 
     // First, ensure the owner role exists with level 0
     let ownerRole = await db.role.findFirst({
-      where: { name: 'owner' }
+      where: { name: "owner" },
     });
 
     if (!ownerRole) {
-      console.log('Owner role not found, creating...');
+      console.log("Owner role not found, creating...");
       ownerRole = await db.role.create({
         data: {
-          name: 'owner',
-          displayName: 'System Owner',
-          description: 'System owner with unrestricted access to all functions',
+          name: "owner",
+          displayName: "System Owner",
+          description: "System owner with unrestricted access to all functions",
           level: 0,
           isSystem: true,
           isActive: true,
           createdAt: new Date(),
           updatedAt: new Date(),
-        }
+        },
       });
       console.log(`✅ Created owner role with ID: ${ownerRole.id}, level: 0`);
     } else {
@@ -32,7 +32,7 @@ async function setAdminRole() {
       if (ownerRole.level !== 0) {
         ownerRole = await db.role.update({
           where: { id: ownerRole.id },
-          data: { level: 0, isSystem: true }
+          data: { level: 0, isSystem: true },
         });
         console.log(`✅ Updated owner role to level 0`);
       } else {
@@ -44,7 +44,7 @@ async function setAdminRole() {
     for (const clerkUserId of SYSTEM_OWNERS) {
       const user = await db.user.findUnique({
         where: { clerkUserId },
-        include: { role: true }
+        include: { role: true },
       });
 
       if (!user) {
@@ -59,15 +59,17 @@ async function setAdminRole() {
 
       await db.user.update({
         where: { clerkUserId },
-        data: { roleId: ownerRole.id }
+        data: { roleId: ownerRole.id },
       });
 
-      console.log(`✅ Updated user ${clerkUserId} from role "${user.role?.name || 'none'}" (level ${user.role?.level ?? 'N/A'}) to "owner" (level 0)`);
+      console.log(
+        `✅ Updated user ${clerkUserId} from role "${user.role?.name || "none"}" (level ${user.role?.level ?? "N/A"}) to "owner" (level 0)`
+      );
     }
 
-    console.log('\n✅ System owner role setup complete!');
+    console.log("\n✅ System owner role setup complete!");
   } catch (error) {
-    console.error('❌ Error setting owner role:', error);
+    console.error("❌ Error setting owner role:", error);
     process.exit(1);
   } finally {
     await db.$disconnect();

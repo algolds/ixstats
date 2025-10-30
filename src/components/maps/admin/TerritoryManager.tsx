@@ -340,8 +340,8 @@ export function TerritoryManager({ map, isAdmin, currentUserId }: TerritoryManag
                             }`}
                           >
                             {editorState.economicImpact.areaChange.km2 >= 0 ? "+" : ""}
-                            {formatNumber(editorState.economicImpact.areaChange.km2)} km²
-                            ({editorState.economicImpact.areaChange.percentChange.toFixed(1)}%)
+                            {formatNumber(editorState.economicImpact.areaChange.km2)} km² (
+                            {editorState.economicImpact.areaChange.percentChange.toFixed(1)}%)
                           </p>
                         </div>
                         <div>

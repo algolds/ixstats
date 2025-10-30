@@ -8,12 +8,7 @@
 
 import React from "react";
 import { TaxCalculator } from "../../atoms/TaxCalculator";
-import type {
-  TaxSystem,
-  TaxCategory,
-  TaxBracket,
-  TaxCalculationResult,
-} from "~/types/tax-system";
+import type { TaxSystem, TaxCategory, TaxBracket, TaxCalculationResult } from "~/types/tax-system";
 
 interface CalculatorPreviewStepProps {
   previewTaxSystem: TaxSystem;

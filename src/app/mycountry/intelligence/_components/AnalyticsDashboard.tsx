@@ -18,17 +18,38 @@
  * @module AnalyticsDashboard
  */
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Activity, Target, Info, CheckCircle, Zap, Globe, Building, Users, FileText } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { cn } from '~/lib/utils';
-import { useAnalyticsDashboard } from '~/hooks/useAnalyticsDashboard';
-import { AnalyticsHeader, OverviewSection, EconomicSection, PolicySection } from '~/components/analytics/sections';
-import { GlassTooltip, ProjectionChart, DiplomaticInfluenceChart, EmbassyNetworkChart, RelationshipDistributionChart } from '~/components/analytics/charts';
+import React from "react";
+import { motion } from "framer-motion";
+import {
+  Activity,
+  Target,
+  Info,
+  CheckCircle,
+  Zap,
+  Globe,
+  Building,
+  Users,
+  FileText,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { cn } from "~/lib/utils";
+import { useAnalyticsDashboard } from "~/hooks/useAnalyticsDashboard";
+import {
+  AnalyticsHeader,
+  OverviewSection,
+  EconomicSection,
+  PolicySection,
+} from "~/components/analytics/sections";
+import {
+  GlassTooltip,
+  ProjectionChart,
+  DiplomaticInfluenceChart,
+  EmbassyNetworkChart,
+  RelationshipDistributionChart,
+} from "~/components/analytics/charts";
 
 // ===== TYPES =====
 
@@ -46,9 +67,9 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
   // Loading state
   if (analytics.isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-4">
-          <Activity className="h-12 w-12 animate-spin text-purple-600 mx-auto" />
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="space-y-4 text-center">
+          <Activity className="mx-auto h-12 w-12 animate-spin text-purple-600" />
           <p className="text-muted-foreground">Loading analytics data...</p>
         </div>
       </div>
@@ -64,7 +85,9 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
           <CardDescription>Advanced analytics require MyCountry Premium access.</CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">Upgrade to access predictive models, diplomatic analytics, and historical trends.</p>
+          <p className="text-muted-foreground text-sm">
+            Upgrade to access predictive models, diplomatic analytics, and historical trends.
+          </p>
         </CardContent>
       </Card>
     );
@@ -82,7 +105,11 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
       />
 
       {/* Section Tabs */}
-      <Tabs value={analytics.activeSection} onValueChange={analytics.handleSectionChange} className="w-full">
+      <Tabs
+        value={analytics.activeSection}
+        onValueChange={analytics.handleSectionChange}
+        className="w-full"
+      >
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="economic">Economic</TabsTrigger>
@@ -144,7 +171,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                 {analytics.diplomaticNetworkStats.map((stat, idx) => (
                   <motion.div
                     key={stat.label}
@@ -152,16 +179,18 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.1 }}
                   >
-                    <div className="p-4 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-900/50">
-                      <div className="flex items-center gap-2 mb-2">
-                        <stat.icon className={cn(
-                          'h-5 w-5',
-                          stat.color === 'purple' && 'text-purple-600',
-                          stat.color === 'blue' && 'text-blue-600',
-                          stat.color === 'green' && 'text-green-600',
-                          stat.color === 'orange' && 'text-orange-600'
-                        )} />
-                        <span className="text-xs text-muted-foreground">{stat.label}</span>
+                    <div className="rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 p-4 dark:from-gray-800/50 dark:to-gray-900/50">
+                      <div className="mb-2 flex items-center gap-2">
+                        <stat.icon
+                          className={cn(
+                            "h-5 w-5",
+                            stat.color === "purple" && "text-purple-600",
+                            stat.color === "blue" && "text-blue-600",
+                            stat.color === "green" && "text-green-600",
+                            stat.color === "orange" && "text-orange-600"
+                          )}
+                        />
+                        <span className="text-muted-foreground text-xs">{stat.label}</span>
                       </div>
                       <div className="text-2xl font-bold">{stat.value}</div>
                     </div>
@@ -171,37 +200,44 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <DiplomaticInfluenceChart
               data={analytics.diplomaticInfluenceData}
               GlassTooltip={GlassTooltip}
-              onExportCSV={() => analytics.exportToCSV(
-                analytics.diplomaticInfluenceData,
-                'diplomatic-influence',
-                { date: 'Date', influence: 'Influence Score' }
-              )}
-              onExportPDF={() => analytics.exportToPDF('diplomatic-influence-chart', 'Diplomatic Influence')}
+              onExportCSV={() =>
+                analytics.exportToCSV(analytics.diplomaticInfluenceData, "diplomatic-influence", {
+                  date: "Date",
+                  influence: "Influence Score",
+                })
+              }
+              onExportPDF={() =>
+                analytics.exportToPDF("diplomatic-influence-chart", "Diplomatic Influence")
+              }
             />
 
             <RelationshipDistributionChart
               data={analytics.relationshipDistributionData}
               GlassTooltip={GlassTooltip}
-              onExportCSV={() => analytics.exportToCSV(
-                analytics.relationshipDistributionData,
-                'relationship-distribution',
-                { name: 'Relationship Type', value: 'Percentage' }
-              )}
-              onExportPDF={() => analytics.exportToPDF('relationship-distribution-chart', 'Relationship Distribution')}
+              onExportCSV={() =>
+                analytics.exportToCSV(
+                  analytics.relationshipDistributionData,
+                  "relationship-distribution",
+                  { name: "Relationship Type", value: "Percentage" }
+                )
+              }
+              onExportPDF={() =>
+                analytics.exportToPDF(
+                  "relationship-distribution-chart",
+                  "Relationship Distribution"
+                )
+              }
             />
           </div>
 
-          <EmbassyNetworkChart
-            data={analytics.embassyNetworkData}
-            GlassTooltip={GlassTooltip}
-          />
+          <EmbassyNetworkChart data={analytics.embassyNetworkData} GlassTooltip={GlassTooltip} />
 
           {/* Mission Success Rates & Cultural Exchange */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Card className="glass-surface glass-refraction">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -218,7 +254,7 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
                         <span className="text-muted-foreground">{mission.total} missions</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                           <motion.div
                             className="h-full bg-gradient-to-r from-green-500 to-emerald-500"
                             initial={{ width: 0 }}
@@ -226,7 +262,9 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
                             transition={{ delay: index * 0.1, duration: 0.5 }}
                           />
                         </div>
-                        <span className="text-sm font-medium w-12 text-right">{mission.success}%</span>
+                        <span className="w-12 text-right text-sm font-medium">
+                          {mission.success}%
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -243,25 +281,25 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="p-4 rounded-lg bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20">
-                    <p className="text-sm text-muted-foreground mb-2">Active Programs</p>
+                  <div className="rounded-lg bg-gradient-to-br from-yellow-50 to-amber-50 p-4 dark:from-yellow-950/20 dark:to-amber-950/20">
+                    <p className="text-muted-foreground mb-2 text-sm">Active Programs</p>
                     <p className="text-3xl font-bold text-yellow-600">42</p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20">
-                      <p className="text-xs text-muted-foreground mb-1">Student Exchange</p>
+                    <div className="rounded-lg bg-blue-50 p-3 dark:bg-blue-950/20">
+                      <p className="text-muted-foreground mb-1 text-xs">Student Exchange</p>
                       <p className="text-xl font-bold text-blue-600">18</p>
                     </div>
-                    <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20">
-                      <p className="text-xs text-muted-foreground mb-1">Artist Programs</p>
+                    <div className="rounded-lg bg-purple-50 p-3 dark:bg-purple-950/20">
+                      <p className="text-muted-foreground mb-1 text-xs">Artist Programs</p>
                       <p className="text-xl font-bold text-purple-600">14</p>
                     </div>
-                    <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/20">
-                      <p className="text-xs text-muted-foreground mb-1">Sports Events</p>
+                    <div className="rounded-lg bg-green-50 p-3 dark:bg-green-950/20">
+                      <p className="text-muted-foreground mb-1 text-xs">Sports Events</p>
                       <p className="text-xl font-bold text-green-600">6</p>
                     </div>
-                    <div className="p-3 rounded-lg bg-orange-50 dark:bg-orange-950/20">
-                      <p className="text-xs text-muted-foreground mb-1">Tech Collaboration</p>
+                    <div className="rounded-lg bg-orange-50 p-3 dark:bg-orange-950/20">
+                      <p className="text-muted-foreground mb-1 text-xs">Tech Collaboration</p>
                       <p className="text-xl font-bold text-orange-600">4</p>
                     </div>
                   </div>
@@ -284,10 +322,10 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {(['optimistic', 'realistic', 'pessimistic'] as const).map((scenario) => (
+                {(["optimistic", "realistic", "pessimistic"] as const).map((scenario) => (
                   <Button
                     key={scenario}
-                    variant={analytics.selectedScenarios.includes(scenario) ? 'default' : 'outline'}
+                    variant={analytics.selectedScenarios.includes(scenario) ? "default" : "outline"}
                     size="sm"
                     onClick={() => analytics.handleScenarioToggle(scenario)}
                   >
@@ -305,19 +343,21 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
             dateRange={analytics.dateRange}
             formatCurrency={analytics.formatCurrency}
             GlassTooltip={GlassTooltip}
-            onExportCSV={() => analytics.exportToCSV(analytics.projectionData, 'gdp-projections', {
-              date: 'Date',
-              optimistic: 'Optimistic Scenario',
-              realistic: 'Realistic Scenario',
-              pessimistic: 'Pessimistic Scenario'
-            })}
-            onExportPDF={() => analytics.exportToPDF('gdp-projections-chart', 'GDP Projections')}
+            onExportCSV={() =>
+              analytics.exportToCSV(analytics.projectionData, "gdp-projections", {
+                date: "Date",
+                optimistic: "Optimistic Scenario",
+                realistic: "Realistic Scenario",
+                pessimistic: "Pessimistic Scenario",
+              })
+            }
+            onExportPDF={() => analytics.exportToPDF("gdp-projections-chart", "GDP Projections")}
           />
 
           {/* Confidence Intervals */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {analytics.predictiveModels?.scenarios?.map((scenario: any, index: number) => {
-              const scenarioName = scenario.scenario as 'optimistic' | 'realistic' | 'pessimistic';
+              const scenarioName = scenario.scenario as "optimistic" | "realistic" | "pessimistic";
               if (!analytics.selectedScenarios.includes(scenarioName)) return null;
 
               return (
@@ -329,26 +369,26 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
                 >
                   <Card className="glass-surface glass-refraction">
                     <CardHeader>
-                      <CardTitle className="text-lg capitalize">{scenario.scenario} Scenario</CardTitle>
-                      <CardDescription>
-                        Confidence: {scenario.confidence}%
-                      </CardDescription>
+                      <CardTitle className="text-lg capitalize">
+                        {scenario.scenario} Scenario
+                      </CardTitle>
+                      <CardDescription>Confidence: {scenario.confidence}%</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div>
-                        <p className="text-sm text-muted-foreground mb-1">Projected GDP</p>
+                        <p className="text-muted-foreground mb-1 text-sm">Projected GDP</p>
                         <p className="text-2xl font-bold text-blue-600">
                           {analytics.formatCurrency(scenario.projectedGdp)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground mb-1">GDP per Capita</p>
+                        <p className="text-muted-foreground mb-1 text-sm">GDP per Capita</p>
                         <p className="text-xl font-semibold">
                           {analytics.formatCurrency(scenario.projectedGdpPerCapita)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground mb-1">Population</p>
+                        <p className="text-muted-foreground mb-1 text-sm">Population</p>
                         <p className="text-xl font-semibold">
                           {scenario.projectedPopulation?.toLocaleString()}
                         </p>
@@ -371,30 +411,35 @@ export function AnalyticsDashboard({ userId, countryId }: AnalyticsDashboardProp
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <h4 className="font-semibold mb-2">Predictive Model</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {analytics.predictiveModels?.methodology || 'Compound growth model with historical variance analysis'}
+                  <h4 className="mb-2 font-semibold">Predictive Model</h4>
+                  <p className="text-muted-foreground text-sm">
+                    {analytics.predictiveModels?.methodology ||
+                      "Compound growth model with historical variance analysis"}
                   </p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20">
-                    <p className="text-xs text-muted-foreground mb-1">Data Points Used</p>
-                    <p className="text-xl font-bold text-blue-600">{analytics.historicalData?.length || 0}</p>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="rounded-lg bg-blue-50 p-3 dark:bg-blue-950/20">
+                    <p className="text-muted-foreground mb-1 text-xs">Data Points Used</p>
+                    <p className="text-xl font-bold text-blue-600">
+                      {analytics.historicalData?.length || 0}
+                    </p>
                   </div>
-                  <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-950/20">
-                    <p className="text-xs text-muted-foreground mb-1">Confidence Level</p>
+                  <div className="rounded-lg bg-purple-50 p-3 dark:bg-purple-950/20">
+                    <p className="text-muted-foreground mb-1 text-xs">Confidence Level</p>
                     <p className="text-xl font-bold text-purple-600">85%</p>
                   </div>
-                  <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/20">
-                    <p className="text-xs text-muted-foreground mb-1">Last Updated</p>
+                  <div className="rounded-lg bg-green-50 p-3 dark:bg-green-950/20">
+                    <p className="text-muted-foreground mb-1 text-xs">Last Updated</p>
                     <p className="text-xl font-bold text-green-600">
-                      {analytics.predictiveModels?.lastUpdated ? new Date(analytics.predictiveModels.lastUpdated).toLocaleDateString() : 'Today'}
+                      {analytics.predictiveModels?.lastUpdated
+                        ? new Date(analytics.predictiveModels.lastUpdated).toLocaleDateString()
+                        : "Today"}
                     </p>
                   </div>
                 </div>
                 <div>
-                  <h4 className="font-semibold mb-2">Key Assumptions</h4>
-                  <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                  <h4 className="mb-2 font-semibold">Key Assumptions</h4>
+                  <ul className="text-muted-foreground list-inside list-disc space-y-1 text-sm">
                     <li>Stable political environment and policy continuity</li>
                     <li>Normal global economic conditions</li>
                     <li>No major external shocks or crises</li>

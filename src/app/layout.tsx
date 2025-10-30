@@ -21,19 +21,20 @@ import { ToastProvider } from "~/components/ui/toast";
 import { NotificationBadgeProvider } from "~/components/notifications/NotificationBadgeProvider";
 import { withBasePath } from "~/lib/base-path";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 // Check if Clerk is configured with valid keys
 const isClerkConfigured = Boolean(
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && 
-  process.env.CLERK_SECRET_KEY &&
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith('pk_') &&
-  process.env.CLERK_SECRET_KEY.startsWith('sk_')
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
+    process.env.CLERK_SECRET_KEY &&
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY.startsWith("pk_") &&
+    process.env.CLERK_SECRET_KEY.startsWith("sk_")
 );
 
 export const metadata: Metadata = {
   title: "IxStats - Nation Simulation Platform",
-  description: "Build your country from the ground up. Design government systems, shape culture and identity, manage diplomacy, and watch your nation evolve",
+  description:
+    "Build your country from the ground up. Design government systems, shape culture and identity, manage diplomacy, and watch your nation evolve",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
@@ -42,12 +43,10 @@ const geist = Geist({
   variable: "--font-geist-sans",
 });
 
-const RootLayout = ({
-  children,
-}: Readonly<{ children: React.ReactNode }>) => {
-  const dashboardPath = withBasePath('/dashboard');
-  const signInPath = withBasePath('/sign-in');
-  const signUpPath = withBasePath('/sign-up');
+const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => {
+  const dashboardPath = withBasePath("/dashboard");
+  const signInPath = withBasePath("/sign-in");
+  const signUpPath = withBasePath("/sign-up");
 
   const AppContent = () => (
     <TRPCReactProvider>
@@ -58,13 +57,11 @@ const RootLayout = ({
               <NotificationBadgeProvider>
                 <GlobalNotificationSystem>
                   <WebGLErrorHandler />
-                  <div className="min-h-screen flex flex-col">
+                  <div className="flex min-h-screen flex-col">
                     <Navigation />
                     {/* <GlobalActivityMarquee /> */}
                     <SetupRedirect />
-                    <main className="flex-1">
-                      {children}
-                    </main>
+                    <main className="flex-1">{children}</main>
                   </div>
                 </GlobalNotificationSystem>
               </NotificationBadgeProvider>
@@ -99,6 +96,6 @@ const RootLayout = ({
       </body>
     </html>
   );
-}
+};
 
 export default RootLayout;

@@ -8,7 +8,7 @@ interface ErrorStatusProps {
 export const ErrorStatus: React.FC<ErrorStatusProps> = ({ error }) => {
   return (
     <>
-      <AlertCircle className="h-5 w-5 text-var(--color-error) flex-shrink-0" />
+      <AlertCircle className="text-var(--color-error) h-5 w-5 flex-shrink-0" />
       <p className="text-red-200">{error}</p>
     </>
   );

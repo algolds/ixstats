@@ -1,22 +1,22 @@
 "use client";
 
-import React, { useState } from 'react';
-import { useUser } from '~/context/auth-context';
-import { Save, Plus, Trash2, Settings, Bell, BellOff, AlertCircle } from 'lucide-react';
-import { Button } from '~/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card';
-import { Label } from '~/components/ui/label';
-import { Input } from '~/components/ui/input';
-import { Switch } from '~/components/ui/switch';
-import { Badge } from '~/components/ui/badge';
-import { Alert, AlertDescription } from '~/components/ui/alert';
+import React, { useState } from "react";
+import { useUser } from "~/context/auth-context";
+import { Save, Plus, Trash2, Settings, Bell, BellOff, AlertCircle } from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { Label } from "~/components/ui/label";
+import { Input } from "~/components/ui/input";
+import { Switch } from "~/components/ui/switch";
+import { Badge } from "~/components/ui/badge";
+import { Alert, AlertDescription } from "~/components/ui/alert";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '~/components/ui/select';
+} from "~/components/ui/select";
 import {
   Table,
   TableBody,
@@ -24,9 +24,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '~/components/ui/table';
-import { api } from '~/trpc/react';
-import { toast } from 'sonner';
+} from "~/components/ui/table";
+import { api } from "~/trpc/react";
+import { toast } from "sonner";
 
 interface AlertThresholdSettingsProps {
   countryId: string;
@@ -49,44 +49,44 @@ interface ThresholdFormData {
 }
 
 const ALERT_TYPES = [
-  { value: 'gdp', label: 'GDP Metrics' },
-  { value: 'population', label: 'Population Metrics' },
-  { value: 'security', label: 'Security Metrics' },
-  { value: 'diplomatic', label: 'Diplomatic Metrics' },
-  { value: 'economic', label: 'Economic Health' },
-  { value: 'governance', label: 'Governance' },
+  { value: "gdp", label: "GDP Metrics" },
+  { value: "population", label: "Population Metrics" },
+  { value: "security", label: "Security Metrics" },
+  { value: "diplomatic", label: "Diplomatic Metrics" },
+  { value: "economic", label: "Economic Health" },
+  { value: "governance", label: "Governance" },
 ];
 
 const METRIC_NAMES: Record<string, { value: string; label: string; unit?: string }[]> = {
   gdp: [
-    { value: 'gdpGrowthRate', label: 'GDP Growth Rate', unit: '%' },
-    { value: 'gdpPerCapita', label: 'GDP Per Capita', unit: '$' },
-    { value: 'totalGDP', label: 'Total GDP', unit: '$' },
+    { value: "gdpGrowthRate", label: "GDP Growth Rate", unit: "%" },
+    { value: "gdpPerCapita", label: "GDP Per Capita", unit: "$" },
+    { value: "totalGDP", label: "Total GDP", unit: "$" },
   ],
   population: [
-    { value: 'populationGrowthRate', label: 'Population Growth Rate', unit: '%' },
-    { value: 'totalPopulation', label: 'Total Population', unit: 'people' },
-    { value: 'populationWellbeing', label: 'Population Wellbeing', unit: '/100' },
+    { value: "populationGrowthRate", label: "Population Growth Rate", unit: "%" },
+    { value: "totalPopulation", label: "Total Population", unit: "people" },
+    { value: "populationWellbeing", label: "Population Wellbeing", unit: "/100" },
   ],
   security: [
-    { value: 'securityScore', label: 'Security Score', unit: '/100' },
-    { value: 'militaryStrength', label: 'Military Strength', unit: '/100' },
-    { value: 'threatLevel', label: 'Threat Level', unit: '/10' },
+    { value: "securityScore", label: "Security Score", unit: "/100" },
+    { value: "militaryStrength", label: "Military Strength", unit: "/100" },
+    { value: "threatLevel", label: "Threat Level", unit: "/10" },
   ],
   diplomatic: [
-    { value: 'diplomaticStanding', label: 'Diplomatic Standing', unit: '/100' },
-    { value: 'activeRelationships', label: 'Active Relationships', unit: 'count' },
-    { value: 'embassyCount', label: 'Embassy Count', unit: 'count' },
+    { value: "diplomaticStanding", label: "Diplomatic Standing", unit: "/100" },
+    { value: "activeRelationships", label: "Active Relationships", unit: "count" },
+    { value: "embassyCount", label: "Embassy Count", unit: "count" },
   ],
   economic: [
-    { value: 'economicVitality', label: 'Economic Vitality', unit: '/100' },
-    { value: 'tradeBalance', label: 'Trade Balance', unit: '$' },
-    { value: 'unemploymentRate', label: 'Unemployment Rate', unit: '%' },
+    { value: "economicVitality", label: "Economic Vitality", unit: "/100" },
+    { value: "tradeBalance", label: "Trade Balance", unit: "$" },
+    { value: "unemploymentRate", label: "Unemployment Rate", unit: "%" },
   ],
   governance: [
-    { value: 'governmentalEfficiency', label: 'Governmental Efficiency', unit: '/100' },
-    { value: 'activePolicies', label: 'Active Policies', unit: 'count' },
-    { value: 'publicApproval', label: 'Public Approval', unit: '%' },
+    { value: "governmentalEfficiency", label: "Governmental Efficiency", unit: "/100" },
+    { value: "activePolicies", label: "Active Policies", unit: "count" },
+    { value: "publicApproval", label: "Public Approval", unit: "%" },
   ],
 };
 
@@ -94,8 +94,8 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
   const { user } = useUser();
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState<ThresholdFormData>({
-    alertType: 'gdp',
-    metricName: 'gdpGrowthRate',
+    alertType: "gdp",
+    metricName: "gdpGrowthRate",
     notifyOnCritical: true,
     notifyOnHigh: true,
     notifyOnMedium: false,
@@ -103,15 +103,19 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
   });
 
   // Fetch existing thresholds
-  const { data: thresholdsData, isLoading, refetch } = api.unifiedIntelligence.getAlertThresholds.useQuery(
-    { countryId, userId: user?.id || '' },
+  const {
+    data: thresholdsData,
+    isLoading,
+    refetch,
+  } = api.unifiedIntelligence.getAlertThresholds.useQuery(
+    { countryId, userId: user?.id || "" },
     { enabled: !!user?.id }
   );
 
   // Mutations
   const updateMutation = api.unifiedIntelligence.updateAlertThreshold.useMutation({
     onSuccess: () => {
-      toast.success('Alert threshold saved successfully');
+      toast.success("Alert threshold saved successfully");
       void refetch();
       setIsCreating(false);
       resetForm();
@@ -123,7 +127,7 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
 
   const deleteMutation = api.unifiedIntelligence.deleteAlertThreshold.useMutation({
     onSuccess: () => {
-      toast.success('Alert threshold deleted successfully');
+      toast.success("Alert threshold deleted successfully");
       void refetch();
     },
     onError: (error) => {
@@ -133,8 +137,8 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
 
   const resetForm = () => {
     setFormData({
-      alertType: 'gdp',
-      metricName: 'gdpGrowthRate',
+      alertType: "gdp",
+      metricName: "gdpGrowthRate",
       notifyOnCritical: true,
       notifyOnHigh: true,
       notifyOnMedium: false,
@@ -144,7 +148,7 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
 
   const handleSave = () => {
     if (!user?.id) {
-      toast.error('User not authenticated');
+      toast.error("User not authenticated");
       return;
     }
 
@@ -179,18 +183,18 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
   };
 
   const availableMetrics = METRIC_NAMES[formData.alertType] || [];
-  const selectedMetric = availableMetrics.find(m => m.value === formData.metricName);
+  const selectedMetric = availableMetrics.find((m) => m.value === formData.metricName);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-bold flex items-center gap-2">
+          <h3 className="flex items-center gap-2 text-2xl font-bold">
             <Settings className="h-6 w-6 text-purple-600" />
             Alert Threshold Settings
           </h3>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-1 text-sm">
             Configure custom alert thresholds for automatic monitoring
           </p>
         </div>
@@ -206,8 +210,9 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
       <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Set custom thresholds for metrics to receive automatic alerts when values fall outside your defined ranges.
-          Configure separate thresholds for critical, high, and medium severity levels.
+          Set custom thresholds for metrics to receive automatic alerts when values fall outside
+          your defined ranges. Configure separate thresholds for critical, high, and medium severity
+          levels.
         </AlertDescription>
       </Alert>
 
@@ -215,16 +220,12 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
       {isCreating && (
         <Card className="border-2 border-purple-200 dark:border-purple-700">
           <CardHeader>
-            <CardTitle>
-              {formData.id ? 'Edit Threshold' : 'Create New Threshold'}
-            </CardTitle>
-            <CardDescription>
-              Define threshold ranges and notification preferences
-            </CardDescription>
+            <CardTitle>{formData.id ? "Edit Threshold" : "Create New Threshold"}</CardTitle>
+            <CardDescription>Define threshold ranges and notification preferences</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Alert Type & Metric Selection */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Alert Type</Label>
                 <Select
@@ -234,7 +235,7 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
                     setFormData({
                       ...formData,
                       alertType: value,
-                      metricName: newMetrics[0]?.value || ''
+                      metricName: newMetrics[0]?.value || "",
                     });
                   }}
                 >
@@ -242,7 +243,7 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {ALERT_TYPES.map(type => (
+                    {ALERT_TYPES.map((type) => (
                       <SelectItem key={type.value} value={type.value}>
                         {type.label}
                       </SelectItem>
@@ -261,7 +262,7 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableMetrics.map(metric => (
+                    {availableMetrics.map((metric) => (
                       <SelectItem key={metric.value} value={metric.value}>
                         {metric.label} {metric.unit && `(${metric.unit})`}
                       </SelectItem>
@@ -273,12 +274,14 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
 
             {/* Threshold Ranges */}
             <div className="space-y-4">
-              <h4 className="font-semibold text-sm">Threshold Ranges</h4>
+              <h4 className="text-sm font-semibold">Threshold Ranges</h4>
 
               {/* Critical Thresholds */}
-              <div className="space-y-2 p-4 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800">
-                <div className="flex items-center justify-between mb-2">
-                  <Label className="text-red-700 dark:text-red-400 font-semibold">Critical Level</Label>
+              <div className="space-y-2 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/20">
+                <div className="mb-2 flex items-center justify-between">
+                  <Label className="font-semibold text-red-700 dark:text-red-400">
+                    Critical Level
+                  </Label>
                   <Badge variant="destructive">Highest Priority</Badge>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -287,8 +290,13 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
                     <Input
                       type="number"
                       placeholder="Min value"
-                      value={formData.criticalMin ?? ''}
-                      onChange={(e) => setFormData({ ...formData, criticalMin: e.target.value ? parseFloat(e.target.value) : undefined })}
+                      value={formData.criticalMin ?? ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          criticalMin: e.target.value ? parseFloat(e.target.value) : undefined,
+                        })
+                      }
                     />
                   </div>
                   <div className="space-y-1">
@@ -296,17 +304,24 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
                     <Input
                       type="number"
                       placeholder="Max value"
-                      value={formData.criticalMax ?? ''}
-                      onChange={(e) => setFormData({ ...formData, criticalMax: e.target.value ? parseFloat(e.target.value) : undefined })}
+                      value={formData.criticalMax ?? ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          criticalMax: e.target.value ? parseFloat(e.target.value) : undefined,
+                        })
+                      }
                     />
                   </div>
                 </div>
               </div>
 
               {/* High Thresholds */}
-              <div className="space-y-2 p-4 rounded-lg bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-800">
-                <div className="flex items-center justify-between mb-2">
-                  <Label className="text-orange-700 dark:text-orange-400 font-semibold">High Level</Label>
+              <div className="space-y-2 rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-950/20">
+                <div className="mb-2 flex items-center justify-between">
+                  <Label className="font-semibold text-orange-700 dark:text-orange-400">
+                    High Level
+                  </Label>
                   <Badge className="bg-orange-500">High Priority</Badge>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -315,8 +330,13 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
                     <Input
                       type="number"
                       placeholder="Min value"
-                      value={formData.highMin ?? ''}
-                      onChange={(e) => setFormData({ ...formData, highMin: e.target.value ? parseFloat(e.target.value) : undefined })}
+                      value={formData.highMin ?? ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          highMin: e.target.value ? parseFloat(e.target.value) : undefined,
+                        })
+                      }
                     />
                   </div>
                   <div className="space-y-1">
@@ -324,17 +344,24 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
                     <Input
                       type="number"
                       placeholder="Max value"
-                      value={formData.highMax ?? ''}
-                      onChange={(e) => setFormData({ ...formData, highMax: e.target.value ? parseFloat(e.target.value) : undefined })}
+                      value={formData.highMax ?? ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          highMax: e.target.value ? parseFloat(e.target.value) : undefined,
+                        })
+                      }
                     />
                   </div>
                 </div>
               </div>
 
               {/* Medium Thresholds */}
-              <div className="space-y-2 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800">
-                <div className="flex items-center justify-between mb-2">
-                  <Label className="text-yellow-700 dark:text-yellow-400 font-semibold">Medium Level</Label>
+              <div className="space-y-2 rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-950/20">
+                <div className="mb-2 flex items-center justify-between">
+                  <Label className="font-semibold text-yellow-700 dark:text-yellow-400">
+                    Medium Level
+                  </Label>
                   <Badge className="bg-yellow-500">Medium Priority</Badge>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -343,8 +370,13 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
                     <Input
                       type="number"
                       placeholder="Min value"
-                      value={formData.mediumMin ?? ''}
-                      onChange={(e) => setFormData({ ...formData, mediumMin: e.target.value ? parseFloat(e.target.value) : undefined })}
+                      value={formData.mediumMin ?? ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          mediumMin: e.target.value ? parseFloat(e.target.value) : undefined,
+                        })
+                      }
                     />
                   </div>
                   <div className="space-y-1">
@@ -352,8 +384,13 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
                     <Input
                       type="number"
                       placeholder="Max value"
-                      value={formData.mediumMax ?? ''}
-                      onChange={(e) => setFormData({ ...formData, mediumMax: e.target.value ? parseFloat(e.target.value) : undefined })}
+                      value={formData.mediumMax ?? ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          mediumMax: e.target.value ? parseFloat(e.target.value) : undefined,
+                        })
+                      }
                     />
                   </div>
                 </div>
@@ -361,43 +398,51 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
             </div>
 
             {/* Notification Preferences */}
-            <div className="space-y-3 p-4 rounded-lg border">
-              <h4 className="font-semibold text-sm flex items-center gap-2">
+            <div className="space-y-3 rounded-lg border p-4">
+              <h4 className="flex items-center gap-2 text-sm font-semibold">
                 <Bell className="h-4 w-4" />
                 Notification Preferences
               </h4>
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className="flex items-center gap-2 cursor-pointer">
+                  <Label className="flex cursor-pointer items-center gap-2">
                     <span>Notify on Critical Alerts</span>
-                    <Badge variant="destructive" className="text-xs">Critical</Badge>
+                    <Badge variant="destructive" className="text-xs">
+                      Critical
+                    </Badge>
                   </Label>
                   <Switch
                     checked={formData.notifyOnCritical}
-                    onCheckedChange={(checked) => setFormData({ ...formData, notifyOnCritical: checked })}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, notifyOnCritical: checked })
+                    }
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label className="flex items-center gap-2 cursor-pointer">
+                  <Label className="flex cursor-pointer items-center gap-2">
                     <span>Notify on High Alerts</span>
                     <Badge className="bg-orange-500 text-xs">High</Badge>
                   </Label>
                   <Switch
                     checked={formData.notifyOnHigh}
-                    onCheckedChange={(checked) => setFormData({ ...formData, notifyOnHigh: checked })}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, notifyOnHigh: checked })
+                    }
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label className="flex items-center gap-2 cursor-pointer">
+                  <Label className="flex cursor-pointer items-center gap-2">
                     <span>Notify on Medium Alerts</span>
                     <Badge className="bg-yellow-500 text-xs">Medium</Badge>
                   </Label>
                   <Switch
                     checked={formData.notifyOnMedium}
-                    onCheckedChange={(checked) => setFormData({ ...formData, notifyOnMedium: checked })}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, notifyOnMedium: checked })
+                    }
                   />
                 </div>
               </div>
@@ -411,7 +456,7 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
                 className="flex-1 gap-2"
               >
                 <Save className="h-4 w-4" />
-                {updateMutation.isPending ? 'Saving...' : 'Save Threshold'}
+                {updateMutation.isPending ? "Saving..." : "Save Threshold"}
               </Button>
               <Button
                 variant="outline"
@@ -432,14 +477,15 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
         <CardHeader>
           <CardTitle>Active Thresholds</CardTitle>
           <CardDescription>
-            {thresholdsData?.total || 0} active threshold{(thresholdsData?.total || 0) !== 1 ? 's' : ''} configured
+            {thresholdsData?.total || 0} active threshold
+            {(thresholdsData?.total || 0) !== 1 ? "s" : ""} configured
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">Loading thresholds...</div>
+            <div className="text-muted-foreground py-8 text-center">Loading thresholds...</div>
           ) : !thresholdsData?.thresholds.length ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-muted-foreground py-8 text-center">
               No thresholds configured. Create one to get started.
             </div>
           ) : (
@@ -461,31 +507,40 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
                     <TableRow key={threshold.id}>
                       <TableCell>
                         <Badge variant="outline">
-                          {ALERT_TYPES.find(t => t.value === threshold.alertType)?.label || threshold.alertType}
+                          {ALERT_TYPES.find((t) => t.value === threshold.alertType)?.label ||
+                            threshold.alertType}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-medium">
-                        {threshold.metricName}
-                      </TableCell>
+                      <TableCell className="font-medium">{threshold.metricName}</TableCell>
                       <TableCell>
-                        <div className="text-xs space-y-1">
-                          {threshold.criticalMin !== null && <div>Min: {threshold.criticalMin}</div>}
-                          {threshold.criticalMax !== null && <div>Max: {threshold.criticalMax}</div>}
-                          {threshold.criticalMin === null && threshold.criticalMax === null && <span className="text-muted-foreground">-</span>}
+                        <div className="space-y-1 text-xs">
+                          {threshold.criticalMin !== null && (
+                            <div>Min: {threshold.criticalMin}</div>
+                          )}
+                          {threshold.criticalMax !== null && (
+                            <div>Max: {threshold.criticalMax}</div>
+                          )}
+                          {threshold.criticalMin === null && threshold.criticalMax === null && (
+                            <span className="text-muted-foreground">-</span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="text-xs space-y-1">
+                        <div className="space-y-1 text-xs">
                           {threshold.highMin !== null && <div>Min: {threshold.highMin}</div>}
                           {threshold.highMax !== null && <div>Max: {threshold.highMax}</div>}
-                          {threshold.highMin === null && threshold.highMax === null && <span className="text-muted-foreground">-</span>}
+                          {threshold.highMin === null && threshold.highMax === null && (
+                            <span className="text-muted-foreground">-</span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="text-xs space-y-1">
+                        <div className="space-y-1 text-xs">
                           {threshold.mediumMin !== null && <div>Min: {threshold.mediumMin}</div>}
                           {threshold.mediumMax !== null && <div>Max: {threshold.mediumMax}</div>}
-                          {threshold.mediumMin === null && threshold.mediumMax === null && <span className="text-muted-foreground">-</span>}
+                          {threshold.mediumMin === null && threshold.mediumMax === null && (
+                            <span className="text-muted-foreground">-</span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -493,18 +548,16 @@ export function AlertThresholdSettings({ countryId }: AlertThresholdSettingsProp
                           {threshold.notifyOnCritical && <Bell className="h-3 w-3 text-red-500" />}
                           {threshold.notifyOnHigh && <Bell className="h-3 w-3 text-orange-500" />}
                           {threshold.notifyOnMedium && <Bell className="h-3 w-3 text-yellow-500" />}
-                          {!threshold.notifyOnCritical && !threshold.notifyOnHigh && !threshold.notifyOnMedium && (
-                            <BellOff className="h-3 w-3 text-muted-foreground" />
-                          )}
+                          {!threshold.notifyOnCritical &&
+                            !threshold.notifyOnHigh &&
+                            !threshold.notifyOnMedium && (
+                              <BellOff className="text-muted-foreground h-3 w-3" />
+                            )}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(threshold)}
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => handleEdit(threshold)}>
                             Edit
                           </Button>
                           <Button

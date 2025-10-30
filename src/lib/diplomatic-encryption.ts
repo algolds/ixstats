@@ -20,43 +20,43 @@
  * @module DiplomaticEncryption
  */
 
-import { db } from '~/server/db';
-import { UserLogger } from './user-logger';
-import type { UserLogContext } from './user-logger';
-import { logger, LogCategory } from './logger';
+import { db } from "~/server/db";
+import { UserLogger } from "./user-logger";
+import type { UserLogContext } from "./user-logger";
+import { logger, LogCategory } from "./logger";
 
 // ============================================================================
 // TYPE DEFINITIONS
 // ============================================================================
 
-export type ClassificationLevel = 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL' | 'SECRET';
-export type EncryptionVersion = 'v1' | 'v2';
+export type ClassificationLevel = "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL" | "SECRET";
+export type EncryptionVersion = "v1" | "v2";
 
 export interface KeyPair {
-  publicKey: string;    // Base64-encoded public key
-  privateKey: string;   // Base64-encoded encrypted private key
-  keyId: string;        // Unique identifier for this key pair
+  publicKey: string; // Base64-encoded public key
+  privateKey: string; // Base64-encoded encrypted private key
+  keyId: string; // Unique identifier for this key pair
   version: EncryptionVersion;
   createdAt: Date;
-  expiresAt: Date;      // For key rotation support
+  expiresAt: Date; // For key rotation support
 }
 
 export type EncryptionKeyModel = KeyPair;
 
 export interface EncryptedMessage {
-  encryptedContent: string;      // Base64-encoded encrypted content
-  signature: string;             // Base64-encoded signature
+  encryptedContent: string; // Base64-encoded encrypted content
+  signature: string; // Base64-encoded signature
   encryptionVersion: EncryptionVersion;
-  iv: string;                    // Initialization vector for AES
-  encryptedKey: string;          // RSA-encrypted AES key
-  senderKeyId: string;           // ID of sender's key pair
-  timestamp: number;             // Unix timestamp
+  iv: string; // Initialization vector for AES
+  encryptedKey: string; // RSA-encrypted AES key
+  senderKeyId: string; // ID of sender's key pair
+  timestamp: number; // Unix timestamp
   classification: ClassificationLevel;
 }
 
 export interface DecryptedMessage {
   content: string;
-  verified: boolean;             // Signature verification result
+  verified: boolean; // Signature verification result
   senderCountryId: string;
   timestamp: number;
   classification: ClassificationLevel;
@@ -65,7 +65,14 @@ export interface DecryptedMessage {
 export interface EncryptionAuditLog {
   id: string;
   countryId: string;
-  operation: 'GENERATE_KEY' | 'ENCRYPT' | 'DECRYPT' | 'SIGN' | 'VERIFY' | 'ROTATE_KEY' | 'REVOKE_KEY';
+  operation:
+    | "GENERATE_KEY"
+    | "ENCRYPT"
+    | "DECRYPT"
+    | "SIGN"
+    | "VERIFY"
+    | "ROTATE_KEY"
+    | "REVOKE_KEY";
   classification: ClassificationLevel;
   success: boolean;
   errorMessage?: string;
@@ -83,26 +90,26 @@ class CryptoUtils {
    * Get crypto API (browser SubtleCrypto or Node.js crypto)
    */
   private static getCrypto(): SubtleCrypto {
-    if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
+    if (typeof window !== "undefined" && window.crypto && window.crypto.subtle) {
       return window.crypto.subtle;
     }
     // Node.js environment
-    if (typeof global !== 'undefined') {
-      const { webcrypto } = require('crypto');
+    if (typeof global !== "undefined") {
+      const { webcrypto } = require("crypto");
       return webcrypto.subtle as SubtleCrypto;
     }
-    throw new Error('No crypto API available');
+    throw new Error("No crypto API available");
   }
 
   /**
    * Get random values (browser or Node.js)
    */
   private static getRandomValues(array: Uint8Array): Uint8Array {
-    if (typeof window !== 'undefined' && window.crypto) {
+    if (typeof window !== "undefined" && window.crypto) {
       return window.crypto.getRandomValues(array);
     }
     // Node.js environment
-    const { randomFillSync } = require('crypto');
+    const { randomFillSync } = require("crypto");
     return randomFillSync(array);
   }
 
@@ -113,13 +120,13 @@ class CryptoUtils {
     const crypto = this.getCrypto();
     return await crypto.generateKey(
       {
-        name: 'RSA-OAEP',
+        name: "RSA-OAEP",
         modulusLength: 2048,
         publicExponent: new Uint8Array([1, 0, 1]),
-        hash: 'SHA-256',
+        hash: "SHA-256",
       },
       true,
-      ['encrypt', 'decrypt']
+      ["encrypt", "decrypt"]
     );
   }
 
@@ -130,13 +137,13 @@ class CryptoUtils {
     const crypto = this.getCrypto();
     return await crypto.generateKey(
       {
-        name: 'RSA-PSS',
+        name: "RSA-PSS",
         modulusLength: 2048,
         publicExponent: new Uint8Array([1, 0, 1]),
-        hash: 'SHA-256',
+        hash: "SHA-256",
       },
       true,
-      ['sign', 'verify']
+      ["sign", "verify"]
     );
   }
 
@@ -147,18 +154,18 @@ class CryptoUtils {
     const crypto = this.getCrypto();
     return await crypto.generateKey(
       {
-        name: 'AES-GCM',
+        name: "AES-GCM",
         length: 256,
       },
       true,
-      ['encrypt', 'decrypt']
+      ["encrypt", "decrypt"]
     );
   }
 
   /**
    * Export key to base64 string
    */
-  static async exportKey(key: CryptoKey, format: 'spki' | 'pkcs8' | 'raw'): Promise<string> {
+  static async exportKey(key: CryptoKey, format: "spki" | "pkcs8" | "raw"): Promise<string> {
     const crypto = this.getCrypto();
     const exported = await crypto.exportKey(format, key);
     return this.arrayBufferToBase64(exported);
@@ -169,7 +176,7 @@ class CryptoUtils {
    */
   static async importKey(
     keyData: string,
-    format: 'spki' | 'pkcs8' | 'raw',
+    format: "spki" | "pkcs8" | "raw",
     algorithm: RsaHashedImportParams | AesKeyAlgorithm,
     extractable: boolean,
     keyUsages: KeyUsage[]
@@ -186,7 +193,7 @@ class CryptoUtils {
     const crypto = this.getCrypto();
     return await crypto.encrypt(
       {
-        name: 'RSA-OAEP',
+        name: "RSA-OAEP",
       },
       publicKey,
       data
@@ -200,7 +207,7 @@ class CryptoUtils {
     const crypto = this.getCrypto();
     return await crypto.decrypt(
       {
-        name: 'RSA-OAEP',
+        name: "RSA-OAEP",
       },
       privateKey,
       encryptedData
@@ -214,7 +221,7 @@ class CryptoUtils {
     const crypto = this.getCrypto();
     return await crypto.encrypt(
       {
-        name: 'AES-GCM',
+        name: "AES-GCM",
         iv: iv as BufferSource,
       },
       key,
@@ -225,11 +232,15 @@ class CryptoUtils {
   /**
    * Decrypt data with AES-GCM
    */
-  static async aesDecrypt(key: CryptoKey, encryptedData: ArrayBuffer, iv: Uint8Array): Promise<ArrayBuffer> {
+  static async aesDecrypt(
+    key: CryptoKey,
+    encryptedData: ArrayBuffer,
+    iv: Uint8Array
+  ): Promise<ArrayBuffer> {
     const crypto = this.getCrypto();
     return await crypto.decrypt(
       {
-        name: 'AES-GCM',
+        name: "AES-GCM",
         iv: iv as BufferSource,
       },
       key,
@@ -244,7 +255,7 @@ class CryptoUtils {
     const crypto = this.getCrypto();
     return await crypto.sign(
       {
-        name: 'RSA-PSS',
+        name: "RSA-PSS",
         saltLength: 32,
       },
       privateKey,
@@ -255,11 +266,15 @@ class CryptoUtils {
   /**
    * Verify signature with RSA-PSS
    */
-  static async verify(publicKey: CryptoKey, signature: ArrayBuffer, data: ArrayBuffer): Promise<boolean> {
+  static async verify(
+    publicKey: CryptoKey,
+    signature: ArrayBuffer,
+    data: ArrayBuffer
+  ): Promise<boolean> {
     const crypto = this.getCrypto();
     return await crypto.verify(
       {
-        name: 'RSA-PSS',
+        name: "RSA-PSS",
         saltLength: 32,
       },
       publicKey,
@@ -273,18 +288,21 @@ class CryptoUtils {
    */
   static arrayBufferToBase64(buffer: ArrayBuffer): string {
     const bytes = new Uint8Array(buffer);
-    let binary = '';
+    let binary = "";
     for (let i = 0; i < bytes.byteLength; i++) {
       binary += String.fromCharCode(bytes[i]!);
     }
-    return typeof btoa !== 'undefined' ? btoa(binary) : Buffer.from(binary, 'binary').toString('base64');
+    return typeof btoa !== "undefined"
+      ? btoa(binary)
+      : Buffer.from(binary, "binary").toString("base64");
   }
 
   /**
    * Convert base64 to ArrayBuffer
    */
   static base64ToArrayBuffer(base64: string): ArrayBuffer {
-    const binary = typeof atob !== 'undefined' ? atob(base64) : Buffer.from(base64, 'base64').toString('binary');
+    const binary =
+      typeof atob !== "undefined" ? atob(base64) : Buffer.from(base64, "base64").toString("binary");
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) {
       bytes[i] = binary.charCodeAt(i);
@@ -325,25 +343,22 @@ class CryptoUtils {
     const passwordBuffer = this.stringToArrayBuffer(masterPassword);
     const salt = this.generateIV();
 
-    const keyMaterial = await crypto.importKey(
-      'raw',
-      passwordBuffer,
-      'PBKDF2',
-      false,
-      ['deriveBits', 'deriveKey']
-    );
+    const keyMaterial = await crypto.importKey("raw", passwordBuffer, "PBKDF2", false, [
+      "deriveBits",
+      "deriveKey",
+    ]);
 
     const derivedKey = await crypto.deriveKey(
       {
-        name: 'PBKDF2',
+        name: "PBKDF2",
         salt: salt as BufferSource,
         iterations: 100000,
-        hash: 'SHA-256',
+        hash: "SHA-256",
       },
       keyMaterial,
-      { name: 'AES-GCM', length: 256 },
+      { name: "AES-GCM", length: 256 },
       true,
-      ['encrypt', 'decrypt']
+      ["encrypt", "decrypt"]
     );
 
     const iv = this.generateIV();
@@ -362,7 +377,10 @@ class CryptoUtils {
   /**
    * Decrypt private key with master password
    */
-  static async decryptPrivateKey(encryptedPrivateKey: string, masterPassword: string): Promise<string> {
+  static async decryptPrivateKey(
+    encryptedPrivateKey: string,
+    masterPassword: string
+  ): Promise<string> {
     const crypto = this.getCrypto();
     const combined = new Uint8Array(this.base64ToArrayBuffer(encryptedPrivateKey));
 
@@ -372,25 +390,22 @@ class CryptoUtils {
 
     const passwordBuffer = this.stringToArrayBuffer(masterPassword);
 
-    const keyMaterial = await crypto.importKey(
-      'raw',
-      passwordBuffer,
-      'PBKDF2',
-      false,
-      ['deriveBits', 'deriveKey']
-    );
+    const keyMaterial = await crypto.importKey("raw", passwordBuffer, "PBKDF2", false, [
+      "deriveBits",
+      "deriveKey",
+    ]);
 
     const derivedKey = await crypto.deriveKey(
       {
-        name: 'PBKDF2',
+        name: "PBKDF2",
         salt,
         iterations: 100000,
-        hash: 'SHA-256',
+        hash: "SHA-256",
       },
       keyMaterial,
-      { name: 'AES-GCM', length: 256 },
+      { name: "AES-GCM", length: 256 },
       true,
-      ['encrypt', 'decrypt']
+      ["encrypt", "decrypt"]
     );
 
     const decryptedBuffer = await this.aesDecrypt(derivedKey, encryptedData.buffer, iv);
@@ -403,9 +418,10 @@ class CryptoUtils {
 // ============================================================================
 
 export class DiplomaticEncryptionService {
-  private static readonly CURRENT_VERSION: EncryptionVersion = 'v1';
+  private static readonly CURRENT_VERSION: EncryptionVersion = "v1";
   private static readonly KEY_EXPIRY_DAYS = 365; // Keys expire after 1 year
-  private static readonly MASTER_PASSWORD = process.env.ENCRYPTION_MASTER_PASSWORD || 'default-master-password-change-in-production';
+  private static readonly MASTER_PASSWORD =
+    process.env.ENCRYPTION_MASTER_PASSWORD || "default-master-password-change-in-production";
 
   /**
    * Generate RSA key pair for a country
@@ -414,10 +430,7 @@ export class DiplomaticEncryptionService {
    * @param userContext - User context for audit logging
    * @returns KeyPair with public and encrypted private keys
    */
-  static async generateKeyPair(
-    countryId: string,
-    userContext?: UserLogContext
-  ): Promise<KeyPair> {
+  static async generateKeyPair(countryId: string, userContext?: UserLogContext): Promise<KeyPair> {
     const startTime = Date.now();
 
     try {
@@ -427,28 +440,36 @@ export class DiplomaticEncryptionService {
       const existingKey = await db.encryptionKey.findFirst({
         where: {
           countryId,
-          status: 'ACTIVE',
+          status: "ACTIVE",
           expiresAt: { gt: new Date() },
         },
       });
 
       if (existingKey) {
-        throw new Error(`Country ${countryId} already has an active key pair. Revoke existing keys before generating new ones.`);
+        throw new Error(
+          `Country ${countryId} already has an active key pair. Revoke existing keys before generating new ones.`
+        );
       }
 
       // Generate encryption key pair
       const encryptionKeyPair = await CryptoUtils.generateRSAKeyPair();
-      const publicKey = await CryptoUtils.exportKey(encryptionKeyPair.publicKey, 'spki');
-      const privateKey = await CryptoUtils.exportKey(encryptionKeyPair.privateKey, 'pkcs8');
+      const publicKey = await CryptoUtils.exportKey(encryptionKeyPair.publicKey, "spki");
+      const privateKey = await CryptoUtils.exportKey(encryptionKeyPair.privateKey, "pkcs8");
 
       // Generate signing key pair
       const signingKeyPair = await CryptoUtils.generateSigningKeyPair();
-      const signingPublicKey = await CryptoUtils.exportKey(signingKeyPair.publicKey, 'spki');
-      const signingPrivateKey = await CryptoUtils.exportKey(signingKeyPair.privateKey, 'pkcs8');
+      const signingPublicKey = await CryptoUtils.exportKey(signingKeyPair.publicKey, "spki");
+      const signingPrivateKey = await CryptoUtils.exportKey(signingKeyPair.privateKey, "pkcs8");
 
       // Encrypt private keys with master password
-      const encryptedPrivateKey = await CryptoUtils.encryptPrivateKey(privateKey, this.MASTER_PASSWORD);
-      const encryptedSigningPrivateKey = await CryptoUtils.encryptPrivateKey(signingPrivateKey, this.MASTER_PASSWORD);
+      const encryptedPrivateKey = await CryptoUtils.encryptPrivateKey(
+        privateKey,
+        this.MASTER_PASSWORD
+      );
+      const encryptedSigningPrivateKey = await CryptoUtils.encryptPrivateKey(
+        signingPrivateKey,
+        this.MASTER_PASSWORD
+      );
 
       const keyId = `key_${countryId}_${Date.now()}`;
       const expiresAt = new Date();
@@ -464,7 +485,7 @@ export class DiplomaticEncryptionService {
           signingPublicKey,
           encryptedSigningPrivateKey,
           version: this.CURRENT_VERSION,
-          status: 'ACTIVE',
+          status: "ACTIVE",
           expiresAt,
           createdAt: new Date(),
         },
@@ -473,8 +494,8 @@ export class DiplomaticEncryptionService {
       // Audit log
       await this.auditLog({
         countryId,
-        operation: 'GENERATE_KEY',
-        classification: 'CONFIDENTIAL',
+        operation: "GENERATE_KEY",
+        classification: "CONFIDENTIAL",
         success: true,
         metadata: {
           keyId,
@@ -488,22 +509,26 @@ export class DiplomaticEncryptionService {
       // User activity log
       if (userContext) {
         await UserLogger.logDiplomaticAction(
-          userContext, 
-          'GENERATE_ENCRYPTION_KEYS',
+          userContext,
+          "GENERATE_ENCRYPTION_KEYS",
           `Generated encryption key pair for country ${countryId}`,
           countryId,
           {
-            action: 'GENERATE_ENCRYPTION_KEYS',
-            severity: 'HIGH',
-            targetResource: 'EncryptionKey',
-          targetId: keyId,
-          success: true,
-          duration: Date.now() - startTime,
-          metadata: { keyId, version: this.CURRENT_VERSION },
-        });
+            action: "GENERATE_ENCRYPTION_KEYS",
+            severity: "HIGH",
+            targetResource: "EncryptionKey",
+            targetId: keyId,
+            success: true,
+            duration: Date.now() - startTime,
+            metadata: { keyId, version: this.CURRENT_VERSION },
+          }
+        );
       }
 
-      logger.info(LogCategory.SECURITY, `Successfully generated key pair for country ${countryId}: ${keyId}`);
+      logger.info(
+        LogCategory.SECURITY,
+        `Successfully generated key pair for country ${countryId}: ${keyId}`
+      );
 
       return {
         publicKey,
@@ -514,14 +539,17 @@ export class DiplomaticEncryptionService {
         expiresAt,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.error(LogCategory.SECURITY, `Failed to generate key pair for country ${countryId}: ${errorMessage}`);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      logger.error(
+        LogCategory.SECURITY,
+        `Failed to generate key pair for country ${countryId}: ${errorMessage}`
+      );
 
       // Audit log failure
       await this.auditLog({
         countryId,
-        operation: 'GENERATE_KEY',
-        classification: 'CONFIDENTIAL',
+        operation: "GENERATE_KEY",
+        classification: "CONFIDENTIAL",
         success: false,
         errorMessage,
         metadata: { durationMs: Date.now() - startTime },
@@ -546,13 +574,16 @@ export class DiplomaticEncryptionService {
     message: string,
     recipientCountryId: string,
     senderCountryId: string,
-    classification: ClassificationLevel = 'RESTRICTED',
+    classification: ClassificationLevel = "RESTRICTED",
     userContext?: UserLogContext
   ): Promise<EncryptedMessage> {
     const startTime = Date.now();
 
     try {
-      logger.info(LogCategory.SECURITY, `Encrypting message from ${senderCountryId} to ${recipientCountryId} [${classification}]`);
+      logger.info(
+        LogCategory.SECURITY,
+        `Encrypting message from ${senderCountryId} to ${recipientCountryId} [${classification}]`
+      );
 
       // Get recipient's public key
       const recipientKey = await this.getCountryPublicKey(recipientCountryId);
@@ -564,7 +595,7 @@ export class DiplomaticEncryptionService {
       const senderKey = await db.encryptionKey.findFirst({
         where: {
           countryId: senderCountryId,
-          status: 'ACTIVE',
+          status: "ACTIVE",
           expiresAt: { gt: new Date() },
         },
       });
@@ -582,15 +613,15 @@ export class DiplomaticEncryptionService {
       const encryptedMessageBuffer = await CryptoUtils.aesEncrypt(aesKey, messageBuffer, iv);
 
       // Export AES key and encrypt it with recipient's RSA public key
-      const aesKeyRaw = await CryptoUtils.exportKey(aesKey, 'raw');
+      const aesKeyRaw = await CryptoUtils.exportKey(aesKey, "raw");
       const aesKeyBuffer = CryptoUtils.base64ToArrayBuffer(aesKeyRaw);
 
       const recipientPublicKeyCrypto = await CryptoUtils.importKey(
         recipientKey.publicKey,
-        'spki',
-        { name: 'RSA-OAEP', hash: 'SHA-256' },
+        "spki",
+        { name: "RSA-OAEP", hash: "SHA-256" },
         true,
-        ['encrypt']
+        ["encrypt"]
       );
 
       const encryptedAESKey = await CryptoUtils.rsaEncrypt(recipientPublicKeyCrypto, aesKeyBuffer);
@@ -603,10 +634,10 @@ export class DiplomaticEncryptionService {
 
       const signingPrivateKeyCrypto = await CryptoUtils.importKey(
         decryptedSigningKey,
-        'pkcs8',
-        { name: 'RSA-PSS', hash: 'SHA-256' },
+        "pkcs8",
+        { name: "RSA-PSS", hash: "SHA-256" },
         true,
-        ['sign']
+        ["sign"]
       );
 
       const signature = await CryptoUtils.sign(signingPrivateKeyCrypto, messageBuffer);
@@ -625,7 +656,7 @@ export class DiplomaticEncryptionService {
       // Audit log
       await this.auditLog({
         countryId: senderCountryId,
-        operation: 'ENCRYPT',
+        operation: "ENCRYPT",
         classification,
         success: true,
         metadata: {
@@ -638,16 +669,19 @@ export class DiplomaticEncryptionService {
         userId: userContext?.userId,
       });
 
-      logger.info(LogCategory.SECURITY, `Successfully encrypted message from ${senderCountryId} to ${recipientCountryId}`);
+      logger.info(
+        LogCategory.SECURITY,
+        `Successfully encrypted message from ${senderCountryId} to ${recipientCountryId}`
+      );
 
       return encryptedMessage;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       logger.error(LogCategory.SECURITY, `Failed to encrypt message: ${errorMessage}`);
 
       await this.auditLog({
         countryId: senderCountryId,
-        operation: 'ENCRYPT',
+        operation: "ENCRYPT",
         classification,
         success: false,
         errorMessage,
@@ -678,13 +712,16 @@ export class DiplomaticEncryptionService {
     const startTime = Date.now();
 
     try {
-      logger.info(LogCategory.SECURITY, `Decrypting message for ${recipientCountryId} [${encryptedMessage.classification}]`);
+      logger.info(
+        LogCategory.SECURITY,
+        `Decrypting message for ${recipientCountryId} [${encryptedMessage.classification}]`
+      );
 
       // Get recipient's private key
       const recipientKey = await db.encryptionKey.findFirst({
         where: {
           countryId: recipientCountryId,
-          status: 'ACTIVE',
+          status: "ACTIVE",
           expiresAt: { gt: new Date() },
         },
       });
@@ -710,10 +747,10 @@ export class DiplomaticEncryptionService {
 
       const privateKeyCrypto = await CryptoUtils.importKey(
         decryptedPrivateKey,
-        'pkcs8',
-        { name: 'RSA-OAEP', hash: 'SHA-256' },
+        "pkcs8",
+        { name: "RSA-OAEP", hash: "SHA-256" },
         true,
-        ['decrypt']
+        ["decrypt"]
       );
 
       // Decrypt AES key with RSA private key
@@ -722,35 +759,41 @@ export class DiplomaticEncryptionService {
 
       const aesKey = await CryptoUtils.importKey(
         CryptoUtils.arrayBufferToBase64(aesKeyBuffer),
-        'raw',
-        { name: 'AES-GCM', length: 256 },
+        "raw",
+        { name: "AES-GCM", length: 256 },
         true,
-        ['decrypt']
+        ["decrypt"]
       );
 
       // Decrypt message content with AES
       const iv = new Uint8Array(CryptoUtils.base64ToArrayBuffer(encryptedMessage.iv));
-      const encryptedContentBuffer = CryptoUtils.base64ToArrayBuffer(encryptedMessage.encryptedContent);
+      const encryptedContentBuffer = CryptoUtils.base64ToArrayBuffer(
+        encryptedMessage.encryptedContent
+      );
       const decryptedBuffer = await CryptoUtils.aesDecrypt(aesKey, encryptedContentBuffer, iv);
       const content = CryptoUtils.arrayBufferToString(decryptedBuffer);
 
       // Verify signature
       const signingPublicKeyCrypto = await CryptoUtils.importKey(
         senderKey.signingPublicKey,
-        'spki',
-        { name: 'RSA-PSS', hash: 'SHA-256' },
+        "spki",
+        { name: "RSA-PSS", hash: "SHA-256" },
         true,
-        ['verify']
+        ["verify"]
       );
 
       const signatureBuffer = CryptoUtils.base64ToArrayBuffer(encryptedMessage.signature);
       const messageBuffer = CryptoUtils.stringToArrayBuffer(content);
-      const verified = await CryptoUtils.verify(signingPublicKeyCrypto, signatureBuffer, messageBuffer);
+      const verified = await CryptoUtils.verify(
+        signingPublicKeyCrypto,
+        signatureBuffer,
+        messageBuffer
+      );
 
       // Audit log
       await this.auditLog({
         countryId: recipientCountryId,
-        operation: 'DECRYPT',
+        operation: "DECRYPT",
         classification: encryptedMessage.classification,
         success: true,
         metadata: {
@@ -764,10 +807,16 @@ export class DiplomaticEncryptionService {
       });
 
       if (!verified) {
-        logger.warn(LogCategory.SECURITY, `Signature verification failed for message to ${recipientCountryId} from ${senderKey.countryId}`);
+        logger.warn(
+          LogCategory.SECURITY,
+          `Signature verification failed for message to ${recipientCountryId} from ${senderKey.countryId}`
+        );
       }
 
-      logger.info(LogCategory.SECURITY, `Successfully decrypted message for ${recipientCountryId} (verified: ${verified})`);
+      logger.info(
+        LogCategory.SECURITY,
+        `Successfully decrypted message for ${recipientCountryId} (verified: ${verified})`
+      );
 
       return {
         content,
@@ -777,12 +826,12 @@ export class DiplomaticEncryptionService {
         classification: encryptedMessage.classification,
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       logger.error(LogCategory.SECURITY, `Failed to decrypt message: ${errorMessage}`);
 
       await this.auditLog({
         countryId: recipientCountryId,
-        operation: 'DECRYPT',
+        operation: "DECRYPT",
         classification: encryptedMessage.classification,
         success: false,
         errorMessage,
@@ -818,7 +867,7 @@ export class DiplomaticEncryptionService {
       const senderKey = await db.encryptionKey.findFirst({
         where: {
           countryId: senderCountryId,
-          status: 'ACTIVE',
+          status: "ACTIVE",
           expiresAt: { gt: new Date() },
         },
       });
@@ -834,10 +883,10 @@ export class DiplomaticEncryptionService {
 
       const signingPrivateKeyCrypto = await CryptoUtils.importKey(
         decryptedSigningKey,
-        'pkcs8',
-        { name: 'RSA-PSS', hash: 'SHA-256' },
+        "pkcs8",
+        { name: "RSA-PSS", hash: "SHA-256" },
         true,
-        ['sign']
+        ["sign"]
       );
 
       const messageBuffer = CryptoUtils.stringToArrayBuffer(message);
@@ -845,8 +894,8 @@ export class DiplomaticEncryptionService {
 
       await this.auditLog({
         countryId: senderCountryId,
-        operation: 'SIGN',
-        classification: 'PUBLIC',
+        operation: "SIGN",
+        classification: "PUBLIC",
         success: true,
         metadata: {
           senderKeyId: senderKey.id,
@@ -858,13 +907,13 @@ export class DiplomaticEncryptionService {
 
       return CryptoUtils.arrayBufferToBase64(signature);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       logger.error(LogCategory.SECURITY, `Failed to sign message: ${errorMessage}`);
 
       await this.auditLog({
         countryId: senderCountryId,
-        operation: 'SIGN',
-        classification: 'PUBLIC',
+        operation: "SIGN",
+        classification: "PUBLIC",
         success: false,
         errorMessage,
         metadata: { durationMs: Date.now() - startTime },
@@ -902,20 +951,24 @@ export class DiplomaticEncryptionService {
 
       const signingPublicKeyCrypto = await CryptoUtils.importKey(
         senderKey.signingPublicKey,
-        'spki',
-        { name: 'RSA-PSS', hash: 'SHA-256' },
+        "spki",
+        { name: "RSA-PSS", hash: "SHA-256" },
         true,
-        ['verify']
+        ["verify"]
       );
 
       const signatureBuffer = CryptoUtils.base64ToArrayBuffer(signature);
       const messageBuffer = CryptoUtils.stringToArrayBuffer(message);
-      const verified = await CryptoUtils.verify(signingPublicKeyCrypto, signatureBuffer, messageBuffer);
+      const verified = await CryptoUtils.verify(
+        signingPublicKeyCrypto,
+        signatureBuffer,
+        messageBuffer
+      );
 
       await this.auditLog({
         countryId: senderCountryId,
-        operation: 'VERIFY',
-        classification: 'PUBLIC',
+        operation: "VERIFY",
+        classification: "PUBLIC",
         success: true,
         metadata: {
           senderKeyId: senderKey.id,
@@ -928,13 +981,13 @@ export class DiplomaticEncryptionService {
 
       return verified;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       logger.error(LogCategory.SECURITY, `Failed to verify signature: ${errorMessage}`);
 
       await this.auditLog({
         countryId: senderCountryId,
-        operation: 'VERIFY',
-        classification: 'PUBLIC',
+        operation: "VERIFY",
+        classification: "PUBLIC",
         success: false,
         errorMessage,
         metadata: { durationMs: Date.now() - startTime },
@@ -955,7 +1008,7 @@ export class DiplomaticEncryptionService {
     return await db.encryptionKey.findFirst({
       where: {
         countryId,
-        status: 'ACTIVE',
+        status: "ACTIVE",
         expiresAt: { gt: new Date() },
       },
     });
@@ -968,10 +1021,7 @@ export class DiplomaticEncryptionService {
    * @param userContext - User context for audit logging
    * @returns New KeyPair
    */
-  static async rotateKeys(
-    countryId: string,
-    userContext?: UserLogContext
-  ): Promise<KeyPair> {
+  static async rotateKeys(countryId: string, userContext?: UserLogContext): Promise<KeyPair> {
     const startTime = Date.now();
 
     try {
@@ -981,10 +1031,10 @@ export class DiplomaticEncryptionService {
       await db.encryptionKey.updateMany({
         where: {
           countryId,
-          status: 'ACTIVE',
+          status: "ACTIVE",
         },
         data: {
-          status: 'ROTATED',
+          status: "ROTATED",
         },
       });
 
@@ -993,8 +1043,8 @@ export class DiplomaticEncryptionService {
 
       await this.auditLog({
         countryId,
-        operation: 'ROTATE_KEY',
-        classification: 'CONFIDENTIAL',
+        operation: "ROTATE_KEY",
+        classification: "CONFIDENTIAL",
         success: true,
         metadata: {
           newKeyId: newKeyPair.keyId,
@@ -1007,13 +1057,13 @@ export class DiplomaticEncryptionService {
 
       return newKeyPair;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       logger.error(LogCategory.SECURITY, `Failed to rotate keys: ${errorMessage}`);
 
       await this.auditLog({
         countryId,
-        operation: 'ROTATE_KEY',
-        classification: 'CONFIDENTIAL',
+        operation: "ROTATE_KEY",
+        classification: "CONFIDENTIAL",
         success: false,
         errorMessage,
         metadata: { durationMs: Date.now() - startTime },
@@ -1039,22 +1089,25 @@ export class DiplomaticEncryptionService {
     const startTime = Date.now();
 
     try {
-      logger.info(LogCategory.SECURITY, `Revoking encryption keys for country: ${countryId} (${reason})`);
+      logger.info(
+        LogCategory.SECURITY,
+        `Revoking encryption keys for country: ${countryId} (${reason})`
+      );
 
       await db.encryptionKey.updateMany({
         where: {
           countryId,
-          status: { in: ['ACTIVE', 'ROTATED'] },
+          status: { in: ["ACTIVE", "ROTATED"] },
         },
         data: {
-          status: 'REVOKED',
+          status: "REVOKED",
         },
       });
 
       await this.auditLog({
         countryId,
-        operation: 'REVOKE_KEY',
-        classification: 'CONFIDENTIAL',
+        operation: "REVOKE_KEY",
+        classification: "CONFIDENTIAL",
         success: true,
         metadata: {
           reason,
@@ -1065,13 +1118,13 @@ export class DiplomaticEncryptionService {
 
       logger.info(LogCategory.SECURITY, `Successfully revoked keys for country ${countryId}`);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       logger.error(LogCategory.SECURITY, `Failed to revoke keys: ${errorMessage}`);
 
       await this.auditLog({
         countryId,
-        operation: 'REVOKE_KEY',
-        classification: 'CONFIDENTIAL',
+        operation: "REVOKE_KEY",
+        classification: "CONFIDENTIAL",
         success: false,
         errorMessage,
         metadata: { reason, durationMs: Date.now() - startTime },
@@ -1089,13 +1142,17 @@ export class DiplomaticEncryptionService {
    * @returns True if encryption is required
    */
   static requiresEncryption(classification: ClassificationLevel): boolean {
-    return classification === 'RESTRICTED' || classification === 'CONFIDENTIAL' || classification === 'SECRET';
+    return (
+      classification === "RESTRICTED" ||
+      classification === "CONFIDENTIAL" ||
+      classification === "SECRET"
+    );
   }
 
   /**
    * Audit log for encryption operations
    */
-  private static async auditLog(log: Omit<EncryptionAuditLog, 'id' | 'timestamp'>): Promise<void> {
+  private static async auditLog(log: Omit<EncryptionAuditLog, "id" | "timestamp">): Promise<void> {
     try {
       await db.encryptionAuditLog.create({
         data: {
@@ -1104,7 +1161,10 @@ export class DiplomaticEncryptionService {
         },
       });
     } catch (error) {
-      logger.error(LogCategory.SECURITY, `Failed to write encryption audit log: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      logger.error(
+        LogCategory.SECURITY,
+        `Failed to write encryption audit log: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
       // Don't throw - audit log failures shouldn't break encryption operations
     }
   }

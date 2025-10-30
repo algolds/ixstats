@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { api } from '~/trpc/react';
-import { buildTaxSyncPayload } from '../../utils/taxSync';
+import { useState, useEffect } from "react";
+import { api } from "~/trpc/react";
+import { buildTaxSyncPayload } from "../../utils/taxSync";
 
 export function useEconomySyncStatus(
   countryId: string | undefined,
@@ -16,7 +16,7 @@ export function useEconomySyncStatus(
   }>({
     isSyncing: false,
     lastSync: null,
-    syncError: null
+    syncError: null,
   });
 
   const syncGovernmentMutation = api.economics.syncEconomyWithGovernment.useMutation({
@@ -24,8 +24,8 @@ export function useEconomySyncStatus(
       // Silent success - toast shown elsewhere if needed
     },
     onError: (error: any) => {
-      console.warn('Government sync failed:', error);
-    }
+      console.warn("Government sync failed:", error);
+    },
   });
 
   const syncTaxMutation = api.economics.syncEconomyWithTax.useMutation({
@@ -33,8 +33,8 @@ export function useEconomySyncStatus(
       // Silent success - toast shown elsewhere if needed
     },
     onError: (error: any) => {
-      console.warn('Tax sync failed:', error);
-    }
+      console.warn("Tax sync failed:", error);
+    },
   });
 
   // Cross-builder synchronization with government
@@ -45,10 +45,10 @@ export function useEconomySyncStatus(
       try {
         await syncGovernmentMutation.mutateAsync({
           countryId,
-          governmentComponents: governmentComponents.map(comp => comp.toString())
+          governmentComponents: governmentComponents.map((comp) => comp.toString()),
         });
       } catch (error) {
-        console.warn('Government sync failed:', error);
+        console.warn("Government sync failed:", error);
       }
     };
 
@@ -64,10 +64,10 @@ export function useEconomySyncStatus(
         const taxPayload = buildTaxSyncPayload(taxSystemData);
         await syncTaxMutation.mutateAsync({
           countryId,
-          taxData: taxPayload
+          taxData: taxPayload,
         });
       } catch (error) {
-        console.warn('Tax sync failed:', error);
+        console.warn("Tax sync failed:", error);
       }
     };
 
@@ -76,24 +76,19 @@ export function useEconomySyncStatus(
 
   // Update sync status based on mutation states
   useEffect(() => {
-    const isAnyMutationLoading =
-      syncGovernmentMutation.isPending ||
-      syncTaxMutation.isPending;
+    const isAnyMutationLoading = syncGovernmentMutation.isPending || syncTaxMutation.isPending;
 
-    setSyncStatus(prev => ({
+    setSyncStatus((prev) => ({
       ...prev,
       isSyncing: isAnyMutationLoading,
       lastSync: isAnyMutationLoading ? prev.lastSync : new Date(),
-      syncError: null
+      syncError: null,
     }));
-  }, [
-    syncGovernmentMutation.isPending,
-    syncTaxMutation.isPending
-  ]);
+  }, [syncGovernmentMutation.isPending, syncTaxMutation.isPending]);
 
   return {
     syncStatus,
     syncGovernmentMutation,
-    syncTaxMutation
+    syncTaxMutation,
   };
 }

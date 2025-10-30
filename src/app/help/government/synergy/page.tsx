@@ -11,16 +11,25 @@ export default function ComponentSynergyArticle() {
       icon={Link2}
     >
       <Section title="Reading Effectiveness">
-        <ul className="list-disc pl-6 space-y-2">
-          <li>Effectiveness scores aggregate collection efficiency, compliance rate, administrative cost, and economic impact.</li>
-          <li>Synergies add modifiers when compatible components coexist; conflicts reduce scores or trigger compliance alerts.</li>
-          <li>Data comes from `AtomicGovernmentComponents` metadata and is surfaced in MyCountry analytics.</li>
+        <ul className="list-disc space-y-2 pl-6">
+          <li>
+            Effectiveness scores aggregate collection efficiency, compliance rate, administrative
+            cost, and economic impact.
+          </li>
+          <li>
+            Synergies add modifiers when compatible components coexist; conflicts reduce scores or
+            trigger compliance alerts.
+          </li>
+          <li>
+            Data comes from `AtomicGovernmentComponents` metadata and is surfaced in MyCountry
+            analytics.
+          </li>
         </ul>
       </Section>
 
       <Section title="Workflow">
         <InfoBox title="Evaluate Combos">
-          <ol className="list-decimal pl-6 space-y-1">
+          <ol className="list-decimal space-y-1 pl-6">
             <li>Select base components in the builder/editor.</li>
             <li>Review synergy/conflict badges in the selection panel.</li>
             <li>Check MyCountry analytics for resulting score changes and compliance notes.</li>
@@ -29,9 +38,15 @@ export default function ComponentSynergyArticle() {
       </Section>
 
       <WarningBox title="Keep in Mind">
-        <ul className="list-disc pl-6 space-y-1">
-          <li><Scale className="inline h-4 w-4" /> Balance effectiveness with narrative goals; dramatic conflicts can be intentional.</li>
-          <li><AlertTriangle className="inline h-4 w-4" /> Update `/help/government/components` when adding new synergies to document best practices.</li>
+        <ul className="list-disc space-y-1 pl-6">
+          <li>
+            <Scale className="inline h-4 w-4" /> Balance effectiveness with narrative goals;
+            dramatic conflicts can be intentional.
+          </li>
+          <li>
+            <AlertTriangle className="inline h-4 w-4" /> Update `/help/government/components` when
+            adding new synergies to document best practices.
+          </li>
         </ul>
       </WarningBox>
     </ArticleLayout>

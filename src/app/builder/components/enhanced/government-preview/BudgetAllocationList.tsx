@@ -1,13 +1,13 @@
 "use client";
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Progress } from '~/components/ui/progress';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
-import { PieChart, ChevronDown, ChevronRight } from 'lucide-react';
-import type { BudgetAllocation, GovernmentDepartment } from '~/types/government';
-import { formatCurrency } from '~/lib/format-utils';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Progress } from "~/components/ui/progress";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
+import { PieChart, ChevronDown, ChevronRight } from "lucide-react";
+import type { BudgetAllocation, GovernmentDepartment } from "~/types/government";
+import { formatCurrency } from "~/lib/format-utils";
 
 interface BudgetAllocationListProps {
   allocations: BudgetAllocation[];
@@ -38,7 +38,7 @@ export function BudgetAllocationList({
     <Collapsible open={isOpen} onOpenChange={onOpenChange}>
       <Card>
         <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+          <CardHeader className="hover:bg-muted/50 cursor-pointer transition-colors">
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <PieChart className="h-5 w-5" />
@@ -48,9 +48,9 @@ export function BudgetAllocationList({
                 </Badge>
               </div>
               {isOpen ? (
-                <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform" />
+                <ChevronDown className="text-muted-foreground h-5 w-5 transition-transform" />
               ) : (
-                <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform" />
+                <ChevronRight className="text-muted-foreground h-5 w-5 transition-transform" />
               )}
             </CardTitle>
           </CardHeader>
@@ -61,7 +61,7 @@ export function BudgetAllocationList({
               {allocations
                 .sort((a, b) => b.allocatedAmount - a.allocatedAmount)
                 .map((allocation) => {
-                  const department = departments.find(d => d.id === allocation.departmentId);
+                  const department = departments.find((d) => d.id === allocation.departmentId);
                   if (!department) return null;
 
                   const percentage = (allocation.allocatedAmount / totalBudget) * 100;
@@ -73,30 +73,34 @@ export function BudgetAllocationList({
                       open={isAllocOpen}
                       onOpenChange={() => onToggleAllocation(allocation.id)}
                     >
-                      <div className="border rounded-lg overflow-hidden">
+                      <div className="overflow-hidden rounded-lg border">
                         <CollapsibleTrigger asChild>
-                          <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 transition-colors">
+                          <div className="hover:bg-muted/50 flex cursor-pointer items-center justify-between p-3 transition-colors">
                             <div className="flex items-center gap-2">
                               <div
-                                className="w-3 h-3 rounded-full"
+                                className="h-3 w-3 rounded-full"
                                 style={{ backgroundColor: department.color }}
                               />
                               <span className="font-medium">{department.name}</span>
                               {isAllocOpen ? (
-                                <ChevronDown className="h-3 w-3 text-muted-foreground ml-1" />
+                                <ChevronDown className="text-muted-foreground ml-1 h-3 w-3" />
                               ) : (
-                                <ChevronRight className="h-3 w-3 text-muted-foreground ml-1" />
+                                <ChevronRight className="text-muted-foreground ml-1 h-3 w-3" />
                               )}
                             </div>
                             <div className="text-right">
-                              <span className="font-semibold">{formatCurrencyLocal(allocation.allocatedAmount)}</span>
-                              <span className="text-sm text-muted-foreground ml-2">({percentage.toFixed(1)}%)</span>
+                              <span className="font-semibold">
+                                {formatCurrencyLocal(allocation.allocatedAmount)}
+                              </span>
+                              <span className="text-muted-foreground ml-2 text-sm">
+                                ({percentage.toFixed(1)}%)
+                              </span>
                             </div>
                           </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
-                          <div className="px-3 pb-3 border-t bg-muted/20">
-                            <div className="pt-3 space-y-2">
+                          <div className="bg-muted/20 border-t px-3 pb-3">
+                            <div className="space-y-2 pt-3">
                               <Progress value={percentage} className="h-2" />
                               <div className="grid grid-cols-2 gap-3 text-sm">
                                 <div>
@@ -105,15 +109,19 @@ export function BudgetAllocationList({
                                 </div>
                                 <div>
                                   <span className="text-muted-foreground">Allocation ID:</span>
-                                  <p className="font-medium text-xs truncate">{allocation.id}</p>
+                                  <p className="truncate text-xs font-medium">{allocation.id}</p>
                                 </div>
                                 <div>
                                   <span className="text-muted-foreground">Percentage:</span>
-                                  <p className="font-medium">{allocation.allocatedPercent?.toFixed(2)}%</p>
+                                  <p className="font-medium">
+                                    {allocation.allocatedPercent?.toFixed(2)}%
+                                  </p>
                                 </div>
                                 <div>
                                   <span className="text-muted-foreground">Amount:</span>
-                                  <p className="font-medium">{formatCurrencyLocal(allocation.allocatedAmount)}</p>
+                                  <p className="font-medium">
+                                    {formatCurrencyLocal(allocation.allocatedAmount)}
+                                  </p>
                                 </div>
                               </div>
                             </div>

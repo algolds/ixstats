@@ -9,8 +9,8 @@
  * @module archetype-types
  */
 
-import { EconomicComponentType } from '~/lib/atomic-economic-data';
-import { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
+import { EconomicComponentType } from "~/lib/atomic-economic-data";
+import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
 
 /**
  * EconomicArchetype - Complete economic archetype definition
@@ -154,7 +154,7 @@ export interface EconomicArchetype {
   challenges: string[];
 
   /** Complexity level for implementation */
-  implementationComplexity: 'low' | 'medium' | 'high';
+  implementationComplexity: "low" | "medium" | "high";
 
   /** Cultural factors that influence this model */
   culturalFactors: string[];
@@ -268,20 +268,20 @@ export interface ArchetypeComparison {
  */
 export enum ArchetypeCategory {
   /** Modern 21st century economic models (e.g., Silicon Valley, Fintech Hub) */
-  MODERN = 'MODERN',
+  MODERN = "MODERN",
 
   /** Historical economic systems (e.g., Gold Standard, Mercantilism) */
-  HISTORICAL = 'HISTORICAL',
+  HISTORICAL = "HISTORICAL",
 
   /** Region-specific models (e.g., Nordic Model, Asian Tigers) */
-  REGIONAL = 'REGIONAL',
+  REGIONAL = "REGIONAL",
 
   /** Experimental or theoretical models being tested */
-  EXPERIMENTAL = 'EXPERIMENTAL',
+  EXPERIMENTAL = "EXPERIMENTAL",
 
   /** Emerging economy models (e.g., BRICs development path) */
-  EMERGING = 'EMERGING',
+  EMERGING = "EMERGING",
 
   /** Traditional economic structures (e.g., Agricultural, Resource-based) */
-  TRADITIONAL = 'TRADITIONAL'
+  TRADITIONAL = "TRADITIONAL",
 }

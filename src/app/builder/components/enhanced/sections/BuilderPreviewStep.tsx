@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
-import { Progress } from '~/components/ui/progress';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/components/ui/collapsible';
+import React, { useState, useMemo } from "react";
+import { motion } from "framer-motion";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Progress } from "~/components/ui/progress";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import {
   Flag,
   Globe,
@@ -36,21 +36,27 @@ import {
   Wrench,
   Home,
   Car,
-  UtensilsCrossed
-} from 'lucide-react';
-import { useBuilderContext } from '../context/BuilderStateContext';
-import { formatCurrency } from '~/lib/format-utils';
-import { cn } from '~/lib/utils';
-import { UnifiedCountryFlag } from '~/components/UnifiedCountryFlag';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '~/components/ui/dialog';
-import type { TaxBuilderState } from '~/hooks/useTaxBuilderState';
+  UtensilsCrossed,
+} from "lucide-react";
+import { useBuilderContext } from "../context/BuilderStateContext";
+import { formatCurrency } from "~/lib/format-utils";
+import { cn } from "~/lib/utils";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
+import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 
 // Import government preview components
-import { StructureOverview } from '../government-preview/StructureOverview';
-import { ComponentsList } from '../government-preview/ComponentsList';
-import { DepartmentsList } from '../government-preview/DepartmentsList';
-import { BudgetAllocationList } from '../government-preview/BudgetAllocationList';
-import { RevenueSourcesList } from '../government-preview/RevenueSourcesList';
+import { StructureOverview } from "../government-preview/StructureOverview";
+import { ComponentsList } from "../government-preview/ComponentsList";
+import { DepartmentsList } from "../government-preview/DepartmentsList";
+import { BudgetAllocationList } from "../government-preview/BudgetAllocationList";
+import { RevenueSourcesList } from "../government-preview/RevenueSourcesList";
 
 interface SectionState {
   nationalIdentity: boolean;
@@ -62,14 +68,14 @@ interface SectionState {
 
 /**
  * BuilderPreviewStep - Comprehensive preview of all builder configuration data
- * 
+ *
  * Displays a complete overview of the country being built with collapsible sections
  * for National Identity, Core Indicators, Government Configuration, Economy Configuration,
  * and Tax System. All data is live-wired from the builder state context.
  */
 export function BuilderPreviewStep() {
   const { builderState } = useBuilderContext();
-  
+
   // Collapsible state for main sections
   const [sectionStates, setSectionStates] = useState<SectionState>({
     nationalIdentity: true,
@@ -86,7 +92,7 @@ export function BuilderPreviewStep() {
 
   // Helper functions
   const toggleSection = (section: keyof SectionState) => {
-    setSectionStates(prev => ({ ...prev, [section]: !prev[section] }));
+    setSectionStates((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
   const expandAll = () => {
@@ -122,50 +128,63 @@ export function BuilderPreviewStep() {
   const taxSystemData = builderState.taxSystemData;
 
   // Format currency helper
-  const formatCurrencyLocal = (amount: number) => 
-    formatCurrency(amount, coreIndicators?.currencyExchangeRate ? 'USD' : 'USD');
+  const formatCurrencyLocal = (amount: number) =>
+    formatCurrency(amount, coreIndicators?.currencyExchangeRate ? "USD" : "USD");
 
   // Get government type icon
   const getGovernmentTypeIcon = (type: string) => {
     switch (type?.toLowerCase()) {
-      case 'democracy': return <Users className="h-5 w-5" />;
-      case 'republic': return <Landmark className="h-5 w-5" />;
-      case 'monarchy': return <Crown className="h-5 w-5" />;
-      case 'federation': return <Building2 className="h-5 w-5" />;
-      default: return <Building2 className="h-5 w-5" />;
+      case "democracy":
+        return <Users className="h-5 w-5" />;
+      case "republic":
+        return <Landmark className="h-5 w-5" />;
+      case "monarchy":
+        return <Crown className="h-5 w-5" />;
+      case "federation":
+        return <Building2 className="h-5 w-5" />;
+      default:
+        return <Building2 className="h-5 w-5" />;
     }
   };
 
   // Get department icon
   const getDepartmentIcon = (category: string) => {
     switch (category?.toLowerCase()) {
-      case 'executive': return <Crown className="h-4 w-4" />;
-      case 'legislative': return <Landmark className="h-4 w-4" />;
-      case 'judicial': return <Scale className="h-4 w-4" />;
-      case 'defense': return <Target className="h-4 w-4" />;
-      case 'finance': return <DollarSign className="h-4 w-4" />;
-      case 'health': return <Users className="h-4 w-4" />;
-      case 'education': return <Briefcase className="h-4 w-4" />;
-      default: return <Building2 className="h-4 w-4" />;
+      case "executive":
+        return <Crown className="h-4 w-4" />;
+      case "legislative":
+        return <Landmark className="h-4 w-4" />;
+      case "judicial":
+        return <Scale className="h-4 w-4" />;
+      case "defense":
+        return <Target className="h-4 w-4" />;
+      case "finance":
+        return <DollarSign className="h-4 w-4" />;
+      case "health":
+        return <Users className="h-4 w-4" />;
+      case "education":
+        return <Briefcase className="h-4 w-4" />;
+      default:
+        return <Building2 className="h-4 w-4" />;
     }
   };
 
   // Normalize government structure for preview components
   const normalizedGovernmentStructure = useMemo(() => {
     if (!governmentStructure) return null;
-    
+
     // If it's already a GovernmentStructure, return as is
-    if ('id' in governmentStructure && 'countryId' in governmentStructure) {
+    if ("id" in governmentStructure && "countryId" in governmentStructure) {
       return governmentStructure;
     }
-    
+
     // If it's a GovernmentBuilderState, convert it
     const builderState = governmentStructure as any;
     return {
-      id: 'preview',
-      countryId: 'preview',
-      governmentName: builderState.structure?.governmentName || 'Government',
-      governmentType: builderState.structure?.governmentType || 'Democracy',
+      id: "preview",
+      countryId: "preview",
+      governmentName: builderState.structure?.governmentName || "Government",
+      governmentType: builderState.structure?.governmentType || "Democracy",
       headOfState: builderState.structure?.headOfState,
       headOfGovernment: builderState.structure?.headOfGovernment,
       legislatureName: builderState.structure?.legislatureName,
@@ -173,12 +192,12 @@ export function BuilderPreviewStep() {
       judicialName: builderState.structure?.judicialName,
       totalBudget: builderState.structure?.totalBudget || 0,
       fiscalYear: builderState.structure?.fiscalYear || new Date().getFullYear().toString(),
-      budgetCurrency: builderState.structure?.budgetCurrency || 'USD',
+      budgetCurrency: builderState.structure?.budgetCurrency || "USD",
       createdAt: new Date(),
       updatedAt: new Date(),
       departments: (builderState.departments || []).map((dept: any, index: number) => ({
         id: index.toString(),
-        governmentStructureId: 'preview',
+        governmentStructureId: "preview",
         name: dept.name,
         shortName: dept.shortName,
         category: dept.category,
@@ -201,27 +220,29 @@ export function BuilderPreviewStep() {
         parentDepartment: undefined,
         subDepartments: [],
         budgetAllocations: [],
-        subBudgets: []
+        subBudgets: [],
       })),
-      budgetAllocations: (builderState.budgetAllocations || []).map((alloc: any, index: number) => ({
-        id: index.toString(),
-        governmentStructureId: 'preview',
-        departmentId: alloc.departmentId,
-        allocatedAmount: alloc.allocatedAmount,
-        spentAmount: 0,
-        encumberedAmount: 0,
-        availableAmount: alloc.allocatedAmount,
-        budgetStatus: 'In Use' as const,
-        budgetYear: alloc.budgetYear,
-        allocatedPercent: alloc.allocatedPercent,
-        lastReviewed: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        department: undefined as any
-      })),
+      budgetAllocations: (builderState.budgetAllocations || []).map(
+        (alloc: any, index: number) => ({
+          id: index.toString(),
+          governmentStructureId: "preview",
+          departmentId: alloc.departmentId,
+          allocatedAmount: alloc.allocatedAmount,
+          spentAmount: 0,
+          encumberedAmount: 0,
+          availableAmount: alloc.allocatedAmount,
+          budgetStatus: "In Use" as const,
+          budgetYear: alloc.budgetYear,
+          allocatedPercent: alloc.allocatedPercent,
+          lastReviewed: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          department: undefined as any,
+        })
+      ),
       revenueSources: (builderState.revenueSources || []).map((source: any, index: number) => ({
         id: index.toString(),
-        governmentStructureId: 'preview',
+        governmentStructureId: "preview",
         name: source.name,
         category: source.category,
         description: source.description,
@@ -232,24 +253,24 @@ export function BuilderPreviewStep() {
         collectionMethod: source.collectionMethod,
         administeredBy: source.administeredBy,
         createdAt: new Date(),
-        updatedAt: new Date()
-      }))
+        updatedAt: new Date(),
+      })),
     };
   }, [governmentStructure]);
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <motion.div 
-        initial={{ opacity: 0, y: -10 }} 
-        animate={{ opacity: 1, y: 0 }} 
-        className="text-center space-y-4"
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-4 text-center"
       >
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 shadow-lg mb-4">
+        <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-green-500 to-green-600 shadow-lg">
           <Flag className="h-8 w-8 text-white" />
         </div>
         <h2 className="text-3xl font-bold">Review Your Nation</h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-muted-foreground mx-auto max-w-2xl">
           Review all your configurations before creating your nation
         </p>
       </motion.div>
@@ -258,11 +279,12 @@ export function BuilderPreviewStep() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="bg-green-50 text-green-700">
-            <Eye className="h-3 w-3 mr-1" />
+            <Eye className="mr-1 h-3 w-3" />
             Preview Mode
           </Badge>
-          <span className="text-sm text-muted-foreground">
-            {Object.values(sectionStates).filter(Boolean).length} of {Object.keys(sectionStates).length} sections expanded
+          <span className="text-muted-foreground text-sm">
+            {Object.values(sectionStates).filter(Boolean).length} of{" "}
+            {Object.keys(sectionStates).length} sections expanded
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -288,28 +310,31 @@ export function BuilderPreviewStep() {
       </div>
 
       {/* 1. National Identity Section */}
-      <Collapsible open={sectionStates.nationalIdentity} onOpenChange={() => toggleSection('nationalIdentity')}>
+      <Collapsible
+        open={sectionStates.nationalIdentity}
+        onOpenChange={() => toggleSection("nationalIdentity")}
+      >
         <Card className="border-amber-200/50 bg-amber-50/30 backdrop-blur-sm">
           <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer hover:bg-amber-50/50 transition-colors">
+            <CardHeader className="cursor-pointer transition-colors hover:bg-amber-50/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-amber-500/10 rounded-lg">
+                  <div className="rounded-lg bg-amber-500/10 p-2">
                     <Flag className="h-5 w-5 text-amber-600" />
                   </div>
                   <div>
                     <CardTitle className="text-lg">National Identity</CardTitle>
-                    <p className="text-sm text-muted-foreground">Country symbols and identity</p>
+                    <p className="text-muted-foreground text-sm">Country symbols and identity</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="bg-amber-100 text-amber-700">
-                    {nationalIdentity ? 'Configured' : 'Not Set'}
+                    {nationalIdentity ? "Configured" : "Not Set"}
                   </Badge>
                   {sectionStates.nationalIdentity ? (
-                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    <ChevronUp className="text-muted-foreground h-4 w-4" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    <ChevronDown className="text-muted-foreground h-4 w-4" />
                   )}
                 </div>
               </div>
@@ -327,35 +352,37 @@ export function BuilderPreviewStep() {
                         <div className="group cursor-pointer">
                           <Dialog>
                             <DialogTrigger asChild>
-                              <div className="relative p-3 bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-lg border border-blue-400/30 group-hover:border-blue-400/50 transition-all duration-300 backdrop-blur-sm">
-                                <UnifiedCountryFlag 
+                              <div className="relative rounded-lg border border-blue-400/30 bg-gradient-to-br from-blue-500/10 to-blue-600/10 p-3 backdrop-blur-sm transition-all duration-300 group-hover:border-blue-400/50">
+                                <UnifiedCountryFlag
                                   countryName={nationalIdentity.countryName}
                                   size="lg"
-                                  className="w-24 h-16 rounded object-cover group-hover:scale-105 transition-transform duration-300"
+                                  className="h-16 w-24 rounded object-cover transition-transform duration-300 group-hover:scale-105"
                                 />
-                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div>
+                                <div className="absolute -top-1 -right-1 h-3 w-3 animate-pulse rounded-full bg-blue-400"></div>
                               </div>
                             </DialogTrigger>
                             <DialogContent className="max-w-2xl">
                               <DialogHeader>
-                                <DialogTitle>National Flag - {nationalIdentity.countryName}</DialogTitle>
+                                <DialogTitle>
+                                  National Flag - {nationalIdentity.countryName}
+                                </DialogTitle>
                               </DialogHeader>
                               <div className="flex justify-center p-4">
-                                <UnifiedCountryFlag 
+                                <UnifiedCountryFlag
                                   countryName={nationalIdentity.countryName}
                                   size="xl"
-                                  className="max-w-full max-h-96 object-contain rounded-lg"
+                                  className="max-h-96 max-w-full rounded-lg object-contain"
                                 />
                               </div>
                             </DialogContent>
                           </Dialog>
                         </div>
                       ) : (
-                        <div className="w-24 h-16 bg-gray-100 rounded flex items-center justify-center border">
+                        <div className="flex h-16 w-24 items-center justify-center rounded border bg-gray-100">
                           <Flag className="h-8 w-8 text-gray-400" />
                         </div>
                       )}
-                      <div className="text-xs font-medium text-blue-400 mt-2">National Flag</div>
+                      <div className="mt-2 text-xs font-medium text-blue-400">National Flag</div>
                     </div>
 
                     {/* Coat of Arms */}
@@ -364,75 +391,86 @@ export function BuilderPreviewStep() {
                         <div className="group cursor-pointer">
                           <Dialog>
                             <DialogTrigger asChild>
-                              <div className="relative p-3 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-lg border border-amber-400/30 group-hover:border-amber-400/50 transition-all duration-300 backdrop-blur-sm">
+                              <div className="relative rounded-lg border border-amber-400/30 bg-gradient-to-br from-amber-500/10 to-orange-500/10 p-3 backdrop-blur-sm transition-all duration-300 group-hover:border-amber-400/50">
                                 <img
                                   src={economicInputs.coatOfArmsUrl}
                                   alt="Coat of Arms"
-                                  className="w-16 h-16 rounded object-cover group-hover:scale-105 transition-transform duration-300"
-                                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                  className="h-16 w-16 rounded object-cover transition-transform duration-300 group-hover:scale-105"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = "none";
+                                  }}
                                 />
-                                <div className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full animate-pulse"></div>
+                                <div className="absolute -top-1 -right-1 h-3 w-3 animate-pulse rounded-full bg-amber-400"></div>
                               </div>
                             </DialogTrigger>
                             <DialogContent className="max-w-2xl">
                               <DialogHeader>
-                                <DialogTitle>Coat of Arms - {nationalIdentity.countryName}</DialogTitle>
+                                <DialogTitle>
+                                  Coat of Arms - {nationalIdentity.countryName}
+                                </DialogTitle>
                               </DialogHeader>
                               <div className="flex justify-center p-4">
                                 <img
                                   src={economicInputs.coatOfArmsUrl}
                                   alt="Coat of Arms"
-                                  className="max-w-full max-h-96 object-contain rounded-lg"
-                                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                  className="max-h-96 max-w-full rounded-lg object-contain"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = "none";
+                                  }}
                                 />
                               </div>
                             </DialogContent>
                           </Dialog>
                         </div>
                       ) : (
-                        <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center border">
+                        <div className="flex h-16 w-16 items-center justify-center rounded border bg-gray-100">
                           <Crown className="h-8 w-8 text-gray-400" />
                         </div>
                       )}
-                      <div className="text-xs font-medium text-amber-400 mt-2">Coat of Arms</div>
+                      <div className="mt-2 text-xs font-medium text-amber-400">Coat of Arms</div>
                     </div>
                   </div>
 
                   {/* Identity Details */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <div className="space-y-3">
-                      <h4 className="font-semibold text-sm text-amber-700 flex items-center gap-2">
+                      <h4 className="flex items-center gap-2 text-sm font-semibold text-amber-700">
                         <Globe className="h-4 w-4" />
                         Basic Information
                       </h4>
                       <div className="space-y-2 text-sm">
                         <div>
-                          <span className="font-medium">Country:</span> {nationalIdentity.countryName}
+                          <span className="font-medium">Country:</span>{" "}
+                          {nationalIdentity.countryName}
                         </div>
                         {nationalIdentity.officialName && (
                           <div>
-                            <span className="font-medium">Official:</span> {nationalIdentity.officialName}
+                            <span className="font-medium">Official:</span>{" "}
+                            {nationalIdentity.officialName}
                           </div>
                         )}
                         <div>
-                          <span className="font-medium">Capital:</span> {nationalIdentity.capitalCity}
+                          <span className="font-medium">Capital:</span>{" "}
+                          {nationalIdentity.capitalCity}
                         </div>
                         {nationalIdentity.largestCity && (
                           <div>
-                            <span className="font-medium">Largest City:</span> {nationalIdentity.largestCity}
+                            <span className="font-medium">Largest City:</span>{" "}
+                            {nationalIdentity.largestCity}
                           </div>
                         )}
                       </div>
                     </div>
 
                     <div className="space-y-3">
-                      <h4 className="font-semibold text-sm text-amber-700 flex items-center gap-2">
+                      <h4 className="flex items-center gap-2 text-sm font-semibold text-amber-700">
                         <Crown className="h-4 w-4" />
                         Government & Culture
                       </h4>
                       <div className="space-y-2 text-sm">
                         <div>
-                          <span className="font-medium">Government:</span> {nationalIdentity.governmentType}
+                          <span className="font-medium">Government:</span>{" "}
+                          {nationalIdentity.governmentType}
                         </div>
                         <div>
                           <span className="font-medium">Demonym:</span> {nationalIdentity.demonym}
@@ -442,23 +480,26 @@ export function BuilderPreviewStep() {
                         </div>
                         {nationalIdentity.nationalReligion && (
                           <div>
-                            <span className="font-medium">Religion:</span> {nationalIdentity.nationalReligion}
+                            <span className="font-medium">Religion:</span>{" "}
+                            {nationalIdentity.nationalReligion}
                           </div>
                         )}
                       </div>
                     </div>
 
                     <div className="space-y-3">
-                      <h4 className="font-semibold text-sm text-amber-700 flex items-center gap-2">
+                      <h4 className="flex items-center gap-2 text-sm font-semibold text-amber-700">
                         <Languages className="h-4 w-4" />
                         Language & Symbols
                       </h4>
                       <div className="space-y-2 text-sm">
                         <div>
-                          <span className="font-medium">Language:</span> {nationalIdentity.officialLanguages}
+                          <span className="font-medium">Language:</span>{" "}
+                          {nationalIdentity.officialLanguages}
                         </div>
                         <div>
-                          <span className="font-medium">Native:</span> {nationalIdentity.nationalLanguage}
+                          <span className="font-medium">Native:</span>{" "}
+                          {nationalIdentity.nationalLanguage}
                         </div>
                         {nationalIdentity.motto && (
                           <div>
@@ -467,7 +508,8 @@ export function BuilderPreviewStep() {
                         )}
                         {nationalIdentity.nationalAnthem && (
                           <div>
-                            <span className="font-medium">Anthem:</span> {nationalIdentity.nationalAnthem}
+                            <span className="font-medium">Anthem:</span>{" "}
+                            {nationalIdentity.nationalAnthem}
                           </div>
                         )}
                       </div>
@@ -476,25 +518,27 @@ export function BuilderPreviewStep() {
 
                   {/* Additional Details */}
                   {(nationalIdentity.nationalDay || nationalIdentity.callingCode) && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                    <div className="grid grid-cols-1 gap-4 border-t pt-4 md:grid-cols-2">
                       <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <Calendar className="text-muted-foreground h-4 w-4" />
                         <span className="text-sm">
-                          <span className="font-medium">National Day:</span> {nationalIdentity.nationalDay || 'Not set'}
+                          <span className="font-medium">National Day:</span>{" "}
+                          {nationalIdentity.nationalDay || "Not set"}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <Phone className="text-muted-foreground h-4 w-4" />
                         <span className="text-sm">
-                          <span className="font-medium">Calling Code:</span> {nationalIdentity.callingCode || 'Not set'}
+                          <span className="font-medium">Calling Code:</span>{" "}
+                          {nationalIdentity.callingCode || "Not set"}
                         </span>
                       </div>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <Flag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <div className="py-8 text-center">
+                  <Flag className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                   <p className="text-muted-foreground">No national identity configured</p>
                 </div>
               )}
@@ -504,28 +548,31 @@ export function BuilderPreviewStep() {
       </Collapsible>
 
       {/* 2. Core Economic Indicators Section */}
-      <Collapsible open={sectionStates.coreIndicators} onOpenChange={() => toggleSection('coreIndicators')}>
+      <Collapsible
+        open={sectionStates.coreIndicators}
+        onOpenChange={() => toggleSection("coreIndicators")}
+      >
         <Card className="border-blue-200/50 bg-blue-50/30 backdrop-blur-sm">
           <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer hover:bg-blue-50/50 transition-colors">
+            <CardHeader className="cursor-pointer transition-colors hover:bg-blue-50/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-500/10 rounded-lg">
+                  <div className="rounded-lg bg-blue-500/10 p-2">
                     <BarChart3 className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
                     <CardTitle className="text-lg">Core Economic Indicators</CardTitle>
-                    <p className="text-sm text-muted-foreground">Primary economic metrics</p>
+                    <p className="text-muted-foreground text-sm">Primary economic metrics</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="bg-blue-100 text-blue-700">
-                    {coreIndicators ? 'Configured' : 'Not Set'}
+                    {coreIndicators ? "Configured" : "Not Set"}
                   </Badge>
                   {sectionStates.coreIndicators ? (
-                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    <ChevronUp className="text-muted-foreground h-4 w-4" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    <ChevronDown className="text-muted-foreground h-4 w-4" />
                   )}
                 </div>
               </div>
@@ -534,58 +581,64 @@ export function BuilderPreviewStep() {
           <CollapsibleContent>
             <CardContent>
               {coreIndicators ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div className="text-center p-4 bg-white/50 rounded-lg border">
-                    <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  <div className="rounded-lg border bg-white/50 p-4 text-center">
+                    <Users className="mx-auto mb-2 h-8 w-8 text-blue-600" />
                     <div className="text-2xl font-bold text-blue-600">
-                      {coreIndicators.totalPopulation?.toLocaleString() || 'N/A'}
+                      {coreIndicators.totalPopulation?.toLocaleString() || "N/A"}
                     </div>
-                    <div className="text-sm text-muted-foreground">Total Population</div>
+                    <div className="text-muted-foreground text-sm">Total Population</div>
                   </div>
 
-                  <div className="text-center p-4 bg-white/50 rounded-lg border">
-                    <DollarSign className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                  <div className="rounded-lg border bg-white/50 p-4 text-center">
+                    <DollarSign className="mx-auto mb-2 h-8 w-8 text-green-600" />
                     <div className="text-2xl font-bold text-green-600">
-                      {coreIndicators.nominalGDP ? formatCurrencyLocal(coreIndicators.nominalGDP) : 'N/A'}
+                      {coreIndicators.nominalGDP
+                        ? formatCurrencyLocal(coreIndicators.nominalGDP)
+                        : "N/A"}
                     </div>
-                    <div className="text-sm text-muted-foreground">Nominal GDP</div>
+                    <div className="text-muted-foreground text-sm">Nominal GDP</div>
                   </div>
 
-                  <div className="text-center p-4 bg-white/50 rounded-lg border">
-                    <TrendingUp className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                  <div className="rounded-lg border bg-white/50 p-4 text-center">
+                    <TrendingUp className="mx-auto mb-2 h-8 w-8 text-purple-600" />
                     <div className="text-2xl font-bold text-purple-600">
-                      {coreIndicators.gdpPerCapita ? formatCurrencyLocal(coreIndicators.gdpPerCapita) : 'N/A'}
+                      {coreIndicators.gdpPerCapita
+                        ? formatCurrencyLocal(coreIndicators.gdpPerCapita)
+                        : "N/A"}
                     </div>
-                    <div className="text-sm text-muted-foreground">GDP per Capita</div>
+                    <div className="text-muted-foreground text-sm">GDP per Capita</div>
                   </div>
 
-                  <div className="text-center p-4 bg-white/50 rounded-lg border">
-                    <BarChart3 className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+                  <div className="rounded-lg border bg-white/50 p-4 text-center">
+                    <BarChart3 className="mx-auto mb-2 h-8 w-8 text-orange-600" />
                     <div className="text-2xl font-bold text-orange-600">
-                      {coreIndicators.realGDPGrowthRate ? `${coreIndicators.realGDPGrowthRate}%` : 'N/A'}
+                      {coreIndicators.realGDPGrowthRate
+                        ? `${coreIndicators.realGDPGrowthRate}%`
+                        : "N/A"}
                     </div>
-                    <div className="text-sm text-muted-foreground">GDP Growth Rate</div>
+                    <div className="text-muted-foreground text-sm">GDP Growth Rate</div>
                   </div>
 
-                  <div className="text-center p-4 bg-white/50 rounded-lg border">
-                    <TrendingUp className="h-8 w-8 text-red-600 mx-auto mb-2" />
+                  <div className="rounded-lg border bg-white/50 p-4 text-center">
+                    <TrendingUp className="mx-auto mb-2 h-8 w-8 text-red-600" />
                     <div className="text-2xl font-bold text-red-600">
-                      {coreIndicators.inflationRate ? `${coreIndicators.inflationRate}%` : 'N/A'}
+                      {coreIndicators.inflationRate ? `${coreIndicators.inflationRate}%` : "N/A"}
                     </div>
-                    <div className="text-sm text-muted-foreground">Inflation Rate</div>
+                    <div className="text-muted-foreground text-sm">Inflation Rate</div>
                   </div>
 
-                  <div className="text-center p-4 bg-white/50 rounded-lg border">
-                    <Globe className="h-8 w-8 text-indigo-600 mx-auto mb-2" />
+                  <div className="rounded-lg border bg-white/50 p-4 text-center">
+                    <Globe className="mx-auto mb-2 h-8 w-8 text-indigo-600" />
                     <div className="text-2xl font-bold text-indigo-600">
-                      {coreIndicators.currencyExchangeRate || 'N/A'}
+                      {coreIndicators.currencyExchangeRate || "N/A"}
                     </div>
-                    <div className="text-sm text-muted-foreground">Exchange Rate</div>
+                    <div className="text-muted-foreground text-sm">Exchange Rate</div>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <div className="py-8 text-center">
+                  <BarChart3 className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                   <p className="text-muted-foreground">No economic indicators configured</p>
                 </div>
               )}
@@ -595,18 +648,23 @@ export function BuilderPreviewStep() {
       </Collapsible>
 
       {/* 3. Government Configuration Section */}
-      <Collapsible open={sectionStates.governmentConfig} onOpenChange={() => toggleSection('governmentConfig')}>
+      <Collapsible
+        open={sectionStates.governmentConfig}
+        onOpenChange={() => toggleSection("governmentConfig")}
+      >
         <Card className="border-indigo-200/50 bg-indigo-50/30 backdrop-blur-sm">
           <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer hover:bg-indigo-50/50 transition-colors">
+            <CardHeader className="cursor-pointer transition-colors hover:bg-indigo-50/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-indigo-500/10 rounded-lg">
+                  <div className="rounded-lg bg-indigo-500/10 p-2">
                     <Building2 className="h-5 w-5 text-indigo-600" />
                   </div>
                   <div>
                     <CardTitle className="text-lg">Government Configuration</CardTitle>
-                    <p className="text-sm text-muted-foreground">Government structure and components</p>
+                    <p className="text-muted-foreground text-sm">
+                      Government structure and components
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -614,9 +672,9 @@ export function BuilderPreviewStep() {
                     {governmentComponents.length} Components
                   </Badge>
                   {sectionStates.governmentConfig ? (
-                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    <ChevronUp className="text-muted-foreground h-4 w-4" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    <ChevronDown className="text-muted-foreground h-4 w-4" />
                   )}
                 </div>
               </div>
@@ -653,7 +711,9 @@ export function BuilderPreviewStep() {
                       isOpen={true}
                       onOpenChange={() => {}}
                       openDepartments={openDepartments}
-                      onToggleDepartment={(id) => setOpenDepartments(prev => ({ ...prev, [id]: !prev[id] }))}
+                      onToggleDepartment={(id) =>
+                        setOpenDepartments((prev) => ({ ...prev, [id]: !prev[id] }))
+                      }
                       getDepartmentIcon={getDepartmentIcon}
                     />
 
@@ -665,24 +725,31 @@ export function BuilderPreviewStep() {
                       isOpen={true}
                       onOpenChange={() => {}}
                       openAllocations={openAllocations}
-                      onToggleAllocation={(id) => setOpenAllocations(prev => ({ ...prev, [id]: !prev[id] }))}
+                      onToggleAllocation={(id) =>
+                        setOpenAllocations((prev) => ({ ...prev, [id]: !prev[id] }))
+                      }
                     />
 
                     <RevenueSourcesList
                       sources={normalizedGovernmentStructure.revenueSources}
-                      totalRevenue={normalizedGovernmentStructure.revenueSources.reduce((sum: number, r: any) => sum + r.revenueAmount, 0)}
+                      totalRevenue={normalizedGovernmentStructure.revenueSources.reduce(
+                        (sum: number, r: any) => sum + r.revenueAmount,
+                        0
+                      )}
                       currency={normalizedGovernmentStructure.budgetCurrency}
                       isOpen={true}
                       onOpenChange={() => {}}
                       openRevenues={openRevenues}
-                      onToggleRevenue={(id) => setOpenRevenues(prev => ({ ...prev, [id]: !prev[id] }))}
+                      onToggleRevenue={(id) =>
+                        setOpenRevenues((prev) => ({ ...prev, [id]: !prev[id] }))
+                      }
                     />
                   </>
                 )}
 
                 {governmentComponents.length === 0 && !normalizedGovernmentStructure && (
-                  <div className="text-center py-8">
-                    <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <div className="py-8 text-center">
+                    <Building2 className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                     <p className="text-muted-foreground">No government configuration set</p>
                   </div>
                 )}
@@ -693,28 +760,33 @@ export function BuilderPreviewStep() {
       </Collapsible>
 
       {/* 4. Economy Configuration Section */}
-      <Collapsible open={sectionStates.economyConfig} onOpenChange={() => toggleSection('economyConfig')}>
+      <Collapsible
+        open={sectionStates.economyConfig}
+        onOpenChange={() => toggleSection("economyConfig")}
+      >
         <Card className="border-green-200/50 bg-green-50/30 backdrop-blur-sm">
           <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer hover:bg-green-50/50 transition-colors">
+            <CardHeader className="cursor-pointer transition-colors hover:bg-green-50/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-500/10 rounded-lg">
+                  <div className="rounded-lg bg-green-500/10 p-2">
                     <Factory className="h-5 w-5 text-green-600" />
                   </div>
                   <div>
                     <CardTitle className="text-lg">Economy Configuration</CardTitle>
-                    <p className="text-sm text-muted-foreground">Labor, demographics, and economic sectors</p>
+                    <p className="text-muted-foreground text-sm">
+                      Labor, demographics, and economic sectors
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="bg-green-100 text-green-700">
-                    {laborEmployment || demographics ? 'Configured' : 'Not Set'}
+                    {laborEmployment || demographics ? "Configured" : "Not Set"}
                   </Badge>
                   {sectionStates.economyConfig ? (
-                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    <ChevronUp className="text-muted-foreground h-4 w-4" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    <ChevronDown className="text-muted-foreground h-4 w-4" />
                   )}
                 </div>
               </div>
@@ -726,46 +798,50 @@ export function BuilderPreviewStep() {
                 {/* Labor & Employment */}
                 {laborEmployment && (
                   <div className="space-y-4">
-                    <h4 className="font-semibold text-green-700 flex items-center gap-2">
+                    <h4 className="flex items-center gap-2 font-semibold text-green-700">
                       <Briefcase className="h-4 w-4" />
                       Labor & Employment
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div className="p-3 bg-white/50 rounded-lg border">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      <div className="rounded-lg border bg-white/50 p-3">
                         <div className="text-lg font-bold text-green-600">
                           {laborEmployment.laborForceParticipationRate}%
                         </div>
-                        <div className="text-sm text-muted-foreground">Labor Force Participation</div>
+                        <div className="text-muted-foreground text-sm">
+                          Labor Force Participation
+                        </div>
                       </div>
-                      <div className="p-3 bg-white/50 rounded-lg border">
+                      <div className="rounded-lg border bg-white/50 p-3">
                         <div className="text-lg font-bold text-green-600">
                           {laborEmployment.employmentRate}%
                         </div>
-                        <div className="text-sm text-muted-foreground">Employment Rate</div>
+                        <div className="text-muted-foreground text-sm">Employment Rate</div>
                       </div>
-                      <div className="p-3 bg-white/50 rounded-lg border">
+                      <div className="rounded-lg border bg-white/50 p-3">
                         <div className="text-lg font-bold text-red-600">
                           {laborEmployment.unemploymentRate}%
                         </div>
-                        <div className="text-sm text-muted-foreground">Unemployment Rate</div>
+                        <div className="text-muted-foreground text-sm">Unemployment Rate</div>
                       </div>
-                      <div className="p-3 bg-white/50 rounded-lg border">
+                      <div className="rounded-lg border bg-white/50 p-3">
                         <div className="text-lg font-bold text-blue-600">
-                          {laborEmployment.totalWorkforce?.toLocaleString() || 'N/A'}
+                          {laborEmployment.totalWorkforce?.toLocaleString() || "N/A"}
                         </div>
-                        <div className="text-sm text-muted-foreground">Total Workforce</div>
+                        <div className="text-muted-foreground text-sm">Total Workforce</div>
                       </div>
-                      <div className="p-3 bg-white/50 rounded-lg border">
+                      <div className="rounded-lg border bg-white/50 p-3">
                         <div className="text-lg font-bold text-purple-600">
                           {laborEmployment.averageWorkweekHours}hrs
                         </div>
-                        <div className="text-sm text-muted-foreground">Avg Work Week</div>
+                        <div className="text-muted-foreground text-sm">Avg Work Week</div>
                       </div>
-                      <div className="p-3 bg-white/50 rounded-lg border">
+                      <div className="rounded-lg border bg-white/50 p-3">
                         <div className="text-lg font-bold text-orange-600">
-                          {laborEmployment.averageAnnualIncome ? formatCurrencyLocal(laborEmployment.averageAnnualIncome) : 'N/A'}
+                          {laborEmployment.averageAnnualIncome
+                            ? formatCurrencyLocal(laborEmployment.averageAnnualIncome)
+                            : "N/A"}
                         </div>
-                        <div className="text-sm text-muted-foreground">Avg Annual Income</div>
+                        <div className="text-muted-foreground text-sm">Avg Annual Income</div>
                       </div>
                     </div>
                   </div>
@@ -774,60 +850,60 @@ export function BuilderPreviewStep() {
                 {/* Demographics */}
                 {demographics && (
                   <div className="space-y-4">
-                    <h4 className="font-semibold text-green-700 flex items-center gap-2">
+                    <h4 className="flex items-center gap-2 font-semibold text-green-700">
                       <Users className="h-4 w-4" />
                       Demographics
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                       {demographics.ageDistribution && demographics.ageDistribution.length > 0 && (
                         <>
-                          <div className="p-3 bg-white/50 rounded-lg border">
+                          <div className="rounded-lg border bg-white/50 p-3">
                             <div className="text-lg font-bold text-blue-600">
                               {demographics.ageDistribution[0]?.percent || 0}%
                             </div>
-                            <div className="text-sm text-muted-foreground">Youth Population</div>
+                            <div className="text-muted-foreground text-sm">Youth Population</div>
                           </div>
-                          <div className="p-3 bg-white/50 rounded-lg border">
+                          <div className="rounded-lg border bg-white/50 p-3">
                             <div className="text-lg font-bold text-green-600">
                               {demographics.ageDistribution[1]?.percent || 0}%
                             </div>
-                            <div className="text-sm text-muted-foreground">Working Age</div>
+                            <div className="text-muted-foreground text-sm">Working Age</div>
                           </div>
-                          <div className="p-3 bg-white/50 rounded-lg border">
+                          <div className="rounded-lg border bg-white/50 p-3">
                             <div className="text-lg font-bold text-purple-600">
                               {demographics.ageDistribution[2]?.percent || 0}%
                             </div>
-                            <div className="text-sm text-muted-foreground">Elderly Population</div>
+                            <div className="text-muted-foreground text-sm">Elderly Population</div>
                           </div>
                         </>
                       )}
                       {demographics.urbanRuralSplit && (
-                        <div className="p-3 bg-white/50 rounded-lg border">
+                        <div className="rounded-lg border bg-white/50 p-3">
                           <div className="text-lg font-bold text-orange-600">
                             {demographics.urbanRuralSplit.urban}%
                           </div>
-                          <div className="text-sm text-muted-foreground">Urban Population</div>
+                          <div className="text-muted-foreground text-sm">Urban Population</div>
                         </div>
                       )}
-                      <div className="p-3 bg-white/50 rounded-lg border">
+                      <div className="rounded-lg border bg-white/50 p-3">
                         <div className="text-lg font-bold text-red-600">
-                          {demographics.lifeExpectancy || 'N/A'}
+                          {demographics.lifeExpectancy || "N/A"}
                         </div>
-                        <div className="text-sm text-muted-foreground">Life Expectancy</div>
+                        <div className="text-muted-foreground text-sm">Life Expectancy</div>
                       </div>
-                      <div className="p-3 bg-white/50 rounded-lg border">
+                      <div className="rounded-lg border bg-white/50 p-3">
                         <div className="text-lg font-bold text-indigo-600">
-                          {demographics.populationGrowthRate || 'N/A'}%
+                          {demographics.populationGrowthRate || "N/A"}%
                         </div>
-                        <div className="text-sm text-muted-foreground">Population Growth</div>
+                        <div className="text-muted-foreground text-sm">Population Growth</div>
                       </div>
                     </div>
                   </div>
                 )}
 
                 {!laborEmployment && !demographics && (
-                  <div className="text-center py-8">
-                    <Factory className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <div className="py-8 text-center">
+                    <Factory className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                     <p className="text-muted-foreground">No economy configuration set</p>
                   </div>
                 )}
@@ -838,18 +914,20 @@ export function BuilderPreviewStep() {
       </Collapsible>
 
       {/* 5. Tax System Section */}
-      <Collapsible open={sectionStates.taxSystem} onOpenChange={() => toggleSection('taxSystem')}>
+      <Collapsible open={sectionStates.taxSystem} onOpenChange={() => toggleSection("taxSystem")}>
         <Card className="border-red-200/50 bg-red-50/30 backdrop-blur-sm">
           <CollapsibleTrigger asChild>
-            <CardHeader className="cursor-pointer hover:bg-red-50/50 transition-colors">
+            <CardHeader className="cursor-pointer transition-colors hover:bg-red-50/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-red-500/10 rounded-lg">
+                  <div className="rounded-lg bg-red-500/10 p-2">
                     <Scale className="h-5 w-5 text-red-600" />
                   </div>
                   <div>
                     <CardTitle className="text-lg">Tax System</CardTitle>
-                    <p className="text-sm text-muted-foreground">Tax categories, brackets, and revenue</p>
+                    <p className="text-muted-foreground text-sm">
+                      Tax categories, brackets, and revenue
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -857,9 +935,9 @@ export function BuilderPreviewStep() {
                     {taxSystemData?.categories?.length || 0} Categories
                   </Badge>
                   {sectionStates.taxSystem ? (
-                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    <ChevronUp className="text-muted-foreground h-4 w-4" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    <ChevronDown className="text-muted-foreground h-4 w-4" />
                   )}
                 </div>
               </div>
@@ -870,123 +948,169 @@ export function BuilderPreviewStep() {
               {taxSystemData ? (
                 <div className="space-y-6">
                   {/* Tax System Overview */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-white/50 rounded-lg border">
+                  <div className="grid grid-cols-1 gap-4 rounded-lg border bg-white/50 p-4 md:grid-cols-3">
                     <div className="text-center">
                       <div className="text-lg font-bold text-red-600">
-                        {taxSystemData.taxSystem?.taxSystemName || 'Unnamed System'}
+                        {taxSystemData.taxSystem?.taxSystemName || "Unnamed System"}
                       </div>
-                      <div className="text-sm text-muted-foreground">Tax System Name</div>
+                      <div className="text-muted-foreground text-sm">Tax System Name</div>
                     </div>
                     <div className="text-center">
                       <div className="text-lg font-bold text-red-600">
-                        {taxSystemData.taxSystem?.fiscalYear || 'N/A'}
+                        {taxSystemData.taxSystem?.fiscalYear || "N/A"}
                       </div>
-                      <div className="text-sm text-muted-foreground">Fiscal Year</div>
+                      <div className="text-muted-foreground text-sm">Fiscal Year</div>
                     </div>
                     <div className="text-center">
                       <div className="text-lg font-bold text-red-600">
-                        {taxSystemData.taxSystem?.progressiveTax ? 'Progressive' : 'Flat'}
+                        {taxSystemData.taxSystem?.progressiveTax ? "Progressive" : "Flat"}
                       </div>
-                      <div className="text-sm text-muted-foreground">Tax Type</div>
+                      <div className="text-muted-foreground text-sm">Tax Type</div>
                     </div>
                   </div>
 
                   {/* Tax Categories */}
                   {taxSystemData.categories && taxSystemData.categories.length > 0 && (
                     <div className="space-y-4">
-                      <h4 className="font-semibold text-red-700 flex items-center gap-2">
+                      <h4 className="flex items-center gap-2 font-semibold text-red-700">
                         <Scale className="h-4 w-4" />
                         Tax Categories
                       </h4>
                       <div className="space-y-3">
-                        {taxSystemData.categories.map((category: TaxBuilderState['categories'][number], index: number) => (
-                          <Collapsible key={index} open={openDepartments[`tax-${index}`]} onOpenChange={(open: boolean) => setOpenDepartments(prev => ({ ...prev, [`tax-${index}`]: open }))}>
-                            <Card className="border">
-                              <CollapsibleTrigger className="w-full">
-                                <div className="flex items-center justify-between p-3 hover:bg-muted/30 transition-colors cursor-pointer">
-                                  <div>
-                                    <div className="font-medium flex items-center gap-2">
-                                      {category.categoryName}
-                                      {openDepartments[`tax-${index}`] ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
-                                    </div>
-                                    <div className="text-sm text-muted-foreground">
-                                      {category.categoryType} • {category.calculationMethod}
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <Badge variant="outline">
-                                      {category.baseRate}% base rate
-                                    </Badge>
-                                    {taxSystemData.brackets && taxSystemData.brackets[index.toString()]?.length > 0 && (
-                                      <div className="text-xs text-muted-foreground mt-1">
-                                        {taxSystemData.brackets[index.toString()].length} brackets
+                        {taxSystemData.categories.map(
+                          (category: TaxBuilderState["categories"][number], index: number) => (
+                            <Collapsible
+                              key={index}
+                              open={openDepartments[`tax-${index}`]}
+                              onOpenChange={(open: boolean) =>
+                                setOpenDepartments((prev) => ({ ...prev, [`tax-${index}`]: open }))
+                              }
+                            >
+                              <Card className="border">
+                                <CollapsibleTrigger className="w-full">
+                                  <div className="hover:bg-muted/30 flex cursor-pointer items-center justify-between p-3 transition-colors">
+                                    <div>
+                                      <div className="flex items-center gap-2 font-medium">
+                                        {category.categoryName}
+                                        {openDepartments[`tax-${index}`] ? (
+                                          <ChevronDown className="h-4 w-4" />
+                                        ) : (
+                                          <ChevronUp className="h-4 w-4" />
+                                        )}
                                       </div>
-                                    )}
+                                      <div className="text-muted-foreground text-sm">
+                                        {category.categoryType} • {category.calculationMethod}
+                                      </div>
+                                    </div>
+                                    <div className="text-right">
+                                      <Badge variant="outline">
+                                        {category.baseRate}% base rate
+                                      </Badge>
+                                      {taxSystemData.brackets &&
+                                        taxSystemData.brackets[index.toString()]?.length > 0 && (
+                                          <div className="text-muted-foreground mt-1 text-xs">
+                                            {taxSystemData.brackets[index.toString()].length}{" "}
+                                            brackets
+                                          </div>
+                                        )}
+                                    </div>
                                   </div>
-                                </div>
-                              </CollapsibleTrigger>
-                              <CollapsibleContent>
-                                <div className="p-3 border-t bg-muted/20">
-                                  <p className="text-sm text-muted-foreground mb-3">{category.description}</p>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                  <div className="bg-muted/20 border-t p-3">
+                                    <p className="text-muted-foreground mb-3 text-sm">
+                                      {category.description}
+                                    </p>
 
-                                  {/* Tax Brackets */}
-                                  {taxSystemData.brackets && taxSystemData.brackets[index.toString()] && (
-                                    <div className="space-y-2">
-                                      <h5 className="font-medium text-sm">Tax Brackets:</h5>
-                                      <div className="space-y-1">
-                                        {taxSystemData.brackets[index.toString()].map((bracket: TaxBuilderState['brackets'][string][number], bracketIndex: number) => (
-                                          <div key={bracketIndex} className="text-xs bg-white/50 p-2 rounded border">
-                                            {bracket.minIncome && bracket.maxIncome ? (
-                                              `${formatCurrencyLocal(bracket.minIncome)} - ${formatCurrencyLocal(bracket.maxIncome)}: ${bracket.rate}%`
-                                            ) : bracket.minIncome ? (
-                                              `${formatCurrencyLocal(bracket.minIncome)}+: ${bracket.rate}%`
-                                            ) : (
-                                              `${bracket.rate}%`
+                                    {/* Tax Brackets */}
+                                    {taxSystemData.brackets &&
+                                      taxSystemData.brackets[index.toString()] && (
+                                        <div className="space-y-2">
+                                          <h5 className="text-sm font-medium">Tax Brackets:</h5>
+                                          <div className="space-y-1">
+                                            {taxSystemData.brackets[index.toString()].map(
+                                              (
+                                                bracket: TaxBuilderState["brackets"][string][number],
+                                                bracketIndex: number
+                                              ) => (
+                                                <div
+                                                  key={bracketIndex}
+                                                  className="rounded border bg-white/50 p-2 text-xs"
+                                                >
+                                                  {bracket.minIncome && bracket.maxIncome
+                                                    ? `${formatCurrencyLocal(bracket.minIncome)} - ${formatCurrencyLocal(bracket.maxIncome)}: ${bracket.rate}%`
+                                                    : bracket.minIncome
+                                                      ? `${formatCurrencyLocal(bracket.minIncome)}+: ${bracket.rate}%`
+                                                      : `${bracket.rate}%`}
+                                                </div>
+                                              )
                                             )}
                                           </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </CollapsibleContent>
-                            </Card>
-                          </Collapsible>
-                        ))}
+                                        </div>
+                                      )}
+                                  </div>
+                                </CollapsibleContent>
+                              </Card>
+                            </Collapsible>
+                          )
+                        )}
                       </div>
                     </div>
                   )}
 
                   {/* Exemptions and Deductions */}
-                  {(taxSystemData.exemptions?.length > 0 || Object.keys(taxSystemData.deductions || {}).length > 0) && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(taxSystemData.exemptions?.length > 0 ||
+                    Object.keys(taxSystemData.deductions || {}).length > 0) && (
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       {taxSystemData.exemptions && taxSystemData.exemptions.length > 0 && (
                         <div className="space-y-2">
-                          <h5 className="font-medium text-sm">Exemptions:</h5>
+                          <h5 className="text-sm font-medium">Exemptions:</h5>
                           <div className="space-y-1">
-                            {taxSystemData.exemptions.map((exemption: TaxBuilderState['exemptions'][number], index: number) => (
-                              <div key={index} className="text-xs bg-white/50 p-2 rounded border">
-                                <div className="font-medium">{exemption.exemptionName}</div>
-                                <div className="text-muted-foreground">{exemption.description}</div>
-                                <div className="text-green-600">{formatCurrencyLocal(exemption.exemptionAmount ?? 0)}</div>
-                              </div>
-                            ))}
+                            {taxSystemData.exemptions.map(
+                              (exemption: TaxBuilderState["exemptions"][number], index: number) => (
+                                <div key={index} className="rounded border bg-white/50 p-2 text-xs">
+                                  <div className="font-medium">{exemption.exemptionName}</div>
+                                  <div className="text-muted-foreground">
+                                    {exemption.description}
+                                  </div>
+                                  <div className="text-green-600">
+                                    {formatCurrencyLocal(exemption.exemptionAmount ?? 0)}
+                                  </div>
+                                </div>
+                              )
+                            )}
                           </div>
                         </div>
                       )}
 
                       {Object.keys(taxSystemData.deductions || {}).length > 0 && (
                         <div className="space-y-2">
-                          <h5 className="font-medium text-sm">Deductions:</h5>
+                          <h5 className="text-sm font-medium">Deductions:</h5>
                           <div className="space-y-1">
-                            {Object.entries(taxSystemData.deductions || {}).flatMap(([categoryIndex, deductions]: [string, TaxBuilderState['deductions'][string]]) =>
-                              deductions.map((deduction: TaxBuilderState['deductions'][string][number], index: number) => (
-                                <div key={`${categoryIndex}-${index}`} className="text-xs bg-white/50 p-2 rounded border">
-                                  <div className="font-medium">{deduction.deductionName}</div>
-                                  <div className="text-muted-foreground">{deduction.description}</div>
-                                  <div className="text-blue-600">{formatCurrencyLocal(deduction.maximumAmount ?? 0)}</div>
-                                </div>
-                              ))
+                            {Object.entries(taxSystemData.deductions || {}).flatMap(
+                              ([categoryIndex, deductions]: [
+                                string,
+                                TaxBuilderState["deductions"][string],
+                              ]) =>
+                                deductions.map(
+                                  (
+                                    deduction: TaxBuilderState["deductions"][string][number],
+                                    index: number
+                                  ) => (
+                                    <div
+                                      key={`${categoryIndex}-${index}`}
+                                      className="rounded border bg-white/50 p-2 text-xs"
+                                    >
+                                      <div className="font-medium">{deduction.deductionName}</div>
+                                      <div className="text-muted-foreground">
+                                        {deduction.description}
+                                      </div>
+                                      <div className="text-blue-600">
+                                        {formatCurrencyLocal(deduction.maximumAmount ?? 0)}
+                                      </div>
+                                    </div>
+                                  )
+                                )
                             )}
                           </div>
                         </div>
@@ -995,8 +1119,8 @@ export function BuilderPreviewStep() {
                   )}
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <Scale className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <div className="py-8 text-center">
+                  <Scale className="mx-auto mb-4 h-12 w-12 text-gray-400" />
                   <p className="text-muted-foreground">No tax system configured</p>
                 </div>
               )}
@@ -1014,36 +1138,32 @@ export function BuilderPreviewStep() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {nationalIdentity ? '✓' : '✗'}
-              </div>
-              <div className="text-sm text-muted-foreground">National Identity</div>
+              <div className="text-2xl font-bold text-blue-600">{nationalIdentity ? "✓" : "✗"}</div>
+              <div className="text-muted-foreground text-sm">National Identity</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {coreIndicators ? '✓' : '✗'}
-              </div>
-              <div className="text-sm text-muted-foreground">Core Indicators</div>
+              <div className="text-2xl font-bold text-green-600">{coreIndicators ? "✓" : "✗"}</div>
+              <div className="text-muted-foreground text-sm">Core Indicators</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">
                 {governmentComponents.length + (normalizedGovernmentStructure ? 1 : 0)}
               </div>
-              <div className="text-sm text-muted-foreground">Government Items</div>
+              <div className="text-muted-foreground text-sm">Government Items</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-orange-600">
                 {(laborEmployment ? 1 : 0) + (demographics ? 1 : 0)}
               </div>
-              <div className="text-sm text-muted-foreground">Economy Sections</div>
+              <div className="text-muted-foreground text-sm">Economy Sections</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-600">
                 {taxSystemData?.categories?.length || 0}
               </div>
-              <div className="text-sm text-muted-foreground">Tax Categories</div>
+              <div className="text-muted-foreground text-sm">Tax Categories</div>
             </div>
           </div>
         </CardContent>

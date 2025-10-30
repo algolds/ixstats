@@ -1,13 +1,13 @@
 // src/components/ui/ixtime-picker.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { IxTime } from '~/lib/ixtime';
-import { Label } from './label';
-import { Input } from './input';
-import { Button } from './button';
-import { Calendar as CalendarIcon, Clock } from 'lucide-react';
-import { format } from 'date-fns';
+import React, { useState, useEffect } from "react";
+import { IxTime } from "~/lib/ixtime";
+import { Label } from "./label";
+import { Input } from "./input";
+import { Button } from "./button";
+import { Calendar as CalendarIcon, Clock } from "lucide-react";
+import { format } from "date-fns";
 
 interface IxTimePickerProps {
   value: number; // IxTime timestamp
@@ -31,7 +31,7 @@ export function IxTimePicker({
   label,
   id,
   required = false,
-  className = '',
+  className = "",
   showRealWorldTime = true,
 }: IxTimePickerProps) {
   // Convert IxTime timestamp to Date for input
@@ -53,10 +53,10 @@ export function IxTimePicker({
   const formatForInput = (ixTime: number) => {
     const date = new Date(ixTime);
     const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    const hours = String(date.getUTCHours()).padStart(2, '0');
-    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const hours = String(date.getUTCHours()).padStart(2, "0");
+    const minutes = String(date.getUTCMinutes()).padStart(2, "0");
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
@@ -72,7 +72,7 @@ export function IxTimePicker({
   // Quick preset buttons
   const setPreset = (hours: number) => {
     const currentIxTime = IxTime.getCurrentIxTime();
-    const newIxTime = currentIxTime + (hours * 60 * 60 * 1000);
+    const newIxTime = currentIxTime + hours * 60 * 60 * 1000;
     onChange(newIxTime);
   };
 
@@ -80,7 +80,7 @@ export function IxTimePicker({
     <div className={className}>
       {label && <Label htmlFor={id}>{label}</Label>}
 
-      <div className="flex gap-2 items-start">
+      <div className="flex items-start gap-2">
         <div className="flex-1">
           <Input
             id={id}
@@ -92,29 +92,29 @@ export function IxTimePicker({
           />
 
           {/* IxTime Display */}
-          <p className="text-xs text-blue-600 font-medium mt-1">
-            <CalendarIcon className="h-3 w-3 inline mr-1" />
+          <p className="mt-1 text-xs font-medium text-blue-600">
+            <CalendarIcon className="mr-1 inline h-3 w-3" />
             {IxTime.formatIxTime(value, true)}
           </p>
 
           {/* Real-world time reference (optional) */}
           {showRealWorldTime && (
-            <p className="text-xs text-muted-foreground mt-0.5">
-              <Clock className="h-3 w-3 inline mr-1" />
-              Real-world: {format(convertIxTimeToRealWorld(value), 'MMM d, yyyy HH:mm')}
+            <p className="text-muted-foreground mt-0.5 text-xs">
+              <Clock className="mr-1 inline h-3 w-3" />
+              Real-world: {format(convertIxTimeToRealWorld(value), "MMM d, yyyy HH:mm")}
             </p>
           )}
         </div>
       </div>
 
       {/* Quick Presets */}
-      <div className="flex flex-wrap gap-1 mt-2">
+      <div className="mt-2 flex flex-wrap gap-1">
         <Button
           type="button"
           variant="outline"
           size="sm"
           onClick={() => onChange(IxTime.getCurrentIxTime())}
-          className="text-xs h-7"
+          className="h-7 text-xs"
         >
           Now (IxTime)
         </Button>
@@ -123,7 +123,7 @@ export function IxTimePicker({
           variant="outline"
           size="sm"
           onClick={() => setPreset(24)}
-          className="text-xs h-7"
+          className="h-7 text-xs"
         >
           +1 Day
         </Button>
@@ -132,7 +132,7 @@ export function IxTimePicker({
           variant="outline"
           size="sm"
           onClick={() => setPreset(24 * 7)}
-          className="text-xs h-7"
+          className="h-7 text-xs"
         >
           +1 Week
         </Button>
@@ -141,7 +141,7 @@ export function IxTimePicker({
           variant="outline"
           size="sm"
           onClick={() => setPreset(24 * 30)}
-          className="text-xs h-7"
+          className="h-7 text-xs"
         >
           +1 Month
         </Button>

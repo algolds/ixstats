@@ -43,7 +43,7 @@ export class AdminErrorBoundary extends Component<Props, State> {
 
   handleGoHome = () => {
     // Use window.location.assign to ensure base path is handled correctly
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       window.location.assign("/");
     }
   };
@@ -59,32 +59,32 @@ export class AdminErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 text-center">
+        <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 dark:bg-gray-900">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 text-center shadow-lg dark:bg-gray-800">
             <div className="mb-4">
-              <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+              <AlertTriangle className="mx-auto mb-4 h-16 w-16 text-red-500" />
+              <h1 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">
                 Admin Dashboard Error
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
+              <p className="mb-4 text-gray-600 dark:text-gray-400">
                 Something went wrong with the admin dashboard. This error has been logged.
               </p>
             </div>
 
             {this.state.error && (
-              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-left">
-                <h3 className="text-sm font-medium text-red-800 dark:text-red-200 mb-2">
+              <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-left dark:border-red-800 dark:bg-red-900/20">
+                <h3 className="mb-2 text-sm font-medium text-red-800 dark:text-red-200">
                   Error Details:
                 </h3>
-                <p className="text-xs text-red-700 dark:text-red-300 font-mono break-words">
+                <p className="font-mono text-xs break-words text-red-700 dark:text-red-300">
                   {this.state.error.message}
                 </p>
-                {process.env.NODE_ENV === 'development' && this.state.errorInfo && (
+                {process.env.NODE_ENV === "development" && this.state.errorInfo && (
                   <details className="mt-2">
-                    <summary className="text-xs text-red-600 dark:text-red-400 cursor-pointer">
+                    <summary className="cursor-pointer text-xs text-red-600 dark:text-red-400">
                       Stack Trace (Dev Mode)
                     </summary>
-                    <pre className="mt-2 text-xs text-red-600 dark:text-red-400 whitespace-pre-wrap overflow-auto max-h-32">
+                    <pre className="mt-2 max-h-32 overflow-auto text-xs whitespace-pre-wrap text-red-600 dark:text-red-400">
                       {this.state.errorInfo.componentStack}
                     </pre>
                   </details>
@@ -95,30 +95,30 @@ export class AdminErrorBoundary extends Component<Props, State> {
             <div className="space-y-2">
               <button
                 onClick={this.handleRetry}
-                className="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium flex items-center justify-center transition-colors"
+                className="flex w-full items-center justify-center rounded-md bg-indigo-600 px-4 py-2 font-medium text-white transition-colors hover:bg-indigo-700"
               >
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <RefreshCw className="mr-2 h-4 w-4" />
                 Try Again
               </button>
-              
+
               <button
                 onClick={this.handleReload}
-                className="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md font-medium flex items-center justify-center transition-colors"
+                className="flex w-full items-center justify-center rounded-md bg-gray-600 px-4 py-2 font-medium text-white transition-colors hover:bg-gray-700"
               >
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <RefreshCw className="mr-2 h-4 w-4" />
                 Reload Page
               </button>
-              
+
               <button
                 onClick={this.handleGoHome}
-                className="w-full px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white rounded-md font-medium flex items-center justify-center transition-colors"
+                className="flex w-full items-center justify-center rounded-md bg-gray-200 px-4 py-2 font-medium text-gray-900 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600"
               >
-                <Home className="h-4 w-4 mr-2" />
+                <Home className="mr-2 h-4 w-4" />
                 Go to Homepage
               </button>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-700">
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 If this problem persists, please contact your system administrator.
               </p>
@@ -133,20 +133,18 @@ export class AdminErrorBoundary extends Component<Props, State> {
 }
 
 // Simple functional error fallback for lighter use cases
-export function AdminErrorFallback({ 
-  error, 
-  onRetry 
-}: { 
-  error?: Error | null; 
-  onRetry?: () => void; 
+export function AdminErrorFallback({
+  error,
+  onRetry,
+}: {
+  error?: Error | null;
+  onRetry?: () => void;
 }) {
   return (
-    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+    <div className="rounded-lg border border-red-200 bg-red-50 p-6 dark:border-red-800 dark:bg-red-900/20">
       <div className="flex items-center">
-        <AlertTriangle className="h-5 w-5 text-red-400 mr-2" />
-        <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
-          Component Error
-        </h3>
+        <AlertTriangle className="mr-2 h-5 w-5 text-red-400" />
+        <h3 className="text-sm font-medium text-red-800 dark:text-red-200">Component Error</h3>
       </div>
       <div className="mt-2">
         <p className="text-sm text-red-700 dark:text-red-300">
@@ -155,7 +153,7 @@ export function AdminErrorFallback({
         {onRetry && (
           <button
             onClick={onRetry}
-            className="mt-3 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded font-medium"
+            className="mt-3 rounded bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
           >
             Retry
           </button>

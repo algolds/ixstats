@@ -3,10 +3,10 @@
  * This is the source of truth for all country information in IxStats
  */
 
-import XLSX from 'xlsx';
-import fs from 'fs';
+import XLSX from "xlsx";
+import fs from "fs";
 
-const WORLD_ROSTER_PATH = '/ixwiki/public/projects/ixstats/public/World-Roster.xlsx';
+const WORLD_ROSTER_PATH = "/ixwiki/public/projects/ixstats/public/World-Roster.xlsx";
 
 interface WorldRosterCountry {
   name: string;
@@ -21,13 +21,13 @@ interface WorldRosterCountry {
 }
 
 async function parseWorldRoster() {
-  console.log('📊 Parsing World Roster...\n');
+  console.log("📊 Parsing World Roster...\n");
 
   // Read Excel file
   const workbook = XLSX.readFile(WORLD_ROSTER_PATH);
 
-  console.log('📋 Sheets found:', workbook.SheetNames);
-  console.log('');
+  console.log("📋 Sheets found:", workbook.SheetNames);
+  console.log("");
 
   // Parse the first sheet (or find the main roster sheet)
   const sheetName = workbook.SheetNames[0];
@@ -38,22 +38,22 @@ async function parseWorldRoster() {
 
   console.log(`📄 Sheet: "${sheetName}"`);
   console.log(`   Rows: ${data.length}`);
-  console.log('');
+  console.log("");
 
   if (data.length > 0) {
-    console.log('🔍 Column headers found:');
+    console.log("🔍 Column headers found:");
     const firstRow = data[0] as any;
     const columns = Object.keys(firstRow);
     columns.forEach((col, idx) => {
       const sampleValue = firstRow[col];
       const valuePreview = sampleValue
-        ? String(sampleValue).substring(0, 50) + (String(sampleValue).length > 50 ? '...' : '')
-        : '(empty)';
+        ? String(sampleValue).substring(0, 50) + (String(sampleValue).length > 50 ? "..." : "")
+        : "(empty)";
       console.log(`   ${idx + 1}. "${col}" - Example: ${valuePreview}`);
     });
-    console.log('');
+    console.log("");
 
-    console.log('📊 Sample rows:');
+    console.log("📊 Sample rows:");
     data.slice(0, 5).forEach((row: any, idx) => {
       console.log(`\n   Row ${idx + 1}:`);
       Object.entries(row).forEach(([key, value]) => {
@@ -65,7 +65,7 @@ async function parseWorldRoster() {
   }
 
   // Output to JSON for easier inspection
-  const outputPath = '/ixwiki/public/projects/ixstats/scripts/world-roster-data.json';
+  const outputPath = "/ixwiki/public/projects/ixstats/scripts/world-roster-data.json";
   fs.writeFileSync(outputPath, JSON.stringify(data, null, 2));
   console.log(`\n✅ Full data exported to: ${outputPath}`);
   console.log(`   Total countries: ${data.length}`);
@@ -74,6 +74,6 @@ async function parseWorldRoster() {
 }
 
 parseWorldRoster().catch((error) => {
-  console.error('❌ Error parsing World Roster:', error);
+  console.error("❌ Error parsing World Roster:", error);
   process.exit(1);
 });

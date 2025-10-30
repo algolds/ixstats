@@ -12,22 +12,22 @@ import { Label } from "~/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Textarea } from "~/components/ui/textarea";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "~/components/ui/select";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   DialogTrigger,
-  DialogFooter
+  DialogFooter,
 } from "~/components/ui/dialog";
-import { 
+import {
   AlertDialog,
   AlertDialogClose,
   AlertDialogContent,
@@ -37,7 +37,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
-import { 
+import {
   Table,
   TableBody,
   TableCell,
@@ -45,11 +45,11 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { 
-  Users, 
-  Unlink, 
-  Link as LinkIcon, 
-  Crown, 
+import {
+  Users,
+  Unlink,
+  Link as LinkIcon,
+  Crown,
   User,
   MapPin,
   AlertTriangle,
@@ -61,7 +61,7 @@ import {
   Trash2,
   Search,
   Settings,
-  Sparkles
+  Sparkles,
 } from "lucide-react";
 import { Switch } from "~/components/ui/switch";
 import { toast } from "sonner";
@@ -79,41 +79,45 @@ export function UserManagement({ className }: UserManagementProps) {
   const [selectedRole, setSelectedRole] = useState<string>("");
   const [showCreateRole, setShowCreateRole] = useState(false);
   const [showUserAssignment, setShowUserAssignment] = useState(false);
-  const [userSearchTerm, setUserSearchTerm] = useState('');
-  
+  const [userSearchTerm, setUserSearchTerm] = useState("");
+
   // Role form state
   const [roleForm, setRoleForm] = useState({
-    name: '',
-    displayName: '',
-    description: '',
+    name: "",
+    displayName: "",
+    description: "",
     level: 100,
-    permissionIds: [] as string[]
+    permissionIds: [] as string[],
   });
 
   const [userAssignment, setUserAssignment] = useState({
-    clerkUserId: '',
-    roleId: ''
+    clerkUserId: "",
+    roleId: "",
   });
 
   // API queries
-  const { 
-    data: usersWithCountries, 
-    isLoading: usersLoading, 
-    refetch: refetchUsers 
+  const {
+    data: usersWithCountries,
+    isLoading: usersLoading,
+    refetch: refetchUsers,
   } = api.admin.listUsersWithCountries.useQuery();
 
-  const { 
-    data: countriesWithUsers, 
-    isLoading: countriesLoading, 
-    refetch: refetchCountries 
+  const {
+    data: countriesWithUsers,
+    isLoading: countriesLoading,
+    refetch: refetchCountries,
   } = api.admin.listCountriesWithUsers.useQuery();
 
   // Role management queries
-  const { data: roles, isLoading: rolesLoading, refetch: refetchRoles } = api.roles.getRoles.useQuery();
+  const {
+    data: roles,
+    isLoading: rolesLoading,
+    refetch: refetchRoles,
+  } = api.roles.getRoles.useQuery();
   const { data: permissions, isLoading: permissionsLoading } = api.roles.getPermissions.useQuery();
   const { data: usersData, refetch: refetchRoleUsers } = api.roles.getUsersWithRoles.useQuery({
     search: userSearchTerm,
-    roleId: selectedRole === "all" ? undefined : selectedRole || undefined
+    roleId: selectedRole === "all" ? undefined : selectedRole || undefined,
   });
 
   // API mutations
@@ -152,16 +156,16 @@ export function UserManagement({ className }: UserManagementProps) {
       toast.error(`Failed to initialize: ${error.message}`);
     },
   });
-  
+
   const createRole = api.roles.createRole.useMutation({
     onSuccess: () => {
       setShowCreateRole(false);
       setRoleForm({
-        name: '',
-        displayName: '',
-        description: '',
+        name: "",
+        displayName: "",
+        description: "",
         level: 100,
-        permissionIds: []
+        permissionIds: [],
       });
       refetchRoles();
       toast.success("Role created successfully");
@@ -174,7 +178,7 @@ export function UserManagement({ className }: UserManagementProps) {
   const assignRole = api.roles.assignUserRole.useMutation({
     onSuccess: () => {
       setShowUserAssignment(false);
-      setUserAssignment({ clerkUserId: '', roleId: '' });
+      setUserAssignment({ clerkUserId: "", roleId: "" });
       refetchRoleUsers();
       toast.success("Role assigned successfully");
     },
@@ -204,10 +208,10 @@ export function UserManagement({ className }: UserManagementProps) {
   });
 
   const handleTogglePremium = (clerkUserId: string, currentTier: string) => {
-    const newTier = currentTier === 'mycountry_premium' ? 'basic' : 'mycountry_premium';
+    const newTier = currentTier === "mycountry_premium" ? "basic" : "mycountry_premium";
     updateMembershipTier.mutate({
       userId: clerkUserId,
-      tier: newTier as 'basic' | 'mycountry_premium',
+      tier: newTier as "basic" | "mycountry_premium",
     });
   };
 
@@ -243,16 +247,16 @@ export function UserManagement({ className }: UserManagementProps) {
   };
 
   const getRoleColor = (level: number) => {
-    if (level <= 0) return 'bg-purple-100 text-purple-800 border-purple-200';
-    if (level <= 10) return 'bg-red-100 text-red-800 border-red-200';
-    if (level <= 20) return 'bg-blue-100 text-blue-800 border-blue-200';
-    if (level <= 30) return 'bg-green-100 text-green-800 border-green-200';
-    return 'bg-gray-100 text-gray-800 border-gray-200';
+    if (level <= 0) return "bg-purple-100 text-purple-800 border-purple-200";
+    if (level <= 10) return "bg-red-100 text-red-800 border-red-200";
+    if (level <= 20) return "bg-blue-100 text-blue-800 border-blue-200";
+    if (level <= 30) return "bg-green-100 text-green-800 border-green-200";
+    return "bg-gray-100 text-gray-800 border-gray-200";
   };
 
-  const unlinkedUsers = usersWithCountries?.filter(user => !user.country) || [];
-  const linkedUsers = usersWithCountries?.filter(user => user.country) || [];
-  const unclaimedCountries = countriesWithUsers?.filter(country => !country.user) || [];
+  const unlinkedUsers = usersWithCountries?.filter((user) => !user.country) || [];
+  const linkedUsers = usersWithCountries?.filter((user) => user.country) || [];
+  const unclaimedCountries = countriesWithUsers?.filter((country) => !country.user) || [];
 
   if (usersLoading || countriesLoading) {
     return (
@@ -282,14 +286,14 @@ export function UserManagement({ className }: UserManagementProps) {
             <Users className="h-5 w-5" />
             User & Role Management
           </CardTitle>
-          
+
           {(!roles || roles.length === 0) && (
-            <Button 
-              onClick={() => initializeSystem.mutate()} 
+            <Button
+              onClick={() => initializeSystem.mutate()}
               disabled={initializeSystem.isPending}
               className="bg-blue-600 hover:bg-blue-700"
             >
-              {initializeSystem.isPending ? 'Initializing...' : 'Initialize Role System'}
+              {initializeSystem.isPending ? "Initializing..." : "Initialize Role System"}
             </Button>
           )}
         </div>
@@ -298,39 +302,35 @@ export function UserManagement({ className }: UserManagementProps) {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
+              <Users className="h-4 w-4" />
               Users & Countries
             </TabsTrigger>
             <TabsTrigger value="roles" className="flex items-center gap-2">
-              <Shield className="w-4 h-4" />
+              <Shield className="h-4 w-4" />
               Roles & Permissions
             </TabsTrigger>
             <TabsTrigger value="assignments" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
+              <Settings className="h-4 w-4" />
               Role Assignments
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="users" className="space-y-6 mt-6">
+          <TabsContent value="users" className="mt-6 space-y-6">
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="rounded-lg bg-blue-50 p-3 dark:bg-blue-950/30">
                 <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   {usersWithCountries?.length || 0}
                 </div>
-                <div className="text-sm text-blue-600/80 dark:text-blue-400/80">
-                  Total Users
-                </div>
+                <div className="text-sm text-blue-600/80 dark:text-blue-400/80">Total Users</div>
               </div>
-              <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-lg">
+              <div className="rounded-lg bg-green-50 p-3 dark:bg-green-950/30">
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                   {linkedUsers.length}
                 </div>
-                <div className="text-sm text-green-600/80 dark:text-green-400/80">
-                  Linked Users
-                </div>
+                <div className="text-sm text-green-600/80 dark:text-green-400/80">Linked Users</div>
               </div>
-              <div className="bg-amber-50 dark:bg-amber-950/30 p-3 rounded-lg">
+              <div className="rounded-lg bg-amber-50 p-3 dark:bg-amber-950/30">
                 <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
                   {unlinkedUsers.length}
                 </div>
@@ -338,7 +338,7 @@ export function UserManagement({ className }: UserManagementProps) {
                   Unlinked Users
                 </div>
               </div>
-              <div className="bg-purple-50 dark:bg-purple-950/30 p-3 rounded-lg">
+              <div className="rounded-lg bg-purple-50 p-3 dark:bg-purple-950/30">
                 <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                   {unclaimedCountries.length}
                 </div>
@@ -350,12 +350,12 @@ export function UserManagement({ className }: UserManagementProps) {
 
             {/* Assign User to Country */}
             <div className="border-t pt-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Assign User to Country</h3>
                 <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
                   <DialogTrigger asChild>
                     <Button>
-                      <LinkIcon className="h-4 w-4 mr-2" />
+                      <LinkIcon className="mr-2 h-4 w-4" />
                       Assign User
                     </Button>
                   </DialogTrigger>
@@ -396,18 +396,12 @@ export function UserManagement({ className }: UserManagementProps) {
                       </div>
                     </div>
                     <DialogFooter>
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setIsAssignDialogOpen(false)}
-                      >
+                      <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)}>
                         Cancel
                       </Button>
-                      <Button 
-                        onClick={handleAssignUser}
-                        disabled={assignUserMutation.isPending}
-                      >
+                      <Button onClick={handleAssignUser} disabled={assignUserMutation.isPending}>
                         {assignUserMutation.isPending && (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         )}
                         Assign
                       </Button>
@@ -419,31 +413,39 @@ export function UserManagement({ className }: UserManagementProps) {
 
             {/* Linked Users */}
             <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                 <CheckCircle className="h-5 w-5 text-green-500" />
                 Linked Users ({linkedUsers.length})
               </h3>
               <div className="space-y-2">
                 {linkedUsers.length === 0 ? (
-                  <p className="text-muted-foreground">No users are currently linked to countries.</p>
+                  <p className="text-muted-foreground">
+                    No users are currently linked to countries.
+                  </p>
                 ) : (
                   linkedUsers.map((user) => (
-                    <div 
+                    <div
                       key={user.id}
-                      className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/30 rounded-lg"
+                      className="flex items-center justify-between rounded-lg bg-green-50 p-3 dark:bg-green-950/30"
                     >
-                      <div className="flex items-center gap-3 flex-1">
+                      <div className="flex flex-1 items-center gap-3">
                         <User className="h-4 w-4 text-green-600" />
                         <div className="flex-1">
                           <div className="font-medium">{user.clerkUserId}</div>
-                          <div className="text-sm text-muted-foreground flex items-center gap-2">
+                          <div className="text-muted-foreground flex items-center gap-2 text-sm">
                             <Crown className="h-3 w-3" />
                             <span>{user.country?.name}</span>
-                            <Badge 
-                              variant={user.membershipTier === 'mycountry_premium' ? 'default' : 'outline'}
-                              className={user.membershipTier === 'mycountry_premium' ? 'bg-purple-600 text-white' : ''}
+                            <Badge
+                              variant={
+                                user.membershipTier === "mycountry_premium" ? "default" : "outline"
+                              }
+                              className={
+                                user.membershipTier === "mycountry_premium"
+                                  ? "bg-purple-600 text-white"
+                                  : ""
+                              }
                             >
-                              {user.membershipTier === 'mycountry_premium' ? 'Premium' : 'Basic'}
+                              {user.membershipTier === "mycountry_premium" ? "Premium" : "Basic"}
                             </Badge>
                           </div>
                         </div>
@@ -451,39 +453,43 @@ export function UserManagement({ className }: UserManagementProps) {
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
                           <Sparkles className="h-4 w-4 text-purple-500" />
-                          <label className="text-sm font-medium cursor-pointer">
-                            Premium
-                          </label>
+                          <label className="cursor-pointer text-sm font-medium">Premium</label>
                           <Switch
-                            checked={user.membershipTier === 'mycountry_premium'}
-                            onCheckedChange={() => handleTogglePremium(user.clerkUserId, user.membershipTier || 'basic')}
+                            checked={user.membershipTier === "mycountry_premium"}
+                            onCheckedChange={() =>
+                              handleTogglePremium(user.clerkUserId, user.membershipTier || "basic")
+                            }
                             disabled={updateMembershipTier.isPending}
                           />
                         </div>
                         <AlertDialog>
-                          <AlertDialogTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 px-3">
-                            <Unlink className="h-4 w-4 mr-2" />
+                          <AlertDialogTrigger className="ring-offset-background focus-visible:ring-ring bg-destructive text-destructive-foreground hover:bg-destructive/90 inline-flex h-9 items-center justify-center rounded-md px-3 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50">
+                            <Unlink className="mr-2 h-4 w-4" />
                             Unlink
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
                               <AlertDialogTitle>Unlink User from Country</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Are you sure you want to unlink <strong>{user.clerkUserId}</strong> from <strong>{user.country?.name}</strong>? 
-                                This action will remove their access to country-specific features.
+                                Are you sure you want to unlink <strong>{user.clerkUserId}</strong>{" "}
+                                from <strong>{user.country?.name}</strong>? This action will remove
+                                their access to country-specific features.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogClose>Cancel</AlertDialogClose>
                               <AlertDialogClose
-                                onClick={() => user.country && handleUnlinkUser(user.clerkUserId, user.country.id)}
+                                onClick={() =>
+                                  user.country &&
+                                  handleUnlinkUser(user.clerkUserId, user.country.id)
+                                }
                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 disabled={unassignUserMutation.isPending}
                               >
                                 {unassignUserMutation.isPending ? (
-                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 ) : (
-                                  <Unlink className="h-4 w-4 mr-2" />
+                                  <Unlink className="mr-2 h-4 w-4" />
                                 )}
                                 Unlink
                               </AlertDialogClose>
@@ -499,7 +505,7 @@ export function UserManagement({ className }: UserManagementProps) {
 
             {/* Unlinked Users */}
             <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                 <AlertTriangle className="h-5 w-5 text-amber-500" />
                 Unlinked Users ({unlinkedUsers.length})
               </h3>
@@ -508,21 +514,27 @@ export function UserManagement({ className }: UserManagementProps) {
                   <p className="text-muted-foreground">All users are linked to countries.</p>
                 ) : (
                   unlinkedUsers.map((user) => (
-                    <div 
+                    <div
                       key={user.id}
-                      className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg"
+                      className="flex items-center justify-between rounded-lg bg-amber-50 p-3 dark:bg-amber-950/30"
                     >
-                      <div className="flex items-center gap-3 flex-1">
+                      <div className="flex flex-1 items-center gap-3">
                         <User className="h-4 w-4 text-amber-600" />
                         <div className="flex-1">
                           <div className="font-medium">{user.clerkUserId}</div>
-                          <div className="text-sm text-muted-foreground flex items-center gap-2">
+                          <div className="text-muted-foreground flex items-center gap-2 text-sm">
                             <span>Not linked to any country</span>
-                            <Badge 
-                              variant={user.membershipTier === 'mycountry_premium' ? 'default' : 'outline'}
-                              className={user.membershipTier === 'mycountry_premium' ? 'bg-purple-600 text-white' : ''}
+                            <Badge
+                              variant={
+                                user.membershipTier === "mycountry_premium" ? "default" : "outline"
+                              }
+                              className={
+                                user.membershipTier === "mycountry_premium"
+                                  ? "bg-purple-600 text-white"
+                                  : ""
+                              }
                             >
-                              {user.membershipTier === 'mycountry_premium' ? 'Premium' : 'Basic'}
+                              {user.membershipTier === "mycountry_premium" ? "Premium" : "Basic"}
                             </Badge>
                           </div>
                         </div>
@@ -530,16 +542,16 @@ export function UserManagement({ className }: UserManagementProps) {
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
                           <Sparkles className="h-4 w-4 text-purple-500" />
-                          <label className="text-sm font-medium cursor-pointer">
-                            Premium
-                          </label>
+                          <label className="cursor-pointer text-sm font-medium">Premium</label>
                           <Switch
-                            checked={user.membershipTier === 'mycountry_premium'}
-                            onCheckedChange={() => handleTogglePremium(user.clerkUserId, user.membershipTier || 'basic')}
+                            checked={user.membershipTier === "mycountry_premium"}
+                            onCheckedChange={() =>
+                              handleTogglePremium(user.clerkUserId, user.membershipTier || "basic")
+                            }
                             disabled={updateMembershipTier.isPending}
                           />
                         </div>
-                        <Badge variant="outline" className="text-amber-600 border-amber-600">
+                        <Badge variant="outline" className="border-amber-600 text-amber-600">
                           Unlinked
                         </Badge>
                       </div>
@@ -550,20 +562,20 @@ export function UserManagement({ className }: UserManagementProps) {
             </div>
           </TabsContent>
 
-          <TabsContent value="roles" className="space-y-6 mt-6">
+          <TabsContent value="roles" className="mt-6 space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold">System Roles</h3>
-                <p className="text-sm text-muted-foreground">Manage roles and their permissions</p>
+                <p className="text-muted-foreground text-sm">Manage roles and their permissions</p>
               </div>
               <Dialog open={showCreateRole} onOpenChange={setShowCreateRole}>
                 <DialogTrigger asChild>
                   <Button className="bg-green-600 hover:bg-green-700">
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="mr-2 h-4 w-4" />
                     Create Role
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Create New Role</DialogTitle>
                   </DialogHeader>
@@ -577,28 +589,36 @@ export function UserManagement({ className }: UserManagementProps) {
                           placeholder="e.g., moderator"
                           pattern="^[a-z_]+$"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Lowercase letters and underscores only</p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Lowercase letters and underscores only
+                        </p>
                       </div>
                       <div>
                         <label className="text-sm font-medium">Display Name</label>
                         <Input
                           value={roleForm.displayName}
-                          onChange={(e) => setRoleForm({ ...roleForm, displayName: e.target.value })}
+                          onChange={(e) =>
+                            setRoleForm({ ...roleForm, displayName: e.target.value })
+                          }
                           placeholder="e.g., Content Moderator"
                         />
                       </div>
                     </div>
-                    
+
                     <div>
                       <label className="text-sm font-medium">Priority Level</label>
                       <Input
                         type="number"
                         value={roleForm.level}
-                        onChange={(e) => setRoleForm({ ...roleForm, level: parseInt(e.target.value) })}
+                        onChange={(e) =>
+                          setRoleForm({ ...roleForm, level: parseInt(e.target.value) })
+                        }
                         min={0}
                         max={1000}
                       />
-                      <p className="text-xs text-gray-500 mt-1">Lower numbers = higher priority (0 = highest)</p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Lower numbers = higher priority (0 = highest)
+                      </p>
                     </div>
 
                     <div>
@@ -613,10 +633,12 @@ export function UserManagement({ className }: UserManagementProps) {
                     {permissions && (
                       <div>
                         <label className="text-sm font-medium">Permissions</label>
-                        <div className="border rounded-lg p-4 max-h-60 overflow-y-auto">
+                        <div className="max-h-60 overflow-y-auto rounded-lg border p-4">
                           {Object.entries(permissions).map(([category, categoryPermissions]) => (
                             <div key={category} className="mb-4">
-                              <h4 className="font-medium text-gray-800 mb-2 capitalize">{category}</h4>
+                              <h4 className="mb-2 font-medium text-gray-800 capitalize">
+                                {category}
+                              </h4>
                               <div className="space-y-2">
                                 {categoryPermissions.map((permission: any) => (
                                   <div key={permission.id} className="flex items-center space-x-2">
@@ -627,12 +649,17 @@ export function UserManagement({ className }: UserManagementProps) {
                                         if (checked) {
                                           setRoleForm({
                                             ...roleForm,
-                                            permissionIds: [...roleForm.permissionIds, permission.id]
+                                            permissionIds: [
+                                              ...roleForm.permissionIds,
+                                              permission.id,
+                                            ],
                                           });
                                         } else {
                                           setRoleForm({
                                             ...roleForm,
-                                            permissionIds: roleForm.permissionIds.filter(id => id !== permission.id)
+                                            permissionIds: roleForm.permissionIds.filter(
+                                              (id) => id !== permission.id
+                                            ),
                                           });
                                         }
                                       }}
@@ -654,7 +681,7 @@ export function UserManagement({ className }: UserManagementProps) {
                       Cancel
                     </Button>
                     <Button onClick={handleCreateRole} disabled={createRole.isPending}>
-                      {createRole.isPending ? 'Creating...' : 'Create Role'}
+                      {createRole.isPending ? "Creating..." : "Create Role"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -678,14 +705,12 @@ export function UserManagement({ className }: UserManagementProps) {
                         <div className="font-medium">{role.displayName}</div>
                         <div className="text-sm text-gray-500">{role.name}</div>
                         {role.description && (
-                          <div className="text-xs text-gray-400 mt-1">{role.description}</div>
+                          <div className="mt-1 text-xs text-gray-400">{role.description}</div>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={getRoleColor(role.level)}>
-                        Level {role.level}
-                      </Badge>
+                      <Badge className={getRoleColor(role.level)}>Level {role.level}</Badge>
                     </TableCell>
                     <TableCell>
                       <span className="text-sm">{role.userCount} users</span>
@@ -699,16 +724,16 @@ export function UserManagement({ className }: UserManagementProps) {
             </Table>
           </TabsContent>
 
-          <TabsContent value="assignments" className="space-y-6 mt-6">
+          <TabsContent value="assignments" className="mt-6 space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold">User Role Assignments</h3>
-                <p className="text-sm text-muted-foreground">Assign and manage user roles</p>
+                <p className="text-muted-foreground text-sm">Assign and manage user roles</p>
               </div>
               <Dialog open={showUserAssignment} onOpenChange={setShowUserAssignment}>
                 <DialogTrigger asChild>
                   <Button className="bg-green-600 hover:bg-green-700">
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="mr-2 h-4 w-4" />
                     Assign Role
                   </Button>
                 </DialogTrigger>
@@ -721,7 +746,9 @@ export function UserManagement({ className }: UserManagementProps) {
                       <label className="text-sm font-medium">User ID (Clerk)</label>
                       <Input
                         value={userAssignment.clerkUserId}
-                        onChange={(e) => setUserAssignment({ ...userAssignment, clerkUserId: e.target.value })}
+                        onChange={(e) =>
+                          setUserAssignment({ ...userAssignment, clerkUserId: e.target.value })
+                        }
                         placeholder="Enter Clerk User ID"
                       />
                     </div>
@@ -729,7 +756,9 @@ export function UserManagement({ className }: UserManagementProps) {
                       <label className="text-sm font-medium">Role</label>
                       <Select
                         value={userAssignment.roleId}
-                        onValueChange={(value) => setUserAssignment({ ...userAssignment, roleId: value })}
+                        onValueChange={(value) =>
+                          setUserAssignment({ ...userAssignment, roleId: value })
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select a role" />
@@ -749,7 +778,7 @@ export function UserManagement({ className }: UserManagementProps) {
                       Cancel
                     </Button>
                     <Button onClick={handleAssignRole} disabled={assignRole.isPending}>
-                      {assignRole.isPending ? 'Assigning...' : 'Assign Role'}
+                      {assignRole.isPending ? "Assigning..." : "Assign Role"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -758,7 +787,7 @@ export function UserManagement({ className }: UserManagementProps) {
 
             <div className="mb-4 grid grid-cols-2 gap-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
                 <Input
                   placeholder="Search users..."
                   value={userSearchTerm}
@@ -795,9 +824,7 @@ export function UserManagement({ className }: UserManagementProps) {
               <TableBody>
                 {usersData?.users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-mono text-sm">
-                      {user.clerkUserId}
-                    </TableCell>
+                    <TableCell className="font-mono text-sm">{user.clerkUserId}</TableCell>
                     <TableCell>
                       {user.role ? (
                         <Badge className={getRoleColor(user.role.level)}>
@@ -824,15 +851,23 @@ export function UserManagement({ className }: UserManagementProps) {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Switch
-                          checked={user.membershipTier === 'mycountry_premium'}
-                          onCheckedChange={() => handleTogglePremium(user.clerkUserId, user.membershipTier || 'basic')}
+                          checked={user.membershipTier === "mycountry_premium"}
+                          onCheckedChange={() =>
+                            handleTogglePremium(user.clerkUserId, user.membershipTier || "basic")
+                          }
                           disabled={updateMembershipTier.isPending}
                         />
-                        <Badge 
-                          variant={user.membershipTier === 'mycountry_premium' ? 'default' : 'outline'}
-                          className={user.membershipTier === 'mycountry_premium' ? 'bg-purple-600 text-white' : ''}
+                        <Badge
+                          variant={
+                            user.membershipTier === "mycountry_premium" ? "default" : "outline"
+                          }
+                          className={
+                            user.membershipTier === "mycountry_premium"
+                              ? "bg-purple-600 text-white"
+                              : ""
+                          }
                         >
-                          {user.membershipTier === 'mycountry_premium' ? 'Premium' : 'Basic'}
+                          {user.membershipTier === "mycountry_premium" ? "Premium" : "Basic"}
                         </Badge>
                       </div>
                     </TableCell>

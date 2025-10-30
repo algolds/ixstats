@@ -7,16 +7,17 @@ import Link from "next/link";
 export function NoCountryState() {
   return (
     <div className="container mx-auto px-4 py-8">
-      <Card className="max-w-2xl mx-auto">
+      <Card className="mx-auto max-w-2xl">
         <CardHeader className="text-center">
-          <Crown className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+          <Crown className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
           <CardTitle className="text-2xl font-bold">No Country Assigned</CardTitle>
         </CardHeader>
         <CardContent className="text-center">
           <p className="text-muted-foreground mb-6">
-            You don't have a country assigned to your account. You need to own a country to use the data editor.
+            You don't have a country assigned to your account. You need to own a country to use the
+            data editor.
           </p>
-          <div className="flex gap-4 justify-center">
+          <div className="flex justify-center gap-4">
             <Link href={createUrl("/countries")}>
               <Button variant="outline">Browse Countries</Button>
             </Link>

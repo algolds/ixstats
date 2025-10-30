@@ -1,14 +1,20 @@
 "use client";
 
-import React, { useCallback, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
-import { Building2, Crown, Scale, Users, Briefcase } from 'lucide-react';
-import type { GovernmentStructureInput, GovernmentType } from '~/types/government';
-import { safeFormatCurrency } from '~/lib/format-utils';
-import { CurrencySelector } from '~/components/ui/currency-selector';
+import React, { useCallback, useRef } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Building2, Crown, Scale, Users, Briefcase } from "lucide-react";
+import type { GovernmentStructureInput, GovernmentType } from "~/types/government";
+import { safeFormatCurrency } from "~/lib/format-utils";
+import { CurrencySelector } from "~/components/ui/currency-selector";
 
 interface GovernmentStructureFormProps {
   data: GovernmentStructureInput;
@@ -21,70 +27,69 @@ interface GovernmentStructureFormProps {
 }
 
 const governmentTypes: GovernmentType[] = [
-  'Constitutional Monarchy',
-  'Federal Republic',
-  'Parliamentary Democracy', 
-  'Presidential Republic',
-  'Federal Constitutional Republic',
-  'Unitary State',
-  'Federation',
-  'Confederation',
-  'Empire',
-  'City-State',
-  'Other'
+  "Constitutional Monarchy",
+  "Federal Republic",
+  "Parliamentary Democracy",
+  "Presidential Republic",
+  "Federal Constitutional Republic",
+  "Unitary State",
+  "Federation",
+  "Confederation",
+  "Empire",
+  "City-State",
+  "Other",
 ];
 
-const fiscalYearOptions = [
-  'Calendar Year',
-  'April-March',
-  'July-June', 
-  'October-September'
-];
+const fiscalYearOptions = ["Calendar Year", "April-March", "July-June", "October-September"];
 
-const currencyOptions = [
-  'USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'SEK', 'NOK', 'DKK'
-];
+const currencyOptions = ["USD", "EUR", "GBP", "CAD", "AUD", "JPY", "CHF", "SEK", "NOK", "DKK"];
 
 export function GovernmentStructureForm({
   data,
   onChange,
   isReadOnly = false,
-  gdpData
+  gdpData,
 }: GovernmentStructureFormProps) {
   // Use a ref to access latest data without causing re-renders
   const dataRef = useRef(data);
   dataRef.current = data;
 
-  const handleChange = useCallback((field: keyof GovernmentStructureInput, value: string | number) => {
-    onChange({
-      ...dataRef.current,
-      [field]: value
-    });
-  }, [onChange]);
+  const handleChange = useCallback(
+    (field: keyof GovernmentStructureInput, value: string | number) => {
+      onChange({
+        ...dataRef.current,
+        [field]: value,
+      });
+    },
+    [onChange]
+  );
 
   const formatCurrency = (amount: number) => {
-    return safeFormatCurrency(amount, data.budgetCurrency || 'USD', false, 'USD');
+    return safeFormatCurrency(amount, data.budgetCurrency || "USD", false, "USD");
   };
 
   return (
     <Card className="w-full">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center text-xl font-semibold text-[var(--color-text-primary)]">
-          <Building2 className="h-6 w-6 mr-2 text-[var(--color-brand-primary)]" />
+          <Building2 className="mr-2 h-6 w-6 text-[var(--color-brand-primary)]" />
           Government Structure
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Basic Information */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="governmentName" className="text-sm font-medium text-[var(--color-text-secondary)]">
+            <Label
+              htmlFor="governmentName"
+              className="text-sm font-medium text-[var(--color-text-secondary)]"
+            >
               Government Name
             </Label>
             <Input
               id="governmentName"
               value={data.governmentName}
-              onChange={(e) => handleChange('governmentName', e.target.value)}
+              onChange={(e) => handleChange("governmentName", e.target.value)}
               placeholder="e.g., Imperial Government of Caphiria"
               disabled={isReadOnly}
               className="w-full"
@@ -92,12 +97,15 @@ export function GovernmentStructureForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="governmentType" className="text-sm font-medium text-[var(--color-text-secondary)]">
+            <Label
+              htmlFor="governmentType"
+              className="text-sm font-medium text-[var(--color-text-secondary)]"
+            >
               Government Type
             </Label>
             <Select
               value={data.governmentType}
-              onValueChange={(value: GovernmentType) => handleChange('governmentType', value)}
+              onValueChange={(value: GovernmentType) => handleChange("governmentType", value)}
               disabled={isReadOnly}
             >
               <SelectTrigger>
@@ -115,30 +123,36 @@ export function GovernmentStructureForm({
         </div>
 
         {/* Leadership */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="headOfState" className="text-sm font-medium text-[var(--color-text-secondary)] flex items-center">
-              <Crown className="h-4 w-4 mr-1" />
+            <Label
+              htmlFor="headOfState"
+              className="flex items-center text-sm font-medium text-[var(--color-text-secondary)]"
+            >
+              <Crown className="mr-1 h-4 w-4" />
               Head of State
             </Label>
             <Input
               id="headOfState"
-              value={data.headOfState || ''}
-              onChange={(e) => handleChange('headOfState', e.target.value)}
+              value={data.headOfState || ""}
+              onChange={(e) => handleChange("headOfState", e.target.value)}
               placeholder="e.g., Emperor, President"
               disabled={isReadOnly}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="headOfGovernment" className="text-sm font-medium text-[var(--color-text-secondary)] flex items-center">
-              <Briefcase className="h-4 w-4 mr-1" />
+            <Label
+              htmlFor="headOfGovernment"
+              className="flex items-center text-sm font-medium text-[var(--color-text-secondary)]"
+            >
+              <Briefcase className="mr-1 h-4 w-4" />
               Head of Government
             </Label>
             <Input
               id="headOfGovernment"
-              value={data.headOfGovernment || ''}
-              onChange={(e) => handleChange('headOfGovernment', e.target.value)}
+              value={data.headOfGovernment || ""}
+              onChange={(e) => handleChange("headOfGovernment", e.target.value)}
               placeholder="e.g., Prime Minister, Chancellor"
               disabled={isReadOnly}
             />
@@ -146,44 +160,53 @@ export function GovernmentStructureForm({
         </div>
 
         {/* Branches of Government */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div className="space-y-2">
-            <Label htmlFor="legislatureName" className="text-sm font-medium text-[var(--color-text-secondary)] flex items-center">
-              <Users className="h-4 w-4 mr-1" />
+            <Label
+              htmlFor="legislatureName"
+              className="flex items-center text-sm font-medium text-[var(--color-text-secondary)]"
+            >
+              <Users className="mr-1 h-4 w-4" />
               Legislature
             </Label>
             <Input
               id="legislatureName"
-              value={data.legislatureName || ''}
-              onChange={(e) => handleChange('legislatureName', e.target.value)}
+              value={data.legislatureName || ""}
+              onChange={(e) => handleChange("legislatureName", e.target.value)}
               placeholder="e.g., Imperial Senate, Parliament"
               disabled={isReadOnly}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="executiveName" className="text-sm font-medium text-[var(--color-text-secondary)] flex items-center">
-              <Briefcase className="h-4 w-4 mr-1" />
+            <Label
+              htmlFor="executiveName"
+              className="flex items-center text-sm font-medium text-[var(--color-text-secondary)]"
+            >
+              <Briefcase className="mr-1 h-4 w-4" />
               Executive
             </Label>
             <Input
               id="executiveName"
-              value={data.executiveName || ''}
-              onChange={(e) => handleChange('executiveName', e.target.value)}
+              value={data.executiveName || ""}
+              onChange={(e) => handleChange("executiveName", e.target.value)}
               placeholder="e.g., Imperial Cabinet, Executive Council"
               disabled={isReadOnly}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="judicialName" className="text-sm font-medium text-[var(--color-text-secondary)] flex items-center">
-              <Scale className="h-4 w-4 mr-1" />
+            <Label
+              htmlFor="judicialName"
+              className="flex items-center text-sm font-medium text-[var(--color-text-secondary)]"
+            >
+              <Scale className="mr-1 h-4 w-4" />
               Judiciary
             </Label>
             <Input
               id="judicialName"
-              value={data.judicialName || ''}
-              onChange={(e) => handleChange('judicialName', e.target.value)}
+              value={data.judicialName || ""}
+              onChange={(e) => handleChange("judicialName", e.target.value)}
               placeholder="e.g., Supreme Court, High Court"
               disabled={isReadOnly}
             />
@@ -191,19 +214,24 @@ export function GovernmentStructureForm({
         </div>
 
         {/* Budget Configuration */}
-        <div className="space-y-4 p-4 bg-[var(--color-bg-tertiary)] rounded-lg border border-[var(--color-border-primary)]">
-          <h4 className="text-lg font-medium text-[var(--color-text-primary)] mb-3">Budget Configuration</h4>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="space-y-4 rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-bg-tertiary)] p-4">
+          <h4 className="mb-3 text-lg font-medium text-[var(--color-text-primary)]">
+            Budget Configuration
+          </h4>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="totalBudget" className="text-sm font-medium text-[var(--color-text-secondary)]">
+              <Label
+                htmlFor="totalBudget"
+                className="text-sm font-medium text-[var(--color-text-secondary)]"
+              >
                 Total Budget
               </Label>
               <Input
                 id="totalBudget"
                 type="number"
                 value={data.totalBudget}
-                onChange={(e) => handleChange('totalBudget', parseFloat(e.target.value) || 0)}
+                onChange={(e) => handleChange("totalBudget", parseFloat(e.target.value) || 0)}
                 placeholder="0"
                 disabled={isReadOnly}
                 min="0"
@@ -212,23 +240,26 @@ export function GovernmentStructureForm({
               <p className="text-xs text-[var(--color-text-muted)]">
                 {formatCurrency(data.totalBudget || 0)}
                 {gdpData?.nominalGDP && gdpData.nominalGDP > 0 && (
-                  <span className="block mt-1 text-blue-600 font-medium">
-                    {(data.totalBudget && gdpData.nominalGDP > 0 
+                  <span className="mt-1 block font-medium text-blue-600">
+                    {data.totalBudget && gdpData.nominalGDP > 0
                       ? ((data.totalBudget / gdpData.nominalGDP) * 100).toFixed(1)
-                      : '0'
-                    )}% of GDP
+                      : "0"}
+                    % of GDP
                   </span>
                 )}
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="fiscalYear" className="text-sm font-medium text-[var(--color-text-secondary)]">
+              <Label
+                htmlFor="fiscalYear"
+                className="text-sm font-medium text-[var(--color-text-secondary)]"
+              >
                 Fiscal Year
               </Label>
               <Select
                 value={data.fiscalYear}
-                onValueChange={(value) => handleChange('fiscalYear', value)}
+                onValueChange={(value) => handleChange("fiscalYear", value)}
                 disabled={isReadOnly}
               >
                 <SelectTrigger>
@@ -245,12 +276,15 @@ export function GovernmentStructureForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="budgetCurrency" className="text-sm font-medium text-[var(--color-text-secondary)]">
+              <Label
+                htmlFor="budgetCurrency"
+                className="text-sm font-medium text-[var(--color-text-secondary)]"
+              >
                 Currency
               </Label>
               <CurrencySelector
                 value={data.budgetCurrency}
-                onValueChange={(value) => handleChange('budgetCurrency', value)}
+                onValueChange={(value) => handleChange("budgetCurrency", value)}
                 disabled={isReadOnly}
                 placeholder="Select currency"
               />

@@ -4,22 +4,25 @@
 
 "use client";
 
-import React from 'react';
-import { Badge } from '~/components/ui/badge';
-import { cn } from '~/lib/utils';
-import { 
-  CheckCircle, 
-  AlertCircle, 
-  TrendingUp, 
-  Clock, 
-  Users, 
+import React from "react";
+import { Badge } from "~/components/ui/badge";
+import { cn } from "~/lib/utils";
+import {
+  CheckCircle,
+  AlertCircle,
+  TrendingUp,
+  Clock,
+  Users,
   Zap,
   Shield,
   Info,
-  DollarSign
-} from 'lucide-react';
-import { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
-import { getApplicablePolicies, type SpendingPolicy } from '../../data/government-spending-policies';
+  DollarSign,
+} from "lucide-react";
+import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import {
+  getApplicablePolicies,
+  type SpendingPolicy,
+} from "../../data/government-spending-policies";
 
 interface PolicySelectorProps {
   selectedPolicies: Set<string>;
@@ -36,22 +39,23 @@ export function PolicySelector({
   selectedPolicies,
   selectedAtomicComponents,
   onTogglePolicy,
-  className
+  className,
 }: PolicySelectorProps) {
   const applicablePolicies = getApplicablePolicies(selectedAtomicComponents);
 
   if (applicablePolicies.length === 0) {
     return (
-      <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", className)}>
-        <div className="col-span-full p-8 text-center border-2 border-dashed border-border rounded-lg bg-muted/30">
+      <div className={cn("grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3", className)}>
+        <div className="border-border bg-muted/30 col-span-full rounded-lg border-2 border-dashed p-8 text-center">
           <div className="flex flex-col items-center gap-3">
-            <div className="p-3 rounded-full bg-muted">
-              <Info className="h-6 w-6 text-muted-foreground" />
+            <div className="bg-muted rounded-full p-3">
+              <Info className="text-muted-foreground h-6 w-6" />
             </div>
             <div>
-              <h3 className="font-semibold text-foreground mb-1">No Applicable Policies</h3>
-              <p className="text-sm text-muted-foreground">
-                Select atomic components to see recommended policies that align with your government structure.
+              <h3 className="text-foreground mb-1 font-semibold">No Applicable Policies</h3>
+              <p className="text-muted-foreground text-sm">
+                Select atomic components to see recommended policies that align with your government
+                structure.
               </p>
             </div>
           </div>
@@ -61,7 +65,7 @@ export function PolicySelector({
   }
 
   return (
-    <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4", className)}>
+    <div className={cn("grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3", className)}>
       {applicablePolicies.map((policy) => {
         const isSelected = selectedPolicies.has(policy.id);
         return (
@@ -83,66 +87,68 @@ export function PolicySelector({
 function PolicyCard({
   policy,
   isSelected,
-  onClick
+  onClick,
 }: {
   policy: SpendingPolicy;
   isSelected: boolean;
   onClick: () => void;
 }) {
   const Icon = policy.icon;
-  
+
   // Calculate total impact for effectiveness display
   const totalImpact = Object.values(policy.impact).reduce((sum, value) => sum + Math.abs(value), 0);
-  const effectiveness = Math.min(100, Math.max(0, 50 + (totalImpact / 2))); // Convert impact to 0-100 scale
-  
+  const effectiveness = Math.min(100, Math.max(0, 50 + totalImpact / 2)); // Convert impact to 0-100 scale
+
   const getCardClasses = () => {
     if (isSelected) {
-      return 'border-2 border-blue-500 bg-blue-500/5 dark:bg-blue-500/10 shadow-lg';
+      return "border-2 border-blue-500 bg-blue-500/5 dark:bg-blue-500/10 shadow-lg";
     }
-    return 'border-2 border-border hover:border-blue-500/50 hover:shadow-md';
+    return "border-2 border-border hover:border-blue-500/50 hover:shadow-md";
   };
 
   const getIconColor = () => {
     if (isSelected) {
-      return 'text-blue-600';
+      return "text-blue-600";
     }
-    return 'text-muted-foreground';
+    return "text-muted-foreground";
   };
 
   const getEffectivenessBgColor = (eff: number) => {
-    if (eff >= 80) return 'bg-green-500/10';
-    if (eff >= 60) return 'bg-yellow-500/10';
-    return 'bg-red-500/10';
+    if (eff >= 80) return "bg-green-500/10";
+    if (eff >= 60) return "bg-yellow-500/10";
+    return "bg-red-500/10";
   };
 
   const getEffectivenessColor = (eff: number) => {
-    if (eff >= 80) return 'text-green-600';
-    if (eff >= 60) return 'text-yellow-600';
-    return 'text-red-600';
+    if (eff >= 80) return "text-green-600";
+    if (eff >= 60) return "text-yellow-600";
+    return "text-red-600";
   };
 
   return (
     <div
       className={cn(
-        "p-4 rounded-lg cursor-pointer transition-all hover:shadow-md",
+        "cursor-pointer rounded-lg p-4 transition-all hover:shadow-md",
         getCardClasses()
       )}
       onClick={onClick}
     >
       {/* Header */}
-      <div className="flex items-start justify-between mb-2">
+      <div className="mb-2 flex items-start justify-between">
         <div className="flex items-center gap-2">
-          <div className={cn(
-            "p-2 rounded-lg",
-            isSelected 
-              ? `${getEffectivenessBgColor(effectiveness)} ${getIconColor()}` 
-              : 'bg-muted'
-          )}>
+          <div
+            className={cn(
+              "rounded-lg p-2",
+              isSelected
+                ? `${getEffectivenessBgColor(effectiveness)} ${getIconColor()}`
+                : "bg-muted"
+            )}
+          >
             {Icon ? <Icon className="h-4 w-4" /> : <Info className="h-4 w-4" />}
           </div>
-          <h4 className="font-semibold text-sm text-foreground">{policy.name}</h4>
+          <h4 className="text-foreground text-sm font-semibold">{policy.name}</h4>
         </div>
-        
+
         <div className="flex items-center gap-1">
           <Badge variant="outline" className="text-xs">
             {Math.round(effectiveness)}%
@@ -152,27 +158,23 @@ function PolicyCard({
       </div>
 
       {/* Description */}
-      <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
-        {policy.description}
-      </p>
+      <p className="text-muted-foreground mb-3 line-clamp-2 text-xs">{policy.description}</p>
 
       {/* Impact Metrics */}
       <div className="space-y-2">
         {Object.entries(policy.impact).map(([key, value]) => (
           <div key={key} className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground capitalize">{key}:</span>
-            <Badge 
-              variant={value > 0 ? "default" : "destructive"}
-              className="text-xs"
-            >
-              {value > 0 ? '+' : ''}{value}%
+            <Badge variant={value > 0 ? "default" : "destructive"} className="text-xs">
+              {value > 0 ? "+" : ""}
+              {value}%
             </Badge>
           </div>
         ))}
       </div>
 
       {/* Policy Metadata */}
-      <div className="mt-2 pt-2 border-t border-border/50 space-y-1">
+      <div className="border-border/50 mt-2 space-y-1 border-t pt-2">
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground flex items-center gap-1">
             <TrendingUp className="h-3 w-3" />
@@ -185,9 +187,7 @@ function PolicyCard({
             <Zap className="h-3 w-3" />
             Max Effect:
           </span>
-          <span className="font-medium">
-            {Math.max(...Object.values(policy.impact))}%
-          </span>
+          <span className="font-medium">{Math.max(...Object.values(policy.impact))}%</span>
         </div>
       </div>
     </div>

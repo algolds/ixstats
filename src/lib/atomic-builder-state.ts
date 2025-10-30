@@ -3,7 +3,7 @@
  * Phase 2: Atomic Components Native Builder Experience
  */
 
-import { ComponentType } from '@prisma/client';
+import { ComponentType } from "@prisma/client";
 
 export interface AtomicBuilderState {
   selectedComponents: ComponentType[];
@@ -18,7 +18,7 @@ export interface AtomicBuilderState {
 export interface SynergyRule {
   id: string;
   components: ComponentType[];
-  type: 'effectiveness_boost' | 'cost_reduction' | 'special_ability';
+  type: "effectiveness_boost" | "cost_reduction" | "special_ability";
   modifier: number;
   description: string;
 }
@@ -28,7 +28,7 @@ export interface ConflictRule {
   components: ComponentType[];
   penalty: number;
   description: string;
-  severity: 'minor' | 'major' | 'critical';
+  severity: "minor" | "major" | "critical";
 }
 
 export interface AtomicEconomicModifiers {
@@ -45,7 +45,7 @@ export interface AtomicEconomicModifiers {
   };
   stabilityIndex: {
     current: number;
-    trend: 'improving' | 'stable' | 'declining';
+    trend: "improving" | "stable" | "declining";
     factors: StabilityFactor[];
   };
   internationalStanding: {
@@ -58,7 +58,7 @@ export interface AtomicEconomicModifiers {
 export interface StabilityFactor {
   factor: string;
   impact: number;
-  trend: 'improving' | 'stable' | 'declining';
+  trend: "improving" | "stable" | "declining";
 }
 
 export interface GeneratedStructure {
@@ -70,77 +70,80 @@ export interface GeneratedStructure {
   budgetAllocations: Record<string, number>;
 }
 
-export type BuilderMode = 'atomic' | 'traditional' | 'hybrid';
+export type BuilderMode = "atomic" | "traditional" | "hybrid";
 
 // Synergy definitions based on component combinations
 export const SYNERGY_RULES: SynergyRule[] = [
   {
-    id: 'tech_professional',
+    id: "tech_professional",
     components: [ComponentType.TECHNOCRATIC_PROCESS, ComponentType.PROFESSIONAL_BUREAUCRACY],
-    type: 'effectiveness_boost',
+    type: "effectiveness_boost",
     modifier: 1.25,
-    description: 'Technocratic decisions combined with professional implementation create superior policy outcomes'
+    description:
+      "Technocratic decisions combined with professional implementation create superior policy outcomes",
   },
   {
-    id: 'rule_judiciary',
+    id: "rule_judiciary",
     components: [ComponentType.RULE_OF_LAW, ComponentType.INDEPENDENT_JUDICIARY],
-    type: 'effectiveness_boost',
-    modifier: 1.20,
-    description: 'Strong legal framework with independent courts maximizes institutional credibility'
+    type: "effectiveness_boost",
+    modifier: 1.2,
+    description:
+      "Strong legal framework with independent courts maximizes institutional credibility",
   },
   {
-    id: 'democratic_electoral',
+    id: "democratic_electoral",
     components: [ComponentType.DEMOCRATIC_PROCESS, ComponentType.ELECTORAL_LEGITIMACY],
-    type: 'effectiveness_boost',
+    type: "effectiveness_boost",
     modifier: 1.15,
-    description: 'Democratic processes backed by electoral mandate enhance legitimacy'
+    description: "Democratic processes backed by electoral mandate enhance legitimacy",
   },
   {
-    id: 'federal_democratic',
+    id: "federal_democratic",
     components: [ComponentType.FEDERAL_SYSTEM, ComponentType.DEMOCRATIC_PROCESS],
-    type: 'effectiveness_boost',
+    type: "effectiveness_boost",
     modifier: 1.18,
-    description: 'Federal structure enables better democratic representation and local autonomy'
+    description: "Federal structure enables better democratic representation and local autonomy",
   },
   {
-    id: 'performance_tech',
+    id: "performance_tech",
     components: [ComponentType.PERFORMANCE_LEGITIMACY, ComponentType.TECHNOCRATIC_AGENCIES],
-    type: 'effectiveness_boost',
+    type: "effectiveness_boost",
     modifier: 1.22,
-    description: 'Performance-based legitimacy with technical expertise delivers exceptional results'
-  }
+    description:
+      "Performance-based legitimacy with technical expertise delivers exceptional results",
+  },
 ];
 
 // Conflict definitions - components that work poorly together
 export const CONFLICT_RULES: ConflictRule[] = [
   {
-    id: 'surveillance_democratic',
+    id: "surveillance_democratic",
     components: [ComponentType.SURVEILLANCE_SYSTEM, ComponentType.DEMOCRATIC_PROCESS],
     penalty: 0.15,
-    description: 'Extensive surveillance undermines democratic participation and civil liberties',
-    severity: 'major'
+    description: "Extensive surveillance undermines democratic participation and civil liberties",
+    severity: "major",
   },
   {
-    id: 'autocratic_electoral',
+    id: "autocratic_electoral",
     components: [ComponentType.AUTOCRATIC_PROCESS, ComponentType.ELECTORAL_LEGITIMACY],
-    penalty: 0.20,
-    description: 'Autocratic decision-making contradicts electoral mandate principles',
-    severity: 'critical'
+    penalty: 0.2,
+    description: "Autocratic decision-making contradicts electoral mandate principles",
+    severity: "critical",
   },
   {
-    id: 'military_civilian',
+    id: "military_civilian",
     components: [ComponentType.MILITARY_ADMINISTRATION, ComponentType.INDEPENDENT_JUDICIARY],
     penalty: 0.12,
-    description: 'Military control of administration can undermine judicial independence',
-    severity: 'major'
+    description: "Military control of administration can undermine judicial independence",
+    severity: "major",
   },
   {
-    id: 'centralized_federal',
+    id: "centralized_federal",
     components: [ComponentType.CENTRALIZED_POWER, ComponentType.FEDERAL_SYSTEM],
-    penalty: 0.10,
-    description: 'Centralized power structure conflicts with federal power-sharing principles',
-    severity: 'minor'
-  }
+    penalty: 0.1,
+    description: "Centralized power structure conflicts with federal power-sharing principles",
+    severity: "minor",
+  },
 ];
 
 export class AtomicBuilderStateManager {
@@ -155,8 +158,8 @@ export class AtomicBuilderStateManager {
       conflicts: [],
       economicImpact: this.getDefaultEconomicImpact(),
       traditionalStructure: this.getDefaultStructure(),
-      builderMode: 'atomic',
-      ...initialState
+      builderMode: "atomic",
+      ...initialState,
     };
   }
 
@@ -164,13 +167,13 @@ export class AtomicBuilderStateManager {
   subscribe(listener: (state: AtomicBuilderState) => void) {
     this.listeners.push(listener);
     return () => {
-      this.listeners = this.listeners.filter(l => l !== listener);
+      this.listeners = this.listeners.filter((l) => l !== listener);
     };
   }
 
   // Notify all listeners of state changes
   private notifyListeners() {
-    this.listeners.forEach(listener => listener(this.state));
+    this.listeners.forEach((listener) => listener(this.state));
   }
 
   // Get current state
@@ -194,9 +197,7 @@ export class AtomicBuilderStateManager {
 
   // Remove a component
   removeComponent(component: ComponentType) {
-    this.setSelectedComponents(
-      this.state.selectedComponents.filter(c => c !== component)
-    );
+    this.setSelectedComponents(this.state.selectedComponents.filter((c) => c !== component));
   }
 
   // Set builder mode
@@ -217,14 +218,15 @@ export class AtomicBuilderStateManager {
   // Calculate overall effectiveness score
   private calculateEffectiveness(): number {
     const { selectedComponents } = this.state;
-    
+
     if (selectedComponents.length === 0) return 0;
 
     // Base effectiveness (average of component effectiveness)
     const componentInfo = this.getComponentInfo();
-    let baseEffectiveness = selectedComponents.reduce((sum, comp) => {
-      return sum + (componentInfo[comp]?.effectiveness || 50);
-    }, 0) / selectedComponents.length;
+    let baseEffectiveness =
+      selectedComponents.reduce((sum, comp) => {
+        return sum + (componentInfo[comp]?.effectiveness || 50);
+      }, 0) / selectedComponents.length;
 
     // Apply synergy bonuses
     const synergies = this.detectSynergies();
@@ -246,48 +248,48 @@ export class AtomicBuilderStateManager {
   // Detect active synergies
   private detectSynergies(): SynergyRule[] {
     const { selectedComponents } = this.state;
-    
-    return SYNERGY_RULES.filter(synergy => {
-      return synergy.components.every(comp => selectedComponents.includes(comp));
+
+    return SYNERGY_RULES.filter((synergy) => {
+      return synergy.components.every((comp) => selectedComponents.includes(comp));
     });
   }
 
   // Detect active conflicts
   private detectConflicts(): ConflictRule[] {
     const { selectedComponents } = this.state;
-    
-    return CONFLICT_RULES.filter(conflict => {
-      return conflict.components.every(comp => selectedComponents.includes(comp));
+
+    return CONFLICT_RULES.filter((conflict) => {
+      return conflict.components.every((comp) => selectedComponents.includes(comp));
     });
   }
 
   // Calculate economic impact based on selected components
   private calculateEconomicImpact(): AtomicEconomicModifiers {
     const { selectedComponents, effectivenessScore } = this.state;
-    
+
     // Base multiplier from effectiveness
     const effectivenessMultiplier = effectivenessScore / 100;
-    
+
     // Calculate GDP impact
-    let gdpImpactBase = 1.0 + (effectivenessMultiplier * 0.3); // Up to 30% GDP boost
-    
+    let gdpImpactBase = 1.0 + effectivenessMultiplier * 0.3; // Up to 30% GDP boost
+
     // Tax efficiency calculation
-    let taxEfficiencyBase = 1.0 + (effectivenessMultiplier * 0.4); // Up to 40% tax efficiency
-    
+    let taxEfficiencyBase = 1.0 + effectivenessMultiplier * 0.4; // Up to 40% tax efficiency
+
     // Stability calculation
     let stabilityBase = effectivenessScore;
-    
+
     // Component-specific bonuses
     if (selectedComponents.includes(ComponentType.TECHNOCRATIC_PROCESS)) {
       gdpImpactBase += 0.1;
       taxEfficiencyBase += 0.15;
     }
-    
+
     if (selectedComponents.includes(ComponentType.PROFESSIONAL_BUREAUCRACY)) {
       taxEfficiencyBase += 0.2;
       stabilityBase += 10;
     }
-    
+
     if (selectedComponents.includes(ComponentType.RULE_OF_LAW)) {
       stabilityBase += 15;
       gdpImpactBase += 0.05;
@@ -298,23 +300,23 @@ export class AtomicBuilderStateManager {
         current: gdpImpactBase,
         projected1Year: gdpImpactBase * 1.1,
         projected3Years: gdpImpactBase * 1.3,
-        confidence: Math.min(95, effectivenessScore + 10)
+        confidence: Math.min(95, effectivenessScore + 10),
       },
       taxEfficiency: {
         currentMultiplier: taxEfficiencyBase,
         projectedRevenue: taxEfficiencyBase * 100000, // Base revenue
-        complianceRate: Math.min(95, effectivenessScore + 5)
+        complianceRate: Math.min(95, effectivenessScore + 5),
       },
       stabilityIndex: {
         current: stabilityBase,
-        trend: stabilityBase > 75 ? 'improving' : stabilityBase > 50 ? 'stable' : 'declining',
-        factors: this.calculateStabilityFactors()
+        trend: stabilityBase > 75 ? "improving" : stabilityBase > 50 ? "stable" : "declining",
+        factors: this.calculateStabilityFactors(),
       },
       internationalStanding: {
         tradeBonus: effectivenessMultiplier * 0.2,
         investmentAttractiveness: effectivenessMultiplier * 0.25,
-        diplomaticWeight: effectivenessMultiplier * 0.15
-      }
+        diplomaticWeight: effectivenessMultiplier * 0.15,
+      },
     };
   }
 
@@ -325,25 +327,25 @@ export class AtomicBuilderStateManager {
 
     if (selectedComponents.includes(ComponentType.RULE_OF_LAW)) {
       factors.push({
-        factor: 'Legal Framework',
+        factor: "Legal Framework",
         impact: 15,
-        trend: 'improving'
+        trend: "improving",
       });
     }
 
     if (selectedComponents.includes(ComponentType.DEMOCRATIC_PROCESS)) {
       factors.push({
-        factor: 'Democratic Legitimacy',
+        factor: "Democratic Legitimacy",
         impact: 12,
-        trend: 'stable'
+        trend: "stable",
       });
     }
 
     if (selectedComponents.includes(ComponentType.SURVEILLANCE_SYSTEM)) {
       factors.push({
-        factor: 'Social Control',
+        factor: "Social Control",
         impact: 8,
-        trend: 'stable'
+        trend: "stable",
       });
     }
 
@@ -353,14 +355,14 @@ export class AtomicBuilderStateManager {
   // Generate traditional government structure from atomic components
   private generateTraditionalStructure(): GeneratedStructure {
     const { selectedComponents } = this.state;
-    
+
     const structure: GeneratedStructure = {
       governmentType: this.inferGovernmentType(selectedComponents),
       departments: this.generateDepartments(selectedComponents),
       executiveStructure: this.generateExecutive(selectedComponents),
       legislativeStructure: this.generateLegislative(selectedComponents),
       judicialStructure: this.generateJudicial(selectedComponents),
-      budgetAllocations: this.generateBudgetBreakdown(selectedComponents)
+      budgetAllocations: this.generateBudgetBreakdown(selectedComponents),
     };
 
     return structure;
@@ -369,67 +371,67 @@ export class AtomicBuilderStateManager {
   private inferGovernmentType(components: ComponentType[]): string {
     if (components.includes(ComponentType.DEMOCRATIC_PROCESS)) {
       if (components.includes(ComponentType.FEDERAL_SYSTEM)) {
-        return 'Federal Democracy';
+        return "Federal Democracy";
       }
-      return 'Parliamentary Democracy';
+      return "Parliamentary Democracy";
     }
-    
+
     if (components.includes(ComponentType.AUTOCRATIC_PROCESS)) {
-      return 'Autocratic Republic';
+      return "Autocratic Republic";
     }
-    
+
     if (components.includes(ComponentType.TECHNOCRATIC_PROCESS)) {
-      return 'Technocratic State';
+      return "Technocratic State";
     }
-    
-    return 'Mixed Government';
+
+    return "Mixed Government";
   }
 
   private generateDepartments(components: ComponentType[]): string[] {
-    const departments: string[] = ['Ministry of Interior', 'Ministry of Finance'];
-    
+    const departments: string[] = ["Ministry of Interior", "Ministry of Finance"];
+
     if (components.includes(ComponentType.PROFESSIONAL_BUREAUCRACY)) {
-      departments.push('Civil Service Commission', 'Administrative Excellence Department');
+      departments.push("Civil Service Commission", "Administrative Excellence Department");
     }
-    
+
     if (components.includes(ComponentType.TECHNOCRATIC_AGENCIES)) {
-      departments.push('Strategic Planning Agency', 'Policy Analysis Bureau');
+      departments.push("Strategic Planning Agency", "Policy Analysis Bureau");
     }
-    
+
     if (components.includes(ComponentType.INDEPENDENT_JUDICIARY)) {
-      departments.push('Judicial Services Commission');
+      departments.push("Judicial Services Commission");
     }
-    
+
     return departments;
   }
 
   private generateExecutive(components: ComponentType[]): string[] {
-    const structure = ['Prime Minister', 'Cabinet'];
-    
+    const structure = ["Prime Minister", "Cabinet"];
+
     if (components.includes(ComponentType.TECHNOCRATIC_PROCESS)) {
-      structure.push('Technical Advisory Council');
+      structure.push("Technical Advisory Council");
     }
-    
+
     return structure;
   }
 
   private generateLegislative(components: ComponentType[]): string[] {
-    const structure = ['National Assembly'];
-    
+    const structure = ["National Assembly"];
+
     if (components.includes(ComponentType.FEDERAL_SYSTEM)) {
-      structure.push('Senate', 'Regional Assemblies');
+      structure.push("Senate", "Regional Assemblies");
     }
-    
+
     return structure;
   }
 
   private generateJudicial(components: ComponentType[]): string[] {
-    const structure = ['Supreme Court'];
-    
+    const structure = ["Supreme Court"];
+
     if (components.includes(ComponentType.INDEPENDENT_JUDICIARY)) {
-      structure.push('Constitutional Court', 'Administrative Courts');
+      structure.push("Constitutional Court", "Administrative Courts");
     }
-    
+
     return structure;
   }
 
@@ -440,20 +442,20 @@ export class AtomicBuilderStateManager {
       education: 20,
       healthcare: 20,
       infrastructure: 15,
-      other: 10
+      other: 10,
     };
-    
+
     if (components.includes(ComponentType.PROFESSIONAL_BUREAUCRACY)) {
       budget.administration += 5;
       budget.other -= 5;
     }
-    
+
     if (components.includes(ComponentType.MILITARY_ADMINISTRATION)) {
       budget.defense += 10;
       budget.education -= 5;
       budget.other -= 5;
     }
-    
+
     return budget;
   }
 
@@ -497,7 +499,7 @@ export class AtomicBuilderStateManager {
       [ComponentType.WORKER_PROTECTION]: { effectiveness: 65 },
       [ComponentType.MERITOCRATIC_SYSTEM]: { effectiveness: 88 },
       [ComponentType.REGIONAL_DEVELOPMENT]: { effectiveness: 68 },
-      [ComponentType.INSTITUTIONAL_LEGITIMACY]: { effectiveness: 78 }
+      [ComponentType.INSTITUTIONAL_LEGITIMACY]: { effectiveness: 78 },
     };
 
     return info;
@@ -509,34 +511,34 @@ export class AtomicBuilderStateManager {
         current: 1.0,
         projected1Year: 1.0,
         projected3Years: 1.0,
-        confidence: 50
+        confidence: 50,
       },
       taxEfficiency: {
         currentMultiplier: 1.0,
         projectedRevenue: 100000,
-        complianceRate: 70
+        complianceRate: 70,
       },
       stabilityIndex: {
         current: 50,
-        trend: 'stable',
-        factors: []
+        trend: "stable",
+        factors: [],
       },
       internationalStanding: {
         tradeBonus: 0,
         investmentAttractiveness: 0,
-        diplomaticWeight: 0
-      }
+        diplomaticWeight: 0,
+      },
     };
   }
 
   private getDefaultStructure(): GeneratedStructure {
     return {
-      governmentType: 'Basic Government',
+      governmentType: "Basic Government",
       departments: [],
       executiveStructure: [],
       legislativeStructure: [],
       judicialStructure: [],
-      budgetAllocations: {}
+      budgetAllocations: {},
     };
   }
 }

@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { cn } from '~/lib/utils';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { cn } from "~/lib/utils";
 
 interface ProgressiveBlurProps {
   children: React.ReactNode;
@@ -11,7 +11,7 @@ interface ProgressiveBlurProps {
   className?: string;
   blurIntensity?: number;
   gradientHeight?: number;
-  arrowPosition?: 'center' | 'right';
+  arrowPosition?: "center" | "right";
 }
 
 export const ProgressiveBlur: React.FC<ProgressiveBlurProps> = ({
@@ -20,7 +20,7 @@ export const ProgressiveBlur: React.FC<ProgressiveBlurProps> = ({
   className,
   blurIntensity = 8,
   gradientHeight = 120,
-  arrowPosition = 'center'
+  arrowPosition = "center",
 }) => {
   const [isRevealed, setIsRevealed] = useState(false);
 
@@ -29,19 +29,19 @@ export const ProgressiveBlur: React.FC<ProgressiveBlurProps> = ({
       {/* Main content with progressive blur effect */}
       <div className="relative">
         {children}
-        
+
         {/* Progressive blur overlay */}
         {!isRevealed && (
           <motion.div
-            className="absolute inset-x-0 bottom-0 pointer-events-none"
+            className="pointer-events-none absolute inset-x-0 bottom-0"
             style={{ height: `${gradientHeight}px` }}
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
           >
             {/* Glass refraction effect */}
-            <div 
-              className="absolute inset-0 glass-refraction"
+            <div
+              className="glass-refraction absolute inset-0"
               style={{
                 background: `
                   linear-gradient(to top,
@@ -56,9 +56,9 @@ export const ProgressiveBlur: React.FC<ProgressiveBlurProps> = ({
                 WebkitBackdropFilter: `blur(${blurIntensity}px) saturate(1.2)`,
               }}
             />
-            
+
             {/* Glass depth effect */}
-            <div 
+            <div
               className="absolute inset-0"
               style={{
                 background: `
@@ -69,12 +69,12 @@ export const ProgressiveBlur: React.FC<ProgressiveBlurProps> = ({
                     transparent 75%,
                     rgba(255, 255, 255, 0.1) 100%
                   )`,
-                mixBlendMode: 'overlay'
+                mixBlendMode: "overlay",
               }}
             />
-            
+
             {/* Subtle inner shadow for depth */}
-            <div 
+            <div
               className="absolute inset-0"
               style={{
                 boxShadow: `
@@ -99,16 +99,14 @@ export const ProgressiveBlur: React.FC<ProgressiveBlurProps> = ({
           "hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_8px_24px_rgba(0,0,0,0.2)]",
           "text-foreground/80 hover:text-foreground transition-all duration-200",
           "pointer-events-auto",
-          arrowPosition === 'center' ? "left-1/2 -translate-x-1/2" : "right-4"
+          arrowPosition === "center" ? "left-1/2 -translate-x-1/2" : "right-4"
         )}
         onClick={() => setIsRevealed(!isRevealed)}
         whileHover={{ scale: 1.05, y: -2 }}
         whileTap={{ scale: 0.95 }}
         transition={{ type: "spring", stiffness: 400, damping: 25 }}
       >
-        <span className="text-sm font-medium">
-          {isRevealed ? 'Show Less' : 'Show More'}
-        </span>
+        <span className="text-sm font-medium">{isRevealed ? "Show Less" : "Show More"}</span>
         <motion.div
           animate={{ rotate: isRevealed ? 180 : 0 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
@@ -124,14 +122,14 @@ export const ProgressiveBlur: React.FC<ProgressiveBlurProps> = ({
             initial={{ opacity: 0, height: 0, y: -20 }}
             animate={{ opacity: 1, height: "auto", y: 0 }}
             exit={{ opacity: 0, height: 0, y: -20 }}
-            transition={{ 
-              duration: 0.5, 
+            transition={{
+              duration: 0.5,
               ease: [0.4, 0.0, 0.2, 1],
-              height: { duration: 0.4 }
+              height: { duration: 0.4 },
             }}
             className="mt-4 overflow-hidden"
           >
-            <div className="glass-hierarchy-child glass-refraction p-4 rounded-lg border border-white/10 backdrop-blur-sm">
+            <div className="glass-hierarchy-child glass-refraction rounded-lg border border-white/10 p-4 backdrop-blur-sm">
               {revealContent}
             </div>
           </motion.div>

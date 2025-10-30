@@ -4,18 +4,18 @@
 
 "use client";
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
-import { Eye, Save } from 'lucide-react';
-import { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
-import { GovernmentStructurePreview } from '../enhanced/GovernmentStructurePreview';
-import { SPENDING_POLICIES } from '../../data/government-spending-policies';
-import { IxTime } from '~/lib/ixtime';
-import type { GovernmentBuilderState } from '~/types/government';
-import type { EconomicInputs } from '../../lib/economy-data-service';
-import { toast } from 'sonner';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Eye, Save } from "lucide-react";
+import { ComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { GovernmentStructurePreview } from "../enhanced/GovernmentStructurePreview";
+import { SPENDING_POLICIES } from "../../data/government-spending-policies";
+import { IxTime } from "~/lib/ixtime";
+import type { GovernmentBuilderState } from "~/types/government";
+import type { EconomicInputs } from "../../lib/economy-data-service";
+import { toast } from "sonner";
 
 interface SpendingPreviewProps {
   selectedPolicies: Set<string>;
@@ -36,13 +36,13 @@ export function SpendingPreview({
   governmentBuilderData,
   inputs,
   onSave,
-  className
+  className,
 }: SpendingPreviewProps) {
   const handleSave = () => {
     if (onSave) {
       onSave();
     } else {
-      toast.success('Government structure saved successfully!');
+      toast.success("Government structure saved successfully!");
     }
   };
 
@@ -52,15 +52,13 @@ export function SpendingPreview({
         {/* Preview Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-semibold text-foreground">
-              Government Structure Preview
-            </h3>
+            <h3 className="text-foreground text-xl font-semibold">Government Structure Preview</h3>
             <p className="text-muted-foreground mt-1">
               Review your government configuration before saving
             </p>
           </div>
           <Badge variant="outline" className="bg-blue-50 text-blue-700">
-            <Eye className="h-3 w-3 mr-1" />
+            <Eye className="mr-1 h-3 w-3" />
             Preview Mode
           </Badge>
         </div>
@@ -74,22 +72,17 @@ export function SpendingPreview({
         )}
 
         {/* Selected Policies */}
-        {selectedPolicies.size > 0 && (
-          <SelectedPoliciesCard selectedPolicies={selectedPolicies} />
-        )}
+        {selectedPolicies.size > 0 && <SelectedPoliciesCard selectedPolicies={selectedPolicies} />}
 
         {/* Budget Projections */}
         {governmentBuilderData && (
-          <BudgetProjectionsCard
-            governmentBuilderData={governmentBuilderData}
-            inputs={inputs}
-          />
+          <BudgetProjectionsCard governmentBuilderData={governmentBuilderData} inputs={inputs} />
         )}
 
         {/* Save Button */}
         <div className="flex justify-end">
           <Button className="min-w-32" onClick={handleSave}>
-            <Save className="h-4 w-4 mr-2" />
+            <Save className="mr-2 h-4 w-4" />
             Save Government
           </Button>
         </div>
@@ -106,25 +99,23 @@ function SelectedPoliciesCard({ selectedPolicies }: { selectedPolicies: Set<stri
     <Card>
       <CardHeader>
         <CardTitle>Selected Policies</CardTitle>
-        <CardDescription>
-          {selectedPolicies.size} policies selected
-        </CardDescription>
+        <CardDescription>{selectedPolicies.size} policies selected</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {Array.from(selectedPolicies).map(policyId => {
-            const policy = SPENDING_POLICIES.find(p => p.id === policyId);
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {Array.from(selectedPolicies).map((policyId) => {
+            const policy = SPENDING_POLICIES.find((p) => p.id === policyId);
             if (!policy) return null;
 
             const Icon = policy.icon;
             return (
-              <div key={policyId} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Icon className="h-4 w-4 text-primary" />
+              <div key={policyId} className="bg-muted/50 flex items-center gap-3 rounded-lg p-3">
+                <div className="bg-primary/10 rounded-lg p-2">
+                  <Icon className="text-primary h-4 w-4" />
                 </div>
                 <div>
-                  <p className="font-medium text-sm">{policy.name}</p>
-                  <p className="text-xs text-muted-foreground">{policy.description}</p>
+                  <p className="text-sm font-medium">{policy.name}</p>
+                  <p className="text-muted-foreground text-xs">{policy.description}</p>
                 </div>
               </div>
             );
@@ -140,7 +131,7 @@ function SelectedPoliciesCard({ selectedPolicies }: { selectedPolicies: Set<stri
  */
 function BudgetProjectionsCard({
   governmentBuilderData,
-  inputs
+  inputs,
 }: {
   governmentBuilderData: GovernmentBuilderState;
   inputs: EconomicInputs;
@@ -161,7 +152,7 @@ function BudgetProjectionsCard({
       budget,
       revenue,
       gdp: gdpGrowth,
-      budgetGdpRatio: gdp > 0 ? ((budget / gdpGrowth) * 100) : 0
+      budgetGdpRatio: gdp > 0 ? (budget / gdpGrowth) * 100 : 0,
     };
   });
 
@@ -169,32 +160,30 @@ function BudgetProjectionsCard({
     <Card>
       <CardHeader>
         <CardTitle>Budget vs Revenue Trend (IxTime Years)</CardTitle>
-        <CardDescription>
-          Projected budget sustainability over 5 years
-        </CardDescription>
+        <CardDescription>Projected budget sustainability over 5 years</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
             {projections.map(({ year, budget, revenue, gdp, budgetGdpRatio }) => (
-              <div key={year} className="text-center p-3 bg-muted/30 rounded-lg">
-                <p className="text-sm font-semibold text-muted-foreground mb-2">Year {year}</p>
+              <div key={year} className="bg-muted/30 rounded-lg p-3 text-center">
+                <p className="text-muted-foreground mb-2 text-sm font-semibold">Year {year}</p>
                 <div className="space-y-1">
                   <p className="text-xs">
-                    <span className="text-muted-foreground">Budget:</span>{' '}
+                    <span className="text-muted-foreground">Budget:</span>{" "}
                     <span className="font-medium">${budget.toLocaleString()}</span>
                   </p>
                   <p className="text-xs">
-                    <span className="text-muted-foreground">Revenue:</span>{' '}
+                    <span className="text-muted-foreground">Revenue:</span>{" "}
                     <span className="font-medium">${revenue.toLocaleString()}</span>
                   </p>
                   {gdp > 0 && (
                     <>
                       <p className="text-xs">
-                        <span className="text-muted-foreground">GDP:</span>{' '}
+                        <span className="text-muted-foreground">GDP:</span>{" "}
                         <span className="font-medium">${gdp.toLocaleString()}</span>
                       </p>
-                      <p className="text-xs font-semibold text-primary mt-1">
+                      <p className="text-primary mt-1 text-xs font-semibold">
                         {budgetGdpRatio.toFixed(1)}% of GDP
                       </p>
                     </>
@@ -205,21 +194,28 @@ function BudgetProjectionsCard({
           </div>
 
           {/* Sustainability indicator */}
-          <div className="flex items-center justify-center gap-2 p-3 bg-muted/20 rounded-lg">
-            <p className="text-sm text-muted-foreground">
-              Average Budget/GDP Ratio:
-            </p>
+          <div className="bg-muted/20 flex items-center justify-center gap-2 rounded-lg p-3">
+            <p className="text-muted-foreground text-sm">Average Budget/GDP Ratio:</p>
             <p className="text-sm font-semibold">
-              {(projections.reduce((sum, p) => sum + p.budgetGdpRatio, 0) / projections.length).toFixed(1)}%
+              {(
+                projections.reduce((sum, p) => sum + p.budgetGdpRatio, 0) / projections.length
+              ).toFixed(1)}
+              %
             </p>
-            <Badge variant={
-              projections[0]!.budgetGdpRatio < 40 ? "default" :
-              projections[0]!.budgetGdpRatio < 50 ? "secondary" :
-              "destructive"
-            }>
-              {projections[0]!.budgetGdpRatio < 40 ? "Sustainable" :
-               projections[0]!.budgetGdpRatio < 50 ? "Moderate" :
-               "High Risk"}
+            <Badge
+              variant={
+                projections[0]!.budgetGdpRatio < 40
+                  ? "default"
+                  : projections[0]!.budgetGdpRatio < 50
+                    ? "secondary"
+                    : "destructive"
+              }
+            >
+              {projections[0]!.budgetGdpRatio < 40
+                ? "Sustainable"
+                : projections[0]!.budgetGdpRatio < 50
+                  ? "Moderate"
+                  : "High Risk"}
             </Badge>
           </div>
         </div>

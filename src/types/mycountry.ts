@@ -1,21 +1,21 @@
 /**
  * TypeScript types for MyCountry system
- * 
+ *
  * This file defines all the data structures used by the MyCountry API and components.
  * These types ensure type safety across the entire MyCountry system.
  */
 
-import type { LucideIcon } from 'lucide-react';
-import type { IntelligenceItem } from './intelligence-unified';
+import type { LucideIcon } from "lucide-react";
+import type { IntelligenceItem } from "./intelligence-unified";
 
 // Re-export from ixstats for consistency
-export type { CountryWithEconomicData } from './ixstats';
+export type { CountryWithEconomicData } from "./ixstats";
 
 /**
  * Intelligence feed item for executive dashboard
  */
 // Re-export unified IntelligenceItem to maintain backward compatibility
-export type { IntelligenceItem } from './intelligence-unified';
+export type { IntelligenceItem } from "./intelligence-unified";
 
 /**
  * Achievement earned by the country
@@ -24,8 +24,8 @@ export interface Achievement {
   id: string;
   title: string;
   description: string;
-  category: 'economic' | 'diplomatic' | 'social' | 'governance' | 'special';
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  category: "economic" | "diplomatic" | "social" | "governance" | "special";
+  rarity: "common" | "rare" | "epic" | "legendary";
   achievedAt: number; // Unix timestamp
   points: number;
   icon: string; // Lucide icon name
@@ -43,8 +43,8 @@ export interface Milestone {
   description: string;
   achievedAt: number; // Unix timestamp
   impact: string;
-  category: 'population' | 'economic' | 'diplomatic' | 'governance' | 'infrastructure';
-  significance: 'minor' | 'moderate' | 'major' | 'historic';
+  category: "population" | "economic" | "diplomatic" | "governance" | "infrastructure";
+  significance: "minor" | "moderate" | "major" | "historic";
   relatedMetrics?: {
     metric: string;
     value: number;
@@ -56,7 +56,13 @@ export interface Milestone {
  * International ranking information
  */
 export interface Ranking {
-  category: 'GDP per Capita' | 'Population' | 'Total GDP' | 'Quality of Life' | 'Innovation' | 'Competitiveness';
+  category:
+    | "GDP per Capita"
+    | "Population"
+    | "Total GDP"
+    | "Quality of Life"
+    | "Innovation"
+    | "Competitiveness";
   global: {
     position: number;
     total: number;
@@ -71,7 +77,7 @@ export interface Ranking {
     total: number;
     tier: string;
   };
-  trend: 'improving' | 'stable' | 'declining';
+  trend: "improving" | "stable" | "declining";
   percentile: number; // 0-100, where 100 is the best
   historicalBest?: {
     position: number;
@@ -97,8 +103,8 @@ export interface ExecutiveAction {
   id: string;
   title: string;
   description: string;
-  category: 'economic' | 'diplomatic' | 'social' | 'military' | 'infrastructure' | 'emergency';
-  urgency: 'low' | 'medium' | 'high' | 'critical';
+  category: "economic" | "diplomatic" | "social" | "military" | "infrastructure" | "emergency";
+  urgency: "low" | "medium" | "high" | "critical";
   estimatedImpact: {
     economic?: string;
     social?: string;
@@ -153,7 +159,7 @@ export interface ActivityRing {
   metrics: {
     primary: string;
     secondary: string;
-    trend: 'up' | 'down' | 'stable';
+    trend: "up" | "down" | "stable";
     change: string;
   };
   target?: number; // Optional target value
@@ -167,13 +173,13 @@ export interface FocusCard {
   id: string;
   title: string;
   description: string;
-  category: 'economic' | 'population' | 'diplomatic' | 'governance';
+  category: "economic" | "population" | "diplomatic" | "governance";
   healthScore: number; // 0-100
-  status: 'excellent' | 'good' | 'attention' | 'critical';
+  status: "excellent" | "good" | "attention" | "critical";
   metrics: FocusMetric[];
   actions: FocusAction[];
   alerts: Alert[];
-  trend: 'improving' | 'stable' | 'declining';
+  trend: "improving" | "stable" | "declining";
   lastUpdated: number;
 }
 
@@ -183,11 +189,11 @@ export interface FocusCard {
 export interface FocusMetric {
   label: string;
   value: string | number;
-  trend: 'up' | 'down' | 'stable';
+  trend: "up" | "down" | "stable";
   change: string;
   target?: number;
-  format: 'number' | 'percentage' | 'currency' | 'text';
-  importance: 'primary' | 'secondary';
+  format: "number" | "percentage" | "currency" | "text";
+  importance: "primary" | "secondary";
 }
 
 /**
@@ -196,10 +202,10 @@ export interface FocusMetric {
 export interface FocusAction {
   id: string;
   label: string;
-  type: 'policy' | 'budget' | 'diplomatic' | 'emergency';
+  type: "policy" | "budget" | "diplomatic" | "emergency";
   enabled: boolean;
   requiresConfirmation: boolean;
-  urgency: 'low' | 'medium' | 'high' | 'critical';
+  urgency: "low" | "medium" | "high" | "critical";
   estimatedImpact: {
     economic?: string;
     social?: string;
@@ -214,12 +220,12 @@ export interface FocusAction {
  */
 export interface Alert {
   id: string;
-  type: 'info' | 'warning' | 'error' | 'success';
+  type: "info" | "warning" | "error" | "success";
   title: string;
   description: string;
   timestamp: number;
   actionable: boolean;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: "low" | "medium" | "high" | "critical";
   dismissible: boolean;
 }
 
@@ -228,8 +234,8 @@ export interface Alert {
  */
 export interface MyCountryNotification {
   id: string;
-  type: 'economic' | 'demographic' | 'diplomatic' | 'governance' | 'achievement' | 'system';
-  priority: 'low' | 'medium' | 'high' | 'critical';
+  type: "economic" | "demographic" | "diplomatic" | "governance" | "achievement" | "system";
+  priority: "low" | "medium" | "high" | "critical";
   title: string;
   message: string;
   timestamp: number;
@@ -246,7 +252,7 @@ export interface MyCountryNotification {
 export interface NotificationAction {
   id: string;
   label: string;
-  type: 'primary' | 'secondary' | 'danger';
+  type: "primary" | "secondary" | "danger";
   handler: () => void | Promise<void>;
 }
 
@@ -255,9 +261,15 @@ export interface NotificationAction {
  */
 export interface DashboardWidget {
   id: string;
-  type: 'activity-rings' | 'focus-cards' | 'intelligence-feed' | 'achievements' | 'rankings' | 'metrics';
+  type:
+    | "activity-rings"
+    | "focus-cards"
+    | "intelligence-feed"
+    | "achievements"
+    | "rankings"
+    | "metrics";
   title: string;
-  size: 'small' | 'medium' | 'large' | 'full';
+  size: "small" | "medium" | "large" | "full";
   position: { x: number; y: number };
   settings: Record<string, any>;
   visible: boolean;
@@ -267,7 +279,7 @@ export interface DashboardWidget {
 /**
  * MyCountry page mode
  */
-export type MyCountryMode = 'public' | 'executive';
+export type MyCountryMode = "public" | "executive";
 
 /**
  * Data synchronization state
@@ -277,7 +289,7 @@ export interface MyCountryDataSyncState {
   lastUpdate: number;
   updateCount: number;
   errors: string[];
-  status: 'idle' | 'syncing' | 'error' | 'disconnected';
+  status: "idle" | "syncing" | "error" | "disconnected";
 }
 
 /**
@@ -295,9 +307,9 @@ export interface MyCountryApiResponse<T> {
  * Search/filter parameters for intelligence feed
  */
 export interface IntelligenceFeedFilters {
-  categories?: IntelligenceItem['category'][];
-  severities?: IntelligenceItem['severity'][];
-  types?: IntelligenceItem['type'][];
+  categories?: IntelligenceItem["category"][];
+  severities?: IntelligenceItem["severity"][];
+  types?: IntelligenceItem["type"][];
   timeRange?: {
     start: number;
     end: number;
@@ -311,15 +323,15 @@ export interface IntelligenceFeedFilters {
  * Executive dashboard configuration
  */
 export interface ExecutiveDashboardConfig {
-  layout: 'grid' | 'cards' | 'compact';
+  layout: "grid" | "cards" | "compact";
   widgets: DashboardWidget[];
   notifications: {
     enabled: boolean;
-    categories: IntelligenceItem['category'][];
-    minSeverity: IntelligenceItem['severity'];
+    categories: IntelligenceItem["category"][];
+    minSeverity: IntelligenceItem["severity"];
   };
   refreshInterval: number; // seconds
-  theme: 'light' | 'dark' | 'auto';
+  theme: "light" | "dark" | "auto";
 }
 
 /**
@@ -343,7 +355,7 @@ export interface CountryComparison {
     area: string;
     suggestion: string;
     potentialImpact: string;
-    difficulty: 'low' | 'medium' | 'high';
+    difficulty: "low" | "medium" | "high";
   }[];
 }
 
@@ -357,7 +369,7 @@ export interface HistoricalTrend {
     value: number;
     events?: string[]; // Notable events at this time
   }[];
-  trend: 'improving' | 'stable' | 'declining';
+  trend: "improving" | "stable" | "declining";
   changeRate: number; // Rate of change per period
   projection?: {
     timestamp: number;
@@ -370,8 +382,8 @@ export interface HistoricalTrend {
  * Export configuration for data export features
  */
 export interface ExportConfig {
-  format: 'json' | 'csv' | 'xlsx' | 'pdf';
-  data: ('overview' | 'metrics' | 'history' | 'intelligence' | 'achievements')[];
+  format: "json" | "csv" | "xlsx" | "pdf";
+  data: ("overview" | "metrics" | "history" | "intelligence" | "achievements")[];
   timeRange?: {
     start: number;
     end: number;
@@ -381,7 +393,11 @@ export interface ExportConfig {
 }
 
 // Utility types
-export type MyCountryEventType = 'data-update' | 'achievement-unlocked' | 'alert-generated' | 'action-executed';
+export type MyCountryEventType =
+  | "data-update"
+  | "achievement-unlocked"
+  | "alert-generated"
+  | "action-executed";
 
 export interface MyCountryEvent {
   type: MyCountryEventType;
@@ -393,22 +409,22 @@ export interface MyCountryEvent {
 
 // Form validation schemas (for use with zod)
 export const IntelligenceItemSchema = {
-  id: 'string',
-  type: ['alert', 'opportunity', 'update', 'prediction'],
-  severity: ['low', 'medium', 'high', 'critical'],
-  title: 'string',
-  description: 'string',
-  category: ['economic', 'diplomatic', 'social', 'governance', 'security'],
-  timestamp: 'number',
-  actionable: 'boolean',
-  source: 'string',
+  id: "string",
+  type: ["alert", "opportunity", "update", "prediction"],
+  severity: ["low", "medium", "high", "critical"],
+  title: "string",
+  description: "string",
+  category: ["economic", "diplomatic", "social", "governance", "security"],
+  timestamp: "number",
+  actionable: "boolean",
+  source: "string",
 } as const;
 
 export const ExecutiveActionSchema = {
-  id: 'string',
-  title: 'string',
-  description: 'string',
-  category: ['economic', 'diplomatic', 'social', 'military', 'infrastructure', 'emergency'],
-  urgency: ['low', 'medium', 'high', 'critical'],
-  enabled: 'boolean',
+  id: "string",
+  title: "string",
+  description: "string",
+  category: ["economic", "diplomatic", "social", "military", "infrastructure", "emergency"],
+  urgency: ["low", "medium", "high", "critical"],
+  enabled: "boolean",
 } as const;

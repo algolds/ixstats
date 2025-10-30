@@ -28,22 +28,22 @@ interface UnifiedCountryFlagProps {
 const sizeClasses = {
   xs: "h-3 w-auto min-w-[16px]",
   sm: "h-4 w-auto min-w-[20px]",
-  md: "h-6 w-auto min-w-[24px]", 
+  md: "h-6 w-auto min-w-[24px]",
   lg: "h-8 w-auto min-w-[32px]",
-  xl: "h-10 w-auto min-w-[40px]"
+  xl: "h-10 w-auto min-w-[40px]",
 };
 
 const placeholderTextSize = {
   xs: "text-[8px]",
-  sm: "text-[9px]", 
+  sm: "text-[9px]",
   md: "text-xs",
   lg: "text-sm",
-  xl: "text-base"
+  xl: "text-base",
 };
 
-export function UnifiedCountryFlag({ 
-  countryName, 
-  size = "md", 
+export function UnifiedCountryFlag({
+  countryName,
+  size = "md",
   className = "",
   showPlaceholder = true,
   showTooltip = true,
@@ -54,16 +54,16 @@ export function UnifiedCountryFlag({
   shadow = false,
   border = false,
 }: UnifiedCountryFlagProps) {
-  
   // Use external props if provided (for bulk loading scenarios)
   // Otherwise use individual flag hook
   const hookResult = useFlag(
-    (externalFlagUrl === undefined && externalIsLoading === undefined) ? countryName : undefined
+    externalFlagUrl === undefined && externalIsLoading === undefined ? countryName : undefined
   );
 
   // Determine which values to use
   const flagUrl = externalFlagUrl !== undefined ? externalFlagUrl : hookResult.flagUrl;
-  const isLoading = externalLoading || (externalIsLoading !== undefined ? externalIsLoading : hookResult.isLoading);
+  const isLoading =
+    externalLoading || (externalIsLoading !== undefined ? externalIsLoading : hookResult.isLoading);
   const error = !isLoading && !flagUrl;
   const isLocal = flagUrl ? hookResult.isLocal : false;
   const isPlaceholder = flagUrl ? hookResult.isPlaceholder : false;
@@ -87,7 +87,7 @@ export function UnifiedCountryFlag({
     "text-gray-500 font-medium",
     "transition-all duration-200",
     rounded && "rounded",
-    shadow && "shadow-sm", 
+    shadow && "shadow-sm",
     border && "border border-gray-200",
     className
   );
@@ -97,9 +97,7 @@ export function UnifiedCountryFlag({
     return (
       <div className="relative">
         <Skeleton className={cn(sizeClasses[size], rounded && "rounded", className)} />
-        {showTooltip && (
-          <span className="sr-only">Loading flag for {countryName}</span>
-        )}
+        {showTooltip && <span className="sr-only">Loading flag for {countryName}</span>}
       </div>
     );
   }
@@ -109,23 +107,20 @@ export function UnifiedCountryFlag({
     if (!showPlaceholder) {
       return null;
     }
-    
-    const countryCode = countryName.length >= 2 ? 
-      countryName.substring(0, 2).toUpperCase() : 
-      countryName.substring(0, 1).toUpperCase();
-    
+
+    const countryCode =
+      countryName.length >= 2
+        ? countryName.substring(0, 2).toUpperCase()
+        : countryName.substring(0, 1).toUpperCase();
+
     return (
-      <div 
+      <div
         className={placeholderClasses}
         title={showTooltip ? `Flag not available for ${countryName}` : undefined}
         role="img"
         aria-label={`Flag placeholder for ${countryName}`}
       >
-        {size === 'xs' || size === 'sm' ? (
-          <Flag className="h-2 w-2 opacity-40" />
-        ) : (
-          countryCode
-        )}
+        {size === "xs" || size === "sm" ? <Flag className="h-2 w-2 opacity-40" /> : countryCode}
       </div>
     );
   }
@@ -146,14 +141,14 @@ export function UnifiedCountryFlag({
 
   // Wrap with tooltip if enabled
   if (showTooltip) {
-    const tooltipText = isPlaceholder ? 
-      `Placeholder flag for ${countryName}` :
-      isLocal ?
-        `${countryName} (cached locally)` :
-        `Flag of ${countryName}`;
+    const tooltipText = isPlaceholder
+      ? `Placeholder flag for ${countryName}`
+      : isLocal
+        ? `${countryName} (cached locally)`
+        : `Flag of ${countryName}`;
 
     return (
-      <div 
+      <div
         title={tooltipText}
         role="img"
         aria-label={`Flag of ${countryName}`}
@@ -161,9 +156,11 @@ export function UnifiedCountryFlag({
       >
         <FlagImage />
         {/* Visual indicator for local files */}
-        {isLocal && size !== 'xs' && (
-          <div className="absolute -top-1 -right-1 h-2 w-2 bg-green-500 rounded-full opacity-75" 
-               title="Cached locally" />
+        {isLocal && size !== "xs" && (
+          <div
+            className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-green-500 opacity-75"
+            title="Cached locally"
+          />
         )}
       </div>
     );
@@ -173,47 +170,43 @@ export function UnifiedCountryFlag({
 }
 
 // Convenience components for common use cases
-export function SmallFlag(props: Omit<UnifiedCountryFlagProps, 'size'>) {
+export function SmallFlag(props: Omit<UnifiedCountryFlagProps, "size">) {
   return <UnifiedCountryFlag {...props} size="sm" />;
 }
 
-export function LargeFlag(props: Omit<UnifiedCountryFlagProps, 'size'>) {
+export function LargeFlag(props: Omit<UnifiedCountryFlagProps, "size">) {
   return <UnifiedCountryFlag {...props} size="lg" />;
 }
 
-export function IconFlag(props: Omit<UnifiedCountryFlagProps, 'size' | 'showTooltip'>) {
+export function IconFlag(props: Omit<UnifiedCountryFlagProps, "size" | "showTooltip">) {
   return <UnifiedCountryFlag {...props} size="xs" showTooltip={false} />;
 }
 
 // Grid component for displaying multiple flags
 interface FlagGridProps {
   countries: Array<{ name: string; displayName?: string }>;
-  flagSize?: UnifiedCountryFlagProps['size'];
+  flagSize?: UnifiedCountryFlagProps["size"];
   columns?: number;
   className?: string;
 }
 
 export function FlagGrid({ countries, flagSize = "md", columns = 4, className }: FlagGridProps) {
-  const gridCols = {
-    2: "grid-cols-2",
-    3: "grid-cols-3", 
-    4: "grid-cols-4",
-    5: "grid-cols-5",
-    6: "grid-cols-6"
-  }[columns] || "grid-cols-4";
+  const gridCols =
+    {
+      2: "grid-cols-2",
+      3: "grid-cols-3",
+      4: "grid-cols-4",
+      5: "grid-cols-5",
+      6: "grid-cols-6",
+    }[columns] || "grid-cols-4";
 
   return (
     <div className={cn("grid gap-4", gridCols, className)}>
       {countries.map((country) => (
         <div key={country.name} className="flex flex-col items-center gap-2">
-          <UnifiedCountryFlag 
-            countryName={country.name} 
-            size={flagSize}
-            shadow
-            border
-          />
-          <span className="text-sm text-center text-gray-600">
-            {country.displayName || country.name.replace(/_/g, ' ')}
+          <UnifiedCountryFlag countryName={country.name} size={flagSize} shadow border />
+          <span className="text-center text-sm text-gray-600">
+            {country.displayName || country.name.replace(/_/g, " ")}
           </span>
         </div>
       ))}
@@ -225,21 +218,21 @@ export function FlagGrid({ countries, flagSize = "md", columns = 4, className }:
 export function UnifiedCountryFlagExample() {
   const testCountries = [
     { name: "United_States", displayName: "United States" },
-    { name: "Germany", displayName: "Germany" }, 
+    { name: "Germany", displayName: "Germany" },
     { name: "Japan", displayName: "Japan" },
     { name: "France", displayName: "France" },
     { name: "United_Kingdom", displayName: "United Kingdom" },
-    { name: "NonExistentCountry", displayName: "Non-Existent" }
+    { name: "NonExistentCountry", displayName: "Non-Existent" },
   ];
 
-  const sizes: UnifiedCountryFlagProps['size'][] = ['xs', 'sm', 'md', 'lg', 'xl'];
+  const sizes: UnifiedCountryFlagProps["size"][] = ["xs", "sm", "md", "lg", "xl"];
 
   return (
     <div className="space-y-8 p-6">
       <div>
-        <h3 className="text-lg font-semibold mb-4">Flag Sizes</h3>
+        <h3 className="mb-4 text-lg font-semibold">Flag Sizes</h3>
         <div className="flex items-end gap-4">
-          {sizes.map(size => (
+          {sizes.map((size) => (
             <div key={size} className="flex flex-col items-center gap-2">
               <UnifiedCountryFlag countryName="United_States" size={size} />
               <span className="text-xs text-gray-500">{size}</span>
@@ -249,14 +242,14 @@ export function UnifiedCountryFlagExample() {
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold mb-4">Flag Grid Example</h3>
+        <h3 className="mb-4 text-lg font-semibold">Flag Grid Example</h3>
         <FlagGrid countries={testCountries} flagSize="md" columns={3} />
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold mb-4">Individual Flags</h3>
+        <h3 className="mb-4 text-lg font-semibold">Individual Flags</h3>
         <div className="flex flex-wrap gap-4">
-          {testCountries.map(country => (
+          {testCountries.map((country) => (
             <div key={country.name} className="flex items-center gap-2">
               <UnifiedCountryFlag countryName={country.name} size="md" />
               <span className="text-sm">{country.displayName}</span>

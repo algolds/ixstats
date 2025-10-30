@@ -1,10 +1,10 @@
 "use client";
 
-import React from 'react';
-import { Progress } from '~/components/ui/progress';
-import { EnhancedSlider } from '../../../../primitives/enhanced';
-import { Baby, UserCheck, Heart } from 'lucide-react';
-import type { DemographicsConfiguration } from '~/types/economy-builder';
+import React from "react";
+import { Progress } from "~/components/ui/progress";
+import { EnhancedSlider } from "../../../../primitives/enhanced";
+import { Baby, UserCheck, Heart } from "lucide-react";
+import type { DemographicsConfiguration } from "~/types/economy-builder";
 
 interface AgeDistributionSectionProps {
   demographics: DemographicsConfiguration;
@@ -15,7 +15,7 @@ interface AgeDistributionSectionProps {
 export function AgeDistributionSection({
   demographics,
   onChange,
-  showAdvanced
+  showAdvanced,
 }: AgeDistributionSectionProps) {
   return (
     <div className="space-y-4">
@@ -23,7 +23,7 @@ export function AgeDistributionSection({
         label="Under 15 Years"
         description="Percentage of population under 15"
         value={demographics.ageDistribution.under15}
-        onChange={(value) => onChange('ageDistribution', 'under15', value)}
+        onChange={(value) => onChange("ageDistribution", "under15", value)}
         min={10}
         max={50}
         step={0.1}
@@ -37,7 +37,7 @@ export function AgeDistributionSection({
         label="Working Age (15-64)"
         description="Percentage of population aged 15-64"
         value={demographics.ageDistribution.age15to64}
-        onChange={(value) => onChange('ageDistribution', 'age15to64', value)}
+        onChange={(value) => onChange("ageDistribution", "age15to64", value)}
         min={40}
         max={80}
         step={0.1}
@@ -51,7 +51,7 @@ export function AgeDistributionSection({
         label="Over 65 Years"
         description="Percentage of population over 65"
         value={demographics.ageDistribution.over65}
-        onChange={(value) => onChange('ageDistribution', 'over65', value)}
+        onChange={(value) => onChange("ageDistribution", "over65", value)}
         min={5}
         max={35}
         step={0.1}
@@ -62,7 +62,7 @@ export function AgeDistributionSection({
       />
 
       {showAdvanced && (
-        <div className="space-y-4 pt-4 border-t">
+        <div className="space-y-4 border-t pt-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
@@ -75,7 +75,9 @@ export function AgeDistributionSection({
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Elderly Dependency Ratio</span>
-                <span className="font-medium">{demographics.elderlyDependencyRatio.toFixed(1)}</span>
+                <span className="font-medium">
+                  {demographics.elderlyDependencyRatio.toFixed(1)}
+                </span>
               </div>
               <Progress value={demographics.elderlyDependencyRatio / 100} className="h-2" />
             </div>

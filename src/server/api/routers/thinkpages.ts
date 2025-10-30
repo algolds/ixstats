@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, protectedProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  publicProcedure,
+  protectedProcedure,
+  rateLimitedPublicProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { IxTime } from "~/lib/ixtime";
 import { generateAndPostCitizenReaction } from "~/lib/auto-post-service";
@@ -17,22 +22,26 @@ const SearchUnsplashImagesSchema = z.object({
   query: z.string().min(1),
   page: z.number().min(1).default(1),
   per_page: z.number().min(1).max(30).default(10),
-  orientation: z.enum(['landscape', 'portrait', 'squarish']).optional(),
+  orientation: z.enum(["landscape", "portrait", "squarish"]).optional(),
   color: z.string().optional(), // Unsplash API supports specific color names or hex codes
 });
 
 // Base schema for ThinkPages accounts
 const thinkpagesAccountBaseSchema = z.object({
   countryId: z.string(),
-  accountType: z.enum(['government', 'media', 'citizen']),
-  username: z.string().min(3).max(20).regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
+  accountType: z.enum(["government", "media", "citizen"]),
+  username: z
+    .string()
+    .min(3)
+    .max(20)
+    .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
   firstName: z.string().min(1).max(50),
   lastName: z.string().min(1).max(50),
   bio: z.string().max(500).optional(),
   verified: z.boolean().default(false),
-  postingFrequency: z.enum(['active', 'moderate', 'low']).default('moderate'),
-  politicalLean: z.enum(['left', 'center', 'right']).default('center'),
-  personality: z.enum(['serious', 'casual', 'satirical']).default('casual'),
+  postingFrequency: z.enum(["active", "moderate", "low"]).default("moderate"),
+  politicalLean: z.enum(["left", "center", "right"]).default("center"),
+  personality: z.enum(["serious", "casual", "satirical"]).default("casual"),
   profileImageUrl: z.string().url().optional(),
   isActive: z.boolean().default(true),
 });
@@ -45,36 +54,51 @@ const UpdateAccountSchema = thinkpagesAccountBaseSchema.partial();
 
 const CreatePostSchema = z.object({
   accountId: z.string(), // ThinkpagesAccount ID for feed posts
-  content: z.string().min(1).max(280).refine(
-    (content) => {
-      const validation = validateNoXSS(content);
-      return validation.valid;
-    },
-    {
-      message: "Content contains potentially unsafe HTML. Please avoid using script tags, javascript: URLs, or event handlers."
-    }
-  ),
+  content: z
+    .string()
+    .min(1)
+    .max(280)
+    .refine(
+      (content) => {
+        const validation = validateNoXSS(content);
+        return validation.valid;
+      },
+      {
+        message:
+          "Content contains potentially unsafe HTML. Please avoid using script tags, javascript: URLs, or event handlers.",
+      }
+    ),
   hashtags: z.array(z.string()).optional(),
   mentions: z.array(z.string()).optional(),
-  visibility: z.enum(['public', 'private', 'unlisted']).default('public'),
+  visibility: z.enum(["public", "private", "unlisted"]).default("public"),
   parentPostId: z.string().optional(), // For replies
   repostOfId: z.string().optional(), // For reposts
-  visualizations: z.array(z.object({
-    type: z.enum(['economic_chart', 'diplomatic_map', 'trade_flow', 'gdp_growth']),
-    title: z.string(),
-    config: z.object({
-      chartType: z.string().optional(),
-      dataSource: z.string().optional(),
-      timeRange: z.object({
-        start: z.string().optional(),
-        end: z.string().optional(),
-      }).optional(),
-      metrics: z.array(z.string()).optional(),
-      countries: z.array(z.string()).optional(),
-      colors: z.array(z.string()).optional(),
-      displayOptions: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
-    }).passthrough(), // Allow additional custom properties
-  })).optional(), // Data visualizations embedded in post
+  visualizations: z
+    .array(
+      z.object({
+        type: z.enum(["economic_chart", "diplomatic_map", "trade_flow", "gdp_growth"]),
+        title: z.string(),
+        config: z
+          .object({
+            chartType: z.string().optional(),
+            dataSource: z.string().optional(),
+            timeRange: z
+              .object({
+                start: z.string().optional(),
+                end: z.string().optional(),
+              })
+              .optional(),
+            metrics: z.array(z.string()).optional(),
+            countries: z.array(z.string()).optional(),
+            colors: z.array(z.string()).optional(),
+            displayOptions: z
+              .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+              .optional(),
+          })
+          .passthrough(), // Allow additional custom properties
+      })
+    )
+    .optional(), // Data visualizations embedded in post
   mediaUrls: z.array(z.string().url()).max(4).optional(), // Up to 4 images per post
 });
 
@@ -82,34 +106,34 @@ const AddReactionSchema = z.object({
   postId: z.string(),
   accountId: z.string(), // ThinkpagesAccount ID for reactions
   reactionType: z.union([
-    z.enum(['like', 'laugh', 'angry', 'sad', 'fire', 'thumbsup', 'thumbsdown']),
-    z.string().startsWith('discord:') // Support Discord emoji reactions like "discord:ixnay"
+    z.enum(["like", "laugh", "angry", "sad", "fire", "thumbsup", "thumbsdown"]),
+    z.string().startsWith("discord:"), // Support Discord emoji reactions like "discord:ixnay"
   ]),
 });
 
 const GetFeedSchema = z.object({
   countryId: z.string().optional(), // Feed filtered by country
   hashtag: z.string().optional(),
-  filter: z.enum(['recent', 'trending', 'hot']).default('recent'),
+  filter: z.enum(["recent", "trending", "hot"]).default("recent"),
   limit: z.number().min(1).max(50).default(20),
   cursor: z.string().optional(),
 });
 
-
-
-async function getWikiCommonsImageInfo(title: string): Promise<{ url: string; description: string; photographer: string } | null> {
+async function getWikiCommonsImageInfo(
+  title: string
+): Promise<{ url: string; description: string; photographer: string } | null> {
   const params = new URLSearchParams({
-    action: 'query',
+    action: "query",
     titles: title,
-    prop: 'imageinfo',
-    iiprop: 'url|extmetadata',
-    format: 'json',
-    formatversion: '2',
+    prop: "imageinfo",
+    iiprop: "url|extmetadata",
+    format: "json",
+    formatversion: "2",
   });
 
   const response = await fetch(`https://commons.wikimedia.org/w/api.php?${params.toString()}`, {
     headers: {
-      'User-Agent': 'IxStats-Builder',
+      "User-Agent": "IxStats-Builder",
     },
   });
 
@@ -118,7 +142,7 @@ async function getWikiCommonsImageInfo(title: string): Promise<{ url: string; de
     return null;
   }
 
-  const data = await response.json() as Record<string, unknown>;
+  const data = (await response.json()) as Record<string, unknown>;
   const page = (data.query as any)?.pages?.[0];
 
   if (!page || page.missing || !page.imageinfo?.[0]) {
@@ -151,84 +175,98 @@ export const thinkpagesRouter = createTRPCRouter({
       } catch (error) {
         console.error("Failed to search Unsplash images:", error);
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to search Unsplash images',
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to search Unsplash images",
         });
       }
     }),
 
   // Search Wiki Commons images
   searchWikiCommonsImages: rateLimitedPublicProcedure
-    .input(z.object({
-      query: z.string().min(1),
-      page: z.number().min(1).default(1),
-      per_page: z.number().min(1).max(30).default(10),
-    }))
+    .input(
+      z.object({
+        query: z.string().min(1),
+        page: z.number().min(1).default(1),
+        per_page: z.number().min(1).max(30).default(10),
+      })
+    )
     .query(async ({ input }) => {
       try {
         const offset = (input.page - 1) * input.per_page;
         const searchParams = new URLSearchParams({
-          action: 'query',
-          list: 'search',
+          action: "query",
+          list: "search",
           srsearch: input.query,
-          srprop: 'titlesnippet', // Get title snippet for description
+          srprop: "titlesnippet", // Get title snippet for description
           srlimit: input.per_page.toString(),
           sroffset: offset.toString(),
-          format: 'json',
-          formatversion: '2',
-          srwhat: 'text',
-          srnamespace: '6', // File namespace
+          format: "json",
+          formatversion: "2",
+          srwhat: "text",
+          srnamespace: "6", // File namespace
         });
 
-        const response = await fetch(`https://commons.wikimedia.org/w/api.php?${searchParams.toString()}`, {
-          headers: {
-            'User-Agent': 'IxStats-Builder',
-          },
-        });
+        const response = await fetch(
+          `https://commons.wikimedia.org/w/api.php?${searchParams.toString()}`,
+          {
+            headers: {
+              "User-Agent": "IxStats-Builder",
+            },
+          }
+        );
 
         if (!response.ok) {
           throw new TRPCError({
-            code: 'INTERNAL_SERVER_ERROR',
+            code: "INTERNAL_SERVER_ERROR",
             message: `Wikimedia Commons API responded with status ${response.status}`,
           });
         }
 
-        const data = await response.json() as Record<string, unknown>;
-        const searchResults = ((data.query as any)?.search || []) as Array<{ title: string; pageid: number }>;
+        const data = (await response.json()) as Record<string, unknown>;
+        const searchResults = ((data.query as any)?.search || []) as Array<{
+          title: string;
+          pageid: number;
+        }>;
 
-        const images = await Promise.all(searchResults.map(async (result: { title: string; pageid: number }) => {
-          const imageInfo = await getWikiCommonsImageInfo(result.title);
-          if (imageInfo) {
-            return {
-              id: result.pageid.toString(),
-              url: imageInfo.url,
-              description: imageInfo.description,
-              photographer: imageInfo.photographer,
-            };
-          }
-          return null;
-        }));
+        const images = await Promise.all(
+          searchResults.map(async (result: { title: string; pageid: number }) => {
+            const imageInfo = await getWikiCommonsImageInfo(result.title);
+            if (imageInfo) {
+              return {
+                id: result.pageid.toString(),
+                url: imageInfo.url,
+                description: imageInfo.description,
+                photographer: imageInfo.photographer,
+              };
+            }
+            return null;
+          })
+        );
 
         return images.filter(Boolean); // Filter out nulls
       } catch (error) {
         console.error("Failed to search Wiki Commons images:", error);
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: `Failed to search Wiki Commons images: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Failed to search Wiki Commons images: ${error instanceof Error ? error.message : "Unknown error"}`,
         });
       }
     }),
 
   searchWiki: rateLimitedPublicProcedure
-    .input(z.object({
-      query: z.string().min(1, "Search query is required"),
-      wiki: z.enum(['iiwiki', 'ixwiki']),
-      cursor: z.string().optional(),
-      limit: z.number().min(1).max(100).default(30)
-    }).refine(
-      (data) => data.query && data.query.trim().length > 0,
-      { message: "Search query cannot be empty or whitespace", path: ["query"] }
-    ))
+    .input(
+      z
+        .object({
+          query: z.string().min(1, "Search query is required"),
+          wiki: z.enum(["iiwiki", "ixwiki"]),
+          cursor: z.string().optional(),
+          limit: z.number().min(1).max(100).default(30),
+        })
+        .refine((data) => data.query && data.query.trim().length > 0, {
+          message: "Search query cannot be empty or whitespace",
+          path: ["query"],
+        })
+    )
     .query(async ({ input, ctx }) => {
       const { query, wiki, cursor, limit } = input;
       const startTime = Date.now();
@@ -239,20 +277,24 @@ export const thinkpagesRouter = createTRPCRouter({
       // Final defensive check
       if (!trimmedQuery || trimmedQuery.length === 0) {
         throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Search query cannot be empty'
+          code: "BAD_REQUEST",
+          message: "Search query cannot be empty",
         });
       }
 
       try {
-        console.log(`[WikiImageSearch] Starting image search - Wiki: ${wiki}, Query: "${trimmedQuery}", Cursor: ${cursor || 'none'}`);
+        console.log(
+          `[WikiImageSearch] Starting image search - Wiki: ${wiki}, Query: "${trimmedQuery}", Cursor: ${cursor || "none"}`
+        );
 
         // Import searchWikiImages function for image-specific search
-        const { searchWikiImagesWithPagination } = await import('~/lib/wiki-search-service');
+        const { searchWikiImagesWithPagination } = await import("~/lib/wiki-search-service");
         const results = await searchWikiImagesWithPagination(trimmedQuery, wiki, cursor, limit);
 
         const duration = Date.now() - startTime;
-        console.log(`[WikiImageSearch] Success - Found ${results.images.length} images in ${duration}ms, hasMore: ${results.hasMore}`);
+        console.log(
+          `[WikiImageSearch] Success - Found ${results.images.length} images in ${duration}ms, hasMore: ${results.hasMore}`
+        );
 
         return {
           images: results.images,
@@ -261,20 +303,22 @@ export const thinkpagesRouter = createTRPCRouter({
         };
       } catch (error) {
         const duration = Date.now() - startTime;
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
 
-        console.error(`[WikiImageSearch] Failed after ${duration}ms - Wiki: ${wiki}, Query: "${query}"`);
+        console.error(
+          `[WikiImageSearch] Failed after ${duration}ms - Wiki: ${wiki}, Query: "${query}"`
+        );
         console.error(`[WikiImageSearch] Error:`, error);
 
         // Log to database for monitoring
         try {
           await ctx.db.systemLog.create({
             data: {
-              level: 'ERROR',
-              category: 'WIKI_SEARCH',
+              level: "ERROR",
+              category: "WIKI_SEARCH",
               message: `Wiki image search failed: ${wiki} - ${errorMessage}`,
               endpoint: `/api/trpc/thinkpages.searchWiki`,
-              component: 'WikiImageSearch',
+              component: "WikiImageSearch",
               duration,
               metadata: JSON.stringify({
                 wiki,
@@ -282,15 +326,15 @@ export const thinkpagesRouter = createTRPCRouter({
                 error: errorMessage,
               }),
               timestamp: new Date(),
-            }
+            },
           });
         } catch (logError) {
-          console.error('[WikiImageSearch] Failed to log error to database:', logError);
+          console.error("[WikiImageSearch] Failed to log error to database:", logError);
         }
 
         // Return graceful error to client
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
+          code: "INTERNAL_SERVER_ERROR",
           message: `Failed to search ${wiki} images: ${errorMessage}. Please try again or select a different wiki.`,
         });
       }
@@ -323,14 +367,15 @@ export const thinkpagesRouter = createTRPCRouter({
           hashtagCounts[hashtag] = { count: 0, engagement: 0 };
         }
         hashtagCounts[hashtag].count++;
-        hashtagCounts[hashtag].engagement += (post.likeCount ?? 0) + (post.repostCount ?? 0) + (post.replyCount ?? 0);
+        hashtagCounts[hashtag].engagement +=
+          (post.likeCount ?? 0) + (post.repostCount ?? 0) + (post.replyCount ?? 0);
       }
     }
 
     for (const hashtag in hashtagCounts) {
       const hashtagData = hashtagCounts[hashtag];
       if (!hashtagData) continue;
-      
+
       await db.trendingTopic.upsert({
         where: { hashtag },
         create: {
@@ -352,9 +397,11 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Search users globally for ThinkTanks/ThinkShare
   searchUsers: rateLimitedPublicProcedure
-    .input(z.object({
-      query: z.string(),
-    }))
+    .input(
+      z.object({
+        query: z.string(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
@@ -386,44 +433,46 @@ export const thinkpagesRouter = createTRPCRouter({
       // Return sanitized account-like objects for frontend (id is Clerk userId, display shows country)
       return users.map((u) => ({
         id: u.clerkUserId,
-        username: u.country?.slug || '',
-        displayName: u.country?.name || 'Unknown Country',
+        username: u.country?.slug || "",
+        displayName: u.country?.name || "Unknown Country",
         profileImageUrl: u.country?.flag || null,
-        accountType: 'country',
+        accountType: "country",
       }));
     }),
 
   // Update ThinkPages Feed Account
   updateAccount: protectedProcedure
-    .input(z.object({
-      accountId: z.string(),
-      verified: z.boolean().optional(),
-      profileImageUrl: z.string().url().optional(),
-      postingFrequency: z.enum(['active', 'moderate', 'low']).optional(),
-      politicalLean: z.enum(['left', 'center', 'right']).optional(),
-      personality: z.enum(['serious', 'casual', 'satirical']).optional(),
-      isActive: z.boolean().optional(),
-    }))
+    .input(
+      z.object({
+        accountId: z.string(),
+        verified: z.boolean().optional(),
+        profileImageUrl: z.string().url().optional(),
+        postingFrequency: z.enum(["active", "moderate", "low"]).optional(),
+        politicalLean: z.enum(["left", "center", "right"]).optional(),
+        personality: z.enum(["serious", "casual", "satirical"]).optional(),
+        isActive: z.boolean().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
       const clerkUserId = ctx.auth?.userId;
 
       if (!clerkUserId) {
         throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'You must be logged in to update accounts'
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to update accounts",
         });
       }
 
       // Verify the account belongs to the current user
       const existingAccount = await db.thinkpagesAccount.findUnique({
-        where: { id: input.accountId }
+        where: { id: input.accountId },
       });
 
       if (!existingAccount || existingAccount.clerkUserId !== clerkUserId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have permission to update this account'
+          code: "FORBIDDEN",
+          message: "You do not have permission to update this account",
         });
       }
 
@@ -443,121 +492,120 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
   // Username availability check for ThinkPages Feed Accounts
   checkUsernameAvailability: publicProcedure
-    .input(z.object({
-      username: z.string().min(3).max(20).regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
-    }))
+    .input(
+      z.object({
+        username: z
+          .string()
+          .min(3)
+          .max(20)
+          .regex(/^[a-zA-Z][a-zA-Z0-9_]*$/),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
-      
+
       // Check if username is already taken in ThinkpagesAccount table
       const existingAccount = await db.thinkpagesAccount.findUnique({
-        where: { username: input.username }
+        where: { username: input.username },
       });
-      
+
       return { isAvailable: !existingAccount };
     }),
 
   // Generate random profile picture
-  generateProfilePicture: publicProcedure
-    .mutation(async () => {
-      // Return first placeholder image (deterministic, not random)
-      const placeholderImage = "https://via.placeholder.com/150/4F46E5/FFFFFF?text=User";
-      return { imageUrl: placeholderImage };
-    }),
+  generateProfilePicture: publicProcedure.mutation(async () => {
+    // Return first placeholder image (deterministic, not random)
+    const placeholderImage = "https://via.placeholder.com/150/4F46E5/FFFFFF?text=User";
+    return { imageUrl: placeholderImage };
+  }),
 
   // Create ThinkPages Feed Account - For Feed only (not ThinkTanks/ThinkShare)
-  createAccount: protectedProcedure
-    .input(CreateAccountSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { db } = ctx;
-      const clerkUserId = ctx.auth?.userId;
+  createAccount: protectedProcedure.input(CreateAccountSchema).mutation(async ({ ctx, input }) => {
+    const { db } = ctx;
+    const clerkUserId = ctx.auth?.userId;
 
-      if (!clerkUserId) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'You must be logged in to create accounts'
-        });
-      }
-
-      // Check account limit - 25 accounts per clerk user
-      const existingAccounts = await db.thinkpagesAccount.findMany({
-        where: { clerkUserId }
+    if (!clerkUserId) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "You must be logged in to create accounts",
       });
+    }
 
-      if (existingAccounts.length >= 25) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'You have reached the maximum of 25 ThinkPages accounts per user'
-        });
-      }
+    // Check account limit - 25 accounts per clerk user
+    const existingAccounts = await db.thinkpagesAccount.findMany({
+      where: { clerkUserId },
+    });
 
-      // Check username availability
-      const existingUsername = await db.thinkpagesAccount.findUnique({
-        where: { username: input.username }
+    if (existingAccounts.length >= 25) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "You have reached the maximum of 25 ThinkPages accounts per user",
       });
+    }
 
-      if (existingUsername) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Username is already taken'
-        });
-      }
+    // Check username availability
+    const existingUsername = await db.thinkpagesAccount.findUnique({
+      where: { username: input.username },
+    });
 
-      // Verify country exists
-      const country = await db.country.findUnique({
-        where: { id: input.countryId }
+    if (existingUsername) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Username is already taken",
       });
+    }
 
-      if (!country) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Country not found'
-        });
-      }
+    // Verify country exists
+    const country = await db.country.findUnique({
+      where: { id: input.countryId },
+    });
 
-      // Create the account
-      const displayName = `${input.firstName} ${input.lastName}`;
-      const account = await db.thinkpagesAccount.create({
-        data: {
-          clerkUserId,
-          countryId: input.countryId,
-          accountType: input.accountType,
-          username: input.username,
-          displayName,
-          firstName: input.firstName,
-          lastName: input.lastName,
-          bio: input.bio,
-          verified: input.verified,
-          postingFrequency: input.postingFrequency,
-          politicalLean: input.politicalLean,
-          personality: input.personality,
-          profileImageUrl: input.profileImageUrl,
-        }
+    if (!country) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Country not found",
       });
+    }
 
-      return account;
-    }),
+    // Create the account
+    const displayName = `${input.firstName} ${input.lastName}`;
+    const account = await db.thinkpagesAccount.create({
+      data: {
+        clerkUserId,
+        countryId: input.countryId,
+        accountType: input.accountType,
+        username: input.username,
+        displayName,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        bio: input.bio,
+        verified: input.verified,
+        postingFrequency: input.postingFrequency,
+        politicalLean: input.politicalLean,
+        personality: input.personality,
+        profileImageUrl: input.profileImageUrl,
+      },
+    });
+
+    return account;
+  }),
 
   // Get ThinkPages Feed Accounts by Country - For Feed only
   getAccountsByCountry: publicProcedure
-    .input(z.object({ countryId: z.string().optional().default('') }).default({ countryId: '' }))
+    .input(z.object({ countryId: z.string().optional().default("") }).default({ countryId: "" }))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
-      
-      if (!input.countryId || input.countryId.trim() === '') {
+
+      if (!input.countryId || input.countryId.trim() === "") {
         return [];
       }
 
       const accounts = await db.thinkpagesAccount.findMany({
-        where: { 
+        where: {
           countryId: input.countryId,
-          isActive: true
+          isActive: true,
         },
-        orderBy: [
-          { verified: 'desc' },
-          { followerCount: 'desc' },
-          { createdAt: 'asc' }
-        ]
+        orderBy: [{ verified: "desc" }, { followerCount: "desc" }, { createdAt: "asc" }],
       });
 
       return accounts;
@@ -570,260 +618,239 @@ export const thinkpagesRouter = createTRPCRouter({
       const { db } = ctx;
 
       const accounts = await db.thinkpagesAccount.findMany({
-        where: { 
+        where: {
           countryId: input.countryId,
-          isActive: true
+          isActive: true,
         },
-        select: { accountType: true }
+        select: { accountType: true },
       });
 
       const counts = {
-        citizen: accounts.filter(a => a.accountType === 'citizen').length,
-        government: accounts.filter(a => a.accountType === 'government').length,
-        media: accounts.filter(a => a.accountType === 'media').length,
-        organization: 0 // Not used currently
+        citizen: accounts.filter((a) => a.accountType === "citizen").length,
+        government: accounts.filter((a) => a.accountType === "government").length,
+        media: accounts.filter((a) => a.accountType === "media").length,
+        organization: 0, // Not used currently
       };
 
       return counts;
     }),
 
   // Post creation
-  createPost: protectedProcedure
-    .input(CreatePostSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { db } = ctx;
-      
-      // Verify account exists and is active
-      const clerkUserId = ctx.auth?.userId;
-      if (!clerkUserId) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'You must be logged in to create posts'
-        });
-      }
+  createPost: protectedProcedure.input(CreatePostSchema).mutation(async ({ ctx, input }) => {
+    const { db } = ctx;
 
-      const account = await db.thinkpagesAccount.findUnique({
-        where: { id: input.accountId }
+    // Verify account exists and is active
+    const clerkUserId = ctx.auth?.userId;
+    if (!clerkUserId) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "You must be logged in to create posts",
       });
-      
-      if (!account || !account.isActive) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Account not found or inactive'
-        });
-      }
+    }
 
-      if (account.clerkUserId !== clerkUserId) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have permission to post from this account'
-        });
-      }
-      
-      // Determine post type
-      let postType: 'original' | 'repost' | 'reply' = 'original';
-      if (input.parentPostId) postType = 'reply';
-      if (input.repostOfId) postType = 'repost';
-      
-      // Create the post
-      const post = await db.thinkpagesPost.create({
-        data: {
-          accountId: input.accountId,
-          content: input.content,
-          hashtags: input.hashtags ? JSON.stringify(input.hashtags) : null,
-          visualizations: input.visualizations ? JSON.stringify(input.visualizations) : null,
-          postType,
-          parentPostId: input.parentPostId,
-          repostOfId: input.repostOfId,
-          visibility: input.visibility,
-          ixTimeTimestamp: new Date() // Store real-world time for social media timestamps
+    const account = await db.thinkpagesAccount.findUnique({
+      where: { id: input.accountId },
+    });
+
+    if (!account || !account.isActive) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Account not found or inactive",
+      });
+    }
+
+    if (account.clerkUserId !== clerkUserId) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "You do not have permission to post from this account",
+      });
+    }
+
+    // Determine post type
+    let postType: "original" | "repost" | "reply" = "original";
+    if (input.parentPostId) postType = "reply";
+    if (input.repostOfId) postType = "repost";
+
+    // Create the post
+    const post = await db.thinkpagesPost.create({
+      data: {
+        accountId: input.accountId,
+        content: input.content,
+        hashtags: input.hashtags ? JSON.stringify(input.hashtags) : null,
+        visualizations: input.visualizations ? JSON.stringify(input.visualizations) : null,
+        postType,
+        parentPostId: input.parentPostId,
+        repostOfId: input.repostOfId,
+        visibility: input.visibility,
+        ixTimeTimestamp: new Date(), // Store real-world time for social media timestamps
+      },
+      include: {
+        account: true,
+        parentPost: {
+          include: {
+            account: true,
+          },
         },
-        include: {
-          account: true,
-          parentPost: {
-            include: {
-              account: true
-            }
+        repostOf: {
+          include: {
+            account: true,
           },
-          repostOf: {
-            include: {
-              account: true
-            }
-          }
-        }
-      });
+        },
+      },
+    });
 
-      // Create media attachments if any
-      if (input.mediaUrls && input.mediaUrls.length > 0) {
-        await db.mediaAttachment.createMany({
-          data: input.mediaUrls.map((url, index) => ({
-            postId: post.id,
-            type: 'image',
-            url: url,
-            filename: `image_${index + 1}`,
-            mimeType: url.startsWith('data:') ? url.split(';')[0]!.split(':')[1] : 'image/jpeg',
-            fileSize: null
-          }))
-        });
-      }
-      
-      // Update account post count
-      await db.thinkpagesAccount.update({
-        where: { id: input.accountId },
-        data: { 
-          postCount: { increment: 1 }
-        }
-      });
-      
-      // Create mentions if any
-      if (input.mentions && input.mentions.length > 0) {
-        const mentionedAccounts = await db.thinkpagesAccount.findMany({
-          where: {
-            username: {
-              in: input.mentions.map(m => m.replace('@', ''))
-            }
-          },
-          select: { id: true, username: true, clerkUserId: true }
-        });
-
-        const mentionData = mentionedAccounts.map((mentionedAccount: any) => ({
+    // Create media attachments if any
+    if (input.mediaUrls && input.mediaUrls.length > 0) {
+      await db.mediaAttachment.createMany({
+        data: input.mediaUrls.map((url, index) => ({
           postId: post.id,
-          mentionedAccountId: mentionedAccount.id,
-          position: input.content.indexOf(`@${mentionedAccount.username}`)
-        }));
+          type: "image",
+          url: url,
+          filename: `image_${index + 1}`,
+          mimeType: url.startsWith("data:") ? url.split(";")[0]!.split(":")[1] : "image/jpeg",
+          fileSize: null,
+        })),
+      });
+    }
 
-        if (mentionData.length > 0) {
-          await db.postMention.createMany({
-            data: mentionData
-          });
+    // Update account post count
+    await db.thinkpagesAccount.update({
+      where: { id: input.accountId },
+      data: {
+        postCount: { increment: 1 },
+      },
+    });
 
-          // 🔔 Notify mentioned users
-          for (const mentioned of mentionedAccounts) {
-            await notificationHooks.onSocialActivity({
-              activityType: 'mention',
+    // Create mentions if any
+    if (input.mentions && input.mentions.length > 0) {
+      const mentionedAccounts = await db.thinkpagesAccount.findMany({
+        where: {
+          username: {
+            in: input.mentions.map((m) => m.replace("@", "")),
+          },
+        },
+        select: { id: true, username: true, clerkUserId: true },
+      });
+
+      const mentionData = mentionedAccounts.map((mentionedAccount: any) => ({
+        postId: post.id,
+        mentionedAccountId: mentionedAccount.id,
+        position: input.content.indexOf(`@${mentionedAccount.username}`),
+      }));
+
+      if (mentionData.length > 0) {
+        await db.postMention.createMany({
+          data: mentionData,
+        });
+
+        // 🔔 Notify mentioned users
+        for (const mentioned of mentionedAccounts) {
+          await notificationHooks
+            .onSocialActivity({
+              activityType: "mention",
               fromUserId: account.clerkUserId,
               toUserId: mentioned.clerkUserId,
               contentTitle: input.content.substring(0, 50),
               contentId: post.id,
-            }).catch(err => console.error('[ThinkPages] Failed to send mention notification:', err));
-          }
+            })
+            .catch((err) =>
+              console.error("[ThinkPages] Failed to send mention notification:", err)
+            );
         }
       }
+    }
 
-      // 🔔 Notify if this is a reply
-      if (input.parentPostId && post.parentPost) {
-        const parentPost = await db.thinkpagesPost.findUnique({
-          where: { id: input.parentPostId },
-          include: { account: true }
-        });
+    // 🔔 Notify if this is a reply
+    if (input.parentPostId && post.parentPost) {
+      const parentPost = await db.thinkpagesPost.findUnique({
+        where: { id: input.parentPostId },
+        include: { account: true },
+      });
 
-        if (parentPost && parentPost.accountId !== input.accountId) {
-          await notificationHooks.onThinkPageActivity({
+      if (parentPost && parentPost.accountId !== input.accountId) {
+        await notificationHooks
+          .onThinkPageActivity({
             thinkpageId: post.id,
             title: input.content.substring(0, 50),
-            action: 'commented',
+            action: "commented",
             authorId: account.clerkUserId,
             targetUserId: parentPost.account.clerkUserId,
-          }).catch(err => console.error('[ThinkPages] Failed to send reply notification:', err));
-        }
+          })
+          .catch((err) => console.error("[ThinkPages] Failed to send reply notification:", err));
       }
+    }
 
-      return post;
-    }),
+    return post;
+  }),
 
   // Add reaction to post
-  addReaction: protectedProcedure
-    .input(AddReactionSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { db } = ctx;
-      const clerkUserId = ctx.auth?.userId;
+  addReaction: protectedProcedure.input(AddReactionSchema).mutation(async ({ ctx, input }) => {
+    const { db } = ctx;
+    const clerkUserId = ctx.auth?.userId;
 
-      if (!clerkUserId) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'You must be logged in to react to posts'
-        });
-      }
-
-      // Verify the account belongs to the current user
-      const account = await db.thinkpagesAccount.findUnique({
-        where: { id: input.accountId }
+    if (!clerkUserId) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "You must be logged in to react to posts",
       });
+    }
 
-      if (!account || account.clerkUserId !== clerkUserId) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have permission to use this account'
-        });
-      }
+    // Verify the account belongs to the current user
+    const account = await db.thinkpagesAccount.findUnique({
+      where: { id: input.accountId },
+    });
 
-      const post = await db.thinkpagesPost.findUnique({
-        where: { id: input.postId },
-        select: { reactionCounts: true },
+    if (!account || account.clerkUserId !== clerkUserId) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "You do not have permission to use this account",
       });
+    }
 
-      if (!post) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Post not found',
-        });
+    const post = await db.thinkpagesPost.findUnique({
+      where: { id: input.postId },
+      select: { reactionCounts: true },
+    });
+
+    if (!post) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Post not found",
+      });
+    }
+
+    const reactionCounts = (() => {
+      try {
+        return post.reactionCounts ? JSON.parse(post.reactionCounts) : {};
+      } catch (error) {
+        console.warn("Failed to parse reactionCounts in addReaction:", error);
+        return {};
       }
+    })();
 
-      const reactionCounts = (() => {
-        try {
-          return post.reactionCounts ? JSON.parse(post.reactionCounts) : {};
-        } catch (error) {
-          console.warn('Failed to parse reactionCounts in addReaction:', error);
-          return {};
-        }
-      })();
-
-      const existingReaction = await db.postReaction.findUnique({
-        where: {
-          postId_accountId: {
-            postId: input.postId,
-            accountId: input.accountId,
-          },
+    const existingReaction = await db.postReaction.findUnique({
+      where: {
+        postId_accountId: {
+          postId: input.postId,
+          accountId: input.accountId,
         },
-      });
+      },
+    });
 
-      if (existingReaction) {
-        if (existingReaction.reactionType === input.reactionType) {
-          // Same reaction - remove it (toggle behavior)
-          await db.$transaction(async (tx) => {
-            reactionCounts[existingReaction.reactionType] = (reactionCounts[existingReaction.reactionType] || 1) - 1;
-            
-            await tx.postReaction.delete({
-              where: {
-                postId_accountId: {
-                  postId: input.postId,
-                  accountId: input.accountId,
-                },
-              },
-            });
-
-            await tx.thinkpagesPost.update({
-              where: { id: input.postId },
-              data: { reactionCounts: JSON.stringify(reactionCounts) },
-            });
-          });
-
-          return { removed: true };
-        }
-
-        // Different reaction - update it
+    if (existingReaction) {
+      if (existingReaction.reactionType === input.reactionType) {
+        // Same reaction - remove it (toggle behavior)
         await db.$transaction(async (tx) => {
-          reactionCounts[existingReaction.reactionType] = (reactionCounts[existingReaction.reactionType] || 1) - 1;
-          reactionCounts[input.reactionType] = (reactionCounts[input.reactionType] || 0) + 1;
+          reactionCounts[existingReaction.reactionType] =
+            (reactionCounts[existingReaction.reactionType] || 1) - 1;
 
-          await tx.postReaction.update({
+          await tx.postReaction.delete({
             where: {
               postId_accountId: {
                 postId: input.postId,
                 accountId: input.accountId,
               },
             },
-            data: { reactionType: input.reactionType },
           });
 
           await tx.thinkpagesPost.update({
@@ -832,76 +859,105 @@ export const thinkpagesRouter = createTRPCRouter({
           });
         });
 
-        return { updated: true, reactionType: input.reactionType };
-      } else {
-        // New reaction - create it
-        const reaction = await db.$transaction(async (tx) => {
-          reactionCounts[input.reactionType] = (reactionCounts[input.reactionType] || 0) + 1;
+        return { removed: true };
+      }
 
-          const newReaction = await tx.postReaction.create({
-            data: {
+      // Different reaction - update it
+      await db.$transaction(async (tx) => {
+        reactionCounts[existingReaction.reactionType] =
+          (reactionCounts[existingReaction.reactionType] || 1) - 1;
+        reactionCounts[input.reactionType] = (reactionCounts[input.reactionType] || 0) + 1;
+
+        await tx.postReaction.update({
+          where: {
+            postId_accountId: {
               postId: input.postId,
               accountId: input.accountId,
-              reactionType: input.reactionType,
             },
-          });
-
-          await tx.thinkpagesPost.update({
-            where: { id: input.postId },
-            data: { reactionCounts: JSON.stringify(reactionCounts) },
-          });
-
-          return newReaction;
+          },
+          data: { reactionType: input.reactionType },
         });
 
-        // 🔔 Notify post author of new reaction (likes only)
-        if (input.reactionType === 'like') {
-          const postWithAuthor = await db.thinkpagesPost.findUnique({
-            where: { id: input.postId },
-            select: { accountId: true, content: true }
-          });
+        await tx.thinkpagesPost.update({
+          where: { id: input.postId },
+          data: { reactionCounts: JSON.stringify(reactionCounts) },
+        });
+      });
 
-          if (postWithAuthor && postWithAuthor.accountId !== input.accountId) {
-            await notificationHooks.onThinkPageActivity({
+      return { updated: true, reactionType: input.reactionType };
+    } else {
+      // New reaction - create it
+      const reaction = await db.$transaction(async (tx) => {
+        reactionCounts[input.reactionType] = (reactionCounts[input.reactionType] || 0) + 1;
+
+        const newReaction = await tx.postReaction.create({
+          data: {
+            postId: input.postId,
+            accountId: input.accountId,
+            reactionType: input.reactionType,
+          },
+        });
+
+        await tx.thinkpagesPost.update({
+          where: { id: input.postId },
+          data: { reactionCounts: JSON.stringify(reactionCounts) },
+        });
+
+        return newReaction;
+      });
+
+      // 🔔 Notify post author of new reaction (likes only)
+      if (input.reactionType === "like") {
+        const postWithAuthor = await db.thinkpagesPost.findUnique({
+          where: { id: input.postId },
+          select: { accountId: true, content: true },
+        });
+
+        if (postWithAuthor && postWithAuthor.accountId !== input.accountId) {
+          await notificationHooks
+            .onThinkPageActivity({
               thinkpageId: input.postId,
               title: postWithAuthor.content.substring(0, 50),
-              action: 'liked',
+              action: "liked",
               authorId: input.accountId,
               targetUserId: postWithAuthor.accountId,
-            }).catch(err => console.error('[ThinkPages] Failed to send like notification:', err));
-          }
+            })
+            .catch((err) => console.error("[ThinkPages] Failed to send like notification:", err));
         }
-
-        return reaction;
       }
-    }),
+
+      return reaction;
+    }
+  }),
 
   // Remove reaction
   removeReaction: protectedProcedure
-    .input(z.object({
-      postId: z.string(),
-      accountId: z.string(),
-    }))
+    .input(
+      z.object({
+        postId: z.string(),
+        accountId: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
       const clerkUserId = ctx.auth?.userId;
 
       if (!clerkUserId) {
         throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'You must be logged in to remove reactions'
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to remove reactions",
         });
       }
 
       // Verify the account belongs to the current user
       const account = await db.thinkpagesAccount.findUnique({
-        where: { id: input.accountId }
+        where: { id: input.accountId },
       });
 
       if (!account || account.clerkUserId !== clerkUserId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have permission to use this account'
+          code: "FORBIDDEN",
+          message: "You do not have permission to use this account",
         });
       }
 
@@ -912,8 +968,8 @@ export const thinkpagesRouter = createTRPCRouter({
 
       if (!post) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Post not found',
+          code: "NOT_FOUND",
+          message: "Post not found",
         });
       }
 
@@ -921,7 +977,7 @@ export const thinkpagesRouter = createTRPCRouter({
         try {
           return post.reactionCounts ? JSON.parse(post.reactionCounts) : {};
         } catch (error) {
-          console.warn('Failed to parse reactionCounts in addReaction:', error);
+          console.warn("Failed to parse reactionCounts in addReaction:", error);
           return {};
         }
       })();
@@ -939,8 +995,9 @@ export const thinkpagesRouter = createTRPCRouter({
         // Use transaction to ensure consistency
         await db.$transaction(async (tx) => {
           // Update reaction counts
-          reactionCounts[existingReaction.reactionType] = (reactionCounts[existingReaction.reactionType] || 1) - 1;
-          
+          reactionCounts[existingReaction.reactionType] =
+            (reactionCounts[existingReaction.reactionType] || 1) - 1;
+
           // Remove the reaction
           await tx.postReaction.delete({
             where: {
@@ -965,127 +1022,124 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Get feed
-  getFeed: rateLimitedPublicProcedure
-    .input(GetFeedSchema)
-    .query(async ({ ctx, input }) => {
-      const { db } = ctx;
-      
-      let whereClause: any = {
-        visibility: 'public' // Only show public posts for now
-      };
-      
-      // Add country filter if specified
-      if ((input as any).countryId) {
-        whereClause.account = {
-          countryId: (input as any).countryId
-        };
-      }
-      
-      // Add trending filter
-      if (input.filter === 'trending') {
-        whereClause.trending = true;
-      }
+  getFeed: rateLimitedPublicProcedure.input(GetFeedSchema).query(async ({ ctx, input }) => {
+    const { db } = ctx;
 
-      if (input.hashtag) {
-        whereClause.hashtags = {
-          contains: `"${input.hashtag}"`,
-        };
-      }
-      
-      const posts = await db.thinkpagesPost.findMany({
-        where: whereClause,
-        include: {
-          account: {
-            select: {
-              id: true,
-              username: true,
-              displayName: true,
-              profileImageUrl: true,
-              accountType: true,
-              verified: true,
-            }
+    let whereClause: any = {
+      visibility: "public", // Only show public posts for now
+    };
+
+    // Add country filter if specified
+    if ((input as any).countryId) {
+      whereClause.account = {
+        countryId: (input as any).countryId,
+      };
+    }
+
+    // Add trending filter
+    if (input.filter === "trending") {
+      whereClause.trending = true;
+    }
+
+    if (input.hashtag) {
+      whereClause.hashtags = {
+        contains: `"${input.hashtag}"`,
+      };
+    }
+
+    const posts = await db.thinkpagesPost.findMany({
+      where: whereClause,
+      include: {
+        account: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            profileImageUrl: true,
+            accountType: true,
+            verified: true,
           },
-          parentPost: {
-            include: {
-              account: {
-                select: {
-                  id: true,
-                  username: true,
-                  displayName: true,
-                  profileImageUrl: true,
-                  accountType: true,
-                  verified: true,
-                }
-              }
-            }
-          },
-          repostOf: {
-            include: {
-              account: {
-                select: {
-                  id: true,
-                  username: true,
-                  displayName: true,
-                  profileImageUrl: true,
-                  accountType: true,
-                  verified: true,
-                }
-              }
-            }
-          },
-          reactions: true,
-          mediaAttachments: true,
-          _count: {
-            select: {
-              // reactions: true // Relation doesn't exist,
-              replies: true,
-              reposts: true
-            }
-          }
         },
-        orderBy: [
-          { pinned: 'desc' },
-          { createdAt: 'desc' }
-        ],
-        take: input.limit,
-        cursor: input.cursor ? { id: input.cursor } : undefined,
-        skip: input.cursor ? 1 : 0
-      });
-      
-      // Transform posts to include parsed hashtags and reaction counts
-      const transformedPosts = posts.map(post => ({
-        ...post,
-        hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
-        reactionCounts: (post as any).reactions.reduce((acc: any, reaction: any) => {
+        parentPost: {
+          include: {
+            account: {
+              select: {
+                id: true,
+                username: true,
+                displayName: true,
+                profileImageUrl: true,
+                accountType: true,
+                verified: true,
+              },
+            },
+          },
+        },
+        repostOf: {
+          include: {
+            account: {
+              select: {
+                id: true,
+                username: true,
+                displayName: true,
+                profileImageUrl: true,
+                accountType: true,
+                verified: true,
+              },
+            },
+          },
+        },
+        reactions: true,
+        mediaAttachments: true,
+        _count: {
+          select: {
+            // reactions: true // Relation doesn't exist,
+            replies: true,
+            reposts: true,
+          },
+        },
+      },
+      orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
+      take: input.limit,
+      cursor: input.cursor ? { id: input.cursor } : undefined,
+      skip: input.cursor ? 1 : 0,
+    });
+
+    // Transform posts to include parsed hashtags and reaction counts
+    const transformedPosts = posts.map((post) => ({
+      ...post,
+      hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
+      reactionCounts: (post as any).reactions.reduce(
+        (acc: any, reaction: any) => {
           acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
           return acc;
-        }, {} as Record<string, number>),
-        timestamp: post.createdAt.toISOString()
-      }));
-      
-      return {
-        posts: transformedPosts,
-        nextCursor: posts.length === input.limit ? posts[posts.length - 1]?.id : null
-      };
-    }),
+        },
+        {} as Record<string, number>
+      ),
+      timestamp: post.createdAt.toISOString(),
+    }));
+
+    return {
+      posts: transformedPosts,
+      nextCursor: posts.length === input.limit ? posts[posts.length - 1]?.id : null,
+    };
+  }),
 
   // Get trending topics
   getTrendingTopics: rateLimitedPublicProcedure
-    .input(z.object({
-      limit: z.number().min(1).max(20).default(10)
-    }))
+    .input(
+      z.object({
+        limit: z.number().min(1).max(20).default(10),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
-      
+
       const trendingTopics = await db.trendingTopic.findMany({
         where: { isActive: true },
-        orderBy: [
-          { engagement: 'desc' },
-          { postCount: 'desc' }
-        ],
-        take: input.limit
+        orderBy: [{ engagement: "desc" }, { postCount: "desc" }],
+        take: input.limit,
       });
-      
+
       return trendingTopics;
     }),
 
@@ -1094,7 +1148,7 @@ export const thinkpagesRouter = createTRPCRouter({
     .input(z.object({ userId: z.string() }))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
-      
+
       const account = await db.user.findUnique({
         where: { id: input.userId },
         include: {
@@ -1103,18 +1157,18 @@ export const thinkpagesRouter = createTRPCRouter({
             select: {
               // posts: true, // Relation doesn't exist
               // reactions: true // Relation doesn't exist
-            }
-          }
-        }
+            },
+          },
+        },
       });
-      
+
       if (!account) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Account not found'
+          code: "NOT_FOUND",
+          message: "Account not found",
         });
       }
-      
+
       return account;
     }),
 
@@ -1127,8 +1181,8 @@ export const thinkpagesRouter = createTRPCRouter({
       const account = await db.user.findFirst({
         where: { clerkUserId: input.clerkUserId },
         include: {
-          country: true
-        }
+          country: true,
+        },
       });
 
       return account;
@@ -1139,64 +1193,66 @@ export const thinkpagesRouter = createTRPCRouter({
     .input(z.object({ postId: z.string() }))
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
-      
+
       const post = await db.thinkpagesPost.findUnique({
         where: { id: input.postId },
         include: {
           // account: true, // Relation doesn't exist
           parentPost: {
-            include: { 
+            include: {
               // account: true // Relation doesn't exist
-            }
+            },
           },
           repostOf: {
-            include: { 
+            include: {
               // account: true // Relation doesn't exist
-            }
+            },
           },
           replies: {
             include: {
               // account: true, // Relation doesn't exist
               // reactions: true // Relation doesn't exist
             },
-            orderBy: { ixTimeTimestamp: 'asc' },
-            take: 50
+            orderBy: { ixTimeTimestamp: "asc" },
+            take: 50,
           },
-          reactions: true
-        }
+          reactions: true,
+        },
       });
-      
+
       if (!post) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Post not found'
+          code: "NOT_FOUND",
+          message: "Post not found",
         });
       }
-      
+
       return {
         ...post,
         hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
-        timestamp: post.createdAt.toISOString()
+        timestamp: post.createdAt.toISOString(),
       };
     }),
 
   // Get posts by Clerk User ID - shows all posts from all accounts owned by this user
   getPostsByClerkUserId: rateLimitedPublicProcedure
-    .input(z.object({
-      clerkUserId: z.string(),
-      limit: z.number().min(1).max(50).default(20),
-      cursor: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        clerkUserId: z.string(),
+        limit: z.number().min(1).max(50).default(20),
+        cursor: z.string().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
       // Get all accounts owned by this user
       const accounts = await db.thinkpagesAccount.findMany({
         where: { clerkUserId: input.clerkUserId },
-        select: { id: true }
+        select: { id: true },
       });
 
-      const accountIds = accounts.map(acc => acc.id);
+      const accountIds = accounts.map((acc) => acc.id);
 
       if (accountIds.length === 0) {
         return { posts: [], nextCursor: null };
@@ -1206,7 +1262,7 @@ export const thinkpagesRouter = createTRPCRouter({
       const posts = await db.thinkpagesPost.findMany({
         where: {
           accountId: { in: accountIds },
-          visibility: 'public'
+          visibility: "public",
         },
         include: {
           account: {
@@ -1217,7 +1273,7 @@ export const thinkpagesRouter = createTRPCRouter({
               profileImageUrl: true,
               accountType: true,
               verified: true,
-            }
+            },
           },
           parentPost: {
             include: {
@@ -1229,9 +1285,9 @@ export const thinkpagesRouter = createTRPCRouter({
                   profileImageUrl: true,
                   accountType: true,
                   verified: true,
-                }
-              }
-            }
+                },
+              },
+            },
           },
           repostOf: {
             include: {
@@ -1243,42 +1299,42 @@ export const thinkpagesRouter = createTRPCRouter({
                   profileImageUrl: true,
                   accountType: true,
                   verified: true,
-                }
-              }
-            }
+                },
+              },
+            },
           },
           reactions: true,
           mediaAttachments: true,
           _count: {
             select: {
               replies: true,
-              reposts: true
-            }
-          }
+              reposts: true,
+            },
+          },
         },
-        orderBy: [
-          { pinned: 'desc' },
-          { createdAt: 'desc' }
-        ],
+        orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
         take: input.limit,
         cursor: input.cursor ? { id: input.cursor } : undefined,
-        skip: input.cursor ? 1 : 0
+        skip: input.cursor ? 1 : 0,
       });
 
       // Transform posts to include parsed hashtags and reaction counts
-      const transformedPosts = posts.map(post => ({
+      const transformedPosts = posts.map((post) => ({
         ...post,
         hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
-        reactionCounts: (post as any).reactions.reduce((acc: any, reaction: any) => {
-          acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>),
-        timestamp: post.createdAt.toISOString()
+        reactionCounts: (post as any).reactions.reduce(
+          (acc: any, reaction: any) => {
+            acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
+            return acc;
+          },
+          {} as Record<string, number>
+        ),
+        timestamp: post.createdAt.toISOString(),
       }));
 
       return {
         posts: transformedPosts,
-        nextCursor: posts.length === input.limit ? posts[posts.length - 1]?.id : null
+        nextCursor: posts.length === input.limit ? posts[posts.length - 1]?.id : null,
       };
     }),
 
@@ -1292,110 +1348,113 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Calculate and store country mood metrics
-  calculateCountryMoodMetrics: publicProcedure
-    .mutation(async ({ ctx }) => {
-      const { db } = ctx;
-      const { analyzePostSentiment } = await import("~/lib/sentiment-analysis");
-      const currentIxTime = IxTime.getCurrentIxTime();
-      const twentyFourHoursAgo = new Date(currentIxTime - 24 * 60 * 60 * 1000);
+  calculateCountryMoodMetrics: publicProcedure.mutation(async ({ ctx }) => {
+    const { db } = ctx;
+    const { analyzePostSentiment } = await import("~/lib/sentiment-analysis");
+    const currentIxTime = IxTime.getCurrentIxTime();
+    const twentyFourHoursAgo = new Date(currentIxTime - 24 * 60 * 60 * 1000);
 
-      const countries = await db.country.findMany({
-        select: { id: true, name: true },
+    const countries = await db.country.findMany({
+      select: { id: true, name: true },
+    });
+
+    for (const country of countries) {
+      const citizenAccounts = await db.user.findMany({
+        where: {
+          countryId: country.id,
+          // accountType: 'citizen', // Field doesn't exist in User model
+          isActive: true,
+        },
+        select: { id: true },
       });
 
-      for (const country of countries) {
-        const citizenAccounts = await db.user.findMany({
-          where: {
-            countryId: country.id,
-            // accountType: 'citizen', // Field doesn't exist in User model
-            isActive: true,
-          },
-          select: { id: true },
-        });
-
-        if (citizenAccounts.length === 0) {
-          console.log(`No citizen accounts for ${country.name}, skipping mood metric calculation.`);
-          continue;
-        }
-
-        const citizenAccountIds = citizenAccounts.map((acc: any) => acc.id);
-
-        const recentCitizenPosts = await db.thinkpagesPost.findMany({
-          where: {
-            accountId: { in: citizenAccountIds },
-            ixTimeTimestamp: { gte: twentyFourHoursAgo },
-          },
-          include: { reactions: true }, // Include reactions for sentiment analysis
-        });
-
-        if (recentCitizenPosts.length === 0) {
-          console.log(`No recent citizen posts for ${country.name}, skipping mood metric calculation.`);
-          continue;
-        }
-
-        let totalSentiment = 0;
-        for (const post of recentCitizenPosts) {
-          totalSentiment += analyzePostSentiment(post as any); // Cast to any due to Prisma type mismatch for relations
-        }
-
-        const averageSentiment = totalSentiment / recentCitizenPosts.length;
-
-        // Store the mood metric
-        const dailyTimestamp = new Date(currentIxTime);
-        dailyTimestamp.setHours(0, 0, 0, 0);
-        
-        await db.countryMoodMetric.upsert({
-          where: {
-            countryId_timestamp: {
-              countryId: country.id,
-              timestamp: dailyTimestamp,
-            },
-          },
-          update: {
-            sentimentScore: averageSentiment,
-            postCount: recentCitizenPosts.length,
-            timestamp: dailyTimestamp,
-          },
-          create: {
-            countryId: country.id,
-            sentimentScore: averageSentiment,
-            postCount: recentCitizenPosts.length,
-            timestamp: dailyTimestamp,
-          },
-        });
-        console.log(`Calculated mood metric for ${country.name}: ${averageSentiment.toFixed(2)}`);
+      if (citizenAccounts.length === 0) {
+        console.log(`No citizen accounts for ${country.name}, skipping mood metric calculation.`);
+        continue;
       }
-      return { success: true, message: "Country mood metrics calculated" };
-    }),
+
+      const citizenAccountIds = citizenAccounts.map((acc: any) => acc.id);
+
+      const recentCitizenPosts = await db.thinkpagesPost.findMany({
+        where: {
+          accountId: { in: citizenAccountIds },
+          ixTimeTimestamp: { gte: twentyFourHoursAgo },
+        },
+        include: { reactions: true }, // Include reactions for sentiment analysis
+      });
+
+      if (recentCitizenPosts.length === 0) {
+        console.log(
+          `No recent citizen posts for ${country.name}, skipping mood metric calculation.`
+        );
+        continue;
+      }
+
+      let totalSentiment = 0;
+      for (const post of recentCitizenPosts) {
+        totalSentiment += analyzePostSentiment(post as any); // Cast to any due to Prisma type mismatch for relations
+      }
+
+      const averageSentiment = totalSentiment / recentCitizenPosts.length;
+
+      // Store the mood metric
+      const dailyTimestamp = new Date(currentIxTime);
+      dailyTimestamp.setHours(0, 0, 0, 0);
+
+      await db.countryMoodMetric.upsert({
+        where: {
+          countryId_timestamp: {
+            countryId: country.id,
+            timestamp: dailyTimestamp,
+          },
+        },
+        update: {
+          sentimentScore: averageSentiment,
+          postCount: recentCitizenPosts.length,
+          timestamp: dailyTimestamp,
+        },
+        create: {
+          countryId: country.id,
+          sentimentScore: averageSentiment,
+          postCount: recentCitizenPosts.length,
+          timestamp: dailyTimestamp,
+        },
+      });
+      console.log(`Calculated mood metric for ${country.name}: ${averageSentiment.toFixed(2)}`);
+    }
+    return { success: true, message: "Country mood metrics calculated" };
+  }),
 
   // ===== THINKTANKS (GROUPS) ENDPOINTS =====
 
   // Create a new ThinkTank group
   createThinktank: protectedProcedure
-    .input(z.object({
-      name: z.string().min(1).max(100),
-      description: z.string().max(500).optional(),
-      avatar: z.string().url().optional(),
-      type: z.enum(['public', 'private', 'invite_only']).default('public'),
-      category: z.string().optional(),
-      tags: z.array(z.string()).optional(),
-      createdBy: z.string(), // userId (clerkUserId)
-    }))
+    .input(
+      z.object({
+        name: z.string().min(1).max(100),
+        description: z.string().max(500).optional(),
+        avatar: z.string().url().optional(),
+        type: z.enum(["public", "private", "invite_only"]).default("public"),
+        category: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+        createdBy: z.string(), // userId (clerkUserId)
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
       // Verify the creator user exists - or allow ThinkTanks to work without full user setup
       const creatorUser = await db.user.findUnique({
         where: { clerkUserId: input.createdBy },
-        include: { country: true }
+        include: { country: true },
       });
 
       // For ThinkTanks, we'll allow creation even without full user setup
       // This enables global access without requiring country selection
-      if (!input.createdBy || input.createdBy.trim() === '') {
+      if (!input.createdBy || input.createdBy.trim() === "") {
         throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'User ID is required'
+          code: "BAD_REQUEST",
+          message: "User ID is required",
         });
       }
 
@@ -1409,11 +1468,11 @@ export const thinkpagesRouter = createTRPCRouter({
           category: input.category,
           tags: input.tags ? JSON.stringify(input.tags) : null,
           createdBy: input.createdBy,
-          memberCount: 1
+          memberCount: 1,
         },
         include: {
-          members: true
-        }
+          members: true,
+        },
       });
 
       // Add creator as owner
@@ -1421,8 +1480,8 @@ export const thinkpagesRouter = createTRPCRouter({
         data: {
           groupId: group.id,
           userId: input.createdBy,
-          role: 'owner'
-        }
+          role: "owner",
+        },
       });
 
       return group;
@@ -1430,37 +1489,42 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Get ThinkTanks globally (no country restriction)
   getThinktanks: publicProcedure
-    .input(z.object({
-      userId: z.string().optional().default(''),
-      type: z.enum(['all', 'joined', 'created']).optional().default('all')
-    }).optional().default(() => ({ userId: '', type: 'all' as const })))
+    .input(
+      z
+        .object({
+          userId: z.string().optional().default(""),
+          type: z.enum(["all", "joined", "created"]).optional().default("all"),
+        })
+        .optional()
+        .default(() => ({ userId: "", type: "all" as const }))
+    )
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
       try {
         // FAILSAFE: Handle ANY invalid input scenario
         if (!input) {
-          console.log('getThinktanks: No input provided, returning empty array');
+          console.log("getThinktanks: No input provided, returning empty array");
           return [];
         }
-        
-        if (!input.userId || input.userId.trim() === '' || input.userId === 'INVALID') {
-          console.log('getThinktanks: Invalid userId, returning empty array');
+
+        if (!input.userId || input.userId.trim() === "" || input.userId === "INVALID") {
+          console.log("getThinktanks: Invalid userId, returning empty array");
           return [];
         }
 
         let whereClause: any = {
-          isActive: true
+          isActive: true,
         };
 
-        if (input.type === 'joined' && input.userId) {
+        if (input.type === "joined" && input.userId) {
           whereClause.members = {
             some: {
               userId: input.userId,
-              isActive: true
-            }
+              isActive: true,
+            },
           };
-        } else if (input.type === 'created' && input.userId) {
+        } else if (input.type === "created" && input.userId) {
           whereClause.createdBy = input.userId;
         }
 
@@ -1468,28 +1532,25 @@ export const thinkpagesRouter = createTRPCRouter({
           where: whereClause,
           include: {
             members: {
-              where: { isActive: true }
+              where: { isActive: true },
             },
             _count: {
               select: {
                 members: true,
-                messages: true
-              }
-            }
+                messages: true,
+              },
+            },
           },
-          orderBy: [
-            { memberCount: 'desc' },
-            { createdAt: 'desc' }
-          ]
+          orderBy: [{ memberCount: "desc" }, { createdAt: "desc" }],
         });
 
-        return groups.map(group => ({
+        return groups.map((group) => ({
           ...group,
           tags: group.tags ? JSON.parse(group.tags) : [],
-          isJoined: input.userId ? group.members.some(m => m.userId === input.userId) : false
+          isJoined: input.userId ? group.members.some((m) => m.userId === input.userId) : false,
         }));
       } catch (error) {
-        console.error('Error in getThinktanks:', error);
+        console.error("Error in getThinktanks:", error);
         // FAILSAFE: Return empty array instead of throwing error
         return [];
       }
@@ -1497,34 +1558,36 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Join a ThinkTank group
   joinThinktank: protectedProcedure
-    .input(z.object({
-      groupId: z.string(),
-      userId: z.string() // Changed to userId (clerkUserId)
-    }))
+    .input(
+      z.object({
+        groupId: z.string(),
+        userId: z.string(), // Changed to userId (clerkUserId)
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
       // Check if group exists and is active
       const group = await db.thinktankGroup.findUnique({
-        where: { id: input.groupId, isActive: true }
+        where: { id: input.groupId, isActive: true },
       });
 
       if (!group) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Group not found or inactive'
+          code: "NOT_FOUND",
+          message: "Group not found or inactive",
         });
       }
 
       // Verify user exists and is active
       const user = await db.user.findUnique({
-        where: { clerkUserId: input.userId }
+        where: { clerkUserId: input.userId },
       });
 
       if (!user || !user.isActive) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'User not found or inactive'
+          code: "NOT_FOUND",
+          message: "User not found or inactive",
         });
       }
 
@@ -1536,22 +1599,22 @@ export const thinkpagesRouter = createTRPCRouter({
         where: {
           groupId_userId: {
             groupId: input.groupId,
-            userId: input.userId
-          }
-        }
+            userId: input.userId,
+          },
+        },
       });
 
       if (existingMember) {
         if (existingMember.isActive) {
           throw new TRPCError({
-            code: 'CONFLICT',
-            message: 'Already a member of this group'
+            code: "CONFLICT",
+            message: "Already a member of this group",
           });
         } else {
           // Reactivate membership
           await db.thinktankMember.update({
             where: { id: existingMember.id },
-            data: { isActive: true, joinedAt: new Date() }
+            data: { isActive: true, joinedAt: new Date() },
           });
         }
       } else {
@@ -1560,15 +1623,15 @@ export const thinkpagesRouter = createTRPCRouter({
           data: {
             groupId: input.groupId,
             userId: input.userId,
-            role: 'member'
-          }
+            role: "member",
+          },
         });
       }
 
       // Update member count
       await db.thinktankGroup.update({
         where: { id: input.groupId },
-        data: { memberCount: { increment: 1 } }
+        data: { memberCount: { increment: 1 } },
       });
 
       // Notify group admins about new member
@@ -1576,37 +1639,39 @@ export const thinkpagesRouter = createTRPCRouter({
         const admins = await db.thinktankMember.findMany({
           where: {
             groupId: input.groupId,
-            role: { in: ['admin', 'owner'] },
+            role: { in: ["admin", "owner"] },
             isActive: true,
-            userId: { not: input.userId }
+            userId: { not: input.userId },
           },
-          select: { userId: true }
+          select: { userId: true },
         });
 
         if (admins.length > 0) {
           await notificationHooks.onThinktankActivity({
-            activityType: 'member_joined',
+            activityType: "member_joined",
             groupId: input.groupId,
             groupName: group.name,
-            groupType: group.type as 'public' | 'private' | 'invite_only',
+            groupType: group.type as "public" | "private" | "invite_only",
             actorUserId: input.userId,
             actorUserName: userDisplayName,
-            targetUserIds: admins.map(a => a.userId),
+            targetUserIds: admins.map((a) => a.userId),
           });
         }
       } catch (e) {
-        console.warn('[ThinkTanks] Failed to send join notifications:', e);
+        console.warn("[ThinkTanks] Failed to send join notifications:", e);
       }
 
-      return { success: true, message: 'Successfully joined group' };
+      return { success: true, message: "Successfully joined group" };
     }),
 
   // Leave a ThinkTank group
   leaveThinktank: protectedProcedure
-    .input(z.object({
-      groupId: z.string(),
-      userId: z.string() // Changed to userId (clerkUserId)
-    }))
+    .input(
+      z.object({
+        groupId: z.string(),
+        userId: z.string(), // Changed to userId (clerkUserId)
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
@@ -1614,32 +1679,33 @@ export const thinkpagesRouter = createTRPCRouter({
         where: {
           groupId_userId: {
             groupId: input.groupId,
-            userId: input.userId
-          }
-        }
+            userId: input.userId,
+          },
+        },
       });
 
       if (!member || !member.isActive) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Not a member of this group'
+          code: "NOT_FOUND",
+          message: "Not a member of this group",
         });
       }
 
       // Can't leave if you're the owner and there are other members
-      if (member.role === 'owner') {
+      if (member.role === "owner") {
         const otherActiveMembers = await db.thinktankMember.count({
           where: {
             groupId: input.groupId,
             userId: { not: input.userId },
-            isActive: true
-          }
+            isActive: true,
+          },
         });
 
         if (otherActiveMembers > 0) {
           throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Cannot leave group as owner while other members exist. Transfer ownership first.'
+            code: "BAD_REQUEST",
+            message:
+              "Cannot leave group as owner while other members exist. Transfer ownership first.",
           });
         }
       }
@@ -1647,14 +1713,14 @@ export const thinkpagesRouter = createTRPCRouter({
       // Deactivate membership
       await db.thinktankMember.update({
         where: { id: member.id },
-        data: { isActive: false }
+        data: { isActive: false },
       });
 
       // Update member count
       const updatedGroup = await db.thinktankGroup.update({
         where: { id: input.groupId },
         data: { memberCount: { decrement: 1 } },
-        select: { name: true, type: true }
+        select: { name: true, type: true },
       });
 
       // Notify group admins about member leaving
@@ -1662,44 +1728,46 @@ export const thinkpagesRouter = createTRPCRouter({
         const admins = await db.thinktankMember.findMany({
           where: {
             groupId: input.groupId,
-            role: { in: ['admin', 'owner'] },
+            role: { in: ["admin", "owner"] },
             isActive: true,
-            userId: { not: input.userId }
+            userId: { not: input.userId },
           },
-          select: { userId: true }
+          select: { userId: true },
         });
 
         const leavingUser = await db.user.findUnique({
-          where: { clerkUserId: input.userId }
+          where: { clerkUserId: input.userId },
         });
 
         if (admins.length > 0 && leavingUser) {
           const leavingUserDisplayName = `User ${input.userId.slice(0, 8)}`;
           await notificationHooks.onThinktankActivity({
-            activityType: 'member_left',
+            activityType: "member_left",
             groupId: input.groupId,
             groupName: updatedGroup.name,
-            groupType: updatedGroup.type as 'public' | 'private' | 'invite_only',
+            groupType: updatedGroup.type as "public" | "private" | "invite_only",
             actorUserId: input.userId,
             actorUserName: leavingUserDisplayName,
-            targetUserIds: admins.map(a => a.userId),
+            targetUserIds: admins.map((a) => a.userId),
           });
         }
       } catch (e) {
-        console.warn('[ThinkTanks] Failed to send leave notifications:', e);
+        console.warn("[ThinkTanks] Failed to send leave notifications:", e);
       }
 
-      return { success: true, message: 'Successfully left group' };
+      return { success: true, message: "Successfully left group" };
     }),
 
   // Get ThinkTank messages
   getThinktankMessages: publicProcedure
-    .input(z.object({
-      groupId: z.string(),
-      userId: z.string(), // Added to verify membership
-      limit: z.number().min(1).max(100).default(50),
-      cursor: z.string().optional()
-    }))
+    .input(
+      z.object({
+        groupId: z.string(),
+        userId: z.string(), // Added to verify membership
+        limit: z.number().min(1).max(100).default(50),
+        cursor: z.string().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
@@ -1708,66 +1776,74 @@ export const thinkpagesRouter = createTRPCRouter({
         where: {
           groupId_userId: {
             groupId: input.groupId,
-            userId: input.userId
-          }
-        }
+            userId: input.userId,
+          },
+        },
       });
 
       if (!member || !member.isActive) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Not a member of this group'
+          code: "FORBIDDEN",
+          message: "Not a member of this group",
         });
       }
 
       const messages = await db.thinktankMessage.findMany({
         where: {
           groupId: input.groupId,
-          deletedAt: null
+          deletedAt: null,
         },
         include: {
           replyTo: true,
           readReceipts: true,
           _count: {
-            select: { replies: true }
-          }
+            select: { replies: true },
+          },
         },
-        orderBy: { ixTimeTimestamp: 'desc' },
+        orderBy: { ixTimeTimestamp: "desc" },
         take: input.limit,
         cursor: input.cursor ? { id: input.cursor } : undefined,
-        skip: input.cursor ? 1 : 0
+        skip: input.cursor ? 1 : 0,
       });
 
       return {
-        messages: messages.map(msg => ({
+        messages: messages.map((msg) => ({
           ...msg,
           reactions: msg.reactions ? JSON.parse(msg.reactions) : {},
           mentions: msg.mentions ? JSON.parse(msg.mentions) : [],
-          attachments: msg.attachments ? JSON.parse(msg.attachments) : []
+          attachments: msg.attachments ? JSON.parse(msg.attachments) : [],
         })),
-        nextCursor: messages.length === input.limit ? messages[messages.length - 1]?.id : null
+        nextCursor: messages.length === input.limit ? messages[messages.length - 1]?.id : null,
       };
     }),
 
   // Send message to ThinkTank
   sendThinktankMessage: protectedProcedure
-    .input(z.object({
-      groupId: z.string(),
-      userId: z.string(), // Changed to userId (clerkUserId)
-      content: z.string().min(1).refine(
-        (content) => validateNoXSS(content).valid,
-        { message: "Content contains potentially unsafe HTML" }
-      ),
-      messageType: z.enum(['text', 'image', 'file', 'system']).default('text'),
-      replyToId: z.string().optional(),
-      mentions: z.array(z.string()).optional(),
-      attachments: z.array(z.object({
-        type: z.string(),
-        url: z.string(),
-        filename: z.string().optional(),
-        size: z.number().optional()
-      })).optional()
-    }))
+    .input(
+      z.object({
+        groupId: z.string(),
+        userId: z.string(), // Changed to userId (clerkUserId)
+        content: z
+          .string()
+          .min(1)
+          .refine((content) => validateNoXSS(content).valid, {
+            message: "Content contains potentially unsafe HTML",
+          }),
+        messageType: z.enum(["text", "image", "file", "system"]).default("text"),
+        replyToId: z.string().optional(),
+        mentions: z.array(z.string()).optional(),
+        attachments: z
+          .array(
+            z.object({
+              type: z.string(),
+              url: z.string(),
+              filename: z.string().optional(),
+              size: z.number().optional(),
+            })
+          )
+          .optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
@@ -1776,15 +1852,15 @@ export const thinkpagesRouter = createTRPCRouter({
         where: {
           groupId_userId: {
             groupId: input.groupId,
-            userId: input.userId
-          }
-        }
+            userId: input.userId,
+          },
+        },
       });
 
       if (!member || !member.isActive) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Not a member of this group'
+          code: "FORBIDDEN",
+          message: "Not a member of this group",
         });
       }
 
@@ -1794,9 +1870,9 @@ export const thinkpagesRouter = createTRPCRouter({
         include: {
           members: {
             where: { isActive: true, userId: { not: input.userId } },
-            select: { userId: true }
-          }
-        }
+            select: { userId: true },
+          },
+        },
       });
 
       // Create the message
@@ -1809,37 +1885,37 @@ export const thinkpagesRouter = createTRPCRouter({
           replyToId: input.replyToId,
           mentions: input.mentions ? JSON.stringify(input.mentions) : null,
           attachments: input.attachments ? JSON.stringify(input.attachments) : null,
-          ixTimeTimestamp: new Date()
+          ixTimeTimestamp: new Date(),
         },
         include: {
-          replyTo: true
-        }
+          replyTo: true,
+        },
       });
 
       // Notify all active members (excluding sender)
       if (group && group.members.length > 0) {
         try {
           const sender = await db.user.findUnique({
-            where: { clerkUserId: input.userId }
+            where: { clerkUserId: input.userId },
           });
 
           if (sender) {
             const senderDisplayName = `User ${input.userId.slice(0, 8)}`;
             const contentPreview = input.content.slice(0, 100);
             await notificationHooks.onThinktankActivity({
-              activityType: 'new_message',
+              activityType: "new_message",
               groupId: input.groupId,
               groupName: group.name,
-              groupType: group.type as 'public' | 'private' | 'invite_only',
+              groupType: group.type as "public" | "private" | "invite_only",
               actorUserId: input.userId,
               actorUserName: senderDisplayName,
-              targetUserIds: group.members.map(m => m.userId),
+              targetUserIds: group.members.map((m) => m.userId),
               contentTitle: contentPreview,
               contentId: message.id,
             });
           }
         } catch (e) {
-          console.warn('[ThinkTanks] Failed to send message notifications:', e);
+          console.warn("[ThinkTanks] Failed to send message notifications:", e);
         }
       }
 
@@ -1848,15 +1924,17 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Update a ThinkTank group
   updateThinktank: protectedProcedure
-    .input(z.object({
-      groupId: z.string(),
-      name: z.string().min(1).max(100).optional(),
-      description: z.string().max(500).optional(),
-      avatar: z.string().url().optional(),
-      type: z.enum(['public', 'private', 'invite_only']).optional(),
-      category: z.string().optional(),
-      tags: z.array(z.string()).optional(),
-    }))
+    .input(
+      z.object({
+        groupId: z.string(),
+        name: z.string().min(1).max(100).optional(),
+        description: z.string().max(500).optional(),
+        avatar: z.string().url().optional(),
+        type: z.enum(["public", "private", "invite_only"]).optional(),
+        category: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
       const { groupId, ...updateData } = input;
@@ -1875,29 +1953,31 @@ export const thinkpagesRouter = createTRPCRouter({
           where: {
             groupId: groupId,
             isActive: true,
-            userId: { not: ctx.user?.clerkUserId }
+            userId: { not: ctx.user?.clerkUserId },
           },
-          select: { userId: true }
+          select: { userId: true },
         });
 
         const actor = await db.user.findUnique({
-          where: { clerkUserId: ctx.user?.clerkUserId }
+          where: { clerkUserId: ctx.user?.clerkUserId },
         });
 
         if (members.length > 0 && actor) {
-          const actorDisplayName = ctx.user?.clerkUserId ? `User ${ctx.user.clerkUserId.slice(0, 8)}` : 'System';
+          const actorDisplayName = ctx.user?.clerkUserId
+            ? `User ${ctx.user.clerkUserId.slice(0, 8)}`
+            : "System";
           await notificationHooks.onThinktankActivity({
-            activityType: 'settings_changed',
+            activityType: "settings_changed",
             groupId: groupId,
             groupName: group.name,
-            groupType: group.type as 'public' | 'private' | 'invite_only',
-            actorUserId: ctx.user?.clerkUserId || 'system',
+            groupType: group.type as "public" | "private" | "invite_only",
+            actorUserId: ctx.user?.clerkUserId || "system",
             actorUserName: actorDisplayName,
-            targetUserIds: members.map(m => m.userId),
+            targetUserIds: members.map((m) => m.userId),
           });
         }
       } catch (e) {
-        console.warn('[ThinkTanks] Failed to send settings change notifications:', e);
+        console.warn("[ThinkTanks] Failed to send settings change notifications:", e);
       }
 
       return group;
@@ -1915,11 +1995,13 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   updateMemberRole: protectedProcedure
-    .input(z.object({
-      groupId: z.string(),
-      userId: z.string(), // Changed to userId (clerkUserId)
-      role: z.enum(['admin', 'member']),
-    }))
+    .input(
+      z.object({
+        groupId: z.string(),
+        userId: z.string(), // Changed to userId (clerkUserId)
+        role: z.enum(["admin", "member"]),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
       await db.thinktankMember.update({
@@ -1936,39 +2018,41 @@ export const thinkpagesRouter = createTRPCRouter({
       try {
         const group = await db.thinktankGroup.findUnique({
           where: { id: input.groupId },
-          select: { name: true, type: true }
+          select: { name: true, type: true },
         });
 
         if (group) {
           await notificationHooks.onThinktankActivity({
-            activityType: 'role_changed',
+            activityType: "role_changed",
             groupId: input.groupId,
             groupName: group.name,
-            groupType: group.type as 'public' | 'private' | 'invite_only',
-            actorUserId: ctx.user?.clerkUserId || 'system',
+            groupType: group.type as "public" | "private" | "invite_only",
+            actorUserId: ctx.user?.clerkUserId || "system",
             targetUserId: input.userId,
-            metadata: { newRole: input.role }
+            metadata: { newRole: input.role },
           });
         }
       } catch (e) {
-        console.warn('[ThinkTanks] Failed to send role change notification:', e);
+        console.warn("[ThinkTanks] Failed to send role change notification:", e);
       }
 
       return { success: true };
     }),
 
   removeMemberFromThinktank: protectedProcedure
-    .input(z.object({
-      groupId: z.string(),
-      userId: z.string(), // Changed to userId (clerkUserId)
-    }))
+    .input(
+      z.object({
+        groupId: z.string(),
+        userId: z.string(), // Changed to userId (clerkUserId)
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
       // Get group info before deletion for notification
       const group = await db.thinktankGroup.findUnique({
         where: { id: input.groupId },
-        select: { name: true, type: true }
+        select: { name: true, type: true },
       });
 
       await db.thinktankMember.delete({
@@ -1991,23 +2075,23 @@ export const thinkpagesRouter = createTRPCRouter({
         try {
           await notificationAPI.create({
             title: `Removed from ${group.name}`,
-            message: 'You have been removed from this ThinkTank group',
+            message: "You have been removed from this ThinkTank group",
             userId: input.userId,
-            category: 'social',
-            type: 'warning',
-            priority: 'medium',
-            href: '/thinkpages/thinktanks',
-            source: 'thinktank',
+            category: "social",
+            type: "warning",
+            priority: "medium",
+            href: "/thinkpages/thinktanks",
+            source: "thinktank",
             actionable: false,
             metadata: {
               groupId: input.groupId,
               groupName: group.name,
               groupType: group.type,
-              activityType: 'member_removed'
-            }
+              activityType: "member_removed",
+            },
           });
         } catch (e) {
-          console.warn('[ThinkTanks] Failed to send removal notification:', e);
+          console.warn("[ThinkTanks] Failed to send removal notification:", e);
         }
       }
 
@@ -2016,27 +2100,29 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Invite users to a ThinkTank group
   inviteToThinktank: protectedProcedure
-    .input(z.object({
-      groupId: z.string(),
-      userIds: z.array(z.string()), // Changed to userIds (clerkUserIds)
-      invitedBy: z.string(), // userId (clerkUserId)
-    }))
+    .input(
+      z.object({
+        groupId: z.string(),
+        userIds: z.array(z.string()), // Changed to userIds (clerkUserIds)
+        invitedBy: z.string(), // userId (clerkUserId)
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
       // Get group details for notifications
       const group = await db.thinktankGroup.findUnique({
         where: { id: input.groupId },
-        select: { name: true, type: true }
+        select: { name: true, type: true },
       });
 
       // Get inviter details for notification
       const inviter = await db.user.findUnique({
-        where: { clerkUserId: input.invitedBy }
+        where: { clerkUserId: input.invitedBy },
       });
 
       const invites = await db.thinktankInvite.createMany({
-        data: input.userIds.map(userId => ({
+        data: input.userIds.map((userId) => ({
           groupId: input.groupId,
           invitedUser: userId,
           invitedBy: input.invitedBy,
@@ -2046,15 +2132,17 @@ export const thinkpagesRouter = createTRPCRouter({
       // Send notifications to all invited users
       if (group && inviter) {
         const inviterName = `User ${input.invitedBy.slice(0, 8)}`;
-        await notificationHooks.onThinktankActivity({
-          activityType: 'group_invite',
-          groupId: input.groupId,
-          groupName: group.name,
-          groupType: group.type as 'public' | 'private' | 'invite_only',
-          actorUserId: input.invitedBy,
-          actorUserName: inviterName,
-          targetUserIds: input.userIds,
-        }).catch((e) => console.warn('[ThinkTanks] Failed to send invite notifications:', e));
+        await notificationHooks
+          .onThinktankActivity({
+            activityType: "group_invite",
+            groupId: input.groupId,
+            groupName: group.name,
+            groupType: group.type as "public" | "private" | "invite_only",
+            actorUserId: input.invitedBy,
+            actorUserName: inviterName,
+            targetUserIds: input.userIds,
+          })
+          .catch((e) => console.warn("[ThinkTanks] Failed to send invite notifications:", e));
       }
 
       return invites;
@@ -2069,8 +2157,8 @@ export const thinkpagesRouter = createTRPCRouter({
       // Verify user is a member of the group
       const documents = await db.collaborativeDoc.findMany({
         where: { groupId: input.groupId },
-        orderBy: { updatedAt: 'desc' },
-        take: 10 // Limit to 10 documents per group
+        orderBy: { updatedAt: "desc" },
+        take: 10, // Limit to 10 documents per group
       });
 
       return documents;
@@ -2078,28 +2166,32 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Create a collaborative document
   createThinktankDocument: protectedProcedure
-    .input(z.object({
-      groupId: z.string(),
-      title: z.string().min(1).max(200),
-      createdBy: z.string(), // userId (clerkUserId)
-      content: z.string().optional().refine(
-        (content) => !content || validateNoXSS(content).valid,
-        { message: "Content contains potentially unsafe HTML" }
-      ),
-      isPublic: z.boolean().default(false)
-    }))
+    .input(
+      z.object({
+        groupId: z.string(),
+        title: z.string().min(1).max(200),
+        createdBy: z.string(), // userId (clerkUserId)
+        content: z
+          .string()
+          .optional()
+          .refine((content) => !content || validateNoXSS(content).valid, {
+            message: "Content contains potentially unsafe HTML",
+          }),
+        isPublic: z.boolean().default(false),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
       // Check document count limit (10 per group)
       const documentCount = await db.collaborativeDoc.count({
-        where: { groupId: input.groupId }
+        where: { groupId: input.groupId },
       });
 
       if (documentCount >= 10) {
         throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Maximum document limit (10) reached for this group'
+          code: "BAD_REQUEST",
+          message: "Maximum document limit (10) reached for this group",
         });
       }
 
@@ -2108,15 +2200,15 @@ export const thinkpagesRouter = createTRPCRouter({
         where: {
           groupId_userId: {
             groupId: input.groupId,
-            userId: input.createdBy
-          }
-        }
+            userId: input.createdBy,
+          },
+        },
       });
 
       if (!member || !member.isActive) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Not a member of this group'
+          code: "FORBIDDEN",
+          message: "Not a member of this group",
         });
       }
 
@@ -2124,11 +2216,11 @@ export const thinkpagesRouter = createTRPCRouter({
         data: {
           groupId: input.groupId,
           title: input.title,
-          content: input.content || '',
+          content: input.content || "",
           version: 1,
           createdBy: input.createdBy,
           lastEditBy: input.createdBy,
-          isPublic: input.isPublic
+          isPublic: input.isPublic,
         },
       });
 
@@ -2139,31 +2231,31 @@ export const thinkpagesRouter = createTRPCRouter({
           include: {
             members: {
               where: { isActive: true, userId: { not: input.createdBy } },
-              select: { userId: true }
-            }
-          }
+              select: { userId: true },
+            },
+          },
         });
 
         const creator = await db.user.findUnique({
-          where: { clerkUserId: input.createdBy }
+          where: { clerkUserId: input.createdBy },
         });
 
         if (group && group.members.length > 0 && creator) {
           const creatorDisplayName = `User ${input.createdBy.slice(0, 8)}`;
           await notificationHooks.onThinktankActivity({
-            activityType: 'document_created',
+            activityType: "document_created",
             groupId: input.groupId,
             groupName: group.name,
-            groupType: group.type as 'public' | 'private' | 'invite_only',
+            groupType: group.type as "public" | "private" | "invite_only",
             actorUserId: input.createdBy,
             actorUserName: creatorDisplayName,
-            targetUserIds: group.members.map(m => m.userId),
+            targetUserIds: group.members.map((m) => m.userId),
             contentTitle: input.title,
             contentId: document.id,
           });
         }
       } catch (e) {
-        console.warn('[ThinkTanks] Failed to send document creation notifications:', e);
+        console.warn("[ThinkTanks] Failed to send document creation notifications:", e);
       }
 
       return document;
@@ -2171,47 +2263,49 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Update a collaborative document
   updateThinktankDocument: protectedProcedure
-    .input(z.object({
-      documentId: z.string(),
-      userId: z.string(),
-      title: z.string().min(1).max(200).optional(),
-      content: z.string().optional().refine(
-        (content) => !content || validateNoXSS(content).valid,
-        { message: "Content contains potentially unsafe HTML" }
-      ),
-      isPublic: z.boolean().optional()
-    }))
+    .input(
+      z.object({
+        documentId: z.string(),
+        userId: z.string(),
+        title: z.string().min(1).max(200).optional(),
+        content: z
+          .string()
+          .optional()
+          .refine((content) => !content || validateNoXSS(content).valid, {
+            message: "Content contains potentially unsafe HTML",
+          }),
+        isPublic: z.boolean().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
       // Get the document to check permissions
       const document = await db.collaborativeDoc.findUnique({
         where: { id: input.documentId },
-        include: { group: { include: { members: true } } }
+        include: { group: { include: { members: true } } },
       });
 
       if (!document) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Document not found'
+          code: "NOT_FOUND",
+          message: "Document not found",
         });
       }
 
       // Verify user is a member
-      const isMember = document.group.members.some(
-        m => m.userId === input.userId && m.isActive
-      );
+      const isMember = document.group.members.some((m) => m.userId === input.userId && m.isActive);
 
       if (!isMember) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Not a member of this group'
+          code: "FORBIDDEN",
+          message: "Not a member of this group",
         });
       }
 
       const updateData: any = {
         lastEditBy: input.userId,
-        version: { increment: 1 }
+        version: { increment: 1 },
       };
 
       if (input.title !== undefined) updateData.title = input.title;
@@ -2220,7 +2314,7 @@ export const thinkpagesRouter = createTRPCRouter({
 
       const updatedDocument = await db.collaborativeDoc.update({
         where: { id: input.documentId },
-        data: updateData
+        data: updateData,
       });
 
       // Notify all group members about document update
@@ -2230,31 +2324,31 @@ export const thinkpagesRouter = createTRPCRouter({
           include: {
             members: {
               where: { isActive: true, userId: { not: input.userId } },
-              select: { userId: true }
-            }
-          }
+              select: { userId: true },
+            },
+          },
         });
 
         const editor = await db.user.findUnique({
-          where: { clerkUserId: input.userId }
+          where: { clerkUserId: input.userId },
         });
 
         if (group && group.members.length > 0 && editor) {
           const editorDisplayName = `User ${input.userId.slice(0, 8)}`;
           await notificationHooks.onThinktankActivity({
-            activityType: 'document_updated',
+            activityType: "document_updated",
             groupId: document.groupId,
             groupName: group.name,
-            groupType: group.type as 'public' | 'private' | 'invite_only',
+            groupType: group.type as "public" | "private" | "invite_only",
             actorUserId: input.userId,
             actorUserName: editorDisplayName,
-            targetUserIds: group.members.map(m => m.userId),
+            targetUserIds: group.members.map((m) => m.userId),
             contentTitle: updatedDocument.title,
             contentId: updatedDocument.id,
           });
         }
       } catch (e) {
-        console.warn('[ThinkTanks] Failed to send document update notifications:', e);
+        console.warn("[ThinkTanks] Failed to send document update notifications:", e);
       }
 
       return updatedDocument;
@@ -2262,22 +2356,24 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Delete a collaborative document
   deleteThinktankDocument: protectedProcedure
-    .input(z.object({
-      documentId: z.string(),
-      userId: z.string()
-    }))
+    .input(
+      z.object({
+        documentId: z.string(),
+        userId: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
       const document = await db.collaborativeDoc.findUnique({
         where: { id: input.documentId },
-        include: { group: true }
+        include: { group: true },
       });
 
       if (!document) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Document not found'
+          code: "NOT_FOUND",
+          message: "Document not found",
         });
       }
 
@@ -2287,13 +2383,13 @@ export const thinkpagesRouter = createTRPCRouter({
 
       if (!isCreator && !isGroupOwner) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only document creator or group owner can delete documents'
+          code: "FORBIDDEN",
+          message: "Only document creator or group owner can delete documents",
         });
       }
 
       await db.collaborativeDoc.delete({
-        where: { id: input.documentId }
+        where: { id: input.documentId },
       });
 
       return { success: true };
@@ -2301,10 +2397,12 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Get a single document
   getThinktankDocument: publicProcedure
-    .input(z.object({
-      documentId: z.string(),
-      userId: z.string()
-    }))
+    .input(
+      z.object({
+        documentId: z.string(),
+        userId: z.string(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
@@ -2314,30 +2412,28 @@ export const thinkpagesRouter = createTRPCRouter({
           group: {
             include: {
               members: {
-                where: { isActive: true }
-              }
-            }
-          }
-        }
+                where: { isActive: true },
+              },
+            },
+          },
+        },
       });
 
       if (!document) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Document not found'
+          code: "NOT_FOUND",
+          message: "Document not found",
         });
       }
 
       // Check permissions
       if (!document.isPublic) {
-        const isMember = document.group.members.some(
-          m => m.userId === input.userId
-        );
+        const isMember = document.group.members.some((m) => m.userId === input.userId);
 
         if (!isMember) {
           throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: 'You do not have access to this document'
+            code: "FORBIDDEN",
+            message: "You do not have access to this document",
           });
         }
       }
@@ -2347,11 +2443,13 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Add reaction to a Thinkshare message
   addReactionToMessage: protectedProcedure
-    .input(z.object({
-      messageId: z.string(),
-      userId: z.string(), // Changed to userId (clerkUserId)
-      reaction: z.string(),
-    }))
+    .input(
+      z.object({
+        messageId: z.string(),
+        userId: z.string(), // Changed to userId (clerkUserId)
+        reaction: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
       const { messageId, userId, reaction } = input;
@@ -2362,7 +2460,7 @@ export const thinkpagesRouter = createTRPCRouter({
       });
 
       if (!message) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Message not found' });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
       }
 
       const reactions = message.reactions ? JSON.parse(message.reactions as string) : {};
@@ -2378,10 +2476,12 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Remove reaction from a Thinkshare message
   removeReactionFromMessage: protectedProcedure
-    .input(z.object({
-      messageId: z.string(),
-      reaction: z.string(),
-    }))
+    .input(
+      z.object({
+        messageId: z.string(),
+        reaction: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
       const { messageId, reaction } = input;
@@ -2392,7 +2492,7 @@ export const thinkpagesRouter = createTRPCRouter({
       });
 
       if (!message) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: 'Message not found' });
+        throw new TRPCError({ code: "NOT_FOUND", message: "Message not found" });
       }
 
       const reactions = message.reactions ? JSON.parse(message.reactions as string) : {};
@@ -2413,13 +2513,17 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Edit a Thinkshare message
   editMessage: protectedProcedure
-    .input(z.object({
-      messageId: z.string(),
-      content: z.string().min(1).refine(
-        (content) => validateNoXSS(content).valid,
-        { message: "Content contains potentially unsafe HTML" }
-      ),
-    }))
+    .input(
+      z.object({
+        messageId: z.string(),
+        content: z
+          .string()
+          .min(1)
+          .refine((content) => validateNoXSS(content).valid, {
+            message: "Content contains potentially unsafe HTML",
+          }),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
       const { messageId, content } = input;
@@ -2441,7 +2545,7 @@ export const thinkpagesRouter = createTRPCRouter({
 
       await db.thinkshareMessage.update({
         where: { id: messageId },
-        data: { deletedAt: new Date(), content: '[deleted]' },
+        data: { deletedAt: new Date(), content: "[deleted]" },
       });
 
       return { success: true };
@@ -2451,70 +2555,72 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Create a new conversation
   createConversation: protectedProcedure
-    .input(z.object({
-      participantIds: z.array(z.string().min(1)) // Now expects userIds (clerkUserIds)
-    }))
+    .input(
+      z.object({
+        participantIds: z.array(z.string().min(1)), // Now expects userIds (clerkUserIds)
+      })
+    )
     .mutation(async ({ ctx, input }) => {
-      console.log('🔍 Server mutation called with raw input:', input);
-      console.log('🔍 Input type:', typeof input);
-      console.log('🔍 Input keys:', Object.keys(input || {}));
-      console.log('🔍 participantIds:', input?.participantIds);
-      
+      console.log("🔍 Server mutation called with raw input:", input);
+      console.log("🔍 Input type:", typeof input);
+      console.log("🔍 Input keys:", Object.keys(input || {}));
+      console.log("🔍 participantIds:", input?.participantIds);
+
       const { db } = ctx;
       const { participantIds } = input;
 
       // Validate participants
       if (participantIds.length === 0 || participantIds.length > 2) {
         throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Direct conversations must have 1-2 participants'
+          code: "BAD_REQUEST",
+          message: "Direct conversations must have 1-2 participants",
         });
       }
 
       const uniqueParticipantIds = [...new Set(participantIds)];
-      
+
       // Verify all participants exist as users
       const users = await db.user.findMany({
-        where: { 
+        where: {
           clerkUserId: { in: uniqueParticipantIds },
-          isActive: true
+          isActive: true,
         },
-        include: { country: true }
+        include: { country: true },
       });
 
       if (users.length !== uniqueParticipantIds.length) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'One or more participants not found'
+          code: "NOT_FOUND",
+          message: "One or more participants not found",
         });
       }
 
       // Check for existing conversation
       const existingConv = await db.thinkshareConversation.findFirst({
         where: {
-          type: 'direct',
-          AND: uniqueParticipantIds.map(participantId => ({
+          type: "direct",
+          AND: uniqueParticipantIds.map((participantId) => ({
             participants: {
               some: {
                 userId: participantId,
-                isActive: true
-              }
-            }
+                isActive: true,
+              },
+            },
           })),
           participants: {
             none: {
               userId: {
-                notIn: uniqueParticipantIds
+                notIn: uniqueParticipantIds,
               },
-              isActive: true
-            }
-          }
+              isActive: true,
+            },
+          },
         },
         include: {
           participants: {
-            where: { isActive: true }
-          }
-        }
+            where: { isActive: true },
+          },
+        },
       });
 
       if (existingConv) {
@@ -2524,21 +2630,21 @@ export const thinkpagesRouter = createTRPCRouter({
       // Create new conversation
       const conversation = await db.thinkshareConversation.create({
         data: {
-          type: 'direct',
+          type: "direct",
           participants: {
             createMany: {
-              data: uniqueParticipantIds.map(userId => ({
+              data: uniqueParticipantIds.map((userId) => ({
                 userId,
-                role: 'participant'
-              }))
-            }
-          }
+                role: "participant",
+              })),
+            },
+          },
         },
         include: {
           participants: {
-            where: { isActive: true }
-          }
-        }
+            where: { isActive: true },
+          },
+        },
       });
 
       // Notify other participant(s) about new conversation
@@ -2548,29 +2654,31 @@ export const thinkpagesRouter = createTRPCRouter({
           const otherUserId = uniqueParticipantIds[1];
 
           const initiator = await db.user.findUnique({
-            where: { clerkUserId: initiatorId }
+            where: { clerkUserId: initiatorId },
           });
 
           if (initiator) {
             const initiatorDisplayName = `User ${initiatorId.slice(0, 8)}`;
-            await notificationAPI.create({
-              title: 'New conversation started',
-              message: `${initiatorDisplayName} started a conversation with you`,
-              userId: otherUserId,
-              category: 'social',
-              type: 'update',
-              priority: 'low',
-              href: `/thinkpages/thinkshare?conversation=${conversation.id}`,
-              source: 'thinkshare',
-              actionable: true,
-              metadata: {
-                conversationId: conversation.id,
-                fromUserId: initiatorId
-              }
-            }).catch(() => {});
+            await notificationAPI
+              .create({
+                title: "New conversation started",
+                message: `${initiatorDisplayName} started a conversation with you`,
+                userId: otherUserId,
+                category: "social",
+                type: "update",
+                priority: "low",
+                href: `/thinkpages/thinkshare?conversation=${conversation.id}`,
+                source: "thinkshare",
+                actionable: true,
+                metadata: {
+                  conversationId: conversation.id,
+                  fromUserId: initiatorId,
+                },
+              })
+              .catch(() => {});
           }
         } catch (e) {
-          console.warn('[ThinkShare] Failed to send conversation start notification:', e);
+          console.warn("[ThinkShare] Failed to send conversation start notification:", e);
         }
       }
 
@@ -2579,210 +2687,236 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Get conversations for a user
   getConversations: publicProcedure
-    .input(z.object({
-      userId: z.string().optional().default(''), // Changed to userId (clerkUserId)
-      limit: z.number().min(1).max(50).optional().default(20),
-      cursor: z.string().optional()
-    }).optional().default(() => ({ userId: '', limit: 20 })))
+    .input(
+      z
+        .object({
+          userId: z.string().optional().default(""), // Changed to userId (clerkUserId)
+          limit: z.number().min(1).max(50).optional().default(20),
+          cursor: z.string().optional(),
+        })
+        .optional()
+        .default(() => ({ userId: "", limit: 20 }))
+    )
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
       try {
         // FAILSAFE: Handle ANY invalid input scenario
         if (!input) {
-          console.log('getConversations: No input provided, returning empty result');
+          console.log("getConversations: No input provided, returning empty result");
           return {
             conversations: [],
-            nextCursor: null
-          };
-        }
-        
-        if (!input.userId || input.userId.trim() === '' || input.userId === 'INVALID') {
-          console.log('getConversations: Invalid userId, returning empty result');
-          return {
-            conversations: [],
-            nextCursor: null
+            nextCursor: null,
           };
         }
 
-      const conversations = await db.thinkshareConversation.findMany({
-        where: {
-          isActive: true,
-          participants: {
-            some: {
-              userId: input.userId,
-              isActive: true
-            }
-          }
-        },
-        include: {
-          participants: {
-            where: { isActive: true }
-          },
-          messages: {
-            orderBy: { ixTimeTimestamp: 'desc' },
-            take: 1,
-            include: {
-              readReceipts: {
-                where: {
-                  userId: input.userId,
-                  messageType: 'thinkshare'
-                }
-              }
-            }
-          },
-          _count: {
-            select: { messages: true }
-          }
-        },
-        orderBy: { lastActivity: 'desc' },
-        take: input.limit,
-        cursor: input.cursor ? { id: input.cursor } : undefined,
-        skip: input.cursor ? 1 : 0
-      });
+        if (!input.userId || input.userId.trim() === "" || input.userId === "INVALID") {
+          console.log("getConversations: Invalid userId, returning empty result");
+          return {
+            conversations: [],
+            nextCursor: null,
+          };
+        }
 
-      // Calculate unread counts for each conversation
-      const conversationIds = conversations.map((c: any) => c.id);
-      const unreadCountsPromises = conversationIds.map(async (convId: string) => {
-        const participant = conversations.find((c: any) => c.id === convId)?.participants.find((p: any) => p.userId === input.userId);
-        const lastReadAt = participant?.lastReadAt;
-
-        // Count messages that are:
-        // 1. In this conversation
-        // 2. Not sent by the current user
-        // 3. Created after the user's lastReadAt timestamp OR don't have a read receipt
-        const unreadCount = await db.thinkshareMessage.count({
+        const conversations = await db.thinkshareConversation.findMany({
           where: {
-            conversationId: convId,
-            userId: { not: input.userId },
-            deletedAt: null,
-            OR: [
-              // Messages sent after user's last read timestamp
-              lastReadAt ? {
-                ixTimeTimestamp: { gt: lastReadAt }
-              } : {},
-              // Messages without read receipts for this user
-              {
+            isActive: true,
+            participants: {
+              some: {
+                userId: input.userId,
+                isActive: true,
+              },
+            },
+          },
+          include: {
+            participants: {
+              where: { isActive: true },
+            },
+            messages: {
+              orderBy: { ixTimeTimestamp: "desc" },
+              take: 1,
+              include: {
                 readReceipts: {
-                  none: {
+                  where: {
                     userId: input.userId,
-                    messageType: 'thinkshare'
-                  }
-                }
-              }
-            ]
-          }
+                    messageType: "thinkshare",
+                  },
+                },
+              },
+            },
+            _count: {
+              select: { messages: true },
+            },
+          },
+          orderBy: { lastActivity: "desc" },
+          take: input.limit,
+          cursor: input.cursor ? { id: input.cursor } : undefined,
+          skip: input.cursor ? 1 : 0,
         });
 
-        return { convId, unreadCount };
-      });
+        // Calculate unread counts for each conversation
+        const conversationIds = conversations.map((c: any) => c.id);
+        const unreadCountsPromises = conversationIds.map(async (convId: string) => {
+          const participant = conversations
+            .find((c: any) => c.id === convId)
+            ?.participants.find((p: any) => p.userId === input.userId);
+          const lastReadAt = participant?.lastReadAt;
 
-      const unreadCountsResults = await Promise.all(unreadCountsPromises);
-      const unreadCountsMap = new Map(unreadCountsResults.map(r => [r.convId, r.unreadCount]));
-
-      // Fetch user profiles for all participants and last messages in a single batch
-      const participantUserIds = new Set<string>();
-      for (const conv of conversations as any[]) {
-        for (const p of conv.participants) participantUserIds.add(p.userId);
-        if (conv.messages[0]?.userId) participantUserIds.add(conv.messages[0].userId);
-      }
-
-      const users = await db.user.findMany({
-        where: { clerkUserId: { in: Array.from(participantUserIds) } },
-        include: { country: true },
-      });
-      const userMap = new Map(users.map(u => [u.clerkUserId, u]));
-
-      return {
-        conversations: conversations.map((conv: any) => {
-          const participantWithAccount = conv.participants.map((p: any) => {
-            const u = userMap.get(p.userId);
-            return {
-              ...p,
-              accountId: p.userId,
-              account: u ? {
-                id: u.clerkUserId,
-                username: u.country?.slug || '',
-                displayName: u.country?.name || 'Unknown Country',
-                profileImageUrl: u.country?.flag || null,
-                accountType: 'country',
-              } : null,
-            };
+          // Count messages that are:
+          // 1. In this conversation
+          // 2. Not sent by the current user
+          // 3. Created after the user's lastReadAt timestamp OR don't have a read receipt
+          const unreadCount = await db.thinkshareMessage.count({
+            where: {
+              conversationId: convId,
+              userId: { not: input.userId },
+              deletedAt: null,
+              OR: [
+                // Messages sent after user's last read timestamp
+                lastReadAt
+                  ? {
+                      ixTimeTimestamp: { gt: lastReadAt },
+                    }
+                  : {},
+                // Messages without read receipts for this user
+                {
+                  readReceipts: {
+                    none: {
+                      userId: input.userId,
+                      messageType: "thinkshare",
+                    },
+                  },
+                },
+              ],
+            },
           });
 
-          const otherParticipants = participantWithAccount.filter((p: any) => p.userId !== input.userId);
-          const lastMessageRaw = conv.messages[0];
-          const lastMessageUser = lastMessageRaw ? userMap.get(lastMessageRaw.userId) : null;
-          const lastMessage = lastMessageRaw ? {
-            ...lastMessageRaw,
-            accountId: lastMessageRaw.userId,
-            account: lastMessageUser ? {
-              id: lastMessageUser.clerkUserId,
-              username: lastMessageUser.country?.slug || '',
-              displayName: lastMessageUser.country?.name || 'Unknown Country',
-              profileImageUrl: lastMessageUser.country?.flag || null,
-              accountType: 'country',
-            } : null,
-          } : undefined;
+          return { convId, unreadCount };
+        });
 
-          // Get calculated unread count from map
-          const participant = conv.participants.find((p: any) => p.userId === input.userId);
-          const unreadCount = unreadCountsMap.get(conv.id) || 0;
+        const unreadCountsResults = await Promise.all(unreadCountsPromises);
+        const unreadCountsMap = new Map(unreadCountsResults.map((r) => [r.convId, r.unreadCount]));
 
-          return {
-            ...conv,
-            participants: participantWithAccount,
-            otherParticipants,
-            lastMessage,
-            lastReadAt: participant?.lastReadAt,
-            unreadCount,
-          };
-        }),
-        nextCursor: conversations.length === input.limit ? conversations[conversations.length - 1]?.id : null
-      };
+        // Fetch user profiles for all participants and last messages in a single batch
+        const participantUserIds = new Set<string>();
+        for (const conv of conversations as any[]) {
+          for (const p of conv.participants) participantUserIds.add(p.userId);
+          if (conv.messages[0]?.userId) participantUserIds.add(conv.messages[0].userId);
+        }
+
+        const users = await db.user.findMany({
+          where: { clerkUserId: { in: Array.from(participantUserIds) } },
+          include: { country: true },
+        });
+        const userMap = new Map(users.map((u) => [u.clerkUserId, u]));
+
+        return {
+          conversations: conversations.map((conv: any) => {
+            const participantWithAccount = conv.participants.map((p: any) => {
+              const u = userMap.get(p.userId);
+              return {
+                ...p,
+                accountId: p.userId,
+                account: u
+                  ? {
+                      id: u.clerkUserId,
+                      username: u.country?.slug || "",
+                      displayName: u.country?.name || "Unknown Country",
+                      profileImageUrl: u.country?.flag || null,
+                      accountType: "country",
+                    }
+                  : null,
+              };
+            });
+
+            const otherParticipants = participantWithAccount.filter(
+              (p: any) => p.userId !== input.userId
+            );
+            const lastMessageRaw = conv.messages[0];
+            const lastMessageUser = lastMessageRaw ? userMap.get(lastMessageRaw.userId) : null;
+            const lastMessage = lastMessageRaw
+              ? {
+                  ...lastMessageRaw,
+                  accountId: lastMessageRaw.userId,
+                  account: lastMessageUser
+                    ? {
+                        id: lastMessageUser.clerkUserId,
+                        username: lastMessageUser.country?.slug || "",
+                        displayName: lastMessageUser.country?.name || "Unknown Country",
+                        profileImageUrl: lastMessageUser.country?.flag || null,
+                        accountType: "country",
+                      }
+                    : null,
+                }
+              : undefined;
+
+            // Get calculated unread count from map
+            const participant = conv.participants.find((p: any) => p.userId === input.userId);
+            const unreadCount = unreadCountsMap.get(conv.id) || 0;
+
+            return {
+              ...conv,
+              participants: participantWithAccount,
+              otherParticipants,
+              lastMessage,
+              lastReadAt: participant?.lastReadAt,
+              unreadCount,
+            };
+          }),
+          nextCursor:
+            conversations.length === input.limit
+              ? conversations[conversations.length - 1]?.id
+              : null,
+        };
       } catch (error) {
-        console.error('Error in getConversations:', error);
+        console.error("Error in getConversations:", error);
         // FAILSAFE: Return empty result instead of throwing error
         return {
           conversations: [],
-          nextCursor: null
+          nextCursor: null,
         };
       }
     }),
 
   // Get messages for a conversation
   getConversationMessages: publicProcedure
-    .input(z.object({
-      conversationId: z.string().min(1, "Conversation ID is required").optional(),
-      userId: z.string().min(1, "User ID is required").optional(), // Changed to userId (clerkUserId)
-      limit: z.number().min(1).max(100).default(50),
-      cursor: z.string().optional()
-    }))
+    .input(
+      z.object({
+        conversationId: z.string().min(1, "Conversation ID is required").optional(),
+        userId: z.string().min(1, "User ID is required").optional(), // Changed to userId (clerkUserId)
+        limit: z.number().min(1).max(100).default(50),
+        cursor: z.string().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
-      console.log('🔍 getConversationMessages - Input:', {
+      console.log("🔍 getConversationMessages - Input:", {
         conversationId: input.conversationId,
         userId: input.userId,
-        limit: input.limit
+        limit: input.limit,
       });
 
       // Validate required fields exist
       if (!input.conversationId || !input.userId) {
-        console.log('❌ Missing required fields');
+        console.log("❌ Missing required fields");
         return {
           messages: [],
-          nextCursor: null
+          nextCursor: null,
         };
       }
 
       // Validate IDs are not placeholder values
-      if (input.conversationId === 'INVALID' || input.userId === 'INVALID' ||
-          input.conversationId === 'SKIP_QUERY' || input.userId === 'SKIP_QUERY') {
-        console.log('❌ Placeholder values detected');
+      if (
+        input.conversationId === "INVALID" ||
+        input.userId === "INVALID" ||
+        input.conversationId === "SKIP_QUERY" ||
+        input.userId === "SKIP_QUERY"
+      ) {
+        console.log("❌ Placeholder values detected");
         return {
           messages: [],
-          nextCursor: null
+          nextCursor: null,
         };
       }
 
@@ -2791,103 +2925,113 @@ export const thinkpagesRouter = createTRPCRouter({
         where: {
           conversationId_userId: {
             conversationId: input.conversationId,
-            userId: input.userId
-          }
-        }
+            userId: input.userId,
+          },
+        },
       });
 
-      console.log('👤 Participant check:', {
+      console.log("👤 Participant check:", {
         found: !!participant,
-        isActive: participant?.isActive
+        isActive: participant?.isActive,
       });
 
       if (!participant || !participant.isActive) {
-        console.log('❌ Not a participant or inactive');
+        console.log("❌ Not a participant or inactive");
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Not a participant in this conversation'
+          code: "FORBIDDEN",
+          message: "Not a participant in this conversation",
         });
       }
 
       const messages = await db.thinkshareMessage.findMany({
         where: {
           conversationId: input.conversationId,
-          deletedAt: null
+          deletedAt: null,
         },
         include: {
           replyTo: true,
-          readReceipts: true
+          readReceipts: true,
         },
-        orderBy: { ixTimeTimestamp: 'desc' },
+        orderBy: { ixTimeTimestamp: "desc" },
         take: input.limit,
         cursor: input.cursor ? { id: input.cursor } : undefined,
-        skip: input.cursor ? 1 : 0
+        skip: input.cursor ? 1 : 0,
       });
 
       // Fetch unique user IDs from messages
-      const userIds = [...new Set(messages.map(msg => msg.userId))];
+      const userIds = [...new Set(messages.map((msg) => msg.userId))];
 
       // Fetch all accounts in one query
       const accounts = await db.user.findMany({
         where: {
-          clerkUserId: { in: userIds }
+          clerkUserId: { in: userIds },
         },
-        include: { country: true }
+        include: { country: true },
       });
 
       // Create a map for quick lookup
       const accountMap = new Map(accounts.map((acc: any) => [acc.clerkUserId, acc]));
 
       return {
-        messages: messages.map(msg => ({
+        messages: messages.map((msg) => ({
           ...msg,
           account: (() => {
             const u = accountMap.get(msg.userId);
-            return u ? {
-              id: u.clerkUserId,
-              username: u.country?.slug || '',
-              displayName: u.country?.name || 'Unknown Country',
-              profileImageUrl: u.country?.flag || null,
-              accountType: 'country',
-            } : null;
+            return u
+              ? {
+                  id: u.clerkUserId,
+                  username: u.country?.slug || "",
+                  displayName: u.country?.name || "Unknown Country",
+                  profileImageUrl: u.country?.flag || null,
+                  accountType: "country",
+                }
+              : null;
           })(),
           accountId: msg.userId, // Keep accountId for compatibility
           reactions: msg.reactions ? JSON.parse(msg.reactions) : {},
           mentions: msg.mentions ? JSON.parse(msg.mentions) : [],
-          attachments: msg.attachments ? JSON.parse(msg.attachments) : []
+          attachments: msg.attachments ? JSON.parse(msg.attachments) : [],
         })),
-        nextCursor: messages.length === input.limit ? messages[messages.length - 1]?.id : null
+        nextCursor: messages.length === input.limit ? messages[messages.length - 1]?.id : null,
       };
     }),
 
   // Send message to conversation
   sendMessage: protectedProcedure
-    .input(z.object({
-      conversationId: z.string(),
-      userId: z.string(), // Changed to userId (clerkUserId)
-      content: z.string().min(1).refine(
-        (content) => validateNoXSS(content).valid,
-        { message: "Content contains potentially unsafe HTML" }
-      ),
-      messageType: z.enum(['text', 'image', 'file', 'system']).default('text'),
-      replyToId: z.string().optional(),
-      mentions: z.array(z.string()).optional(),
-      attachments: z.array(z.object({
-        type: z.string(),
-        url: z.string(),
-        filename: z.string().optional(),
-        size: z.number().optional()
-      })).optional()
-    }))
+    .input(
+      z.object({
+        conversationId: z.string(),
+        userId: z.string(), // Changed to userId (clerkUserId)
+        content: z
+          .string()
+          .min(1)
+          .refine((content) => validateNoXSS(content).valid, {
+            message: "Content contains potentially unsafe HTML",
+          }),
+        messageType: z.enum(["text", "image", "file", "system"]).default("text"),
+        replyToId: z.string().optional(),
+        mentions: z.array(z.string()).optional(),
+        attachments: z
+          .array(
+            z.object({
+              type: z.string(),
+              url: z.string(),
+              filename: z.string().optional(),
+              size: z.number().optional(),
+            })
+          )
+          .optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
-      console.log('🔍 sendMessage called with input:', input);
-      console.log('🔍 messageType:', input.messageType);
-      
+      console.log("🔍 sendMessage called with input:", input);
+      console.log("🔍 messageType:", input.messageType);
+
       const { db } = ctx;
 
       // Enforce authenticated user matches input userId
       if (!ctx.user?.clerkUserId || ctx.user.clerkUserId !== input.userId) {
-        throw new TRPCError({ code: 'FORBIDDEN', message: 'User mismatch' });
+        throw new TRPCError({ code: "FORBIDDEN", message: "User mismatch" });
       }
 
       // Verify user is participant
@@ -2895,15 +3039,15 @@ export const thinkpagesRouter = createTRPCRouter({
         where: {
           conversationId_userId: {
             conversationId: input.conversationId,
-            userId: input.userId
-          }
-        }
+            userId: input.userId,
+          },
+        },
       });
 
       if (!participant || !participant.isActive) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Not a participant in this conversation'
+          code: "FORBIDDEN",
+          message: "Not a participant in this conversation",
         });
       }
 
@@ -2917,63 +3061,70 @@ export const thinkpagesRouter = createTRPCRouter({
           replyToId: input.replyToId,
           mentions: input.mentions ? JSON.stringify(input.mentions) : null,
           attachments: input.attachments ? JSON.stringify(input.attachments) : null,
-          ixTimeTimestamp: new Date()
+          ixTimeTimestamp: new Date(),
         },
         include: {
           conversation: true,
-          replyTo: true
-        }
+          replyTo: true,
+        },
       });
 
       // Update conversation last activity
       await db.thinkshareConversation.update({
         where: { id: input.conversationId },
-        data: { lastActivity: new Date() }
+        data: { lastActivity: new Date() },
       });
 
       // Broadcast real-time event to conversation subscribers
       try {
         const thinkpages = getThinkPagesServer();
         thinkpages?.broadcastMessage({
-          type: 'message:new',
+          type: "message:new",
           conversationId: input.conversationId,
           messageId: message.id,
           accountId: input.userId,
           content: input.content,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       } catch (e) {
-        console.warn('[ThinkPages] Failed to broadcast message update (non-fatal):', e);
+        console.warn("[ThinkPages] Failed to broadcast message update (non-fatal):", e);
       }
 
       // Create notifications for other participants
       try {
         const participants = await db.conversationParticipant.findMany({
           where: { conversationId: input.conversationId, isActive: true },
-          select: { userId: true }
+          select: { userId: true },
         });
 
         const recipientIds = participants
-          .map(p => p.userId)
-          .filter(uid => uid !== input.userId);
+          .map((p) => p.userId)
+          .filter((uid) => uid !== input.userId);
 
         // Create one notification per recipient
         for (const recipientId of recipientIds) {
-          await notificationAPI.create({
-            title: 'New ThinkShare message',
-            message: input.content.replace(/<[^>]*>/g, '').slice(0, 140) || 'You have a new message',
-            userId: recipientId,
-            category: 'social',
-            type: 'update',
-            priority: 'medium',
-            href: `/thinkpages/thinkshare?conversation=${input.conversationId}`,
-            source: 'thinkshare',
-            actionable: true,
-            metadata: { conversationId: input.conversationId, messageId: message.id, fromUserId: input.userId }
-          }).catch(() => {});
+          await notificationAPI
+            .create({
+              title: "New ThinkShare message",
+              message:
+                input.content.replace(/<[^>]*>/g, "").slice(0, 140) || "You have a new message",
+              userId: recipientId,
+              category: "social",
+              type: "update",
+              priority: "medium",
+              href: `/thinkpages/thinkshare?conversation=${input.conversationId}`,
+              source: "thinkshare",
+              actionable: true,
+              metadata: {
+                conversationId: input.conversationId,
+                messageId: message.id,
+                fromUserId: input.userId,
+              },
+            })
+            .catch(() => {});
         }
       } catch (e) {
-        console.warn('[ThinkPages] Failed to create notifications (non-fatal):', e);
+        console.warn("[ThinkPages] Failed to create notifications (non-fatal):", e);
       }
 
       return message;
@@ -2981,17 +3132,19 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Mark messages as read
   markMessagesAsRead: protectedProcedure
-    .input(z.object({
-      conversationId: z.string(),
-      userId: z.string(), // Changed to userId (clerkUserId)
-      messageIds: z.array(z.string()).optional() // If not provided, mark all as read
-    }))
+    .input(
+      z.object({
+        conversationId: z.string(),
+        userId: z.string(), // Changed to userId (clerkUserId)
+        messageIds: z.array(z.string()).optional(), // If not provided, mark all as read
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
       // Enforce authenticated user matches input userId
       if (!ctx.user?.clerkUserId || ctx.user.clerkUserId !== input.userId) {
-        throw new TRPCError({ code: 'FORBIDDEN', message: 'User mismatch' });
+        throw new TRPCError({ code: "FORBIDDEN", message: "User mismatch" });
       }
 
       // Verify participant exists before updating
@@ -2999,15 +3152,15 @@ export const thinkpagesRouter = createTRPCRouter({
         where: {
           conversationId_userId: {
             conversationId: input.conversationId,
-            userId: input.userId
-          }
-        }
+            userId: input.userId,
+          },
+        },
       });
 
       if (!participant) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Not a participant in this conversation'
+          code: "NOT_FOUND",
+          message: "Not a participant in this conversation",
         });
       }
 
@@ -3016,10 +3169,10 @@ export const thinkpagesRouter = createTRPCRouter({
         where: {
           conversationId_userId: {
             conversationId: input.conversationId,
-            userId: input.userId
-          }
+            userId: input.userId,
+          },
         },
-        data: { lastReadAt: new Date() }
+        data: { lastReadAt: new Date() },
       });
 
       // If specific message IDs provided, create read receipts (skip duplicates)
@@ -3028,21 +3181,21 @@ export const thinkpagesRouter = createTRPCRouter({
         const existingReceipts = await db.messageReadReceipt.findMany({
           where: {
             messageId: { in: input.messageIds },
-            userId: input.userId
+            userId: input.userId,
           },
-          select: { messageId: true }
+          select: { messageId: true },
         });
 
-        const existingMessageIds = new Set(existingReceipts.map(r => r.messageId));
-        const newMessageIds = input.messageIds.filter(id => !existingMessageIds.has(id));
+        const existingMessageIds = new Set(existingReceipts.map((r) => r.messageId));
+        const newMessageIds = input.messageIds.filter((id) => !existingMessageIds.has(id));
 
         if (newMessageIds.length > 0) {
           await db.messageReadReceipt.createMany({
-            data: newMessageIds.map(messageId => ({
+            data: newMessageIds.map((messageId) => ({
               messageId,
               userId: input.userId,
-              messageType: 'thinkshare' as const
-            }))
+              messageType: "thinkshare" as const,
+            })),
           });
         }
       }
@@ -3052,12 +3205,14 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Update user presence/online status
   updatePresence: protectedProcedure
-    .input(z.object({
-      userId: z.string(), // Changed to userId (clerkUserId)
-      isOnline: z.boolean(),
-      status: z.enum(['available', 'busy', 'away', 'invisible']).optional(),
-      customStatus: z.string().optional()
-    }))
+    .input(
+      z.object({
+        userId: z.string(), // Changed to userId (clerkUserId)
+        isOnline: z.boolean(),
+        status: z.enum(["available", "busy", "away", "invisible"]).optional(),
+        customStatus: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
 
@@ -3066,16 +3221,16 @@ export const thinkpagesRouter = createTRPCRouter({
         create: {
           userId: input.userId,
           isOnline: input.isOnline,
-          status: input.status || 'available',
+          status: input.status || "available",
           customStatus: input.customStatus,
-          lastSeen: new Date()
+          lastSeen: new Date(),
         },
         update: {
           isOnline: input.isOnline,
           status: input.status,
           customStatus: input.customStatus,
-          lastSeen: new Date()
-        }
+          lastSeen: new Date(),
+        },
       });
 
       return { success: true };
@@ -3083,16 +3238,18 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Get presence for multiple users
   getPresenceForUsers: publicProcedure
-    .input(z.object({
-      userIds: z.array(z.string()) // Changed to userIds (clerkUserIds)
-    }))
+    .input(
+      z.object({
+        userIds: z.array(z.string()), // Changed to userIds (clerkUserIds)
+      })
+    )
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
 
       const presence = await db.userPresence.findMany({
         where: {
-          userId: { in: input.userIds }
-        }
+          userId: { in: input.userIds },
+        },
       });
 
       return presence;
@@ -3100,267 +3257,285 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Get Discord server emojis
   getDiscordEmojis: publicProcedure
-    .input(z.object({
-      guildId: z.string().optional()
-    }))
+    .input(
+      z.object({
+        guildId: z.string().optional(),
+      })
+    )
     .query(async ({ input }) => {
       try {
-        const botUrl = process.env.IXTIME_BOT_URL || 'http://localhost:3001';
-        const url = input.guildId 
-          ? `${botUrl}/emojis?guild=${input.guildId}`
-          : `${botUrl}/emojis`;
-        
+        const botUrl = process.env.IXTIME_BOT_URL || "http://localhost:3001";
+        const url = input.guildId ? `${botUrl}/emojis?guild=${input.guildId}` : `${botUrl}/emojis`;
+
         const response = await fetch(url, {
-          method: 'GET',
+          method: "GET",
           headers: {
-            'Content-Type': 'application/json'
+            "Content-Type": "application/json",
           },
-          signal: AbortSignal.timeout(5000) // 5 second timeout
+          signal: AbortSignal.timeout(5000), // 5 second timeout
         });
 
         if (!response.ok) {
           throw new Error(`Discord bot responded with status ${response.status}`);
         }
 
-        const data = await response.json() as { success: boolean; error?: string; emojis?: Array<{ id: string; name: string; url: string; animated?: boolean }> };
+        const data = (await response.json()) as {
+          success: boolean;
+          error?: string;
+          emojis?: Array<{ id: string; name: string; url: string; animated?: boolean }>;
+        };
 
         if (!data.success) {
-          throw new Error(data.error || 'Failed to fetch Discord emojis');
+          throw new Error(data.error || "Failed to fetch Discord emojis");
         }
 
         return {
           success: true,
-          emojis: (data.emojis || []).map((emoji: { id: string; name: string; url: string; animated?: boolean }) => ({
-            id: emoji.id,
-            name: emoji.name,
-            url: emoji.url,
-            animated: emoji.animated
-          })),
-          count: data.emojis?.length ?? 0
+          emojis: (data.emojis || []).map(
+            (emoji: { id: string; name: string; url: string; animated?: boolean }) => ({
+              id: emoji.id,
+              name: emoji.name,
+              url: emoji.url,
+              animated: emoji.animated,
+            })
+          ),
+          count: data.emojis?.length ?? 0,
         };
       } catch (error) {
-        console.error('Error fetching Discord emojis:', error);
+        console.error("Error fetching Discord emojis:", error);
         return {
           success: false,
           emojis: [],
           count: 0,
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : "Unknown error",
         };
       }
     }),
 
   // Update a post
   updatePost: protectedProcedure
-    .input(z.object({
-      postId: z.string(),
-      content: z.string().min(1).max(1000),
-      accountId: z.string(),
-    }))
+    .input(
+      z.object({
+        postId: z.string(),
+        content: z.string().min(1).max(1000),
+        accountId: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
-      
+
       // Verify ownership
       const post = await db.thinkpagesPost.findUnique({
         where: { id: input.postId },
-        select: { accountId: true }
+        select: { accountId: true },
       });
-      
+
       if (!post) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Post not found'
+          code: "NOT_FOUND",
+          message: "Post not found",
         });
       }
-      
+
       if (post.accountId !== input.accountId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only edit your own posts'
+          code: "FORBIDDEN",
+          message: "You can only edit your own posts",
         });
       }
-      
+
       const updatedPost = await db.thinkpagesPost.update({
         where: { id: input.postId },
-        data: { 
+        data: {
           content: input.content,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         },
         include: {
           // account: true, // Relation doesn't exist
-          reactions: true
-        }
+          reactions: true,
+        },
       });
-      
+
       return updatedPost;
     }),
 
   // Delete a post
   deletePost: protectedProcedure
-    .input(z.object({
-      postId: z.string(),
-      accountId: z.string(),
-    }))
+    .input(
+      z.object({
+        postId: z.string(),
+        accountId: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
-      
+
       // Verify ownership
       const post = await db.thinkpagesPost.findUnique({
         where: { id: input.postId },
-        select: { accountId: true }
+        select: { accountId: true },
       });
-      
+
       if (!post) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Post not found'
+          code: "NOT_FOUND",
+          message: "Post not found",
         });
       }
-      
+
       if (post.accountId !== input.accountId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only delete your own posts'
+          code: "FORBIDDEN",
+          message: "You can only delete your own posts",
         });
       }
-      
+
       await db.thinkpagesPost.delete({
-        where: { id: input.postId }
+        where: { id: input.postId },
       });
-      
+
       return { success: true };
     }),
 
   // Pin/unpin a post
   pinPost: protectedProcedure
-    .input(z.object({
-      postId: z.string(),
-      accountId: z.string(),
-      pinned: z.boolean(),
-    }))
+    .input(
+      z.object({
+        postId: z.string(),
+        accountId: z.string(),
+        pinned: z.boolean(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
-      
+
       // Verify ownership
       const post = await db.thinkpagesPost.findUnique({
         where: { id: input.postId },
-        select: { accountId: true }
+        select: { accountId: true },
       });
-      
+
       if (!post) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Post not found'
+          code: "NOT_FOUND",
+          message: "Post not found",
         });
       }
-      
+
       if (post.accountId !== input.accountId) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only pin your own posts'
+          code: "FORBIDDEN",
+          message: "You can only pin your own posts",
         });
       }
-      
+
       const updatedPost = await db.thinkpagesPost.update({
         where: { id: input.postId },
-        data: { pinned: input.pinned }
+        data: { pinned: input.pinned },
       });
-      
+
       return updatedPost;
     }),
 
   // Bookmark/unbookmark a post
   bookmarkPost: protectedProcedure
-    .input(z.object({
-      postId: z.string(),
-      userId: z.string(),
-      bookmarked: z.boolean(),
-    }))
+    .input(
+      z.object({
+        postId: z.string(),
+        userId: z.string(),
+        bookmarked: z.boolean(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
-      
+
       if (input.bookmarked) {
         // Add bookmark
         await db.postBookmark.upsert({
           where: {
             userId_postId: {
               postId: input.postId,
-              userId: input.userId
-            }
+              userId: input.userId,
+            },
           },
           update: {},
           create: {
             postId: input.postId,
-            userId: input.userId
-          }
+            userId: input.userId,
+          },
         });
       } else {
         // Remove bookmark
         await db.postBookmark.deleteMany({
           where: {
             postId: input.postId,
-            userId: input.userId
-          }
+            userId: input.userId,
+          },
         });
       }
-      
+
       return { success: true };
     }),
 
   // Flag a post
   flagPost: protectedProcedure
-    .input(z.object({
-      postId: z.string(),
-      userId: z.string(),
-      reason: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        postId: z.string(),
+        userId: z.string(),
+        reason: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { db } = ctx;
-      
+
       // Check if already flagged by this user
       const existingFlag = await db.postFlag.findUnique({
         where: {
           userId_postId: {
             postId: input.postId,
-            userId: input.userId
-          }
-        }
+            userId: input.userId,
+          },
+        },
       });
-      
+
       if (existingFlag) {
         throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'You have already flagged this post'
+          code: "BAD_REQUEST",
+          message: "You have already flagged this post",
         });
       }
-      
+
       await db.postFlag.create({
         data: {
           postId: input.postId,
           userId: input.userId,
-          reason: input.reason
-        }
+          reason: input.reason,
+        },
       });
-      
+
       return { success: true };
     }),
 
   // Create a conversation between two countries' official accounts
   createConversationByCountries: protectedProcedure
-    .input(z.object({
-      fromCountryId: z.string(),
-      toCountryId: z.string(),
-      initialMessage: z.string().optional()
-    }))
+    .input(
+      z.object({
+        fromCountryId: z.string(),
+        toCountryId: z.string(),
+        initialMessage: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Get users for both countries
       const fromUsers = await ctx.db.user.findMany({
         where: { countryId: input.fromCountryId },
-        take: 1
+        take: 1,
       });
 
       const toUsers = await ctx.db.user.findMany({
         where: { countryId: input.toCountryId },
-        take: 1
+        take: 1,
       });
 
       if (fromUsers.length === 0) {
@@ -3377,17 +3552,17 @@ export const thinkpagesRouter = createTRPCRouter({
       // Create a conversation
       const conversation = await ctx.db.thinkshareConversation.create({
         data: {
-          type: 'direct',
-          name: `Diplomatic Channel`
-        }
+          type: "direct",
+          name: `Diplomatic Channel`,
+        },
       });
 
       // Add participants
       await ctx.db.conversationParticipant.createMany({
         data: [
           { conversationId: conversation.id, userId: fromUser.clerkUserId },
-          { conversationId: conversation.id, userId: toUser.clerkUserId }
-        ]
+          { conversationId: conversation.id, userId: toUser.clerkUserId },
+        ],
       });
 
       // Send initial message if provided
@@ -3396,8 +3571,8 @@ export const thinkpagesRouter = createTRPCRouter({
           data: {
             conversationId: conversation.id,
             userId: fromUser.clerkUserId,
-            content: input.initialMessage
-          }
+            content: input.initialMessage,
+          },
         });
       }
 
@@ -3406,21 +3581,23 @@ export const thinkpagesRouter = createTRPCRouter({
 
   // Get post reactions with account details
   getPostReactions: publicProcedure
-    .input(z.object({ 
-      postId: z.string(),
-      reactionType: z.string().optional() // Filter by specific reaction type
-    }))
+    .input(
+      z.object({
+        postId: z.string(),
+        reactionType: z.string().optional(), // Filter by specific reaction type
+      })
+    )
     .query(async ({ ctx, input }) => {
       const { db } = ctx;
-      
+
       const whereClause: any = {
-        postId: input.postId
+        postId: input.postId,
       };
 
       if (input.reactionType) {
         whereClause.reactionType = input.reactionType;
       }
-      
+
       const reactions = await db.postReaction.findMany({
         where: whereClause,
         include: {
@@ -3432,14 +3609,14 @@ export const thinkpagesRouter = createTRPCRouter({
               profileImageUrl: true,
               accountType: true,
               verified: true,
-            }
-          }
+            },
+          },
         },
         orderBy: {
-          timestamp: 'desc'
-        }
+          timestamp: "desc",
+        },
       });
-      
+
       return reactions;
-    })
+    }),
 });

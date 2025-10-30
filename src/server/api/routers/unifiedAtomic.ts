@@ -95,10 +95,15 @@ export const unifiedAtomicRouter = createTRPCRouter({
       }
 
       // Three-way synergies (if all three types exist)
-      if (governmentComponents.length > 0 && economicComponents.length > 0 && taxComponents.length > 0) {
+      if (
+        governmentComponents.length > 0 &&
+        economicComponents.length > 0 &&
+        taxComponents.length > 0
+      ) {
         synergies.push({
           type: "ALL_THREE",
-          description: "Comprehensive policy framework with government, economic, and tax components working together",
+          description:
+            "Comprehensive policy framework with government, economic, and tax components working together",
           bonus: 15, // Higher bonus for three-way synergy
         });
       }
@@ -160,17 +165,23 @@ export const unifiedAtomicRouter = createTRPCRouter({
       ]);
 
       // Calculate individual effectiveness scores
-      const govScore = governmentComponents.length > 0 
-        ? governmentComponents.reduce((sum, comp) => sum + comp.effectivenessScore, 0) / governmentComponents.length
-        : 0;
-      
-      const econScore = economicComponents.length > 0
-        ? economicComponents.reduce((sum, comp) => sum + comp.effectivenessScore, 0) / economicComponents.length
-        : 0;
-      
-      const taxScore = taxComponents.length > 0
-        ? taxComponents.reduce((sum, comp) => sum + comp.effectivenessScore, 0) / taxComponents.length
-        : 0;
+      const govScore =
+        governmentComponents.length > 0
+          ? governmentComponents.reduce((sum, comp) => sum + comp.effectivenessScore, 0) /
+            governmentComponents.length
+          : 0;
+
+      const econScore =
+        economicComponents.length > 0
+          ? economicComponents.reduce((sum, comp) => sum + comp.effectivenessScore, 0) /
+            economicComponents.length
+          : 0;
+
+      const taxScore =
+        taxComponents.length > 0
+          ? taxComponents.reduce((sum, comp) => sum + comp.effectivenessScore, 0) /
+            taxComponents.length
+          : 0;
 
       // Calculate synergies and conflicts
       const synergies = await ctx.db.crossBuilderSynergy.findMany({
@@ -180,7 +191,7 @@ export const unifiedAtomicRouter = createTRPCRouter({
       const synergyBonus = synergies.reduce((sum, syn) => sum + syn.effectivenessBonus, 0);
 
       // Calculate combined score with weights
-      const combinedScore = (govScore * 0.4) + (econScore * 0.35) + (taxScore * 0.25) + synergyBonus;
+      const combinedScore = govScore * 0.4 + econScore * 0.35 + taxScore * 0.25 + synergyBonus;
 
       return {
         governmentScore: govScore,
@@ -198,11 +209,13 @@ export const unifiedAtomicRouter = createTRPCRouter({
 
   // Get historical changes for components
   getHistoricalChanges: publicProcedure
-    .input(z.object({ 
-      countryId: z.string(),
-      limit: z.number().default(50),
-      componentType: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        limit: z.number().default(50),
+        componentType: z.string().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       return await ctx.db.componentChangeLog.findMany({
         where: {
@@ -216,17 +229,21 @@ export const unifiedAtomicRouter = createTRPCRouter({
 
   // Save cross-builder synergies
   saveSynergies: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-      synergies: z.array(z.object({
-        governmentComponents: z.array(z.string()),
-        economicComponents: z.array(z.string()),
-        taxComponents: z.array(z.string()),
-        synergyType: z.string(),
-        effectivenessBonus: z.number(),
-        description: z.string(),
-      })),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        synergies: z.array(
+          z.object({
+            governmentComponents: z.array(z.string()),
+            economicComponents: z.array(z.string()),
+            taxComponents: z.array(z.string()),
+            synergyType: z.string(),
+            effectivenessBonus: z.number(),
+            description: z.string(),
+          })
+        ),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Clear existing synergies
       await ctx.db.crossBuilderSynergy.deleteMany({
@@ -263,26 +280,41 @@ function detectComponentSynergy(
   // Define synergy rules based on component types
   const synergyRules: Record<string, Record<string, { bonus: number; description: string }>> = {
     // Government + Economic synergies
-    "FREE_MARKET_SYSTEM": {
-      "FREE_MARKET_SYSTEM": { bonus: 10, description: "Free market government supports free market economy" },
-      "MIXED_ECONOMY": { bonus: 5, description: "Free market government with mixed economy creates balance" },
+    FREE_MARKET_SYSTEM: {
+      FREE_MARKET_SYSTEM: {
+        bonus: 10,
+        description: "Free market government supports free market economy",
+      },
+      MIXED_ECONOMY: {
+        bonus: 5,
+        description: "Free market government with mixed economy creates balance",
+      },
     },
-    "PLANNED_ECONOMY": {
-      "PLANNED_ECONOMY": { bonus: 10, description: "Planned government with planned economy creates efficiency" },
+    PLANNED_ECONOMY: {
+      PLANNED_ECONOMY: {
+        bonus: 10,
+        description: "Planned government with planned economy creates efficiency",
+      },
     },
-    "SOCIAL_MARKET_ECONOMY": {
-      "SOCIAL_MARKET_ECONOMY": { bonus: 10, description: "Social market government with social market economy" },
+    SOCIAL_MARKET_ECONOMY: {
+      SOCIAL_MARKET_ECONOMY: {
+        bonus: 10,
+        description: "Social market government with social market economy",
+      },
     },
     // Government + Tax synergies
-    "PROGRESSIVE_TAX": {
-      "PROGRESSIVE_TAX": { bonus: 8, description: "Progressive government with progressive taxation" },
+    PROGRESSIVE_TAX: {
+      PROGRESSIVE_TAX: {
+        bonus: 8,
+        description: "Progressive government with progressive taxation",
+      },
     },
-    "FLAT_TAX": {
-      "FLAT_TAX": { bonus: 8, description: "Simplified government with flat taxation" },
+    FLAT_TAX: {
+      FLAT_TAX: { bonus: 8, description: "Simplified government with flat taxation" },
     },
     // Economic + Tax synergies
-    "FREE_TRADE": {
-      "FREE_TRADE": { bonus: 6, description: "Free trade economy with free trade taxation" },
+    FREE_TRADE: {
+      FREE_TRADE: { bonus: 6, description: "Free trade economy with free trade taxation" },
     },
   };
 
@@ -301,11 +333,17 @@ function detectComponentConflict(
 ): { penalty: number; description: string } | null {
   // Define conflict rules
   const conflictRules: Record<string, Record<string, { penalty: number; description: string }>> = {
-    "FREE_MARKET_SYSTEM": {
-      "PLANNED_ECONOMY": { penalty: 15, description: "Free market government conflicts with planned economy" },
+    FREE_MARKET_SYSTEM: {
+      PLANNED_ECONOMY: {
+        penalty: 15,
+        description: "Free market government conflicts with planned economy",
+      },
     },
-    "PLANNED_ECONOMY": {
-      "FREE_MARKET_SYSTEM": { penalty: 15, description: "Planned government conflicts with free market economy" },
+    PLANNED_ECONOMY: {
+      FREE_MARKET_SYSTEM: {
+        penalty: 15,
+        description: "Planned government conflicts with free market economy",
+      },
     },
   };
 
@@ -316,4 +354,3 @@ function detectComponentConflict(
 
   return null;
 }
-

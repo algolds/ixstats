@@ -1,15 +1,19 @@
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { api } from "~/trpc/react";
 
 export function useThinkpagesSettings(user: any) {
   const [isEditingThinkpages, setIsEditingThinkpages] = useState(false);
-  const [thinkpagesPostingFrequency, setThinkpagesPostingFrequency] = useState('');
-  const [thinkpagesPoliticalLean, setThinkpagesPoliticalLean] = useState('');
-  const [thinkpagesPersonality, setThinkpagesPersonality] = useState('');
+  const [thinkpagesPostingFrequency, setThinkpagesPostingFrequency] = useState("");
+  const [thinkpagesPoliticalLean, setThinkpagesPoliticalLean] = useState("");
+  const [thinkpagesPersonality, setThinkpagesPersonality] = useState("");
 
-  const { data: thinkpagesAccount, isLoading: thinkpagesAccountLoading, refetch: refetchThinkpagesAccount } = api.thinkpages.getThinkpagesAccountByUserId.useQuery(
-    { clerkUserId: user?.id || 'placeholder-disabled' },
+  const {
+    data: thinkpagesAccount,
+    isLoading: thinkpagesAccountLoading,
+    refetch: refetchThinkpagesAccount,
+  } = api.thinkpages.getThinkpagesAccountByUserId.useQuery(
+    { clerkUserId: user?.id || "placeholder-disabled" },
     { enabled: !!user?.id }
   );
 
@@ -29,15 +33,15 @@ export function useThinkpagesSettings(user: any) {
     try {
       await updateThinkpagesAccountMutation.mutateAsync({
         accountId: thinkpagesAccount.id,
-        postingFrequency: thinkpagesPostingFrequency as 'active' | 'moderate' | 'low',
-        politicalLean: thinkpagesPoliticalLean as 'left' | 'center' | 'right',
-        personality: thinkpagesPersonality as 'serious' | 'casual' | 'satirical',
+        postingFrequency: thinkpagesPostingFrequency as "active" | "moderate" | "low",
+        politicalLean: thinkpagesPoliticalLean as "left" | "center" | "right",
+        personality: thinkpagesPersonality as "serious" | "casual" | "satirical",
       });
-      toast.success('Thinkpages settings updated!');
+      toast.success("Thinkpages settings updated!");
       setIsEditingThinkpages(false);
       refetchThinkpagesAccount();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to update Thinkpages settings');
+      toast.error(error.message || "Failed to update Thinkpages settings");
     }
   };
 
@@ -63,6 +67,6 @@ export function useThinkpagesSettings(user: any) {
     thinkpagesAccountLoading,
     updateThinkpagesAccountMutation,
     handleSaveThinkpagesSettings,
-    handleCancelThinkpagesEdit
+    handleCancelThinkpagesEdit,
   };
 }

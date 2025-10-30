@@ -1,7 +1,7 @@
 // src/hooks/useBuilderAutoSync.ts
 /**
  * Auto-Sync Hooks for Government and Tax Builders
- * 
+ *
  * These hooks provide intelligent auto-save functionality with:
  * - Debounced saves to prevent excessive API calls
  * - Conflict detection before saving
@@ -10,11 +10,11 @@
  * - Rollback support on errors
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { api } from '~/trpc/react';
-import type { GovernmentBuilderState } from '~/types/government';
-import type { TaxBuilderState } from '~/hooks/useTaxBuilderState';
-import type { ConflictWarning } from '~/server/services/builderIntegrationService';
+import { useState, useCallback, useEffect, useRef } from "react";
+import { api } from "~/trpc/react";
+import type { GovernmentBuilderState } from "~/types/government";
+import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
+import type { ConflictWarning } from "~/server/services/builderIntegrationService";
 
 // ==================== TYPES ====================
 
@@ -68,7 +68,7 @@ export function useGovernmentBuilderAutoSync(
   const updateMutation = api.government.update.useMutation();
   const checkConflictsMutation = api.government.checkConflicts.useMutation();
   const existingGovernmentQuery = api.government.getByCountryId.useQuery(
-    { countryId: countryId || '' },
+    { countryId: countryId || "" },
     { enabled: !!countryId, staleTime: 30000 }
   );
 
@@ -77,14 +77,14 @@ export function useGovernmentBuilderAutoSync(
     if (builderState && previousStateRef.current) {
       const hasChanges = JSON.stringify(builderState) !== JSON.stringify(previousStateRef.current);
       if (hasChanges) {
-        setSyncState(prev => ({ ...prev, pendingChanges: true }));
-        
+        setSyncState((prev) => ({ ...prev, pendingChanges: true }));
+
         // Trigger debounced save
         if (enabled && countryId) {
           if (debounceTimerRef.current) {
             clearTimeout(debounceTimerRef.current);
           }
-          
+
           debounceTimerRef.current = setTimeout(() => {
             handleAutoSync();
           }, debounceMs);
@@ -97,7 +97,7 @@ export function useGovernmentBuilderAutoSync(
   const handleAutoSync = useCallback(async () => {
     if (!countryId || !builderState || !enabled) return;
 
-    setSyncState(prev => ({ ...prev, isSyncing: true, syncError: null }));
+    setSyncState((prev) => ({ ...prev, isSyncing: true, syncError: null }));
 
     try {
       // Check for conflicts first if enabled
@@ -108,23 +108,26 @@ export function useGovernmentBuilderAutoSync(
           data: builderState,
         });
         warnings = conflictResult.warnings;
-        
+
         if (warnings.length > 0) {
-          setSyncState(prev => ({ ...prev, conflictWarnings: warnings }));
+          setSyncState((prev) => ({ ...prev, conflictWarnings: warnings }));
           if (onConflictDetected) {
             onConflictDetected(warnings);
           }
-          
+
           // If there are critical warnings, don't auto-save
-          const hasCriticalWarnings = warnings.some(w => w.severity === 'critical');
+          const hasCriticalWarnings = warnings.some((w) => w.severity === "critical");
           if (hasCriticalWarnings) {
-            setSyncState(prev => ({ 
-              ...prev, 
+            setSyncState((prev) => ({
+              ...prev,
               isSyncing: false,
-              pendingChanges: true 
+              pendingChanges: true,
             }));
             // Surface a durable error to the UI layer for hard-block UX
-            setSyncState(prev => ({ ...prev, syncError: new Error('Critical conflicts detected. Please resolve before saving.') }));
+            setSyncState((prev) => ({
+              ...prev,
+              syncError: new Error("Critical conflicts detected. Please resolve before saving."),
+            }));
             return;
           }
         }
@@ -153,7 +156,10 @@ export function useGovernmentBuilderAutoSync(
       } catch (err) {
         // If update failed due to missing record, fall back to create
         const message = err instanceof Error ? err.message : String(err);
-        const looksLikeNotFound = message.includes('No record was found') || message.includes('Record to update not found') || message.includes('P2025');
+        const looksLikeNotFound =
+          message.includes("No record was found") ||
+          message.includes("Record to update not found") ||
+          message.includes("P2025");
         if (attemptedUpdate && looksLikeNotFound) {
           result = await createMutation.mutateAsync({
             countryId,
@@ -179,13 +185,13 @@ export function useGovernmentBuilderAutoSync(
         onSyncSuccess(result);
       }
     } catch (error) {
-      const err = error instanceof Error ? error : new Error('Unknown sync error');
-      setSyncState(prev => ({
+      const err = error instanceof Error ? error : new Error("Unknown sync error");
+      setSyncState((prev) => ({
         ...prev,
         isSyncing: false,
         syncError: err,
       }));
-      
+
       if (onSyncError) {
         onSyncError(err);
       }
@@ -213,7 +219,7 @@ export function useGovernmentBuilderAutoSync(
 
   // Clear pending changes
   const clearConflicts = useCallback(() => {
-    setSyncState(prev => ({ ...prev, conflictWarnings: [] }));
+    setSyncState((prev) => ({ ...prev, conflictWarnings: [] }));
   }, []);
 
   // Cleanup
@@ -267,7 +273,7 @@ export function useTaxBuilderAutoSync(
   const updateMutation = api.taxSystem.update.useMutation();
   const checkConflictsMutation = api.taxSystem.checkConflicts.useMutation();
   const existingTaxQuery = api.taxSystem.getByCountryId.useQuery(
-    { countryId: countryId || '' },
+    { countryId: countryId || "" },
     { enabled: !!countryId, staleTime: 30000 }
   );
 
@@ -276,14 +282,14 @@ export function useTaxBuilderAutoSync(
     if (builderState && previousStateRef.current) {
       const hasChanges = JSON.stringify(builderState) !== JSON.stringify(previousStateRef.current);
       if (hasChanges) {
-        setSyncState(prev => ({ ...prev, pendingChanges: true }));
-        
+        setSyncState((prev) => ({ ...prev, pendingChanges: true }));
+
         // Trigger debounced save
         if (enabled && countryId) {
           if (debounceTimerRef.current) {
             clearTimeout(debounceTimerRef.current);
           }
-          
+
           debounceTimerRef.current = setTimeout(() => {
             handleAutoSync();
           }, debounceMs);
@@ -296,7 +302,7 @@ export function useTaxBuilderAutoSync(
   const handleAutoSync = useCallback(async () => {
     if (!countryId || !builderState || !enabled) return;
 
-    setSyncState(prev => ({ ...prev, isSyncing: true, syncError: null }));
+    setSyncState((prev) => ({ ...prev, isSyncing: true, syncError: null }));
 
     try {
       // Check for conflicts first if enabled
@@ -307,20 +313,20 @@ export function useTaxBuilderAutoSync(
           data: builderState,
         });
         warnings = conflictResult.warnings;
-        
+
         if (warnings.length > 0) {
-          setSyncState(prev => ({ ...prev, conflictWarnings: warnings }));
+          setSyncState((prev) => ({ ...prev, conflictWarnings: warnings }));
           if (onConflictDetected) {
             onConflictDetected(warnings);
           }
-          
+
           // If there are critical warnings, don't auto-save
-          const hasCriticalWarnings = warnings.some(w => w.severity === 'critical');
+          const hasCriticalWarnings = warnings.some((w) => w.severity === "critical");
           if (hasCriticalWarnings) {
-            setSyncState(prev => ({ 
-              ...prev, 
+            setSyncState((prev) => ({
+              ...prev,
               isSyncing: false,
-              pendingChanges: true 
+              pendingChanges: true,
             }));
             return;
           }
@@ -338,7 +344,10 @@ export function useTaxBuilderAutoSync(
         });
       } catch (updateErr) {
         const updateMsg = updateErr instanceof Error ? updateErr.message : String(updateErr);
-        const notFound = updateMsg.includes('No record was found') || updateMsg.includes('Record to update not found') || updateMsg.includes('P2025');
+        const notFound =
+          updateMsg.includes("No record was found") ||
+          updateMsg.includes("Record to update not found") ||
+          updateMsg.includes("P2025");
         if (notFound) {
           try {
             // Create if no existing record
@@ -349,7 +358,8 @@ export function useTaxBuilderAutoSync(
             });
           } catch (createErr) {
             const createMsg = createErr instanceof Error ? createErr.message : String(createErr);
-            const uniqueViolation = createMsg.includes('Unique constraint failed') || createMsg.includes('P2002');
+            const uniqueViolation =
+              createMsg.includes("Unique constraint failed") || createMsg.includes("P2002");
             if (uniqueViolation) {
               // Another writer created it between our check and create; retry update
               result = await updateMutation.mutateAsync({
@@ -380,13 +390,13 @@ export function useTaxBuilderAutoSync(
         onSyncSuccess(result);
       }
     } catch (error) {
-      const err = error instanceof Error ? error : new Error('Unknown sync error');
-      setSyncState(prev => ({
+      const err = error instanceof Error ? error : new Error("Unknown sync error");
+      setSyncState((prev) => ({
         ...prev,
         isSyncing: false,
         syncError: err,
       }));
-      
+
       if (onSyncError) {
         onSyncError(err);
       }
@@ -414,7 +424,7 @@ export function useTaxBuilderAutoSync(
 
   // Clear pending changes
   const clearConflicts = useCallback(() => {
-    setSyncState(prev => ({ ...prev, conflictWarnings: [] }));
+    setSyncState((prev) => ({ ...prev, conflictWarnings: [] }));
   }, []);
 
   // Cleanup
@@ -442,21 +452,21 @@ export function useTaxBuilderAutoSync(
  */
 export function getSyncStatusMessage(syncState: AutoSyncState): string {
   if (syncState.isSyncing) {
-    return 'Saving changes...';
+    return "Saving changes...";
   }
-  
+
   if (syncState.syncError) {
     return `Error: ${syncState.syncError.message}`;
   }
-  
+
   if (syncState.pendingChanges) {
-    return 'Unsaved changes';
+    return "Unsaved changes";
   }
-  
+
   if (syncState.lastSyncTime) {
     const now = new Date();
     const diff = Math.floor((now.getTime() - syncState.lastSyncTime.getTime()) / 1000);
-    
+
     if (diff < 60) {
       return `Saved ${diff}s ago`;
     } else if (diff < 3600) {
@@ -465,23 +475,22 @@ export function getSyncStatusMessage(syncState: AutoSyncState): string {
       return `Saved ${Math.floor(diff / 3600)}h ago`;
     }
   }
-  
-  return 'Not saved';
+
+  return "Not saved";
 }
 
 /**
  * Get conflict severity badge color
  */
-export function getConflictSeverityColor(severity: 'info' | 'warning' | 'critical'): string {
+export function getConflictSeverityColor(severity: "info" | "warning" | "critical"): string {
   switch (severity) {
-    case 'info':
-      return 'blue';
-    case 'warning':
-      return 'yellow';
-    case 'critical':
-      return 'red';
+    case "info":
+      return "blue";
+    case "warning":
+      return "yellow";
+    case "critical":
+      return "red";
     default:
-      return 'gray';
+      return "gray";
   }
 }
-

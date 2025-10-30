@@ -18,13 +18,7 @@ import {
   Minus,
   Info,
 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
@@ -54,12 +48,7 @@ import {
   ComposedChart,
 } from "recharts";
 import { formatCurrency, formatPercentage, formatPopulation } from "./utils";
-import type {
-  Country,
-  EconomicYearData,
-  DMInputs,
-  EconomicModel,
-} from "~/server/db/schema";
+import type { Country, EconomicYearData, DMInputs, EconomicModel } from "~/server/db/schema";
 import { useEconomicModel, type UseEconomicModelReturn } from "~/hooks/useEconomicModel";
 import type { ModelParameters, SectorData, PolicyData } from "~/lib/economic-modeling-engine";
 
@@ -152,36 +141,41 @@ const parameterDefinitions = {
   },
 };
 
-export function EconomicModelingEngine({
-  country,
-  onModelUpdate,
-}: EconomicModelingEngineProps) {
-  const [view, setView] = useState<"parameters" | "sectors" | "policies" | "projections">("parameters");
+export function EconomicModelingEngine({ country, onModelUpdate }: EconomicModelingEngineProps) {
+  const [view, setView] = useState<"parameters" | "sectors" | "policies" | "projections">(
+    "parameters"
+  );
 
   // Use custom hook for all business logic
   const model = useEconomicModel(country, onModelUpdate);
 
   // Helper for getting model health display properties
-  const getModelHealthDisplay = (health: UseEconomicModelReturn['modelHealth']) => {
+  const getModelHealthDisplay = (health: UseEconomicModelReturn["modelHealth"]) => {
     const score = health.score;
     return {
       score,
-      label: health.status === 'excellent' ? "Excellent" :
-             health.status === 'good' ? "Good" :
-             health.status === 'fair' ? "Fair" : "Needs Attention",
-      color: health.status === 'excellent' ? "text-green-600" :
-             health.status === 'good' ? "text-blue-600" :
-             health.status === 'fair' ? "text-yellow-600" : "text-red-600"
+      label:
+        health.status === "excellent"
+          ? "Excellent"
+          : health.status === "good"
+            ? "Good"
+            : health.status === "fair"
+              ? "Fair"
+              : "Needs Attention",
+      color:
+        health.status === "excellent"
+          ? "text-green-600"
+          : health.status === "good"
+            ? "text-blue-600"
+            : health.status === "fair"
+              ? "text-yellow-600"
+              : "text-red-600",
     };
   };
 
   const modelHealthDisplay = getModelHealthDisplay(model.modelHealth);
 
-  const renderParameterInput = (
-    label: string,
-    field: keyof ModelParameters,
-    value: number,
-  ) => {
+  const renderParameterInput = (label: string, field: keyof ModelParameters, value: number) => {
     const def = parameterDefinitions[field];
 
     return (
@@ -191,7 +185,7 @@ export function EconomicModelingEngine({
             <Label className="text-sm font-medium">{label}</Label>
             <Tooltip>
               <TooltipTrigger>
-                <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                <HelpCircle className="text-muted-foreground h-3 w-3" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
                 <p>{def.description}</p>
@@ -199,11 +193,12 @@ export function EconomicModelingEngine({
             </Tooltip>
           </div>
           <span className="text-sm font-medium">
-            {value.toFixed(def.step < 1 ? 1 : 0)}{def.isPercentage ? "%" : ""}
+            {value.toFixed(def.step < 1 ? 1 : 0)}
+            {def.isPercentage ? "%" : ""}
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
           <Input
             type="number"
             value={value}
@@ -214,7 +209,7 @@ export function EconomicModelingEngine({
             className="md:col-span-1"
           />
 
-          <div className="md:col-span-2 flex items-center gap-2">
+          <div className="flex items-center gap-2 md:col-span-2">
             <Slider
               value={[value]}
               onValueChange={(val) => model.updateParameter(field, val[0] ?? 0)}
@@ -233,13 +228,13 @@ export function EconomicModelingEngine({
     <TooltipProvider>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Calculator className="h-5 w-5 text-primary" />
+            <h3 className="flex items-center gap-2 text-lg font-semibold">
+              <Calculator className="text-primary h-5 w-5" />
               Economic Modeling Engine
             </h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Build and simulate economic scenarios for {country.name}
             </p>
           </div>
@@ -250,7 +245,11 @@ export function EconomicModelingEngine({
               size="sm"
               onClick={() => model.setEditMode(!model.editMode)}
             >
-              {model.editMode ? <Eye className="h-4 w-4 mr-1" /> : <Pencil className="h-4 w-4 mr-1" />}
+              {model.editMode ? (
+                <Eye className="mr-1 h-4 w-4" />
+              ) : (
+                <Pencil className="mr-1 h-4 w-4" />
+              )}
               {model.editMode ? "View" : "Edit"}
             </Button>
 
@@ -260,7 +259,7 @@ export function EconomicModelingEngine({
               onClick={model.resetParameters}
               disabled={model.isLoading}
             >
-              <RotateCcw className="h-4 w-4 mr-1" />
+              <RotateCcw className="mr-1 h-4 w-4" />
               Reset
             </Button>
 
@@ -271,9 +270,9 @@ export function EconomicModelingEngine({
               disabled={model.isSimulating}
             >
               {model.isSimulating ? (
-                <PauseCircle className="h-4 w-4 mr-1" />
+                <PauseCircle className="mr-1 h-4 w-4" />
               ) : (
-                <PlayCircle className="h-4 w-4 mr-1" />
+                <PlayCircle className="mr-1 h-4 w-4" />
               )}
               {model.isSimulating ? "Simulating..." : "Run Simulation"}
             </Button>
@@ -281,68 +280,82 @@ export function EconomicModelingEngine({
         </div>
 
         {/* Model Health Status */}
-        <Alert className={`border-l-4 ${
-          modelHealthDisplay.color === 'text-green-600' ? 'border-l-green-500' :
-          modelHealthDisplay.color === 'text-blue-600' ? 'border-l-blue-500' :
-          modelHealthDisplay.color === 'text-yellow-600' ? 'border-l-yellow-500' : 'border-l-red-500'
-        }`}>
+        <Alert
+          className={`border-l-4 ${
+            modelHealthDisplay.color === "text-green-600"
+              ? "border-l-green-500"
+              : modelHealthDisplay.color === "text-blue-600"
+                ? "border-l-blue-500"
+                : modelHealthDisplay.color === "text-yellow-600"
+                  ? "border-l-yellow-500"
+                  : "border-l-red-500"
+          }`}
+        >
           <Activity className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
             <span>
-              Model Health: <span className={`font-semibold ${modelHealthDisplay.color}`}>{modelHealthDisplay.label}</span>
+              Model Health:{" "}
+              <span className={`font-semibold ${modelHealthDisplay.color}`}>
+                {modelHealthDisplay.label}
+              </span>
               <span className="ml-4">Score: {modelHealthDisplay.score}/100</span>
             </span>
-            <Badge variant={
-              modelHealthDisplay.score >= 85 ? "default" :
-              modelHealthDisplay.score >= 70 ? "secondary" : "destructive"
-            }>
+            <Badge
+              variant={
+                modelHealthDisplay.score >= 85
+                  ? "default"
+                  : modelHealthDisplay.score >= 70
+                    ? "secondary"
+                    : "destructive"
+              }
+            >
               {model.projectedData.length} Year Forecast
             </Badge>
           </AlertDescription>
         </Alert>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <Card>
             <CardContent className="p-4">
-              <div className="text-center space-y-1">
+              <div className="space-y-1 text-center">
                 <div className="text-2xl font-bold text-green-600">
                   {formatPercentage(model.parameters.gdpGrowthRate)}
                 </div>
-                <div className="text-xs text-muted-foreground">GDP Growth</div>
+                <div className="text-muted-foreground text-xs">GDP Growth</div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-4">
-              <div className="text-center space-y-1">
+              <div className="space-y-1 text-center">
                 <div className="text-2xl font-bold text-blue-600">
                   {formatPercentage(model.parameters.inflationRate)}
                 </div>
-                <div className="text-xs text-muted-foreground">Inflation</div>
+                <div className="text-muted-foreground text-xs">Inflation</div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-4">
-              <div className="text-center space-y-1">
+              <div className="space-y-1 text-center">
                 <div className="text-2xl font-bold text-orange-600">
                   {formatPercentage(model.parameters.unemploymentRate)}
                 </div>
-                <div className="text-xs text-muted-foreground">Unemployment</div>
+                <div className="text-muted-foreground text-xs">Unemployment</div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-4">
-              <div className="text-center space-y-1">
+              <div className="space-y-1 text-center">
                 <div className="text-2xl font-bold text-purple-600">
                   {model.parameters.projectionYears}
                 </div>
-                <div className="text-xs text-muted-foreground">Years Forecast</div>
+                <div className="text-muted-foreground text-xs">Years Forecast</div>
               </div>
             </CardContent>
           </Card>
@@ -368,18 +381,58 @@ export function EconomicModelingEngine({
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   {renderParameterInput("Base Year", "baseYear", model.parameters.baseYear)}
-                  {renderParameterInput("Projection Years", "projectionYears", model.parameters.projectionYears)}
-                  {renderParameterInput("GDP Growth Rate (%)", "gdpGrowthRate", model.parameters.gdpGrowthRate)}
-                  {renderParameterInput("Inflation Rate (%)", "inflationRate", model.parameters.inflationRate)}
-                  {renderParameterInput("Unemployment Rate (%)", "unemploymentRate", model.parameters.unemploymentRate)}
-                  {renderParameterInput("Interest Rate (%)", "interestRate", model.parameters.interestRate)}
-                  {renderParameterInput("Exchange Rate (to USD)", "exchangeRate", model.parameters.exchangeRate)}
-                  {renderParameterInput("Population Growth Rate (%)", "populationGrowthRate", model.parameters.populationGrowthRate)}
-                  {renderParameterInput("Investment Rate (% of GDP)", "investmentRate", model.parameters.investmentRate)}
-                  {renderParameterInput("Fiscal Balance (% of GDP)", "fiscalBalance", model.parameters.fiscalBalance)}
-                  {renderParameterInput("Trade Balance (% of GDP)", "tradeBalance", model.parameters.tradeBalance)}
+                  {renderParameterInput(
+                    "Projection Years",
+                    "projectionYears",
+                    model.parameters.projectionYears
+                  )}
+                  {renderParameterInput(
+                    "GDP Growth Rate (%)",
+                    "gdpGrowthRate",
+                    model.parameters.gdpGrowthRate
+                  )}
+                  {renderParameterInput(
+                    "Inflation Rate (%)",
+                    "inflationRate",
+                    model.parameters.inflationRate
+                  )}
+                  {renderParameterInput(
+                    "Unemployment Rate (%)",
+                    "unemploymentRate",
+                    model.parameters.unemploymentRate
+                  )}
+                  {renderParameterInput(
+                    "Interest Rate (%)",
+                    "interestRate",
+                    model.parameters.interestRate
+                  )}
+                  {renderParameterInput(
+                    "Exchange Rate (to USD)",
+                    "exchangeRate",
+                    model.parameters.exchangeRate
+                  )}
+                  {renderParameterInput(
+                    "Population Growth Rate (%)",
+                    "populationGrowthRate",
+                    model.parameters.populationGrowthRate
+                  )}
+                  {renderParameterInput(
+                    "Investment Rate (% of GDP)",
+                    "investmentRate",
+                    model.parameters.investmentRate
+                  )}
+                  {renderParameterInput(
+                    "Fiscal Balance (% of GDP)",
+                    "fiscalBalance",
+                    model.parameters.fiscalBalance
+                  )}
+                  {renderParameterInput(
+                    "Trade Balance (% of GDP)",
+                    "tradeBalance",
+                    model.parameters.tradeBalance
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -486,11 +539,7 @@ export function EconomicModelingEngine({
                 </div>
 
                 {model.editMode && (
-                  <Button
-                    onClick={model.addSectoralOutputYear}
-                    variant="outline"
-                    className="mt-4"
-                  >
+                  <Button onClick={model.addSectoralOutputYear} variant="outline" className="mt-4">
                     <Plus className="mr-2 h-4 w-4" /> Add Year
                   </Button>
                 )}
@@ -511,14 +560,15 @@ export function EconomicModelingEngine({
               </CardHeader>
               <CardContent className="space-y-4">
                 {model.policyEffects.map((policy, index) => (
-                  <Card key={policy.id ? `policy-${policy.id}` : `policy-fallback-${index}`} className="p-4">
-                    <div className="flex items-center justify-between mb-4">
+                  <Card
+                    key={policy.id ? `policy-${policy.id}` : `policy-fallback-${index}`}
+                    className="p-4"
+                  >
+                    <div className="mb-4 flex items-center justify-between">
                       <Input
                         value={policy.name}
-                        onChange={(e) =>
-                          model.updatePolicyEffect(index, "name", e.target.value)
-                        }
-                        className="text-md font-semibold w-1/2"
+                        onChange={(e) => model.updatePolicyEffect(index, "name", e.target.value)}
+                        className="text-md w-1/2 font-semibold"
                         disabled={!model.editMode}
                       />
                       {model.editMode && (
@@ -532,7 +582,7 @@ export function EconomicModelingEngine({
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div>
                         <Label className="text-sm font-medium">Description</Label>
                         <Input
@@ -587,7 +637,11 @@ export function EconomicModelingEngine({
                           type="number"
                           value={policy.inflationEffectPercentage}
                           onChange={(e) =>
-                            model.updatePolicyEffect(index, "inflationEffectPercentage", e.target.value)
+                            model.updatePolicyEffect(
+                              index,
+                              "inflationEffectPercentage",
+                              e.target.value
+                            )
                           }
                           step="0.1"
                           disabled={!model.editMode}
@@ -600,7 +654,11 @@ export function EconomicModelingEngine({
                           type="number"
                           value={policy.employmentEffectPercentage}
                           onChange={(e) =>
-                            model.updatePolicyEffect(index, "employmentEffectPercentage", e.target.value)
+                            model.updatePolicyEffect(
+                              index,
+                              "employmentEffectPercentage",
+                              e.target.value
+                            )
                           }
                           step="0.1"
                           disabled={!model.editMode}
@@ -640,17 +698,32 @@ export function EconomicModelingEngine({
                       <YAxis yAxisId="right" orientation="right" />
                       <RechartsTooltip
                         formatter={(value: number, name: string) => [
-                          name === "gdp" ? formatCurrency(value) :
-                          name === "gdpPerCapita" ? formatCurrency(value) :
-                          name === "population" ? formatPopulation(value) :
-                          formatPercentage(value),
+                          name === "gdp"
+                            ? formatCurrency(value)
+                            : name === "gdpPerCapita"
+                              ? formatCurrency(value)
+                              : name === "population"
+                                ? formatPopulation(value)
+                                : formatPercentage(value),
                           name.charAt(0).toUpperCase() + name.slice(1),
                         ]}
                       />
                       <Legend />
                       <Bar yAxisId="left" dataKey="gdp" fill="#3b82f6" name="GDP (Total)" />
-                      <Line yAxisId="right" type="monotone" dataKey="inflation" stroke="#f59e0b" name="Inflation %" />
-                      <Line yAxisId="right" type="monotone" dataKey="unemployment" stroke="#ef4444" name="Unemployment %" />
+                      <Line
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="inflation"
+                        stroke="#f59e0b"
+                        name="Inflation %"
+                      />
+                      <Line
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="unemployment"
+                        stroke="#ef4444"
+                        name="Unemployment %"
+                      />
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
@@ -690,11 +763,7 @@ export function EconomicModelingEngine({
 
         {/* Save Button */}
         <div className="flex justify-end gap-2">
-          <Button
-            onClick={model.saveModel}
-            disabled={model.isLoading}
-            size="lg"
-          >
+          <Button onClick={model.saveModel} disabled={model.isLoading} size="lg">
             {model.isLoading ? (
               <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
             ) : (
@@ -709,10 +778,12 @@ export function EconomicModelingEngine({
           <Info className="h-4 w-4" />
           <AlertDescription>
             <div className="font-medium">Model Summary</div>
-            <p className="text-sm mt-1">
-              {model.parameters.projectionYears}-year economic model with {formatPercentage(model.parameters.gdpGrowthRate)} GDP growth,
-              {formatPercentage(model.parameters.inflationRate)} inflation, and {model.policyEffects.length} policy scenarios.
-              Model health score: {modelHealthDisplay.score}/100 ({modelHealthDisplay.label}).
+            <p className="mt-1 text-sm">
+              {model.parameters.projectionYears}-year economic model with{" "}
+              {formatPercentage(model.parameters.gdpGrowthRate)} GDP growth,
+              {formatPercentage(model.parameters.inflationRate)} inflation, and{" "}
+              {model.policyEffects.length} policy scenarios. Model health score:{" "}
+              {modelHealthDisplay.score}/100 ({modelHealthDisplay.label}).
             </p>
           </AlertDescription>
         </Alert>
@@ -722,4 +793,3 @@ export function EconomicModelingEngine({
 }
 
 export default EconomicModelingEngine;
-

@@ -1,11 +1,18 @@
-import { useState, useCallback } from 'react';
-import { api } from '~/trpc/react';
-import type { ComparisonCountry } from '~/app/countries/_components/CountryComparisonModal';
+import { useState, useCallback } from "react";
+import { api } from "~/trpc/react";
+import type { ComparisonCountry } from "~/app/countries/_components/CountryComparisonModal";
 
 const CHART_COLORS = [
-  "#8b5cf6", "#06b6d4", "#84cc16", "#f97316", 
-  "#ec4899", "#14b8a6", "#f59e0b", "#ef4444",
-  "#8b5cf6", "#06b6d4"
+  "#8b5cf6",
+  "#06b6d4",
+  "#84cc16",
+  "#f97316",
+  "#ec4899",
+  "#14b8a6",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#06b6d4",
 ];
 
 export function useCountryComparison() {
@@ -14,10 +21,13 @@ export function useCountryComparison() {
 
   // Fetch detailed data for a specific country
   const { data: countryData, isLoading: isLoadingCountry } = api.countries.getByIdAtTime.useQuery(
-    { id: selectedCountryIds[0] || '' },
-    { 
-      enabled: selectedCountryIds.length === 1 && !!selectedCountryIds[0] && selectedCountryIds[0].trim() !== '',
-      retry: false
+    { id: selectedCountryIds[0] || "" },
+    {
+      enabled:
+        selectedCountryIds.length === 1 &&
+        !!selectedCountryIds[0] &&
+        selectedCountryIds[0].trim() !== "",
+      retry: false,
     }
   );
 
@@ -28,53 +38,58 @@ export function useCountryComparison() {
   );
 
   // Add country to comparison
-  const addCountryToComparison = useCallback(async (countryId: string) => {
-    if (comparisonCountries.length >= 8) return;
+  const addCountryToComparison = useCallback(
+    async (countryId: string) => {
+      if (comparisonCountries.length >= 8) return;
 
-    try {
-      // Fetch detailed country data
-      const response = await fetch(`/api/trpc/countries.getByIdAtTime?batch=1&input=${encodeURIComponent(JSON.stringify({ id: countryId }))}`);
-      const data = await response.json();
-      
-      if (data[0]?.result?.data?.json) {
-        const country = data[0].result.data.json;
-        
-        const comparisonCountry: ComparisonCountry = {
-          id: country.id,
-          name: country.name,
-          currentPopulation: country.currentPopulation || 0,
-          currentGdpPerCapita: country.currentGdpPerCapita || 0,
-          currentTotalGdp: country.currentTotalGdp || 0,
-          populationGrowthRate: country.populationGrowthRate || 0,
-          adjustedGdpGrowth: country.adjustedGdpGrowth || 0,
-          economicTier: country.economicTier || 'Unknown',
-          populationTier: country.populationTier || 'Unknown',
-          populationDensity: country.populationDensity,
-          gdpDensity: country.gdpDensity,
-          landArea: country.landArea,
-          continent: country.continent,
-          color: CHART_COLORS[comparisonCountries.length] || "#8b5cf6",
-        };
+      try {
+        // Fetch detailed country data
+        const response = await fetch(
+          `/api/trpc/countries.getByIdAtTime?batch=1&input=${encodeURIComponent(JSON.stringify({ id: countryId }))}`
+        );
+        const data = await response.json();
 
-        setComparisonCountries(prev => [...prev, comparisonCountry]);
-        setSelectedCountryIds(prev => [...prev, countryId]);
+        if (data[0]?.result?.data?.json) {
+          const country = data[0].result.data.json;
+
+          const comparisonCountry: ComparisonCountry = {
+            id: country.id,
+            name: country.name,
+            currentPopulation: country.currentPopulation || 0,
+            currentGdpPerCapita: country.currentGdpPerCapita || 0,
+            currentTotalGdp: country.currentTotalGdp || 0,
+            populationGrowthRate: country.populationGrowthRate || 0,
+            adjustedGdpGrowth: country.adjustedGdpGrowth || 0,
+            economicTier: country.economicTier || "Unknown",
+            populationTier: country.populationTier || "Unknown",
+            populationDensity: country.populationDensity,
+            gdpDensity: country.gdpDensity,
+            landArea: country.landArea,
+            continent: country.continent,
+            color: CHART_COLORS[comparisonCountries.length] || "#8b5cf6",
+          };
+
+          setComparisonCountries((prev) => [...prev, comparisonCountry]);
+          setSelectedCountryIds((prev) => [...prev, countryId]);
+        }
+      } catch (error) {
+        console.error("Error fetching country data for comparison:", error);
       }
-    } catch (error) {
-      console.error('Error fetching country data for comparison:', error);
-    }
-  }, [comparisonCountries.length]);
+    },
+    [comparisonCountries.length]
+  );
 
   // Remove country from comparison
   const removeCountryFromComparison = useCallback((countryId: string) => {
-    setComparisonCountries(prev => {
-      const newCountries = prev.filter(c => c.id !== countryId);
+    setComparisonCountries((prev) => {
+      const newCountries = prev.filter((c) => c.id !== countryId);
       // Reassign colors
       return newCountries.map((country, index) => ({
         ...country,
         color: CHART_COLORS[index] || "#8b5cf6",
       }));
     });
-    setSelectedCountryIds(prev => prev.filter(id => id !== countryId));
+    setSelectedCountryIds((prev) => prev.filter((id) => id !== countryId));
   }, []);
 
   // Clear all countries from comparison
@@ -86,11 +101,11 @@ export function useCountryComparison() {
   // Get available countries for selection (excluding already selected ones)
   const getAvailableCountries = useCallback(() => {
     if (!allCountries?.countries) return [];
-    
+
     const selectedIds = new Set(selectedCountryIds);
     return allCountries.countries
-      .filter(country => !selectedIds.has(country.id))
-      .map(country => ({
+      .filter((country) => !selectedIds.has(country.id))
+      .map((country) => ({
         id: country.id,
         name: country.name,
         continent: country.continent,
@@ -109,4 +124,4 @@ export function useCountryComparison() {
     isLoadingCountry,
     countryData,
   };
-} 
+}

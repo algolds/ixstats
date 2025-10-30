@@ -1,8 +1,8 @@
 "use client";
 
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/components/ui/dialog';
-import { EnhancedAccountManager } from './EnhancedAccountManager';
+import React from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { EnhancedAccountManager } from "./EnhancedAccountManager";
 
 interface AccountManagerModalProps {
   isOpen: boolean;
@@ -25,16 +25,19 @@ export function AccountManagerModal({
   onAccountSelect,
   onAccountSettings,
   onCreateAccount,
-  isOwner
+  isOwner,
 }: AccountManagerModalProps) {
-  console.log('AccountManagerModal render - isOpen:', isOpen);
-  
+  console.log("AccountManagerModal render - isOpen:", isOpen);
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      console.log('Dialog onOpenChange called with:', open);
-      if (!open) onClose();
-    }}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        console.log("Dialog onOpenChange called with:", open);
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-hidden">
         <DialogHeader>
           <DialogTitle>Account Manager</DialogTitle>
         </DialogHeader>

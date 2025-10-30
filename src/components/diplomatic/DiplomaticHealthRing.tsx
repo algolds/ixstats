@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Globe, TrendingUp, TrendingDown, Activity } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip';
-import { Badge } from '~/components/ui/badge';
-import { api } from '~/trpc/react';
+import React, { useMemo } from "react";
+import { motion } from "framer-motion";
+import { Globe, TrendingUp, TrendingDown, Activity } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
+import { Badge } from "~/components/ui/badge";
+import { api } from "~/trpc/react";
 
 interface DiplomaticHealthRingProps {
   countryId: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   interactive?: boolean;
   onClick?: () => void;
   className?: string;
@@ -52,7 +52,9 @@ function calculateDiplomaticHealth(data: {
 
   // 1. Embassy Coverage Score (0-25 points)
   // Optimal number of embassies varies by country size, but 10-15 is reasonable
-  const activeEmbassies = embassies.filter((e: any) => e.status === 'ACTIVE' || e.status === 'active');
+  const activeEmbassies = embassies.filter(
+    (e: any) => e.status === "ACTIVE" || e.status === "active"
+  );
   const embassyScore = Math.min(25, (activeEmbassies.length / 10) * 25);
 
   // 2. Relationship Strength Score (0-30 points)
@@ -70,18 +72,21 @@ function calculateDiplomaticHealth(data: {
     const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     return completedDate && completedDate > monthAgo;
   });
-  const recentExchanges = exchanges.filter((e: any) => e.status === 'active' || e.status === 'ACTIVE');
-  const activityScore = Math.min(25, (recentMissions.length * 3 + recentExchanges.length * 2));
+  const recentExchanges = exchanges.filter(
+    (e: any) => e.status === "active" || e.status === "ACTIVE"
+  );
+  const activityScore = Math.min(25, recentMissions.length * 3 + recentExchanges.length * 2);
 
   // 4. Mission Success Rate (0-20 points)
-  const completedMissions = missions.filter((m: any) => m.status === 'completed' || m.status === 'COMPLETED');
-  const successfulMissions = missions.filter((m: any) =>
-    (m.status === 'completed' || m.status === 'COMPLETED') &&
-    (m.outcome?.success !== false)
+  const completedMissions = missions.filter(
+    (m: any) => m.status === "completed" || m.status === "COMPLETED"
   );
-  const successRate = completedMissions.length > 0
-    ? (successfulMissions.length / completedMissions.length) * 20
-    : 10; // Default score if no missions yet
+  const successfulMissions = missions.filter(
+    (m: any) =>
+      (m.status === "completed" || m.status === "COMPLETED") && m.outcome?.success !== false
+  );
+  const successRate =
+    completedMissions.length > 0 ? (successfulMissions.length / completedMissions.length) * 20 : 10; // Default score if no missions yet
 
   const totalScore = Math.round(embassyScore + relationshipScore + activityScore + successRate);
 
@@ -99,19 +104,20 @@ function calculateDiplomaticHealth(data: {
       avgStrength: Math.round(avgRelationshipStrength),
       recentMissions: recentMissions.length,
       activeExchanges: recentExchanges.length,
-      successRate: completedMissions.length > 0
-        ? Math.round((successfulMissions.length / completedMissions.length) * 100)
-        : 0,
+      successRate:
+        completedMissions.length > 0
+          ? Math.round((successfulMissions.length / completedMissions.length) * 100)
+          : 0,
     },
   };
 }
 
 export function DiplomaticHealthRing({
   countryId,
-  size = 'md',
+  size = "md",
   interactive = true,
   onClick,
-  className = '',
+  className = "",
 }: DiplomaticHealthRingProps) {
   const config = RING_CONFIGS[size];
 
@@ -147,11 +153,12 @@ export function DiplomaticHealthRing({
   const { score, breakdown, metrics } = healthData;
 
   // Determine trend based on score
-  const trend = score >= 70 ? 'up' : score >= 40 ? 'stable' : 'down';
-  const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Activity;
+  const trend = score >= 70 ? "up" : score >= 40 ? "stable" : "down";
+  const TrendIcon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Activity;
 
   // Color gradient based on score
-  const color = score >= 80 ? '#7C3AED' : score >= 60 ? '#8B5CF6' : score >= 40 ? '#A78BFA' : '#C4B5FD';
+  const color =
+    score >= 80 ? "#7C3AED" : score >= 60 ? "#8B5CF6" : score >= 40 ? "#A78BFA" : "#C4B5FD";
 
   const radius = (config.diameter - config.strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -162,7 +169,7 @@ export function DiplomaticHealthRing({
     <Tooltip>
       <TooltipTrigger asChild>
         <motion.div
-          className={`relative cursor-pointer ${interactive ? 'hover:scale-105' : ''} ${className}`}
+          className={`relative cursor-pointer ${interactive ? "hover:scale-105" : ""} ${className}`}
           style={{
             width: config.diameter,
             height: config.diameter,
@@ -180,7 +187,7 @@ export function DiplomaticHealthRing({
         >
           {/* Background Ring */}
           <svg
-            className="absolute inset-0 transform -rotate-90"
+            className="absolute inset-0 -rotate-90 transform"
             width={config.diameter}
             height={config.diameter}
           >
@@ -197,25 +204,25 @@ export function DiplomaticHealthRing({
 
           {/* Progress Ring */}
           <svg
-            className="absolute inset-0 transform -rotate-90"
+            className="absolute inset-0 -rotate-90 transform"
             width={config.diameter}
             height={config.diameter}
           >
             <defs>
               <filter id="glow-diplomatic" x="-100%" y="-100%" width="300%" height="300%">
-                <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
-                <feGaussianBlur stdDeviation="12" result="coloredBlur2"/>
+                <feGaussianBlur stdDeviation="6" result="coloredBlur" />
+                <feGaussianBlur stdDeviation="12" result="coloredBlur2" />
                 <feMerge>
-                  <feMergeNode in="coloredBlur2"/>
-                  <feMergeNode in="coloredBlur"/>
-                  <feMergeNode in="SourceGraphic"/>
+                  <feMergeNode in="coloredBlur2" />
+                  <feMergeNode in="coloredBlur" />
+                  <feMergeNode in="SourceGraphic" />
                 </feMerge>
               </filter>
               <linearGradient id="gradient-diplomatic" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor={color} stopOpacity="1"/>
-                <stop offset="40%" stopColor={color} stopOpacity="0.9"/>
-                <stop offset="70%" stopColor={color} stopOpacity="0.7"/>
-                <stop offset="100%" stopColor={color} stopOpacity="0.4"/>
+                <stop offset="0%" stopColor={color} stopOpacity="1" />
+                <stop offset="40%" stopColor={color} stopOpacity="0.9" />
+                <stop offset="70%" stopColor={color} stopOpacity="0.7" />
+                <stop offset="100%" stopColor={color} stopOpacity="0.4" />
               </linearGradient>
             </defs>
             <motion.circle
@@ -234,7 +241,7 @@ export function DiplomaticHealthRing({
                 ease: "easeInOut",
               }}
               style={{
-                filter: 'url(#glow-diplomatic)',
+                filter: "url(#glow-diplomatic)",
               }}
               className="glass-hierarchy-interactive"
             />
@@ -246,16 +253,12 @@ export function DiplomaticHealthRing({
             style={{
               width: config.centerSize,
               height: config.centerSize,
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
             }}
           >
-            <Globe
-              size={config.iconSize}
-              className="mb-1"
-              style={{ color }}
-            />
+            <Globe size={config.iconSize} className="mb-1" style={{ color }} />
             <motion.div
               className="text-lg font-bold"
               initial={{ scale: 0 }}
@@ -268,10 +271,10 @@ export function DiplomaticHealthRing({
 
           {/* Animated Glow Background */}
           <motion.div
-            className="absolute inset-0 rounded-full pointer-events-none"
+            className="pointer-events-none absolute inset-0 rounded-full"
             style={{
               background: `radial-gradient(circle, ${color}15 0%, transparent 60%)`,
-              filter: 'blur(8px)',
+              filter: "blur(8px)",
             }}
             animate={{
               scale: [0.8, 1.2, 0.8],
@@ -287,10 +290,10 @@ export function DiplomaticHealthRing({
           {/* Pulse Effect for Low Scores */}
           {score < 40 && (
             <motion.div
-              className="absolute inset-0 rounded-full pointer-events-none"
+              className="pointer-events-none absolute inset-0 rounded-full"
               style={{
                 background: `radial-gradient(circle, ${color}15 0%, transparent 60%)`,
-                filter: 'blur(4px)',
+                filter: "blur(4px)",
               }}
               animate={{
                 scale: [1, 1.3, 1],
@@ -306,22 +309,28 @@ export function DiplomaticHealthRing({
         </motion.div>
       </TooltipTrigger>
 
-      <TooltipContent className="glass-hierarchy-child p-4 max-w-xs">
+      <TooltipContent className="glass-hierarchy-child max-w-xs p-4">
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Globe size={16} style={{ color }} />
             <span className="font-semibold">Diplomatic Health</span>
-            <Badge variant={score >= 70 ? 'default' : score >= 40 ? 'secondary' : 'destructive'}>
-              {score >= 80 ? 'Excellent' : score >= 60 ? 'Good' : score >= 40 ? 'Fair' : 'Needs Attention'}
+            <Badge variant={score >= 70 ? "default" : score >= 40 ? "secondary" : "destructive"}>
+              {score >= 80
+                ? "Excellent"
+                : score >= 60
+                  ? "Good"
+                  : score >= 40
+                    ? "Fair"
+                    : "Needs Attention"}
             </Badge>
           </div>
 
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Overall assessment of diplomatic operations, relationships, and international standing.
           </p>
 
           <div className="space-y-2">
-            <div className="text-xs font-semibold text-muted-foreground">Score Breakdown:</div>
+            <div className="text-muted-foreground text-xs font-semibold">Score Breakdown:</div>
             <div className="space-y-1 text-xs">
               <div className="flex justify-between">
                 <span>Embassy Coverage:</span>
@@ -342,8 +351,8 @@ export function DiplomaticHealthRing({
             </div>
           </div>
 
-          <div className="pt-2 border-t border-border space-y-1">
-            <div className="text-xs font-semibold text-muted-foreground">Key Metrics:</div>
+          <div className="border-border space-y-1 border-t pt-2">
+            <div className="text-muted-foreground text-xs font-semibold">Key Metrics:</div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
                 <div className="text-muted-foreground">Active Embassies</div>
@@ -364,17 +373,25 @@ export function DiplomaticHealthRing({
             </div>
           </div>
 
-          <div className="pt-2 border-t border-border">
+          <div className="border-border border-t pt-2">
             <div className="flex items-center gap-2 text-xs">
-              <TrendIcon className={`h-3 w-3 ${
-                trend === 'up' ? 'text-green-600' :
-                trend === 'down' ? 'text-red-600' : 'text-yellow-600'
-              }`} />
+              <TrendIcon
+                className={`h-3 w-3 ${
+                  trend === "up"
+                    ? "text-green-600"
+                    : trend === "down"
+                      ? "text-red-600"
+                      : "text-yellow-600"
+                }`}
+              />
               <span className="text-muted-foreground">
-                {score >= 80 ? 'Strong diplomatic position' :
-                 score >= 60 ? 'Stable diplomatic relations' :
-                 score >= 40 ? 'Room for improvement' :
-                 'Critical - expand diplomatic efforts'}
+                {score >= 80
+                  ? "Strong diplomatic position"
+                  : score >= 60
+                    ? "Stable diplomatic relations"
+                    : score >= 40
+                      ? "Room for improvement"
+                      : "Critical - expand diplomatic efforts"}
               </span>
             </div>
           </div>

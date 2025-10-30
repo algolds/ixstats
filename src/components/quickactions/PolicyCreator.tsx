@@ -1,10 +1,10 @@
 // src/components/quickactions/PolicyCreator.tsx
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useUser } from '~/context/auth-context';
-import { api } from '~/trpc/react';
+import React, { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useUser } from "~/context/auth-context";
+import { api } from "~/trpc/react";
 import {
   Dialog,
   DialogContent,
@@ -12,29 +12,25 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '~/components/ui/dialog';
-import { Button } from '~/components/ui/button';
-import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
-import { Textarea } from '~/components/ui/textarea';
-import { Badge } from '~/components/ui/badge';
-import { Separator } from '~/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '~/components/ui/popover';
+} from "~/components/ui/dialog";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
+import { Badge } from "~/components/ui/badge";
+import { Separator } from "~/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '~/components/ui/select';
-import { Slider } from '~/components/ui/slider';
-import { Progress } from '~/components/ui/progress';
-import { NumberFlowDisplay } from '~/components/ui/number-flow';
+} from "~/components/ui/select";
+import { Slider } from "~/components/ui/slider";
+import { Progress } from "~/components/ui/progress";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import {
   FileText,
   Sparkles,
@@ -49,13 +45,13 @@ import {
   Lightbulb,
   Library,
   Clock,
-  ChevronDown
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { cn } from '~/lib/utils';
-import { PolicyTemplateSelector } from './PolicyTemplateSelector';
-import type { PolicyTemplate } from '~/lib/policy-taxonomy';
+  ChevronDown,
+} from "lucide-react";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { cn } from "~/lib/utils";
+import { PolicyTemplateSelector } from "./PolicyTemplateSelector";
+import type { PolicyTemplate } from "~/lib/policy-taxonomy";
 
 interface PolicyCreatorProps {
   countryId: string;
@@ -65,37 +61,34 @@ interface PolicyCreatorProps {
 }
 
 const POLICY_TYPES = [
-  { value: 'economic', label: 'Economic Policy', icon: DollarSign, color: 'text-blue-600' },
-  { value: 'social', label: 'Social Policy', icon: Users, color: 'text-green-600' },
-  { value: 'infrastructure', label: 'Infrastructure', icon: Target, color: 'text-orange-600' },
-  { value: 'governance', label: 'Governance', icon: FileText, color: 'text-purple-600' },
+  { value: "economic", label: "Economic Policy", icon: DollarSign, color: "text-blue-600" },
+  { value: "social", label: "Social Policy", icon: Users, color: "text-green-600" },
+  { value: "infrastructure", label: "Infrastructure", icon: Target, color: "text-orange-600" },
+  { value: "governance", label: "Governance", icon: FileText, color: "text-purple-600" },
 ];
 
 const PRIORITY_LEVELS = [
-  { value: 'critical', label: 'Critical', color: 'bg-red-500' },
-  { value: 'high', label: 'High', color: 'bg-orange-500' },
-  { value: 'medium', label: 'Medium', color: 'bg-blue-500' },
-  { value: 'low', label: 'Low', color: 'bg-gray-500' },
+  { value: "critical", label: "Critical", color: "bg-red-500" },
+  { value: "high", label: "High", color: "bg-orange-500" },
+  { value: "medium", label: "Medium", color: "bg-blue-500" },
+  { value: "low", label: "Low", color: "bg-gray-500" },
 ];
 
-export function PolicyCreator({
-  countryId,
-  open,
-  onOpenChange,
-  onSuccess,
-}: PolicyCreatorProps) {
+export function PolicyCreator({ countryId, open, onOpenChange, onSuccess }: PolicyCreatorProps) {
   const { user } = useUser();
 
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
   const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
   const [futureOpportunitiesExpanded, setFutureOpportunitiesExpanded] = useState(false);
 
   // Policy basic info
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [policyType, setPolicyType] = useState<'economic' | 'social' | 'diplomatic' | 'infrastructure' | 'governance'>('economic');
-  const [category, setCategory] = useState('');
-  const [priority, setPriority] = useState<'critical' | 'high' | 'medium' | 'low'>('medium');
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [policyType, setPolicyType] = useState<
+    "economic" | "social" | "diplomatic" | "infrastructure" | "governance"
+  >("economic");
+  const [category, setCategory] = useState("");
+  const [priority, setPriority] = useState<"critical" | "high" | "medium" | "low">("medium");
 
   // Economic effects
   const [gdpEffect, setGdpEffect] = useState(0);
@@ -114,10 +107,11 @@ export function PolicyCreator({
   );
 
   // Get policy recommendations
-  const { data: recommendations, isLoading: recommendationsLoading } = api.quickActions.getPolicyRecommendations.useQuery(
-    { countryId, limit: 10 },
-    { enabled: open && !!countryId }
-  );
+  const { data: recommendations, isLoading: recommendationsLoading } =
+    api.quickActions.getPolicyRecommendations.useQuery(
+      { countryId, limit: 10 },
+      { enabled: open && !!countryId }
+    );
 
   // Get existing policies for history
   const { data: policies } = api.quickActions.getPolicies.useQuery(
@@ -128,7 +122,7 @@ export function PolicyCreator({
   // Create policy mutation
   const createPolicy = api.quickActions.createPolicy.useMutation({
     onSuccess: (result) => {
-      toast.success('Policy created successfully!');
+      toast.success("Policy created successfully!");
       onOpenChange(false);
       resetForm();
       onSuccess?.();
@@ -151,11 +145,11 @@ export function PolicyCreator({
   }, [employmentEffect, inflationEffect, taxRevenueEffect]);
 
   const resetForm = () => {
-    setName('');
-    setDescription('');
-    setPolicyType('economic');
-    setCategory('');
-    setPriority('medium');
+    setName("");
+    setDescription("");
+    setPolicyType("economic");
+    setCategory("");
+    setPriority("medium");
     setGdpEffect(0);
     setEmploymentEffect(0);
     setInflationEffect(0);
@@ -177,8 +171,8 @@ export function PolicyCreator({
     setImplementationCost(template.implementationCost ?? 0);
     setMaintenanceCost(template.maintenanceCost ?? 0);
     setTemplateSelectorOpen(false);
-    setActiveTab('create');
-    toast.success('Template loaded - adjust as needed');
+    setActiveTab("create");
+    toast.success("Template loaded - adjust as needed");
   };
 
   const loadRecommendation = (rec: any) => {
@@ -193,21 +187,21 @@ export function PolicyCreator({
     setTaxRevenueEffect(rec.estimatedEffects.taxRevenueEffect);
     setImplementationCost(rec.implementationCost);
     setMaintenanceCost(rec.maintenanceCost);
-    setActiveTab('create');
-    toast.success('Recommendation loaded - adjust as needed');
+    setActiveTab("create");
+    toast.success("Recommendation loaded - adjust as needed");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name.trim() || !description.trim() || !category.trim()) {
-      toast.error('Please fill in all required fields');
+      toast.error("Please fill in all required fields");
       return;
     }
 
     createPolicy.mutate({
       countryId,
-      userId: user?.id ?? '',
+      userId: user?.id ?? "",
       policy: {
         name,
         description,
@@ -258,20 +252,20 @@ export function PolicyCreator({
     };
   }, [country, gdpEffect, employmentEffect, inflationEffect, taxRevenueEffect]);
 
-  const suitableRecommendations = recommendations?.filter(r => r.meetsRequirements) ?? [];
-  const aspirationalRecommendations = recommendations?.filter(r => !r.meetsRequirements) ?? [];
+  const suitableRecommendations = recommendations?.filter((r) => r.meetsRequirements) ?? [];
+  const aspirationalRecommendations = recommendations?.filter((r) => !r.meetsRequirements) ?? [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         style={{
-          width: '100vw',
-          maxWidth: '100vw',
-          height: '100vh',
-          maxHeight: '100vh',
-          padding: '24px',
-          margin: '0px',
-          overflowY: 'auto'
+          width: "100vw",
+          maxWidth: "100vw",
+          height: "100vh",
+          maxHeight: "100vh",
+          padding: "24px",
+          margin: "0px",
+          overflowY: "auto",
         }}
         onEscapeKeyDown={(e) => {
           e.preventDefault();
@@ -284,22 +278,23 @@ export function PolicyCreator({
             Create New Policy
           </DialogTitle>
           <DialogDescription>
-            Design and implement policies to manage your country's domestic affairs. Recommendations are based on your country's current economic tier, stats, and needs.
+            Design and implement policies to manage your country's domestic affairs. Recommendations
+            are based on your country's current economic tier, stats, and needs.
           </DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview">
-              <Sparkles className="h-4 w-4 mr-2" />
+              <Sparkles className="mr-2 h-4 w-4" />
               Overview
             </TabsTrigger>
             <TabsTrigger value="create">
-              <FileText className="h-4 w-4 mr-2" />
+              <FileText className="mr-2 h-4 w-4" />
               Create Policy
             </TabsTrigger>
             <TabsTrigger value="history">
-              <Clock className="h-4 w-4 mr-2" />
+              <Clock className="mr-2 h-4 w-4" />
               Policy History
             </TabsTrigger>
           </TabsList>
@@ -309,33 +304,35 @@ export function PolicyCreator({
             {/* Country Profile Section */}
             {country && (
               <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600">
+                <div className="mb-4 flex items-center gap-3">
+                  <div className="rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 p-2">
                     <Info className="h-5 w-5 text-white" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold">Country Profile</h2>
-                    <p className="text-sm text-muted-foreground">Current economic snapshot</p>
+                    <p className="text-muted-foreground text-sm">Current economic snapshot</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="p-4 rounded-xl glass-hierarchy-child border border-white/20">
-                    <span className="text-xs text-muted-foreground block mb-1">Economic Tier</span>
-                    <div className="font-bold text-lg text-blue-600">{country.economicTier}</div>
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                  <div className="glass-hierarchy-child rounded-xl border border-white/20 p-4">
+                    <span className="text-muted-foreground mb-1 block text-xs">Economic Tier</span>
+                    <div className="text-lg font-bold text-blue-600">{country.economicTier}</div>
                   </div>
-                  <div className="p-4 rounded-xl glass-hierarchy-child border border-white/20">
-                    <span className="text-xs text-muted-foreground block mb-1">GDP per Capita</span>
-                    <div className="font-bold text-lg text-green-600">
+                  <div className="glass-hierarchy-child rounded-xl border border-white/20 p-4">
+                    <span className="text-muted-foreground mb-1 block text-xs">GDP per Capita</span>
+                    <div className="text-lg font-bold text-green-600">
                       <NumberFlowDisplay value={country.currentGdpPerCapita} prefix="$" />
                     </div>
                   </div>
-                  <div className="p-4 rounded-xl glass-hierarchy-child border border-white/20">
-                    <span className="text-xs text-muted-foreground block mb-1">Unemployment</span>
-                    <div className="font-bold text-lg text-orange-600">{(country.unemploymentRate ?? 5.0).toFixed(1)}%</div>
+                  <div className="glass-hierarchy-child rounded-xl border border-white/20 p-4">
+                    <span className="text-muted-foreground mb-1 block text-xs">Unemployment</span>
+                    <div className="text-lg font-bold text-orange-600">
+                      {(country.unemploymentRate ?? 5.0).toFixed(1)}%
+                    </div>
                   </div>
-                  <div className="p-4 rounded-xl glass-hierarchy-child border border-white/20">
-                    <span className="text-xs text-muted-foreground block mb-1">Population</span>
-                    <div className="font-bold text-lg text-purple-600">
+                  <div className="glass-hierarchy-child rounded-xl border border-white/20 p-4">
+                    <span className="text-muted-foreground mb-1 block text-xs">Population</span>
+                    <div className="text-lg font-bold text-purple-600">
                       <NumberFlowDisplay value={country.currentPopulation} />
                     </div>
                   </div>
@@ -347,19 +344,21 @@ export function PolicyCreator({
 
             {/* AI Recommendations Section */}
             <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 p-2">
                   <Sparkles className="h-5 w-5 text-white" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold">Policy Recommendations</h2>
-                  <p className="text-sm text-muted-foreground">Personalized policy suggestions based on your country</p>
+                  <p className="text-muted-foreground text-sm">
+                    Personalized policy suggestions based on your country
+                  </p>
                 </div>
               </div>
 
               {recommendationsLoading ? (
-                <div className="text-center py-12 text-muted-foreground glass-hierarchy-child rounded-xl p-8">
-                  <Sparkles className="h-12 w-12 animate-pulse mx-auto mb-4 text-purple-400" />
+                <div className="text-muted-foreground glass-hierarchy-child rounded-xl p-8 py-12 text-center">
+                  <Sparkles className="mx-auto mb-4 h-12 w-12 animate-pulse text-purple-400" />
                   <p className="text-lg font-medium">Analyzing your country...</p>
                   <p className="text-sm">Generating personalized recommendations</p>
                 </div>
@@ -368,95 +367,113 @@ export function PolicyCreator({
                   {/* Suitable recommendations */}
                   {suitableRecommendations.length > 0 && (
                     <div>
-                      <div className="flex items-center gap-2 mb-4 pb-2 border-b">
+                      <div className="mb-4 flex items-center gap-2 border-b pb-2">
                         <CheckCircle2 className="h-5 w-5 text-green-600" />
-                        <h3 className="font-bold text-lg">Recommended Policies</h3>
-                        <Badge variant="secondary" className="ml-auto">{suitableRecommendations.length} policies</Badge>
+                        <h3 className="text-lg font-bold">Recommended Policies</h3>
+                        <Badge variant="secondary" className="ml-auto">
+                          {suitableRecommendations.length} policies
+                        </Badge>
                       </div>
                       <div className="space-y-3">
-
-                    {suitableRecommendations.map((rec, index) => (
-                      <motion.div
-                        key={rec.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="p-4 border rounded-lg bg-card hover:bg-accent/50 transition-colors cursor-pointer"
-                        onClick={() => loadRecommendation(rec)}
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h4 className="font-semibold">{rec.name}</h4>
-                              <Badge
-                                variant="outline"
-                                className={`text-xs ${
-                                  rec.priority === 'critical' ? 'border-red-500 text-red-600' :
-                                  rec.priority === 'high' ? 'border-orange-500 text-orange-600' :
-                                  'border-blue-500 text-blue-600'
-                                }`}
-                              >
-                                {rec.priority}
-                              </Badge>
-                              <Badge variant="secondary" className="text-xs">
-                                {rec.category}
-                              </Badge>
-                            </div>
-
-                            <p className="text-sm text-muted-foreground mb-3">
-                              {rec.description}
-                            </p>
-
-                            <div className="flex items-center gap-2 mb-2">
-                              <Lightbulb className="h-4 w-4 text-amber-600" />
-                              <span className="text-xs font-medium">Why recommended:</span>
-                              <span className="text-xs text-muted-foreground">{rec.recommendationReason}</span>
-                            </div>
-
-                            {/* Expected effects */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                              <div className="flex items-center gap-1">
-                                <TrendingUp className={`h-3 w-3 ${rec.estimatedEffects.gdpEffect > 0 ? 'text-green-600' : 'text-red-600'}`} />
-                                <span>GDP {rec.estimatedEffects.gdpEffect > 0 ? '+' : ''}{rec.estimatedEffects.gdpEffect}%</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Users className={`h-3 w-3 ${rec.estimatedEffects.employmentEffect < 0 ? 'text-green-600' : 'text-red-600'}`} />
-                                <span>Unemployment {rec.estimatedEffects.employmentEffect > 0 ? '+' : ''}{rec.estimatedEffects.employmentEffect}%</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <DollarSign className={`h-3 w-3 ${rec.estimatedEffects.taxRevenueEffect > 0 ? 'text-green-600' : 'text-red-600'}`} />
-                                <span>Tax Revenue {rec.estimatedEffects.taxRevenueEffect > 0 ? '+' : ''}{rec.estimatedEffects.taxRevenueEffect}%</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <span className="text-muted-foreground">Cost:</span>
-                                <NumberFlowDisplay
-                                  value={rec.implementationCost}
-                                  prefix="$"
-                                  className="font-medium"
-                                />
-                              </div>
-                            </div>
-
-                            {/* Suitability score */}
-                            <div className="mt-2">
-                              <div className="flex items-center justify-between text-xs mb-1">
-                                <span className="text-muted-foreground">Suitability</span>
-                                <span className="font-medium">{rec.suitabilityScore}%</span>
-                              </div>
-                              <Progress value={rec.suitabilityScore} className="h-1.5" />
-                            </div>
-                          </div>
-
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
+                        {suitableRecommendations.map((rec, index) => (
+                          <motion.div
+                            key={rec.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            className="bg-card hover:bg-accent/50 cursor-pointer rounded-lg border p-4 transition-colors"
+                            onClick={() => loadRecommendation(rec)}
                           >
-                            Use Template
-                          </Button>
-                        </div>
-                      </motion.div>
-                      ))}
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <div className="mb-2 flex items-center gap-2">
+                                  <h4 className="font-semibold">{rec.name}</h4>
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-xs ${
+                                      rec.priority === "critical"
+                                        ? "border-red-500 text-red-600"
+                                        : rec.priority === "high"
+                                          ? "border-orange-500 text-orange-600"
+                                          : "border-blue-500 text-blue-600"
+                                    }`}
+                                  >
+                                    {rec.priority}
+                                  </Badge>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {rec.category}
+                                  </Badge>
+                                </div>
+
+                                <p className="text-muted-foreground mb-3 text-sm">
+                                  {rec.description}
+                                </p>
+
+                                <div className="mb-2 flex items-center gap-2">
+                                  <Lightbulb className="h-4 w-4 text-amber-600" />
+                                  <span className="text-xs font-medium">Why recommended:</span>
+                                  <span className="text-muted-foreground text-xs">
+                                    {rec.recommendationReason}
+                                  </span>
+                                </div>
+
+                                {/* Expected effects */}
+                                <div className="grid grid-cols-2 gap-2 text-xs md:grid-cols-4">
+                                  <div className="flex items-center gap-1">
+                                    <TrendingUp
+                                      className={`h-3 w-3 ${rec.estimatedEffects.gdpEffect > 0 ? "text-green-600" : "text-red-600"}`}
+                                    />
+                                    <span>
+                                      GDP {rec.estimatedEffects.gdpEffect > 0 ? "+" : ""}
+                                      {rec.estimatedEffects.gdpEffect}%
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Users
+                                      className={`h-3 w-3 ${rec.estimatedEffects.employmentEffect < 0 ? "text-green-600" : "text-red-600"}`}
+                                    />
+                                    <span>
+                                      Unemployment{" "}
+                                      {rec.estimatedEffects.employmentEffect > 0 ? "+" : ""}
+                                      {rec.estimatedEffects.employmentEffect}%
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <DollarSign
+                                      className={`h-3 w-3 ${rec.estimatedEffects.taxRevenueEffect > 0 ? "text-green-600" : "text-red-600"}`}
+                                    />
+                                    <span>
+                                      Tax Revenue{" "}
+                                      {rec.estimatedEffects.taxRevenueEffect > 0 ? "+" : ""}
+                                      {rec.estimatedEffects.taxRevenueEffect}%
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground">Cost:</span>
+                                    <NumberFlowDisplay
+                                      value={rec.implementationCost}
+                                      prefix="$"
+                                      className="font-medium"
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Suitability score */}
+                                <div className="mt-2">
+                                  <div className="mb-1 flex items-center justify-between text-xs">
+                                    <span className="text-muted-foreground">Suitability</span>
+                                    <span className="font-medium">{rec.suitabilityScore}%</span>
+                                  </div>
+                                  <Progress value={rec.suitabilityScore} className="h-1.5" />
+                                </div>
+                              </div>
+
+                              <Button type="button" variant="outline" size="sm">
+                                Use Template
+                              </Button>
+                            </div>
+                          </motion.div>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -467,57 +484,61 @@ export function PolicyCreator({
                       <button
                         type="button"
                         onClick={() => setFutureOpportunitiesExpanded(!futureOpportunitiesExpanded)}
-                        className="w-full flex items-center gap-2 mb-4 pb-2 border-b hover:bg-accent/50 transition-colors rounded-t-lg px-2 py-1"
+                        className="hover:bg-accent/50 mb-4 flex w-full items-center gap-2 rounded-t-lg border-b px-2 py-1 pb-2 transition-colors"
                       >
                         <AlertCircle className="h-5 w-5 text-amber-600" />
-                        <h3 className="font-bold text-lg">Future Opportunities</h3>
-                        <Badge variant="outline" className="text-amber-600 border-amber-600">{aspirationalRecommendations.length} policies</Badge>
-                        <ChevronDown className={cn(
-                          "h-5 w-5 ml-auto transition-transform text-muted-foreground",
-                          futureOpportunitiesExpanded && "rotate-180"
-                        )} />
+                        <h3 className="text-lg font-bold">Future Opportunities</h3>
+                        <Badge variant="outline" className="border-amber-600 text-amber-600">
+                          {aspirationalRecommendations.length} policies
+                        </Badge>
+                        <ChevronDown
+                          className={cn(
+                            "text-muted-foreground ml-auto h-5 w-5 transition-transform",
+                            futureOpportunitiesExpanded && "rotate-180"
+                          )}
+                        />
                       </button>
 
                       {futureOpportunitiesExpanded && (
                         <>
-                          <p className="text-sm text-muted-foreground mb-3">
-                            These policies require additional economic development before implementation
+                          <p className="text-muted-foreground mb-3 text-sm">
+                            These policies require additional economic development before
+                            implementation
                           </p>
                           <div className="space-y-3">
+                            {aspirationalRecommendations.slice(0, 5).map((rec, index) => (
+                              <div
+                                key={rec.id}
+                                className="bg-muted/10 rounded-lg border p-4 opacity-75"
+                              >
+                                <div className="flex items-start gap-4">
+                                  <div className="flex-1">
+                                    <div className="mb-2 flex items-center gap-2">
+                                      <h4 className="text-sm font-semibold">{rec.name}</h4>
+                                      <Badge variant="outline" className="text-xs">
+                                        {rec.category}
+                                      </Badge>
+                                    </div>
 
-                    {aspirationalRecommendations.slice(0, 5).map((rec, index) => (
-                      <div
-                        key={rec.id}
-                        className="p-4 border rounded-lg bg-muted/10 opacity-75"
-                      >
-                        <div className="flex items-start gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h4 className="font-semibold text-sm">{rec.name}</h4>
-                              <Badge variant="outline" className="text-xs">
-                                {rec.category}
-                              </Badge>
-                            </div>
+                                    <p className="text-muted-foreground mb-2 text-sm">
+                                      {rec.description}
+                                    </p>
 
-                            <p className="text-sm text-muted-foreground mb-2">
-                              {rec.description}
-                            </p>
-
-                            <div className="flex items-start gap-2 text-xs">
-                              <AlertCircle className="h-3 w-3 text-amber-600 mt-0.5 flex-shrink-0" />
-                              <div>
-                                <span className="font-medium">Missing requirements:</span>
-                                <ul className="list-disc list-inside text-muted-foreground">
-                                  {rec.missingRequirements.map((req: string) => (
-                                    <li key={req}>{req}</li>
-                                  ))}
-                                </ul>
+                                    <div className="flex items-start gap-2 text-xs">
+                                      <AlertCircle className="mt-0.5 h-3 w-3 flex-shrink-0 text-amber-600" />
+                                      <div>
+                                        <span className="font-medium">Missing requirements:</span>
+                                        <ul className="text-muted-foreground list-inside list-disc">
+                                          {rec.missingRequirements.map((req: string) => (
+                                            <li key={req}>{req}</li>
+                                          ))}
+                                        </ul>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                          ))}
+                            ))}
                           </div>
                         </>
                       )}
@@ -525,10 +546,12 @@ export function PolicyCreator({
                   )}
 
                   {recommendations && recommendations.length === 0 && (
-                    <div className="text-center py-12 glass-hierarchy-child rounded-xl p-8">
-                      <FileText className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                      <p className="text-lg font-medium mb-2">No Recommendations Available</p>
-                      <p className="text-sm text-muted-foreground">Create a custom policy using the Create Policy tab</p>
+                    <div className="glass-hierarchy-child rounded-xl p-8 py-12 text-center">
+                      <FileText className="mx-auto mb-4 h-16 w-16 text-gray-300" />
+                      <p className="mb-2 text-lg font-medium">No Recommendations Available</p>
+                      <p className="text-muted-foreground text-sm">
+                        Create a custom policy using the Create Policy tab
+                      </p>
                     </div>
                   )}
                 </div>
@@ -539,18 +562,18 @@ export function PolicyCreator({
           {/* Create Policy Tab - Combined policy creation with templates and form */}
           <TabsContent value="create" className="space-y-4">
             {/* Template Selector Button */}
-            <div className="flex items-center gap-4 p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+            <div className="flex items-center gap-4 rounded-lg border bg-gradient-to-r from-blue-50 to-indigo-50 p-4 dark:from-blue-950/20 dark:to-indigo-950/20">
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="mb-1 flex items-center gap-2">
                   <Library className="h-5 w-5 text-blue-600" />
                   <h3 className="font-semibold">Use a Policy Template</h3>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Start with a pre-configured policy template with realistic economic effects
                 </p>
               </div>
               <Button onClick={() => setTemplateSelectorOpen(true)} size="lg">
-                <Library className="h-4 w-4 mr-2" />
+                <Library className="mr-2 h-4 w-4" />
                 Browse Templates
               </Button>
             </div>
@@ -591,7 +614,7 @@ export function PolicyCreator({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {POLICY_TYPES.map(type => {
+                        {POLICY_TYPES.map((type) => {
                           const Icon = type.icon;
                           return (
                             <SelectItem key={type.value} value={type.value}>
@@ -613,7 +636,7 @@ export function PolicyCreator({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {PRIORITY_LEVELS.map(level => (
+                        {PRIORITY_LEVELS.map((level) => (
                           <SelectItem key={level.value} value={level.value}>
                             <div className="flex items-center gap-2">
                               <div className={`h-2 w-2 rounded-full ${level.color}`} />
@@ -642,13 +665,16 @@ export function PolicyCreator({
 
               {/* Economic Effects */}
               <div className="space-y-4">
-                <h3 className="font-semibold flex items-center gap-2">
+                <h3 className="flex items-center gap-2 font-semibold">
                   <TrendingUp className="h-5 w-5 text-blue-600" />
                   Economic Effects
-                  <Badge variant="secondary" className="text-xs">Select expected impacts</Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    Select expected impacts
+                  </Badge>
                 </h3>
-                <p className="text-sm text-muted-foreground">
-                  Choose the economic indicators this policy will affect. GDP is calculated automatically based on these effects.
+                <p className="text-muted-foreground text-sm">
+                  Choose the economic indicators this policy will affect. GDP is calculated
+                  automatically based on these effects.
                 </p>
 
                 {/* Employment Effect Tags */}
@@ -656,18 +682,22 @@ export function PolicyCreator({
                   <Label className="text-sm font-medium">Employment Impact</Label>
                   <div className="flex flex-wrap gap-2">
                     {[
-                      { label: 'Major Job Creation', value: -3.0, desc: 'Significantly reduces unemployment' },
-                      { label: 'Job Creation', value: -1.5, desc: 'Moderate employment boost' },
-                      { label: 'Neutral', value: 0, desc: 'No significant impact' },
-                      { label: 'Job Reduction', value: 1.5, desc: 'May increase unemployment' },
-                      { label: 'Major Reduction', value: 3.0, desc: 'Significant job losses' },
+                      {
+                        label: "Major Job Creation",
+                        value: -3.0,
+                        desc: "Significantly reduces unemployment",
+                      },
+                      { label: "Job Creation", value: -1.5, desc: "Moderate employment boost" },
+                      { label: "Neutral", value: 0, desc: "No significant impact" },
+                      { label: "Job Reduction", value: 1.5, desc: "May increase unemployment" },
+                      { label: "Major Reduction", value: 3.0, desc: "Significant job losses" },
                     ].map((option) => (
                       <button
                         key={option.label}
                         type="button"
                         onClick={() => setEmploymentEffect(option.value)}
                         className={cn(
-                          "px-3 py-2 rounded-lg border-2 transition-all text-sm font-medium",
+                          "rounded-lg border-2 px-3 py-2 text-sm font-medium transition-all",
                           employmentEffect === option.value
                             ? "border-blue-500 bg-blue-50 text-blue-700 shadow-md"
                             : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
@@ -675,7 +705,7 @@ export function PolicyCreator({
                       >
                         <div className="flex flex-col items-start">
                           <span>{option.label}</span>
-                          <span className="text-xs text-muted-foreground">{option.desc}</span>
+                          <span className="text-muted-foreground text-xs">{option.desc}</span>
                         </div>
                       </button>
                     ))}
@@ -687,18 +717,18 @@ export function PolicyCreator({
                   <Label className="text-sm font-medium">Inflation Impact</Label>
                   <div className="flex flex-wrap gap-2">
                     {[
-                      { label: 'Deflationary', value: -1.0, desc: 'Reduces prices' },
-                      { label: 'Minimal Impact', value: 0, desc: 'Stable prices' },
-                      { label: 'Low Inflation', value: 0.4, desc: 'Slight price increase' },
-                      { label: 'Moderate Inflation', value: 1.0, desc: 'Notable price rise' },
-                      { label: 'High Inflation', value: 2.5, desc: 'Significant price surge' },
+                      { label: "Deflationary", value: -1.0, desc: "Reduces prices" },
+                      { label: "Minimal Impact", value: 0, desc: "Stable prices" },
+                      { label: "Low Inflation", value: 0.4, desc: "Slight price increase" },
+                      { label: "Moderate Inflation", value: 1.0, desc: "Notable price rise" },
+                      { label: "High Inflation", value: 2.5, desc: "Significant price surge" },
                     ].map((option) => (
                       <button
                         key={option.label}
                         type="button"
                         onClick={() => setInflationEffect(option.value)}
                         className={cn(
-                          "px-3 py-2 rounded-lg border-2 transition-all text-sm font-medium",
+                          "rounded-lg border-2 px-3 py-2 text-sm font-medium transition-all",
                           inflationEffect === option.value
                             ? "border-orange-500 bg-orange-50 text-orange-700 shadow-md"
                             : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
@@ -706,7 +736,7 @@ export function PolicyCreator({
                       >
                         <div className="flex flex-col items-start">
                           <span>{option.label}</span>
-                          <span className="text-xs text-muted-foreground">{option.desc}</span>
+                          <span className="text-muted-foreground text-xs">{option.desc}</span>
                         </div>
                       </button>
                     ))}
@@ -718,18 +748,18 @@ export function PolicyCreator({
                   <Label className="text-sm font-medium">Tax Revenue Impact</Label>
                   <div className="flex flex-wrap gap-2">
                     {[
-                      { label: 'Major Loss', value: -2.5, desc: 'Significant revenue decrease' },
-                      { label: 'Revenue Loss', value: -0.6, desc: 'Moderate decrease' },
-                      { label: 'Neutral', value: 0, desc: 'No change' },
-                      { label: 'Revenue Gain', value: 1.0, desc: 'Moderate increase' },
-                      { label: 'Major Gain', value: 2.5, desc: 'Significant revenue boost' },
+                      { label: "Major Loss", value: -2.5, desc: "Significant revenue decrease" },
+                      { label: "Revenue Loss", value: -0.6, desc: "Moderate decrease" },
+                      { label: "Neutral", value: 0, desc: "No change" },
+                      { label: "Revenue Gain", value: 1.0, desc: "Moderate increase" },
+                      { label: "Major Gain", value: 2.5, desc: "Significant revenue boost" },
                     ].map((option) => (
                       <button
                         key={option.label}
                         type="button"
                         onClick={() => setTaxRevenueEffect(option.value)}
                         className={cn(
-                          "px-3 py-2 rounded-lg border-2 transition-all text-sm font-medium",
+                          "rounded-lg border-2 px-3 py-2 text-sm font-medium transition-all",
                           taxRevenueEffect === option.value
                             ? "border-green-500 bg-green-50 text-green-700 shadow-md"
                             : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
@@ -737,7 +767,7 @@ export function PolicyCreator({
                       >
                         <div className="flex flex-col items-start">
                           <span>{option.label}</span>
-                          <span className="text-xs text-muted-foreground">{option.desc}</span>
+                          <span className="text-muted-foreground text-xs">{option.desc}</span>
                         </div>
                       </button>
                     ))}
@@ -745,21 +775,29 @@ export function PolicyCreator({
                 </div>
 
                 {/* Calculated GDP Effect Display */}
-                <div className="p-4 border-2 border-blue-200 rounded-lg bg-blue-50">
-                  <div className="flex items-center justify-between mb-2">
+                <div className="rounded-lg border-2 border-blue-200 bg-blue-50 p-4">
+                  <div className="mb-2 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Info className="h-4 w-4 text-blue-600" />
                       <span className="font-medium text-blue-900">Calculated GDP Impact</span>
                     </div>
-                    <span className={cn(
-                      "text-lg font-bold",
-                      gdpEffect > 0 ? "text-green-600" : gdpEffect < 0 ? "text-red-600" : "text-gray-600"
-                    )}>
-                      {gdpEffect > 0 ? '+' : ''}{gdpEffect.toFixed(1)}%
+                    <span
+                      className={cn(
+                        "text-lg font-bold",
+                        gdpEffect > 0
+                          ? "text-green-600"
+                          : gdpEffect < 0
+                            ? "text-red-600"
+                            : "text-gray-600"
+                      )}
+                    >
+                      {gdpEffect > 0 ? "+" : ""}
+                      {gdpEffect.toFixed(1)}%
                     </span>
                   </div>
                   <p className="text-xs text-blue-700">
-                    GDP is automatically calculated based on employment, inflation, and tax revenue impacts. This reflects realistic economic interconnections.
+                    GDP is automatically calculated based on employment, inflation, and tax revenue
+                    impacts. This reflects realistic economic interconnections.
                   </p>
                 </div>
               </div>
@@ -768,7 +806,7 @@ export function PolicyCreator({
 
               {/* Costs */}
               <div className="space-y-4">
-                <h3 className="font-semibold flex items-center gap-2">
+                <h3 className="flex items-center gap-2 font-semibold">
                   <DollarSign className="h-5 w-5 text-green-600" />
                   Implementation Costs
                 </h3>
@@ -786,11 +824,11 @@ export function PolicyCreator({
                         step={1000000}
                         className="pr-12"
                       />
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-sm text-muted-foreground">
+                      <div className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm">
                         <NumberFlowDisplay value={implementationCost} prefix="$" />
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-muted-foreground mt-1 text-xs">
                       One-time implementation cost
                     </p>
                   </div>
@@ -807,143 +845,164 @@ export function PolicyCreator({
                         step={100000}
                         className="pr-12"
                       />
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-sm text-muted-foreground">
+                      <div className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm">
                         <NumberFlowDisplay value={maintenanceCost} prefix="$" />
                       </div>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Recurring annual cost
-                    </p>
+                    <p className="text-muted-foreground mt-1 text-xs">Recurring annual cost</p>
                   </div>
                 </div>
               </div>
             </form>
 
             {/* Floating Economic Impact Preview - Bottom Right */}
-            <div className="fixed bottom-24 right-8 z-50">
-              {activeTab === 'create' && (
+            <div className="fixed right-8 bottom-24 z-50">
+              {activeTab === "create" && (
                 <Popover>
                   <PopoverTrigger
-                    className="p-4 rounded-full shadow-2xl transition-all hover:scale-110 active:scale-95 glass-hierarchy-interactive border-2 border-blue-500/50"
+                    className="glass-hierarchy-interactive rounded-full border-2 border-blue-500/50 p-4 shadow-2xl transition-all hover:scale-110 active:scale-95"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(99, 102, 241, 0.9))',
-                      backdropFilter: 'blur(10px)'
+                      background:
+                        "linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(99, 102, 241, 0.9))",
+                      backdropFilter: "blur(10px)",
                     }}
                   >
                     <div className="relative">
                       <TrendingUp className="h-6 w-6 text-white" />
                       {impactPreview && (
-                        <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-green-400 border-2 border-white animate-pulse"></div>
+                        <div className="absolute -top-1 -right-1 h-3 w-3 animate-pulse rounded-full border-2 border-white bg-green-400"></div>
                       )}
                     </div>
                   </PopoverTrigger>
-                <PopoverContent
-                  side="top"
-                  align="end"
-                  className="w-[480px] p-0 glass-hierarchy-modal border-2 border-blue-400/50"
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.95)',
-                    backdropFilter: 'blur(20px) saturate(180%)'
-                  }}
-                >
-                  <div className="p-5">
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600">
-                        <TrendingUp className="h-5 w-5 text-white" />
+                  <PopoverContent
+                    side="top"
+                    align="end"
+                    className="glass-hierarchy-modal w-[480px] border-2 border-blue-400/50 p-0"
+                    style={{
+                      background: "rgba(255, 255, 255, 0.95)",
+                      backdropFilter: "blur(20px) saturate(180%)",
+                    }}
+                  >
+                    <div className="p-5">
+                      <div className="mb-4 flex items-center gap-2">
+                        <div className="rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 p-2">
+                          <TrendingUp className="h-5 w-5 text-white" />
+                        </div>
+                        <h3 className="text-lg font-bold">Economic Impact Preview</h3>
                       </div>
-                      <h3 className="font-bold text-lg">Economic Impact Preview</h3>
+
+                      {impactPreview ? (
+                        <div className="grid grid-cols-2 gap-3">
+                          {/* GDP Impact */}
+                          <div className="glass-hierarchy-child rounded-lg p-3">
+                            <div className="mb-2 flex items-center justify-between">
+                              <span className="text-sm font-medium text-gray-700">
+                                GDP per Capita
+                              </span>
+                              <Badge
+                                variant={gdpEffect > 0 ? "default" : "destructive"}
+                                className="text-xs"
+                              >
+                                {gdpEffect > 0 ? "+" : ""}
+                                {gdpEffect.toFixed(1)}%
+                              </Badge>
+                            </div>
+                            <div className="space-y-1 text-xs">
+                              <div className="flex justify-between text-gray-600">
+                                <span>Current:</span>
+                                <NumberFlowDisplay value={impactPreview.gdp.current} prefix="$" />
+                              </div>
+                              <div className="flex justify-between font-medium">
+                                <span>Projected:</span>
+                                <NumberFlowDisplay value={impactPreview.gdp.projected} prefix="$" />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Unemployment Impact */}
+                          <div className="glass-hierarchy-child rounded-lg p-3">
+                            <div className="mb-2 flex items-center justify-between">
+                              <span className="text-sm font-medium text-gray-700">
+                                Unemployment
+                              </span>
+                              <Badge
+                                variant={employmentEffect < 0 ? "default" : "destructive"}
+                                className="text-xs"
+                              >
+                                {employmentEffect > 0 ? "+" : ""}
+                                {employmentEffect.toFixed(1)}%
+                              </Badge>
+                            </div>
+                            <div className="space-y-1 text-xs">
+                              <div className="flex justify-between text-gray-600">
+                                <span>Current:</span>
+                                <span>{impactPreview.unemployment.current.toFixed(1)}%</span>
+                              </div>
+                              <div className="flex justify-between font-medium">
+                                <span>Projected:</span>
+                                <span>{impactPreview.unemployment.projected.toFixed(1)}%</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Inflation Impact */}
+                          <div className="glass-hierarchy-child rounded-lg p-3">
+                            <div className="mb-2 flex items-center justify-between">
+                              <span className="text-sm font-medium text-gray-700">Inflation</span>
+                              <Badge
+                                variant={
+                                  Math.abs(inflationEffect) < 1 ? "secondary" : "destructive"
+                                }
+                                className="text-xs"
+                              >
+                                {inflationEffect > 0 ? "+" : ""}
+                                {inflationEffect.toFixed(1)}%
+                              </Badge>
+                            </div>
+                            <div className="space-y-1 text-xs">
+                              <div className="flex justify-between text-gray-600">
+                                <span>Current:</span>
+                                <span>{impactPreview.inflation.current.toFixed(1)}%</span>
+                              </div>
+                              <div className="flex justify-between font-medium">
+                                <span>Projected:</span>
+                                <span>{impactPreview.inflation.projected.toFixed(1)}%</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Tax Revenue Impact */}
+                          <div className="glass-hierarchy-child rounded-lg p-3">
+                            <div className="mb-2 flex items-center justify-between">
+                              <span className="text-sm font-medium text-gray-700">Tax Revenue</span>
+                              <Badge
+                                variant={taxRevenueEffect > 0 ? "default" : "destructive"}
+                                className="text-xs"
+                              >
+                                {taxRevenueEffect > 0 ? "+" : ""}
+                                {taxRevenueEffect.toFixed(1)}%
+                              </Badge>
+                            </div>
+                            <div className="space-y-1 text-xs">
+                              <div className="flex justify-between text-gray-600">
+                                <span>Current:</span>
+                                <span>{impactPreview.taxRevenue.current.toFixed(1)}%</span>
+                              </div>
+                              <div className="flex justify-between font-medium">
+                                <span>Projected:</span>
+                                <span>{impactPreview.taxRevenue.projected.toFixed(1)}%</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground py-8 text-center text-sm">
+                          <TrendingUp className="mx-auto mb-2 h-10 w-10 opacity-30" />
+                          <p>Set economic effects to see preview</p>
+                        </div>
+                      )}
                     </div>
-
-                    {impactPreview ? (
-                      <div className="grid grid-cols-2 gap-3">
-                        {/* GDP Impact */}
-                        <div className="p-3 rounded-lg glass-hierarchy-child">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-gray-700">GDP per Capita</span>
-                            <Badge variant={gdpEffect > 0 ? 'default' : 'destructive'} className="text-xs">
-                              {gdpEffect > 0 ? '+' : ''}{gdpEffect.toFixed(1)}%
-                            </Badge>
-                          </div>
-                          <div className="space-y-1 text-xs">
-                            <div className="flex justify-between text-gray-600">
-                              <span>Current:</span>
-                              <NumberFlowDisplay value={impactPreview.gdp.current} prefix="$" />
-                            </div>
-                            <div className="flex justify-between font-medium">
-                              <span>Projected:</span>
-                              <NumberFlowDisplay value={impactPreview.gdp.projected} prefix="$" />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Unemployment Impact */}
-                        <div className="p-3 rounded-lg glass-hierarchy-child">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-gray-700">Unemployment</span>
-                            <Badge variant={employmentEffect < 0 ? 'default' : 'destructive'} className="text-xs">
-                              {employmentEffect > 0 ? '+' : ''}{employmentEffect.toFixed(1)}%
-                            </Badge>
-                          </div>
-                          <div className="space-y-1 text-xs">
-                            <div className="flex justify-between text-gray-600">
-                              <span>Current:</span>
-                              <span>{impactPreview.unemployment.current.toFixed(1)}%</span>
-                            </div>
-                            <div className="flex justify-between font-medium">
-                              <span>Projected:</span>
-                              <span>{impactPreview.unemployment.projected.toFixed(1)}%</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Inflation Impact */}
-                        <div className="p-3 rounded-lg glass-hierarchy-child">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-gray-700">Inflation</span>
-                            <Badge variant={Math.abs(inflationEffect) < 1 ? 'secondary' : 'destructive'} className="text-xs">
-                              {inflationEffect > 0 ? '+' : ''}{inflationEffect.toFixed(1)}%
-                            </Badge>
-                          </div>
-                          <div className="space-y-1 text-xs">
-                            <div className="flex justify-between text-gray-600">
-                              <span>Current:</span>
-                              <span>{impactPreview.inflation.current.toFixed(1)}%</span>
-                            </div>
-                            <div className="flex justify-between font-medium">
-                              <span>Projected:</span>
-                              <span>{impactPreview.inflation.projected.toFixed(1)}%</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Tax Revenue Impact */}
-                        <div className="p-3 rounded-lg glass-hierarchy-child">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-gray-700">Tax Revenue</span>
-                            <Badge variant={taxRevenueEffect > 0 ? 'default' : 'destructive'} className="text-xs">
-                              {taxRevenueEffect > 0 ? '+' : ''}{taxRevenueEffect.toFixed(1)}%
-                            </Badge>
-                          </div>
-                          <div className="space-y-1 text-xs">
-                            <div className="flex justify-between text-gray-600">
-                              <span>Current:</span>
-                              <span>{impactPreview.taxRevenue.current.toFixed(1)}%</span>
-                            </div>
-                            <div className="flex justify-between font-medium">
-                              <span>Projected:</span>
-                              <span>{impactPreview.taxRevenue.projected.toFixed(1)}%</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="py-8 text-center text-sm text-muted-foreground">
-                        <TrendingUp className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                        <p>Set economic effects to see preview</p>
-                      </div>
-                    )}
-                  </div>
-                </PopoverContent>
+                  </PopoverContent>
                 </Popover>
               )}
             </div>
@@ -952,8 +1011,8 @@ export function PolicyCreator({
           {/* Policy History Tab */}
           <TabsContent value="history" className="space-y-4">
             <div className="mb-4">
-              <h3 className="text-lg font-semibold mb-2">Your Policy History</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="mb-2 text-lg font-semibold">Your Policy History</h3>
+              <p className="text-muted-foreground text-sm">
                 View and manage all policies you've created for your country
               </p>
             </div>
@@ -961,12 +1020,18 @@ export function PolicyCreator({
             {policies && policies.length > 0 ? (
               <div className="space-y-3">
                 {policies.map((policy: any) => (
-                  <div key={policy.id} className="p-4 border rounded-lg bg-card hover:bg-accent/50 transition-colors">
+                  <div
+                    key={policy.id}
+                    className="bg-card hover:bg-accent/50 rounded-lg border p-4 transition-colors"
+                  >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="mb-2 flex items-center gap-2">
                           <h4 className="font-medium">{policy.name}</h4>
-                          <Badge variant={policy.status === 'implemented' ? 'default' : 'secondary'} className="text-xs">
+                          <Badge
+                            variant={policy.status === "implemented" ? "default" : "secondary"}
+                            className="text-xs"
+                          >
                             {policy.status}
                           </Badge>
                           <Badge variant="outline" className="text-xs">
@@ -974,16 +1039,23 @@ export function PolicyCreator({
                           </Badge>
                         </div>
                         {policy.description && (
-                          <p className="text-sm text-muted-foreground mb-2">{policy.description}</p>
+                          <p className="text-muted-foreground mb-2 text-sm">{policy.description}</p>
                         )}
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <div className="text-muted-foreground flex items-center gap-4 text-xs">
                           {policy.implementationCost && (
                             <span>
-                              Cost: <NumberFlowDisplay value={policy.implementationCost} prefix="$" className="font-medium" />
+                              Cost:{" "}
+                              <NumberFlowDisplay
+                                value={policy.implementationCost}
+                                prefix="$"
+                                className="font-medium"
+                              />
                             </span>
                           )}
                           {policy.createdAt && (
-                            <span>Created: {format(new Date(policy.createdAt), 'MMM d, yyyy')}</span>
+                            <span>
+                              Created: {format(new Date(policy.createdAt), "MMM d, yyyy")}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -992,8 +1064,8 @@ export function PolicyCreator({
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <div className="text-muted-foreground py-12 text-center">
+                <FileText className="mx-auto mb-4 h-12 w-12 opacity-50" />
                 <p className="mb-2">No policies created yet</p>
                 <p className="text-sm">Create your first policy to see it here</p>
               </div>
@@ -1007,9 +1079,11 @@ export function PolicyCreator({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={createPolicy.isPending || !name.trim() || !description.trim() || !category.trim()}
+            disabled={
+              createPolicy.isPending || !name.trim() || !description.trim() || !category.trim()
+            }
           >
-            {createPolicy.isPending ? 'Creating...' : 'Create Policy'}
+            {createPolicy.isPending ? "Creating..." : "Create Policy"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1019,12 +1093,16 @@ export function PolicyCreator({
         open={templateSelectorOpen}
         onOpenChange={setTemplateSelectorOpen}
         onSelect={loadTemplate}
-        economicData={country ? {
-          gdp: country.currentGdpPerCapita,
-          unemployment: country.unemploymentRate ?? 5.0,
-          inflation: country.inflationRate ?? 2.0,
-          taxRevenue: country.taxRevenueGDPPercent ?? 20.0,
-        } : undefined}
+        economicData={
+          country
+            ? {
+                gdp: country.currentGdpPerCapita,
+                unemployment: country.unemploymentRate ?? 5.0,
+                inflation: country.inflationRate ?? 2.0,
+                taxRevenue: country.taxRevenueGDPPercent ?? 20.0,
+              }
+            : undefined
+        }
       />
     </Dialog>
   );

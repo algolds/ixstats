@@ -3,22 +3,18 @@
  * Phase 2: AI-powered component suggestions based on country profile and current selection
  */
 
-import { ComponentType } from '@prisma/client';
-import { SYNERGY_RULES, CONFLICT_RULES } from './atomic-builder-state';
-import type { 
-  SynergyRule, 
-  ConflictRule, 
-  AtomicEconomicModifiers 
-} from './atomic-builder-state';
+import { ComponentType } from "@prisma/client";
+import { SYNERGY_RULES, CONFLICT_RULES } from "./atomic-builder-state";
+import type { SynergyRule, ConflictRule, AtomicEconomicModifiers } from "./atomic-builder-state";
 
 export interface SmartRecommendation {
   id: string;
-  type: 'synergy_complete' | 'effectiveness_boost' | 'conflict_avoid' | 'country_fit';
+  type: "synergy_complete" | "effectiveness_boost" | "conflict_avoid" | "country_fit";
   component: ComponentType;
   reason: string;
   impactPreview: RecommendationImpact;
   confidence: number;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
 }
 
 export interface RecommendationImpact {
@@ -30,19 +26,19 @@ export interface RecommendationImpact {
 }
 
 export interface CountryProfile {
-  size: 'small' | 'medium' | 'large';
-  developmentLevel: 'developing' | 'emerging' | 'developed';
-  politicalTradition: 'democratic' | 'authoritarian' | 'mixed' | 'traditional';
-  economicSystem: 'market' | 'mixed' | 'planned';
-  culturalContext: 'western' | 'eastern' | 'islamic' | 'african' | 'latin' | 'mixed';
+  size: "small" | "medium" | "large";
+  developmentLevel: "developing" | "emerging" | "developed";
+  politicalTradition: "democratic" | "authoritarian" | "mixed" | "traditional";
+  economicSystem: "market" | "mixed" | "planned";
+  culturalContext: "western" | "eastern" | "islamic" | "african" | "latin" | "mixed";
   primaryChallenges: Challenge[];
   gdp: number;
   population: number;
 }
 
 export interface Challenge {
-  type: 'economic_growth' | 'political_stability' | 'corruption' | 'inequality' | 'development';
-  severity: 'low' | 'medium' | 'high';
+  type: "economic_growth" | "political_stability" | "corruption" | "inequality" | "development";
+  severity: "low" | "medium" | "high";
 }
 
 // Component compatibility matrix based on country profiles
@@ -85,7 +81,7 @@ const COUNTRY_COMPONENT_COMPATIBILITY: Record<string, Partial<Record<ComponentTy
     [ComponentType.DEVELOPMENTAL_STATE]: 0.7,
     [ComponentType.WORKER_PROTECTION]: 0.7,
     [ComponentType.MERITOCRATIC_SYSTEM]: 0.8,
-    [ComponentType.REGIONAL_DEVELOPMENT]: 0.75
+    [ComponentType.REGIONAL_DEVELOPMENT]: 0.75,
   },
 
   large: {
@@ -125,7 +121,7 @@ const COUNTRY_COMPONENT_COMPATIBILITY: Record<string, Partial<Record<ComponentTy
     [ComponentType.DEVELOPMENTAL_STATE]: 0.8,
     [ComponentType.WORKER_PROTECTION]: 0.7,
     [ComponentType.MERITOCRATIC_SYSTEM]: 0.9,
-    [ComponentType.REGIONAL_DEVELOPMENT]: 0.85
+    [ComponentType.REGIONAL_DEVELOPMENT]: 0.85,
   },
 
   // Development level compatibility
@@ -166,7 +162,7 @@ const COUNTRY_COMPONENT_COMPATIBILITY: Record<string, Partial<Record<ComponentTy
     [ComponentType.DEVELOPMENTAL_STATE]: 0.7,
     [ComponentType.WORKER_PROTECTION]: 0.75,
     [ComponentType.MERITOCRATIC_SYSTEM]: 0.95,
-    [ComponentType.REGIONAL_DEVELOPMENT]: 0.75
+    [ComponentType.REGIONAL_DEVELOPMENT]: 0.75,
   },
 
   developing: {
@@ -206,8 +202,8 @@ const COUNTRY_COMPONENT_COMPATIBILITY: Record<string, Partial<Record<ComponentTy
     [ComponentType.DEVELOPMENTAL_STATE]: 0.8,
     [ComponentType.WORKER_PROTECTION]: 0.6,
     [ComponentType.MERITOCRATIC_SYSTEM]: 0.6,
-    [ComponentType.REGIONAL_DEVELOPMENT]: 0.8
-  }
+    [ComponentType.REGIONAL_DEVELOPMENT]: 0.8,
+  },
 };
 
 // Challenge-specific component recommendations
@@ -217,36 +213,36 @@ const CHALLENGE_SOLUTIONS: Record<string, ComponentType[]> = {
     ComponentType.PROFESSIONAL_BUREAUCRACY,
     ComponentType.TECHNOCRATIC_AGENCIES,
     ComponentType.PERFORMANCE_LEGITIMACY,
-    ComponentType.RULE_OF_LAW
+    ComponentType.RULE_OF_LAW,
   ],
   political_stability: [
     ComponentType.RULE_OF_LAW,
     ComponentType.INDEPENDENT_JUDICIARY,
     ComponentType.ELECTORAL_LEGITIMACY,
     ComponentType.FEDERAL_SYSTEM,
-    ComponentType.CONSENSUS_PROCESS
+    ComponentType.CONSENSUS_PROCESS,
   ],
   corruption: [
     ComponentType.RULE_OF_LAW,
     ComponentType.INDEPENDENT_JUDICIARY,
     ComponentType.PROFESSIONAL_BUREAUCRACY,
     ComponentType.SURVEILLANCE_SYSTEM,
-    ComponentType.PERFORMANCE_LEGITIMACY
+    ComponentType.PERFORMANCE_LEGITIMACY,
   ],
   inequality: [
     ComponentType.DEMOCRATIC_PROCESS,
     ComponentType.FEDERAL_SYSTEM,
     ComponentType.SOCIAL_PRESSURE,
     ComponentType.ECONOMIC_INCENTIVES,
-    ComponentType.ELECTORAL_LEGITIMACY
+    ComponentType.ELECTORAL_LEGITIMACY,
   ],
   development: [
     ComponentType.TECHNOCRATIC_AGENCIES,
     ComponentType.PROFESSIONAL_BUREAUCRACY,
     ComponentType.PERFORMANCE_LEGITIMACY,
     ComponentType.CENTRALIZED_POWER,
-    ComponentType.RULE_OF_LAW
-  ]
+    ComponentType.RULE_OF_LAW,
+  ],
 };
 
 export class AtomicRecommendationEngine {
@@ -262,31 +258,36 @@ export class AtomicRecommendationEngine {
 
     // 1. Synergy completion recommendations
     const synergyRecommendations = this.getSynergyCompletionRecommendations(
-      currentComponents, countryProfile
+      currentComponents,
+      countryProfile
     );
     recommendations.push(...synergyRecommendations);
 
-    // 2. Conflict avoidance recommendations  
+    // 2. Conflict avoidance recommendations
     const conflictAvoidanceRecommendations = this.getConflictAvoidanceRecommendations(
-      currentComponents, countryProfile
+      currentComponents,
+      countryProfile
     );
     recommendations.push(...conflictAvoidanceRecommendations);
 
     // 3. Country-fit recommendations
     const countryFitRecommendations = this.getCountryFitRecommendations(
-      currentComponents, countryProfile
+      currentComponents,
+      countryProfile
     );
     recommendations.push(...countryFitRecommendations);
 
     // 4. Challenge-specific recommendations
     const challengeRecommendations = this.getChallengeSpecificRecommendations(
-      currentComponents, countryProfile
+      currentComponents,
+      countryProfile
     );
     recommendations.push(...challengeRecommendations);
 
     // 5. Effectiveness boost recommendations
     const effectivenessRecommendations = this.getEffectivenessBoostRecommendations(
-      currentComponents, countryProfile
+      currentComponents,
+      countryProfile
     );
     recommendations.push(...effectivenessRecommendations);
 
@@ -312,25 +313,23 @@ export class AtomicRecommendationEngine {
 
     for (const synergy of SYNERGY_RULES) {
       // Check if we have some but not all components for this synergy
-      const hasComponents = synergy.components.filter(comp => 
-        currentComponents.includes(comp)
-      );
-      const missingComponents = synergy.components.filter(comp => 
-        !currentComponents.includes(comp)
+      const hasComponents = synergy.components.filter((comp) => currentComponents.includes(comp));
+      const missingComponents = synergy.components.filter(
+        (comp) => !currentComponents.includes(comp)
       );
 
       if (hasComponents.length > 0 && missingComponents.length > 0) {
         for (const missingComponent of missingComponents) {
           const compatibility = this.getComponentCompatibility(missingComponent, countryProfile);
-          
+
           recommendations.push({
             id: `synergy_${synergy.id}_${missingComponent}`,
-            type: 'synergy_complete',
+            type: "synergy_complete",
             component: missingComponent,
             reason: `Complete the "${synergy.description}" synergy by adding this component`,
             impactPreview: this.calculateImpactPreview(missingComponent, currentComponents),
             confidence: compatibility * 0.9, // High confidence for synergy completion
-            priority: 'high'
+            priority: "high",
           });
         }
       }
@@ -350,14 +349,14 @@ export class AtomicRecommendationEngine {
 
     // Check for potential conflicts with components not yet selected
     for (const conflict of CONFLICT_RULES) {
-      const hasConflictingComponents = conflict.components.filter(comp =>
+      const hasConflictingComponents = conflict.components.filter((comp) =>
         currentComponents.includes(comp)
       );
 
       if (hasConflictingComponents.length > 0) {
         // Find alternative components that serve similar purpose without conflict
         const alternatives = this.findAlternativeComponents(
-          hasConflictingComponents[0], 
+          hasConflictingComponents[0],
           currentComponents,
           countryProfile
         );
@@ -365,12 +364,12 @@ export class AtomicRecommendationEngine {
         for (const alternative of alternatives) {
           recommendations.push({
             id: `avoid_conflict_${conflict.id}_${alternative}`,
-            type: 'conflict_avoid',
+            type: "conflict_avoid",
             component: alternative,
             reason: `Consider this alternative to avoid the "${conflict.description}" conflict`,
             impactPreview: this.calculateImpactPreview(alternative, currentComponents),
             confidence: this.getComponentCompatibility(alternative, countryProfile) * 0.8,
-            priority: conflict.severity === 'critical' ? 'high' : 'medium'
+            priority: conflict.severity === "critical" ? "high" : "medium",
           });
         }
       }
@@ -387,22 +386,22 @@ export class AtomicRecommendationEngine {
     countryProfile: CountryProfile
   ): SmartRecommendation[] {
     const recommendations: SmartRecommendation[] = [];
-    const availableComponents = Object.values(ComponentType).filter(comp =>
-      !currentComponents.includes(comp)
+    const availableComponents = Object.values(ComponentType).filter(
+      (comp) => !currentComponents.includes(comp)
     );
 
     for (const component of availableComponents) {
       const compatibility = this.getComponentCompatibility(component, countryProfile);
-      
+
       if (compatibility > 0.8) {
         recommendations.push({
           id: `country_fit_${component}`,
-          type: 'country_fit',
+          type: "country_fit",
           component,
           reason: `Excellent fit for your ${countryProfile.size} ${countryProfile.developmentLevel} country`,
           impactPreview: this.calculateImpactPreview(component, currentComponents),
           confidence: compatibility,
-          priority: compatibility > 0.9 ? 'high' : 'medium'
+          priority: compatibility > 0.9 ? "high" : "medium",
         });
       }
     }
@@ -421,21 +420,21 @@ export class AtomicRecommendationEngine {
 
     for (const challenge of countryProfile.primaryChallenges) {
       const solutionComponents = CHALLENGE_SOLUTIONS[challenge.type] || [];
-      
+
       for (const component of solutionComponents) {
         if (!currentComponents.includes(component)) {
           const compatibility = this.getComponentCompatibility(component, countryProfile);
-          const severityMultiplier = challenge.severity === 'high' ? 1.0 : 
-                                   challenge.severity === 'medium' ? 0.8 : 0.6;
+          const severityMultiplier =
+            challenge.severity === "high" ? 1.0 : challenge.severity === "medium" ? 0.8 : 0.6;
 
           recommendations.push({
             id: `challenge_${challenge.type}_${component}`,
-            type: 'effectiveness_boost',
+            type: "effectiveness_boost",
             component,
-            reason: `Addresses your ${challenge.severity} ${challenge.type.replace('_', ' ')} challenge`,
+            reason: `Addresses your ${challenge.severity} ${challenge.type.replace("_", " ")} challenge`,
             impactPreview: this.calculateImpactPreview(component, currentComponents),
             confidence: compatibility * severityMultiplier,
-            priority: challenge.severity === 'high' ? 'high' : 'medium'
+            priority: challenge.severity === "high" ? "high" : "medium",
           });
         }
       }
@@ -452,29 +451,29 @@ export class AtomicRecommendationEngine {
     countryProfile: CountryProfile
   ): SmartRecommendation[] {
     const recommendations: SmartRecommendation[] = [];
-    
+
     // High-effectiveness components
     const highEffectivenessComponents = [
       ComponentType.TECHNOCRATIC_AGENCIES,
       ComponentType.RULE_OF_LAW,
       ComponentType.PROFESSIONAL_BUREAUCRACY,
       ComponentType.INDEPENDENT_JUDICIARY,
-      ComponentType.TECHNOCRATIC_PROCESS
+      ComponentType.TECHNOCRATIC_PROCESS,
     ];
 
     for (const component of highEffectivenessComponents) {
       if (!currentComponents.includes(component)) {
         const compatibility = this.getComponentCompatibility(component, countryProfile);
-        
+
         if (compatibility > 0.6) {
           recommendations.push({
             id: `effectiveness_${component}`,
-            type: 'effectiveness_boost',
+            type: "effectiveness_boost",
             component,
-            reason: 'High-effectiveness component that boosts overall system performance',
+            reason: "High-effectiveness component that boosts overall system performance",
             impactPreview: this.calculateImpactPreview(component, currentComponents),
             confidence: compatibility,
-            priority: compatibility > 0.8 ? 'high' : 'medium'
+            priority: compatibility > 0.8 ? "high" : "medium",
           });
         }
       }
@@ -499,27 +498,46 @@ export class AtomicRecommendationEngine {
     }
 
     // Development level compatibility
-    const devCompatibility = COUNTRY_COMPONENT_COMPATIBILITY[countryProfile.developmentLevel]?.[component];
+    const devCompatibility =
+      COUNTRY_COMPONENT_COMPATIBILITY[countryProfile.developmentLevel]?.[component];
     if (devCompatibility) {
       compatibility = (compatibility + devCompatibility) / 2;
     }
 
     // Political tradition adjustments
-    if (countryProfile.politicalTradition === 'democratic') {
-      if ([ComponentType.DEMOCRATIC_PROCESS, ComponentType.ELECTORAL_LEGITIMACY, 
-           ComponentType.RULE_OF_LAW, ComponentType.INDEPENDENT_JUDICIARY].includes(component as any)) {
+    if (countryProfile.politicalTradition === "democratic") {
+      if (
+        [
+          ComponentType.DEMOCRATIC_PROCESS,
+          ComponentType.ELECTORAL_LEGITIMACY,
+          ComponentType.RULE_OF_LAW,
+          ComponentType.INDEPENDENT_JUDICIARY,
+        ].includes(component as any)
+      ) {
         compatibility += 0.2;
       }
-      if ([ComponentType.AUTOCRATIC_PROCESS, ComponentType.MILITARY_ADMINISTRATION].includes(component as any)) {
+      if (
+        [ComponentType.AUTOCRATIC_PROCESS, ComponentType.MILITARY_ADMINISTRATION].includes(
+          component as any
+        )
+      ) {
         compatibility -= 0.3;
       }
     }
 
-    if (countryProfile.politicalTradition === 'traditional') {
-      if ([ComponentType.TRADITIONAL_LEGITIMACY, ComponentType.CONSENSUS_PROCESS].includes(component as any)) {
+    if (countryProfile.politicalTradition === "traditional") {
+      if (
+        [ComponentType.TRADITIONAL_LEGITIMACY, ComponentType.CONSENSUS_PROCESS].includes(
+          component as any
+        )
+      ) {
         compatibility += 0.2;
       }
-      if ([ComponentType.TECHNOCRATIC_PROCESS, ComponentType.TECHNOCRATIC_AGENCIES].includes(component as any)) {
+      if (
+        [ComponentType.TECHNOCRATIC_PROCESS, ComponentType.TECHNOCRATIC_AGENCIES].includes(
+          component as any
+        )
+      ) {
         compatibility -= 0.2;
       }
     }
@@ -539,20 +557,40 @@ export class AtomicRecommendationEngine {
 
     // Define component alternatives by category
     const alternativeGroups: Record<string, ComponentType[]> = {
-      power: [ComponentType.CENTRALIZED_POWER, ComponentType.FEDERAL_SYSTEM, 
-              ComponentType.CONFEDERATE_SYSTEM, ComponentType.UNITARY_SYSTEM],
-      decision: [ComponentType.DEMOCRATIC_PROCESS, ComponentType.AUTOCRATIC_PROCESS,
-                ComponentType.TECHNOCRATIC_PROCESS, ComponentType.CONSENSUS_PROCESS,
-                ComponentType.OLIGARCHIC_PROCESS],
-      legitimacy: [ComponentType.ELECTORAL_LEGITIMACY, ComponentType.TRADITIONAL_LEGITIMACY,
-                  ComponentType.PERFORMANCE_LEGITIMACY, ComponentType.CHARISMATIC_LEGITIMACY,
-                  ComponentType.RELIGIOUS_LEGITIMACY],
-      institutions: [ComponentType.PROFESSIONAL_BUREAUCRACY, ComponentType.MILITARY_ADMINISTRATION,
-                    ComponentType.INDEPENDENT_JUDICIARY, ComponentType.PARTISAN_INSTITUTIONS,
-                    ComponentType.TECHNOCRATIC_AGENCIES],
-      control: [ComponentType.RULE_OF_LAW, ComponentType.SURVEILLANCE_SYSTEM,
-               ComponentType.ECONOMIC_INCENTIVES, ComponentType.SOCIAL_PRESSURE,
-               ComponentType.MILITARY_ENFORCEMENT]
+      power: [
+        ComponentType.CENTRALIZED_POWER,
+        ComponentType.FEDERAL_SYSTEM,
+        ComponentType.CONFEDERATE_SYSTEM,
+        ComponentType.UNITARY_SYSTEM,
+      ],
+      decision: [
+        ComponentType.DEMOCRATIC_PROCESS,
+        ComponentType.AUTOCRATIC_PROCESS,
+        ComponentType.TECHNOCRATIC_PROCESS,
+        ComponentType.CONSENSUS_PROCESS,
+        ComponentType.OLIGARCHIC_PROCESS,
+      ],
+      legitimacy: [
+        ComponentType.ELECTORAL_LEGITIMACY,
+        ComponentType.TRADITIONAL_LEGITIMACY,
+        ComponentType.PERFORMANCE_LEGITIMACY,
+        ComponentType.CHARISMATIC_LEGITIMACY,
+        ComponentType.RELIGIOUS_LEGITIMACY,
+      ],
+      institutions: [
+        ComponentType.PROFESSIONAL_BUREAUCRACY,
+        ComponentType.MILITARY_ADMINISTRATION,
+        ComponentType.INDEPENDENT_JUDICIARY,
+        ComponentType.PARTISAN_INSTITUTIONS,
+        ComponentType.TECHNOCRATIC_AGENCIES,
+      ],
+      control: [
+        ComponentType.RULE_OF_LAW,
+        ComponentType.SURVEILLANCE_SYSTEM,
+        ComponentType.ECONOMIC_INCENTIVES,
+        ComponentType.SOCIAL_PRESSURE,
+        ComponentType.MILITARY_ENFORCEMENT,
+      ],
     };
 
     // Find which group the component belongs to
@@ -560,10 +598,11 @@ export class AtomicRecommendationEngine {
       if (components.includes(component)) {
         // Return other components in the same group that aren't already selected
         alternatives.push(
-          ...components.filter(alt => 
-            alt !== component && 
-            !currentComponents.includes(alt) &&
-            this.getComponentCompatibility(alt, countryProfile) > 0.5
+          ...components.filter(
+            (alt) =>
+              alt !== component &&
+              !currentComponents.includes(alt) &&
+              this.getComponentCompatibility(alt, countryProfile) > 0.5
           )
         );
         break;
@@ -618,19 +657,19 @@ export class AtomicRecommendationEngine {
       [ComponentType.DEVELOPMENTAL_STATE]: 83,
       [ComponentType.WORKER_PROTECTION]: 65,
       [ComponentType.MERITOCRATIC_SYSTEM]: 88,
-      [ComponentType.REGIONAL_DEVELOPMENT]: 67
+      [ComponentType.REGIONAL_DEVELOPMENT]: 67,
     };
 
     const effectiveness = componentEffectiveness[component] || 60;
-    
+
     // Calculate synergies that would be added
     let synergiesAdded = 0;
     let conflictsAdded = 0;
 
     for (const synergy of SYNERGY_RULES) {
       if (synergy.components.includes(component)) {
-        const otherComponents = synergy.components.filter(c => c !== component);
-        if (otherComponents.some(c => currentComponents.includes(c))) {
+        const otherComponents = synergy.components.filter((c) => c !== component);
+        if (otherComponents.some((c) => currentComponents.includes(c))) {
           synergiesAdded++;
         }
       }
@@ -638,8 +677,8 @@ export class AtomicRecommendationEngine {
 
     for (const conflict of CONFLICT_RULES) {
       if (conflict.components.includes(component)) {
-        const otherComponents = conflict.components.filter(c => c !== component);
-        if (otherComponents.some(c => currentComponents.includes(c))) {
+        const otherComponents = conflict.components.filter((c) => c !== component);
+        if (otherComponents.some((c) => currentComponents.includes(c))) {
           conflictsAdded++;
         }
       }
@@ -650,7 +689,7 @@ export class AtomicRecommendationEngine {
       economicImpact: effectiveness * 0.01, // 1% per effectiveness point
       stabilityImpact: effectiveness * 0.5,
       synergiesAdded,
-      conflictsAdded
+      conflictsAdded,
     };
   }
 }

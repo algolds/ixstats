@@ -30,7 +30,7 @@ export function SortableCard({
   variant = "glass",
   actions,
   order,
-  onReorder
+  onReorder,
 }: SortableCardProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
@@ -47,33 +47,34 @@ export function SortableCard({
       transition={{
         type: "spring",
         damping: 25,
-        stiffness: 300
+        stiffness: 300,
       }}
     >
-      <GlassCard 
-        variant={variant} 
-        className="relative overflow-hidden backdrop-blur-xl bg-card/80 border border-white/20 dark:border-white/10 shadow-2xl"
+      <GlassCard
+        variant={variant}
+        className="bg-card/80 relative overflow-hidden border border-white/20 shadow-2xl backdrop-blur-xl dark:border-white/10"
         style={{
-          background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
+          background:
+            "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
           backdropFilter: "blur(20px) saturate(180%)",
           WebkitBackdropFilter: "blur(20px) saturate(180%)",
         }}
       >
         {/* Glow effect overlay */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10 blur-xl animate-pulse" />
+        <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+          <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10 blur-xl" />
           <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-white/5" />
         </div>
 
         <div className="relative z-10">
-          <div className="p-4 border-b border/20 backdrop-blur-sm">
+          <div className="border/20 border-b p-4 backdrop-blur-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-grab active:cursor-grabbing">
-                  <GripVertical className="h-4 w-4 text-muted-foreground" />
+                <div className="cursor-grab opacity-0 transition-opacity duration-200 group-hover:opacity-100 active:cursor-grabbing">
+                  <GripVertical className="text-muted-foreground h-4 w-4" />
                 </div>
                 {icon}
-                <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+                <h3 className="text-foreground text-lg font-semibold">{title}</h3>
               </div>
               <div className="flex items-center gap-2">
                 {actions}
@@ -81,30 +82,22 @@ export function SortableCard({
                   variant="ghost"
                   size="sm"
                   onClick={() => setIsOpen(!isOpen)}
-                  className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-white/10"
+                  className="text-muted-foreground hover:text-foreground h-8 w-8 p-0 hover:bg-white/10"
                 >
-                  {isOpen ? (
-                    <ChevronUp className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
+                  {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
           </div>
-          {isOpen && (
-            <div className="p-4 backdrop-blur-sm">
-              {children}
-            </div>
-          )}
+          {isOpen && <div className="p-4 backdrop-blur-sm">{children}</div>}
         </div>
 
         {/* Subtle refraction effect */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-          <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-          <div className="absolute top-0 left-0 w-px h-full bg-gradient-to-b from-transparent via-white/20 to-transparent" />
-          <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-white/10 to-transparent" />
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          <div className="absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+          <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+          <div className="absolute top-0 right-0 h-full w-px bg-gradient-to-b from-transparent via-white/10 to-transparent" />
         </div>
       </GlassCard>
     </Reorder.Item>
@@ -135,7 +128,7 @@ export function SortableGrid({ children, onReorder, className }: SortableGridPro
       as="div"
       values={items}
       onReorder={handleReorder}
-      className={cn("grid grid-cols-1 lg:grid-cols-12 gap-6", className)}
+      className={cn("grid grid-cols-1 gap-6 lg:grid-cols-12", className)}
     >
       {children}
     </Reorder.Group>

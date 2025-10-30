@@ -3,24 +3,24 @@
  * Hover-triggered cloth physics simulation with realistic ripple effects
  */
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { SimpleFlag } from '~/components/SimpleFlag';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { SimpleFlag } from "~/components/SimpleFlag";
 
 interface WavingFlagProps {
   countryName: string;
   className?: string;
   showPlaceholder?: boolean;
-  intensity?: 'calm' | 'moderate' | 'strong';
-  polePosition?: 'left' | 'right';
+  intensity?: "calm" | "moderate" | "strong";
+  polePosition?: "left" | "right";
 }
 
 export const WavingFlag: React.FC<WavingFlagProps> = ({
   countryName,
   className = "",
   showPlaceholder = true,
-  intensity = 'moderate',
-  polePosition = 'left'
+  intensity = "moderate",
+  polePosition = "left",
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -28,7 +28,7 @@ export const WavingFlag: React.FC<WavingFlagProps> = ({
   const settings = {
     calm: { rippleStrength: 2, duration: 2.0 },
     moderate: { rippleStrength: 3, duration: 1.8 },
-    strong: { rippleStrength: 4, duration: 1.5 }
+    strong: { rippleStrength: 4, duration: 1.5 },
   };
 
   const { rippleStrength, duration } = settings[intensity];
@@ -45,81 +45,108 @@ export const WavingFlag: React.FC<WavingFlagProps> = ({
       y: 0,
       transition: {
         duration: 1.2,
-        ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number] // Apple's preferred cubic bezier
-      }
+        ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number], // Apple's preferred cubic bezier
+      },
     },
     ripple: {
       // Ultra-subtle multi-stage ripple - Apple style
-      rotateY: [0, rippleStrength * 0.8, -rippleStrength * 0.3, rippleStrength * 0.2, 0] as number[],
-      rotateX: [0, -rippleStrength * 0.4, rippleStrength * 0.6, -rippleStrength * 0.2, 0] as number[],
-      scaleX: [1, 1 + rippleStrength * 0.003, 1 - rippleStrength * 0.002, 1 + rippleStrength * 0.001, 1] as number[],
-      scaleY: [1, 1 - rippleStrength * 0.002, 1 + rippleStrength * 0.004, 1 - rippleStrength * 0.001, 1] as number[],
+      rotateY: [
+        0,
+        rippleStrength * 0.8,
+        -rippleStrength * 0.3,
+        rippleStrength * 0.2,
+        0,
+      ] as number[],
+      rotateX: [
+        0,
+        -rippleStrength * 0.4,
+        rippleStrength * 0.6,
+        -rippleStrength * 0.2,
+        0,
+      ] as number[],
+      scaleX: [
+        1,
+        1 + rippleStrength * 0.003,
+        1 - rippleStrength * 0.002,
+        1 + rippleStrength * 0.001,
+        1,
+      ] as number[],
+      scaleY: [
+        1,
+        1 - rippleStrength * 0.002,
+        1 + rippleStrength * 0.004,
+        1 - rippleStrength * 0.001,
+        1,
+      ] as number[],
       skewX: [0, rippleStrength * 0.6, -rippleStrength * 0.4, rippleStrength * 0.2, 0] as number[],
       x: [0, rippleStrength * 0.8, -rippleStrength * 0.3, rippleStrength * 0.15, 0] as number[],
       y: [0, -rippleStrength * 0.4, rippleStrength * 0.6, -rippleStrength * 0.2, 0] as number[],
       transition: {
         duration: duration,
         ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number], // Apple's signature easing
-        times: [0, 0.25, 0.55, 0.8, 1] as number[] // More refined timing
-      }
-    }
+        times: [0, 0.25, 0.55, 0.8, 1] as number[], // More refined timing
+      },
+    },
   };
 
   return (
-    <div 
-      className={`relative overflow-hidden cursor-pointer ${className}`}
+    <div
+      className={`relative cursor-pointer overflow-hidden ${className}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Pole indicator */}
-      <div 
-        className={`absolute top-0 bottom-0 w-0.5 bg-gray-700/40 z-10 ${
-          polePosition === 'left' ? 'left-0' : 'right-0'
+      <div
+        className={`absolute top-0 bottom-0 z-10 w-0.5 bg-gray-700/40 ${
+          polePosition === "left" ? "left-0" : "right-0"
         }`}
       />
 
       {/* Main flag with fabric physics */}
       <motion.div
-        className="relative w-full h-full"
+        className="relative h-full w-full"
         style={{
-          transformOrigin: polePosition === 'left' ? '0% 50%' : '100% 50%',
-          perspective: '1000px',
+          transformOrigin: polePosition === "left" ? "0% 50%" : "100% 50%",
+          perspective: "1000px",
         }}
         variants={fabricVariants}
-        animate={isHovered ? 'ripple' : 'rest'}
+        animate={isHovered ? "ripple" : "rest"}
       >
         {/* Base flag layer */}
-        <div className="relative w-full h-full">
-          <SimpleFlag 
+        <div className="relative h-full w-full">
+          <SimpleFlag
             countryName={countryName}
-            className="w-full h-full object-cover"
+            className="h-full w-full object-cover"
             showPlaceholder={showPlaceholder}
           />
-          
+
           {/* Ultra-subtle fabric depth shadows - Apple style */}
           <AnimatePresence>
             {isHovered && (
               <motion.div
-                className="absolute inset-0 pointer-events-none"
+                className="pointer-events-none absolute inset-0"
                 initial={{ opacity: 0 }}
-                animate={{ 
+                animate={{
                   opacity: [0, 0.15, 0.08, 0.12, 0],
                   background: [
-                    'linear-gradient(130deg, transparent 0%, rgba(0,0,0,0.03) 35%, transparent 65%)',
-                    'linear-gradient(160deg, transparent 10%, rgba(0,0,0,0.04) 45%, transparent 80%)',
-                    'linear-gradient(70deg, transparent 5%, rgba(0,0,0,0.025) 40%, transparent 75%)',
-                    'linear-gradient(110deg, transparent 15%, rgba(0,0,0,0.035) 50%, transparent 85%)',
-                    'transparent'
-                  ]
+                    "linear-gradient(130deg, transparent 0%, rgba(0,0,0,0.03) 35%, transparent 65%)",
+                    "linear-gradient(160deg, transparent 10%, rgba(0,0,0,0.04) 45%, transparent 80%)",
+                    "linear-gradient(70deg, transparent 5%, rgba(0,0,0,0.025) 40%, transparent 75%)",
+                    "linear-gradient(110deg, transparent 15%, rgba(0,0,0,0.035) 50%, transparent 85%)",
+                    "transparent",
+                  ],
                 }}
                 exit={{
                   opacity: 0,
-                  transition: { duration: 0.8, ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number] }
+                  transition: {
+                    duration: 0.8,
+                    ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
+                  },
                 }}
                 transition={{
                   duration: duration,
                   ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
-                  times: [0, 0.3, 0.6, 0.85, 1]
+                  times: [0, 0.3, 0.6, 0.85, 1],
                 }}
               />
             )}
@@ -129,34 +156,37 @@ export const WavingFlag: React.FC<WavingFlagProps> = ({
           <AnimatePresence>
             {isHovered && (
               <motion.div
-                className="absolute inset-0 pointer-events-none"
+                className="pointer-events-none absolute inset-0"
                 initial={{ opacity: 0 }}
-                animate={{ 
+                animate={{
                   opacity: [0, 0.25, 0.12, 0.18, 0],
                   background: [
-                    'radial-gradient(ellipse 50% 70% at 25% 35%, rgba(255,255,255,0.08) 0%, transparent 60%)',
-                    'radial-gradient(ellipse 60% 75% at 65% 65%, rgba(255,255,255,0.06) 0%, transparent 65%)',
-                    'radial-gradient(ellipse 45% 60% at 75% 45%, rgba(255,255,255,0.1) 0%, transparent 55%)',
-                    'radial-gradient(ellipse 55% 65% at 35% 75%, rgba(255,255,255,0.07) 0%, transparent 60%)',
-                    'transparent'
-                  ]
+                    "radial-gradient(ellipse 50% 70% at 25% 35%, rgba(255,255,255,0.08) 0%, transparent 60%)",
+                    "radial-gradient(ellipse 60% 75% at 65% 65%, rgba(255,255,255,0.06) 0%, transparent 65%)",
+                    "radial-gradient(ellipse 45% 60% at 75% 45%, rgba(255,255,255,0.1) 0%, transparent 55%)",
+                    "radial-gradient(ellipse 55% 65% at 35% 75%, rgba(255,255,255,0.07) 0%, transparent 60%)",
+                    "transparent",
+                  ],
                 }}
                 exit={{
                   opacity: 0,
-                  transition: { duration: 1.0, ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number] }
+                  transition: {
+                    duration: 1.0,
+                    ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
+                  },
                 }}
                 transition={{
                   duration: duration * 1.2,
                   ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
-                  times: [0, 0.2, 0.5, 0.75, 1]
+                  times: [0, 0.2, 0.5, 0.75, 1],
                 }}
               />
             )}
           </AnimatePresence>
 
           {/* Barely-there fabric texture - Apple subtlety */}
-          <div 
-            className="absolute inset-0 pointer-events-none opacity-8 mix-blend-soft-light"
+          <div
+            className="pointer-events-none absolute inset-0 opacity-8 mix-blend-soft-light"
             style={{
               background: `
                 repeating-linear-gradient(
@@ -173,25 +203,25 @@ export const WavingFlag: React.FC<WavingFlagProps> = ({
                   transparent 4px,
                   rgba(0,0,0,0.015) 5px
                 )
-              `
+              `,
             }}
           />
         </div>
       </motion.div>
 
       {/* Ultra-subtle pole attachment shadow - Apple refinement */}
-      <motion.div 
-        className={`absolute top-0 bottom-0 w-3 bg-gradient-to-r pointer-events-none ${
-          polePosition === 'left' 
-            ? 'left-0 from-black/12 to-transparent' 
-            : 'right-0 from-transparent to-black/12'
+      <motion.div
+        className={`pointer-events-none absolute top-0 bottom-0 w-3 bg-gradient-to-r ${
+          polePosition === "left"
+            ? "left-0 from-black/12 to-transparent"
+            : "right-0 from-transparent to-black/12"
         }`}
         animate={{
-          opacity: isHovered ? [1, 1.3, 1.1, 1.2, 1] : 1
+          opacity: isHovered ? [1, 1.3, 1.1, 1.2, 1] : 1,
         }}
         transition={{
           duration: isHovered ? duration : 1.2,
-          ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number]
+          ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number],
         }}
       />
     </div>

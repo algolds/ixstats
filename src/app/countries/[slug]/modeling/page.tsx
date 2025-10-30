@@ -1,5 +1,5 @@
 "use client";
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 import { use } from "react";
 import { api } from "~/trpc/react";
 import { EconomicModelingEngine } from "~/app/countries/_components/economy";
@@ -18,13 +18,17 @@ interface ModelingPageProps {
 
 export default function ModelingPage({ params }: ModelingPageProps) {
   const { id } = use(params);
-  const { data: country, isLoading, error } = api.countries.getByIdWithEconomicData.useQuery({ id });
+  const {
+    data: country,
+    isLoading,
+    error,
+  } = api.countries.getByIdWithEconomicData.useQuery({ id });
 
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Skeleton className="h-8 w-1/2 mb-4" />
-        <Skeleton className="h-4 w-1/4 mb-8" />
+        <Skeleton className="mb-4 h-8 w-1/2" />
+        <Skeleton className="mb-8 h-4 w-1/4" />
         <Skeleton className="h-96 w-full" />
       </div>
     );
@@ -33,7 +37,7 @@ export default function ModelingPage({ params }: ModelingPageProps) {
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8 text-red-500">
-        <AlertTriangle className="inline-block mr-2" />
+        <AlertTriangle className="mr-2 inline-block" />
         Error loading country data: {error.message}
       </div>
     );
@@ -46,7 +50,7 @@ export default function ModelingPage({ params }: ModelingPageProps) {
   // Create a country object with the required economicYears property
   const countryWithEconomicYears = {
     ...country,
-    economicYears: [] // Empty array for now, can be populated later if needed
+    economicYears: [], // Empty array for now, can be populated later if needed
   };
 
   // Generate flag-based theme colors
@@ -56,12 +60,14 @@ export default function ModelingPage({ params }: ModelingPageProps) {
   return (
     <>
       <SignedIn>
-        <div 
-          className="container mx-auto px-4 py-8 space-y-6 country-themed"
-          style={flagThemeCSS}
-        >
+        <div className="country-themed container mx-auto space-y-6 px-4 py-8" style={flagThemeCSS}>
           <div className="mb-6">
-            <Link href={createUrl(`/countries/${country.slug}`)} className="text-primary hover:underline">&larr; Back to {country.name}</Link>
+            <Link
+              href={createUrl(`/countries/${country.slug}`)}
+              className="text-primary hover:underline"
+            >
+              &larr; Back to {country.name}
+            </Link>
           </div>
           <Card>
             <CardHeader>
@@ -76,12 +82,16 @@ export default function ModelingPage({ params }: ModelingPageProps) {
                         year: h.year,
                         gdp: h.gdp,
                         inflation: undefined, // Map if available
-                        unemployment: undefined // Map if available
+                        unemployment: undefined, // Map if available
                       })) as EconomicYearData[])
                     : [],
-                  dmInputs: country.dmInputs?.[0]?.id && country.dmInputs[0].countryId
-                    ? { id: country.dmInputs[0].id, countryId: country.dmInputs[0].countryId } as DMInputs
-                    : undefined,
+                  dmInputs:
+                    country.dmInputs?.[0]?.id && country.dmInputs[0].countryId
+                      ? ({
+                          id: country.dmInputs[0].id,
+                          countryId: country.dmInputs[0].countryId,
+                        } as DMInputs)
+                      : undefined,
                 }}
               />
             </CardContent>
@@ -89,10 +99,10 @@ export default function ModelingPage({ params }: ModelingPageProps) {
         </div>
       </SignedIn>
       <SignedOut>
-        <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="flex min-h-screen flex-col items-center justify-center">
           <SignInButton mode="modal" />
         </div>
       </SignedOut>
     </>
   );
-} 
+}

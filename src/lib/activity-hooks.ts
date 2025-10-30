@@ -29,33 +29,35 @@ export class DiplomaticActivityHooks {
 
       await db.activityFeed.create({
         data: {
-          type: 'diplomatic',
-          category: 'game',
+          type: "diplomatic",
+          category: "game",
           userId: userId || null,
           countryId: country1Id,
           title: `${country1.name} Establishes Embassy in ${country2.name}`,
           description: `${country1.name} has opened a ${embassyTier} embassy in ${country2.name}, strengthening diplomatic ties between the two nations.`,
           metadata: JSON.stringify({
-            eventType: 'embassy_established',
+            eventType: "embassy_established",
             country1: country1.name,
             country2: country2.name,
             embassyTier,
           }),
-          priority: 'medium',
-          visibility: 'public',
+          priority: "medium",
+          visibility: "public",
           relatedCountries: JSON.stringify([country1Id, country2Id]),
         },
       });
 
       // 🔔 Notify diplomatic event
-      await notificationHooks.onDiplomaticEvent({
-        eventType: 'agreement',
-        title: `Embassy Established with ${country2.name}`,
-        countries: [country1Id, country2Id],
-        description: `${embassyTier} embassy established`,
-      }).catch(err => console.error('[Activity] Failed to send embassy notification:', err));
+      await notificationHooks
+        .onDiplomaticEvent({
+          eventType: "agreement",
+          title: `Embassy Established with ${country2.name}`,
+          countries: [country1Id, country2Id],
+          description: `${embassyTier} embassy established`,
+        })
+        .catch((err) => console.error("[Activity] Failed to send embassy notification:", err));
     } catch (error) {
-      console.error('Error creating embassy established activity:', error);
+      console.error("Error creating embassy established activity:", error);
     }
   }
 
@@ -79,26 +81,26 @@ export class DiplomaticActivityHooks {
 
       await db.activityFeed.create({
         data: {
-          type: 'diplomatic',
-          category: 'game',
+          type: "diplomatic",
+          category: "game",
           userId: userId || null,
           countryId,
-          title: `${country.name} ${success ? 'Completes' : 'Fails'} ${missionType} Mission`,
-          description: `${country.name} has ${success ? 'successfully completed' : 'failed to complete'} a ${missionType} mission with ${targetCountry.name}.`,
+          title: `${country.name} ${success ? "Completes" : "Fails"} ${missionType} Mission`,
+          description: `${country.name} has ${success ? "successfully completed" : "failed to complete"} a ${missionType} mission with ${targetCountry.name}.`,
           metadata: JSON.stringify({
-            eventType: 'mission_completed',
+            eventType: "mission_completed",
             missionType,
             success,
             country: country.name,
             targetCountry: targetCountry.name,
           }),
-          priority: success ? 'medium' : 'low',
-          visibility: 'public',
+          priority: success ? "medium" : "low",
+          visibility: "public",
           relatedCountries: JSON.stringify([countryId, targetCountryId]),
         },
       });
     } catch (error) {
-      console.error('Error creating mission completed activity:', error);
+      console.error("Error creating mission completed activity:", error);
     }
   }
 
@@ -121,23 +123,23 @@ export class DiplomaticActivityHooks {
 
       await db.activityFeed.create({
         data: {
-          type: 'diplomatic',
-          category: 'game',
+          type: "diplomatic",
+          category: "game",
           userId: userId || null,
           title: `${country1.name} and ${country2.name} Form Alliance`,
-          description: `${country1.name} and ${country2.name} have formed the ${allianceName || 'bilateral alliance'}, pledging mutual cooperation and support.`,
+          description: `${country1.name} and ${country2.name} have formed the ${allianceName || "bilateral alliance"}, pledging mutual cooperation and support.`,
           metadata: JSON.stringify({
-            eventType: 'alliance_formed',
+            eventType: "alliance_formed",
             countries: [country1.name, country2.name],
             allianceName,
           }),
-          priority: 'high',
-          visibility: 'public',
+          priority: "high",
+          visibility: "public",
           relatedCountries: JSON.stringify([country1Id, country2Id]),
         },
       });
     } catch (error) {
-      console.error('Error creating alliance formed activity:', error);
+      console.error("Error creating alliance formed activity:", error);
     }
   }
 
@@ -158,27 +160,27 @@ export class DiplomaticActivityHooks {
 
       if (!country1 || !country2) return;
 
-      const priority = tradeValue && tradeValue > 50000000000 ? 'high' : 'medium';
+      const priority = tradeValue && tradeValue > 50000000000 ? "high" : "medium";
 
       await db.activityFeed.create({
         data: {
-          type: 'diplomatic',
-          category: 'game',
+          type: "diplomatic",
+          category: "game",
           userId: userId || null,
           title: `${country1.name} and ${country2.name} Sign Trade Agreement`,
-          description: `${country1.name} and ${country2.name} have signed a comprehensive trade agreement${tradeValue ? ` valued at ${formatCurrency(tradeValue)}` : ''}.`,
+          description: `${country1.name} and ${country2.name} have signed a comprehensive trade agreement${tradeValue ? ` valued at ${formatCurrency(tradeValue)}` : ""}.`,
           metadata: JSON.stringify({
-            eventType: 'trade_agreement',
+            eventType: "trade_agreement",
             countries: [country1.name, country2.name],
             tradeValue,
           }),
           priority,
-          visibility: 'public',
+          visibility: "public",
           relatedCountries: JSON.stringify([country1Id, country2Id]),
         },
       });
     } catch (error) {
-      console.error('Error creating trade agreement activity:', error);
+      console.error("Error creating trade agreement activity:", error);
     }
   }
 }
@@ -206,25 +208,25 @@ export class GovernmentActivityHooks {
 
       await db.activityFeed.create({
         data: {
-          type: 'achievement',
-          category: 'game',
+          type: "achievement",
+          category: "game",
           userId: userId || null,
           countryId,
           title: `${country.name} Implements ${componentName}`,
           description: `${country.name} has implemented ${componentName}, a ${componentType} component in their governmental system.`,
           metadata: JSON.stringify({
-            eventType: 'component_added',
+            eventType: "component_added",
             componentName,
             componentType,
             country: country.name,
           }),
-          priority: 'medium',
-          visibility: 'public',
+          priority: "medium",
+          visibility: "public",
           relatedCountries: JSON.stringify([countryId]),
         },
       });
     } catch (error) {
-      console.error('Error creating component added activity:', error);
+      console.error("Error creating component added activity:", error);
     }
   }
 
@@ -248,29 +250,29 @@ export class GovernmentActivityHooks {
       if (!country) return;
 
       const isImprovement = newEffectiveness > oldEffectiveness;
-      const priority = Math.abs(newEffectiveness - oldEffectiveness) > 20 ? 'high' : 'medium';
+      const priority = Math.abs(newEffectiveness - oldEffectiveness) > 20 ? "high" : "medium";
 
       await db.activityFeed.create({
         data: {
-          type: 'achievement',
-          category: 'game',
+          type: "achievement",
+          category: "game",
           userId: userId || null,
           countryId,
-          title: `${country.name} Government Effectiveness ${isImprovement ? 'Increases' : 'Decreases'}`,
-          description: `${country.name}'s governmental effectiveness has ${isImprovement ? 'improved' : 'declined'} to ${newEffectiveness.toFixed(1)}%, ${isImprovement ? 'strengthening' : 'weakening'} administrative capacity.`,
+          title: `${country.name} Government Effectiveness ${isImprovement ? "Increases" : "Decreases"}`,
+          description: `${country.name}'s governmental effectiveness has ${isImprovement ? "improved" : "declined"} to ${newEffectiveness.toFixed(1)}%, ${isImprovement ? "strengthening" : "weakening"} administrative capacity.`,
           metadata: JSON.stringify({
-            eventType: 'effectiveness_change',
+            eventType: "effectiveness_change",
             oldEffectiveness,
             newEffectiveness,
             isImprovement,
           }),
           priority,
-          visibility: 'public',
+          visibility: "public",
           relatedCountries: JSON.stringify([countryId]),
         },
       });
     } catch (error) {
-      console.error('Error creating effectiveness change activity:', error);
+      console.error("Error creating effectiveness change activity:", error);
     }
   }
 
@@ -293,24 +295,24 @@ export class GovernmentActivityHooks {
 
       await db.activityFeed.create({
         data: {
-          type: 'achievement',
-          category: 'game',
+          type: "achievement",
+          category: "game",
           userId: userId || null,
           countryId,
           title: `${country.name} Enacts Constitutional Reform`,
           description: `${country.name} has enacted major ${reformType} reforms: ${reformDescription}`,
           metadata: JSON.stringify({
-            eventType: 'constitutional_reform',
+            eventType: "constitutional_reform",
             reformType,
             reformDescription,
           }),
-          priority: 'high',
-          visibility: 'public',
+          priority: "high",
+          visibility: "public",
           relatedCountries: JSON.stringify([countryId]),
         },
       });
     } catch (error) {
-      console.error('Error creating constitutional reform activity:', error);
+      console.error("Error creating constitutional reform activity:", error);
     }
   }
 }
@@ -338,24 +340,24 @@ export class EconomicActivityHooks {
 
       await db.activityFeed.create({
         data: {
-          type: 'economic',
-          category: 'game',
+          type: "economic",
+          category: "game",
           userId: userId || null,
           countryId,
           title: `${country.name} Approves ${formatCurrency(totalBudget)} Budget`,
-          description: `${country.name} has approved a ${formatCurrency(totalBudget)} national budget${majorChanges.length ? ` with major changes in ${majorChanges.join(', ')}` : ''}.`,
+          description: `${country.name} has approved a ${formatCurrency(totalBudget)} national budget${majorChanges.length ? ` with major changes in ${majorChanges.join(", ")}` : ""}.`,
           metadata: JSON.stringify({
-            eventType: 'budget_approved',
+            eventType: "budget_approved",
             totalBudget,
             majorChanges,
           }),
-          priority: totalBudget > 1000000000000 ? 'high' : 'medium',
-          visibility: 'public',
+          priority: totalBudget > 1000000000000 ? "high" : "medium",
+          visibility: "public",
           relatedCountries: JSON.stringify([countryId]),
         },
       });
     } catch (error) {
-      console.error('Error creating budget approved activity:', error);
+      console.error("Error creating budget approved activity:", error);
     }
   }
 
@@ -379,25 +381,25 @@ export class EconomicActivityHooks {
 
       await db.activityFeed.create({
         data: {
-          type: 'economic',
-          category: 'game',
+          type: "economic",
+          category: "game",
           userId: userId || null,
           countryId,
           title: `${country.name} Reforms Tax Policy`,
           description: `${country.name} has implemented ${policyType} tax reforms affecting ${formatPopulation(impactedPopulation)} citizens: ${policyDescription}`,
           metadata: JSON.stringify({
-            eventType: 'tax_policy_change',
+            eventType: "tax_policy_change",
             policyType,
             policyDescription,
             impactedPopulation,
           }),
-          priority: 'medium',
-          visibility: 'public',
+          priority: "medium",
+          visibility: "public",
           relatedCountries: JSON.stringify([countryId]),
         },
       });
     } catch (error) {
-      console.error('Error creating tax policy change activity:', error);
+      console.error("Error creating tax policy change activity:", error);
     }
   }
 
@@ -419,29 +421,29 @@ export class EconomicActivityHooks {
 
       if (!country) return;
 
-      const priority = projectValue > 10000000000 ? 'high' : 'medium';
+      const priority = projectValue > 10000000000 ? "high" : "medium";
 
       await db.activityFeed.create({
         data: {
-          type: 'economic',
-          category: 'game',
+          type: "economic",
+          category: "game",
           userId: userId || null,
           countryId,
           title: `${country.name} Announces Major Infrastructure Project`,
           description: `${country.name} has announced the ${projectName}, a ${formatCurrency(projectValue)} ${projectType} infrastructure initiative.`,
           metadata: JSON.stringify({
-            eventType: 'infrastructure_project',
+            eventType: "infrastructure_project",
             projectName,
             projectValue,
             projectType,
           }),
           priority,
-          visibility: 'public',
+          visibility: "public",
           relatedCountries: JSON.stringify([countryId]),
         },
       });
     } catch (error) {
-      console.error('Error creating infrastructure project activity:', error);
+      console.error("Error creating infrastructure project activity:", error);
     }
   }
 }
@@ -456,7 +458,7 @@ export class SecurityActivityHooks {
   static async onMilitaryBranchChange(
     countryId: string,
     branchName: string,
-    action: 'created' | 'upgraded',
+    action: "created" | "upgraded",
     newLevel?: string,
     userId?: string
   ): Promise<void> {
@@ -470,25 +472,25 @@ export class SecurityActivityHooks {
 
       await db.activityFeed.create({
         data: {
-          type: 'achievement',
-          category: 'game',
+          type: "achievement",
+          category: "game",
           userId: userId || null,
           countryId,
-          title: `${country.name} ${action === 'created' ? 'Establishes' : 'Upgrades'} ${branchName}`,
-          description: `${country.name} has ${action} the ${branchName}${newLevel ? ` to ${newLevel} level` : ''}, enhancing national defense capabilities.`,
+          title: `${country.name} ${action === "created" ? "Establishes" : "Upgrades"} ${branchName}`,
+          description: `${country.name} has ${action} the ${branchName}${newLevel ? ` to ${newLevel} level` : ""}, enhancing national defense capabilities.`,
           metadata: JSON.stringify({
-            eventType: 'military_branch_change',
+            eventType: "military_branch_change",
             branchName,
             action,
             newLevel,
           }),
-          priority: 'medium',
-          visibility: 'public',
+          priority: "medium",
+          visibility: "public",
           relatedCountries: JSON.stringify([countryId]),
         },
       });
     } catch (error) {
-      console.error('Error creating military branch change activity:', error);
+      console.error("Error creating military branch change activity:", error);
     }
   }
 
@@ -499,7 +501,7 @@ export class SecurityActivityHooks {
     countryId: string,
     threatType: string,
     severity: string,
-    status: 'detected' | 'resolved',
+    status: "detected" | "resolved",
     userId?: string
   ): Promise<void> {
     try {
@@ -510,29 +512,30 @@ export class SecurityActivityHooks {
 
       if (!country) return;
 
-      const priority = severity === 'critical' ? 'critical' : severity === 'high' ? 'high' : 'medium';
+      const priority =
+        severity === "critical" ? "critical" : severity === "high" ? "high" : "medium";
 
       await db.activityFeed.create({
         data: {
-          type: 'meta',
-          category: 'game',
+          type: "meta",
+          category: "game",
           userId: userId || null,
           countryId,
-          title: `${country.name} ${status === 'detected' ? 'Faces' : 'Resolves'} Security Threat`,
+          title: `${country.name} ${status === "detected" ? "Faces" : "Resolves"} Security Threat`,
           description: `${country.name} has ${status} a ${severity} severity ${threatType} threat to national security.`,
           metadata: JSON.stringify({
-            eventType: 'security_threat',
+            eventType: "security_threat",
             threatType,
             severity,
             status,
           }),
           priority,
-          visibility: 'public',
+          visibility: "public",
           relatedCountries: JSON.stringify([countryId]),
         },
       });
     } catch (error) {
-      console.error('Error creating security threat activity:', error);
+      console.error("Error creating security threat activity:", error);
     }
   }
 }
@@ -549,7 +552,7 @@ export class SocialActivityHooks {
     countryId: string,
     postTitle: string,
     postType: string,
-    visibility: 'public' | 'followers' | 'friends'
+    visibility: "public" | "followers" | "friends"
   ): Promise<void> {
     try {
       const country = await db.country.findUnique({
@@ -561,23 +564,23 @@ export class SocialActivityHooks {
 
       await db.activityFeed.create({
         data: {
-          type: 'social',
-          category: 'social',
+          type: "social",
+          category: "social",
           userId,
           countryId,
           title: `New ${postType} from ${country.name}`,
           description: postTitle,
           metadata: JSON.stringify({
-            eventType: 'thinkpage_post',
+            eventType: "thinkpage_post",
             postType,
           }),
-          priority: 'low',
+          priority: "low",
           visibility,
           relatedCountries: JSON.stringify([countryId]),
         },
       });
     } catch (error) {
-      console.error('Error creating ThinkPage post activity:', error);
+      console.error("Error creating ThinkPage post activity:", error);
     }
   }
 
@@ -592,65 +595,66 @@ export class SocialActivityHooks {
     try {
       const [country, userCountry] = await Promise.all([
         db.country.findUnique({ where: { id: countryId }, select: { name: true } }),
-        userCountryId ? db.country.findUnique({ where: { id: userCountryId }, select: { name: true } }) : null,
+        userCountryId
+          ? db.country.findUnique({ where: { id: userCountryId }, select: { name: true } })
+          : null,
       ]);
 
       if (!country) return;
 
       await db.activityFeed.create({
         data: {
-          type: 'social',
-          category: 'social',
+          type: "social",
+          category: "social",
           userId,
           countryId: userCountryId || null,
-          title: `${userCountry?.name || 'User'} Follows ${country.name}`,
-          description: `${userCountry?.name || 'A user'} is now following ${country.name} for updates and activities.`,
+          title: `${userCountry?.name || "User"} Follows ${country.name}`,
+          description: `${userCountry?.name || "A user"} is now following ${country.name} for updates and activities.`,
           metadata: JSON.stringify({
-            eventType: 'follow_country',
+            eventType: "follow_country",
             followedCountry: country.name,
           }),
-          priority: 'low',
-          visibility: 'friends',
+          priority: "low",
+          visibility: "friends",
           relatedCountries: JSON.stringify([countryId, ...(userCountryId ? [userCountryId] : [])]),
         },
       });
     } catch (error) {
-      console.error('Error creating follow country activity:', error);
+      console.error("Error creating follow country activity:", error);
     }
   }
 
   /**
    * User joins platform
    */
-  static async onUserJoined(
-    userId: string,
-    countryId?: string
-  ): Promise<void> {
+  static async onUserJoined(userId: string, countryId?: string): Promise<void> {
     try {
-      const country = countryId ? await db.country.findUnique({
-        where: { id: countryId },
-        select: { name: true },
-      }) : null;
+      const country = countryId
+        ? await db.country.findUnique({
+            where: { id: countryId },
+            select: { name: true },
+          })
+        : null;
 
       await db.activityFeed.create({
         data: {
-          type: 'social',
-          category: 'platform',
+          type: "social",
+          category: "platform",
           userId,
           countryId: countryId || null,
           title: `New Leader Joins IxStats`,
-          description: `A new leader has joined IxStats${country ? ` representing ${country.name}` : ''}!`,
+          description: `A new leader has joined IxStats${country ? ` representing ${country.name}` : ""}!`,
           metadata: JSON.stringify({
-            eventType: 'user_joined',
+            eventType: "user_joined",
             countryName: country?.name,
           }),
-          priority: 'low',
-          visibility: 'public',
+          priority: "low",
+          visibility: "public",
           relatedCountries: countryId ? JSON.stringify([countryId]) : null,
         },
       });
     } catch (error) {
-      console.error('Error creating user joined activity:', error);
+      console.error("Error creating user joined activity:", error);
     }
   }
 }
@@ -689,23 +693,23 @@ export class UserActivityHooks {
 
       await db.activityFeed.create({
         data: {
-          type: 'achievement',
-          category: 'game',
+          type: "achievement",
+          category: "game",
           userId,
           countryId,
           title: `${country.name} Unlocks Achievement: ${achievementName}`,
           description: achievementDescription,
           metadata: JSON.stringify({
-            eventType: 'achievement_unlocked',
+            eventType: "achievement_unlocked",
             achievementName,
           }),
-          priority: 'medium',
-          visibility: 'public',
+          priority: "medium",
+          visibility: "public",
           relatedCountries: JSON.stringify([countryId]),
         },
       });
     } catch (error) {
-      console.error('Error creating achievement unlocked activity:', error);
+      console.error("Error creating achievement unlocked activity:", error);
     }
   }
 }

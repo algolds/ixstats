@@ -1,21 +1,21 @@
 /**
  * IxTime Visualizer - Comprehensive time management and accuracy verification
- * 
+ *
  * This component provides real-time visualization of IxTime calculations,
  * accuracy verification, synchronization status, and time simulation tools.
  */
 
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { 
-  Clock, 
-  Activity, 
-  AlertTriangle, 
-  CheckCircle, 
-  XCircle, 
-  RefreshCw, 
-  Play, 
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import {
+  Clock,
+  Activity,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  RefreshCw,
+  Play,
   Pause,
   TrendingUp,
   TrendingDown,
@@ -24,16 +24,16 @@ import {
   Settings,
   BarChart3,
   Timer,
-  Gauge
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { Progress } from '~/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { IxTime } from '~/lib/ixtime';
-import { IxTimeAccuracyVerifier, type TimeSimulationResult } from '~/lib/ixtime-accuracy';
-import { IxTimeSyncManager, type MasterTimeState, type SyncStatus } from '~/lib/ixtime-sync';
+  Gauge,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Progress } from "~/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { IxTime } from "~/lib/ixtime";
+import { IxTimeAccuracyVerifier, type TimeSimulationResult } from "~/lib/ixtime-accuracy";
+import { IxTimeSyncManager, type MasterTimeState, type SyncStatus } from "~/lib/ixtime-sync";
 
 interface TimeVisualizationData {
   currentIxTime: number;
@@ -59,7 +59,7 @@ export function IxTimeVisualizer() {
   const [syncStatuses, setSyncStatuses] = useState<SyncStatus[]>([]);
   const [isRunningSimulation, setIsRunningSimulation] = useState(false);
   const [simulationResults, setSimulationResults] = useState<TimeSimulationResult | null>(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
   const [autoRefresh, setAutoRefresh] = useState(true);
 
   // Update time data
@@ -71,13 +71,13 @@ export function IxTimeVisualizer() {
       const multiplier = IxTime.getTimeMultiplier();
       const isPaused = IxTime.isPaused();
       const formattedTime = IxTime.formatIxTime(currentIxTime, true);
-      
+
       const realWorldEpoch = IxTime.getRealWorldEpoch();
       const inGameEpoch = IxTime.getInGameEpoch();
-      const speedChangeEpoch = new Date('2025-07-27T00:00:00Z').getTime();
-      
+      const speedChangeEpoch = new Date("2025-07-27T00:00:00Z").getTime();
+
       const timeSinceEpoch = currentIxTime - realWorldEpoch;
-      
+
       // Calculate time until next major transition (if any)
       let timeUntilTransition = null;
       if (currentRealTime < speedChangeEpoch) {
@@ -96,11 +96,11 @@ export function IxTimeVisualizer() {
         epochData: {
           realWorldEpoch,
           inGameEpoch,
-          speedChangeEpoch
-        }
+          speedChangeEpoch,
+        },
       });
     } catch (error) {
-      console.error('Error updating time data:', error);
+      console.error("Error updating time data:", error);
     }
   }, []);
 
@@ -110,7 +110,7 @@ export function IxTimeVisualizer() {
       const status = IxTimeAccuracyVerifier.getAccuracyStatus();
       setAccuracyStatus(status);
     } catch (error) {
-      console.error('Error updating accuracy status:', error);
+      console.error("Error updating accuracy status:", error);
     }
   }, []);
 
@@ -122,7 +122,7 @@ export function IxTimeVisualizer() {
       setMasterState(master);
       setSyncStatuses(statuses);
     } catch (error) {
-      console.error('Error updating sync status:', error);
+      console.error("Error updating sync status:", error);
     }
   }, [syncManager]);
 
@@ -144,10 +144,10 @@ export function IxTimeVisualizer() {
     updateTimeData();
     updateAccuracyStatus();
     updateSyncStatus();
-    
+
     // Start sync manager
     syncManager.start().catch(console.error);
-    
+
     return () => {
       syncManager.stop();
     };
@@ -160,7 +160,7 @@ export function IxTimeVisualizer() {
       const results = await IxTimeAccuracyVerifier.runAllTests();
       setSimulationResults(results);
     } catch (error) {
-      console.error('Error running simulation:', error);
+      console.error("Error running simulation:", error);
     } finally {
       setIsRunningSimulation(false);
     }
@@ -172,7 +172,7 @@ export function IxTimeVisualizer() {
     const hours = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((ms % (1000 * 60)) / 1000);
-    
+
     if (days > 0) return `${days}d ${hours}h ${minutes}m`;
     if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
     if (minutes > 0) return `${minutes}m ${seconds}s`;
@@ -182,27 +182,40 @@ export function IxTimeVisualizer() {
   // Status color mapping
   const getStatusColor = useCallback((status: string) => {
     switch (status) {
-      case 'excellent': return 'text-green-600';
-      case 'good': return 'text-blue-600';
-      case 'warning': return 'text-yellow-600';
-      case 'critical': return 'text-red-600';
-      default: return 'text-gray-600';
+      case "excellent":
+        return "text-green-600";
+      case "good":
+        return "text-blue-600";
+      case "warning":
+        return "text-yellow-600";
+      case "critical":
+        return "text-red-600";
+      default:
+        return "text-gray-600";
     }
   }, []);
 
-  const getStatusBadgeVariant = useCallback((status: string): "default" | "secondary" | "destructive" | "outline" => {
-    switch (status) {
-      case 'excellent': case 'good': return 'default';
-      case 'warning': return 'secondary';
-      case 'critical': return 'destructive';
-      default: return 'outline';
-    }
-  }, []);
+  const getStatusBadgeVariant = useCallback(
+    (status: string): "default" | "secondary" | "destructive" | "outline" => {
+      switch (status) {
+        case "excellent":
+        case "good":
+          return "default";
+        case "warning":
+          return "secondary";
+        case "critical":
+          return "destructive";
+        default:
+          return "outline";
+      }
+    },
+    []
+  );
 
   if (!timeData || !accuracyStatus) {
     return (
       <div className="flex items-center justify-center p-8">
-        <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+        <RefreshCw className="mr-2 h-6 w-6 animate-spin" />
         <span>Loading IxTime visualization...</span>
       </div>
     );
@@ -217,13 +230,9 @@ export function IxTimeVisualizer() {
           <h2 className="text-2xl font-bold">IxTime Management & Visualization</h2>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setAutoRefresh(!autoRefresh)}
-          >
+          <Button variant="outline" size="sm" onClick={() => setAutoRefresh(!autoRefresh)}>
             {autoRefresh ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            {autoRefresh ? 'Pause' : 'Resume'}
+            {autoRefresh ? "Pause" : "Resume"}
           </Button>
           <Button
             variant="outline"
@@ -251,23 +260,23 @@ export function IxTimeVisualizer() {
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
           {/* Current Time Display */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <Clock className="h-5 w-5" />
                   Current IxTime
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <div className="text-2xl font-mono font-bold text-blue-600">
+                  <div className="font-mono text-2xl font-bold text-blue-600">
                     {timeData.formattedTime}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     Game Year: {timeData.currentGameYear}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     Raw timestamp: {timeData.currentIxTime}
                   </div>
                 </div>
@@ -276,7 +285,7 @@ export function IxTimeVisualizer() {
 
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <Gauge className="h-5 w-5" />
                   Time Multiplier
                 </CardTitle>
@@ -284,17 +293,15 @@ export function IxTimeVisualizer() {
               <CardContent>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <div className="text-3xl font-bold">
-                      {timeData.multiplier}x
-                    </div>
-                    {timeData.isPaused && (
-                      <Badge variant="destructive">PAUSED</Badge>
-                    )}
+                    <div className="text-3xl font-bold">{timeData.multiplier}x</div>
+                    {timeData.isPaused && <Badge variant="destructive">PAUSED</Badge>}
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    {timeData.multiplier === 4 ? '4x Speed Period (Pre-2025)' : 
-                     timeData.multiplier === 2 ? '2x Speed Period (Post-2025)' : 
-                     'Custom Speed Override'}
+                  <div className="text-muted-foreground text-sm">
+                    {timeData.multiplier === 4
+                      ? "4x Speed Period (Pre-2025)"
+                      : timeData.multiplier === 2
+                        ? "2x Speed Period (Post-2025)"
+                        : "Custom Speed Override"}
                   </div>
                 </div>
               </CardContent>
@@ -302,7 +309,7 @@ export function IxTimeVisualizer() {
 
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <Target className="h-5 w-5" />
                   System Health
                 </CardTitle>
@@ -310,9 +317,9 @@ export function IxTimeVisualizer() {
               <CardContent>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    {accuracyStatus.status === 'excellent' ? (
+                    {accuracyStatus.status === "excellent" ? (
                       <CheckCircle className="h-5 w-5 text-green-600" />
-                    ) : accuracyStatus.status === 'critical' ? (
+                    ) : accuracyStatus.status === "critical" ? (
                       <XCircle className="h-5 w-5 text-red-600" />
                     ) : (
                       <AlertTriangle className="h-5 w-5 text-yellow-600" />
@@ -321,12 +328,10 @@ export function IxTimeVisualizer() {
                       {accuracyStatus.status.toUpperCase()}
                     </Badge>
                   </div>
-                  <div className="text-sm font-mono">
+                  <div className="font-mono text-sm">
                     Accuracy: {accuracyStatus.accuracy.toFixed(4)}%
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    {accuracyStatus.message}
-                  </div>
+                  <div className="text-muted-foreground text-sm">{accuracyStatus.message}</div>
                 </div>
               </CardContent>
             </Card>
@@ -342,18 +347,18 @@ export function IxTimeVisualizer() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div className="p-3 bg-blue-50 rounded-lg">
+                <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
+                  <div className="rounded-lg bg-blue-50 p-3">
                     <div className="font-semibold text-blue-800">Real World Epoch</div>
                     <div className="text-blue-600">October 4, 2020</div>
                     <div className="text-xs text-blue-500">IxTime system start</div>
                   </div>
-                  <div className="p-3 bg-green-50 rounded-lg">
+                  <div className="rounded-lg bg-green-50 p-3">
                     <div className="font-semibold text-green-800">Speed Transition</div>
                     <div className="text-green-600">July 27, 2025</div>
                     <div className="text-xs text-green-500">4x → 2x multiplier</div>
                   </div>
-                  <div className="p-3 bg-purple-50 rounded-lg">
+                  <div className="rounded-lg bg-purple-50 p-3">
                     <div className="font-semibold text-purple-800">In-Game Epoch</div>
                     <div className="text-purple-600">January 1, 2028</div>
                     <div className="text-xs text-purple-500">Game baseline</div>
@@ -362,24 +367,38 @@ export function IxTimeVisualizer() {
 
                 {/* Visual timeline */}
                 <div className="relative">
-                  <div className="h-2 bg-gradient-to-r from-blue-200 via-green-200 to-purple-200 rounded-full"></div>
-                  <div className="absolute top-0 left-0 h-2 bg-blue-500 rounded-l-full" style={{
-                    width: timeData.currentRealTime >= timeData.epochData.speedChangeEpoch ? '50%' : 
-                           `${((timeData.currentRealTime - timeData.epochData.realWorldEpoch) / 
-                              (timeData.epochData.speedChangeEpoch - timeData.epochData.realWorldEpoch)) * 50}%`
-                  }}></div>
+                  <div className="h-2 rounded-full bg-gradient-to-r from-blue-200 via-green-200 to-purple-200"></div>
+                  <div
+                    className="absolute top-0 left-0 h-2 rounded-l-full bg-blue-500"
+                    style={{
+                      width:
+                        timeData.currentRealTime >= timeData.epochData.speedChangeEpoch
+                          ? "50%"
+                          : `${
+                              ((timeData.currentRealTime - timeData.epochData.realWorldEpoch) /
+                                (timeData.epochData.speedChangeEpoch -
+                                  timeData.epochData.realWorldEpoch)) *
+                              50
+                            }%`,
+                    }}
+                  ></div>
                   {timeData.currentRealTime >= timeData.epochData.speedChangeEpoch && (
-                    <div className="absolute top-0 left-1/2 h-2 bg-green-500" style={{
-                      width: '25%', // Placeholder for post-transition progress
-                      borderRadius: '0 4px 4px 0'
-                    }}></div>
+                    <div
+                      className="absolute top-0 left-1/2 h-2 bg-green-500"
+                      style={{
+                        width: "25%", // Placeholder for post-transition progress
+                        borderRadius: "0 4px 4px 0",
+                      }}
+                    ></div>
                   )}
                 </div>
 
-                <div className="text-xs text-muted-foreground">
+                <div className="text-muted-foreground text-xs">
                   <div>Time since real world epoch: {formatDuration(timeData.timeSinceEpoch)}</div>
                   {timeData.timeUntilTransition && (
-                    <div>Time until speed transition: {formatDuration(timeData.timeUntilTransition)}</div>
+                    <div>
+                      Time until speed transition: {formatDuration(timeData.timeUntilTransition)}
+                    </div>
                   )}
                 </div>
               </div>
@@ -400,45 +419,32 @@ export function IxTimeVisualizer() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-2xl font-bold">
-                      {accuracyStatus.accuracy.toFixed(6)}%
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Target: ≥99.9998% accuracy
-                    </div>
+                    <div className="text-2xl font-bold">{accuracyStatus.accuracy.toFixed(6)}%</div>
+                    <div className="text-muted-foreground text-sm">Target: ≥99.9998% accuracy</div>
                   </div>
                   <div className={`text-right ${getStatusColor(accuracyStatus.status)}`}>
                     <div className="text-lg font-semibold">
                       {accuracyStatus.status.toUpperCase()}
                     </div>
                     <div className="text-sm">
-                      {accuracyStatus.isAccurate ? 'PASSING' : 'FAILING'}
+                      {accuracyStatus.isAccurate ? "PASSING" : "FAILING"}
                     </div>
                   </div>
                 </div>
 
-                <Progress 
-                  value={Math.min(100, accuracyStatus.accuracy)} 
-                  className="h-3"
-                />
+                <Progress value={Math.min(100, accuracyStatus.accuracy)} className="h-3" />
 
-                <div className="text-sm text-muted-foreground">
-                  {accuracyStatus.message}
-                </div>
+                <div className="text-muted-foreground text-sm">{accuracyStatus.message}</div>
 
-                <Button 
-                  onClick={runSimulation}
-                  disabled={isRunningSimulation}
-                  className="w-full"
-                >
+                <Button onClick={runSimulation} disabled={isRunningSimulation} className="w-full">
                   {isRunningSimulation ? (
                     <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
                       Running Comprehensive Tests...
                     </>
                   ) : (
                     <>
-                      <Zap className="h-4 w-4 mr-2" />
+                      <Zap className="mr-2 h-4 w-4" />
                       Run Full Accuracy Test Suite
                     </>
                   )}
@@ -454,40 +460,40 @@ export function IxTimeVisualizer() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-green-600">
                         {simulationResults.passedTests}
                       </div>
-                      <div className="text-sm text-muted-foreground">Passed</div>
+                      <div className="text-muted-foreground text-sm">Passed</div>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-red-600">
                         {simulationResults.failedTests}
                       </div>
-                      <div className="text-sm text-muted-foreground">Failed</div>
+                      <div className="text-muted-foreground text-sm">Failed</div>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold">
                         {simulationResults.overallAccuracy.toFixed(2)}%
                       </div>
-                      <div className="text-sm text-muted-foreground">Overall</div>
+                      <div className="text-muted-foreground text-sm">Overall</div>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold">
                         {simulationResults.averageExecutionTime.toFixed(1)}ms
                       </div>
-                      <div className="text-sm text-muted-foreground">Avg Time</div>
+                      <div className="text-muted-foreground text-sm">Avg Time</div>
                     </div>
                   </div>
 
                   {simulationResults.criticalIssues.length > 0 && (
-                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                      <div className="font-semibold text-red-800 mb-2">Critical Issues Found:</div>
-                      <ul className="text-sm text-red-700 space-y-1">
+                    <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                      <div className="mb-2 font-semibold text-red-800">Critical Issues Found:</div>
+                      <ul className="space-y-1 text-sm text-red-700">
                         {simulationResults.criticalIssues.map((issue, index) => (
                           <li key={index} className="flex items-start gap-2">
-                            <XCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                            <XCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
                             {issue.details}
                           </li>
                         ))}
@@ -512,34 +518,38 @@ export function IxTimeVisualizer() {
             <CardContent>
               <div className="space-y-4">
                 {syncStatuses.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-8">
-                    <Timer className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <div className="text-muted-foreground py-8 text-center">
+                    <Timer className="mx-auto mb-2 h-8 w-8 opacity-50" />
                     <p>No sync targets configured</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {syncStatuses.map((status) => (
-                      <div key={status.target} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div
+                        key={status.target}
+                        className="flex items-center justify-between rounded-lg border p-3"
+                      >
                         <div className="flex items-center gap-3">
-                          {status.status === 'synced' ? (
+                          {status.status === "synced" ? (
                             <CheckCircle className="h-5 w-5 text-green-600" />
-                          ) : status.status === 'drift' ? (
+                          ) : status.status === "drift" ? (
                             <AlertTriangle className="h-5 w-5 text-yellow-600" />
                           ) : (
                             <XCircle className="h-5 w-5 text-red-600" />
                           )}
                           <div>
                             <div className="font-medium">{status.target}</div>
-                            <div className="text-sm text-muted-foreground">
+                            <div className="text-muted-foreground text-sm">
                               Last sync: {new Date(status.lastSyncAttempt).toLocaleTimeString()}
                             </div>
                           </div>
                         </div>
                         <div className="text-right">
                           <div className="font-mono text-sm">
-                            Drift: {status.drift > 0 ? '+' : ''}{status.drift}ms
+                            Drift: {status.drift > 0 ? "+" : ""}
+                            {status.drift}ms
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-muted-foreground text-xs">
                             {status.accuracy.toFixed(2)}% accuracy
                           </div>
                         </div>
@@ -548,12 +558,12 @@ export function IxTimeVisualizer() {
                   </div>
                 )}
 
-                <Button 
-                  onClick={() => syncManager.forceSyncAll()} 
+                <Button
+                  onClick={() => syncManager.forceSyncAll()}
                   className="w-full"
                   variant="outline"
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <RefreshCw className="mr-2 h-4 w-4" />
                   Force Sync All Targets
                 </Button>
               </div>
@@ -573,39 +583,39 @@ export function IxTimeVisualizer() {
             <CardContent>
               <div className="space-y-4">
                 <p className="text-muted-foreground">
-                  Run comprehensive simulations to verify IxTime accuracy across different scenarios,
-                  test edge cases, and validate synchronization between systems.
+                  Run comprehensive simulations to verify IxTime accuracy across different
+                  scenarios, test edge cases, and validate synchronization between systems.
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button 
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <Button
                     onClick={runSimulation}
                     disabled={isRunningSimulation}
                     variant="outline"
                     className="h-16"
                   >
                     <div className="text-center">
-                      <div className="flex items-center justify-center mb-1">
-                        <Zap className="h-5 w-5 mr-2" />
+                      <div className="mb-1 flex items-center justify-center">
+                        <Zap className="mr-2 h-5 w-5" />
                         Accuracy Test Suite
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-muted-foreground text-xs">
                         Run all accuracy verification tests
                       </div>
                     </div>
                   </Button>
 
-                  <Button 
+                  <Button
                     onClick={() => syncManager.runComprehensiveSync()}
                     variant="outline"
                     className="h-16"
                   >
                     <div className="text-center">
-                      <div className="flex items-center justify-center mb-1">
-                        <RefreshCw className="h-5 w-5 mr-2" />
+                      <div className="mb-1 flex items-center justify-center">
+                        <RefreshCw className="mr-2 h-5 w-5" />
                         Sync Verification
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-muted-foreground text-xs">
                         Test all synchronization targets
                       </div>
                     </div>
@@ -613,12 +623,12 @@ export function IxTimeVisualizer() {
                 </div>
 
                 {isRunningSimulation && (
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
                     <div className="flex items-center gap-2">
                       <RefreshCw className="h-4 w-4 animate-spin" />
                       <span className="font-medium">Running comprehensive simulation...</span>
                     </div>
-                    <div className="text-sm text-muted-foreground mt-1">
+                    <div className="text-muted-foreground mt-1 text-sm">
                       This may take several seconds to complete all accuracy tests.
                     </div>
                   </div>

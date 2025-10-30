@@ -6,11 +6,11 @@
  * @module MeetingList
  */
 
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar as CalendarIcon } from 'lucide-react';
-import { MeetingCard } from './MeetingCard';
-import type { Meeting } from '~/lib/meeting-scheduler-utils';
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { MeetingCard } from "./MeetingCard";
+import type { Meeting } from "~/lib/meeting-scheduler-utils";
 
 interface MeetingListProps {
   meetings: Meeting[];
@@ -24,54 +24,56 @@ interface MeetingListProps {
   className?: string;
 }
 
-export const MeetingList = React.memo<MeetingListProps>(({
-  meetings,
-  selectedMeetingId,
-  expandedMeetings,
-  onSelectMeeting,
-  onToggleExpanded,
-  onDeleteMeeting,
-  onManageAgenda,
-  onViewMinutes,
-  className
-}) => {
-  if (meetings.length === 0) {
+export const MeetingList = React.memo<MeetingListProps>(
+  ({
+    meetings,
+    selectedMeetingId,
+    expandedMeetings,
+    onSelectMeeting,
+    onToggleExpanded,
+    onDeleteMeeting,
+    onManageAgenda,
+    onViewMinutes,
+    className,
+  }) => {
+    if (meetings.length === 0) {
+      return (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="py-12 text-center"
+        >
+          <CalendarIcon className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+          <p className="text-muted-foreground">No meetings scheduled for this date</p>
+        </motion.div>
+      );
+    }
+
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="text-center py-12"
-      >
-        <CalendarIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-        <p className="text-muted-foreground">No meetings scheduled for this date</p>
-      </motion.div>
+      <div className={className}>
+        <h3 className="mb-4 text-lg font-semibold">Scheduled Meetings</h3>
+        <div className="space-y-4">
+          <AnimatePresence>
+            {meetings.map((meeting, index) => (
+              <MeetingCard
+                key={meeting.id}
+                meeting={meeting}
+                isSelected={selectedMeetingId === meeting.id}
+                isExpanded={expandedMeetings.has(meeting.id)}
+                onSelect={onSelectMeeting}
+                onToggleExpanded={onToggleExpanded}
+                onDelete={onDeleteMeeting}
+                onManageAgenda={onManageAgenda}
+                onViewMinutes={onViewMinutes}
+                index={index}
+              />
+            ))}
+          </AnimatePresence>
+        </div>
+      </div>
     );
   }
+);
 
-  return (
-    <div className={className}>
-      <h3 className="text-lg font-semibold mb-4">Scheduled Meetings</h3>
-      <div className="space-y-4">
-        <AnimatePresence>
-          {meetings.map((meeting, index) => (
-            <MeetingCard
-              key={meeting.id}
-              meeting={meeting}
-              isSelected={selectedMeetingId === meeting.id}
-              isExpanded={expandedMeetings.has(meeting.id)}
-              onSelect={onSelectMeeting}
-              onToggleExpanded={onToggleExpanded}
-              onDelete={onDeleteMeeting}
-              onManageAgenda={onManageAgenda}
-              onViewMinutes={onViewMinutes}
-              index={index}
-            />
-          ))}
-        </AnimatePresence>
-      </div>
-    </div>
-  );
-});
-
-MeetingList.displayName = 'MeetingList';
+MeetingList.displayName = "MeetingList";

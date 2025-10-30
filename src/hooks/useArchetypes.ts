@@ -7,11 +7,11 @@
  * @module useArchetypes
  */
 
-import { useMemo } from 'react';
-import { api } from '~/trpc/react';
-import { modernArchetypes } from '@/app/builder/data/archetypes/modern';
-import { historicalArchetypes } from '@/app/builder/data/archetypes/historical';
-import type { EconomicArchetype } from '@/app/builder/data/archetype-types';
+import { useMemo } from "react";
+import { api } from "~/trpc/react";
+import { modernArchetypes } from "@/app/builder/data/archetypes/modern";
+import { historicalArchetypes } from "@/app/builder/data/archetypes/historical";
+import type { EconomicArchetype } from "@/app/builder/data/archetype-types";
 
 /**
  * useArchetypes - Fetch economic archetypes with fallback pattern
@@ -43,10 +43,14 @@ import type { EconomicArchetype } from '@/app/builder/data/archetype-types';
  * }
  * ```
  */
-export function useArchetypes(era?: 'modern' | 'historical' | 'all') {
+export function useArchetypes(era?: "modern" | "historical" | "all") {
   // Query database with 10-minute cache
-  const { data: dbArchetypes, isLoading, error } = api.economicArchetypes.getAllArchetypes.useQuery(
-    { era: era || 'all', isActive: true },
+  const {
+    data: dbArchetypes,
+    isLoading,
+    error,
+  } = api.economicArchetypes.getAllArchetypes.useQuery(
+    { era: era || "all", isActive: true },
     { staleTime: 10 * 60 * 1000 } // 10-minute cache
   );
 
@@ -56,31 +60,33 @@ export function useArchetypes(era?: 'modern' | 'historical' | 'all') {
     if (dbArchetypes && dbArchetypes.length > 0) {
       return {
         archetypes: dbArchetypes,
-        isUsingFallback: false
+        isUsingFallback: false,
       };
     }
 
     // Fallback to hardcoded data
     if (!isLoading) {
-      console.warn('[useArchetypes] Database empty or unavailable, falling back to hardcoded archetypes');
+      console.warn(
+        "[useArchetypes] Database empty or unavailable, falling back to hardcoded archetypes"
+      );
     }
 
     const fallback: EconomicArchetype[] = [
       ...Array.from(modernArchetypes.values()),
-      ...Array.from(historicalArchetypes.values())
+      ...Array.from(historicalArchetypes.values()),
     ];
 
     // Filter by era if specified
     let filtered = fallback;
-    if (era === 'modern') {
-      filtered = fallback.filter(a => modernArchetypes.has(a.id));
-    } else if (era === 'historical') {
-      filtered = fallback.filter(a => historicalArchetypes.has(a.id));
+    if (era === "modern") {
+      filtered = fallback.filter((a) => modernArchetypes.has(a.id));
+    } else if (era === "historical") {
+      filtered = fallback.filter((a) => historicalArchetypes.has(a.id));
     }
 
     return {
       archetypes: filtered,
-      isUsingFallback: true
+      isUsingFallback: true,
     };
   }, [dbArchetypes, era, isLoading]);
 
@@ -88,6 +94,6 @@ export function useArchetypes(era?: 'modern' | 'historical' | 'all') {
     archetypes,
     isLoading,
     error,
-    isUsingFallback
+    isUsingFallback,
   };
 }

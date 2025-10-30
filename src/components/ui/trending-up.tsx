@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import type { Variants } from 'framer-motion';
-import { motion, useAnimation } from 'framer-motion';
-import type { HTMLAttributes } from 'react';
-import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
-import { cn } from '~/lib/utils';
+import type { Variants } from "framer-motion";
+import { motion, useAnimation } from "framer-motion";
+import type { HTMLAttributes } from "react";
+import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
+import { cn } from "~/lib/utils";
 
 export interface TrendingUpIconHandle {
   startAnimation: () => void;
@@ -78,15 +78,15 @@ const TrendingUpIcon = forwardRef<TrendingUpIconHandle, TrendingUpIconProps>(
       isControlledRef.current = true;
 
       return {
-        startAnimation: () => controls.start('animate'),
-        stopAnimation: () => controls.start('normal'),
+        startAnimation: () => controls.start("animate"),
+        stopAnimation: () => controls.start("normal"),
       };
     });
 
     const handleMouseEnter = useCallback(
       (e: React.MouseEvent<HTMLDivElement>) => {
         if (!isControlledRef.current) {
-          controls.start('animate');
+          controls.start("animate");
         } else {
           onMouseEnter?.(e);
         }
@@ -97,7 +97,7 @@ const TrendingUpIcon = forwardRef<TrendingUpIconHandle, TrendingUpIconProps>(
     const handleMouseLeave = useCallback(
       (e: React.MouseEvent<HTMLDivElement>) => {
         if (!isControlledRef.current) {
-          controls.start('normal');
+          controls.start("normal");
         } else {
           onMouseLeave?.(e);
         }
@@ -144,6 +144,6 @@ const TrendingUpIcon = forwardRef<TrendingUpIconHandle, TrendingUpIconProps>(
   }
 );
 
-TrendingUpIcon.displayName = 'TrendingUpIcon';
+TrendingUpIcon.displayName = "TrendingUpIcon";
 
 export { TrendingUpIcon };

@@ -249,10 +249,7 @@ async function testStaticAssets(baseUrl: string): Promise<TestResult> {
 
   try {
     // Test common static paths
-    const assetPaths = [
-      "/_next/static/css",
-      "/flags/metadata.json",
-    ];
+    const assetPaths = ["/_next/static/css", "/flags/metadata.json"];
 
     let allPassed = true;
     const results: string[] = [];
@@ -397,9 +394,7 @@ async function testExternalAPIs(): Promise<TestResult> {
   return {
     name: "External API Integrations",
     passed: allPassed,
-    message: allPassed
-      ? "All external APIs accessible"
-      : `Issues: ${results.join(", ")}`,
+    message: allPassed ? "All external APIs accessible" : `Issues: ${results.join(", ")}`,
     duration: Date.now() - start,
     critical: false,
   };
@@ -433,9 +428,7 @@ async function testCriticalFeatures(baseUrl: string): Promise<TestResult> {
     return {
       name: "Critical Features",
       passed: allPassed,
-      message: allPassed
-        ? "All critical pages accessible"
-        : `Failed: ${results.join(", ")}`,
+      message: allPassed ? "All critical pages accessible" : `Failed: ${results.join(", ")}`,
       duration: Date.now() - start,
       critical: false,
     };
@@ -498,7 +491,12 @@ async function testPerformance(baseUrl: string): Promise<TestResult> {
  */
 function generateReport(report: ValidationReport): string {
   const criticalStatus = report.criticalFailures === 0 ? "✅ PASSED" : "❌ FAILED";
-  const overallStatus = report.failed === 0 ? "✅ SUCCESS" : report.criticalFailures > 0 ? "❌ CRITICAL FAILURE" : "⚠️  WARNING";
+  const overallStatus =
+    report.failed === 0
+      ? "✅ SUCCESS"
+      : report.criticalFailures > 0
+        ? "❌ CRITICAL FAILURE"
+        : "⚠️  WARNING";
 
   let markdown = `# Post-Deployment Validation Report
 

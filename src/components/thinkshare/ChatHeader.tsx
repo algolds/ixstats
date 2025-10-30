@@ -1,11 +1,24 @@
 "use client";
 
-import React, { useState } from 'react';
-import { CardHeader } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Input } from '~/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
-import { Search, Settings, MoreHorizontal, Users, Crown, Hash, Globe, X, Bell, BellOff, Archive, Trash2 } from 'lucide-react';
+import React, { useState } from "react";
+import { CardHeader } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import {
+  Search,
+  Settings,
+  MoreHorizontal,
+  Users,
+  Crown,
+  Hash,
+  Globe,
+  X,
+  Bell,
+  BellOff,
+  Archive,
+  Trash2,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +35,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 
 interface ThinkshareConversation {
   id: string;
@@ -48,18 +61,26 @@ interface ChatHeaderProps {
   onSearchToggle?: (query: string) => void;
 }
 
-export function ChatHeader({ selectedConversation, currentAccountId, onSearchToggle }: ChatHeaderProps) {
+export function ChatHeader({
+  selectedConversation,
+  currentAccountId,
+  onSearchToggle,
+}: ChatHeaderProps) {
   const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
 
   const getAccountTypeIcon = (accountType: string) => {
     switch (accountType) {
-      case 'government': return <Crown className="h-3 w-3 text-amber-500" />;
-      case 'media': return <Hash className="h-3 w-3 text-blue-500" />;
-      case 'citizen': return <Globe className="h-3 w-3 text-green-500" />;
-      default: return null;
+      case "government":
+        return <Crown className="h-3 w-3 text-amber-500" />;
+      case "media":
+        return <Hash className="h-3 w-3 text-blue-500" />;
+      case "citizen":
+        return <Globe className="h-3 w-3 text-green-500" />;
+      default:
+        return null;
     }
   };
 
@@ -73,15 +94,15 @@ export function ChatHeader({ selectedConversation, currentAccountId, onSearchTog
 
   const handleMuteToggle = () => {
     setIsMuted(!isMuted);
-    toast.success(isMuted ? 'Notifications enabled' : 'Notifications muted');
+    toast.success(isMuted ? "Notifications enabled" : "Notifications muted");
   };
 
   const handleArchive = () => {
-    toast.info('Archive conversation - Feature coming soon');
+    toast.info("Archive conversation - Feature coming soon");
   };
 
   const handleDelete = () => {
-    toast.error('Delete conversation - Feature coming soon');
+    toast.error("Delete conversation - Feature coming soon");
   };
 
   return (
@@ -89,27 +110,37 @@ export function ChatHeader({ selectedConversation, currentAccountId, onSearchTog
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {selectedConversation.type === 'direct' && selectedConversation.otherParticipants.length > 0 && selectedConversation.otherParticipants[0] ? (
+            {selectedConversation.type === "direct" &&
+            selectedConversation.otherParticipants.length > 0 &&
+            selectedConversation.otherParticipants[0] ? (
               <>
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={selectedConversation.otherParticipants[0].account?.profileImageUrl || undefined} />
-                  <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold">
-                    {(selectedConversation.otherParticipants[0].account?.displayName || '??').split(' ').map((n: string) => n[0]).join('') || '??'}
+                  <AvatarImage
+                    src={
+                      selectedConversation.otherParticipants[0].account?.profileImageUrl ||
+                      undefined
+                    }
+                  />
+                  <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 font-semibold text-white">
+                    {(selectedConversation.otherParticipants[0].account?.displayName || "??")
+                      .split(" ")
+                      .map((n: string) => n[0])
+                      .join("") || "??"}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-semibold flex items-center gap-2">
+                  <h3 className="flex items-center gap-2 font-semibold">
                     {selectedConversation.otherParticipants[0].accountId === currentAccountId
-                      ? `${selectedConversation.otherParticipants[0].account?.displayName || 'You'} (You)`
-                      : selectedConversation.otherParticipants[0].account?.displayName || 'Unknown'
-                    }
-                    {getAccountTypeIcon(selectedConversation.otherParticipants[0].account?.accountType || 'country')}
+                      ? `${selectedConversation.otherParticipants[0].account?.displayName || "You"} (You)`
+                      : selectedConversation.otherParticipants[0].account?.displayName || "Unknown"}
+                    {getAccountTypeIcon(
+                      selectedConversation.otherParticipants[0].account?.accountType || "country"
+                    )}
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {selectedConversation.otherParticipants[0].accountId === currentAccountId
                       ? "Your personal notes"
-                      : selectedConversation.otherParticipants[0].account?.username
-                    }
+                      : selectedConversation.otherParticipants[0].account?.username}
                   </p>
                 </div>
               </>
@@ -117,13 +148,13 @@ export function ChatHeader({ selectedConversation, currentAccountId, onSearchTog
               <>
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={selectedConversation.avatar || undefined} />
-                  <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 text-white font-semibold">
+                  <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-600 font-semibold text-white">
                     <Users className="h-5 w-5" />
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-semibold">{selectedConversation.name || 'Group Chat'}</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-semibold">{selectedConversation.name || "Group Chat"}</h3>
+                  <p className="text-muted-foreground text-sm">
                     {selectedConversation.otherParticipants.length + 1} members
                   </p>
                 </div>
@@ -152,7 +183,7 @@ export function ChatHeader({ selectedConversation, currentAccountId, onSearchTog
             {/* Hamburger Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-accent hover:text-accent-foreground h-9 px-3"
+                className="focus-visible:ring-ring hover:bg-accent hover:text-accent-foreground inline-flex h-9 items-center justify-center gap-2 rounded-md px-3 text-sm font-medium whitespace-nowrap transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"
                 title="More options"
               >
                 <MoreHorizontal className="h-4 w-4" />
@@ -162,16 +193,20 @@ export function ChatHeader({ selectedConversation, currentAccountId, onSearchTog
                   <DropdownMenuGroupLabel>Conversation Options</DropdownMenuGroupLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleMuteToggle}>
-                    {isMuted ? <Bell className="h-4 w-4 mr-2" /> : <BellOff className="h-4 w-4 mr-2" />}
-                    {isMuted ? 'Unmute notifications' : 'Mute notifications'}
+                    {isMuted ? (
+                      <Bell className="mr-2 h-4 w-4" />
+                    ) : (
+                      <BellOff className="mr-2 h-4 w-4" />
+                    )}
+                    {isMuted ? "Unmute notifications" : "Mute notifications"}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleArchive}>
-                    <Archive className="h-4 w-4 mr-2" />
+                    <Archive className="mr-2 h-4 w-4" />
                     Archive conversation
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleDelete} variant="destructive">
-                    <Trash2 className="h-4 w-4 mr-2" />
+                    <Trash2 className="mr-2 h-4 w-4" />
                     Delete conversation
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
@@ -183,34 +218,36 @@ export function ChatHeader({ selectedConversation, currentAccountId, onSearchTog
         {/* Search Bar */}
         {showSearch && (
           <form onSubmit={handleSearch} className="flex items-center gap-2">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <div className="relative flex-1">
+              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
               <Input
                 type="text"
                 placeholder="Search messages..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-9"
+                className="pr-9 pl-9"
                 autoFocus
               />
               {searchQuery && (
                 <button
                   type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute top-1/2 right-3 -translate-y-1/2 transform"
                 >
-                  <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                  <X className="text-muted-foreground hover:text-foreground h-4 w-4" />
                 </button>
               )}
             </div>
-            <Button type="submit" size="sm">Search</Button>
+            <Button type="submit" size="sm">
+              Search
+            </Button>
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={() => {
                 setShowSearch(false);
-                setSearchQuery('');
+                setSearchQuery("");
               }}
             >
               Cancel
@@ -224,15 +261,13 @@ export function ChatHeader({ selectedConversation, currentAccountId, onSearchTog
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Conversation Settings</DialogTitle>
-            <DialogDescription>
-              Manage settings for this conversation
-            </DialogDescription>
+            <DialogDescription>Manage settings for this conversation</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-medium">Notifications</h4>
-                <p className="text-sm text-muted-foreground">Get notified about new messages</p>
+                <p className="text-muted-foreground text-sm">Get notified about new messages</p>
               </div>
               <Button
                 variant={isMuted ? "outline" : "default"}
@@ -244,7 +279,7 @@ export function ChatHeader({ selectedConversation, currentAccountId, onSearchTog
             </div>
 
             <div className="border-t pt-4">
-              <h4 className="font-medium mb-2">Conversation Info</h4>
+              <h4 className="mb-2 font-medium">Conversation Info</h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Type:</span>
@@ -252,26 +287,20 @@ export function ChatHeader({ selectedConversation, currentAccountId, onSearchTog
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Participants:</span>
-                  <span className="font-medium">{selectedConversation.otherParticipants.length + 1}</span>
+                  <span className="font-medium">
+                    {selectedConversation.otherParticipants.length + 1}
+                  </span>
                 </div>
               </div>
             </div>
 
-            <div className="border-t pt-4 space-y-2">
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={handleArchive}
-              >
-                <Archive className="h-4 w-4 mr-2" />
+            <div className="space-y-2 border-t pt-4">
+              <Button variant="outline" className="w-full justify-start" onClick={handleArchive}>
+                <Archive className="mr-2 h-4 w-4" />
                 Archive conversation
               </Button>
-              <Button
-                variant="destructive"
-                className="w-full justify-start"
-                onClick={handleDelete}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
+              <Button variant="destructive" className="w-full justify-start" onClick={handleDelete}>
+                <Trash2 className="mr-2 h-4 w-4" />
                 Delete conversation
               </Button>
             </div>

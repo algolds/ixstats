@@ -20,7 +20,7 @@ interface CachedImage {
   searchTerm: string;
 }
 
-const CACHE_KEY_PREFIX = 'wiki_commons_image_';
+const CACHE_KEY_PREFIX = "wiki_commons_image_";
 const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days
 const THUMBNAIL_SIZE = 300;
 
@@ -28,10 +28,10 @@ const THUMBNAIL_SIZE = 300;
  * Validate that an image URL is accessible and returns a valid image
  */
 export async function validateImageUrl(url: string): Promise<boolean> {
-  if (!url || url.trim() === '') return false;
+  if (!url || url.trim() === "") return false;
 
   // For Wikimedia URLs, we can trust them directly
-  if (url.includes('wikimedia.org') || url.includes('wikipedia.org')) {
+  if (url.includes("wikimedia.org") || url.includes("wikipedia.org")) {
     return true;
   }
 
@@ -50,7 +50,7 @@ export async function validateImageUrl(url: string): Promise<boolean> {
     };
 
     // Set crossOrigin to anonymous to allow CORS
-    img.crossOrigin = 'anonymous';
+    img.crossOrigin = "anonymous";
     img.src = url;
 
     // Timeout after 3 seconds
@@ -79,17 +79,17 @@ export async function searchWikiCommonsImages(
     const enhancedSearch = `${searchTerm} military`;
 
     // Use Wikimedia Commons API
-    const searchUrl = new URL('https://commons.wikimedia.org/w/api.php');
-    searchUrl.searchParams.set('action', 'query');
-    searchUrl.searchParams.set('format', 'json');
-    searchUrl.searchParams.set('generator', 'search');
-    searchUrl.searchParams.set('gsrsearch', enhancedSearch);
-    searchUrl.searchParams.set('gsrnamespace', '6'); // File namespace
-    searchUrl.searchParams.set('gsrlimit', limit.toString());
-    searchUrl.searchParams.set('prop', 'imageinfo|info');
-    searchUrl.searchParams.set('iiprop', 'url|extmetadata');
-    searchUrl.searchParams.set('iiurlwidth', THUMBNAIL_SIZE.toString());
-    searchUrl.searchParams.set('origin', '*');
+    const searchUrl = new URL("https://commons.wikimedia.org/w/api.php");
+    searchUrl.searchParams.set("action", "query");
+    searchUrl.searchParams.set("format", "json");
+    searchUrl.searchParams.set("generator", "search");
+    searchUrl.searchParams.set("gsrsearch", enhancedSearch);
+    searchUrl.searchParams.set("gsrnamespace", "6"); // File namespace
+    searchUrl.searchParams.set("gsrlimit", limit.toString());
+    searchUrl.searchParams.set("prop", "imageinfo|info");
+    searchUrl.searchParams.set("iiprop", "url|extmetadata");
+    searchUrl.searchParams.set("iiurlwidth", THUMBNAIL_SIZE.toString());
+    searchUrl.searchParams.set("origin", "*");
 
     const response = await fetch(searchUrl.toString());
     if (!response.ok) {
@@ -114,8 +114,8 @@ export async function searchWikiCommonsImages(
       if (!imageInfo) continue;
 
       // Validate that we have a valid URL
-      const imageUrl = imageInfo.url || '';
-      const thumbUrl = imageInfo.thumburl || imageInfo.url || '';
+      const imageUrl = imageInfo.url || "";
+      const thumbUrl = imageInfo.thumburl || imageInfo.url || "";
 
       if (!imageUrl || !thumbUrl) {
         console.warn(`[WikiCommons] Skipping image with missing URL for "${searchTerm}"`);
@@ -125,7 +125,7 @@ export async function searchWikiCommonsImages(
       const result: WikiCommonsImage = {
         url: imageUrl,
         thumbnailUrl: thumbUrl,
-        title: page.title?.replace('File:', '') || searchTerm,
+        title: page.title?.replace("File:", "") || searchTerm,
         description: imageInfo.extmetadata?.ImageDescription?.value,
         license: imageInfo.extmetadata?.LicenseShortName?.value,
         cached: false,
@@ -178,11 +178,7 @@ export async function getAssetImage(
 /**
  * Build intelligent search terms for different asset types
  */
-function buildSearchTerms(
-  assetName: string,
-  assetType: string,
-  category?: string
-): string[] {
+function buildSearchTerms(assetName: string, assetType: string, category?: string): string[] {
   const terms: string[] = [];
 
   // Primary search: exact asset name
@@ -195,47 +191,47 @@ function buildSearchTerms(
 
   // Add type-specific enhancements
   switch (assetType) {
-    case 'aircraft':
+    case "aircraft":
       terms.push(`${assetName} aircraft`);
-      if (category?.toLowerCase().includes('fighter')) {
+      if (category?.toLowerCase().includes("fighter")) {
         terms.push(`${assetName} fighter jet`);
-      } else if (category?.toLowerCase().includes('helicopter')) {
+      } else if (category?.toLowerCase().includes("helicopter")) {
         terms.push(`${assetName} helicopter`);
-      } else if (category?.toLowerCase().includes('bomber')) {
+      } else if (category?.toLowerCase().includes("bomber")) {
         terms.push(`${assetName} bomber`);
       }
       break;
 
-    case 'ship':
+    case "ship":
       terms.push(`${assetName} ship`);
-      if (category?.toLowerCase().includes('carrier')) {
+      if (category?.toLowerCase().includes("carrier")) {
         terms.push(`${assetName} aircraft carrier`);
-      } else if (category?.toLowerCase().includes('submarine')) {
+      } else if (category?.toLowerCase().includes("submarine")) {
         terms.push(`${assetName} submarine`);
-      } else if (category?.toLowerCase().includes('destroyer')) {
+      } else if (category?.toLowerCase().includes("destroyer")) {
         terms.push(`${assetName} destroyer`);
       }
       break;
 
-    case 'vehicle':
+    case "vehicle":
       terms.push(`${assetName} military vehicle`);
-      if (category?.toLowerCase().includes('tank')) {
+      if (category?.toLowerCase().includes("tank")) {
         terms.push(`${assetName} tank`);
-      } else if (category?.toLowerCase().includes('apc')) {
+      } else if (category?.toLowerCase().includes("apc")) {
         terms.push(`${assetName} armored personnel carrier`);
       }
       break;
 
-    case 'weapon_system':
+    case "weapon_system":
       terms.push(`${assetName} weapon system`);
-      if (category?.toLowerCase().includes('missile')) {
+      if (category?.toLowerCase().includes("missile")) {
         terms.push(`${assetName} missile`);
-      } else if (category?.toLowerCase().includes('artillery')) {
+      } else if (category?.toLowerCase().includes("artillery")) {
         terms.push(`${assetName} artillery`);
       }
       break;
 
-    case 'installation':
+    case "installation":
       terms.push(`${assetName} military base`);
       break;
   }
@@ -248,7 +244,7 @@ function buildSearchTerms(
  */
 function cacheImage(searchTerm: string, image: WikiCommonsImage): void {
   try {
-    const cacheKey = CACHE_KEY_PREFIX + searchTerm.toLowerCase().replace(/\s+/g, '_');
+    const cacheKey = CACHE_KEY_PREFIX + searchTerm.toLowerCase().replace(/\s+/g, "_");
     const cached: CachedImage = {
       ...image,
       timestamp: Date.now(),
@@ -267,7 +263,7 @@ function cacheImage(searchTerm: string, image: WikiCommonsImage): void {
  */
 function getCachedImage(searchTerm: string): WikiCommonsImage | null {
   try {
-    const cacheKey = CACHE_KEY_PREFIX + searchTerm.toLowerCase().replace(/\s+/g, '_');
+    const cacheKey = CACHE_KEY_PREFIX + searchTerm.toLowerCase().replace(/\s+/g, "_");
     const cachedStr = localStorage.getItem(cacheKey);
 
     if (!cachedStr) return null;
@@ -305,10 +301,10 @@ export function clearImageCache(): void {
       }
     }
 
-    keys.forEach(key => localStorage.removeItem(key));
+    keys.forEach((key) => localStorage.removeItem(key));
     console.log(`[WikiCommons] Cleared ${keys.length} cached images`);
   } catch (error) {
-    console.error('[WikiCommons] Failed to clear cache:', error);
+    console.error("[WikiCommons] Failed to clear cache:", error);
   }
 }
 
@@ -331,7 +327,7 @@ export function getCacheStats(): { count: number; totalSize: number } {
       }
     }
   } catch (error) {
-    console.error('[WikiCommons] Failed to get cache stats:', error);
+    console.error("[WikiCommons] Failed to get cache stats:", error);
   }
 
   return { count, totalSize };

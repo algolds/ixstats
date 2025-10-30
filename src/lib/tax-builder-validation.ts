@@ -179,10 +179,7 @@ function validateBrackets(builderState: TaxBuilderState): Record<string, Record<
 /**
  * Check if validation has errors for a specific step
  */
-export function hasStepErrors(
-  stepId: string,
-  validationErrors: Record<string, any>
-): boolean {
+export function hasStepErrors(stepId: string, validationErrors: Record<string, any>): boolean {
   switch (stepId) {
     case "atomic":
       // No specific validation errors for atomic components

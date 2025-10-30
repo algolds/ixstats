@@ -6,9 +6,7 @@
  */
 export function getCSSVar(property: string): string {
   if (typeof window !== "undefined") {
-    return getComputedStyle(document.documentElement).getPropertyValue(
-      property
-    );
+    return getComputedStyle(document.documentElement).getPropertyValue(property);
   }
   return "";
 }
@@ -16,9 +14,7 @@ export function getCSSVar(property: string): string {
 /**
  * Economic tier styling helper
  */
-export function getTierStyle(
-  tier: string
-): { className: string; color: string } {
+export function getTierStyle(tier: string): { className: string; color: string } {
   const tierMap: Record<string, { className: string; color: string }> = {
     Advanced: {
       className: "tier-badge tier-advanced",
@@ -91,11 +87,7 @@ export function getChartColors(): {
 /**
  * Get responsive class names based on screen size
  */
-export function getResponsiveClasses(
-  mobile: string,
-  tablet?: string,
-  desktop?: string
-): string {
+export function getResponsiveClasses(mobile: string, tablet?: string, desktop?: string): string {
   const classes = [mobile];
   if (tablet) classes.push(`md:${tablet}`);
   if (desktop) classes.push(`lg:${desktop}`);
@@ -105,9 +97,7 @@ export function getResponsiveClasses(
 /**
  * Conditional class helper
  */
-export function cn(
-  ...classes: (string | undefined | null | false)[]
-): string {
+export function cn(...classes: (string | undefined | null | false)[]): string {
   return classes.filter(Boolean).join(" ");
 }
 
@@ -144,10 +134,7 @@ export function getButtonClasses(
 /**
  * Theme-aware input class generator
  */
-export function getInputClasses(
-  hasError = false,
-  size: "sm" | "md" | "lg" = "md"
-): string {
+export function getInputClasses(hasError = false, size: "sm" | "md" | "lg" = "md"): string {
   const base = "form-input";
   const sizes = {
     sm: "px-2.5 py-1.5 text-sm",
@@ -177,9 +164,7 @@ export function getCardClasses(
 /**
  * Loading state class generator
  */
-export function getLoadingClasses(
-  type: "spinner" | "skeleton" | "pulse" = "spinner"
-): string {
+export function getLoadingClasses(type: "spinner" | "skeleton" | "pulse" = "spinner"): string {
   const map = {
     spinner: "loading-spinner",
     skeleton: "loading-skeleton rounded",

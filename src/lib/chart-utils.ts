@@ -59,9 +59,9 @@ export function formatCurrency(value: number | null | undefined): string {
   } else if (absValue >= 1e3) {
     return `$${(value / 1e3).toFixed(1)}K`;
   } else {
-    return `$${value.toLocaleString(undefined, { 
-      minimumFractionDigits: 0, 
-      maximumFractionDigits: 0 
+    return `$${value.toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     })}`;
   }
 }
@@ -72,7 +72,7 @@ export function formatCurrency(value: number | null | undefined): string {
  * @param decimals Number of decimal places to show
  */
 export function formatGrowthRateFromDecimal(
-  value: number | null | undefined, 
+  value: number | null | undefined,
   decimals = 2
 ): string {
   if (value == null || !isFinite(value) || isNaN(value)) {
@@ -81,10 +81,10 @@ export function formatGrowthRateFromDecimal(
 
   // Convert decimal to percentage (0.005 → 0.5%)
   const percentValue = value * 100;
-  
+
   // Cap extreme percentage values
   const cappedValue = Math.min(Math.max(percentValue, -999), 9999);
-  
+
   return `${cappedValue.toFixed(decimals)}%`;
 }
 
@@ -97,7 +97,7 @@ export function formatGdpGrowthRate(value: number | null | undefined): string {
 }
 
 /**
- * FIXED: Format population growth rates specifically  
+ * FIXED: Format population growth rates specifically
  * Assumes input is in decimal form (0.01 for 1%)
  */
 export function formatPopulationGrowthRate(value: number | null | undefined): string {
@@ -109,17 +109,14 @@ export function formatPopulationGrowthRate(value: number | null | undefined): st
  * @param value The number to format (already as percentage, e.g., 0.5 for 0.5%)
  * @param decimals Number of decimal places to show
  */
-export function formatPercentage(
-  value: number | null | undefined, 
-  decimals = 2
-): string {
+export function formatPercentage(value: number | null | undefined, decimals = 2): string {
   if (value == null || !isFinite(value) || isNaN(value)) {
     return "N/A";
   }
 
   // Value is already in percentage form
   const cappedValue = Math.min(Math.max(value, -999), 9999);
-  
+
   return `${cappedValue.toFixed(decimals)}%`;
 }
 
@@ -127,17 +124,17 @@ export function formatPercentage(
  * Parse numeric value from potentially formatted Excel data
  */
 export function parseExcelNumber(value: any): number | null {
-  if (typeof value === 'number') {
+  if (typeof value === "number") {
     return isFinite(value) ? value : null;
   }
-  
-  if (typeof value === 'string') {
+
+  if (typeof value === "string") {
     // Remove common Excel formatting: $, %, commas, spaces
-    const cleaned = value.replace(/[$,%\s]/g, '');
+    const cleaned = value.replace(/[$,%\s]/g, "");
     const parsed = parseFloat(cleaned);
     return isFinite(parsed) ? parsed : null;
   }
-  
+
   return null;
 }
 
@@ -145,17 +142,17 @@ export function parseExcelNumber(value: any): number | null {
  * Parse percentage value from Excel (handles both decimal and percentage formats)
  */
 export function parseExcelPercentage(value: any): number | null {
-  if (typeof value === 'number') {
+  if (typeof value === "number") {
     return isFinite(value) ? value : null;
   }
-  
-  if (typeof value === 'string') {
-    const hasPercent = value.includes('%');
-    const cleaned = value.replace(/[%$,\s]/g, '');
+
+  if (typeof value === "string") {
+    const hasPercent = value.includes("%");
+    const cleaned = value.replace(/[%$,\s]/g, "");
     const parsed = parseFloat(cleaned);
-    
+
     if (!isFinite(parsed)) return null;
-    
+
     if (hasPercent) {
       // Convert percentage to decimal (50% → 0.5)
       return parsed / 100;
@@ -164,7 +161,7 @@ export function parseExcelPercentage(value: any): number | null {
       return parsed > 1 ? parsed / 100 : parsed;
     }
   }
-  
+
   return null;
 }
 
@@ -213,9 +210,9 @@ export function formatNumber(value: number | null | undefined, decimals = 0): st
     return "> 1,000,000,000,000,000";
   }
 
-  return value.toLocaleString(undefined, { 
-    minimumFractionDigits: decimals, 
-    maximumFractionDigits: decimals 
+  return value.toLocaleString(undefined, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   });
 }
 
@@ -232,7 +229,7 @@ export function formatGrowthRate(value: number | null | undefined): {
     return {
       formatted: "N/A",
       color: "text-muted-foreground",
-      icon: "neutral"
+      icon: "neutral",
     };
   }
 
@@ -244,19 +241,19 @@ export function formatGrowthRate(value: number | null | undefined): {
     return {
       formatted,
       color: "text-green-600",
-      icon: "up"
+      icon: "up",
     };
   } else if (percentValue < -0.1) {
     return {
       formatted,
       color: "text-red-600",
-      icon: "down"
+      icon: "down",
     };
   } else {
     return {
       formatted,
       color: "text-gray-500",
-      icon: "neutral"
+      icon: "neutral",
     };
   }
 }
@@ -315,28 +312,26 @@ export function formatLargeNumber(value: number | null | undefined): string {
  * Validate if a number is reasonable for display
  */
 export function isValidDisplayNumber(value: any): value is number {
-  return typeof value === 'number' && 
-         isFinite(value) && 
-         !isNaN(value) && 
-         value >= 0 && 
-         value < 1e15;
+  return (
+    typeof value === "number" && isFinite(value) && !isNaN(value) && value >= 0 && value < 1e15
+  );
 }
 
 /**
  * Safe number conversion with fallback
  */
 export function safeNumber(value: any, fallback = 0): number {
-  if (typeof value === 'number' && isValidDisplayNumber(value)) {
+  if (typeof value === "number" && isValidDisplayNumber(value)) {
     return value;
   }
-  
-  if (typeof value === 'string') {
+
+  if (typeof value === "string") {
     const parsed = parseExcelNumber(value);
     if (parsed !== null && isValidDisplayNumber(parsed)) {
       return parsed;
     }
   }
-  
+
   return fallback;
 }
 
@@ -370,11 +365,11 @@ export function displayGrowthRate(percentageValue: number | null | undefined): s
   if (percentageValue == null || !isFinite(percentageValue) || isNaN(percentageValue)) {
     return "N/A";
   }
-  
+
   // Value is already in percentage form, just format it
   // Cap extreme values for display
   const cappedPercentage = Math.min(Math.max(percentageValue, -999), 999);
-  
+
   return `${cappedPercentage.toFixed(2)}%`;
 }
 
@@ -385,26 +380,26 @@ export function getGrowthIcon(decimalValue: number | null | undefined): "up" | "
   if (decimalValue == null || !isFinite(decimalValue) || isNaN(decimalValue)) {
     return "neutral";
   }
-  
+
   // Convert to percentage for threshold comparison
   const percentage = decimalValue * 100;
-  
+
   if (percentage > 0.1) return "up";
   if (percentage < -0.1) return "down";
   return "neutral";
 }
 
 /**
- * FIXED: Get growth color based on decimal value  
+ * FIXED: Get growth color based on decimal value
  */
 export function getGrowthColor(decimalValue: number | null | undefined): string {
   if (decimalValue == null || !isFinite(decimalValue) || isNaN(decimalValue)) {
     return "text-muted-foreground";
   }
-  
-  // Convert to percentage for threshold comparison  
+
+  // Convert to percentage for threshold comparison
   const percentage = decimalValue * 100;
-  
+
   if (percentage > 0.1) return "text-green-600";
   if (percentage < -0.1) return "text-red-600";
   return "text-gray-500";
@@ -412,13 +407,13 @@ export function getGrowthColor(decimalValue: number | null | undefined): string 
 
 function smartNormalizeGrowthRate(value: number | null | undefined, fallback = 3.0): number {
   if (!value || !isFinite(value)) return fallback;
-  
+
   // If the value is extremely large (> 100%), it's likely incorrectly stored
   // and needs to be divided by 100
   if (Math.abs(value) > 100) {
     return value / 100;
   }
-  
+
   // Otherwise, the value is reasonable as-is
   return value;
 }

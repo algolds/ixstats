@@ -3,13 +3,13 @@
  * Run with: npx tsx scripts/populate-country-slugs.ts
  */
 
-import { PrismaClient } from '@prisma/client';
-import { generateSlug } from '../src/lib/slug-utils';
+import { PrismaClient } from "@prisma/client";
+import { generateSlug } from "../src/lib/slug-utils";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Starting slug population for countries...\n');
+  console.log("Starting slug population for countries...\n");
 
   // Get all countries
   const countries = await prisma.country.findMany({
@@ -44,20 +44,20 @@ async function main() {
       console.log(`✓ ${country.name} → ${slug}`);
       updated++;
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
       console.error(`✗ ${country.name} - Error: ${errorMsg}`);
       errors.push({ name: country.name, error: errorMsg });
     }
   }
 
-  console.log('\n--- Summary ---');
+  console.log("\n--- Summary ---");
   console.log(`Total countries: ${countries.length}`);
   console.log(`Updated: ${updated}`);
   console.log(`Skipped (already had slug): ${skipped}`);
   console.log(`Errors: ${errors.length}`);
 
   if (errors.length > 0) {
-    console.log('\nErrors:');
+    console.log("\nErrors:");
     errors.forEach(({ name, error }) => {
       console.log(`  - ${name}: ${error}`);
     });
@@ -66,7 +66,7 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error('Migration failed:', e);
+    console.error("Migration failed:", e);
     process.exit(1);
   })
   .finally(async () => {

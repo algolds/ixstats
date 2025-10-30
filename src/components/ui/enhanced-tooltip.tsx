@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { createPortal } from 'react-dom';
-import { cn } from '~/lib/utils';
-import { Info, TrendingUp, TrendingDown, AlertTriangle, HelpCircle } from 'lucide-react';
+import React, { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
+import { cn } from "~/lib/utils";
+import { Info, TrendingUp, TrendingDown, AlertTriangle, HelpCircle } from "lucide-react";
 
 interface EnhancedTooltipProps {
   children: React.ReactNode;
@@ -16,7 +16,7 @@ interface EnhancedTooltipProps {
     description: string;
   }[];
   warning?: string;
-  position?: 'top' | 'bottom' | 'left' | 'right' | 'auto';
+  position?: "top" | "bottom" | "left" | "right" | "auto";
   delay?: number;
   maxWidth?: string;
   className?: string;
@@ -26,11 +26,11 @@ interface EnhancedTooltipProps {
 
 const themeStyles = {
   default: {
-    bg: 'var(--tooltip-bg)',
-    border: 'var(--tooltip-border)',
-    text: 'var(--tooltip-text)',
-    accent: 'var(--tooltip-accent)'
-  }
+    bg: "var(--tooltip-bg)",
+    border: "var(--tooltip-border)",
+    text: "var(--tooltip-text)",
+    accent: "var(--tooltip-accent)",
+  },
 };
 
 export function EnhancedTooltip({
@@ -39,12 +39,12 @@ export function EnhancedTooltip({
   title,
   impact,
   warning,
-  position = 'auto',
+  position = "auto",
   delay = 300,
-  maxWidth = 'max-w-xs',
+  maxWidth = "max-w-xs",
   className,
   zIndex = 9999,
-  disabled = false
+  disabled = false,
 }: EnhancedTooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState(position);
@@ -63,7 +63,7 @@ export function EnhancedTooltip({
     const tooltipRect = tooltipElement.getBoundingClientRect();
     const viewport = {
       width: window.innerWidth,
-      height: window.innerHeight
+      height: window.innerHeight,
     };
 
     let finalPosition = position;
@@ -71,38 +71,38 @@ export function EnhancedTooltip({
     let y = 0;
 
     // Auto-position logic
-    if (position === 'auto') {
+    if (position === "auto") {
       const spaceTop = triggerRect.top;
       const spaceBottom = viewport.height - triggerRect.bottom;
       const spaceLeft = triggerRect.left;
       const spaceRight = viewport.width - triggerRect.right;
 
       if (spaceTop > tooltipRect.height + 10) {
-        finalPosition = 'top';
+        finalPosition = "top";
       } else if (spaceBottom > tooltipRect.height + 10) {
-        finalPosition = 'bottom';
+        finalPosition = "bottom";
       } else if (spaceLeft > tooltipRect.width + 10) {
-        finalPosition = 'left';
+        finalPosition = "left";
       } else {
-        finalPosition = 'right';
+        finalPosition = "right";
       }
     }
 
     // Calculate coordinates based on final position
     switch (finalPosition) {
-      case 'top':
+      case "top":
         x = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
         y = triggerRect.top - tooltipRect.height - 8;
         break;
-      case 'bottom':
+      case "bottom":
         x = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
         y = triggerRect.bottom + 8;
         break;
-      case 'left':
+      case "left":
         x = triggerRect.left - tooltipRect.width - 8;
         y = triggerRect.top + triggerRect.height / 2 - tooltipRect.height / 2;
         break;
-      case 'right':
+      case "right":
         x = triggerRect.right + 8;
         y = triggerRect.top + triggerRect.height / 2 - tooltipRect.height / 2;
         break;
@@ -143,17 +143,17 @@ export function EnhancedTooltip({
   }, []);
 
   const getArrowClasses = () => {
-    const baseArrow = 'absolute w-3 h-3 transform rotate-45';
-    const borderColor = themeStyle.border.replace('border-', 'bg-');
-    
+    const baseArrow = "absolute w-3 h-3 transform rotate-45";
+    const borderColor = themeStyle.border.replace("border-", "bg-");
+
     switch (tooltipPosition) {
-      case 'top':
+      case "top":
         return `${baseArrow} ${borderColor} -bottom-1.5 left-1/2 -translate-x-1/2`;
-      case 'bottom':
+      case "bottom":
         return `${baseArrow} ${borderColor} -top-1.5 left-1/2 -translate-x-1/2`;
-      case 'left':
+      case "left":
         return `${baseArrow} ${borderColor} -right-1.5 top-1/2 -translate-y-1/2`;
-      case 'right':
+      case "right":
         return `${baseArrow} ${borderColor} -left-1.5 top-1/2 -translate-y-1/2`;
       default:
         return `${baseArrow} ${borderColor} -bottom-1.5 left-1/2 -translate-x-1/2`;
@@ -170,9 +170,9 @@ export function EnhancedTooltip({
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.15, ease: "easeOut" }}
           className={cn(
-            'fixed pointer-events-none',
-            'rounded-lg border backdrop-blur-xl',
-            'shadow-2xl shadow-black/20',
+            "pointer-events-none fixed",
+            "rounded-lg border backdrop-blur-xl",
+            "shadow-2xl shadow-black/20",
             themeStyle.bg,
             themeStyle.border,
             themeStyle.text,
@@ -182,28 +182,28 @@ export function EnhancedTooltip({
           style={{
             left: coordinates.x,
             top: coordinates.y,
-            zIndex
+            zIndex,
           }}
         >
           {/* Arrow */}
           <div className={getArrowClasses()} />
-          
+
           {/* Content */}
-          <div className="p-4 space-y-3">
+          <div className="space-y-3 p-4">
             {title && (
-              <div className="flex items-center gap-2 font-semibold text-sm">
+              <div className="flex items-center gap-2 text-sm font-semibold">
                 <Info className="h-4 w-4" />
                 {title}
               </div>
             )}
-            
-            <div className="text-sm">
-              {content}
-            </div>
-            
+
+            <div className="text-sm">{content}</div>
+
             {impact && impact.length > 0 && (
-              <div className="space-y-2 pt-2 border-t border-current/20">
-                <div className={cn("text-xs font-medium flex items-center gap-1", themeStyle.accent)}>
+              <div className="space-y-2 border-t border-current/20 pt-2">
+                <div
+                  className={cn("flex items-center gap-1 text-xs font-medium", themeStyle.accent)}
+                >
                   <TrendingUp className="h-3 w-3" />
                   Impact Analysis
                 </div>
@@ -216,22 +216,28 @@ export function EnhancedTooltip({
                       ) : item.change < 0 ? (
                         <TrendingDown className="h-3 w-3 text-red-400" />
                       ) : null}
-                      <span className={cn(
-                        'font-medium',
-                        item.change > 0 ? 'text-green-400' : 
-                        item.change < 0 ? 'text-red-400' : 'opacity-60'
-                      )}>
-                        {item.change > 0 ? '+' : ''}{item.change}%
+                      <span
+                        className={cn(
+                          "font-medium",
+                          item.change > 0
+                            ? "text-green-400"
+                            : item.change < 0
+                              ? "text-red-400"
+                              : "opacity-60"
+                        )}
+                      >
+                        {item.change > 0 ? "+" : ""}
+                        {item.change}%
                       </span>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-            
+
             {warning && (
-              <div className="flex items-start gap-2 p-2 rounded bg-red-500/20 border border-red-400/30">
-                <AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" />
+              <div className="flex items-start gap-2 rounded border border-red-400/30 bg-red-500/20 p-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-red-400" />
                 <div className="text-xs text-red-200">{warning}</div>
               </div>
             )}
@@ -243,7 +249,7 @@ export function EnhancedTooltip({
 
   return (
     <>
-      <div 
+      <div
         ref={triggerRef}
         className="inline-block"
         onMouseEnter={showTooltip}
@@ -253,22 +259,19 @@ export function EnhancedTooltip({
       >
         {children}
       </div>
-      
-      {typeof window !== 'undefined' && createPortal(tooltipContent, document.body)}
+
+      {typeof window !== "undefined" && createPortal(tooltipContent, document.body)}
     </>
   );
 }
 
-export function InfoIcon({ 
-  className,
-  ...props 
-}: React.ComponentProps<typeof HelpCircle>) {
+export function InfoIcon({ className, ...props }: React.ComponentProps<typeof HelpCircle>) {
   return (
-    <HelpCircle 
+    <HelpCircle
       className={cn(
-        'h-4 w-4 text-white/40 hover:text-amber-400 transition-colors cursor-help',
+        "h-4 w-4 cursor-help text-white/40 transition-colors hover:text-amber-400",
         className
-      )} 
+      )}
       {...props}
     />
   );

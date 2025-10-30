@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import React, { useMemo } from "react";
+import { motion } from "framer-motion";
 import {
   Building2,
   Globe,
@@ -17,15 +17,15 @@ import {
   Activity,
   ArrowUpRight,
   Shield,
-  Sparkles
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
-import { Badge } from '~/components/ui/badge';
-import { Progress } from '~/components/ui/progress';
-import { Button } from '~/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { api } from '~/trpc/react';
-import { cn } from '~/lib/utils';
+  Sparkles,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { Progress } from "~/components/ui/progress";
+import { Button } from "~/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { api } from "~/trpc/react";
+import { cn } from "~/lib/utils";
 import {
   LineChart,
   Line,
@@ -41,9 +41,9 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
-} from 'recharts';
-import { DEFAULT_CHART_COLORS } from '~/lib/chart-colors';
+  ResponsiveContainer,
+} from "recharts";
+import { DEFAULT_CHART_COLORS } from "~/lib/chart-colors";
 
 interface DiplomaticIntelligenceHubProps {
   countryId: string;
@@ -52,10 +52,10 @@ interface DiplomaticIntelligenceHubProps {
 
 interface DiplomaticAlert {
   id: string;
-  type: 'warning' | 'opportunity' | 'info';
+  type: "warning" | "opportunity" | "info";
   title: string;
   description: string;
-  priority: 'high' | 'medium' | 'low';
+  priority: "high" | "medium" | "low";
   timestamp: Date;
 }
 
@@ -63,9 +63,9 @@ interface StrategicRecommendation {
   id: string;
   title: string;
   description: string;
-  type: 'treaty' | 'trade' | 'alliance' | 'cultural' | 'expansion';
+  type: "treaty" | "trade" | "alliance" | "cultural" | "expansion";
   expectedBenefit: string;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: "easy" | "medium" | "hard";
   action: string;
 }
 
@@ -82,15 +82,20 @@ interface MissionSummary {
   etaHours?: number;
 }
 
-export function DiplomaticIntelligenceHub({ countryId, countryName }: DiplomaticIntelligenceHubProps) {
-  const [activeTab, setActiveTab] = React.useState<'overview' | 'network' | 'missions' | 'exchanges'>('overview');
+export function DiplomaticIntelligenceHub({
+  countryId,
+  countryName,
+}: DiplomaticIntelligenceHubProps) {
+  const [activeTab, setActiveTab] = React.useState<
+    "overview" | "network" | "missions" | "exchanges"
+  >("overview");
 
   // Fetch diplomatic data with real-time refresh
   const { data: embassies, isLoading: embassiesLoading } = api.diplomatic.getEmbassies.useQuery(
     { countryId },
     {
       refetchInterval: 10000, // Refresh every 10 seconds
-      enabled: !!countryId
+      enabled: !!countryId,
     }
   );
 
@@ -98,7 +103,7 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
     { countryId },
     {
       refetchInterval: 15000,
-      enabled: !!countryId
+      enabled: !!countryId,
     }
   );
 
@@ -112,7 +117,7 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
         // Extract missions from embassies - would need actual mission data
         // For now return empty array as missions are fetched per embassy
         return [];
-      }
+      },
     }
   );
 
@@ -120,7 +125,7 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
     { countryId },
     {
       refetchInterval: 15000,
-      enabled: !!countryId
+      enabled: !!countryId,
     }
   );
 
@@ -128,19 +133,19 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
     { countryId, hours: 24 },
     {
       refetchInterval: 8000,
-      enabled: !!countryId
+      enabled: !!countryId,
     }
   );
 
   const missionList = missions ?? [];
 
   const activeMissions = useMemo(
-    () => missionList.filter((mission) => mission?.status === 'active'),
+    () => missionList.filter((mission) => mission?.status === "active"),
     [missionList]
   );
 
   const completedMissions = useMemo(
-    () => missionList.filter((mission) => mission?.status === 'completed'),
+    () => missionList.filter((mission) => mission?.status === "completed"),
     [missionList]
   );
 
@@ -160,7 +165,7 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
         embassyContribution: 0,
         relationshipContribution: 0,
         missionContribution: 0,
-        ranking: 'Emerging' as const
+        ranking: "Emerging" as const,
       };
     }
 
@@ -168,7 +173,7 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
     const embassyContribution = embassies.reduce((sum, embassy) => {
       const level = (embassy as any).level || 1;
       const strength = embassy.strength || 50;
-      return sum + (level * (strength / 100) * 10);
+      return sum + level * (strength / 100) * 10;
     }, 0);
 
     // Relationship contribution: sum of (strength * multiplier based on type)
@@ -178,10 +183,10 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
         friendly: 1.5,
         neutral: 0.5,
         strained: -0.5,
-        hostile: -1.0
+        hostile: -1.0,
       };
       const multiplier = multipliers[rel.relationship] || 0.5;
-      return sum + (rel.strength * multiplier / 10);
+      return sum + (rel.strength * multiplier) / 10;
     }, 0);
 
     // Mission contribution: active missions * average success rate
@@ -190,17 +195,17 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
     const totalPower = embassyContribution + relationshipContribution + missionContribution;
 
     // Determine ranking
-    let ranking: 'Elite' | 'Strong' | 'Developing' | 'Emerging' = 'Emerging';
-    if (totalPower > 150) ranking = 'Elite';
-    else if (totalPower > 100) ranking = 'Strong';
-    else if (totalPower > 50) ranking = 'Developing';
+    let ranking: "Elite" | "Strong" | "Developing" | "Emerging" = "Emerging";
+    if (totalPower > 150) ranking = "Elite";
+    else if (totalPower > 100) ranking = "Strong";
+    else if (totalPower > 50) ranking = "Developing";
 
     return {
       totalPower: Math.round(totalPower),
       embassyContribution: Math.round(embassyContribution),
       relationshipContribution: Math.round(relationshipContribution),
       missionContribution: Math.round(missionContribution),
-      ranking
+      ranking,
     };
   }, [embassies, relationships, missions, activeMissions, averageActiveMissionSuccess]);
 
@@ -210,14 +215,17 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
 
     if (recentChanges && recentChanges.length > 0) {
       recentChanges.slice(0, 5).forEach((change, idx) => {
-        const isPositive = change.changeType?.includes('improve') || change.changeType?.includes('strengthen');
+        const isPositive =
+          change.changeType?.includes("improve") || change.changeType?.includes("strengthen");
         alerts.push({
           id: `change-${idx}`,
-          type: isPositive ? 'opportunity' : 'warning',
+          type: isPositive ? "opportunity" : "warning",
           title: `Relationship Change: ${change.targetCountry}`,
-          description: change.description || `Status changed from ${change.previousStatus} to ${change.currentStatus}`,
-          priority: change.changeType?.includes('significant') ? 'high' : 'medium',
-          timestamp: new Date(change.updatedAt)
+          description:
+            change.description ||
+            `Status changed from ${change.previousStatus} to ${change.currentStatus}`,
+          priority: change.changeType?.includes("significant") ? "high" : "medium",
+          timestamp: new Date(change.updatedAt),
         });
       });
     }
@@ -228,11 +236,11 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
         if (embassy.strength < 40) {
           alerts.push({
             id: `weak-embassy-${idx}`,
-            type: 'warning',
+            type: "warning",
             title: `Weak Embassy: ${embassy.country}`,
             description: `Embassy influence at ${embassy.strength}%. Consider budget allocation or staff expansion.`,
-            priority: embassy.strength < 25 ? 'high' : 'medium',
-            timestamp: new Date()
+            priority: embassy.strength < 25 ? "high" : "medium",
+            timestamp: new Date(),
           });
         }
       });
@@ -240,15 +248,16 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
 
     // Check for mission opportunities
     if (missions) {
-      const completedMissions = missions.filter((m: any) => m.status === 'completed');
+      const completedMissions = missions.filter((m: any) => m.status === "completed");
       if (completedMissions.length > 0) {
         alerts.push({
-          id: 'missions-completed',
-          type: 'opportunity',
-          title: `${completedMissions.length} Mission${completedMissions.length > 1 ? 's' : ''} Completed`,
-          description: 'Review completed missions and claim rewards to strengthen diplomatic standing.',
-          priority: 'medium',
-          timestamp: new Date()
+          id: "missions-completed",
+          type: "opportunity",
+          title: `${completedMissions.length} Mission${completedMissions.length > 1 ? "s" : ""} Completed`,
+          description:
+            "Review completed missions and claim rewards to strengthen diplomatic standing.",
+          priority: "medium",
+          timestamp: new Date(),
         });
       }
     }
@@ -263,67 +272,74 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
     // Recommend establishing embassies if count is low
     if (embassies && embassies.length < 5) {
       recommendations.push({
-        id: 'expand-network',
-        title: 'Expand Embassy Network',
+        id: "expand-network",
+        title: "Expand Embassy Network",
         description: `You have ${embassies.length} embassies. Establishing more embassies increases diplomatic reach and unlocks new mission opportunities.`,
-        type: 'expansion',
-        expectedBenefit: '+15-25 network power per embassy',
-        difficulty: 'medium',
-        action: 'Establish new embassy in strategic partner country'
+        type: "expansion",
+        expectedBenefit: "+15-25 network power per embassy",
+        difficulty: "medium",
+        action: "Establish new embassy in strategic partner country",
       });
     }
 
     // Recommend upgrading high-performing embassies
-    if (embassies && embassies.some(e => e.strength > 75 && (e as any).level < 3)) {
+    if (embassies && embassies.some((e) => e.strength > 75 && (e as any).level < 3)) {
       recommendations.push({
-        id: 'upgrade-embassy',
-        title: 'Upgrade High-Performing Embassies',
-        description: 'Strong embassies with high influence are ready for upgrades to unlock advanced missions and benefits.',
-        type: 'expansion',
-        expectedBenefit: '+20% mission success rate, +10 network power',
-        difficulty: 'easy',
-        action: 'Upgrade embassy to next level'
+        id: "upgrade-embassy",
+        title: "Upgrade High-Performing Embassies",
+        description:
+          "Strong embassies with high influence are ready for upgrades to unlock advanced missions and benefits.",
+        type: "expansion",
+        expectedBenefit: "+20% mission success rate, +10 network power",
+        difficulty: "easy",
+        action: "Upgrade embassy to next level",
       });
     }
 
     // Recommend cultural exchanges
     if (exchanges && exchanges.length < 3) {
       recommendations.push({
-        id: 'cultural-exchange',
-        title: 'Launch Cultural Exchange Program',
-        description: 'Cultural exchanges boost relationship strength and provide soft power benefits.',
-        type: 'cultural',
-        expectedBenefit: '+5-10 relationship strength, +cultural influence',
-        difficulty: 'easy',
-        action: 'Create cultural exchange with partner country'
+        id: "cultural-exchange",
+        title: "Launch Cultural Exchange Program",
+        description:
+          "Cultural exchanges boost relationship strength and provide soft power benefits.",
+        type: "cultural",
+        expectedBenefit: "+5-10 relationship strength, +cultural influence",
+        difficulty: "easy",
+        action: "Create cultural exchange with partner country",
       });
     }
 
     // Recommend trade agreements
-    if (relationships && relationships.some(r => r.strength > 70 && (!r.treaties || r.treaties.length === 0))) {
+    if (
+      relationships &&
+      relationships.some((r) => r.strength > 70 && (!r.treaties || r.treaties.length === 0))
+    ) {
       recommendations.push({
-        id: 'trade-treaty',
-        title: 'Formalize Trade Agreements',
-        description: 'Strong relationships without formal treaties miss economic benefits.',
-        type: 'trade',
-        expectedBenefit: '+15% trade volume, +economic stability',
-        difficulty: 'medium',
-        action: 'Negotiate trade treaty with friendly nation'
+        id: "trade-treaty",
+        title: "Formalize Trade Agreements",
+        description: "Strong relationships without formal treaties miss economic benefits.",
+        type: "trade",
+        expectedBenefit: "+15% trade volume, +economic stability",
+        difficulty: "medium",
+        action: "Negotiate trade treaty with friendly nation",
       });
     }
 
     // Recommend alliance formation
-    if (relationships && relationships.filter(r => r.relationship === 'alliance').length === 0) {
-      const strongFriendly = relationships.filter(r => r.relationship === 'friendly' && r.strength > 80);
+    if (relationships && relationships.filter((r) => r.relationship === "alliance").length === 0) {
+      const strongFriendly = relationships.filter(
+        (r) => r.relationship === "friendly" && r.strength > 80
+      );
       if (strongFriendly.length > 0) {
         recommendations.push({
-          id: 'form-alliance',
-          title: 'Form Strategic Alliance',
+          id: "form-alliance",
+          title: "Form Strategic Alliance",
           description: `${strongFriendly.length} countries have excellent relations. Consider elevating to formal alliance.`,
-          type: 'alliance',
-          expectedBenefit: '+30 network power, mutual defense pact, shared intelligence',
-          difficulty: 'hard',
-          action: 'Propose alliance to highest-strength friendly nation'
+          type: "alliance",
+          expectedBenefit: "+30 network power, mutual defense pact, shared intelligence",
+          difficulty: "hard",
+          action: "Propose alliance to highest-strength friendly nation",
         });
       }
     }
@@ -336,17 +352,17 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
     if (!relationships) return [];
 
     const strengthBuckets = {
-      strong: relationships.filter(r => r.strength >= 75).length,
-      moderate: relationships.filter(r => r.strength >= 50 && r.strength < 75).length,
-      weak: relationships.filter(r => r.strength >= 25 && r.strength < 50).length,
-      critical: relationships.filter(r => r.strength < 25).length
+      strong: relationships.filter((r) => r.strength >= 75).length,
+      moderate: relationships.filter((r) => r.strength >= 50 && r.strength < 75).length,
+      weak: relationships.filter((r) => r.strength >= 25 && r.strength < 50).length,
+      critical: relationships.filter((r) => r.strength < 25).length,
     };
 
     return [
-      { name: 'Strong (75+)', value: strengthBuckets.strong, color: DEFAULT_CHART_COLORS[1] },
-      { name: 'Moderate (50-74)', value: strengthBuckets.moderate, color: DEFAULT_CHART_COLORS[0] },
-      { name: 'Weak (25-49)', value: strengthBuckets.weak, color: DEFAULT_CHART_COLORS[4] },
-      { name: 'Critical (<25)', value: strengthBuckets.critical, color: DEFAULT_CHART_COLORS[3] }
+      { name: "Strong (75+)", value: strengthBuckets.strong, color: DEFAULT_CHART_COLORS[1] },
+      { name: "Moderate (50-74)", value: strengthBuckets.moderate, color: DEFAULT_CHART_COLORS[0] },
+      { name: "Weak (25-49)", value: strengthBuckets.weak, color: DEFAULT_CHART_COLORS[4] },
+      { name: "Critical (<25)", value: strengthBuckets.critical, color: DEFAULT_CHART_COLORS[3] },
     ];
   }, [relationships]);
 
@@ -354,16 +370,19 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
   const networkPowerTrend = useMemo(() => {
     const now = Date.now();
     return Array.from({ length: 12 }, (_, i) => ({
-      date: new Date(now - (11 - i) * 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      power: Math.max(0, networkMetrics.totalPower + Math.sin(i / 2) * 15 - 20 + i * 2)
+      date: new Date(now - (11 - i) * 7 * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      power: Math.max(0, networkMetrics.totalPower + Math.sin(i / 2) * 15 - 20 + i * 2),
     }));
   }, [networkMetrics.totalPower]);
 
   if (embassiesLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-4">
-          <Activity className="h-12 w-12 animate-spin text-purple-600 mx-auto" />
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="space-y-4 text-center">
+          <Activity className="mx-auto h-12 w-12 animate-spin text-purple-600" />
           <p className="text-muted-foreground">Loading diplomatic intelligence...</p>
         </div>
       </div>
@@ -387,49 +406,62 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-purple-600">{networkMetrics.totalPower}</div>
-              <Badge variant="outline" className={cn(
-                'mt-1',
-                networkMetrics.ranking === 'Elite' && 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300',
-                networkMetrics.ranking === 'Strong' && 'bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300',
-                networkMetrics.ranking === 'Developing' && 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300',
-                networkMetrics.ranking === 'Emerging' && 'bg-gray-100 dark:bg-gray-900/20 text-gray-700 dark:text-gray-300'
-              )}>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "mt-1",
+                  networkMetrics.ranking === "Elite" &&
+                    "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300",
+                  networkMetrics.ranking === "Strong" &&
+                    "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300",
+                  networkMetrics.ranking === "Developing" &&
+                    "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300",
+                  networkMetrics.ranking === "Emerging" &&
+                    "bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-300"
+                )}
+              >
                 {networkMetrics.ranking}
               </Badge>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="p-4 rounded-lg bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20">
-              <div className="flex items-center gap-2 mb-2">
+          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-lg bg-gradient-to-br from-blue-50 to-cyan-50 p-4 dark:from-blue-950/20 dark:to-cyan-950/20">
+              <div className="mb-2 flex items-center gap-2">
                 <Building2 className="h-5 w-5 text-blue-600" />
-                <span className="text-sm text-muted-foreground">Embassy Network</span>
+                <span className="text-muted-foreground text-sm">Embassy Network</span>
               </div>
-              <div className="text-2xl font-bold text-blue-600">{networkMetrics.embassyContribution}</div>
-              <div className="text-xs text-muted-foreground mt-1">
+              <div className="text-2xl font-bold text-blue-600">
+                {networkMetrics.embassyContribution}
+              </div>
+              <div className="text-muted-foreground mt-1 text-xs">
                 {embassies?.length || 0} embassies
               </div>
             </div>
 
-            <div className="p-4 rounded-lg bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="rounded-lg bg-gradient-to-br from-purple-50 to-indigo-50 p-4 dark:from-purple-950/20 dark:to-indigo-950/20">
+              <div className="mb-2 flex items-center gap-2">
                 <Globe className="h-5 w-5 text-purple-600" />
-                <span className="text-sm text-muted-foreground">Relationships</span>
+                <span className="text-muted-foreground text-sm">Relationships</span>
               </div>
-              <div className="text-2xl font-bold text-purple-600">{networkMetrics.relationshipContribution}</div>
-              <div className="text-xs text-muted-foreground mt-1">
+              <div className="text-2xl font-bold text-purple-600">
+                {networkMetrics.relationshipContribution}
+              </div>
+              <div className="text-muted-foreground mt-1 text-xs">
                 {relationships?.length || 0} connections
               </div>
             </div>
 
-            <div className="p-4 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 p-4 dark:from-green-950/20 dark:to-emerald-950/20">
+              <div className="mb-2 flex items-center gap-2">
                 <Target className="h-5 w-5 text-green-600" />
-                <span className="text-sm text-muted-foreground">Active Missions</span>
+                <span className="text-muted-foreground text-sm">Active Missions</span>
               </div>
-              <div className="text-2xl font-bold text-green-600">{networkMetrics.missionContribution}</div>
-              <div className="text-xs text-muted-foreground mt-1">
+              <div className="text-2xl font-bold text-green-600">
+                {networkMetrics.missionContribution}
+              </div>
+              <div className="text-muted-foreground mt-1 text-xs">
                 {activeMissions.length} in progress
               </div>
             </div>
@@ -437,7 +469,7 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
 
           {/* Network Power Trend Chart */}
           <div className="mt-4">
-            <h4 className="text-sm font-medium mb-3">Network Power Trend</h4>
+            <h4 className="mb-3 text-sm font-medium">Network Power Trend</h4>
             <ResponsiveContainer width="100%" height={150}>
               <AreaChart data={networkPowerTrend}>
                 <defs>
@@ -447,10 +479,16 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
-                <XAxis dataKey="date" tick={{ fill: '#6b7280', fontSize: 11 }} />
-                <YAxis tick={{ fill: '#6b7280', fontSize: 11 }} />
+                <XAxis dataKey="date" tick={{ fill: "#6b7280", fontSize: 11 }} />
+                <YAxis tick={{ fill: "#6b7280", fontSize: 11 }} />
                 <Tooltip />
-                <Area type="monotone" dataKey="power" stroke="#9333ea" fill="url(#powerGradient)" strokeWidth={2} />
+                <Area
+                  type="monotone"
+                  dataKey="power"
+                  stroke="#9333ea"
+                  fill="url(#powerGradient)"
+                  strokeWidth={2}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -467,8 +505,8 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
         </TabsList>
 
         {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4 mt-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <TabsContent value="overview" className="mt-4 space-y-4">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {/* Diplomatic Alerts */}
             <Card className="glass-hierarchy-child">
               <CardHeader>
@@ -486,16 +524,20 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         className={cn(
-                          'p-3 rounded-lg border-l-4',
-                          alert.type === 'warning' && 'bg-orange-50 dark:bg-orange-950/20 border-orange-500',
-                          alert.type === 'opportunity' && 'bg-green-50 dark:bg-green-950/20 border-green-500',
-                          alert.type === 'info' && 'bg-blue-50 dark:bg-blue-950/20 border-blue-500'
+                          "rounded-lg border-l-4 p-3",
+                          alert.type === "warning" &&
+                            "border-orange-500 bg-orange-50 dark:bg-orange-950/20",
+                          alert.type === "opportunity" &&
+                            "border-green-500 bg-green-50 dark:bg-green-950/20",
+                          alert.type === "info" && "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
                         )}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            <div className="font-medium text-sm">{alert.title}</div>
-                            <div className="text-xs text-muted-foreground mt-1">{alert.description}</div>
+                            <div className="text-sm font-medium">{alert.title}</div>
+                            <div className="text-muted-foreground mt-1 text-xs">
+                              {alert.description}
+                            </div>
                           </div>
                           <Badge variant="outline" className="text-xs">
                             {alert.priority}
@@ -504,8 +546,8 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
                       </motion.div>
                     ))
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <CheckCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <div className="text-muted-foreground py-8 text-center">
+                      <CheckCircle className="mx-auto mb-2 h-12 w-12 opacity-50" />
                       <p className="text-sm">No alerts - all systems stable</p>
                     </div>
                   )}
@@ -528,18 +570,18 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
                       key={rec.id}
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="p-3 rounded-lg bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 hover:shadow-md transition-shadow cursor-pointer"
+                      className="cursor-pointer rounded-lg bg-gradient-to-br from-purple-50 to-indigo-50 p-3 transition-shadow hover:shadow-md dark:from-purple-950/20 dark:to-indigo-950/20"
                     >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="font-medium text-sm">{rec.title}</div>
+                      <div className="mb-2 flex items-start justify-between">
+                        <div className="text-sm font-medium">{rec.title}</div>
                         <Badge variant="outline" className="text-xs capitalize">
                           {rec.difficulty}
                         </Badge>
                       </div>
-                      <div className="text-xs text-muted-foreground mb-2">{rec.description}</div>
+                      <div className="text-muted-foreground mb-2 text-xs">{rec.description}</div>
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-green-600 font-medium">{rec.expectedBenefit}</span>
-                        <ArrowUpRight className="h-3 w-3 text-muted-foreground" />
+                        <span className="font-medium text-green-600">{rec.expectedBenefit}</span>
+                        <ArrowUpRight className="text-muted-foreground h-3 w-3" />
                       </div>
                     </motion.div>
                   ))}
@@ -549,12 +591,27 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {[
-              { label: 'Embassies', value: embassies?.length || 0, icon: Building2, color: 'blue' },
-              { label: 'Active Missions', value: activeMissions.length, icon: Target, color: 'green' },
-              { label: 'Cultural Exchanges', value: exchanges?.filter((e: any) => e.status === 'active').length || 0, icon: Heart, color: 'pink' },
-              { label: 'Relationships', value: relationships?.length || 0, icon: Users, color: 'purple' }
+              { label: "Embassies", value: embassies?.length || 0, icon: Building2, color: "blue" },
+              {
+                label: "Active Missions",
+                value: activeMissions.length,
+                icon: Target,
+                color: "green",
+              },
+              {
+                label: "Cultural Exchanges",
+                value: exchanges?.filter((e: any) => e.status === "active").length || 0,
+                icon: Heart,
+                color: "pink",
+              },
+              {
+                label: "Relationships",
+                value: relationships?.length || 0,
+                icon: Users,
+                color: "purple",
+              },
             ].map((stat, idx) => (
               <motion.div
                 key={stat.label}
@@ -565,24 +622,28 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
                 <Card className="glass-hierarchy-child">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
-                      <div className={cn(
-                        'p-2 rounded-lg',
-                        stat.color === 'blue' && 'bg-blue-100 dark:bg-blue-900/20',
-                        stat.color === 'green' && 'bg-green-100 dark:bg-green-900/20',
-                        stat.color === 'pink' && 'bg-pink-100 dark:bg-pink-900/20',
-                        stat.color === 'purple' && 'bg-purple-100 dark:bg-purple-900/20'
-                      )}>
-                        <stat.icon className={cn(
-                          'h-5 w-5',
-                          stat.color === 'blue' && 'text-blue-600',
-                          stat.color === 'green' && 'text-green-600',
-                          stat.color === 'pink' && 'text-pink-600',
-                          stat.color === 'purple' && 'text-purple-600'
-                        )} />
+                      <div
+                        className={cn(
+                          "rounded-lg p-2",
+                          stat.color === "blue" && "bg-blue-100 dark:bg-blue-900/20",
+                          stat.color === "green" && "bg-green-100 dark:bg-green-900/20",
+                          stat.color === "pink" && "bg-pink-100 dark:bg-pink-900/20",
+                          stat.color === "purple" && "bg-purple-100 dark:bg-purple-900/20"
+                        )}
+                      >
+                        <stat.icon
+                          className={cn(
+                            "h-5 w-5",
+                            stat.color === "blue" && "text-blue-600",
+                            stat.color === "green" && "text-green-600",
+                            stat.color === "pink" && "text-pink-600",
+                            stat.color === "purple" && "text-purple-600"
+                          )}
+                        />
                       </div>
                       <div>
                         <div className="text-2xl font-bold">{stat.value}</div>
-                        <div className="text-xs text-muted-foreground">{stat.label}</div>
+                        <div className="text-muted-foreground text-xs">{stat.label}</div>
                       </div>
                     </div>
                   </CardContent>
@@ -620,15 +681,20 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
                 </PieChart>
               </ResponsiveContainer>
 
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2">
                 {relationships?.slice(0, 6).map((rel) => (
-                  <div key={rel.id} className="p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="font-medium text-sm">{rel.targetCountry}</div>
-                      <Badge variant="outline" className="text-xs capitalize">{rel.relationship}</Badge>
+                  <div
+                    key={rel.id}
+                    className="bg-muted/50 hover:bg-muted rounded-lg p-3 transition-colors"
+                  >
+                    <div className="mb-2 flex items-center justify-between">
+                      <div className="text-sm font-medium">{rel.targetCountry}</div>
+                      <Badge variant="outline" className="text-xs capitalize">
+                        {rel.relationship}
+                      </Badge>
                     </div>
                     <Progress value={rel.strength} className="h-2" />
-                    <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
+                    <div className="text-muted-foreground mt-1 flex items-center justify-between text-xs">
                       <span>Strength: {rel.strength}%</span>
                       <span>{rel.treaties?.length || 0} treaties</span>
                     </div>
@@ -647,26 +713,29 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
               <CardDescription>Track ongoing diplomatic operations</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
                 {[
                   {
-                    label: 'In Progress',
+                    label: "In Progress",
                     value: activeMissions.length,
-                    color: 'blue'
+                    color: "blue",
                   },
                   {
-                    label: 'Avg Success Rate',
-                    value: activeMissions.length > 0 ? `${averageActiveMissionSuccess}%` : '0%',
-                    color: 'green'
+                    label: "Avg Success Rate",
+                    value: activeMissions.length > 0 ? `${averageActiveMissionSuccess}%` : "0%",
+                    color: "green",
                   },
                   {
-                    label: 'Completed (24h)',
+                    label: "Completed (24h)",
                     value: completedMissions.length,
-                    color: 'purple'
-                  }
+                    color: "purple",
+                  },
                 ].map((stat) => (
-                  <div key={stat.label} className="p-4 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-900/50">
-                    <div className="text-sm text-muted-foreground mb-1">{stat.label}</div>
+                  <div
+                    key={stat.label}
+                    className="rounded-lg bg-gradient-to-br from-gray-50 to-gray-100 p-4 dark:from-gray-800/50 dark:to-gray-900/50"
+                  >
+                    <div className="text-muted-foreground mb-1 text-sm">{stat.label}</div>
                     <div className="text-2xl font-bold">{stat.value}</div>
                   </div>
                 ))}
@@ -674,16 +743,19 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
 
               <div className="space-y-3">
                 {activeMissions.slice(0, 5).map((mission) => (
-                  <div key={mission.id} className="p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors">
-                    <div className="flex items-start justify-between mb-2">
+                  <div
+                    key={mission.id}
+                    className="border-border hover:bg-muted/50 rounded-lg border p-4 transition-colors"
+                  >
+                    <div className="mb-2 flex items-start justify-between">
                       <div>
                         <div className="font-medium">{mission.name}</div>
-                        <div className="text-sm text-muted-foreground">{mission.type}</div>
+                        <div className="text-muted-foreground text-sm">{mission.type}</div>
                       </div>
                       <Badge variant="outline">{mission.successChance}% success</Badge>
                     </div>
-                    <Progress value={mission.progress || 0} className="h-2 mb-2" />
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <Progress value={mission.progress || 0} className="mb-2 h-2" />
+                    <div className="text-muted-foreground flex items-center justify-between text-xs">
                       <span>Progress: {Math.round(mission.progress || 0)}%</span>
                       {mission.completesAt && (
                         <span>Completes: {new Date(mission.completesAt).toLocaleDateString()}</span>
@@ -704,35 +776,68 @@ export function DiplomaticIntelligenceHub({ countryId, countryName }: Diplomatic
               <CardDescription>Monitor active cultural programs and their impact</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
                 {[
-                  { label: 'Active Programs', value: exchanges?.filter((e: any) => e.status === 'active').length || 0 },
-                  { label: 'Total Participants', value: exchanges?.reduce((sum: number, e: any) => sum + (e.metrics?.participants || 0), 0) || 0 },
-                  { label: 'Avg Impact', value: exchanges && exchanges.length > 0 ? Math.round(exchanges.reduce((sum: number, e: any) => sum + (e.metrics?.culturalImpact || 0), 0) / exchanges.length) : 0 }
+                  {
+                    label: "Active Programs",
+                    value: exchanges?.filter((e: any) => e.status === "active").length || 0,
+                  },
+                  {
+                    label: "Total Participants",
+                    value:
+                      exchanges?.reduce(
+                        (sum: number, e: any) => sum + (e.metrics?.participants || 0),
+                        0
+                      ) || 0,
+                  },
+                  {
+                    label: "Avg Impact",
+                    value:
+                      exchanges && exchanges.length > 0
+                        ? Math.round(
+                            exchanges.reduce(
+                              (sum: number, e: any) => sum + (e.metrics?.culturalImpact || 0),
+                              0
+                            ) / exchanges.length
+                          )
+                        : 0,
+                  },
                 ].map((stat) => (
-                  <div key={stat.label} className="p-4 rounded-lg bg-gradient-to-br from-pink-50 to-purple-50 dark:from-pink-950/20 dark:to-purple-950/20">
-                    <div className="text-sm text-muted-foreground mb-1">{stat.label}</div>
+                  <div
+                    key={stat.label}
+                    className="rounded-lg bg-gradient-to-br from-pink-50 to-purple-50 p-4 dark:from-pink-950/20 dark:to-purple-950/20"
+                  >
+                    <div className="text-muted-foreground mb-1 text-sm">{stat.label}</div>
                     <div className="text-2xl font-bold">{stat.value}</div>
                   </div>
                 ))}
               </div>
 
               <div className="space-y-3">
-                {exchanges?.filter((e: any) => e.status === 'active').slice(0, 5).map((exchange: any) => (
-                  <div key={exchange.id} className="p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <div className="font-medium">{exchange.title}</div>
-                        <div className="text-sm text-muted-foreground capitalize">{exchange.type}</div>
+                {exchanges
+                  ?.filter((e: any) => e.status === "active")
+                  .slice(0, 5)
+                  .map((exchange: any) => (
+                    <div
+                      key={exchange.id}
+                      className="border-border hover:bg-muted/50 rounded-lg border p-4 transition-colors"
+                    >
+                      <div className="mb-2 flex items-start justify-between">
+                        <div>
+                          <div className="font-medium">{exchange.title}</div>
+                          <div className="text-muted-foreground text-sm capitalize">
+                            {exchange.type}
+                          </div>
+                        </div>
+                        <Badge variant="outline">{exchange.metrics?.culturalImpact || 0}/100</Badge>
                       </div>
-                      <Badge variant="outline">{exchange.metrics?.culturalImpact || 0}/100</Badge>
+                      <div className="text-muted-foreground mb-2 text-xs">
+                        {exchange.participatingCountries?.length || 0} countries •{" "}
+                        {exchange.metrics?.participants || 0} participants
+                      </div>
+                      <Progress value={exchange.metrics?.culturalImpact || 0} className="h-2" />
                     </div>
-                    <div className="text-xs text-muted-foreground mb-2">
-                      {exchange.participatingCountries?.length || 0} countries • {exchange.metrics?.participants || 0} participants
-                    </div>
-                    <Progress value={exchange.metrics?.culturalImpact || 0} className="h-2" />
-                  </div>
-                ))}
+                  ))}
               </div>
             </CardContent>
           </Card>

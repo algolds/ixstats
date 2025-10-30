@@ -14,27 +14,31 @@ const features = [
   {
     icon: Building2,
     title: "National Identity",
-    description: "Define your country's name and flag, and assign your country a currency, language, and other essential symbols.",
-    color: "text-blue-600 dark:text-blue-400"
+    description:
+      "Define your country's name and flag, and assign your country a currency, language, and other essential symbols.",
+    color: "text-blue-600 dark:text-blue-400",
   },
   {
     icon: Crown,
     title: "MyGovernment",
-    description: "Customize everything from your political system to your departments and budgets to policies and more.",
-    color: "text-purple-600 dark:text-purple-400"
+    description:
+      "Customize everything from your political system to your departments and budgets to policies and more.",
+    color: "text-purple-600 dark:text-purple-400",
   },
   {
     icon: TrendingUp,
     title: "MyEconomy",
-    description: "Configure your industry sectors, labor markets, income distribution, and trade policies to your liking.",
-    color: "text-emerald-600 dark:text-emerald-400"
+    description:
+      "Configure your industry sectors, labor markets, income distribution, and trade policies to your liking.",
+    color: "text-emerald-600 dark:text-emerald-400",
   },
   {
     icon: Users,
     title: "Tax Builder",
-    description: "Our integrated tax builder allows you to design a comprehensive tax system with brackets, exemptions, and deductions that is connected to your economy.",
-    color: "text-orange-600 dark:text-orange-400"
-  }
+    description:
+      "Our integrated tax builder allows you to design a comprehensive tax system with brackets, exemptions, and deductions that is connected to your economy.",
+    color: "text-orange-600 dark:text-orange-400",
+  },
 ];
 
 const benefits = [
@@ -45,7 +49,7 @@ const benefits = [
   "Compete Globally: Track your nation's ranking across economic, diplomatic, and cultural metrics—unlock achievements and see how you compare to other nations worldwide",
   "ThinkPages: Use ThinkPages to engage as government officials, citizens, or media on our in-world social platform. Collaborate with other players through ThinkTanks and discuss IC or OOC topics.",
   "Wiki Integration: You can import your country's data/lore from IIWiki or AltHistoryWiki if you want to use it as a base for your country",
-  "Image Repository: Use our image repository to natively search for images from Wiki Commons, Unsplash, and IIWiki."
+  "Image Repository: Use our image repository to natively search for images from Wiki Commons, Unsplash, and IIWiki.",
 ];
 
 export function CreateNewStep({ onBack, onCreate, isCreating }: CreateNewStepProps) {
@@ -61,68 +65,62 @@ export function CreateNewStep({ onBack, onCreate, isCreating }: CreateNewStepPro
         <Button
           variant="ghost"
           onClick={onBack}
-          className="mb-8 glass-hierarchy-child px-6 py-3 rounded-xl"
+          className="glass-hierarchy-child mb-8 rounded-xl px-6 py-3"
         >
-          <ArrowLeft className="h-5 w-5 mr-3" />
+          <ArrowLeft className="mr-3 h-5 w-5" />
           Back to options
         </Button>
 
-        <h1 className="text-5xl font-bold text-foreground mb-6">
-          Create New Country
-        </h1>
+        <h1 className="text-foreground mb-6 text-5xl font-bold">Create New Country</h1>
       </div>
 
-      <div className="glass-hierarchy-parent rounded-3xl p-8 border border-border">
+      <div className="glass-hierarchy-parent border-border rounded-3xl border p-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-foreground flex items-center mb-4">
-            <div className="glass-hierarchy-child p-3 rounded-xl mr-4">
+          <h2 className="text-foreground mb-4 flex items-center text-2xl font-bold">
+            <div className="glass-hierarchy-child mr-4 rounded-xl p-3">
               <Building2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
             </div>
             MyCountry Builder
           </h2>
           <p className="text-muted-foreground text-lg">
-            Build your country exactly how you want. Our builder allows you to customize everything from your government structure to your economy and demographics to
-            your policies and manage diplomatic relations. We use a multi-layered Economic Engine that models real-world economic behavior through advanced
-            mathematical models, tier-based growth systems, and time-synchronized calculations to ensure a dynamic and realistic world.
+            Build your country exactly how you want. Our builder allows you to customize everything
+            from your government structure to your economy and demographics to your policies and
+            manage diplomatic relations. We use a multi-layered Economic Engine that models
+            real-world economic behavior through advanced mathematical models, tier-based growth
+            systems, and time-synchronized calculations to ensure a dynamic and realistic world.
           </p>
         </div>
 
         <div className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
             {features.map((feature, index) => (
               <motion.div
                 key={feature.title}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 * (index + 1) }}
-                className="glass-hierarchy-child p-6 rounded-2xl text-center group hover:glass-hierarchy-interactive transition-all duration-500"
+                className="glass-hierarchy-child group hover:glass-hierarchy-interactive rounded-2xl p-6 text-center transition-all duration-500"
               >
-                <div className="w-20 h-20 glass-hierarchy-child rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                <div className="glass-hierarchy-child mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110">
                   <feature.icon className={`h-10 w-10 ${feature.color}`} />
                 </div>
-                <h3 className="text-xl font-bold text-foreground mb-3">
-                  {feature.title}
-                </h3>
-                <p className="text-muted-foreground">
-                  {feature.description}
-                </p>
+                <h3 className="text-foreground mb-3 text-xl font-bold">{feature.title}</h3>
+                <p className="text-muted-foreground">{feature.description}</p>
               </motion.div>
             ))}
           </div>
 
-          <div className="glass-hierarchy-child p-8 rounded-2xl">
-            <div className="flex items-center mb-6">
-              <div className="glass-hierarchy-child p-3 rounded-xl mr-4">
+          <div className="glass-hierarchy-child rounded-2xl p-8">
+            <div className="mb-6 flex items-center">
+              <div className="glass-hierarchy-child mr-4 rounded-xl p-3">
                 <Star className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground">
-                What You'll Get
-              </h3>
+              <h3 className="text-foreground text-2xl font-bold">What You'll Get</h3>
             </div>
-            <ul className="space-y-4 text-muted-foreground">
+            <ul className="text-muted-foreground space-y-4">
               {benefits.map((benefit, index) => (
                 <li key={index} className="flex items-start">
-                  <div className="w-2 h-2 bg-emerald-600 dark:bg-emerald-400 rounded-full mr-4 mt-2 flex-shrink-0"></div>
+                  <div className="mt-2 mr-4 h-2 w-2 flex-shrink-0 rounded-full bg-emerald-600 dark:bg-emerald-400"></div>
                   <span>{benefit}</span>
                 </li>
               ))}
@@ -132,17 +130,17 @@ export function CreateNewStep({ onBack, onCreate, isCreating }: CreateNewStepPro
           <Button
             onClick={onCreate}
             disabled={isCreating}
-            className="w-full glass-hierarchy-interactive py-6 text-lg font-semibold rounded-2xl"
+            className="glass-hierarchy-interactive w-full rounded-2xl py-6 text-lg font-semibold"
             size="lg"
           >
             {isCreating ? (
               <>
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-current mr-4"></div>
+                <div className="mr-4 h-6 w-6 animate-spin rounded-full border-b-2 border-current"></div>
                 Starting MyCountry Builder...
               </>
             ) : (
               <>
-                <Plus className="h-6 w-6 mr-4" />
+                <Plus className="mr-4 h-6 w-6" />
                 Start MyCountry Builder
               </>
             )}

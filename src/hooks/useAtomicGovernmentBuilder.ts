@@ -7,9 +7,9 @@
  * @module useAtomicGovernmentBuilder
  */
 
-import { useState, useMemo, useCallback } from 'react';
-import { ComponentType } from '@prisma/client';
-import { ATOMIC_COMPONENTS, COMPONENT_CATEGORIES } from '~/lib/atomic-government-data';
+import { useState, useMemo, useCallback } from "react";
+import { ComponentType } from "@prisma/client";
+import { ATOMIC_COMPONENTS, COMPONENT_CATEGORIES } from "~/lib/atomic-government-data";
 import {
   calculateGovernmentEffectiveness,
   detectSynergies,
@@ -20,8 +20,8 @@ import {
   calculateMaintenanceCost,
   calculateRequiredCapacity,
   validateSelection,
-} from '~/lib/atomic-government-utils';
-import type { EffectivenessMetrics } from '~/components/atomic/shared/types';
+} from "~/lib/atomic-government-utils";
+import type { EffectivenessMetrics } from "~/components/atomic/shared/types";
 
 export interface UseAtomicGovernmentBuilderProps {
   /** Initially selected components */
@@ -41,7 +41,7 @@ export interface UseAtomicGovernmentBuilderReturn {
   searchQuery: string;
 
   // Computed values
-  filteredComponents: Partial<Record<ComponentType, typeof ATOMIC_COMPONENTS[ComponentType]>>;
+  filteredComponents: Partial<Record<ComponentType, (typeof ATOMIC_COMPONENTS)[ComponentType]>>;
   effectiveness: EffectivenessMetrics;
   synergies: ReturnType<typeof detectSynergies>;
   conflicts: ReturnType<typeof detectConflicts>;
@@ -76,7 +76,7 @@ export function useAtomicGovernmentBuilder({
   // State
   const [selectedComponents, setSelectedComponents] = useState<ComponentType[]>(initialComponents);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Filtered components based on search and category
   const filteredComponents = useMemo(() => {
@@ -100,16 +100,10 @@ export function useAtomicGovernmentBuilder({
   );
 
   // Synergies
-  const synergies = useMemo(
-    () => detectSynergies(selectedComponents),
-    [selectedComponents]
-  );
+  const synergies = useMemo(() => detectSynergies(selectedComponents), [selectedComponents]);
 
   // Conflicts
-  const conflicts = useMemo(
-    () => detectConflicts(selectedComponents),
-    [selectedComponents]
-  );
+  const conflicts = useMemo(() => detectConflicts(selectedComponents), [selectedComponents]);
 
   // Cost calculations
   const implementationCost = useMemo(

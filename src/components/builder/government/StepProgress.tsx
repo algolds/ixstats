@@ -4,9 +4,9 @@
  * Visual progress indicator for government builder steps
  */
 
-import React from 'react';
-import { CheckCircle, AlertTriangle, ArrowRight, type LucideIcon } from 'lucide-react';
-import type { ValidationErrors } from '~/lib/government-builder-validation';
+import React from "react";
+import { CheckCircle, AlertTriangle, ArrowRight, type LucideIcon } from "lucide-react";
+import type { ValidationErrors } from "~/lib/government-builder-validation";
 
 export interface Step {
   id: string;
@@ -32,7 +32,7 @@ export const StepProgress = React.memo(function StepProgress({
   const currentStepIndex = steps.findIndex((step) => step.id === currentStep);
 
   return (
-    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg border border-border">
+    <div className="bg-muted/50 border-border flex items-center justify-between rounded-lg border p-4">
       {steps.map((step, index) => {
         const StepIcon = step.icon;
         const isActive = step.id === currentStep;
@@ -49,14 +49,14 @@ export const StepProgress = React.memo(function StepProgress({
             <button
               onClick={() => onStepChange(step.id)}
               disabled={isReadOnly}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors relative ${
+              className={`relative flex items-center gap-2 rounded-lg px-3 py-2 transition-colors ${
                 isActive
-                  ? 'bg-primary text-primary-foreground'
+                  ? "bg-primary text-primary-foreground"
                   : isCompleted && !hasErrors
-                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
+                    ? "bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50"
                     : hasErrors
-                      ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'
-                      : 'hover:bg-muted text-muted-foreground'
+                      ? "bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
+                      : "hover:bg-muted text-muted-foreground"
               }`}
             >
               <StepIcon className="h-4 w-4" />
@@ -65,7 +65,7 @@ export const StepProgress = React.memo(function StepProgress({
               {hasErrors && <AlertTriangle className="h-4 w-4" />}
             </button>
             {index < steps.length - 1 && (
-              <ArrowRight className="h-4 w-4 mx-2 text-muted-foreground" />
+              <ArrowRight className="text-muted-foreground mx-2 h-4 w-4" />
             )}
           </div>
         );

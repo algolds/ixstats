@@ -5,16 +5,16 @@
  * with various parts of the IxStats platform.
  */
 
-import { DiplomaticEncryptionService } from './diplomatic-encryption';
+import { DiplomaticEncryptionService } from "./diplomatic-encryption";
 import type {
   ClassificationLevel,
   EncryptedMessage,
   DecryptedMessage,
   EncryptionKeyModel,
-} from './diplomatic-encryption';
-import type { UserLogContext } from './user-logger';
-import { db } from '~/server/db';
-import { notificationAPI } from './notification-api';
+} from "./diplomatic-encryption";
+import type { UserLogContext } from "./user-logger";
+import { db } from "~/server/db";
+import { notificationAPI } from "./notification-api";
 
 // ============================================================================
 // EXAMPLE 1: Country Setup - Generate Initial Keys
@@ -32,8 +32,8 @@ export async function setupCountryEncryption(
     console.log(`Setting up encryption for country: ${countryName} (${countryId})`);
 
     const userContext: UserLogContext = {
-      userId: userId || 'system',
-      clerkUserId: userId || 'system',
+      userId: userId || "system",
+      clerkUserId: userId || "system",
       countryId,
     };
 
@@ -46,14 +46,14 @@ export async function setupCountryEncryption(
 
     // Send notification to country owner
     await notificationAPI.create({
-      title: '🔐 Encryption Keys Generated',
+      title: "🔐 Encryption Keys Generated",
       message: `Secure encryption keys have been generated for ${countryName}. Your diplomatic communications are now protected.`,
       countryId,
-      category: 'diplomatic',
-      priority: 'medium',
-      type: 'success',
-      href: '/diplomatic',
-      source: 'encryption-system',
+      category: "diplomatic",
+      priority: "medium",
+      type: "success",
+      href: "/diplomatic",
+      source: "encryption-system",
       actionable: false,
       metadata: {
         keyId: keyPair.keyId,
@@ -82,7 +82,7 @@ export async function sendEncryptedDiplomaticMessage(params: {
   subject: string;
   content: string;
   classification: ClassificationLevel;
-  priority?: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT";
   userId: string;
 }): Promise<{ messageId: string; encrypted: boolean }> {
   const {
@@ -94,7 +94,7 @@ export async function sendEncryptedDiplomaticMessage(params: {
     subject,
     content,
     classification,
-    priority = 'NORMAL',
+    priority = "NORMAL",
     userId,
   } = params;
 
@@ -119,7 +119,7 @@ export async function sendEncryptedDiplomaticMessage(params: {
     priority,
     encrypted: requiresEncryption,
     ixTimeTimestamp: Date.now(),
-    status: 'SENT',
+    status: "SENT",
   };
 
   // Encrypt message if required
@@ -136,7 +136,7 @@ export async function sendEncryptedDiplomaticMessage(params: {
 
     messageData = {
       ...messageData,
-      content: '[ENCRYPTED]', // Placeholder for plaintext field
+      content: "[ENCRYPTED]", // Placeholder for plaintext field
       encryptedContent: encryptedMessage.encryptedContent,
       signature: encryptedMessage.signature,
       encryptionVersion: encryptedMessage.encryptionVersion,
@@ -162,14 +162,14 @@ export async function sendEncryptedDiplomaticMessage(params: {
 
   // Notify recipient
   await notificationAPI.create({
-    title: requiresEncryption ? '🔐 Encrypted Message Received' : '📨 New Message',
+    title: requiresEncryption ? "🔐 Encrypted Message Received" : "📨 New Message",
     message: `${fromCountryName} sent you a ${classification.toLowerCase()} message: "${subject}"`,
     countryId: toCountryId,
-    category: 'diplomatic',
-    priority: priority === 'URGENT' ? 'high' : priority === 'HIGH' ? 'medium' : 'low',
-    type: 'info',
+    category: "diplomatic",
+    priority: priority === "URGENT" ? "high" : priority === "HIGH" ? "medium" : "low",
+    type: "info",
     href: `/diplomatic/channels/${channelId}`,
-    source: 'diplomatic-system',
+    source: "diplomatic-system",
     actionable: true,
     metadata: {
       messageId: message.id,
@@ -216,7 +216,7 @@ export async function readEncryptedDiplomaticMessage(params: {
 
   // Verify user has access to this message
   if (message.toCountryId !== recipientCountryId && message.fromCountryId !== recipientCountryId) {
-    throw new Error('Unauthorized: You do not have access to this message');
+    throw new Error("Unauthorized: You do not have access to this message");
   }
 
   // If not encrypted, return plaintext
@@ -233,7 +233,7 @@ export async function readEncryptedDiplomaticMessage(params: {
   const encryptedMessage: EncryptedMessage = {
     encryptedContent: message.encryptedContent,
     signature: message.signature!,
-    encryptionVersion: (message.encryptionVersion || 'v1') as any,
+    encryptionVersion: (message.encryptionVersion || "v1") as any,
     iv: message.iv!,
     encryptedKey: message.encryptedKey!,
     senderKeyId: message.senderKeyId!,
@@ -251,26 +251,26 @@ export async function readEncryptedDiplomaticMessage(params: {
   await db.diplomaticMessage.update({
     where: { id: messageId },
     data: {
-      status: 'READ',
+      status: "READ",
       signatureVerified: decryptedMessage.verified,
     },
   });
 
   console.log(
-    `✓ Message decrypted (signature ${decryptedMessage.verified ? 'verified' : 'FAILED'})`
+    `✓ Message decrypted (signature ${decryptedMessage.verified ? "verified" : "FAILED"})`
   );
 
   // Warn if signature verification failed
   if (!decryptedMessage.verified) {
     await notificationAPI.create({
-      title: '⚠️ Signature Verification Failed',
+      title: "⚠️ Signature Verification Failed",
       message: `A message from ${message.fromCountryName} could not be verified. It may have been tampered with.`,
       countryId: recipientCountryId,
-      category: 'security',
-      priority: 'high',
-      type: 'warning',
+      category: "security",
+      priority: "high",
+      type: "warning",
       href: `/diplomatic/channels/${message.channelId}`,
-      source: 'encryption-system',
+      source: "encryption-system",
       actionable: true,
       metadata: {
         messageId,
@@ -290,7 +290,7 @@ export async function readEncryptedDiplomaticMessage(params: {
  * Check and rotate keys that are expiring soon
  */
 export async function checkAndRotateExpiringKeys(): Promise<void> {
-  console.log('Checking for expiring encryption keys...');
+  console.log("Checking for expiring encryption keys...");
 
   const warningThreshold = new Date();
   warningThreshold.setDate(warningThreshold.getDate() + 30); // 30 days warning
@@ -298,7 +298,7 @@ export async function checkAndRotateExpiringKeys(): Promise<void> {
   // Find keys expiring within 30 days
   const expiringKeys = await db.encryptionKey.findMany({
     where: {
-      status: 'ACTIVE',
+      status: "ACTIVE",
       expiresAt: {
         lte: warningThreshold,
         gt: new Date(),
@@ -320,7 +320,7 @@ export async function checkAndRotateExpiringKeys(): Promise<void> {
     });
 
     console.log(
-      `  ${country?.name || 'Unknown Country'}: ${key.id} expires in ${daysUntilExpiry} days`
+      `  ${country?.name || "Unknown Country"}: ${key.id} expires in ${daysUntilExpiry} days`
     );
 
     // Auto-rotate if within 7 days
@@ -330,32 +330,32 @@ export async function checkAndRotateExpiringKeys(): Promise<void> {
       const newKeyPair = await DiplomaticEncryptionService.rotateKeys(key.countryId);
 
       await notificationAPI.create({
-        title: '🔄 Encryption Keys Rotated',
+        title: "🔄 Encryption Keys Rotated",
         message: `Your encryption keys have been automatically rotated. Old key expires in ${daysUntilExpiry} days.`,
         countryId: key.countryId,
-        category: 'security',
-        priority: 'high',
-        type: 'warning',
-        href: '/diplomatic',
-        source: 'encryption-system',
+        category: "security",
+        priority: "high",
+        type: "warning",
+        href: "/diplomatic",
+        source: "encryption-system",
         actionable: false,
         metadata: {
           oldKeyId: key.id,
           newKeyId: newKeyPair.keyId,
-          reason: 'auto-rotation',
+          reason: "auto-rotation",
         },
       });
     } else {
       // Send warning notification
       await notificationAPI.create({
-        title: '⚠️ Encryption Keys Expiring Soon',
+        title: "⚠️ Encryption Keys Expiring Soon",
         message: `Your encryption keys expire in ${daysUntilExpiry} days. Consider rotating them soon.`,
         countryId: key.countryId,
-        category: 'security',
-        priority: 'medium',
-        type: 'warning',
-        href: '/diplomatic',
-        source: 'encryption-system',
+        category: "security",
+        priority: "medium",
+        type: "warning",
+        href: "/diplomatic",
+        source: "encryption-system",
         actionable: true,
         metadata: {
           keyId: key.id,
@@ -387,18 +387,18 @@ export async function manuallyRotateKeys(countryId: string, userId: string): Pro
   });
 
   await notificationAPI.create({
-    title: '🔄 Encryption Keys Rotated',
-    message: `New encryption keys have been generated for ${country?.name || 'your country'}. All future messages will use the new keys.`,
+    title: "🔄 Encryption Keys Rotated",
+    message: `New encryption keys have been generated for ${country?.name || "your country"}. All future messages will use the new keys.`,
     countryId,
-    category: 'security',
-    priority: 'medium',
-    type: 'success',
-    href: '/diplomatic',
-    source: 'encryption-system',
+    category: "security",
+    priority: "medium",
+    type: "success",
+    href: "/diplomatic",
+    source: "encryption-system",
     actionable: false,
     metadata: {
       newKeyId: newKeyPair.keyId,
-      reason: 'manual-rotation',
+      reason: "manual-rotation",
     },
   });
 
@@ -415,16 +415,16 @@ export async function manuallyRotateKeys(countryId: string, userId: string): Pro
 export async function getCountryEncryptionStats(countryId: string) {
   const [encryptionLogs, decryptionLogs, signLogs, verifyLogs, keys] = await Promise.all([
     db.encryptionAuditLog.count({
-      where: { countryId, operation: 'ENCRYPT', success: true },
+      where: { countryId, operation: "ENCRYPT", success: true },
     }),
     db.encryptionAuditLog.count({
-      where: { countryId, operation: 'DECRYPT', success: true },
+      where: { countryId, operation: "DECRYPT", success: true },
     }),
     db.encryptionAuditLog.count({
-      where: { countryId, operation: 'SIGN', success: true },
+      where: { countryId, operation: "SIGN", success: true },
     }),
     db.encryptionAuditLog.count({
-      where: { countryId, operation: 'VERIFY', success: true },
+      where: { countryId, operation: "VERIFY", success: true },
     }),
     db.encryptionKey.findMany({
       where: { countryId },
@@ -432,33 +432,33 @@ export async function getCountryEncryptionStats(countryId: string) {
   ]);
 
   const failedDecryptions = await db.encryptionAuditLog.count({
-    where: { countryId, operation: 'DECRYPT', success: false },
+    where: { countryId, operation: "DECRYPT", success: false },
   });
 
   const failedVerifications = await db.encryptionAuditLog.count({
-    where: { countryId, operation: 'VERIFY', success: false },
+    where: { countryId, operation: "VERIFY", success: false },
   });
 
-  const activeKeys = keys.filter((k: any) => k.status === 'ACTIVE' && k.expiresAt > new Date());
+  const activeKeys = keys.filter((k: any) => k.status === "ACTIVE" && k.expiresAt > new Date());
   const expiredKeys = keys.filter((k: any) => k.expiresAt <= new Date());
-  const revokedKeys = keys.filter((k: any) => k.status === 'REVOKED');
+  const revokedKeys = keys.filter((k: any) => k.status === "REVOKED");
 
   // Get average encryption/decryption times
   const encryptionTimes = await db.encryptionAuditLog.findMany({
-    where: { countryId, operation: 'ENCRYPT', success: true },
+    where: { countryId, operation: "ENCRYPT", success: true },
     select: { metadata: true },
     take: 100,
   });
 
   const avgEncryptionTime =
     encryptionTimes.reduce((sum: number, log: any) => {
-      const metadata = typeof log.metadata === 'string' ? JSON.parse(log.metadata) : log.metadata;
+      const metadata = typeof log.metadata === "string" ? JSON.parse(log.metadata) : log.metadata;
       return sum + (metadata.durationMs || 0);
     }, 0) / Math.max(encryptionTimes.length, 1);
 
   const lastRotation = await db.encryptionAuditLog.findFirst({
-    where: { countryId, operation: 'ROTATE_KEY', success: true },
-    orderBy: { createdAt: 'desc' },
+    where: { countryId, operation: "ROTATE_KEY", success: true },
+    orderBy: { createdAt: "desc" },
   });
 
   return {
@@ -512,11 +512,11 @@ export async function getSecurityEvents(countryId: string, limit = 20) {
       countryId,
       OR: [
         { success: false }, // Failed operations
-        { operation: 'ROTATE_KEY' }, // Key rotations
-        { operation: 'REVOKE_KEY' }, // Key revocations
+        { operation: "ROTATE_KEY" }, // Key rotations
+        { operation: "REVOKE_KEY" }, // Key revocations
       ],
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
     take: limit,
   });
 
@@ -527,7 +527,7 @@ export async function getSecurityEvents(countryId: string, limit = 20) {
     success: event.success,
     errorMessage: event.errorMessage,
     timestamp: event.createdAt,
-    metadata: typeof event.metadata === 'string' ? JSON.parse(event.metadata) : event.metadata,
+    metadata: typeof event.metadata === "string" ? JSON.parse(event.metadata) : event.metadata,
   }));
 }
 
@@ -574,11 +574,11 @@ export async function sendEncryptedBroadcast(params: {
         fromCountryId,
         fromCountryName,
         toCountryId: recipientId,
-        toCountryName: recipient?.name || 'Unknown',
+        toCountryName: recipient?.name || "Unknown",
         subject,
         content,
         classification,
-        priority: 'NORMAL',
+        priority: "NORMAL",
         userId,
       });
 
@@ -676,4 +676,3 @@ export const exampleTRPCProcedures = {
     }),
   `,
 };
-

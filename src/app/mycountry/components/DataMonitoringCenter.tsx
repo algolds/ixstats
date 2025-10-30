@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Activity, 
-  Database, 
-  TrendingUp, 
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Activity,
+  Database,
+  TrendingUp,
   TrendingDown,
   AlertTriangle,
   CheckCircle,
@@ -17,17 +17,21 @@ import {
   RefreshCw,
   Pause,
   Play,
-  Settings
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { IxTime } from '~/lib/ixtime';
-import { useGlobalNotifications } from './GlobalNotificationSystem';
-import { getDatabaseIntegrationService } from '../services/DatabaseIntegrationService';
-import { useDataSync } from '../hooks/useDataSync';
-import { useRealTimeIntelligence } from '~/hooks/useRealTimeIntelligence';
-import { analyzeTrend, calculateEconomicTrend, formatTrendForIntelligence } from '~/lib/historical-trends';
+  Settings,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { IxTime } from "~/lib/ixtime";
+import { useGlobalNotifications } from "./GlobalNotificationSystem";
+import { getDatabaseIntegrationService } from "../services/DatabaseIntegrationService";
+import { useDataSync } from "../hooks/useDataSync";
+import { useRealTimeIntelligence } from "~/hooks/useRealTimeIntelligence";
+import {
+  analyzeTrend,
+  calculateEconomicTrend,
+  formatTrendForIntelligence,
+} from "~/lib/historical-trends";
 
 interface DataMonitoringCenterProps {
   countryId: string;
@@ -42,7 +46,7 @@ interface MetricTrend {
   previous: number;
   change: number;
   changePercent: number;
-  trend: 'up' | 'down' | 'stable';
+  trend: "up" | "down" | "stable";
   timestamp: number;
 }
 
@@ -55,23 +59,20 @@ interface SystemMetrics {
   uptime: number;
 }
 
-export function DataMonitoringCenter({ 
-  countryId, 
-  isVisible, 
-  onClose, 
-  className = '' 
+export function DataMonitoringCenter({
+  countryId,
+  isVisible,
+  onClose,
+  className = "",
 }: DataMonitoringCenterProps) {
   const { addNotification } = useGlobalNotifications();
   const dbService = getDatabaseIntegrationService();
-  
+
   // Real-time intelligence integration
-  const { 
-    connectionState, 
-    latestUpdate, 
-    updates, 
-    isConnected 
-  } = useRealTimeIntelligence({ countryId });
-  
+  const { connectionState, latestUpdate, updates, isConnected } = useRealTimeIntelligence({
+    countryId,
+  });
+
   // State for monitoring data
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics>({
     activeConnections: 0,
@@ -81,7 +82,7 @@ export function DataMonitoringCenter({
     errors: 0,
     uptime: 0,
   });
-  
+
   const [metricTrends, setMetricTrends] = useState<MetricTrend[]>([]);
   const [isMonitoring, setIsMonitoring] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -89,11 +90,11 @@ export function DataMonitoringCenter({
   const streamIdRef = useRef<string | null>(null);
 
   // Use the data sync hook for real-time updates
-  const { 
-    syncState, 
-    isConnected: isSyncConnected, 
+  const {
+    syncState,
+    isConnected: isSyncConnected,
     forceRefresh,
-    data: countryData 
+    data: countryData,
   } = useDataSync(countryId, {
     enabled: isVisible && isMonitoring,
     pollInterval: 15000, // Fast updates for monitoring
@@ -110,60 +111,62 @@ export function DataMonitoringCenter({
     const newTrends: MetricTrend[] = [];
 
     // Process each change into a trend
-    changes.forEach(change => {
-      let current = 0, previous = 0, metric = '';
+    changes.forEach((change) => {
+      let current = 0,
+        previous = 0,
+        metric = "";
 
       switch (change) {
-        case 'population':
+        case "population":
           current = newData.currentPopulation || 0;
           previous = current; // TODO: Get previous value from cache
-          metric = 'Population';
+          metric = "Population";
           break;
-        case 'gdpPerCapita':
+        case "gdpPerCapita":
           current = newData.currentGdpPerCapita || 0;
           previous = current;
-          metric = 'GDP per Capita';
+          metric = "GDP per Capita";
           break;
-        case 'totalGdp':
+        case "totalGdp":
           current = newData.currentTotalGdp || 0;
           previous = current;
-          metric = 'Total GDP';
+          metric = "Total GDP";
           break;
-        case 'economicVitality':
+        case "economicVitality":
           current = newData.economicVitality || 0;
           previous = current;
-          metric = 'Economic Vitality';
+          metric = "Economic Vitality";
           break;
       }
 
       if (metric) {
         const changeValue = current - previous;
         const changePercent = previous > 0 ? (changeValue / previous) * 100 : 0;
-        
+
         newTrends.push({
           metric,
           current,
           previous,
           change: changeValue,
           changePercent,
-          trend: changeValue > 0 ? 'up' : changeValue < 0 ? 'down' : 'stable',
+          trend: changeValue > 0 ? "up" : changeValue < 0 ? "down" : "stable",
           timestamp,
         });
       }
     });
 
     if (newTrends.length > 0) {
-      setMetricTrends(prev => [...newTrends, ...prev].slice(0, 20)); // Keep last 20 trends
-      
+      setMetricTrends((prev) => [...newTrends, ...prev].slice(0, 20)); // Keep last 20 trends
+
       // Generate monitoring notification
       addNotification({
-        type: 'info',
-        category: 'system',
-        title: 'Data Monitor Alert',
+        type: "info",
+        category: "system",
+        title: "Data Monitor Alert",
         message: `${newTrends.length} metrics updated for ${newData.name}`,
-        source: 'Data Monitor',
+        source: "Data Monitor",
         actionable: false,
-        priority: 'low',
+        priority: "low",
         autoRemove: true,
         removeAfter: 15000,
       });
@@ -173,23 +176,25 @@ export function DataMonitoringCenter({
   // Handle sync status changes
   function handleStatusChange(status: string) {
     console.log(`[DataMonitoringCenter] Sync status changed: ${status}`);
-    
-    if (status === 'error') {
+
+    if (status === "error") {
       addNotification({
-        type: 'warning',
-        category: 'system',
-        title: 'Monitoring Alert',
-        message: 'Data sync encountered an error - monitoring may be affected',
-        source: 'Data Monitor',
+        type: "warning",
+        category: "system",
+        title: "Monitoring Alert",
+        message: "Data sync encountered an error - monitoring may be affected",
+        source: "Data Monitor",
         actionable: true,
-        priority: 'medium',
+        priority: "medium",
         autoRemove: false,
-        actions: [{
-          id: 'retry',
-          label: 'Retry Connection',
-          type: 'primary' as const,
-          onClick: () => forceRefresh(),
-        }]
+        actions: [
+          {
+            id: "retry",
+            label: "Retry Connection",
+            type: "primary" as const,
+            onClick: () => forceRefresh(),
+          },
+        ],
       });
     }
   }
@@ -198,8 +203,8 @@ export function DataMonitoringCenter({
   const updateSystemMetrics = useCallback(() => {
     const dbStatus = dbService.getConnectionStatus();
     const currentTime = Date.now();
-    
-    setSystemMetrics(prev => ({
+
+    setSystemMetrics((prev) => ({
       activeConnections: dbStatus.isConnected ? 1 : 0,
       dataStreams: dbStatus.activeStreams,
       lastUpdate: Math.max(dbStatus.lastUpdate, syncState?.lastUpdate || 0),
@@ -228,23 +233,23 @@ export function DataMonitoringCenter({
   // Create database stream when component mounts
   useEffect(() => {
     if (isVisible && countryId && !streamIdRef.current) {
-      const streamId = dbService.createStream(countryId, ['*']);
+      const streamId = dbService.createStream(countryId, ["*"]);
       streamIdRef.current = streamId;
 
       // Add listener for database events
       dbService.addListener(streamId, (event: any) => {
-        console.log('[DataMonitoringCenter] Database event:', event);
-        
-        if (event.type === 'system_event') {
+        console.log("[DataMonitoringCenter] Database event:", event);
+
+        if (event.type === "system_event") {
           addNotification({
-            type: event.severity === 'error' ? 'critical' : 'info',
-            category: 'system',
+            type: event.severity === "error" ? "critical" : "info",
+            category: "system",
             title: `System Event: ${event.eventType}`,
             message: event.message,
-            source: 'Database Monitor',
-            actionable: event.severity === 'error',
-            priority: event.severity === 'error' ? 'high' : 'low',
-            autoRemove: event.severity !== 'error',
+            source: "Database Monitor",
+            actionable: event.severity === "error",
+            priority: event.severity === "error" ? "high" : "low",
+            autoRemove: event.severity !== "error",
             removeAfter: 20000,
           });
         }
@@ -261,32 +266,39 @@ export function DataMonitoringCenter({
 
   // Render trend indicator
   const renderTrendIndicator = (trend: MetricTrend) => {
-    const Icon = trend.trend === 'up' ? TrendingUp : trend.trend === 'down' ? TrendingDown : Activity;
-    const colorClass = trend.trend === 'up' ? 'text-green-500' : trend.trend === 'down' ? 'text-red-500' : 'text-blue-500';
-    
+    const Icon =
+      trend.trend === "up" ? TrendingUp : trend.trend === "down" ? TrendingDown : Activity;
+    const colorClass =
+      trend.trend === "up"
+        ? "text-green-500"
+        : trend.trend === "down"
+          ? "text-red-500"
+          : "text-blue-500";
+
     return (
       <motion.div
         initial={{ opacity: 0, x: -10 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 10 }}
-        className="flex items-center gap-3 p-3 rounded-lg bg-card/50 border"
+        className="bg-card/50 flex items-center gap-3 rounded-lg border p-3"
       >
         <Icon className={`h-4 w-4 ${colorClass}`} />
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">{trend.metric}</span>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground text-xs">
               {new Date(trend.timestamp).toLocaleTimeString()}
             </span>
           </div>
-          <div className="flex items-center gap-2 mt-1">
+          <div className="mt-1 flex items-center gap-2">
             <span className="text-lg font-bold">
-              {trend.metric.includes('GDP') ? 
-                `$${(trend.current / 1000).toFixed(1)}k` : 
-                trend.current.toLocaleString()}
+              {trend.metric.includes("GDP")
+                ? `$${(trend.current / 1000).toFixed(1)}k`
+                : trend.current.toLocaleString()}
             </span>
             <span className={`text-sm ${colorClass}`}>
-              {trend.change > 0 ? '+' : ''}{trend.changePercent.toFixed(2)}%
+              {trend.change > 0 ? "+" : ""}
+              {trend.changePercent.toFixed(2)}%
             </span>
           </div>
         </div>
@@ -303,36 +315,33 @@ export function DataMonitoringCenter({
       exit={{ opacity: 0, scale: 0.95 }}
       className={`fixed inset-4 z-50 flex items-center justify-center ${className}`}
     >
-      <div className="w-full max-w-4xl h-full max-h-[90vh] bg-background/95 backdrop-blur-lg border rounded-xl shadow-2xl overflow-hidden">
-        
+      <div className="bg-background/95 h-full max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-xl border shadow-2xl backdrop-blur-lg">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b bg-card/50">
+        <div className="bg-card/50 flex items-center justify-between border-b p-6">
           <div className="flex items-center gap-3">
-            <Database className="h-6 w-6 text-primary" />
+            <Database className="text-primary h-6 w-6" />
             <div>
               <h2 className="text-xl font-bold">Data Monitoring Center</h2>
-              <p className="text-sm text-muted-foreground">
-                Real-time data synchronization for {countryData?.name || 'Country'}
+              <p className="text-muted-foreground text-sm">
+                Real-time data synchronization for {countryData?.name || "Country"}
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setAutoRefresh(!autoRefresh)}
-            >
+            <Button variant="outline" size="sm" onClick={() => setAutoRefresh(!autoRefresh)}>
               {autoRefresh ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              {autoRefresh ? 'Pause' : 'Resume'}
+              {autoRefresh ? "Pause" : "Resume"}
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={forceRefresh}
-              disabled={syncState?.status === 'syncing'}
+              disabled={syncState?.status === "syncing"}
             >
-              <RefreshCw className={`h-4 w-4 ${syncState?.status === 'syncing' ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`h-4 w-4 ${syncState?.status === "syncing" ? "animate-spin" : ""}`}
+              />
               Refresh
             </Button>
             <Button variant="outline" size="sm" onClick={onClose}>
@@ -342,8 +351,7 @@ export function DataMonitoringCenter({
         </div>
 
         <div className="flex-1 overflow-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 p-4 md:p-6">
-            
+          <div className="grid grid-cols-1 gap-4 p-4 md:p-6 lg:grid-cols-2 lg:gap-6">
             {/* System Status */}
             <Card>
               <CardHeader>
@@ -353,50 +361,53 @@ export function DataMonitoringCenter({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Connection</span>
+                      <span className="text-muted-foreground text-sm">Connection</span>
                       <Badge variant={isConnected ? "default" : "destructive"}>
-                        {isConnected ? 'Connected' : 'Disconnected'}
+                        {isConnected ? "Connected" : "Disconnected"}
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Active Streams</span>
+                      <span className="text-muted-foreground text-sm">Active Streams</span>
                       <span className="font-mono">{systemMetrics.dataStreams}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Errors</span>
-                      <span className={`font-mono ${systemMetrics.errors > 0 ? 'text-red-500' : ''}`}>
+                      <span className="text-muted-foreground text-sm">Errors</span>
+                      <span
+                        className={`font-mono ${systemMetrics.errors > 0 ? "text-red-500" : ""}`}
+                      >
                         {systemMetrics.errors}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Intelligence</span>
-                      <Badge variant={connectionState.status === 'connected' ? "default" : "outline"}>
-                        {connectionState.status === 'connected' ? 'Live' : 'Offline'}
+                      <span className="text-muted-foreground text-sm">Intelligence</span>
+                      <Badge
+                        variant={connectionState.status === "connected" ? "default" : "outline"}
+                      >
+                        {connectionState.status === "connected" ? "Live" : "Offline"}
                       </Badge>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Last Update</span>
+                      <span className="text-muted-foreground text-sm">Last Update</span>
                       <span className="text-xs">
-                        {systemMetrics.lastUpdate ? 
-                          new Date(systemMetrics.lastUpdate).toLocaleTimeString() : 
-                          'Never'
-                        }
+                        {systemMetrics.lastUpdate
+                          ? new Date(systemMetrics.lastUpdate).toLocaleTimeString()
+                          : "Never"}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">IxTime</span>
+                      <span className="text-muted-foreground text-sm">IxTime</span>
                       <span className="text-xs text-amber-500">
-                        {IxTime.formatIxTime(IxTime.getCurrentIxTime()).split(',')[1]}
+                        {IxTime.formatIxTime(IxTime.getCurrentIxTime()).split(",")[1]}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Multiplier</span>
+                      <span className="text-muted-foreground text-sm">Multiplier</span>
                       <span className="text-xs">×{IxTime.getTimeMultiplier()}</span>
                     </div>
                   </div>
@@ -413,17 +424,21 @@ export function DataMonitoringCenter({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3 max-h-60 overflow-y-auto">
+                <div className="max-h-60 space-y-3 overflow-y-auto">
                   <AnimatePresence>
                     {metricTrends.length > 0 ? (
-                      metricTrends.slice(0, 5).map((trend, index) => (
-                        <div key={`trend-${trend.metric || 'unknown'}-${trend.timestamp || index}`}>
-                          {renderTrendIndicator(trend)}
-                        </div>
-                      ))
+                      metricTrends
+                        .slice(0, 5)
+                        .map((trend, index) => (
+                          <div
+                            key={`trend-${trend.metric || "unknown"}-${trend.timestamp || index}`}
+                          >
+                            {renderTrendIndicator(trend)}
+                          </div>
+                        ))
                     ) : (
-                      <div className="text-center text-muted-foreground py-8">
-                        <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <div className="text-muted-foreground py-8 text-center">
+                        <Activity className="mx-auto mb-2 h-8 w-8 opacity-50" />
                         <p>No recent data changes detected</p>
                         <p className="text-xs">Monitoring active...</p>
                       </div>
@@ -443,35 +458,35 @@ export function DataMonitoringCenter({
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-4 rounded-lg bg-card/50">
-                      <Users className="h-6 w-6 mx-auto mb-2 text-blue-500" />
+                  <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                    <div className="bg-card/50 rounded-lg p-4 text-center">
+                      <Users className="mx-auto mb-2 h-6 w-6 text-blue-500" />
                       <div className="text-2xl font-bold">
                         {(countryData.currentPopulation / 1000000).toFixed(1)}M
                       </div>
-                      <div className="text-xs text-muted-foreground">Population</div>
+                      <div className="text-muted-foreground text-xs">Population</div>
                     </div>
-                    
-                    <div className="text-center p-4 rounded-lg bg-card/50">
-                      <DollarSign className="h-6 w-6 mx-auto mb-2 text-green-500" />
+
+                    <div className="bg-card/50 rounded-lg p-4 text-center">
+                      <DollarSign className="mx-auto mb-2 h-6 w-6 text-green-500" />
                       <div className="text-2xl font-bold">
                         ${(countryData.currentGdpPerCapita / 1000).toFixed(0)}k
                       </div>
-                      <div className="text-xs text-muted-foreground">GDP per Capita</div>
+                      <div className="text-muted-foreground text-xs">GDP per Capita</div>
                     </div>
-                    
-                    <div className="text-center p-4 rounded-lg bg-card/50">
-                      <TrendingUp className="h-6 w-6 mx-auto mb-2 text-purple-500" />
+
+                    <div className="bg-card/50 rounded-lg p-4 text-center">
+                      <TrendingUp className="mx-auto mb-2 h-6 w-6 text-purple-500" />
                       <div className="text-2xl font-bold">
-                        {countryData.economicVitality?.toFixed(0) || 'N/A'}
+                        {countryData.economicVitality?.toFixed(0) || "N/A"}
                       </div>
-                      <div className="text-xs text-muted-foreground">Economic Vitality</div>
+                      <div className="text-muted-foreground text-xs">Economic Vitality</div>
                     </div>
-                    
-                    <div className="text-center p-4 rounded-lg bg-card/50">
-                      <Zap className="h-6 w-6 mx-auto mb-2 text-amber-500" />
+
+                    <div className="bg-card/50 rounded-lg p-4 text-center">
+                      <Zap className="mx-auto mb-2 h-6 w-6 text-amber-500" />
                       <div className="text-2xl font-bold">{countryData.economicTier}</div>
-                      <div className="text-xs text-muted-foreground">Economic Tier</div>
+                      <div className="text-muted-foreground text-xs">Economic Tier</div>
                     </div>
                   </div>
                 </CardContent>

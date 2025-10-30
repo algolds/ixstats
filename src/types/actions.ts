@@ -1,11 +1,17 @@
-import type { BaseAction, StandardPriority, IconReference, ImpactMetrics, CostStructure } from './base';
+import type {
+  BaseAction,
+  StandardPriority,
+  IconReference,
+  ImpactMetrics,
+  CostStructure,
+} from "./base";
 
 // Discriminated union for all action types
 export type Action = ExecutiveAction | QuickAction | NotificationAction;
 
 // Executive-level actions with full metadata
 export interface ExecutiveAction extends BaseAction {
-  type: 'executive';
+  type: "executive";
   urgency: StandardPriority;
   estimatedImpact: ImpactMetrics;
   requirements: string[];
@@ -16,16 +22,16 @@ export interface ExecutiveAction extends BaseAction {
 
 // Quick actions for immediate use
 export interface QuickAction extends BaseAction {
-  type: 'quick';
-  icon: IconReference;           // Standardized icon reference
+  type: "quick";
+  icon: IconReference; // Standardized icon reference
   estimatedTime: string;
-  impact: StandardPriority;      // Unified with priority
-  urgency?: StandardPriority;    // Backward compatibility - maps to priority
+  impact: StandardPriority; // Unified with priority
+  urgency?: StandardPriority; // Backward compatibility - maps to priority
 }
 
 // Notification-embedded actions
 export interface NotificationAction extends BaseAction {
-  type: 'notification';
+  type: "notification";
   onClick: (() => void) | string; // Function or URL
   shortcut?: string;
   icon?: IconReference;
@@ -35,11 +41,10 @@ export interface NotificationAction extends BaseAction {
 }
 
 // Type guards for discriminated unions
-export const isExecutiveAction = (action: Action): action is ExecutiveAction => 
-  action.type === 'executive';
+export const isExecutiveAction = (action: Action): action is ExecutiveAction =>
+  action.type === "executive";
 
-export const isQuickAction = (action: Action): action is QuickAction => 
-  action.type === 'quick';
+export const isQuickAction = (action: Action): action is QuickAction => action.type === "quick";
 
-export const isNotificationAction = (action: Action): action is NotificationAction => 
-  action.type === 'notification';
+export const isNotificationAction = (action: Action): action is NotificationAction =>
+  action.type === "notification";

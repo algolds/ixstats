@@ -1,4 +1,4 @@
-import type { ThinkpagesPost, PostReaction } from '@prisma/client';
+import type { ThinkpagesPost, PostReaction } from "@prisma/client";
 
 interface PostWithReactions extends ThinkpagesPost {
   reactions: PostReaction[];
@@ -16,8 +16,30 @@ const REACTION_SENTIMENT: Record<string, number> = {
 };
 
 // Basic positive and negative keywords (can be expanded significantly)
-const POSITIVE_KEYWORDS = ['great', 'excellent', 'good', 'positive', 'success', 'growth', 'strong', 'thriving', 'progress', 'boom'];
-const NEGATIVE_KEYWORDS = ['bad', 'poor', 'crisis', 'decline', 'struggle', 'negative', 'recession', 'unrest', 'problem', 'fall'];
+const POSITIVE_KEYWORDS = [
+  "great",
+  "excellent",
+  "good",
+  "positive",
+  "success",
+  "growth",
+  "strong",
+  "thriving",
+  "progress",
+  "boom",
+];
+const NEGATIVE_KEYWORDS = [
+  "bad",
+  "poor",
+  "crisis",
+  "decline",
+  "struggle",
+  "negative",
+  "recession",
+  "unrest",
+  "problem",
+  "fall",
+];
 
 export function analyzePostSentiment(post: PostWithReactions): number {
   let sentimentScore = 0;
@@ -56,7 +78,7 @@ export function analyzePostSentiment(post: PostWithReactions): number {
   // Combine reaction and keyword sentiment
   // Give more weight to reactions as they are direct expressions of sentiment
   if (totalReactions > 0 && keywordCount > 0) {
-    sentimentScore = (sentimentScore * 0.7) + (keywordSentiment * 0.3); // 70% reactions, 30% keywords
+    sentimentScore = sentimentScore * 0.7 + keywordSentiment * 0.3; // 70% reactions, 30% keywords
   } else if (keywordCount > 0) {
     sentimentScore = keywordSentiment; // Only keywords available
   }

@@ -3,12 +3,12 @@
 
 "use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Globe } from 'lucide-react';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { CountrySelector } from '../CountrySelector';
-import type { RealCountryData } from '~/app/builder/lib/economy-data-service';
+import React from "react";
+import { motion } from "framer-motion";
+import { Globe } from "lucide-react";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { CountrySelector } from "../CountrySelector";
+import type { RealCountryData } from "~/app/builder/lib/economy-data-service";
 
 interface FoundationStepProps {
   countries: RealCountryData[];
@@ -25,22 +25,22 @@ export function FoundationStep({
   countryLoadError,
   onCountrySelect,
   onCreateFromScratch,
-  onBackToIntro
+  onBackToIntro,
 }: FoundationStepProps) {
   if (isLoadingCountries) {
     return (
       <div className="flex items-center justify-center py-24">
-        <div className="text-center space-y-4">
+        <div className="space-y-4 text-center">
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="w-16 h-16 mx-auto"
+            className="mx-auto h-16 w-16"
           >
             <Globe className="h-16 w-16 text-amber-500" />
           </motion.div>
           <div className="space-y-2">
             <p className="text-lg font-medium">Loading nations data...</p>
-            <p className="text-sm text-muted-foreground">Preparing your foundation options</p>
+            <p className="text-muted-foreground text-sm">Preparing your foundation options</p>
           </div>
         </div>
       </div>

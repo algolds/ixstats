@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { EnhancedCommandCenter } from '~/app/_components/EnhancedCommandCenter';
-import { DashboardErrorBoundary } from '~/components/shared/feedback/DashboardErrorBoundary';
+import { EnhancedCommandCenter } from "~/app/_components/EnhancedCommandCenter";
+import { DashboardErrorBoundary } from "~/components/shared/feedback/DashboardErrorBoundary";
 
 export default function NewDashboardPage() {
   return (

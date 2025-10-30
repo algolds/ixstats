@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Input } from '~/components/ui/input';
-import { Badge } from '~/components/ui/badge';
-import { cn } from '~/lib/utils';
-import { Search, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Badge } from "~/components/ui/badge";
+import { cn } from "~/lib/utils";
+import { Search, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface Column<T> {
   key: string;
@@ -14,7 +14,7 @@ export interface Column<T> {
   sortable?: boolean;
   render?: (value: any, row: T) => React.ReactNode;
   className?: string;
-  align?: 'left' | 'center' | 'right';
+  align?: "left" | "center" | "right";
 }
 
 export interface DataTableProps<T> {
@@ -40,19 +40,19 @@ export function DataTable<T extends Record<string, any>>({
   title,
   description,
   searchable = false,
-  searchPlaceholder = 'Search...',
+  searchPlaceholder = "Search...",
   searchKeys = [],
   paginated = false,
   pageSize = 10,
   className,
   loading = false,
-  emptyMessage = 'No data available',
+  emptyMessage = "No data available",
   onRowClick,
-  rowClassName
+  rowClassName,
 }: DataTableProps<T>) {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [sortColumn, setSortColumn] = useState<string | null>(null);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState(1);
 
   // Filter data based on search
@@ -60,15 +60,11 @@ export function DataTable<T extends Record<string, any>>({
     if (!searchable || !searchTerm) return data;
 
     const lowerSearch = searchTerm.toLowerCase();
-    return data.filter(row => {
+    return data.filter((row) => {
       if (searchKeys.length > 0) {
-        return searchKeys.some(key =>
-          String(row[key]).toLowerCase().includes(lowerSearch)
-        );
+        return searchKeys.some((key) => String(row[key]).toLowerCase().includes(lowerSearch));
       }
-      return Object.values(row).some(value =>
-        String(value).toLowerCase().includes(lowerSearch)
-      );
+      return Object.values(row).some((value) => String(value).toLowerCase().includes(lowerSearch));
     });
   }, [data, searchTerm, searchable, searchKeys]);
 
@@ -80,14 +76,14 @@ export function DataTable<T extends Record<string, any>>({
       const aVal = a[sortColumn];
       const bVal = b[sortColumn];
 
-      if (typeof aVal === 'number' && typeof bVal === 'number') {
-        return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
       }
 
       const aStr = String(aVal).toLowerCase();
       const bStr = String(bVal).toLowerCase();
 
-      if (sortDirection === 'asc') {
+      if (sortDirection === "asc") {
         return aStr.localeCompare(bStr);
       }
       return bStr.localeCompare(aStr);
@@ -105,24 +101,26 @@ export function DataTable<T extends Record<string, any>>({
 
   const handleSort = (columnKey: string) => {
     if (sortColumn === columnKey) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortColumn(columnKey);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
   const renderSortIcon = (columnKey: string) => {
     if (sortColumn !== columnKey) {
-      return <ArrowUpDown className="h-3 w-3 ml-1 text-muted-foreground" />;
+      return <ArrowUpDown className="text-muted-foreground ml-1 h-3 w-3" />;
     }
-    return sortDirection === 'asc'
-      ? <ArrowUp className="h-3 w-3 ml-1 text-primary" />
-      : <ArrowDown className="h-3 w-3 ml-1 text-primary" />;
+    return sortDirection === "asc" ? (
+      <ArrowUp className="text-primary ml-1 h-3 w-3" />
+    ) : (
+      <ArrowDown className="text-primary ml-1 h-3 w-3" />
+    );
   };
 
   return (
-    <Card className={cn('glass-hierarchy-child', className)}>
+    <Card className={cn("glass-hierarchy-child", className)}>
       {(title || description || searchable) && (
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -132,7 +130,7 @@ export function DataTable<T extends Record<string, any>>({
             </div>
             {searchable && (
               <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
                 <Input
                   placeholder={searchPlaceholder}
                   value={searchTerm}
@@ -148,24 +146,26 @@ export function DataTable<T extends Record<string, any>>({
         <div className="relative overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/50">
+              <tr className="border-border/50 border-b">
                 {columns.map((column) => (
                   <th
                     key={column.key}
                     className={cn(
-                      'px-4 py-3 font-medium text-muted-foreground',
-                      column.align === 'center' && 'text-center',
-                      column.align === 'right' && 'text-right',
-                      column.sortable && 'cursor-pointer hover:text-foreground transition-colors',
+                      "text-muted-foreground px-4 py-3 font-medium",
+                      column.align === "center" && "text-center",
+                      column.align === "right" && "text-right",
+                      column.sortable && "hover:text-foreground cursor-pointer transition-colors",
                       column.className
                     )}
                     onClick={() => column.sortable && handleSort(column.key)}
                   >
-                    <div className={cn(
-                      'flex items-center gap-1',
-                      column.align === 'center' && 'justify-center',
-                      column.align === 'right' && 'justify-end'
-                    )}>
+                    <div
+                      className={cn(
+                        "flex items-center gap-1",
+                        column.align === "center" && "justify-center",
+                        column.align === "right" && "justify-end"
+                      )}
+                    >
                       {column.label}
                       {column.sortable && renderSortIcon(column.key)}
                     </div>
@@ -178,14 +178,17 @@ export function DataTable<T extends Record<string, any>>({
                 <tr>
                   <td colSpan={columns.length} className="px-4 py-8 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      <div className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
                       <span className="text-muted-foreground">Loading...</span>
                     </div>
                   </td>
                 </tr>
               ) : paginatedData.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-8 text-center text-muted-foreground">
+                  <td
+                    colSpan={columns.length}
+                    className="text-muted-foreground px-4 py-8 text-center"
+                  >
                     {emptyMessage}
                   </td>
                 </tr>
@@ -194,8 +197,8 @@ export function DataTable<T extends Record<string, any>>({
                   <tr
                     key={rowIndex}
                     className={cn(
-                      'border-b border-border/30 transition-colors',
-                      onRowClick && 'cursor-pointer hover:bg-muted/50',
+                      "border-border/30 border-b transition-colors",
+                      onRowClick && "hover:bg-muted/50 cursor-pointer",
                       rowClassName?.(row)
                     )}
                     onClick={() => onRowClick?.(row)}
@@ -204,15 +207,13 @@ export function DataTable<T extends Record<string, any>>({
                       <td
                         key={column.key}
                         className={cn(
-                          'px-4 py-3',
-                          column.align === 'center' && 'text-center',
-                          column.align === 'right' && 'text-right',
+                          "px-4 py-3",
+                          column.align === "center" && "text-center",
+                          column.align === "right" && "text-right",
                           column.className
                         )}
                       >
-                        {column.render
-                          ? column.render(row[column.key], row)
-                          : row[column.key]}
+                        {column.render ? column.render(row[column.key], row) : row[column.key]}
                       </td>
                     ))}
                   </tr>
@@ -223,17 +224,16 @@ export function DataTable<T extends Record<string, any>>({
         </div>
 
         {paginated && totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-border/30">
-            <div className="text-sm text-muted-foreground">
-              Showing {((currentPage - 1) * pageSize) + 1} to{' '}
-              {Math.min(currentPage * pageSize, sortedData.length)} of{' '}
-              {sortedData.length} results
+          <div className="border-border/30 mt-4 flex items-center justify-between border-t pt-4">
+            <div className="text-muted-foreground text-sm">
+              Showing {(currentPage - 1) * pageSize + 1} to{" "}
+              {Math.min(currentPage * pageSize, sortedData.length)} of {sortedData.length} results
             </div>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -254,10 +254,10 @@ export function DataTable<T extends Record<string, any>>({
                   return (
                     <Button
                       key={pageNum}
-                      variant={currentPage === pageNum ? 'default' : 'outline'}
+                      variant={currentPage === pageNum ? "default" : "outline"}
                       size="sm"
                       onClick={() => setCurrentPage(pageNum)}
-                      className="w-8 h-8 p-0"
+                      className="h-8 w-8 p-0"
                     >
                       {pageNum}
                     </Button>
@@ -267,7 +267,7 @@ export function DataTable<T extends Record<string, any>>({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
               >
                 <ChevronRight className="h-4 w-4" />

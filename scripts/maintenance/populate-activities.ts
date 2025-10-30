@@ -37,15 +37,15 @@ async function populateActivityFeed() {
 
     // Generate achievement activities for top performers
     const topGdpCountries = [...countries]
-      .filter(c => c.currentTotalGdp && c.currentTotalGdp > 0)
+      .filter((c) => c.currentTotalGdp && c.currentTotalGdp > 0)
       .sort((a, b) => (b.currentTotalGdp || 0) - (a.currentTotalGdp || 0))
       .slice(0, 15);
 
     for (const country of topGdpCountries) {
       // Economic milestone activity
       activities.push({
-        type: 'achievement',
-        category: 'game',
+        type: "achievement",
+        category: "game",
         countryId: country.id,
         title: `${country.name} Reaches Economic Milestone`,
         description: `${country.name} has achieved ${formatCurrency(country.currentTotalGdp || 0)} total GDP, entering the ${country.economicTier} economic tier with ${formatPopulation(country.currentPopulation || 0)} citizens!`,
@@ -54,10 +54,10 @@ async function populateActivityFeed() {
           tier: country.economicTier,
           growth: country.adjustedGdpGrowth,
           population: country.currentPopulation,
-          gdpPerCapita: country.currentGdpPerCapita
+          gdpPerCapita: country.currentGdpPerCapita,
         }),
-        priority: country.economicTier === 'Extravagant' ? 'CRITICAL' : 'HIGH',
-        visibility: 'public',
+        priority: country.economicTier === "Extravagant" ? "CRITICAL" : "HIGH",
+        visibility: "public",
         relatedCountries: JSON.stringify([country.id]),
         likes: 0, // NO FAKE DATA
         comments: 0, // NO FAKE DATA
@@ -69,23 +69,23 @@ async function populateActivityFeed() {
 
     // Generate growth performance activities
     const highGrowthCountries = countries
-      .filter(c => c.adjustedGdpGrowth && c.adjustedGdpGrowth > 0.03)
+      .filter((c) => c.adjustedGdpGrowth && c.adjustedGdpGrowth > 0.03)
       .slice(0, 10);
 
     for (const country of highGrowthCountries) {
       activities.push({
-        type: 'economic',
-        category: 'game', 
+        type: "economic",
+        category: "game",
         countryId: country.id,
         title: `${country.name} Shows Impressive Growth`,
         description: `${country.name} is experiencing exceptional economic growth at ${((country.adjustedGdpGrowth || 0) * 100).toFixed(1)}% annually, outpacing regional competitors.`,
         metadata: JSON.stringify({
           growthRate: country.adjustedGdpGrowth,
           gdp: country.currentTotalGdp,
-          tier: country.economicTier
+          tier: country.economicTier,
         }),
-        priority: 'MEDIUM',
-        visibility: 'public',
+        priority: "MEDIUM",
+        visibility: "public",
         relatedCountries: JSON.stringify([country.id]),
         likes: 0, // NO FAKE DATA
         comments: 0, // NO FAKE DATA
@@ -97,31 +97,34 @@ async function populateActivityFeed() {
 
     // Generate diplomatic activities
     const diplomaticPairs = [
-      ['Lysandria', 'Crystalia', 'comprehensive trade agreement'],
-      ['Valorheim', 'Meridian States', 'strategic partnership'],
-      ['Aetheria', 'Northmark', 'cultural exchange program'],
-      ['Solmere', 'Ironhold', 'defense cooperation treaty'],
-      ['Celestine', 'Drakemoor', 'technology sharing initiative']
+      ["Lysandria", "Crystalia", "comprehensive trade agreement"],
+      ["Valorheim", "Meridian States", "strategic partnership"],
+      ["Aetheria", "Northmark", "cultural exchange program"],
+      ["Solmere", "Ironhold", "defense cooperation treaty"],
+      ["Celestine", "Drakemoor", "technology sharing initiative"],
     ];
 
     for (const [country1Name, country2Name, agreementType] of diplomaticPairs) {
-      const country1 = countries.find(c => c.name === country1Name);
-      const country2 = countries.find(c => c.name === country2Name);
-      
+      const country1 = countries.find((c) => c.name === country1Name);
+      const country2 = countries.find((c) => c.name === country2Name);
+
       if (country1 && country2) {
         activities.push({
-          type: 'diplomatic',
-          category: 'game',
+          type: "diplomatic",
+          category: "game",
           countryId: null, // System activity
-          title: `New ${agreementType.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')} Established`,
+          title: `New ${agreementType
+            .split(" ")
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(" ")} Established`,
           description: `${country1.name} and ${country2.name} have successfully negotiated a ${agreementType}, strengthening ties between the two nations and opening new opportunities for cooperation.`,
           metadata: JSON.stringify({
             countries: [country1.name, country2.name],
             agreementType,
             tradeValue: Math.floor(Math.random() * 100000000000) + 10000000000,
           }),
-          priority: 'HIGH',
-          visibility: 'public',
+          priority: "HIGH",
+          visibility: "public",
           relatedCountries: JSON.stringify([country1.id, country2.id]),
           likes: 0, // NO FAKE DATA
           comments: 0, // NO FAKE DATA
@@ -134,18 +137,24 @@ async function populateActivityFeed() {
 
     // Generate social/meta platform activities
     activities.push({
-      type: 'meta',
-      category: 'platform',
+      type: "meta",
+      category: "platform",
       countryId: null,
-      title: 'IxStats Platform Update: Enhanced Intelligence System',
-      description: 'Major platform upgrade includes new intelligence dashboards, real-time diplomatic tracking, and enhanced economic modeling capabilities for all member nations.',
+      title: "IxStats Platform Update: Enhanced Intelligence System",
+      description:
+        "Major platform upgrade includes new intelligence dashboards, real-time diplomatic tracking, and enhanced economic modeling capabilities for all member nations.",
       metadata: JSON.stringify({
-        version: '2.1.0',
-        features: ['Intelligence Dashboards', 'Diplomatic Tracking', 'Economic Modeling', 'Social Feed'],
+        version: "2.1.0",
+        features: [
+          "Intelligence Dashboards",
+          "Diplomatic Tracking",
+          "Economic Modeling",
+          "Social Feed",
+        ],
         affectedUsers: countries.length,
       }),
-      priority: 'MEDIUM',
-      visibility: 'public',
+      priority: "MEDIUM",
+      visibility: "public",
       likes: 0, // NO FAKE DATA
       comments: 0, // NO FAKE DATA
       shares: 0, // NO FAKE DATA
@@ -154,18 +163,19 @@ async function populateActivityFeed() {
     });
 
     activities.push({
-      type: 'social',
-      category: 'platform',
+      type: "social",
+      category: "platform",
       countryId: null,
-      title: 'Community Milestone: 1000+ Active Leaders',
-      description: 'The IxStats community has grown to over 1000 active national leaders, making it the premier platform for international cooperation and economic simulation.',
+      title: "Community Milestone: 1000+ Active Leaders",
+      description:
+        "The IxStats community has grown to over 1000 active national leaders, making it the premier platform for international cooperation and economic simulation.",
       metadata: JSON.stringify({
-        milestone: '1000+ leaders',
+        milestone: "1000+ leaders",
         totalCountries: countries.length,
-        activeFeatures: ['Economic Modeling', 'Diplomatic Relations', 'Intelligence Systems'],
+        activeFeatures: ["Economic Modeling", "Diplomatic Relations", "Intelligence Systems"],
       }),
-      priority: 'HIGH',
-      visibility: 'public',
+      priority: "HIGH",
+      visibility: "public",
       likes: 0, // NO FAKE DATA
       comments: 0, // NO FAKE DATA
       shares: 0, // NO FAKE DATA
@@ -175,7 +185,7 @@ async function populateActivityFeed() {
 
     // Create all activities
     console.log(`📝 Creating ${activities.length} activity feed entries...`);
-    
+
     for (const activity of activities) {
       await db.activityFeed.create({
         data: activity,
@@ -183,18 +193,17 @@ async function populateActivityFeed() {
     }
 
     console.log(`✅ Successfully populated activity feed with ${activities.length} entries`);
-    
+
     // Show summary
     const typeCounts = await db.activityFeed.groupBy({
-      by: ['type'],
+      by: ["type"],
       _count: { id: true },
     });
-    
+
     console.log("\n📊 Activity Feed Summary:");
     typeCounts.forEach(({ type, _count }) => {
       console.log(`  ${type}: ${_count.id} entries`);
     });
-
   } catch (error) {
     console.error("❌ Error populating activity feed:", error);
   } finally {

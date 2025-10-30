@@ -194,12 +194,8 @@ export const economicArchetypesRouter = createTRPCRouter({
       }
 
       return {
-        modern: archetypes
-          .filter((a) => a.era === "modern")
-          .map(parseArchetypeJSON),
-        historical: archetypes
-          .filter((a) => a.era === "historical")
-          .map(parseArchetypeJSON),
+        modern: archetypes.filter((a) => a.era === "modern").map(parseArchetypeJSON),
+        historical: archetypes.filter((a) => a.era === "historical").map(parseArchetypeJSON),
       };
     } catch (error) {
       console.error("Error fetching archetypes by category:", error);
@@ -238,67 +234,65 @@ export const economicArchetypesRouter = createTRPCRouter({
   /**
    * Create new archetype (admin only)
    */
-  createArchetype: adminProcedure
-    .input(archetypeInputSchema)
-    .mutation(async ({ ctx, input }) => {
-      try {
-        const archetype = await ctx.db.economicArchetype.create({
-          data: {
-            key: input.key,
-            name: input.name,
-            description: input.description,
-            region: input.region,
-            era: input.era,
-            characteristics: JSON.stringify(input.characteristics),
-            economicComponents: JSON.stringify(input.economicComponents),
-            governmentComponents: JSON.stringify(input.governmentComponents),
-            taxProfile: JSON.stringify(input.taxProfile),
-            sectorFocus: JSON.stringify(input.sectorFocus),
-            employmentProfile: JSON.stringify(input.employmentProfile),
-            growthMetrics: JSON.stringify(input.growthMetrics),
-            strengths: JSON.stringify(input.strengths),
-            challenges: JSON.stringify(input.challenges),
-            culturalFactors: JSON.stringify(input.culturalFactors),
-            modernExamples: JSON.stringify(input.modernExamples),
-            recommendations: JSON.stringify(input.recommendations),
-            implementationComplexity: input.implementationComplexity,
-            historicalContext: input.historicalContext,
-            isCustom: true,
-            createdBy: ctx.user?.id,
-          },
-        });
+  createArchetype: adminProcedure.input(archetypeInputSchema).mutation(async ({ ctx, input }) => {
+    try {
+      const archetype = await ctx.db.economicArchetype.create({
+        data: {
+          key: input.key,
+          name: input.name,
+          description: input.description,
+          region: input.region,
+          era: input.era,
+          characteristics: JSON.stringify(input.characteristics),
+          economicComponents: JSON.stringify(input.economicComponents),
+          governmentComponents: JSON.stringify(input.governmentComponents),
+          taxProfile: JSON.stringify(input.taxProfile),
+          sectorFocus: JSON.stringify(input.sectorFocus),
+          employmentProfile: JSON.stringify(input.employmentProfile),
+          growthMetrics: JSON.stringify(input.growthMetrics),
+          strengths: JSON.stringify(input.strengths),
+          challenges: JSON.stringify(input.challenges),
+          culturalFactors: JSON.stringify(input.culturalFactors),
+          modernExamples: JSON.stringify(input.modernExamples),
+          recommendations: JSON.stringify(input.recommendations),
+          implementationComplexity: input.implementationComplexity,
+          historicalContext: input.historicalContext,
+          isCustom: true,
+          createdBy: ctx.user?.id,
+        },
+      });
 
-        // Audit log
-        const ipAddress =
-          ctx.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-          ctx.headers.get("x-real-ip") ||
-          "unknown";
+      // Audit log
+      const ipAddress =
+        ctx.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        ctx.headers.get("x-real-ip") ||
+        "unknown";
 
-        await ctx.db.adminAuditLog.create({
-          data: {
-            action: "ARCHETYPE_CREATED",
-            targetType: "economic_archetype",
-            targetId: archetype.id,
-            targetName: archetype.name,
-            adminId: ctx.user?.id || "system",
-            ipAddress,
-            changes: JSON.stringify({
-              era: archetype.era,
-              region: archetype.region,
-              key: archetype.key,
-            }),
-          },
-        });
+      await ctx.db.adminAuditLog.create({
+        data: {
+          action: "ARCHETYPE_CREATED",
+          targetType: "economic_archetype",
+          targetId: archetype.id,
+          targetName: archetype.name,
+          adminId: ctx.user?.id || "system",
+          ipAddress,
+          changes: JSON.stringify({
+            era: archetype.era,
+            region: archetype.region,
+            key: archetype.key,
+          }),
+        },
+      });
 
-        return { success: true, archetype: parseArchetypeJSON(archetype) };
-      } catch (error) {
-        console.error("Error creating archetype:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create archetype",
-        });
-      }
-    }),
+      return { success: true, archetype: parseArchetypeJSON(archetype) };
+    } catch (error) {
+      console.error("Error creating archetype:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to create archetype",
+      });
+    }
+  }),
 
   /**
    * Update existing archetype (admin only)
@@ -445,8 +439,7 @@ export const economicArchetypesRouter = createTRPCRouter({
 
       const complexityStats = archetypes.reduce(
         (acc, a) => {
-          acc[a.implementationComplexity] =
-            (acc[a.implementationComplexity] || 0) + 1;
+          acc[a.implementationComplexity] = (acc[a.implementationComplexity] || 0) + 1;
           return acc;
         },
         {} as Record<string, number>
@@ -457,10 +450,7 @@ export const economicArchetypesRouter = createTRPCRouter({
           totalArchetypes,
           activeArchetypes,
           totalUsage,
-          averageUsage:
-            totalArchetypes > 0
-              ? (totalUsage / totalArchetypes).toFixed(2)
-              : "0.00",
+          averageUsage: totalArchetypes > 0 ? (totalUsage / totalArchetypes).toFixed(2) : "0.00",
         },
         topArchetypes: topArchetypes.map(parseArchetypeJSON),
         leastUsed: leastUsed.map(parseArchetypeJSON),

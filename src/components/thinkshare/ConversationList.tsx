@@ -1,10 +1,10 @@
 "use client";
 
-import React from 'react';
-import { Card } from '~/components/ui/card';
-import { ConversationListHeader } from './ConversationListHeader';
-import { ConversationListContent } from './ConversationListContent';
-import type { ThinkShareConversation, ThinkShareClientState } from '~/types/thinkshare';
+import React from "react";
+import { Card } from "~/components/ui/card";
+import { ConversationListHeader } from "./ConversationListHeader";
+import { ConversationListContent } from "./ConversationListContent";
+import type { ThinkShareConversation, ThinkShareClientState } from "~/types/thinkshare";
 
 interface ConversationListProps {
   conversations: ThinkShareConversation[];
@@ -31,23 +31,26 @@ export function ConversationList({
   getAccountTypeIcon,
   clientState,
 }: ConversationListProps) {
-  const filteredConversations = conversations?.filter((conv) => 
-    searchQuery === '' || 
-    conv.otherParticipants.some((p: any) => 
-      p.account.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.account.username.toLowerCase().includes(searchQuery.toLowerCase())
-    ) ||
-    (conv.name && conv.name.toLowerCase().includes(searchQuery.toLowerCase()))
-  ) || [];
+  const filteredConversations =
+    conversations?.filter(
+      (conv) =>
+        searchQuery === "" ||
+        conv.otherParticipants.some(
+          (p: any) =>
+            p.account.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            p.account.username.toLowerCase().includes(searchQuery.toLowerCase())
+        ) ||
+        (conv.name && conv.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    ) || [];
 
   return (
-    <Card className="glass-hierarchy-child h-[700px] flex flex-col">
+    <Card className="glass-hierarchy-child flex h-[700px] flex-col">
       <ConversationListHeader
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onNewConversationClick={onNewConversationClick}
       />
-      
+
       <ConversationListContent
         conversations={filteredConversations}
         isLoadingConversations={isLoadingConversations}

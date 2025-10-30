@@ -35,7 +35,7 @@ export const Marquee = React.forwardRef<HTMLDivElement, MarqueeProps>(
       "aria-label": ariaLabel,
       ...props
     },
-    ref,
+    ref
   ) => {
     const containerRef = React.useRef<HTMLDivElement>(null);
     const [isClient, setIsClient] = React.useState(false);
@@ -114,15 +114,18 @@ export const Marquee = React.forwardRef<HTMLDivElement, MarqueeProps>(
       ...style,
     } as React.CSSProperties;
 
-    const animationStyles: React.CSSProperties = React.useMemo(() => ({
-      animationName: getAnimationName(),
-      animationDuration: getSpeed(),
-      animationTimingFunction: "linear",
-      animationIterationCount: "infinite",
-      animationDirection: getAnimationDirection(),
-      animationPlayState: "running",
-      willChange: "transform", // Optimize for animations
-    }), [getAnimationName, getAnimationDirection, getSpeed]);
+    const animationStyles: React.CSSProperties = React.useMemo(
+      () => ({
+        animationName: getAnimationName(),
+        animationDuration: getSpeed(),
+        animationTimingFunction: "linear",
+        animationIterationCount: "infinite",
+        animationDirection: getAnimationDirection(),
+        animationPlayState: "running",
+        willChange: "transform", // Optimize for animations
+      }),
+      [getAnimationName, getAnimationDirection, getSpeed]
+    );
 
     const fadeStyles = fade
       ? vertical
@@ -143,11 +146,7 @@ export const Marquee = React.forwardRef<HTMLDivElement, MarqueeProps>(
     const content = Array.from({ length: calculateRepeat() }, (_, i) => (
       <div
         key={i}
-        className={cn(
-          "flex shrink-0",
-          vertical ? "flex-col" : "flex-row",
-          "[gap:var(--gap)]",
-        )}
+        className={cn("flex shrink-0", vertical ? "flex-col" : "flex-row", "[gap:var(--gap)]")}
         style={animationStyles}
         aria-hidden={i > 0 ? "true" : undefined}
       >
@@ -167,7 +166,7 @@ export const Marquee = React.forwardRef<HTMLDivElement, MarqueeProps>(
           pauseOnHover && "hover:[&>*]:pause-animation",
           "motion-reduce:hover:[&>*]:pause-animation",
           "transform-gpu", // Use GPU acceleration
-          className,
+          className
         )}
         style={{
           ...containerStyles,
@@ -177,32 +176,27 @@ export const Marquee = React.forwardRef<HTMLDivElement, MarqueeProps>(
       >
         <div
           ref={containerRef}
-          className={cn(
-            "flex",
-            vertical ? "flex-col" : "flex-row",
-            "[gap:var(--gap)]",
-          )}
+          className={cn("flex", vertical ? "flex-col" : "flex-row", "[gap:var(--gap)]")}
         >
           {content}
         </div>
       </div>
     );
-  },
+  }
 );
 
 Marquee.displayName = "Marquee";
 
 // Convenience components for common use cases
-export const MarqueeItem = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("flex shrink-0 items-center justify-center", className)}
-    {...props}
-  />
-));
+export const MarqueeItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div
+      ref={ref}
+      className={cn("flex shrink-0 items-center justify-center", className)}
+      {...props}
+    />
+  )
+);
 
 MarqueeItem.displayName = "MarqueeItem";
 
@@ -210,11 +204,7 @@ export const MarqueeContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("flex items-center gap-4", className)}
-    {...props}
-  />
+  <div ref={ref} className={cn("flex items-center gap-4", className)} {...props} />
 ));
 
 MarqueeContent.displayName = "MarqueeContent";

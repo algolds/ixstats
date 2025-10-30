@@ -14,13 +14,7 @@ import { Separator } from "~/components/ui/separator";
 import { Skeleton } from "~/components/ui/skeleton";
 import { GlassCard } from "~/components/ui/enhanced-card";
 import { Progress } from "~/components/ui/progress";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import {
   Users,
   Crown,
@@ -100,37 +94,32 @@ export function PopulationTierDetailsModal({
   // Enhanced escape functionality
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen) {
+      if (event.key === "Escape" && isOpen) {
         onClose();
       }
     };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
+      document.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "hidden";
     }
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "unset";
     };
   }, [isOpen, onClose]);
 
-  const {
-    data: economicData,
-    isLoading: isEconomicLoading,
-  } = api.countries.getEconomicData.useQuery(
-    { countryId },
-    {
-      enabled: isOpen,
-      staleTime: 5 * 60 * 1000,
-    }
-  );
+  const { data: economicData, isLoading: isEconomicLoading } =
+    api.countries.getEconomicData.useQuery(
+      { countryId },
+      {
+        enabled: isOpen,
+        staleTime: 5 * 60 * 1000,
+      }
+    );
 
-  const {
-    data: globalStats,
-    isLoading: isGlobalLoading,
-  } = api.countries.getGlobalStats.useQuery(
+  const { data: globalStats, isLoading: isGlobalLoading } = api.countries.getGlobalStats.useQuery(
     undefined,
     {
       enabled: isOpen,
@@ -153,21 +142,21 @@ export function PopulationTierDetailsModal({
         description: "Small emerging nations with developing infrastructure",
         benefits: [
           "Accelerated development programs",
-          "International aid eligibility", 
+          "International aid eligibility",
           "Simplified governance structures",
-          "Focus on basic infrastructure"
+          "Focus on basic infrastructure",
         ],
         challenges: [
           "Limited resources",
           "Vulnerability to external shocks",
           "Brain drain risks",
-          "Infrastructure gaps"
+          "Infrastructure gaps",
         ],
         growthModifiers: {
           economic: "+15% base growth potential",
           population: "High growth rates (2-4%)",
-          development: "Priority access to development funds"
-        }
+          development: "Priority access to development funds",
+        },
       },
       {
         tier: "2",
@@ -184,19 +173,19 @@ export function PopulationTierDetailsModal({
           "Regional development partnerships",
           "Moderate bureaucratic overhead",
           "Flexible policy implementation",
-          "Strong community cohesion"
+          "Strong community cohesion",
         ],
         challenges: [
           "Market size limitations",
           "Skill shortage in specialized sectors",
           "Currency volatility",
-          "Regional dependency"
+          "Regional dependency",
         ],
         growthModifiers: {
           economic: "+10% growth bonus",
           population: "Stable growth (1.5-3%)",
-          development: "Access to regional partnerships"
-        }
+          development: "Access to regional partnerships",
+        },
       },
       {
         tier: "3",
@@ -213,19 +202,19 @@ export function PopulationTierDetailsModal({
           "Balanced market size",
           "Diverse economic opportunities",
           "Regional influence",
-          "Manageable governance complexity"
+          "Manageable governance complexity",
         ],
         challenges: [
           "Competition with larger economies",
           "Resource allocation challenges",
           "Infrastructure scaling needs",
-          "Political fragmentation risks"
+          "Political fragmentation risks",
         ],
         growthModifiers: {
           economic: "+5% growth bonus",
           population: "Moderate growth (1-2.5%)",
-          development: "Balanced development approach"
-        }
+          development: "Balanced development approach",
+        },
       },
       {
         tier: "4",
@@ -242,19 +231,19 @@ export function PopulationTierDetailsModal({
           "Substantial domestic market",
           "Economic diversification potential",
           "Regional leadership opportunities",
-          "Innovation ecosystems"
+          "Innovation ecosystems",
         ],
         challenges: [
           "Complex governance structures",
           "Regional inequality management",
           "Infrastructure maintenance costs",
-          "Political coordination difficulties"
+          "Political coordination difficulties",
         ],
         growthModifiers: {
           economic: "Standard growth rates",
           population: "Stable growth (0.5-2%)",
-          development: "Self-sufficient development"
-        }
+          development: "Self-sufficient development",
+        },
       },
       {
         tier: "5",
@@ -271,19 +260,19 @@ export function PopulationTierDetailsModal({
           "Large consumer markets",
           "Global supply chain integration",
           "Diplomatic influence",
-          "Research and development hubs"
+          "Research and development hubs",
         ],
         challenges: [
           "Bureaucratic complexity",
           "Social inequality pressures",
           "Environmental impact management",
-          "International obligations"
+          "International obligations",
         ],
         growthModifiers: {
           economic: "-5% growth (maturity effects)",
           population: "Low growth (0.2-1.5%)",
-          development: "Advanced development needs"
-        }
+          development: "Advanced development needs",
+        },
       },
       {
         tier: "6",
@@ -300,19 +289,19 @@ export function PopulationTierDetailsModal({
           "Massive economic scale",
           "Global market influence",
           "Technological leadership",
-          "Cultural soft power"
+          "Cultural soft power",
         ],
         challenges: [
           "Governance at scale",
           "Regional disparities",
           "Resource coordination",
-          "International responsibility"
+          "International responsibility",
         ],
         growthModifiers: {
           economic: "-10% growth (scale effects)",
           population: "Very low growth (0-1%)",
-          development: "Innovation-driven development"
-        }
+          development: "Innovation-driven development",
+        },
       },
       {
         tier: "7",
@@ -329,19 +318,19 @@ export function PopulationTierDetailsModal({
           "Continental market dominance",
           "Geopolitical leadership",
           "Resource abundance",
-          "Strategic depth"
+          "Strategic depth",
         ],
         challenges: [
           "Administrative complexity",
           "Cultural diversity management",
           "Infrastructure at scale",
-          "Internal cohesion"
+          "Internal cohesion",
         ],
         growthModifiers: {
           economic: "-15% growth (diminishing returns)",
           population: "Minimal growth (0-0.8%)",
-          development: "Efficiency optimization focus"
-        }
+          development: "Efficiency optimization focus",
+        },
       },
       {
         tier: "X",
@@ -358,20 +347,20 @@ export function PopulationTierDetailsModal({
           "Global market control",
           "Civilization-level projects",
           "Ultimate strategic depth",
-          "Cultural hegemon status"
+          "Cultural hegemon status",
         ],
         challenges: [
           "Unprecedented complexity",
           "Global responsibility",
           "Internal stability at scale",
-          "Environmental stewardship"
+          "Environmental stewardship",
         ],
         growthModifiers: {
           economic: "-20% growth (superpower constraints)",
           population: "Near-zero growth (0-0.5%)",
-          development: "Sustainability and optimization"
-        }
-      }
+          development: "Sustainability and optimization",
+        },
+      },
     ];
 
     return tiers;
@@ -388,27 +377,33 @@ export function PopulationTierDetailsModal({
     }
 
     const { currentPopulation } = economicData as any;
-    const { populationTierDistribution } = globalStats as { populationTierDistribution: Record<string, number> };
+    const { populationTierDistribution } = globalStats as {
+      populationTierDistribution: Record<string, number>;
+    };
 
-    const currentTier = tierSystemData.find(tier => 
-      currentPopulation >= tier.min && currentPopulation <= tier.max
+    const currentTier = tierSystemData.find(
+      (tier) => currentPopulation >= tier.min && currentPopulation <= tier.max
     );
 
-    const currentIndex = tierSystemData.findIndex(tier => tier === currentTier);
+    const currentIndex = tierSystemData.findIndex((tier) => tier === currentTier);
     const nextTier = tierSystemData[currentIndex + 1];
     const previousTier = tierSystemData[currentIndex - 1];
 
-    const progressToNext = (currentTier && nextTier) ? 
-      ((currentPopulation - currentTier.min) / (nextTier.min - currentTier.min)) * 100 : 100;
+    const progressToNext =
+      currentTier && nextTier
+        ? ((currentPopulation - currentTier.min) / (nextTier.min - currentTier.min)) * 100
+        : 100;
 
-    const currentTierInfo: CurrentTierInfo | null = currentTier ? {
-      current: currentTier,
-      next: nextTier,
-      previous: previousTier,
-      index: currentIndex,
-      progressToNext,
-      populationNeeded: nextTier ? nextTier.min - currentPopulation : 0,
-    } : null;
+    const currentTierInfo: CurrentTierInfo | null = currentTier
+      ? {
+          current: currentTier,
+          next: nextTier,
+          previous: previousTier,
+          index: currentIndex,
+          progressToNext,
+          populationNeeded: nextTier ? nextTier.min - currentPopulation : 0,
+        }
+      : null;
 
     const tierDistributionData: TierDistributionData[] = tierSystemData.map((tier) => ({
       name: `Tier ${tier.tier}`,
@@ -431,7 +426,7 @@ export function PopulationTierDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-[calc(100vw-4rem)] w-[calc(100vw-2rem)] sm:w-[calc(100vw-4rem)] max-h-[90vh] overflow-y-auto z-[13000] shadow-2xl border-2 border-white/10 backdrop-blur-xl bg-background/95">
+      <DialogContent className="bg-background/95 z-[13000] max-h-[90vh] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] overflow-y-auto border-2 border-white/10 shadow-2xl backdrop-blur-xl sm:w-[calc(100vw-4rem)] sm:max-w-[calc(100vw-4rem)]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
@@ -448,24 +443,29 @@ export function PopulationTierDetailsModal({
             <Skeleton className="h-32" />
           ) : economicData && currentTierInfo?.current ? (
             <GlassCard variant="diplomatic" className="p-6">
-              <div className="flex items-start justify-between mb-4">
+              <div className="mb-4 flex items-start justify-between">
                 <div className="flex items-center gap-4">
                   <div className="text-4xl">{currentTierInfo.current.icon}</div>
                   <div>
-                    <h3 className="text-2xl font-bold flex items-center gap-2">
+                    <h3 className="flex items-center gap-2 text-2xl font-bold">
                       Tier {currentTierInfo.current.tier}: {currentTierInfo.current.name}
                       <Badge variant="default">Current</Badge>
                     </h3>
                     <p className="text-muted-foreground">{currentTierInfo.current.description}</p>
                     <p className="text-sm">
-                      Population: {formatPopulation((economicData as any)?.currentPopulation || 0)} 
-                      <span className="text-muted-foreground ml-2">({currentTierInfo.current.range})</span>
+                      Population: {formatPopulation((economicData as any)?.currentPopulation || 0)}
+                      <span className="text-muted-foreground ml-2">
+                        ({currentTierInfo.current.range})
+                      </span>
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm text-muted-foreground">Tier Rank</div>
-                  <div className="text-2xl font-bold" style={{ color: currentTierInfo.current.color }}>
+                  <div className="text-muted-foreground text-sm">Tier Rank</div>
+                  <div
+                    className="text-2xl font-bold"
+                    style={{ color: currentTierInfo.current.color }}
+                  >
                     {currentTierInfo.index + 1}/8
                   </div>
                 </div>
@@ -478,7 +478,7 @@ export function PopulationTierDetailsModal({
                     <span>{currentTierInfo.progressToNext.toFixed(1)}%</span>
                   </div>
                   <Progress value={currentTierInfo.progressToNext} className="h-2" />
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-muted-foreground text-xs">
                     Need {formatPopulation(currentTierInfo.populationNeeded)} more people to advance
                   </div>
                 </div>
@@ -490,69 +490,77 @@ export function PopulationTierDetailsModal({
 
           {/* Current Tier Details */}
           {currentTierInfo?.current && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <GlassCard variant="social" className="p-6">
-                <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <h4 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                   <Star className="h-5 w-5 text-yellow-500" />
                   Tier Benefits
                 </h4>
                 <div className="space-y-3">
                   {currentTierInfo.current.benefits.map((benefit, index) => (
                     <div key={index} className="flex items-start gap-3">
-                      <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0" />
+                      <div className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-green-500" />
                       <span className="text-sm">{benefit}</span>
                     </div>
                   ))}
                 </div>
 
                 <div className="mt-6">
-                  <h5 className="font-medium mb-3 flex items-center gap-2">
+                  <h5 className="mb-3 flex items-center gap-2 font-medium">
                     <TrendingUp className="h-4 w-4" />
                     Growth Modifiers
                   </h5>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span>Economic:</span>
-                      <span className="font-mono">{currentTierInfo.current.growthModifiers.economic}</span>
+                      <span className="font-mono">
+                        {currentTierInfo.current.growthModifiers.economic}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Population:</span>
-                      <span className="font-mono">{currentTierInfo.current.growthModifiers.population}</span>
+                      <span className="font-mono">
+                        {currentTierInfo.current.growthModifiers.population}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Development:</span>
-                      <span className="font-mono">{currentTierInfo.current.growthModifiers.development}</span>
+                      <span className="font-mono">
+                        {currentTierInfo.current.growthModifiers.development}
+                      </span>
                     </div>
                   </div>
                 </div>
               </GlassCard>
 
               <GlassCard variant="economic" className="p-6">
-                <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <h4 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                   <Shield className="h-5 w-5 text-red-500" />
                   Tier Challenges
                 </h4>
                 <div className="space-y-3">
                   {currentTierInfo.current.challenges.map((challenge, index) => (
                     <div key={index} className="flex items-start gap-3">
-                      <div className="w-2 h-2 rounded-full bg-red-500 mt-2 flex-shrink-0" />
+                      <div className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-red-500" />
                       <span className="text-sm">{challenge}</span>
                     </div>
                   ))}
                 </div>
 
                 {currentTierInfo.next && (
-                  <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-                    <h5 className="font-medium mb-2 flex items-center gap-2">
+                  <div className="bg-muted/50 mt-6 rounded-lg p-4">
+                    <h5 className="mb-2 flex items-center gap-2 font-medium">
                       <Target className="h-4 w-4" />
                       Next Tier: {currentTierInfo.next.name}
                     </h5>
-                    <p className="text-sm text-muted-foreground mb-2">
+                    <p className="text-muted-foreground mb-2 text-sm">
                       {currentTierInfo.next.description}
                     </p>
                     <div className="flex items-center gap-2 text-sm">
                       <ArrowRight className="h-4 w-4" />
-                      <span>Required: {formatPopulation(currentTierInfo.next.min)}+ population</span>
+                      <span>
+                        Required: {formatPopulation(currentTierInfo.next.min)}+ population
+                      </span>
                     </div>
                   </div>
                 )}
@@ -564,38 +572,42 @@ export function PopulationTierDetailsModal({
 
           {/* Complete Tier System Overview */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
+            <h3 className="flex items-center gap-2 text-lg font-semibold">
               <Crown className="h-5 w-5" />
               Complete Tier System
             </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
               {tierSystemData.map((tier) => (
-                <GlassCard 
+                <GlassCard
                   key={tier.tier}
-                  variant="social" 
+                  variant="social"
                   className={`p-4 transition-all ${
-                    currentTierInfo?.current?.tier === tier.tier 
-                      ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950/20' 
-                      : 'hover:scale-105'
+                    currentTierInfo?.current?.tier === tier.tier
+                      ? "bg-blue-50 ring-2 ring-blue-500 dark:bg-blue-950/20"
+                      : "hover:scale-105"
                   }`}
                 >
-                  <div className="text-center space-y-3">
+                  <div className="space-y-3 text-center">
                     <div className="text-3xl">{tier.icon}</div>
                     <div>
                       <h4 className="font-bold">Tier {tier.tier}</h4>
                       <p className="text-sm font-medium" style={{ color: tier.color }}>
                         {tier.name}
                       </p>
-                      <p className="text-xs text-muted-foreground">{tier.range}</p>
+                      <p className="text-muted-foreground text-xs">{tier.range}</p>
                     </div>
-                    
+
                     {currentTierInfo?.current?.tier === tier.tier && (
-                      <Badge variant="default" className="text-xs">Current</Badge>
+                      <Badge variant="default" className="text-xs">
+                        Current
+                      </Badge>
                     )}
-                    
+
                     {currentTierInfo?.next?.tier === tier.tier && (
-                      <Badge variant="outline" className="text-xs">Next Goal</Badge>
+                      <Badge variant="outline" className="text-xs">
+                        Next Goal
+                      </Badge>
                     )}
                   </div>
                 </GlassCard>
@@ -608,14 +620,14 @@ export function PopulationTierDetailsModal({
             <>
               <Separator />
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
+                <h3 className="flex items-center gap-2 text-lg font-semibold">
                   <Globe className="h-5 w-5" />
                   Global Tier Distribution
                 </h3>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                   <GlassCard variant="diplomatic" className="p-6">
-                    <h4 className="text-lg font-medium mb-4">Countries by Tier</h4>
+                    <h4 className="mb-4 text-lg font-medium">Countries by Tier</h4>
                     <div className="h-64">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
@@ -626,16 +638,16 @@ export function PopulationTierDetailsModal({
                             outerRadius={80}
                             fill="#8884d8"
                             dataKey="count"
-                            label={({ name, count }) => count > 0 ? `${name}: ${count}` : ''}
+                            label={({ name, count }) => (count > 0 ? `${name}: ${count}` : "")}
                           >
                             {tierDistributionData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                           </Pie>
-                          <Tooltip 
+                          <Tooltip
                             formatter={(value: number, name, props) => [
-                              `${value} countries`, 
-                              (props as any)?.payload?.fullName || name
+                              `${value} countries`,
+                              (props as any)?.payload?.fullName || name,
                             ]}
                           />
                         </PieChart>
@@ -644,13 +656,16 @@ export function PopulationTierDetailsModal({
                   </GlassCard>
 
                   <GlassCard variant="diplomatic" className="p-6">
-                    <h4 className="text-lg font-medium mb-4">Distribution Breakdown</h4>
+                    <h4 className="mb-4 text-lg font-medium">Distribution Breakdown</h4>
                     <div className="space-y-3">
                       {tierDistributionData.map((tier) => (
-                        <div key={tier.name} className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                        <div
+                          key={tier.name}
+                          className="bg-muted/50 flex items-center justify-between rounded p-2"
+                        >
                           <div className="flex items-center gap-3">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
+                            <div
+                              className="h-3 w-3 rounded-full"
                               style={{ backgroundColor: tier.color }}
                             />
                             <span className="text-sm font-medium">{tier.name}</span>
@@ -659,10 +674,11 @@ export function PopulationTierDetailsModal({
                         </div>
                       ))}
                     </div>
-                    
-                    <div className="mt-4 p-3 bg-muted/30 rounded">
-                      <div className="text-sm text-muted-foreground">
-                        Total countries in system: {tierDistributionData.reduce((sum, tier) => sum + tier.count, 0)}
+
+                    <div className="bg-muted/30 mt-4 rounded p-3">
+                      <div className="text-muted-foreground text-sm">
+                        Total countries in system:{" "}
+                        {tierDistributionData.reduce((sum, tier) => sum + tier.count, 0)}
                       </div>
                     </div>
                   </GlassCard>
@@ -673,34 +689,37 @@ export function PopulationTierDetailsModal({
 
           {/* Strategic Implications */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
+            <h3 className="flex items-center gap-2 text-lg font-semibold">
               <Zap className="h-5 w-5" />
               Strategic Implications
             </h3>
-            
+
             <GlassCard variant="social" className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <div className="text-center">
-                  <Building className="h-8 w-8 mx-auto mb-3 text-blue-500" />
-                  <h4 className="font-semibold mb-2">Governance Complexity</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Higher tiers require more sophisticated administrative structures and coordination mechanisms.
+                  <Building className="mx-auto mb-3 h-8 w-8 text-blue-500" />
+                  <h4 className="mb-2 font-semibold">Governance Complexity</h4>
+                  <p className="text-muted-foreground text-sm">
+                    Higher tiers require more sophisticated administrative structures and
+                    coordination mechanisms.
                   </p>
                 </div>
-                
+
                 <div className="text-center">
-                  <Coins className="h-8 w-8 mx-auto mb-3 text-green-500" />
-                  <h4 className="font-semibold mb-2">Economic Scale</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Larger populations enable greater market size but face diminishing returns on growth.
+                  <Coins className="mx-auto mb-3 h-8 w-8 text-green-500" />
+                  <h4 className="mb-2 font-semibold">Economic Scale</h4>
+                  <p className="text-muted-foreground text-sm">
+                    Larger populations enable greater market size but face diminishing returns on
+                    growth.
                   </p>
                 </div>
-                
+
                 <div className="text-center">
-                  <Award className="h-8 w-8 mx-auto mb-3 text-purple-500" />
+                  <Award className="mx-auto mb-3 h-8 w-8 text-purple-500" />
                   <h4 className="font-semibant mb-2">Global Influence</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Higher tiers gain increased diplomatic weight and responsibility in global affairs.
+                  <p className="text-muted-foreground text-sm">
+                    Higher tiers gain increased diplomatic weight and responsibility in global
+                    affairs.
                   </p>
                 </div>
               </div>

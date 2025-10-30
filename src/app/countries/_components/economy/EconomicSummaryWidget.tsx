@@ -2,17 +2,17 @@
 "use client";
 
 import React, { useState } from "react";
-import { 
-  DollarSign, 
-  Users, 
-  TrendingUp, 
-  TrendingDown, 
-  Building, 
+import {
+  DollarSign,
+  Users,
+  TrendingUp,
+  TrendingDown,
+  Building,
   Briefcase,
   BarChart3,
   Info,
   ChevronRight,
-  Eye
+  Eye,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -31,20 +31,20 @@ interface EconomicSummaryData {
   gdpPerCapita: number;
   totalGdp: number;
   economicTier: string;
-  
+
   // Growth rates (as decimals)
   populationGrowthRate: number;
   gdpGrowthRate: number;
-  
+
   // Labor metrics
   unemploymentRate: number;
   laborForceParticipationRate: number;
-  
+
   // Fiscal metrics
   taxRevenueGDPPercent?: number;
   budgetBalance?: number;
   debtToGDP?: number;
-  
+
   // Density metrics
   populationDensity?: number | null;
   gdpDensity?: number | null;
@@ -87,25 +87,26 @@ interface MetricCardProps {
  * @param color - CSS class for icon color
  * @param badge - Optional badge with text and variant
  */
-function MetricCard({ 
-  icon: IconComponent, 
-  label, 
-  value, 
-  subValue, 
-  trend, 
+function MetricCard({
+  icon: IconComponent,
+  label,
+  value,
+  subValue,
+  trend,
   color = "text-primary",
-  badge 
+  badge,
 }: MetricCardProps) {
   // Only allow valid badge variants to prevent runtime errors
-  const allowedBadgeVariants: string[] = ['default', 'secondary', 'destructive', 'outline'];
-  const safeBadgeVariant = badge && allowedBadgeVariants.includes(String(badge.variant)) ? badge.variant : undefined;
-  
+  const allowedBadgeVariants: string[] = ["default", "secondary", "destructive", "outline"];
+  const safeBadgeVariant =
+    badge && allowedBadgeVariants.includes(String(badge.variant)) ? badge.variant : undefined;
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {React.createElement(IconComponent, { className: `h-4 w-4 ${color}` })}
-          <span className="text-sm font-medium text-muted-foreground">{label}</span>
+          <span className="text-muted-foreground text-sm font-medium">{label}</span>
         </div>
         {badge && (
           <Badge variant={safeBadgeVariant} className="text-xs">
@@ -113,12 +114,10 @@ function MetricCard({
           </Badge>
         )}
       </div>
-      
+
       <div className="space-y-1">
-        <div className="text-xl font-bold text-foreground">{value}</div>
-        {subValue && (
-          <div className="text-xs text-muted-foreground">{subValue}</div>
-        )}
+        <div className="text-foreground text-xl font-bold">{value}</div>
+        {subValue && <div className="text-muted-foreground text-xs">{subValue}</div>}
         {trend && (
           <div className="flex items-center gap-1">
             {trend.isPositive ? (
@@ -126,9 +125,11 @@ function MetricCard({
             ) : (
               <TrendingDown className="h-3 w-3 text-red-600" />
             )}
-            <span className={`text-xs font-medium ${
-              trend.isPositive ? 'text-green-600' : 'text-red-600'
-            }`}>
+            <span
+              className={`text-xs font-medium ${
+                trend.isPositive ? "text-green-600" : "text-red-600"
+              }`}
+            >
               {Math.abs(trend.value).toFixed(2)}%
             </span>
           </div>
@@ -138,12 +139,12 @@ function MetricCard({
   );
 }
 
-function HealthIndicator({ 
-  label, 
-  value, 
-  max, 
-  optimal, 
-  format = (v: number) => v.toFixed(1) + '%'
+function HealthIndicator({
+  label,
+  value,
+  max,
+  optimal,
+  format = (v: number) => v.toFixed(1) + "%",
 }: {
   label: string;
   value: number;
@@ -153,25 +154,24 @@ function HealthIndicator({
 }) {
   const percentage = (value / max) * 100;
   const isOptimal = value >= optimal.min && value <= optimal.max;
-  const color = isOptimal ? 'bg-green-500' : 
-                value < optimal.min ? 'bg-yellow-500' : 'bg-red-500';
-  
+  const color = isOptimal ? "bg-green-500" : value < optimal.min ? "bg-yellow-500" : "bg-red-500";
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">{label}</span>
-        <span className="text-sm text-muted-foreground">{format(value)}</span>
+        <span className="text-muted-foreground text-sm">{format(value)}</span>
       </div>
       <div className="relative">
         <Progress value={percentage} className="h-2" />
-        <div 
+        <div
           className={`absolute top-0 left-0 h-2 rounded-full ${color} transition-all`}
           style={{ width: `${Math.min(percentage, 100)}%` }}
         />
       </div>
-      <div className="flex justify-between text-xs text-muted-foreground">
+      <div className="text-muted-foreground flex justify-between text-xs">
         <span>0</span>
-        <span className={isOptimal ? 'text-green-600 font-medium' : ''}>
+        <span className={isOptimal ? "font-medium text-green-600" : ""}>
           Optimal: {format(optimal.min)}-{format(optimal.max)}
         </span>
         <span>{format(max)}</span>
@@ -187,54 +187,57 @@ export function EconomicSummaryWidget({
   showDetails = true,
   onViewDetails,
   onEdit,
-  isEditable = false
+  isEditable = false,
 }: EconomicSummaryWidgetProps) {
   const [expanded, setExpanded] = useState(!compactMode);
-  
+
   const tierStyle = getTierStyle(data.economicTier);
   // Only allow valid badge variants for the main badge
-  const allowedBadgeVariants = ['default', 'secondary', 'destructive', 'outline'] as const;
-  const mainBadgeVariant = (data.economicTier === 'Advanced' || data.economicTier === 'Developed') ? 'default' : 'secondary';
-  const safeMainBadgeVariant = allowedBadgeVariants.includes(mainBadgeVariant as any) ? mainBadgeVariant : undefined;
-  
+  const allowedBadgeVariants = ["default", "secondary", "destructive", "outline"] as const;
+  const mainBadgeVariant =
+    data.economicTier === "Advanced" || data.economicTier === "Developed" ? "default" : "secondary";
+  const safeMainBadgeVariant = allowedBadgeVariants.includes(mainBadgeVariant as any)
+    ? mainBadgeVariant
+    : undefined;
+
   // Calculate health scores
   const getEconomicHealth = () => {
     let score = 70; // Base score
-    
+
     // GDP per capita contribution
     if (data.gdpPerCapita >= 50000) score += 15;
     else if (data.gdpPerCapita >= 25000) score += 10;
     else if (data.gdpPerCapita >= 10000) score += 5;
     else score -= 5;
-    
+
     // Unemployment contribution
     if (data.unemploymentRate <= 5) score += 10;
     else if (data.unemploymentRate <= 10) score += 5;
     else if (data.unemploymentRate >= 15) score -= 10;
-    
+
     // Growth contribution
     const gdpGrowthPercent = data.gdpGrowthRate * 100;
     if (gdpGrowthPercent >= 3) score += 5;
     else if (gdpGrowthPercent >= 1) score += 2;
     else if (gdpGrowthPercent < 0) score -= 5;
-    
+
     return Math.max(0, Math.min(100, Math.round(score)));
   };
-  
+
   const healthScore = getEconomicHealth();
-  
+
   const getHealthColor = (score: number) => {
-    if (score >= 85) return 'text-green-600';
-    if (score >= 70) return 'text-blue-600';
-    if (score >= 55) return 'text-yellow-600';
-    return 'text-red-600';
+    if (score >= 85) return "text-green-600";
+    if (score >= 70) return "text-blue-600";
+    if (score >= 55) return "text-yellow-600";
+    return "text-red-600";
   };
-  
+
   const getHealthLabel = (score: number) => {
-    if (score >= 85) return 'Excellent';
-    if (score >= 70) return 'Good';
-    if (score >= 55) return 'Fair';
-    return 'Poor';
+    if (score >= 85) return "Excellent";
+    if (score >= 70) return "Good";
+    if (score >= 55) return "Fair";
+    return "Poor";
   };
 
   if (compactMode && !expanded) {
@@ -243,15 +246,16 @@ export function EconomicSummaryWidget({
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <BarChart3 className="h-5 w-5 text-primary" />
+              <BarChart3 className="text-primary h-5 w-5" />
               <div>
                 <div className="font-medium">Economic Summary</div>
-                <div className="text-sm text-muted-foreground">
-                  {formatCurrency(data.gdpPerCapita)} per capita • {data.unemploymentRate.toFixed(1)}% unemployment
+                <div className="text-muted-foreground text-sm">
+                  {formatCurrency(data.gdpPerCapita)} per capita •{" "}
+                  {data.unemploymentRate.toFixed(1)}% unemployment
                 </div>
               </div>
             </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <ChevronRight className="text-muted-foreground h-4 w-4" />
           </div>
         </CardContent>
       </GlassCard>
@@ -266,7 +270,9 @@ export function EconomicSummaryWidget({
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
               Economic Summary
-              <Badge variant={safeMainBadgeVariant} className={tierStyle.className}>{data.economicTier}</Badge>
+              <Badge variant={safeMainBadgeVariant} className={tierStyle.className}>
+                {data.economicTier}
+              </Badge>
               <InlineHelpIcon
                 title="Economic Summary"
                 content="Comprehensive overview of key economic indicators including population, GDP, employment rates, and overall economic health score. Metrics are color-coded based on performance thresholds."
@@ -276,17 +282,13 @@ export function EconomicSummaryWidget({
           </div>
           <div className="flex items-center gap-2">
             {compactMode && (
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setExpanded(false)}
-              >
+              <Button variant="ghost" size="sm" onClick={() => setExpanded(false)}>
                 Collapse
               </Button>
             )}
             {showDetails && onViewDetails && (
               <Button variant="outline" size="sm" onClick={onViewDetails}>
-                <Eye className="h-4 w-4 mr-2" />
+                <Eye className="mr-2 h-4 w-4" />
                 View Details
               </Button>
             )}
@@ -300,15 +302,17 @@ export function EconomicSummaryWidget({
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Core Metrics Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <MetricCard
             icon={Users}
             label="Population"
             value={formatPopulation(data.population)}
-            subValue={data.populationDensity ? `${data.populationDensity.toFixed(0)}/km²` : undefined}
+            subValue={
+              data.populationDensity ? `${data.populationDensity.toFixed(0)}/km²` : undefined
+            }
             trend={{
               value: data.populationGrowthRate * 100,
-              isPositive: data.populationGrowthRate > 0
+              isPositive: data.populationGrowthRate > 0,
             }}
             color="text-blue-600"
           />
@@ -319,12 +323,15 @@ export function EconomicSummaryWidget({
             subValue={`Total: ${formatCurrency(data.totalGdp)}`}
             trend={{
               value: data.gdpGrowthRate * 100,
-              isPositive: data.gdpGrowthRate > 0
+              isPositive: data.gdpGrowthRate > 0,
             }}
             color="text-green-600"
             badge={{
               text: data.economicTier,
-              variant: (data.economicTier === 'Advanced' || data.economicTier === 'Developed') ? 'default' : 'secondary'
+              variant:
+                data.economicTier === "Advanced" || data.economicTier === "Developed"
+                  ? "default"
+                  : "secondary",
             }}
           />
           <MetricCard
@@ -344,7 +351,7 @@ export function EconomicSummaryWidget({
         </div>
         {/* Health Indicators */}
         <div className="space-y-4">
-          <h4 className="text-sm font-semibold flex items-center gap-2">
+          <h4 className="flex items-center gap-2 text-sm font-semibold">
             <Info className="h-4 w-4" />
             Economic Health Indicators
             <InlineHelpIcon
@@ -352,7 +359,7 @@ export function EconomicSummaryWidget({
               content="Progress bars showing key economic metrics against optimal ranges. Green indicates optimal performance, yellow shows acceptable levels, and red highlights areas needing attention."
             />
           </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <HealthIndicator
               label="Unemployment Rate"
               value={data.unemploymentRate}
@@ -384,27 +391,34 @@ export function EconomicSummaryWidget({
           </div>
         </div>
         {/* Additional Insights */}
-        <div className="p-4 bg-muted/50 rounded-lg">
-          <h5 className="text-sm font-semibold mb-2">Economic Insights</h5>
-          <div className="text-sm text-muted-foreground space-y-1">
+        <div className="bg-muted/50 rounded-lg p-4">
+          <h5 className="mb-2 text-sm font-semibold">Economic Insights</h5>
+          <div className="text-muted-foreground space-y-1 text-sm">
             <p>
-              • GDP growth of {displayGrowthRate(data.gdpGrowthRate)} is {
-                data.gdpGrowthRate > 0.03 ? 'strong' : 
-                data.gdpGrowthRate > 0.01 ? 'moderate' : 'weak'
-              } for a {data.economicTier.toLowerCase()} economy
+              • GDP growth of {displayGrowthRate(data.gdpGrowthRate)} is{" "}
+              {data.gdpGrowthRate > 0.03
+                ? "strong"
+                : data.gdpGrowthRate > 0.01
+                  ? "moderate"
+                  : "weak"}{" "}
+              for a {data.economicTier.toLowerCase()} economy
             </p>
             <p>
-              • Unemployment at {data.unemploymentRate.toFixed(1)}% is {
-                data.unemploymentRate <= 5 ? 'excellent' :
-                data.unemploymentRate <= 10 ? 'good' : 'concerning'
-              }
+              • Unemployment at {data.unemploymentRate.toFixed(1)}% is{" "}
+              {data.unemploymentRate <= 5
+                ? "excellent"
+                : data.unemploymentRate <= 10
+                  ? "good"
+                  : "concerning"}
             </p>
             {data.populationDensity && (
               <p>
-                • Population density of {data.populationDensity.toFixed(0)}/km² indicates {
-                  data.populationDensity > 300 ? 'high urbanization' :
-                  data.populationDensity > 100 ? 'moderate density' : 'low density'
-                }
+                • Population density of {data.populationDensity.toFixed(0)}/km² indicates{" "}
+                {data.populationDensity > 300
+                  ? "high urbanization"
+                  : data.populationDensity > 100
+                    ? "moderate density"
+                    : "low density"}
               </p>
             )}
           </div>

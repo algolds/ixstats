@@ -19,14 +19,18 @@ export function NavigationSettings() {
   const [isSaving, setIsSaving] = useState(false);
 
   // Query to get current navigation settings
-  const { data: navigationSettings, isLoading, refetch } = api.admin.getNavigationSettings.useQuery();
+  const {
+    data: navigationSettings,
+    isLoading,
+    refetch,
+  } = api.admin.getNavigationSettings.useQuery();
 
   // Update local settings when data arrives
   useEffect(() => {
     if (navigationSettings) {
-      setLocalSettings(prev => ({
+      setLocalSettings((prev) => ({
         ...prev,
-        ...navigationSettings
+        ...navigationSettings,
       }));
     }
   }, [navigationSettings]);
@@ -50,18 +54,18 @@ export function NavigationSettings() {
   };
 
   const handleToggle = (setting: keyof typeof localSettings, value: boolean) => {
-    setLocalSettings(prev => ({
+    setLocalSettings((prev) => ({
       ...prev,
-      [setting]: value
+      [setting]: value,
     }));
   };
 
-  const hasChanges = navigationSettings && (
-    navigationSettings.showWikiTab !== localSettings.showWikiTab ||
-    navigationSettings.showCardsTab !== localSettings.showCardsTab ||
-    navigationSettings.showLabsTab !== localSettings.showLabsTab ||
-    navigationSettings.showIntelligenceTab !== localSettings.showIntelligenceTab
-  );
+  const hasChanges =
+    navigationSettings &&
+    (navigationSettings.showWikiTab !== localSettings.showWikiTab ||
+      navigationSettings.showCardsTab !== localSettings.showCardsTab ||
+      navigationSettings.showLabsTab !== localSettings.showLabsTab ||
+      navigationSettings.showIntelligenceTab !== localSettings.showIntelligenceTab);
 
   if (isLoading) {
     return (
@@ -74,7 +78,7 @@ export function NavigationSettings() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
           </div>
         </CardContent>
       </Card>
@@ -88,78 +92,75 @@ export function NavigationSettings() {
           <Navigation className="h-5 w-5" />
           Navigation Settings
         </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Control which navigation tabs are visible to users. These tabs can be hidden to simplify the navigation bar.
+        <p className="text-muted-foreground text-sm">
+          Control which navigation tabs are visible to users. These tabs can be hidden to simplify
+          the navigation bar.
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Wiki Tab Setting */}
-        <div className="flex items-center justify-between p-4 rounded-lg bg-card/50 border border-border/50">
+        <div className="bg-card/50 border-border/50 flex items-center justify-between rounded-lg border p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+            <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-2">
               {localSettings.showWikiTab ? (
                 <Eye className="h-4 w-4 text-blue-500" />
               ) : (
-                <EyeOff className="h-4 w-4 text-muted-foreground" />
+                <EyeOff className="text-muted-foreground h-4 w-4" />
               )}
             </div>
             <div>
               <Label htmlFor="wiki-tab" className="text-sm font-medium">
                 Wiki Tab
               </Label>
-              <p className="text-xs text-muted-foreground">
-                Show/hide the Wiki navigation tab
-              </p>
+              <p className="text-muted-foreground text-xs">Show/hide the Wiki navigation tab</p>
             </div>
           </div>
           <Switch
             id="wiki-tab"
             checked={localSettings.showWikiTab}
-            onCheckedChange={(checked) => handleToggle('showWikiTab', checked)}
+            onCheckedChange={(checked) => handleToggle("showWikiTab", checked)}
           />
         </div>
 
         {/* Cards Tab Setting */}
-        <div className="flex items-center justify-between p-4 rounded-lg bg-card/50 border border-border/50">
+        <div className="bg-card/50 border-border/50 flex items-center justify-between rounded-lg border p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+            <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/10 p-2">
               {localSettings.showCardsTab ? (
                 <Eye className="h-4 w-4 text-cyan-500" />
               ) : (
-                <EyeOff className="h-4 w-4 text-muted-foreground" />
+                <EyeOff className="text-muted-foreground h-4 w-4" />
               )}
             </div>
             <div>
               <Label htmlFor="cards-tab" className="text-sm font-medium">
                 Cards Tab
               </Label>
-              <p className="text-xs text-muted-foreground">
-                Show/hide the Cards navigation tab
-              </p>
+              <p className="text-muted-foreground text-xs">Show/hide the Cards navigation tab</p>
             </div>
           </div>
           <Switch
             id="cards-tab"
             checked={localSettings.showCardsTab}
-            onCheckedChange={(checked) => handleToggle('showCardsTab', checked)}
+            onCheckedChange={(checked) => handleToggle("showCardsTab", checked)}
           />
         </div>
 
         {/* Labs Tab Setting */}
-        <div className="flex items-center justify-between p-4 rounded-lg bg-card/50 border border-border/50">
+        <div className="bg-card/50 border-border/50 flex items-center justify-between rounded-lg border p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20">
+            <div className="rounded-lg border border-purple-500/20 bg-purple-500/10 p-2">
               {localSettings.showLabsTab ? (
                 <Eye className="h-4 w-4 text-purple-500" />
               ) : (
-                <EyeOff className="h-4 w-4 text-muted-foreground" />
+                <EyeOff className="text-muted-foreground h-4 w-4" />
               )}
             </div>
             <div>
               <Label htmlFor="labs-tab" className="text-sm font-medium">
                 Labs Tab
               </Label>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Show/hide the Labs navigation tab and dropdown
               </p>
             </div>
@@ -167,26 +168,29 @@ export function NavigationSettings() {
           <Switch
             id="labs-tab"
             checked={localSettings.showLabsTab}
-            onCheckedChange={(checked) => handleToggle('showLabsTab', checked)}
+            onCheckedChange={(checked) => handleToggle("showLabsTab", checked)}
           />
         </div>
 
         {/* Intelligence Tab Setting */}
-        <div className="flex items-center justify-between p-4 rounded-lg bg-card/50 border border-border/50">
+        <div className="bg-card/50 border-border/50 flex items-center justify-between rounded-lg border p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2">
               {localSettings.showIntelligenceTab ? (
                 <Eye className="h-4 w-4 text-emerald-500" />
               ) : (
-                <EyeOff className="h-4 w-4 text-muted-foreground" />
+                <EyeOff className="text-muted-foreground h-4 w-4" />
               )}
             </div>
             <div>
-              <Label htmlFor="intelligence-tab" className="text-sm font-medium flex items-center gap-1">
-                <Shield className="h-4 w-4 text-muted-foreground" />
+              <Label
+                htmlFor="intelligence-tab"
+                className="flex items-center gap-1 text-sm font-medium"
+              >
+                <Shield className="text-muted-foreground h-4 w-4" />
                 Intelligence Tab
               </Label>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 Show/hide the Intelligence navigation tab
               </p>
             </div>
@@ -194,26 +198,22 @@ export function NavigationSettings() {
           <Switch
             id="intelligence-tab"
             checked={localSettings.showIntelligenceTab}
-            onCheckedChange={(checked) => handleToggle('showIntelligenceTab', checked)}
+            onCheckedChange={(checked) => handleToggle("showIntelligenceTab", checked)}
           />
         </div>
 
         {/* Save Button */}
         {hasChanges && (
-          <div className="pt-4 border-t border-border/50">
-            <Button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="w-full"
-            >
+          <div className="border-border/50 border-t pt-4">
+            <Button onClick={handleSave} disabled={isSaving} className="w-full">
               {isSaving ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving...
                 </>
               ) : (
                 <>
-                  <Save className="h-4 w-4 mr-2" />
+                  <Save className="mr-2 h-4 w-4" />
                   Save Changes
                 </>
               )}
@@ -222,8 +222,8 @@ export function NavigationSettings() {
         )}
 
         {!hasChanges && navigationSettings && (
-          <div className="pt-4 border-t border-border/50">
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <div className="border-border/50 border-t pt-4">
+            <div className="text-muted-foreground flex items-center justify-center gap-2 text-sm">
               <Check className="h-4 w-4 text-green-500" />
               All changes saved
             </div>

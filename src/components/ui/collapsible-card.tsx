@@ -22,13 +22,13 @@ export function CollapsibleCard({
   defaultOpen = true,
   className = "",
   variant = "glass",
-  actions
+  actions,
 }: CollapsibleCardProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
     <GlassCard variant={variant} className={`${className}`}>
-      <div className="p-4 border-b border/10">
+      <div className="border/10 border-b p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             {icon}
@@ -42,20 +42,12 @@ export function CollapsibleCard({
               onClick={() => setIsOpen(!isOpen)}
               className="h-8 w-8 p-0"
             >
-              {isOpen ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
+              {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
           </div>
         </div>
       </div>
-      {isOpen && (
-        <div className="p-4">
-          {children}
-        </div>
-      )}
+      {isOpen && <div className="p-4">{children}</div>}
     </GlassCard>
   );
 }

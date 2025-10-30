@@ -9,23 +9,18 @@ export const env = createEnv({
    */
   server: {
     DATABASE_URL: z.string().url(),
-    NODE_ENV: z
-      .enum(["development", "test", "production"])
-      .default("development"),
+    NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     // Discord Bot IxTime API Configuration
-    IXTIME_BOT_URL: z
-      .string()
-      .url()
-      .optional()
-      .default("http://localhost:3001"),
+    IXTIME_BOT_URL: z.string().url().optional().default("http://localhost:3001"),
     // Optional: Discord Bot Configuration (if needed for direct bot integration)
     DISCORD_BOT_TOKEN: z.string().optional(),
     DISCORD_CLIENT_ID: z.string().optional(),
     DISCORD_GUILD_ID: z.string().optional(),
     // Clerk Authentication Configuration - Required in production
-    CLERK_SECRET_KEY: process.env.NODE_ENV === "production"
-      ? z.string().min(1, "CLERK_SECRET_KEY is required in production")
-      : z.string().optional(),
+    CLERK_SECRET_KEY:
+      process.env.NODE_ENV === "production"
+        ? z.string().min(1, "CLERK_SECRET_KEY is required in production")
+        : z.string().optional(),
     // Discord Webhook Configuration (optional)
     DISCORD_WEBHOOK_URL: z.string().url().optional(),
     DISCORD_WEBHOOK_ENABLED: z.string().optional().default("false"),
@@ -52,21 +47,14 @@ export const env = createEnv({
   client: {
     // NEXT_PUBLIC_CLIENTVAR: z.string(),
     // If you need the bot URL on the client side for direct API calls:
-    NEXT_PUBLIC_IXTIME_BOT_URL: z
-      .string()
-      .url()
-      .optional()
-      .default("http://localhost:3001"),
+    NEXT_PUBLIC_IXTIME_BOT_URL: z.string().url().optional().default("http://localhost:3001"),
     // MediaWiki API URL for country data and flags
-    NEXT_PUBLIC_MEDIAWIKI_URL: z
-      .string()
-      .url()
-      .optional()
-      .default("https://ixwiki.com/"),
+    NEXT_PUBLIC_MEDIAWIKI_URL: z.string().url().optional().default("https://ixwiki.com/"),
     // Clerk Authentication Configuration (Client-side) - Required in production
-    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NODE_ENV === "production" 
-      ? z.string().min(1, "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is required in production")
-      : z.string().optional(),
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
+      process.env.NODE_ENV === "production"
+        ? z.string().min(1, "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is required in production")
+        : z.string().optional(),
   },
 
   /**

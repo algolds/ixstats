@@ -10,8 +10,8 @@
  * Run with: npx tsx prisma/seeds/economic-templates.ts
  */
 
-import { PrismaClient } from '@prisma/client';
-import { ECONOMIC_TEMPLATES } from '../../src/lib/atomic-economic-data';
+import { PrismaClient } from "@prisma/client";
+import { ECONOMIC_TEMPLATES } from "../../src/lib/atomic-economic-data";
 
 const prisma = new PrismaClient();
 
@@ -21,20 +21,20 @@ const prisma = new PrismaClient();
  */
 function getIconName(iconComponent: React.ComponentType<{ className?: string }>): string {
   // Try to get the display name or function name
-  if ('displayName' in iconComponent && iconComponent.displayName) {
+  if ("displayName" in iconComponent && iconComponent.displayName) {
     return iconComponent.displayName as string;
   }
-  if ('name' in iconComponent && iconComponent.name) {
+  if ("name" in iconComponent && iconComponent.name) {
     return iconComponent.name as string;
   }
   // Fallback to parsing the function string
   const iconString = iconComponent.toString();
   const match = iconString.match(/function\s+(\w+)/);
-  return match ? match[1] : 'Briefcase';
+  return match ? match[1] : "Briefcase";
 }
 
 async function main() {
-  console.log('\n📋 Starting Economic Templates seed...\n');
+  console.log("\n📋 Starting Economic Templates seed...\n");
 
   let createdCount = 0;
   let updatedCount = 0;
@@ -70,13 +70,19 @@ async function main() {
       const wasCreated = result.createdAt.getTime() === result.updatedAt.getTime();
 
       if (wasCreated) {
-        console.log(`✅ Created template: ${template.name} (${template.components.length} components)`);
+        console.log(
+          `✅ Created template: ${template.name} (${template.components.length} components)`
+        );
         console.log(`   Key: ${template.id}`);
         console.log(`   Icon: ${iconName}`);
-        console.log(`   Components: ${template.components.slice(0, 3).join(', ')}${template.components.length > 3 ? '...' : ''}\n`);
+        console.log(
+          `   Components: ${template.components.slice(0, 3).join(", ")}${template.components.length > 3 ? "..." : ""}\n`
+        );
         createdCount++;
       } else {
-        console.log(`🔄 Updated template: ${template.name} (${template.components.length} components)`);
+        console.log(
+          `🔄 Updated template: ${template.name} (${template.components.length} components)`
+        );
         console.log(`   Key: ${template.id}\n`);
         updatedCount++;
       }
@@ -87,18 +93,18 @@ async function main() {
   }
 
   // Print summary
-  console.log('='.repeat(60));
-  console.log('📊 Economic Templates Seed Summary\n');
+  console.log("=".repeat(60));
+  console.log("📊 Economic Templates Seed Summary\n");
   console.log(`✅ Created: ${createdCount}`);
   console.log(`🔄 Updated: ${updatedCount}`);
   console.log(`❌ Errors: ${errorCount}`);
   console.log(`📦 Total Processed: ${createdCount + updatedCount}`);
-  console.log('='.repeat(60) + '\n');
+  console.log("=".repeat(60) + "\n");
 
   // Fetch and display all templates with component counts
-  console.log('📋 All Economic Templates:\n');
+  console.log("📋 All Economic Templates:\n");
   const allTemplates = await prisma.economicTemplate.findMany({
-    orderBy: { name: 'asc' },
+    orderBy: { name: "asc" },
   });
 
   allTemplates.forEach((template, idx) => {
@@ -108,13 +114,13 @@ async function main() {
     console.log(`   Icon: ${template.iconName}`);
     console.log(`   Description: ${template.description}`);
     console.log(`   Components: ${components.length}`);
-    console.log(`   ${components.slice(0, 3).join(', ')}${components.length > 3 ? '...' : ''}\n`);
+    console.log(`   ${components.slice(0, 3).join(", ")}${components.length > 3 ? "..." : ""}\n`);
   });
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seed script failed:', e);
+    console.error("❌ Seed script failed:", e);
     process.exit(1);
   })
   .finally(async () => {

@@ -5,7 +5,7 @@
  * Provides structured data extraction from wiki markup, infoboxes, and templates.
  */
 
-import React from 'react';
+import React from "react";
 
 /**
  * Parsed wiki content structure
@@ -31,8 +31,8 @@ export interface WikiSection {
   sourceUrl?: string;
   content: string;
   subsections?: WikiSection[];
-  classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
-  importance: 'critical' | 'high' | 'medium' | 'low';
+  classification: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
+  importance: "critical" | "high" | "medium" | "low";
   images?: string[];
   links?: string[];
   categories?: string[];
@@ -51,7 +51,7 @@ export interface WikiSection {
  * @param title - Page title
  * @returns Parsed wiki content structure
  */
-export function parseWikiMarkup(markup: string, title: string = ''): ParsedWikiContent {
+export function parseWikiMarkup(markup: string, title: string = ""): ParsedWikiContent {
   const sections: WikiSection[] = [];
   const infobox: Record<string, string> = {};
   const categories: string[] = [];
@@ -62,9 +62,9 @@ export function parseWikiMarkup(markup: string, title: string = ''): ParsedWikiC
   const infoboxMatch = markup.match(/\{\{Infobox[\s\S]*?\}\}/i);
   if (infoboxMatch) {
     const infoboxText = infoboxMatch[0];
-    const lines = infoboxText.split('\n');
+    const lines = infoboxText.split("\n");
 
-    lines.forEach(line => {
+    lines.forEach((line) => {
       const keyValue = line.match(/\|\s*(\w+)\s*=\s*(.+)/);
       if (keyValue) {
         infobox[keyValue[1].trim()] = keyValue[2].trim();
@@ -87,14 +87,14 @@ export function parseWikiMarkup(markup: string, title: string = ''): ParsedWikiC
   // Extract internal links
   const linkMatches = markup.matchAll(/\[\[([^\]|]+)/g);
   for (const match of linkMatches) {
-    if (!match[1].startsWith('File:') && !match[1].startsWith('Category:')) {
+    if (!match[1].startsWith("File:") && !match[1].startsWith("Category:")) {
       links.push(match[1]);
     }
   }
 
   // Extract summary (first paragraph before first heading)
   const summaryMatch = markup.match(/^([^=\n]+(?:\n[^=\n]+)*)/);
-  const summary = summaryMatch ? summaryMatch[1].trim() : '';
+  const summary = summaryMatch ? summaryMatch[1].trim() : "";
 
   // Parse sections
   const sectionRegex = /^(={2,})\s*(.+?)\s*\1$/gm;
@@ -110,11 +110,13 @@ export function parseWikiMarkup(markup: string, title: string = ''): ParsedWikiC
     sectionRegex.lastIndex = startIndex;
 
     const content = markup.substring(startIndex, endIndex).trim();
-    const sectionId = sectionTitle.toLowerCase().replace(/\s+/g, '-');
-    const sectionImageMatches = Array.from(content.matchAll(/\[\[File:([^\]|]+)/g)).map(match => match[1]);
+    const sectionId = sectionTitle.toLowerCase().replace(/\s+/g, "-");
+    const sectionImageMatches = Array.from(content.matchAll(/\[\[File:([^\]|]+)/g)).map(
+      (match) => match[1]
+    );
     const sectionLinkMatches = Array.from(content.matchAll(/\[\[([^\]|]+)/g))
-      .map(match => match[1])
-      .filter(link => !link.startsWith('File:') && !link.startsWith('Category:'));
+      .map((match) => match[1])
+      .filter((link) => !link.startsWith("File:") && !link.startsWith("Category:"));
 
     sections.push({
       id: sectionId,
@@ -124,15 +126,14 @@ export function parseWikiMarkup(markup: string, title: string = ''): ParsedWikiC
       sourceUrl: `https://ixwiki.com/wiki/${encodeURIComponent(sectionTitle)}`,
       content,
       subsections: [],
-      classification: 'PUBLIC',
-      importance: 'medium',
+      classification: "PUBLIC",
+      importance: "medium",
       images: sectionImageMatches,
       links: sectionLinkMatches,
       linkCount: sectionLinkMatches.length,
       wordCount: content ? content.split(/\s+/).filter(Boolean).length : 0,
-      lastModified: new Date().toISOString()
+      lastModified: new Date().toISOString(),
     });
-
   }
 
   return {
@@ -142,7 +143,7 @@ export function parseWikiMarkup(markup: string, title: string = ''): ParsedWikiC
     sections,
     categories,
     images,
-    links
+    links,
   };
 }
 
@@ -158,7 +159,7 @@ export function extractIntelligenceData(content: ParsedWikiContent): Record<stri
     summary: content.summary,
     categories: content.categories,
     metadata: {},
-    keyData: {}
+    keyData: {},
   };
 
   // Extract key data from infobox
@@ -167,13 +168,20 @@ export function extractIntelligenceData(content: ParsedWikiContent): Record<stri
 
     // Extract specific intelligence fields
     const keyFields = [
-      'population', 'gdp', 'government', 'leader', 'capital',
-      'area', 'currency', 'established', 'type'
+      "population",
+      "gdp",
+      "government",
+      "leader",
+      "capital",
+      "area",
+      "currency",
+      "established",
+      "type",
     ];
 
-    keyFields.forEach(field => {
-      const value = Object.entries(content.infobox).find(
-        ([key]) => key.toLowerCase().includes(field.toLowerCase())
+    keyFields.forEach((field) => {
+      const value = Object.entries(content.infobox).find(([key]) =>
+        key.toLowerCase().includes(field.toLowerCase())
       );
       if (value) {
         intelligence.keyData[field] = value[1];
@@ -182,9 +190,9 @@ export function extractIntelligenceData(content: ParsedWikiContent): Record<stri
   }
 
   // Extract section summaries
-  intelligence.sections = content.sections.map(section => ({
+  intelligence.sections = content.sections.map((section) => ({
     title: section.title,
-    preview: section.content.substring(0, 200) + (section.content.length > 200 ? '...' : '')
+    preview: section.content.substring(0, 200) + (section.content.length > 200 ? "..." : ""),
   }));
 
   return intelligence;
@@ -200,7 +208,7 @@ export function parseTemplate(template: string): { name: string; params: Record<
   const match = template.match(/\{\{([^|]+)(?:\|(.+))?\}\}/s);
 
   if (!match) {
-    return { name: '', params: {} };
+    return { name: "", params: {} };
   }
 
   const name = match[1].trim();
@@ -228,25 +236,28 @@ export function stripWikiMarkup(markup: string): string {
   let text = markup;
 
   // Remove templates
-  text = text.replace(/\{\{[^}]+\}\}/g, '');
+  text = text.replace(/\{\{[^}]+\}\}/g, "");
 
   // Remove file/image links
-  text = text.replace(/\[\[File:[^\]]+\]\]/g, '');
+  text = text.replace(/\[\[File:[^\]]+\]\]/g, "");
 
   // Convert internal links to plain text
   text = text.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, link, display) => display || link);
 
   // Remove external link brackets
-  text = text.replace(/\[(https?:\/\/[^\s\]]+)(?:\s+([^\]]+))?\]/g, (_, url, display) => display || url);
+  text = text.replace(
+    /\[(https?:\/\/[^\s\]]+)(?:\s+([^\]]+))?\]/g,
+    (_, url, display) => display || url
+  );
 
   // Remove HTML tags
-  text = text.replace(/<[^>]+>/g, '');
+  text = text.replace(/<[^>]+>/g, "");
 
   // Remove categories
-  text = text.replace(/\[\[Category:[^\]]+\]\]/g, '');
+  text = text.replace(/\[\[Category:[^\]]+\]\]/g, "");
 
   // Clean up multiple newlines
-  text = text.replace(/\n{3,}/g, '\n\n');
+  text = text.replace(/\n{3,}/g, "\n\n");
 
   return text.trim();
 }
@@ -258,22 +269,25 @@ export function stripWikiMarkup(markup: string): string {
  * @param maxLength - Maximum length in characters
  * @returns Object with truncated content and isTruncated flag
  */
-export function truncateContent(content: string, maxLength: number = 500): { truncated: string; isTruncated: boolean } {
+export function truncateContent(
+  content: string,
+  maxLength: number = 500
+): { truncated: string; isTruncated: boolean } {
   if (content.length <= maxLength) {
     return { truncated: content, isTruncated: false };
   }
 
   // Try to truncate at a sentence boundary
   const truncated = content.substring(0, maxLength);
-  const lastPeriod = truncated.lastIndexOf('.');
-  const lastNewline = truncated.lastIndexOf('\n');
+  const lastPeriod = truncated.lastIndexOf(".");
+  const lastNewline = truncated.lastIndexOf("\n");
   const breakPoint = Math.max(lastPeriod, lastNewline);
 
   if (breakPoint > maxLength * 0.7) {
     return { truncated: truncated.substring(0, breakPoint + 1), isTruncated: true };
   }
 
-  return { truncated: truncated + '...', isTruncated: true };
+  return { truncated: truncated + "...", isTruncated: true };
 }
 
 /**
@@ -283,7 +297,10 @@ export function truncateContent(content: string, maxLength: number = 500): { tru
  * @param handleLinkClick - Callback for link clicks
  * @returns JSX elements for rendering
  */
-export function parseWikiContent(content: string, handleLinkClick: (page: string) => void): React.ReactNode {
+export function parseWikiContent(
+  content: string,
+  handleLinkClick: (page: string) => void
+): React.ReactNode {
   // Simple text parsing - convert wiki links to clickable elements
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
@@ -303,7 +320,7 @@ export function parseWikiContent(content: string, handleLinkClick: (page: string
     parts.push(
       <span
         key={match.index}
-        className="text-blue-400 hover:text-blue-300 cursor-pointer underline"
+        className="cursor-pointer text-blue-400 underline hover:text-blue-300"
         onClick={() => handleLinkClick(page)}
       >
         {display}
@@ -328,6 +345,6 @@ export function parseWikiContent(content: string, handleLinkClick: (page: string
  * @returns Cleaned display value
  */
 export function parseInfoboxValue(value: string | undefined): string {
-  if (!value) return '';
+  if (!value) return "";
   return stripWikiMarkup(value);
 }

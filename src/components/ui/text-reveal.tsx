@@ -1,6 +1,13 @@
 "use client";
 
-import { motion, useAnimation, useInView, useMotionValue, useTransform, animate } from "framer-motion";
+import {
+  motion,
+  useAnimation,
+  useInView,
+  useMotionValue,
+  useTransform,
+  animate,
+} from "framer-motion";
 import { useEffect, useRef } from "react";
 import { cn } from "~/lib/utils";
 
@@ -37,15 +44,16 @@ export const TextReveal = ({ children, className, delay = 0, duration = 0.6 }: T
           className="inline-block"
           variants={{
             hidden: { opacity: 0, y: 20 },
-            visible: { opacity: 1, y: 0 }
+            visible: { opacity: 1, y: 0 },
           }}
           transition={{
             duration,
             delay: delay + index * 0.1,
-            ease: "easeOut"
+            ease: "easeOut",
           }}
         >
-          {word}{index !== words.length - 1 ? "\u00A0" : ""}
+          {word}
+          {index !== words.length - 1 ? "\u00A0" : ""}
         </motion.span>
       ))}
     </motion.div>
@@ -71,7 +79,7 @@ export const CountUp = ({
   className,
   prefix = "",
   suffix = "",
-  decimals = 0
+  decimals = 0,
 }: CountUpProps) => {
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true });
@@ -102,9 +110,7 @@ export const CountUp = ({
           transition={{ duration, delay, ease: "easeOut" }}
         >
           {prefix}
-          <motion.span>
-            {rounded}
-          </motion.span>
+          <motion.span>{rounded}</motion.span>
           {suffix}
         </motion.span>
       )}
@@ -133,7 +139,7 @@ export const Typewriter = ({ text, delay = 0, speed = 50, className }: Typewrite
       <motion.span
         variants={{
           hidden: { opacity: 0 },
-          visible: { opacity: 1 }
+          visible: { opacity: 1 },
         }}
         transition={{ delay, duration: 0.1 }}
       >
@@ -144,7 +150,7 @@ export const Typewriter = ({ text, delay = 0, speed = 50, className }: Typewrite
             animate={isInView ? { opacity: 1 } : { opacity: 0 }}
             transition={{
               delay: delay + index * (speed / 1000),
-              duration: 0.1
+              duration: 0.1,
             }}
           >
             {char}
@@ -163,23 +169,28 @@ interface FadeInProps {
   className?: string;
 }
 
-export const FadeIn = ({ 
-  children, 
-  direction = "up", 
-  delay = 0, 
-  duration = 0.6, 
-  className 
+export const FadeIn = ({
+  children,
+  direction = "up",
+  delay = 0,
+  duration = 0.6,
+  className,
 }: FadeInProps) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true });
 
   const getInitialPosition = () => {
     switch (direction) {
-      case "up": return { y: 30, opacity: 0 };
-      case "down": return { y: -30, opacity: 0 };
-      case "left": return { x: 30, opacity: 0 };
-      case "right": return { x: -30, opacity: 0 };
-      default: return { y: 30, opacity: 0 };
+      case "up":
+        return { y: 30, opacity: 0 };
+      case "down":
+        return { y: -30, opacity: 0 };
+      case "left":
+        return { x: 30, opacity: 0 };
+      case "right":
+        return { x: -30, opacity: 0 };
+      default:
+        return { y: 30, opacity: 0 };
     }
   };
 
@@ -188,10 +199,10 @@ export const FadeIn = ({
       ref={ref}
       initial={getInitialPosition()}
       animate={isInView ? { x: 0, y: 0, opacity: 1 } : getInitialPosition()}
-      transition={{ 
-        duration, 
-        delay, 
-        ease: "easeOut" 
+      transition={{
+        duration,
+        delay,
+        ease: "easeOut",
       }}
       className={className}
     >

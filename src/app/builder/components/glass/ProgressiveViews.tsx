@@ -1,11 +1,11 @@
 "use client";
 
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '~/lib/utils';
-import { ChevronDown, ChevronUp, Zap, Settings } from 'lucide-react';
-import { GlassToggle } from './GlassInputs';
-import { NumberFlowDisplay } from '~/components/ui/number-flow';
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "~/lib/utils";
+import { ChevronDown, ChevronUp, Zap, Settings } from "lucide-react";
+import { GlassToggle } from "./GlassInputs";
+import { NumberFlowDisplay } from "~/components/ui/number-flow";
 
 // Basic/Advanced View Components for Progressive Disclosure
 interface ViewProps {
@@ -17,7 +17,7 @@ interface ViewProps {
 // Basic View - Always visible essential controls
 export function BasicView({ children, visible = true, className }: ViewProps) {
   if (!visible) return null;
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -40,10 +40,10 @@ export function AdvancedView({ children, visible = false, className }: ViewProps
           initial={{ opacity: 0, height: 0, y: -20 }}
           animate={{ opacity: 1, height: "auto", y: 0 }}
           exit={{ opacity: 0, height: 0, y: -20 }}
-          transition={{ 
-            duration: 0.4, 
+          transition={{
+            duration: 0.4,
             ease: "easeOut",
-            height: { duration: 0.5 }
+            height: { duration: 0.5 },
           }}
           className={cn("overflow-hidden", className)}
         >
@@ -52,7 +52,7 @@ export function AdvancedView({ children, visible = false, className }: ViewProps
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ delay: 0.1, duration: 0.3 }}
-            className="space-y-4 pt-4 border-t border-border"
+            className="border-border space-y-4 border-t pt-4"
           >
             {children}
           </motion.div>
@@ -69,7 +69,7 @@ interface ViewToggleProps {
   basicLabel?: string;
   advancedLabel?: string;
   className?: string;
-  theme?: 'gold' | 'blue' | 'indigo' | 'red' | 'neutral';
+  theme?: "gold" | "blue" | "indigo" | "red" | "neutral";
 }
 
 export function ViewToggle({
@@ -78,22 +78,22 @@ export function ViewToggle({
   basicLabel = "Basic",
   advancedLabel = "Advanced",
   className,
-  theme = 'neutral'
+  theme = "neutral",
 }: ViewToggleProps) {
   return (
     <div className={cn("flex items-center justify-between", className)}>
       <div className="flex items-center gap-3">
         <motion.button
           onClick={() => {
-            console.log('Toggling advanced view from ViewToggle');
+            console.log("Toggling advanced view from ViewToggle");
             onToggle();
           }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           className={cn(
-            "flex items-center gap-2 px-3 py-2 md:py-1.5 rounded-lg transition-all duration-200",
-            "bg-card/50 hover:bg-card/70 border border-border hover:border-accent",
-            "text-sm font-medium text-foreground touch-manipulation",
+            "flex items-center gap-2 rounded-lg px-3 py-2 transition-all duration-200 md:py-1.5",
+            "bg-card/50 hover:bg-card/70 border-border hover:border-accent border",
+            "text-foreground touch-manipulation text-sm font-medium",
             "min-h-[44px] md:min-h-[auto]" // iOS minimum touch target
           )}
         >
@@ -111,19 +111,14 @@ export function ViewToggle({
             </>
           )}
         </motion.button>
-        
-        <span className="text-xs text-muted-foreground">
+
+        <span className="text-muted-foreground text-xs">
           {showAdvanced ? "Showing detailed controls" : "Click for advanced options"}
         </span>
       </div>
-      
+
       {/* Alternative toggle style */}
-      <GlassToggle
-        checked={showAdvanced}
-        onChange={onToggle}
-        theme={theme}
-        size="sm"
-      />
+      <GlassToggle checked={showAdvanced} onChange={onToggle} theme={theme} size="sm" />
     </div>
   );
 }
@@ -136,7 +131,7 @@ interface SectionContainerProps {
   showAdvanced: boolean;
   onToggleAdvanced: () => void;
   children: React.ReactNode;
-  theme?: 'gold' | 'blue' | 'indigo' | 'red' | 'neutral';
+  theme?: "gold" | "blue" | "indigo" | "red" | "neutral";
   className?: string;
   headerActions?: React.ReactNode;
   hideViewToggle?: boolean;
@@ -150,11 +145,11 @@ export function SectionContainer({
   showAdvanced,
   onToggleAdvanced,
   children,
-  theme = 'neutral',
+  theme = "neutral",
   className,
   headerActions,
   hideViewToggle = false,
-  helpContent
+  helpContent,
 }: SectionContainerProps) {
   return (
     <div className={cn("space-y-6", className)}>
@@ -163,25 +158,21 @@ export function SectionContainer({
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             {Icon && (
-              <div className={cn(
-                "p-2 rounded-lg bg-card/50 border border-border",
-                "flex items-center justify-center"
-              )}>
+              <div
+                className={cn(
+                  "bg-card/50 border-border rounded-lg border p-2",
+                  "flex items-center justify-center"
+                )}
+              >
                 {React.createElement(Icon, { className: "h-5 w-5 text-muted-foreground" })}
               </div>
             )}
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-foreground">{title}</h3>
-                {helpContent && (
-                  <div className="flex items-center">
-                    {helpContent}
-                  </div>
-                )}
+                <h3 className="text-foreground text-lg font-semibold">{title}</h3>
+                {helpContent && <div className="flex items-center">{helpContent}</div>}
               </div>
-              {subtitle && (
-                <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
-              )}
+              {subtitle && <p className="text-muted-foreground mt-1 text-sm">{subtitle}</p>}
             </div>
           </div>
           {headerActions}
@@ -189,18 +180,12 @@ export function SectionContainer({
 
         {/* View Toggle */}
         {!hideViewToggle && (
-          <ViewToggle
-            showAdvanced={showAdvanced}
-            onToggle={onToggleAdvanced}
-            theme={theme}
-          />
+          <ViewToggle showAdvanced={showAdvanced} onToggle={onToggleAdvanced} theme={theme} />
         )}
       </div>
 
       {/* Section Content */}
-      <div className="space-y-6">
-        {children}
-      </div>
+      <div className="space-y-6">{children}</div>
     </div>
   );
 }
@@ -217,18 +202,10 @@ export function FormGrid({ children, columns = 2, className }: FormGridProps) {
     1: "grid-cols-1",
     2: "grid-cols-1 md:grid-cols-2",
     3: "grid-cols-1 md:grid-cols-2 lg:grid-cols-3",
-    4: "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
+    4: "grid-cols-1 md:grid-cols-2 lg:grid-cols-4",
   };
 
-  return (
-    <div className={cn(
-      "grid gap-4",
-      gridColumns[columns],
-      className
-    )}>
-      {children}
-    </div>
-  );
+  return <div className={cn("grid gap-4", gridColumns[columns], className)}>{children}</div>;
 }
 
 // Metric Overview Component for displaying key stats
@@ -237,57 +214,63 @@ interface MetricOverviewProps {
     label: string;
     value: string | number;
     unit?: string;
-    trend?: 'up' | 'down' | 'neutral';
+    trend?: "up" | "down" | "neutral";
     change?: number;
     icon?: React.ElementType;
-    theme?: 'gold' | 'blue' | 'indigo' | 'red' | 'neutral';
+    theme?: "gold" | "blue" | "indigo" | "red" | "neutral";
   }[];
   className?: string;
 }
 
 export function MetricOverview({ metrics, className }: MetricOverviewProps) {
   return (
-    <div className={cn(
-      "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4",
-      className
-    )}>
+    <div className={cn("grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4", className)}>
       {metrics.map((metric, index) => (
         <motion.div
           key={`${metric.label}-${index}`}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1, duration: 0.3 }}
-          className="p-4 bg-card/50 backdrop-blur-sm border border-border rounded-lg"
+          className="bg-card/50 border-border rounded-lg border p-4 backdrop-blur-sm"
         >
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <p className="text-xs text-muted-foreground mb-1">{metric.label}</p>
+              <p className="text-muted-foreground mb-1 text-xs">{metric.label}</p>
               <div className="flex items-baseline gap-1">
-                {typeof metric.value === 'number' ? (
+                {typeof metric.value === "number" ? (
                   <NumberFlowDisplay
                     value={metric.value}
                     format={
-                      metric.unit === '%' ? 'percentage' :
-                      metric.unit === ' years' ? 'default' :
-                      metric.value >= 1000000 ? 'population' : 'default'
+                      metric.unit === "%"
+                        ? "percentage"
+                        : metric.unit === " years"
+                          ? "default"
+                          : metric.value >= 1000000
+                            ? "population"
+                            : "default"
                     }
-                    suffix={metric.unit && metric.unit !== '%' ? metric.unit : ''}
-                    className="text-xl font-bold text-foreground"
+                    suffix={metric.unit && metric.unit !== "%" ? metric.unit : ""}
+                    className="text-foreground text-xl font-bold"
                     duration={800}
-                    decimalPlaces={metric.unit === '%' || metric.unit === ' years' ? 1 : 0}
+                    decimalPlaces={metric.unit === "%" || metric.unit === " years" ? 1 : 0}
                   />
                 ) : (
-                  <span className="text-xl font-bold text-foreground">{metric.value}</span>
+                  <span className="text-foreground text-xl font-bold">{metric.value}</span>
                 )}
               </div>
               {metric.change !== undefined && (
-                <div className={cn(
-                  "flex items-center gap-1 mt-1 text-xs",
-                  metric.trend === 'up' ? "text-green-400" :
-                  metric.trend === 'down' ? "text-red-400" : "text-muted-foreground"
-                )}>
-                  {metric.trend === 'up' && <ChevronUp className="h-3 w-3" />}
-                  {metric.trend === 'down' && <ChevronDown className="h-3 w-3" />}
+                <div
+                  className={cn(
+                    "mt-1 flex items-center gap-1 text-xs",
+                    metric.trend === "up"
+                      ? "text-green-400"
+                      : metric.trend === "down"
+                        ? "text-red-400"
+                        : "text-muted-foreground"
+                  )}
+                >
+                  {metric.trend === "up" && <ChevronUp className="h-3 w-3" />}
+                  {metric.trend === "down" && <ChevronDown className="h-3 w-3" />}
                   <NumberFlowDisplay
                     value={Math.abs(metric.change)}
                     format="percentage"
@@ -298,9 +281,8 @@ export function MetricOverview({ metrics, className }: MetricOverviewProps) {
                 </div>
               )}
             </div>
-            {metric.icon && 
-              React.createElement(metric.icon, { className: "h-5 w-5 text-muted-foreground" })
-            }
+            {metric.icon &&
+              React.createElement(metric.icon, { className: "h-5 w-5 text-muted-foreground" })}
           </div>
         </motion.div>
       ))}
@@ -310,7 +292,7 @@ export function MetricOverview({ metrics, className }: MetricOverviewProps) {
 
 // Validation Message Component
 interface ValidationMessageProps {
-  type: 'error' | 'warning' | 'info' | 'success';
+  type: "error" | "warning" | "info" | "success";
   message: string;
   className?: string;
 }
@@ -320,14 +302,14 @@ export function ValidationMessage({ type, message, className }: ValidationMessag
     error: "bg-red-500/20 border-red-400/30 text-red-300",
     warning: "bg-yellow-500/20 border-yellow-400/30 text-yellow-300",
     info: "bg-blue-500/20 border-blue-400/30 text-blue-300",
-    success: "bg-green-500/20 border-green-400/30 text-green-300"
+    success: "bg-green-500/20 border-green-400/30 text-green-300",
   };
 
   const icons = {
     error: "⚠️",
     warning: "⚡",
     info: "ℹ️",
-    success: "✅"
+    success: "✅",
   };
 
   return (
@@ -336,13 +318,13 @@ export function ValidationMessage({ type, message, className }: ValidationMessag
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       className={cn(
-        "flex items-start gap-2 p-3 rounded-lg border backdrop-blur-sm",
+        "flex items-start gap-2 rounded-lg border p-3 backdrop-blur-sm",
         styles[type],
         className
       )}
     >
       <span className="text-sm">{icons[type]}</span>
-      <p className="text-sm font-medium flex-1">{message}</p>
+      <p className="flex-1 text-sm font-medium">{message}</p>
     </motion.div>
   );
 }

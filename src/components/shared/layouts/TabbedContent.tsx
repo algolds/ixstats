@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { Badge } from '~/components/ui/badge';
-import { cn } from '~/lib/utils';
-import type { LucideIcon } from 'lucide-react';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Badge } from "~/components/ui/badge";
+import { cn } from "~/lib/utils";
+import type { LucideIcon } from "lucide-react";
 
 export interface Tab {
   id: string;
@@ -23,8 +23,8 @@ export interface TabbedContentProps {
   className?: string;
   tabsClassName?: string;
   contentClassName?: string;
-  orientation?: 'horizontal' | 'vertical';
-  variant?: 'default' | 'pills' | 'underline';
+  orientation?: "horizontal" | "vertical";
+  variant?: "default" | "pills" | "underline";
   animated?: boolean;
 }
 
@@ -35,11 +35,11 @@ export function TabbedContent({
   className,
   tabsClassName,
   contentClassName,
-  orientation = 'horizontal',
-  variant = 'default',
-  animated = true
+  orientation = "horizontal",
+  variant = "default",
+  animated = true,
 }: TabbedContentProps) {
-  const [activeTab, setActiveTab] = useState(defaultTab || tabs[0]?.id || '');
+  const [activeTab, setActiveTab] = useState(defaultTab || tabs[0]?.id || "");
 
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
@@ -47,28 +47,24 @@ export function TabbedContent({
   };
 
   const variantStyles = {
-    default: '',
-    pills: 'bg-muted/50 p-1 rounded-lg',
-    underline: 'border-b border-border'
+    default: "",
+    pills: "bg-muted/50 p-1 rounded-lg",
+    underline: "border-b border-border",
   };
 
   const triggerVariantStyles = {
-    default: '',
-    pills: 'data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md',
-    underline: 'border-b-2 border-transparent data-[state=active]:border-primary rounded-none'
+    default: "",
+    pills: "data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md",
+    underline: "border-b-2 border-transparent data-[state=active]:border-primary rounded-none",
   };
 
   return (
-    <Tabs
-      value={activeTab}
-      onValueChange={handleTabChange}
-      className={cn('w-full', className)}
-    >
+    <Tabs value={activeTab} onValueChange={handleTabChange} className={cn("w-full", className)}>
       <TabsList
         className={cn(
-          'w-full',
+          "w-full",
           variantStyles[variant],
-          orientation === 'vertical' && 'flex-col h-auto',
+          orientation === "vertical" && "h-auto flex-col",
           tabsClassName
         )}
       >
@@ -78,9 +74,9 @@ export function TabbedContent({
             value={tab.id}
             disabled={tab.disabled}
             className={cn(
-              'flex items-center gap-2',
+              "flex items-center gap-2",
               triggerVariantStyles[variant],
-              orientation === 'vertical' && 'w-full justify-start'
+              orientation === "vertical" && "w-full justify-start"
             )}
           >
             {tab.icon && <tab.icon className="h-4 w-4" />}
@@ -95,11 +91,7 @@ export function TabbedContent({
       </TabsList>
 
       {tabs.map((tab) => (
-        <TabsContent
-          key={tab.id}
-          value={tab.id}
-          className={cn('mt-4', contentClassName)}
-        >
+        <TabsContent key={tab.id} value={tab.id} className={cn("mt-4", contentClassName)}>
           {animated ? (
             <AnimatePresence mode="wait">
               {activeTab === tab.id && (

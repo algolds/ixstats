@@ -14,14 +14,10 @@
  * @module usePolicyCreator
  */
 
-import { useState, useMemo, useCallback } from 'react';
-import { toast } from 'sonner';
-import { api } from '~/trpc/react';
-import {
-  type PolicyType,
-  type PolicyPriority,
-  type PolicyTemplate
-} from '~/lib/policy-templates';
+import { useState, useMemo, useCallback } from "react";
+import { toast } from "sonner";
+import { api } from "~/trpc/react";
+import { type PolicyType, type PolicyPriority, type PolicyTemplate } from "~/lib/policy-templates";
 import {
   validatePolicyStep1,
   validatePolicyStep2,
@@ -32,9 +28,12 @@ import {
   assessPolicyFeasibility,
   type PolicyData,
   type EconomicData,
-  type CountryData
-} from '~/lib/policy-validation';
-import { ATOMIC_COMPONENTS, type ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
+  type CountryData,
+} from "~/lib/policy-validation";
+import {
+  ATOMIC_COMPONENTS,
+  type ComponentType,
+} from "~/components/government/atoms/AtomicGovernmentComponents";
 
 /**
  * Hook configuration interface
@@ -103,19 +102,19 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
 
   // Policy form state
   const [formState, setFormState] = useState<PolicyFormState>({
-    policyType: 'economic',
-    name: '',
-    description: '',
-    category: '',
+    policyType: "economic",
+    name: "",
+    description: "",
+    category: "",
     selectedDepartment: null,
     selectedComponents: [],
     implementationCost: 1000000,
     maintenanceCost: 100000,
-    priority: 'medium',
+    priority: "medium",
     effectiveDate: null,
     expiryDate: null,
     targetMetrics: {},
-    autoActivate: false
+    autoActivate: false,
   });
 
   // Fetch government builder data
@@ -139,8 +138,8 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
   // Create policy mutation
   const createPolicyMutation = api.policies.createPolicy.useMutation({
     onSuccess: (policy) => {
-      toast.success('Policy Created', {
-        description: `"${policy.name}" has been successfully created`
+      toast.success("Policy Created", {
+        description: `"${policy.name}" has been successfully created`,
       });
 
       // Auto-activate if requested
@@ -151,20 +150,20 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
       onSuccess?.(policy.id);
     },
     onError: (error) => {
-      toast.error('Failed to Create Policy', {
-        description: error.message
+      toast.error("Failed to Create Policy", {
+        description: error.message,
       });
       setIsProcessing(false);
-    }
+    },
   });
 
   // Activate policy mutation
   const activatePolicyMutation = api.policies.activatePolicy.useMutation({
     onSuccess: () => {
-      toast.success('Policy Activated', {
-        description: 'The policy is now in effect'
+      toast.success("Policy Activated", {
+        description: "The policy is now in effect",
       });
-    }
+    },
   });
 
   /**
@@ -177,7 +176,7 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
         revenueImpact: 0,
         employmentImpact: 0,
         budgetBalance: 0,
-        effectiveness: 50
+        effectiveness: 50,
       };
     }
 
@@ -189,7 +188,7 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
       {
         policyType: formState.policyType,
         implementationCost: formState.implementationCost,
-        maintenanceCost: formState.maintenanceCost
+        maintenanceCost: formState.maintenanceCost,
       },
       { structure: { totalGDP: gdp }, totalBudget }
     );
@@ -197,25 +196,27 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
     let { gdpImpact, employmentImpact, revenueImpact = 0 } = baseImpact;
 
     // Component synergy bonus
-    const synergyBonus = formState.selectedComponents.length > 0
-      ? formState.selectedComponents.reduce((acc, comp) => {
-          const component = ATOMIC_COMPONENTS[comp];
-          return acc + (component?.effectiveness || 0);
-        }, 0) / formState.selectedComponents.length / 100
-      : 0;
+    const synergyBonus =
+      formState.selectedComponents.length > 0
+        ? formState.selectedComponents.reduce((acc, comp) => {
+            const component = ATOMIC_COMPONENTS[comp];
+            return acc + (component?.effectiveness || 0);
+          }, 0) /
+          formState.selectedComponents.length /
+          100
+        : 0;
 
     // Apply synergy multiplier
-    gdpImpact *= (1 + synergyBonus);
-    revenueImpact *= (1 + synergyBonus);
-    employmentImpact *= (1 + synergyBonus);
+    gdpImpact *= 1 + synergyBonus;
+    revenueImpact *= 1 + synergyBonus;
+    employmentImpact *= 1 + synergyBonus;
 
     const budgetBalance = totalBudget - formState.implementationCost - formState.maintenanceCost;
     const effectiveness = Math.min(
       95,
-      50 + synergyBonus * 100 + (
-        formState.priority === 'critical' ? 20 :
-        formState.priority === 'high' ? 10 : 0
-      )
+      50 +
+        synergyBonus * 100 +
+        (formState.priority === "critical" ? 20 : formState.priority === "high" ? 10 : 0)
     );
 
     return {
@@ -223,7 +224,7 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
       revenueImpact: Math.round(revenueImpact),
       employmentImpact: Math.round(employmentImpact * 100) / 100,
       budgetBalance: Math.round(budgetBalance),
-      effectiveness: Math.round(effectiveness)
+      effectiveness: Math.round(effectiveness),
     };
   }, [
     formState.policyType,
@@ -232,7 +233,7 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
     formState.selectedComponents,
     formState.priority,
     economyData,
-    governmentData
+    governmentData,
   ]);
 
   /**
@@ -243,7 +244,7 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
       return {
         feasible: true,
         score: 50,
-        factors: ['Insufficient data for assessment']
+        factors: ["Insufficient data for assessment"],
       };
     }
 
@@ -251,12 +252,12 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
       {
         implementationCost: formState.implementationCost,
         maintenanceCost: formState.maintenanceCost,
-        priority: formState.priority
+        priority: formState.priority,
       },
       {
         totalBudget: governmentData.totalBudget,
         gdp: economyData.structure.totalGDP,
-        stability: 70 // Default stability
+        stability: 70, // Default stability
       }
     );
   }, [
@@ -264,7 +265,7 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
     formState.maintenanceCost,
     formState.priority,
     economyData,
-    governmentData
+    governmentData,
   ]);
 
   /**
@@ -273,23 +274,13 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
   const stepValidation = useMemo((): StepValidation => {
     switch (currentStep) {
       case 1:
-        return validatePolicyStep1(
-          formState.policyType,
-          formState.name,
-          formState.description
-        );
+        return validatePolicyStep1(formState.policyType, formState.name, formState.description);
       case 2:
         return validatePolicyStep2(formState.selectedDepartment);
       case 3:
-        return validatePolicyStep3(
-          formState.implementationCost,
-          formState.maintenanceCost
-        );
+        return validatePolicyStep3(formState.implementationCost, formState.maintenanceCost);
       case 4:
-        return validatePolicyStep4(
-          formState.effectiveDate,
-          formState.expiryDate
-        );
+        return validatePolicyStep4(formState.effectiveDate, formState.expiryDate);
       case 5:
         return validatePolicyStep5({
           name: formState.name,
@@ -299,10 +290,10 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
           maintenanceCost: formState.maintenanceCost,
           priority: formState.priority,
           effectiveDate: formState.effectiveDate,
-          expiryDate: formState.expiryDate
+          expiryDate: formState.expiryDate,
         });
       default:
-        return { valid: false, errors: ['Invalid step'] };
+        return { valid: false, errors: ["Invalid step"] };
     }
   }, [currentStep, formState]);
 
@@ -316,21 +307,21 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
   /**
    * Update a single form field
    */
-  const updateField = useCallback(<K extends keyof PolicyFormState>(
-    field: K,
-    value: PolicyFormState[K]
-  ) => {
-    setFormState(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  }, []);
+  const updateField = useCallback(
+    <K extends keyof PolicyFormState>(field: K, value: PolicyFormState[K]) => {
+      setFormState((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    },
+    []
+  );
 
   /**
    * Apply a policy template
    */
   const applyTemplate = useCallback((template: PolicyTemplate) => {
-    setFormState(prev => ({
+    setFormState((prev) => ({
       ...prev,
       policyType: template.policyType,
       name: template.name,
@@ -338,12 +329,12 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
       category: template.category,
       implementationCost: template.defaultSettings.implementationCost || 1000000,
       maintenanceCost: template.defaultSettings.maintenanceCost || 100000,
-      priority: template.defaultSettings.priority || 'medium',
-      targetMetrics: template.defaultSettings.targetMetrics || {}
+      priority: template.defaultSettings.priority || "medium",
+      targetMetrics: template.defaultSettings.targetMetrics || {},
     }));
 
-    toast.success('Template Applied', {
-      description: `Loaded "${template.name}" template`
+    toast.success("Template Applied", {
+      description: `Loaded "${template.name}" template`,
     });
   }, []);
 
@@ -352,10 +343,10 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
    */
   const nextStep = useCallback(() => {
     if (stepValidation.valid) {
-      setCurrentStep(prev => Math.min(5, prev + 1));
+      setCurrentStep((prev) => Math.min(5, prev + 1));
     } else {
-      toast.error('Please complete all required fields', {
-        description: stepValidation.errors[0]
+      toast.error("Please complete all required fields", {
+        description: stepValidation.errors[0],
       });
     }
   }, [stepValidation]);
@@ -364,7 +355,7 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
    * Navigate to previous step
    */
   const prevStep = useCallback(() => {
-    setCurrentStep(prev => Math.max(1, prev - 1));
+    setCurrentStep((prev) => Math.max(1, prev - 1));
   }, []);
 
   /**
@@ -372,19 +363,19 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
    */
   const resetForm = useCallback(() => {
     setFormState({
-      policyType: 'economic',
-      name: '',
-      description: '',
-      category: '',
+      policyType: "economic",
+      name: "",
+      description: "",
+      category: "",
       selectedDepartment: null,
       selectedComponents: [],
       implementationCost: 1000000,
       maintenanceCost: 100000,
-      priority: 'medium',
+      priority: "medium",
       effectiveDate: null,
       expiryDate: null,
       targetMetrics: {},
-      autoActivate: false
+      autoActivate: false,
     });
     setCurrentStep(1);
   }, []);
@@ -401,12 +392,12 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
       maintenanceCost: formState.maintenanceCost,
       priority: formState.priority,
       effectiveDate: formState.effectiveDate,
-      expiryDate: formState.expiryDate
+      expiryDate: formState.expiryDate,
     });
 
     if (!finalValidation.valid) {
-      toast.error('Please complete all required fields', {
-        description: finalValidation.errors[0]
+      toast.error("Please complete all required fields", {
+        description: finalValidation.errors[0],
       });
       return;
     }
@@ -426,7 +417,7 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
         targetMetrics: JSON.stringify(formState.targetMetrics),
         implementationCost: formState.implementationCost,
         maintenanceCost: formState.maintenanceCost,
-        priority: formState.priority
+        priority: formState.priority,
       });
     } catch (error) {
       setIsProcessing(false);
@@ -456,6 +447,6 @@ export function usePolicyCreator(config: UsePolicyCreatorConfig) {
     nextStep,
     prevStep,
     resetForm,
-    handleSubmit
+    handleSubmit,
   };
 }

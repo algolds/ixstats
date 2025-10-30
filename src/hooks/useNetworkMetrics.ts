@@ -35,9 +35,13 @@ export function useNetworkMetrics(
     if (!embassiesWithSynergies.length) return null;
 
     const totalEmbassies = embassiesWithSynergies.length;
-    const avgSynergyScore = embassiesWithSynergies.reduce((sum, e) => sum + e.totalSynergyScore, 0) / totalEmbassies;
+    const avgSynergyScore =
+      embassiesWithSynergies.reduce((sum, e) => sum + e.totalSynergyScore, 0) / totalEmbassies;
     const totalEconomicBonus = embassiesWithSynergies.reduce((sum, e) => sum + e.economicBonus, 0);
-    const totalDiplomaticBonus = embassiesWithSynergies.reduce((sum, e) => sum + e.diplomaticBonus, 0);
+    const totalDiplomaticBonus = embassiesWithSynergies.reduce(
+      (sum, e) => sum + e.diplomaticBonus,
+      0
+    );
     const totalCulturalBonus = embassiesWithSynergies.reduce((sum, e) => sum + e.culturalBonus, 0);
 
     return {
@@ -46,7 +50,7 @@ export function useNetworkMetrics(
       totalEconomicBonus,
       totalDiplomaticBonus,
       totalCulturalBonus,
-      networkPower: Math.round((totalEmbassies * 10) + (avgSynergyScore * 2))
+      networkPower: Math.round(totalEmbassies * 10 + avgSynergyScore * 2),
     };
   }, [embassiesWithSynergies]);
 }

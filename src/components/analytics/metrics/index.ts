@@ -6,6 +6,6 @@
  * @module analytics/metrics
  */
 
-export { SummaryMetricsCard } from './SummaryMetricsCard';
-export { VolatilityMetricsCard } from './VolatilityMetricsCard';
-export { ComparativeBenchmarkingCard } from './ComparativeBenchmarkingCard';
+export { SummaryMetricsCard } from "./SummaryMetricsCard";
+export { VolatilityMetricsCard } from "./VolatilityMetricsCard";
+export { ComparativeBenchmarkingCard } from "./ComparativeBenchmarkingCard";

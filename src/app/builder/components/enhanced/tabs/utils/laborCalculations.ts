@@ -6,7 +6,7 @@
  * Extracted from LaborEmploymentTab for reusability.
  */
 
-import type { LaborConfiguration } from '~/types/economy-builder';
+import type { LaborConfiguration } from "~/types/economy-builder";
 
 /**
  * Derived labor market metrics calculated from base labor configuration
@@ -49,9 +49,7 @@ export interface DerivedLaborMetrics {
  * // metrics.effectiveUnemployment = 8 (5% + 3%)
  * ```
  */
-export function calculateDerivedLabor(
-  laborMarket: LaborConfiguration
-): DerivedLaborMetrics {
+export function calculateDerivedLabor(laborMarket: LaborConfiguration): DerivedLaborMetrics {
   const totalWorkforce = laborMarket.totalWorkforce;
   const employed = Math.round(totalWorkforce * (laborMarket.employmentRate / 100));
   const unemployed = totalWorkforce - employed;
@@ -61,9 +59,11 @@ export function calculateDerivedLabor(
     employed,
     unemployed,
     underemployed,
-    workingAgePopulation: Math.round(totalWorkforce / (laborMarket.laborForceParticipationRate / 100)),
+    workingAgePopulation: Math.round(
+      totalWorkforce / (laborMarket.laborForceParticipationRate / 100)
+    ),
     laborForceSize: totalWorkforce,
-    effectiveUnemployment: ((unemployed + underemployed) / totalWorkforce) * 100
+    effectiveUnemployment: ((unemployed + underemployed) / totalWorkforce) * 100,
   };
 }
 
@@ -83,15 +83,15 @@ export function calculateDerivedLabor(
  */
 export function getEmploymentTypeColor(type: string): string {
   const colors: Record<string, string> = {
-    fullTime: 'blue',
-    partTime: 'green',
-    temporary: 'yellow',
-    seasonal: 'orange',
-    selfEmployed: 'purple',
-    gig: 'pink',
-    informal: 'red'
+    fullTime: "blue",
+    partTime: "green",
+    temporary: "yellow",
+    seasonal: "orange",
+    selfEmployed: "purple",
+    gig: "pink",
+    informal: "red",
   };
-  return colors[type] || 'gray';
+  return colors[type] || "gray";
 }
 
 /**
@@ -110,24 +110,24 @@ export function getEmploymentTypeColor(type: string): string {
  */
 export function getSectorColor(sector: string): string {
   const colors: Record<string, string> = {
-    agriculture: 'green',
-    mining: 'orange',
-    manufacturing: 'blue',
-    construction: 'yellow',
-    utilities: 'purple',
-    wholesale: 'cyan',
-    retail: 'pink',
-    transportation: 'indigo',
-    information: 'teal',
-    finance: 'amber',
-    professional: 'emerald',
-    education: 'violet',
-    healthcare: 'red',
-    hospitality: 'lime',
-    government: 'gray',
-    other: 'slate'
+    agriculture: "green",
+    mining: "orange",
+    manufacturing: "blue",
+    construction: "yellow",
+    utilities: "purple",
+    wholesale: "cyan",
+    retail: "pink",
+    transportation: "indigo",
+    information: "teal",
+    finance: "amber",
+    professional: "emerald",
+    education: "violet",
+    healthcare: "red",
+    hospitality: "lime",
+    government: "gray",
+    other: "slate",
   };
-  return colors[sector] || 'gray';
+  return colors[sector] || "gray";
 }
 
 /**
@@ -146,11 +146,11 @@ export function getSectorColor(sector: string): string {
  */
 export function getProtectionColor(protection: string): string {
   const colors: Record<string, string> = {
-    jobSecurity: 'blue',
-    wageProtection: 'green',
-    healthSafety: 'red',
-    discriminationProtection: 'purple',
-    collectiveRights: 'orange'
+    jobSecurity: "blue",
+    wageProtection: "green",
+    healthSafety: "red",
+    discriminationProtection: "purple",
+    collectiveRights: "orange",
   };
-  return colors[protection] || 'gray';
+  return colors[protection] || "gray";
 }

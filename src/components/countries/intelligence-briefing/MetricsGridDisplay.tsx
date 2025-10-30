@@ -23,80 +23,87 @@ interface MetricsGridDisplayProps {
   icon?: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
 }
 
-export const MetricsGridDisplay = React.memo<MetricsGridDisplayProps>(({
-  metrics,
-  viewerClearanceLevel,
-  flagColors,
-  filterCategories,
-  title = "Key Metrics",
-  icon: Icon,
-}) => {
-  const filteredMetrics = metrics.filter(metric => {
-    // Filter by clearance level
-    if (!hasAccess(viewerClearanceLevel, metric.classification)) {
-      return false;
+export const MetricsGridDisplay = React.memo<MetricsGridDisplayProps>(
+  ({
+    metrics,
+    viewerClearanceLevel,
+    flagColors,
+    filterCategories,
+    title = "Key Metrics",
+    icon: Icon,
+  }) => {
+    const filteredMetrics = metrics.filter((metric) => {
+      // Filter by clearance level
+      if (!hasAccess(viewerClearanceLevel, metric.classification)) {
+        return false;
+      }
+
+      // Filter by category if specified
+      if (filterCategories && filterCategories.length > 0) {
+        return filterCategories.some((cat) => metric.id.includes(cat));
+      }
+
+      return true;
+    });
+
+    if (filteredMetrics.length === 0) {
+      return null;
     }
 
-    // Filter by category if specified
-    if (filterCategories && filterCategories.length > 0) {
-      return filterCategories.some(cat => metric.id.includes(cat));
-    }
+    return (
+      <Card className="glass-hierarchy-child">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            {Icon && <Icon className="h-5 w-5" style={{ color: flagColors.primary }} />}
+            {title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {filteredMetrics.map((metric) => {
+              const MetricIcon = metric.icon as React.ComponentType<{
+                className?: string;
+                style?: React.CSSProperties;
+              }>;
+              const TrendIcon = metric.trend ? getTrendIcon(metric.trend.direction) : null;
 
-    return true;
-  });
+              return (
+                <div
+                  key={metric.id}
+                  className="bg-card/50 hover:bg-card/70 rounded-lg border p-4 transition-colors"
+                >
+                  <div className="mb-2 flex items-center gap-2">
+                    <MetricIcon className="text-muted-foreground h-4 w-4" />
+                    <span className="text-sm font-medium">{metric.label}</span>
+                  </div>
 
-  if (filteredMetrics.length === 0) {
-    return null;
-  }
+                  <div className="mb-2 flex items-baseline gap-1">
+                    <span className="text-xl font-semibold">{metric.value}</span>
+                    {metric.unit && (
+                      <span className="text-muted-foreground text-sm">{metric.unit}</span>
+                    )}
+                  </div>
 
-  return (
-    <Card className="glass-hierarchy-child">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          {Icon && <Icon className="h-5 w-5" style={{ color: flagColors.primary }} />}
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredMetrics.map((metric) => {
-            const MetricIcon = metric.icon as React.ComponentType<{ className?: string; style?: React.CSSProperties; }>;
-            const TrendIcon = metric.trend ? getTrendIcon(metric.trend.direction) : null;
-
-            return (
-              <div
-                key={metric.id}
-                className="p-4 rounded-lg border bg-card/50 hover:bg-card/70 transition-colors"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <MetricIcon className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">{metric.label}</span>
-                </div>
-
-                <div className="flex items-baseline gap-1 mb-2">
-                  <span className="text-xl font-semibold">{metric.value}</span>
-                  {metric.unit && (
-                    <span className="text-sm text-muted-foreground">{metric.unit}</span>
+                  {metric.trend && (
+                    <div className="flex items-center gap-1">
+                      {TrendIcon && (
+                        <TrendIcon
+                          className={cn("h-3 w-3", getTrendColor(metric.trend.direction))}
+                        />
+                      )}
+                      <span className={cn("text-xs", getTrendColor(metric.trend.direction))}>
+                        {metric.trend.value.toFixed(2)}% {metric.trend.period}
+                      </span>
+                    </div>
                   )}
                 </div>
-
-                {metric.trend && (
-                  <div className="flex items-center gap-1">
-                    {TrendIcon && (
-                      <TrendIcon className={cn("h-3 w-3", getTrendColor(metric.trend.direction))} />
-                    )}
-                    <span className={cn("text-xs", getTrendColor(metric.trend.direction))}>
-                      {metric.trend.value.toFixed(2)}% {metric.trend.period}
-                    </span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
-  );
-});
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+);
 
 MetricsGridDisplay.displayName = "MetricsGridDisplay";

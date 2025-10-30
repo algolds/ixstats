@@ -1,6 +1,6 @@
 /**
  * User Logging Middleware for tRPC
- * 
+ *
  * This middleware automatically captures user actions and logs them
  * with proper context and categorization.
  */
@@ -11,7 +11,7 @@ import { ErrorLogger } from "./error-logger";
 
 export interface UserLoggingConfig {
   enabled: boolean;
-  logLevel: 'ALL' | 'MUTATIONS_ONLY' | 'SENSITIVE_ONLY';
+  logLevel: "ALL" | "MUTATIONS_ONLY" | "SENSITIVE_ONLY";
   excludePaths: string[];
   includeMetadata: boolean;
   logPerformance: boolean;
@@ -19,21 +19,27 @@ export interface UserLoggingConfig {
 
 const DEFAULT_CONFIG: UserLoggingConfig = {
   enabled: true,
-  logLevel: 'MUTATIONS_ONLY',
+  logLevel: "MUTATIONS_ONLY",
   logPerformance: true,
   excludePaths: [
-    'users.getProfile',
-    'countries.getCountryData',
-    'ixtime.getCurrentTime',
-    'system.health'
+    "users.getProfile",
+    "countries.getCountryData",
+    "ixtime.getCurrentTime",
+    "system.health",
   ],
-  includeMetadata: true
+  includeMetadata: true,
 };
 
 export function createUserLoggingMiddleware(config: Partial<UserLoggingConfig> = {}) {
   const finalConfig = { ...DEFAULT_CONFIG, ...config };
 
-  return async ({ ctx, next, path, input, type }: {
+  return async ({
+    ctx,
+    next,
+    path,
+    input,
+    type,
+  }: {
     ctx: any;
     next: () => Promise<any>;
     path: string;
@@ -65,18 +71,20 @@ export function createUserLoggingMiddleware(config: Partial<UserLoggingConfig> =
       clerkUserId: ctx.auth.userId,
       countryId: ctx.user.countryId || undefined,
       roleId: ctx.user.roleId || undefined,
-      sessionId: ctx.headers?.get('x-session-id') || undefined,
-      ipAddress: ctx.headers?.get('x-forwarded-for') || ctx.headers?.get('x-real-ip') || undefined,
-      userAgent: ctx.headers?.get('user-agent') || undefined,
+      sessionId: ctx.headers?.get("x-session-id") || undefined,
+      ipAddress: ctx.headers?.get("x-forwarded-for") || ctx.headers?.get("x-real-ip") || undefined,
+      userAgent: ctx.headers?.get("user-agent") || undefined,
       endpoint: path,
-      method: 'tRPC',
-      requestId: ctx.headers?.get('x-request-id') || undefined,
-      traceId: ctx.headers?.get('x-trace-id') || undefined,
-      metadata: finalConfig.includeMetadata ? {
-        input: sanitizeInput(input),
-        userRole: ctx.user.role?.name,
-        membershipTier: ctx.user.membershipTier
-      } : undefined
+      method: "tRPC",
+      requestId: ctx.headers?.get("x-request-id") || undefined,
+      traceId: ctx.headers?.get("x-trace-id") || undefined,
+      metadata: finalConfig.includeMetadata
+        ? {
+            input: sanitizeInput(input),
+            userRole: ctx.user.role?.name,
+            membershipTier: ctx.user.membershipTier,
+          }
+        : undefined,
     };
 
     try {
@@ -98,9 +106,9 @@ export function createUserLoggingMiddleware(config: Partial<UserLoggingConfig> =
         } catch (logError) {
           // Don't fail the request if logging fails
           ErrorLogger.logError(logError as Error, {
-            component: 'UserLoggingMiddleware',
-            action: 'LOG_USER_ACTION',
-            userId: ctx.auth.userId
+            component: "UserLoggingMiddleware",
+            action: "LOG_USER_ACTION",
+            userId: ctx.auth.userId,
           });
         }
       }
@@ -114,15 +122,15 @@ export function createUserLoggingMiddleware(config: Partial<UserLoggingConfig> =
  * Determine if an action should be logged based on configuration
  */
 function shouldLogAction(path: string, type: string, config: UserLoggingConfig): boolean {
-  if (config.logLevel === 'ALL') {
+  if (config.logLevel === "ALL") {
     return true;
   }
 
-  if (config.logLevel === 'MUTATIONS_ONLY') {
-    return type === 'mutation';
+  if (config.logLevel === "MUTATIONS_ONLY") {
+    return type === "mutation";
   }
 
-  if (config.logLevel === 'SENSITIVE_ONLY') {
+  if (config.logLevel === "SENSITIVE_ONLY") {
     return isSensitiveAction(path);
   }
 
@@ -134,22 +142,20 @@ function shouldLogAction(path: string, type: string, config: UserLoggingConfig):
  */
 function isSensitiveAction(path: string): boolean {
   const sensitivePatterns = [
-    'execute',
-    'create',
-    'update',
-    'delete',
-    'admin',
-    'auth',
-    'security',
-    'intelligence',
-    'diplomatic',
-    'economic',
-    'settings'
+    "execute",
+    "create",
+    "update",
+    "delete",
+    "admin",
+    "auth",
+    "security",
+    "intelligence",
+    "diplomatic",
+    "economic",
+    "settings",
   ];
 
-  return sensitivePatterns.some(pattern => 
-    path.toLowerCase().includes(pattern.toLowerCase())
-  );
+  return sensitivePatterns.some((pattern) => path.toLowerCase().includes(pattern.toLowerCase()));
 }
 
 /**
@@ -178,8 +184,8 @@ function createUserAction(
     metadata: {
       path,
       type,
-      inputKeys: input ? Object.keys(input) : []
-    }
+      inputKeys: input ? Object.keys(input) : [],
+    },
   };
 }
 
@@ -187,91 +193,120 @@ function createUserAction(
  * Extract action name from path
  */
 function extractActionName(path: string): string {
-  const parts = path.split('.');
-  return parts[parts.length - 1]?.toUpperCase() || 'UNKNOWN';
+  const parts = path.split(".");
+  return parts[parts.length - 1]?.toUpperCase() || "UNKNOWN";
 }
 
 /**
  * Determine action category from path
  */
-function determineCategory(path: string): UserAction['category'] {
+function determineCategory(path: string): UserAction["category"] {
   const pathLower = path.toLowerCase();
 
-  if (pathLower.includes('auth') || pathLower.includes('login') || pathLower.includes('logout')) {
-    return 'AUTH';
+  if (pathLower.includes("auth") || pathLower.includes("login") || pathLower.includes("logout")) {
+    return "AUTH";
   }
-  if (pathLower.includes('admin') || pathLower.includes('system')) {
-    return 'ADMIN';
+  if (pathLower.includes("admin") || pathLower.includes("system")) {
+    return "ADMIN";
   }
-  if (pathLower.includes('intelligence') || pathLower.includes('intel')) {
-    return 'INTELLIGENCE';
+  if (pathLower.includes("intelligence") || pathLower.includes("intel")) {
+    return "INTELLIGENCE";
   }
-  if (pathLower.includes('diplomatic') || pathLower.includes('embassy')) {
-    return 'DIPLOMATIC';
+  if (pathLower.includes("diplomatic") || pathLower.includes("embassy")) {
+    return "DIPLOMATIC";
   }
-  if (pathLower.includes('economic') || pathLower.includes('budget') || pathLower.includes('finance')) {
-    return 'ECONOMIC';
+  if (
+    pathLower.includes("economic") ||
+    pathLower.includes("budget") ||
+    pathLower.includes("finance")
+  ) {
+    return "ECONOMIC";
   }
-  if (pathLower.includes('social') || pathLower.includes('thinkpages') || pathLower.includes('thinktank')) {
-    return 'SOCIAL';
+  if (
+    pathLower.includes("social") ||
+    pathLower.includes("thinkpages") ||
+    pathLower.includes("thinktank")
+  ) {
+    return "SOCIAL";
   }
-  if (pathLower.includes('settings') || pathLower.includes('preferences')) {
-    return 'SETTINGS';
+  if (pathLower.includes("settings") || pathLower.includes("preferences")) {
+    return "SETTINGS";
   }
-  if (pathLower.includes('create') || pathLower.includes('update') || pathLower.includes('delete')) {
-    return 'DATA_MODIFICATION';
+  if (
+    pathLower.includes("create") ||
+    pathLower.includes("update") ||
+    pathLower.includes("delete")
+  ) {
+    return "DATA_MODIFICATION";
   }
-  if (pathLower.includes('get') || pathLower.includes('list') || pathLower.includes('search')) {
-    return 'DATA_ACCESS';
+  if (pathLower.includes("get") || pathLower.includes("list") || pathLower.includes("search")) {
+    return "DATA_ACCESS";
   }
 
-  return 'DATA_ACCESS';
+  return "DATA_ACCESS";
 }
 
 /**
  * Determine severity based on action and outcome
  */
-function determineSeverity(path: string, success: boolean, error: Error | null): UserAction['severity'] {
+function determineSeverity(
+  path: string,
+  success: boolean,
+  error: Error | null
+): UserAction["severity"] {
   if (error) {
-    return 'HIGH';
+    return "HIGH";
   }
 
   if (!success) {
-    return 'MEDIUM';
+    return "MEDIUM";
   }
 
   const pathLower = path.toLowerCase();
 
   // Critical actions
-  if (pathLower.includes('admin') || pathLower.includes('security') || pathLower.includes('delete')) {
-    return 'HIGH';
+  if (
+    pathLower.includes("admin") ||
+    pathLower.includes("security") ||
+    pathLower.includes("delete")
+  ) {
+    return "HIGH";
   }
 
   // Sensitive actions
-  if (pathLower.includes('execute') || pathLower.includes('intelligence') || pathLower.includes('diplomatic')) {
-    return 'MEDIUM';
+  if (
+    pathLower.includes("execute") ||
+    pathLower.includes("intelligence") ||
+    pathLower.includes("diplomatic")
+  ) {
+    return "MEDIUM";
   }
 
-  return 'LOW';
+  return "LOW";
 }
 
 /**
  * Generate human-readable description
  */
-function generateDescription(path: string, type: string, success: boolean, error: Error | null): string {
+function generateDescription(
+  path: string,
+  type: string,
+  success: boolean,
+  error: Error | null
+): string {
   const action = extractActionName(path);
   const resource = extractResourceName(path);
-  
+
   let description = `${action} operation on ${resource}`;
-  
-  if (type === 'mutation') {
+
+  if (type === "mutation") {
     description = `Modified ${resource}`;
-  } else if (type === 'query') {
+  } else if (type === "query") {
     description = `Accessed ${resource}`;
   }
 
   if (!success) {
-    description += ` (failed: ${error?.message || 'unknown error'})`;
+    description += ` (failed: ${error?.message || "unknown error"})`;
   }
 
   return description;
@@ -281,27 +316,27 @@ function generateDescription(path: string, type: string, success: boolean, error
  * Extract resource name from path
  */
 function extractResourceName(path: string): string {
-  const parts = path.split('.');
+  const parts = path.split(".");
   if (parts.length >= 2) {
     return parts[parts.length - 2];
   }
-  return 'unknown resource';
+  return "unknown resource";
 }
 
 /**
  * Sanitize input for logging (remove sensitive data)
  */
 function sanitizeInput(input: any): any {
-  if (!input || typeof input !== 'object') {
+  if (!input || typeof input !== "object") {
     return input;
   }
 
-  const sensitiveFields = ['password', 'token', 'secret', 'key', 'auth', 'credential'];
+  const sensitiveFields = ["password", "token", "secret", "key", "auth", "credential"];
   const sanitized = { ...input };
 
   for (const field of sensitiveFields) {
     if (field in sanitized) {
-      sanitized[field] = '[REDACTED]';
+      sanitized[field] = "[REDACTED]";
     }
   }
 
@@ -313,12 +348,12 @@ function sanitizeInput(input: any): any {
  * Limit object depth to prevent huge log entries
  */
 function limitObjectDepth(obj: any, maxDepth: number, currentDepth = 0): any {
-  if (currentDepth >= maxDepth || !obj || typeof obj !== 'object') {
-    return '[MAX_DEPTH_REACHED]';
+  if (currentDepth >= maxDepth || !obj || typeof obj !== "object") {
+    return "[MAX_DEPTH_REACHED]";
   }
 
   if (Array.isArray(obj)) {
-    return obj.slice(0, 10).map(item => limitObjectDepth(item, maxDepth, currentDepth + 1));
+    return obj.slice(0, 10).map((item) => limitObjectDepth(item, maxDepth, currentDepth + 1));
   }
 
   const limited: any = {};
@@ -340,30 +375,30 @@ export const userLoggingMiddleware = {
 
   // Middleware for mutations only
   mutations: createUserLoggingMiddleware({
-    logLevel: 'MUTATIONS_ONLY'
+    logLevel: "MUTATIONS_ONLY",
   }),
 
   // Middleware for sensitive operations only
   sensitive: createUserLoggingMiddleware({
-    logLevel: 'SENSITIVE_ONLY'
+    logLevel: "SENSITIVE_ONLY",
   }),
 
   // Middleware for all operations
   comprehensive: createUserLoggingMiddleware({
-    logLevel: 'ALL'
+    logLevel: "ALL",
   }),
 
   // Middleware with performance logging
   withPerformance: createUserLoggingMiddleware({
-    logLevel: 'ALL',
-    logPerformance: true
+    logLevel: "ALL",
+    logPerformance: true,
   }),
 
   // Middleware for admin operations
   admin: createUserLoggingMiddleware({
-    logLevel: 'ALL',
-    includeMetadata: true
-  })
+    logLevel: "ALL",
+    includeMetadata: true,
+  }),
 };
 
 export default userLoggingMiddleware;

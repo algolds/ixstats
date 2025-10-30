@@ -5,23 +5,23 @@
  * with timeline management, dependency resolution, and progress tracking.
  */
 
-import type { ActionableRecommendation } from '~/app/mycountry/types/intelligence';
-import { notificationAPI } from '~/lib/notification-api';
+import type { ActionableRecommendation } from "~/app/mycountry/types/intelligence";
+import { notificationAPI } from "~/lib/notification-api";
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
 export type ActionStatus =
-  | 'pending'      // Awaiting user confirmation
-  | 'queued'       // Confirmed, waiting to start
-  | 'in_progress'  // Currently being executed
-  | 'paused'       // Temporarily suspended
-  | 'completed'    // Successfully finished
-  | 'failed'       // Execution failed
-  | 'cancelled';   // User cancelled
+  | "pending" // Awaiting user confirmation
+  | "queued" // Confirmed, waiting to start
+  | "in_progress" // Currently being executed
+  | "paused" // Temporarily suspended
+  | "completed" // Successfully finished
+  | "failed" // Execution failed
+  | "cancelled"; // User cancelled
 
-export type ActionPriority = 'critical' | 'high' | 'medium' | 'low';
+export type ActionPriority = "critical" | "high" | "medium" | "low";
 
 export interface ActionQueueItem {
   id: string;
@@ -52,7 +52,7 @@ export interface ActionQueueItem {
     diplomatic?: number;
     governance?: number;
   };
-  outcome?: 'success' | 'partial' | 'failure';
+  outcome?: "success" | "partial" | "failure";
   notes?: string;
 
   // Notifications
@@ -83,8 +83,8 @@ export interface ActionExecutionPlan {
     time: number;
   };
   risks: Array<{
-    type: 'economic' | 'political' | 'social' | 'timeline';
-    severity: 'low' | 'medium' | 'high';
+    type: "economic" | "political" | "social" | "timeline";
+    severity: "low" | "medium" | "high";
     description: string;
     mitigation: string;
   }>;
@@ -104,7 +104,7 @@ class ActionQueueManager {
    */
   addToQueue(
     recommendation: ActionableRecommendation,
-    priority: ActionPriority = 'medium'
+    priority: ActionPriority = "medium"
   ): ActionQueueItem {
     const id = `action-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -115,12 +115,12 @@ class ActionQueueManager {
     const item: ActionQueueItem = {
       id,
       recommendation,
-      status: 'pending',
+      status: "pending",
       priority,
       queuedAt: Date.now(),
       estimatedCompletionAt,
       progress: 0,
-      currentPhase: 'Awaiting confirmation',
+      currentPhase: "Awaiting confirmation",
       totalPhases: this.calculatePhases(recommendation),
       completedPhases: 0,
       dependsOn: [],
@@ -129,8 +129,8 @@ class ActionQueueManager {
         started: false,
         milestone: false,
         completed: false,
-        failed: false
-      }
+        failed: false,
+      },
     };
 
     this.queue.set(id, item);
@@ -146,7 +146,7 @@ class ActionQueueManager {
     const item = this.queue.get(actionId);
     if (!item) throw new Error(`Action ${actionId} not found`);
 
-    item.status = 'queued';
+    item.status = "queued";
     this.notifyListeners();
 
     // Check if action can start immediately
@@ -162,12 +162,12 @@ class ActionQueueManager {
 
     // Check dependencies
     if (item.blockedBy.length > 0) {
-      throw new Error(`Action blocked by: ${item.blockedBy.join(', ')}`);
+      throw new Error(`Action blocked by: ${item.blockedBy.join(", ")}`);
     }
 
-    item.status = 'in_progress';
+    item.status = "in_progress";
     item.startedAt = Date.now();
-    item.currentPhase = 'Initialization';
+    item.currentPhase = "Initialization";
     item.progress = 5;
 
     this.notifyListeners();
@@ -183,11 +183,11 @@ class ActionQueueManager {
     const item = this.queue.get(actionId);
     if (!item) throw new Error(`Action ${actionId} not found`);
 
-    if (item.status !== 'in_progress') {
+    if (item.status !== "in_progress") {
       throw new Error(`Cannot pause action in ${item.status} status`);
     }
 
-    item.status = 'paused';
+    item.status = "paused";
     this.notifyListeners();
   }
 
@@ -198,11 +198,11 @@ class ActionQueueManager {
     const item = this.queue.get(actionId);
     if (!item) throw new Error(`Action ${actionId} not found`);
 
-    if (item.status !== 'paused') {
+    if (item.status !== "paused") {
       throw new Error(`Cannot resume action in ${item.status} status`);
     }
 
-    item.status = 'in_progress';
+    item.status = "in_progress";
     this.notifyListeners();
 
     // Continue execution
@@ -216,7 +216,7 @@ class ActionQueueManager {
     const item = this.queue.get(actionId);
     if (!item) throw new Error(`Action ${actionId} not found`);
 
-    item.status = 'cancelled';
+    item.status = "cancelled";
     item.completedAt = Date.now();
     this.notifyListeners();
   }
@@ -224,22 +224,25 @@ class ActionQueueManager {
   /**
    * Complete an action successfully
    */
-  async completeAction(actionId: string, actualImpact?: ActionQueueItem['actualImpact']): Promise<void> {
+  async completeAction(
+    actionId: string,
+    actualImpact?: ActionQueueItem["actualImpact"]
+  ): Promise<void> {
     const item = this.queue.get(actionId);
     if (!item) throw new Error(`Action ${actionId} not found`);
 
-    item.status = 'completed';
+    item.status = "completed";
     item.completedAt = Date.now();
     item.progress = 100;
-    item.currentPhase = 'Completed';
-    item.outcome = 'success';
+    item.currentPhase = "Completed";
+    item.outcome = "success";
 
     if (actualImpact) {
       item.actualImpact = actualImpact;
     }
 
     if (!item.notificationsSent.completed) {
-      await this.sendNotification(actionId, 'completed');
+      await this.sendNotification(actionId, "completed");
       item.notificationsSent.completed = true;
     }
 
@@ -256,13 +259,13 @@ class ActionQueueManager {
     const item = this.queue.get(actionId);
     if (!item) throw new Error(`Action ${actionId} not found`);
 
-    item.status = 'failed';
+    item.status = "failed";
     item.completedAt = Date.now();
-    item.outcome = 'failure';
+    item.outcome = "failure";
     item.notes = reason;
 
     if (!item.notificationsSent.failed) {
-      await this.sendNotification(actionId, 'failed', reason);
+      await this.sendNotification(actionId, "failed", reason);
       item.notificationsSent.failed = true;
     }
 
@@ -287,7 +290,7 @@ class ActionQueueManager {
    * Get actions by status
    */
   getActionsByStatus(status: ActionStatus): ActionQueueItem[] {
-    return this.getQueue().filter(item => item.status === status);
+    return this.getQueue().filter((item) => item.status === status);
   }
 
   /**
@@ -295,7 +298,7 @@ class ActionQueueManager {
    */
   getActiveActions(): ActionQueueItem[] {
     return this.getQueue().filter(
-      item => item.status === 'queued' || item.status === 'in_progress'
+      (item) => item.status === "queued" || item.status === "in_progress"
     );
   }
 
@@ -321,10 +324,10 @@ class ActionQueueManager {
       resourceRequirements: {
         economic: this.estimateEconomicCost(recommendation),
         political: this.estimatePoliticalCost(recommendation),
-        time: totalDuration
+        time: totalDuration,
       },
       risks: this.assessRisks(recommendation),
-      successCriteria: this.defineSuccessCriteria(recommendation)
+      successCriteria: this.defineSuccessCriteria(recommendation),
     };
   }
 
@@ -334,13 +337,13 @@ class ActionQueueManager {
 
   private notifyListeners(): void {
     const queue = this.getQueue();
-    this.listeners.forEach(listener => listener(queue));
+    this.listeners.forEach((listener) => listener(queue));
   }
 
   private processQueue(): void {
     // Find queued actions that can start
-    const queuedActions = this.getActionsByStatus('queued')
-      .filter(item => item.blockedBy.length === 0)
+    const queuedActions = this.getActionsByStatus("queued")
+      .filter((item) => item.blockedBy.length === 0)
       .sort((a, b) => {
         // Sort by priority, then by queued time
         const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
@@ -358,12 +361,12 @@ class ActionQueueManager {
 
   private simulateExecution(actionId: string): void {
     const item = this.queue.get(actionId);
-    if (!item || item.status !== 'in_progress') return;
+    if (!item || item.status !== "in_progress") return;
 
     // Simulate phased progression
     const interval = setInterval(() => {
       const current = this.queue.get(actionId);
-      if (!current || current.status !== 'in_progress') {
+      if (!current || current.status !== "in_progress") {
         clearInterval(interval);
         return;
       }
@@ -378,8 +381,8 @@ class ActionQueueManager {
 
       // Send milestone notifications
       if (current.progress === 50 && !current.notificationsSent.milestone) {
-        this.sendNotification(actionId, 'milestone').catch(err =>
-          console.error('Failed to send milestone notification:', err)
+        this.sendNotification(actionId, "milestone").catch((err) =>
+          console.error("Failed to send milestone notification:", err)
         );
         current.notificationsSent.milestone = true;
       }
@@ -391,10 +394,8 @@ class ActionQueueManager {
           economic: current.recommendation.impact.economic,
           social: current.recommendation.impact.social,
           diplomatic: current.recommendation.impact.diplomatic,
-          governance: current.recommendation.impact.governance
-        }).catch(err =>
-          console.error('Failed to complete action:', err)
-        );
+          governance: current.recommendation.impact.governance,
+        }).catch((err) => console.error("Failed to complete action:", err));
       }
 
       this.notifyListeners();
@@ -405,61 +406,77 @@ class ActionQueueManager {
    * Send notification through the unified notification center
    * Integrated with notification API for consistent delivery
    */
-  private async sendNotification(actionId: string, type: 'started' | 'milestone' | 'completed' | 'failed', details?: string): Promise<void> {
+  private async sendNotification(
+    actionId: string,
+    type: "started" | "milestone" | "completed" | "failed",
+    details?: string
+  ): Promise<void> {
     const item = this.queue.get(actionId);
     if (!item) return;
 
     // Map action notification types to notification system types
     const notificationTypeMap = {
-      started: 'info' as const,
-      milestone: 'update' as const,
-      completed: 'success' as const,
-      failed: 'error' as const,
+      started: "info" as const,
+      milestone: "update" as const,
+      completed: "success" as const,
+      failed: "error" as const,
     };
 
     // Map to priority levels
     const priorityMap = {
-      started: 'medium' as const,
-      milestone: 'medium' as const,
-      completed: 'high' as const,
-      failed: 'critical' as const,
+      started: "medium" as const,
+      milestone: "medium" as const,
+      completed: "high" as const,
+      failed: "critical" as const,
     };
 
     // Determine category based on recommendation category
     const categoryMap: Record<string, any> = {
-      economic: 'economic',
-      diplomatic: 'diplomatic',
-      governance: 'governance',
-      social: 'social',
-      default: 'intelligence',
+      economic: "economic",
+      diplomatic: "diplomatic",
+      governance: "governance",
+      social: "social",
+      default: "intelligence",
     };
 
-    const category = categoryMap[item.recommendation.category] || 'intelligence';
+    const category = categoryMap[item.recommendation.category] || "intelligence";
 
     // Build notification message
-    let message = '';
+    let message = "";
     switch (type) {
-      case 'started':
+      case "started":
         message = `Action "${item.recommendation.title}" has started execution`;
         break;
-      case 'milestone':
+      case "milestone":
         message = `Action "${item.recommendation.title}" is ${item.progress}% complete (${item.currentPhase})`;
         break;
-      case 'completed':
+      case "completed":
         message = `Action "${item.recommendation.title}" completed successfully`;
         if (item.actualImpact) {
           const impacts = [];
-          if (item.actualImpact.economic) impacts.push(`Economic: ${item.actualImpact.economic > 0 ? '+' : ''}${item.actualImpact.economic}`);
-          if (item.actualImpact.social) impacts.push(`Social: ${item.actualImpact.social > 0 ? '+' : ''}${item.actualImpact.social}`);
-          if (item.actualImpact.diplomatic) impacts.push(`Diplomatic: ${item.actualImpact.diplomatic > 0 ? '+' : ''}${item.actualImpact.diplomatic}`);
-          if (item.actualImpact.governance) impacts.push(`Governance: ${item.actualImpact.governance > 0 ? '+' : ''}${item.actualImpact.governance}`);
+          if (item.actualImpact.economic)
+            impacts.push(
+              `Economic: ${item.actualImpact.economic > 0 ? "+" : ""}${item.actualImpact.economic}`
+            );
+          if (item.actualImpact.social)
+            impacts.push(
+              `Social: ${item.actualImpact.social > 0 ? "+" : ""}${item.actualImpact.social}`
+            );
+          if (item.actualImpact.diplomatic)
+            impacts.push(
+              `Diplomatic: ${item.actualImpact.diplomatic > 0 ? "+" : ""}${item.actualImpact.diplomatic}`
+            );
+          if (item.actualImpact.governance)
+            impacts.push(
+              `Governance: ${item.actualImpact.governance > 0 ? "+" : ""}${item.actualImpact.governance}`
+            );
           if (impacts.length > 0) {
-            message += ` - Impact: ${impacts.join(', ')}`;
+            message += ` - Impact: ${impacts.join(", ")}`;
           }
         }
         break;
-      case 'failed':
-        message = `Action "${item.recommendation.title}" failed${details ? `: ${details}` : ''}`;
+      case "failed":
+        message = `Action "${item.recommendation.title}" failed${details ? `: ${details}` : ""}`;
         break;
     }
 
@@ -470,9 +487,10 @@ class ActionQueueManager {
         category,
         type: notificationTypeMap[type],
         priority: priorityMap[type],
-        severity: type === 'failed' ? 'urgent' : type === 'completed' ? 'important' : 'informational',
-        actionable: type === 'started' || type === 'milestone',
-        source: 'action-queue',
+        severity:
+          type === "failed" ? "urgent" : type === "completed" ? "important" : "informational",
+        actionable: type === "started" || type === "milestone",
+        source: "action-queue",
         metadata: {
           actionId,
           actionType: type,
@@ -488,7 +506,10 @@ class ActionQueueManager {
     } catch (error) {
       console.error(`[Action Queue] Failed to send notification for ${type}:`, error);
       // Fallback to console logging if notification fails
-      console.log(`[Action Notification] ${type.toUpperCase()}: ${item.recommendation.title}`, details);
+      console.log(
+        `[Action Notification] ${type.toUpperCase()}: ${item.recommendation.title}`,
+        details
+      );
     }
   }
 
@@ -506,11 +527,16 @@ class ActionQueueManager {
   private calculatePhases(recommendation: ActionableRecommendation): number {
     // Determine number of phases based on difficulty
     switch (recommendation.difficulty) {
-      case 'easy': return 3;
-      case 'moderate': return 5;
-      case 'complex': return 7;
-      case 'major': return 10;
-      default: return 5;
+      case "easy":
+        return 3;
+      case "moderate":
+        return 5;
+      case "complex":
+        return 7;
+      case "major":
+        return 10;
+      default:
+        return 5;
     }
   }
 
@@ -520,16 +546,16 @@ class ActionQueueManager {
     const phaseDuration = baseDuration / phaseCount;
 
     const phaseNames = [
-      'Planning & Analysis',
-      'Resource Allocation',
-      'Stakeholder Engagement',
-      'Implementation',
-      'Monitoring',
-      'Adjustment',
-      'Evaluation',
-      'Consolidation',
-      'Documentation',
-      'Review & Reporting'
+      "Planning & Analysis",
+      "Resource Allocation",
+      "Stakeholder Engagement",
+      "Implementation",
+      "Monitoring",
+      "Adjustment",
+      "Evaluation",
+      "Consolidation",
+      "Documentation",
+      "Review & Reporting",
     ];
 
     return phaseNames.slice(0, phaseCount).map((name, i) => ({
@@ -538,14 +564,17 @@ class ActionQueueManager {
       description: `Phase ${i + 1} of ${phaseCount}: ${name}`,
       duration: phaseDuration,
       requirements: recommendation.prerequisites.slice(0, 2),
-      outcomes: [`Complete ${name.toLowerCase()} activities`]
+      outcomes: [`Complete ${name.toLowerCase()} activities`],
     }));
   }
 
-  private getPhaseNameForProgress(progress: number, recommendation: ActionableRecommendation): string {
+  private getPhaseNameForProgress(
+    progress: number,
+    recommendation: ActionableRecommendation
+  ): string {
     const phases = this.generatePhases(recommendation);
     const phaseIndex = Math.floor((progress / 100) * phases.length);
-    return phases[phaseIndex]?.name || 'Finalizing';
+    return phases[phaseIndex]?.name || "Finalizing";
   }
 
   private estimateEconomicCost(recommendation: ActionableRecommendation): number {
@@ -554,7 +583,7 @@ class ActionQueueManager {
       easy: 1000,
       moderate: 5000,
       complex: 20000,
-      major: 100000
+      major: 100000,
     };
     return baseCosts[recommendation.difficulty] || 5000;
   }
@@ -565,30 +594,30 @@ class ActionQueueManager {
       easy: 1,
       moderate: 3,
       complex: 6,
-      major: 9
+      major: 9,
     };
     return politicalCosts[recommendation.difficulty] || 3;
   }
 
-  private assessRisks(recommendation: ActionableRecommendation): ActionExecutionPlan['risks'] {
-    const risks: ActionExecutionPlan['risks'] = [];
+  private assessRisks(recommendation: ActionableRecommendation): ActionExecutionPlan["risks"] {
+    const risks: ActionExecutionPlan["risks"] = [];
 
     // Add risks based on category and difficulty
-    if (recommendation.category === 'economic') {
+    if (recommendation.category === "economic") {
       risks.push({
-        type: 'economic',
-        severity: recommendation.difficulty === 'major' ? 'high' : 'medium',
-        description: 'Market volatility may affect implementation costs',
-        mitigation: 'Maintain contingency budget of 20%'
+        type: "economic",
+        severity: recommendation.difficulty === "major" ? "high" : "medium",
+        description: "Market volatility may affect implementation costs",
+        mitigation: "Maintain contingency budget of 20%",
       });
     }
 
-    if (recommendation.difficulty === 'major' || recommendation.difficulty === 'complex') {
+    if (recommendation.difficulty === "major" || recommendation.difficulty === "complex") {
       risks.push({
-        type: 'timeline',
-        severity: 'medium',
-        description: 'Implementation may take longer than estimated',
-        mitigation: 'Build buffer time into schedule'
+        type: "timeline",
+        severity: "medium",
+        description: "Implementation may take longer than estimated",
+        mitigation: "Build buffer time into schedule",
       });
     }
 
@@ -599,9 +628,9 @@ class ActionQueueManager {
     return [
       `Achieve ${recommendation.successProbability}% of expected impact`,
       `Complete within ${recommendation.estimatedDuration}`,
-      'Maintain stakeholder approval above 70%',
-      'Stay within allocated budget',
-      'No critical implementation issues'
+      "Maintain stakeholder approval above 70%",
+      "Stay within allocated budget",
+      "No critical implementation issues",
     ];
   }
 }

@@ -21,12 +21,12 @@ interface LiveActivityMarqueeProps {
   isLoading: boolean;
 }
 
-export function LiveActivityMarquee({ countries, userCountry, isLoading }: LiveActivityMarqueeProps) {
+export function LiveActivityMarquee({
+  countries,
+  userCountry,
+  isLoading,
+}: LiveActivityMarqueeProps) {
   return (
-    <GlassActivityMarquee
-      countries={countries}
-      userCountry={userCountry}
-      isLoading={isLoading}
-    />
+    <GlassActivityMarquee countries={countries} userCountry={userCountry} isLoading={isLoading} />
   );
 }

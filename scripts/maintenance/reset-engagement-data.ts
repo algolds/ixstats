@@ -17,7 +17,7 @@ async function resetEngagementData() {
     });
 
     console.log(`✅ Successfully reset engagement data for ${result.count} activities`);
-    
+
     // Show current state
     const activities = await db.activityFeed.findMany({
       select: {
@@ -29,12 +29,13 @@ async function resetEngagementData() {
         views: true,
       },
     });
-    
-    console.log("\n📊 Current engagement state:");
-    activities.forEach(activity => {
-      console.log(`  ${activity.title}: ${activity.likes} likes, ${activity.comments} comments, ${activity.shares} shares, ${activity.views} views`);
-    });
 
+    console.log("\n📊 Current engagement state:");
+    activities.forEach((activity) => {
+      console.log(
+        `  ${activity.title}: ${activity.likes} likes, ${activity.comments} comments, ${activity.shares} shares, ${activity.views} views`
+      );
+    });
   } catch (error) {
     console.error("❌ Error resetting engagement data:", error);
   } finally {

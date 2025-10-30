@@ -12,29 +12,31 @@
  * @module MeetingScheduler
  */
 
-import React from 'react';
-import { motion } from 'framer-motion';
-import { cn } from '~/lib/utils';
+import React from "react";
+import { motion } from "framer-motion";
+import { cn } from "~/lib/utils";
+import { Calendar as CalendarIcon, Plus, ListChecks, FileText, Target } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
 import {
-  Calendar as CalendarIcon,
-  Plus,
-  ListChecks,
-  FileText,
-  Target
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '~/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { useMeetingScheduler } from '~/hooks/useMeetingScheduler';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "~/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { useMeetingScheduler } from "~/hooks/useMeetingScheduler";
 import {
   MeetingCalendar,
   MeetingList,
   MeetingForm,
   AgendaManager,
   DecisionRecorder,
-  ActionItemManager
-} from '~/components/meeting';
+  ActionItemManager,
+} from "~/components/meeting";
 
 // ============================================================================
 // Types
@@ -55,7 +57,7 @@ export function MeetingScheduler({
   countryId,
   userId,
   governmentStructureId,
-  className
+  className,
 }: MeetingSchedulerProps) {
   // ============================================================================
   // State Management Hook
@@ -69,12 +71,12 @@ export function MeetingScheduler({
 
   if (scheduler.meetingsLoading) {
     return (
-      <Card className={cn('glass-hierarchy-parent', className)}>
+      <Card className={cn("glass-hierarchy-parent", className)}>
         <CardContent className="p-8">
           <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-muted rounded w-1/3"></div>
-            <div className="h-48 bg-muted rounded"></div>
-            <div className="h-24 bg-muted rounded"></div>
+            <div className="bg-muted h-8 w-1/3 rounded"></div>
+            <div className="bg-muted h-48 rounded"></div>
+            <div className="bg-muted h-24 rounded"></div>
           </div>
         </CardContent>
       </Card>
@@ -113,11 +115,11 @@ export function MeetingScheduler({
             >
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-amber-600 to-amber-700 text-white">
-                  <Plus className="h-4 w-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Schedule Meeting
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl glass-hierarchy-modal">
+              <DialogContent className="glass-hierarchy-modal max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>Schedule New Meeting</DialogTitle>
                   <DialogDescription>
@@ -125,16 +127,10 @@ export function MeetingScheduler({
                   </DialogDescription>
                 </DialogHeader>
 
-                <MeetingForm
-                  form={scheduler.meetingForm}
-                  onChange={scheduler.setMeetingForm}
-                />
+                <MeetingForm form={scheduler.meetingForm} onChange={scheduler.setMeetingForm} />
 
                 <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => scheduler.setCreateMeetingOpen(false)}
-                  >
+                  <Button variant="outline" onClick={() => scheduler.setCreateMeetingOpen(false)}>
                     Cancel
                   </Button>
                   <Button
@@ -142,7 +138,7 @@ export function MeetingScheduler({
                     disabled={scheduler.isCreatingMeeting}
                     className="bg-gradient-to-r from-amber-600 to-amber-700 text-white"
                   >
-                    {scheduler.isCreatingMeeting ? 'Creating...' : 'Create Meeting'}
+                    {scheduler.isCreatingMeeting ? "Creating..." : "Create Meeting"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -179,7 +175,7 @@ export function MeetingScheduler({
 
             {/* Calendar Tab */}
             <TabsContent value="calendar" className="space-y-4">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 <MeetingCalendar
                   selectedDate={scheduler.selectedDate}
                   onSelectDate={scheduler.setSelectedDate}
@@ -194,8 +190,8 @@ export function MeetingScheduler({
                   onSelectMeeting={scheduler.setSelectedMeetingId}
                   onToggleExpanded={scheduler.toggleMeetingExpanded}
                   onDeleteMeeting={scheduler.handleDeleteMeeting}
-                  onManageAgenda={() => scheduler.setActiveTab('agenda')}
-                  onViewMinutes={() => scheduler.setActiveTab('minutes')}
+                  onManageAgenda={() => scheduler.setActiveTab("agenda")}
+                  onViewMinutes={() => scheduler.setActiveTab("minutes")}
                   className="lg:col-span-2"
                 />
               </div>
@@ -204,8 +200,8 @@ export function MeetingScheduler({
             {/* Agenda Tab */}
             <TabsContent value="agenda" className="space-y-4">
               {!scheduler.selectedMeetingId ? (
-                <div className="text-center py-12">
-                  <ListChecks className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <div className="py-12 text-center">
+                  <ListChecks className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
                   <p className="text-muted-foreground">Select a meeting to manage its agenda</p>
                 </div>
               ) : (
@@ -222,8 +218,8 @@ export function MeetingScheduler({
             {/* Minutes Tab */}
             <TabsContent value="minutes" className="space-y-4">
               {!scheduler.selectedMeetingId ? (
-                <div className="text-center py-12">
-                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <div className="py-12 text-center">
+                  <FileText className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
                   <p className="text-muted-foreground">
                     Select a meeting to view or record minutes
                   </p>
@@ -242,11 +238,9 @@ export function MeetingScheduler({
             {/* Actions Tab */}
             <TabsContent value="actions" className="space-y-4">
               {!scheduler.selectedMeetingId ? (
-                <div className="text-center py-12">
-                  <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">
-                    Select a meeting to create action items
-                  </p>
+                <div className="py-12 text-center">
+                  <Target className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
+                  <p className="text-muted-foreground">Select a meeting to create action items</p>
                 </div>
               ) : (
                 <ActionItemManager

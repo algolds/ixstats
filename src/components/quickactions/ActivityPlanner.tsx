@@ -1,14 +1,14 @@
 // src/components/quickactions/ActivityPlanner.tsx
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { api } from '~/trpc/react';
-import { IxTime } from '~/lib/ixtime';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
+import React, { useState, useMemo } from "react";
+import { motion } from "framer-motion";
+import { api } from "~/trpc/react";
+import { IxTime } from "~/lib/ixtime";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
   Calendar,
   Clock,
@@ -19,13 +19,13 @@ import {
   Filter,
   CalendarDays,
   ListTodo,
-  Zap
-} from 'lucide-react';
-import { format, addDays, startOfWeek, endOfWeek, isSameDay } from 'date-fns';
-import { toast } from 'sonner';
-import { MeetingScheduler } from './MeetingScheduler';
-import { PolicyCreator } from './PolicyCreator';
-import { MeetingDecisionsModal } from './MeetingDecisionsModal';
+  Zap,
+} from "lucide-react";
+import { format, addDays, startOfWeek, endOfWeek, isSameDay } from "date-fns";
+import { toast } from "sonner";
+import { MeetingScheduler } from "./MeetingScheduler";
+import { PolicyCreator } from "./PolicyCreator";
+import { MeetingDecisionsModal } from "./MeetingDecisionsModal";
 
 interface ActivityPlannerProps {
   countryId: string;
@@ -33,29 +33,51 @@ interface ActivityPlannerProps {
   className?: string;
 }
 
-type ViewMode = 'week' | 'month' | 'upcoming';
+type ViewMode = "week" | "month" | "upcoming";
 
 const ACTIVITY_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  meeting: { bg: 'bg-blue-100 dark:bg-blue-950/30', border: 'border-blue-300', text: 'text-blue-700' },
-  policy_review: { bg: 'bg-green-100 dark:bg-green-950/30', border: 'border-green-300', text: 'text-green-700' },
-  economic_review: { bg: 'bg-purple-100 dark:bg-purple-950/30', border: 'border-purple-300', text: 'text-purple-700' },
-  diplomatic_event: { bg: 'bg-amber-100 dark:bg-amber-950/30', border: 'border-amber-300', text: 'text-amber-700' },
-  custom: { bg: 'bg-gray-100 dark:bg-gray-950/30', border: 'border-gray-300', text: 'text-gray-700' },
+  meeting: {
+    bg: "bg-blue-100 dark:bg-blue-950/30",
+    border: "border-blue-300",
+    text: "text-blue-700",
+  },
+  policy_review: {
+    bg: "bg-green-100 dark:bg-green-950/30",
+    border: "border-green-300",
+    text: "text-green-700",
+  },
+  economic_review: {
+    bg: "bg-purple-100 dark:bg-purple-950/30",
+    border: "border-purple-300",
+    text: "text-purple-700",
+  },
+  diplomatic_event: {
+    bg: "bg-amber-100 dark:bg-amber-950/30",
+    border: "border-amber-300",
+    text: "text-amber-700",
+  },
+  custom: {
+    bg: "bg-gray-100 dark:bg-gray-950/30",
+    border: "border-gray-300",
+    text: "text-gray-700",
+  },
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
-  urgent: 'bg-red-500',
-  high: 'bg-orange-500',
-  normal: 'bg-blue-500',
-  low: 'bg-gray-500',
+  urgent: "bg-red-500",
+  high: "bg-orange-500",
+  normal: "bg-blue-500",
+  low: "bg-gray-500",
 };
 
 export function ActivityPlanner({ countryId, userId, className }: ActivityPlannerProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>('week');
+  const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showMeetingScheduler, setShowMeetingScheduler] = useState(false);
   const [showPolicyCreator, setShowPolicyCreator] = useState(false);
-  const [selectedMeeting, setSelectedMeeting] = useState<{ id: string; title: string } | null>(null);
+  const [selectedMeeting, setSelectedMeeting] = useState<{ id: string; title: string } | null>(
+    null
+  );
 
   // Calculate date range based on view mode (using IxTime)
   const dateRange = useMemo(() => {
@@ -63,11 +85,11 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
     const currentIxDate = new Date(currentIxTime);
     const selectedIxDate = new Date(selectedDate);
 
-    if (viewMode === 'week') {
+    if (viewMode === "week") {
       const start = startOfWeek(selectedIxDate, { weekStartsOn: 1 }); // Monday
       const end = endOfWeek(selectedIxDate, { weekStartsOn: 1 });
       return { start, end };
-    } else if (viewMode === 'month') {
+    } else if (viewMode === "month") {
       const start = new Date(selectedIxDate.getFullYear(), selectedIxDate.getMonth(), 1);
       const end = new Date(selectedIxDate.getFullYear(), selectedIxDate.getMonth() + 1, 0);
       return { start, end };
@@ -80,7 +102,11 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
   }, [viewMode, selectedDate]);
 
   // Fetch activities for the date range
-  const { data: activities, isLoading, refetch } = api.quickActions.getActivitySchedule.useQuery({
+  const {
+    data: activities,
+    isLoading,
+    refetch,
+  } = api.quickActions.getActivitySchedule.useQuery({
     countryId,
     userId,
     fromDate: dateRange.start,
@@ -103,17 +129,17 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
   });
 
   const navigatePrevious = () => {
-    if (viewMode === 'week') {
+    if (viewMode === "week") {
       setSelectedDate(addDays(selectedDate, -7));
-    } else if (viewMode === 'month') {
+    } else if (viewMode === "month") {
       setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1));
     }
   };
 
   const navigateNext = () => {
-    if (viewMode === 'week') {
+    if (viewMode === "week") {
       setSelectedDate(addDays(selectedDate, 7));
-    } else if (viewMode === 'month') {
+    } else if (viewMode === "month") {
       setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1));
     }
   };
@@ -128,10 +154,11 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
 
     const grouped = new Map<string, typeof activities>();
 
-    activities.forEach(activity => {
+    activities.forEach((activity) => {
       // Use IxTime for grouping if available, otherwise fall back to scheduledDate
-      const ixTime = activity.scheduledIxTime ?? IxTime.convertToIxTime(activity.scheduledDate.getTime());
-      const dayKey = format(new Date(ixTime), 'yyyy-MM-dd');
+      const ixTime =
+        activity.scheduledIxTime ?? IxTime.convertToIxTime(activity.scheduledDate.getTime());
+      const dayKey = format(new Date(ixTime), "yyyy-MM-dd");
       const existing = grouped.get(dayKey) ?? [];
       grouped.set(dayKey, [...existing, activity]);
     });
@@ -171,16 +198,17 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
     const priorityColor = PRIORITY_COLORS[activity.priority] || PRIORITY_COLORS.normal;
 
     // Use IxTime if available, otherwise convert from scheduledDate
-    const ixTime = activity.scheduledIxTime ?? IxTime.convertToIxTime(activity.scheduledDate.getTime());
+    const ixTime =
+      activity.scheduledIxTime ?? IxTime.convertToIxTime(activity.scheduledDate.getTime());
     const ixDate = new Date(ixTime);
 
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className={`p-2 rounded-md border ${colors.bg} ${colors.border} cursor-pointer hover:shadow-md transition-all`}
+        className={`rounded-md border p-2 ${colors.bg} ${colors.border} cursor-pointer transition-all hover:shadow-md`}
         onClick={() => {
-          if (activity.activityType === 'meeting' && activity.status === 'completed') {
+          if (activity.activityType === "meeting" && activity.status === "completed") {
             // Find the actual meeting ID from relatedIds
             const relatedIds = activity.relatedIds;
             if (relatedIds?.meetingId) {
@@ -191,25 +219,23 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
       >
         <div className="flex items-start gap-2">
           <div className={`h-2 w-2 rounded-full ${priorityColor} mt-1.5 flex-shrink-0`} />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex items-center gap-2">
               <span className={`text-xs font-semibold ${colors.text}`}>
-                {format(ixDate, 'HH:mm')} ILT
+                {format(ixDate, "HH:mm")} ILT
               </span>
               <Badge variant="outline" className="text-xs">
-                {activity.activityType.replace('_', ' ')}
+                {activity.activityType.replace("_", " ")}
               </Badge>
-              {activity.status === 'completed' && (
-                <Badge variant="default" className="text-xs bg-green-600">
+              {activity.status === "completed" && (
+                <Badge variant="default" className="bg-green-600 text-xs">
                   ✓
                 </Badge>
               )}
             </div>
-            <h4 className="text-sm font-medium truncate">{activity.title}</h4>
+            <h4 className="truncate text-sm font-medium">{activity.title}</h4>
             {activity.duration && (
-              <p className="text-xs text-muted-foreground">
-                {activity.duration} minutes
-              </p>
+              <p className="text-muted-foreground text-xs">{activity.duration} minutes</p>
             )}
           </div>
         </div>
@@ -228,11 +254,11 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
             </CardTitle>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => setShowMeetingScheduler(true)}>
-                <Users className="h-4 w-4 mr-2" />
+                <Users className="mr-2 h-4 w-4" />
                 Schedule Meeting
               </Button>
               <Button variant="outline" size="sm" onClick={() => setShowPolicyCreator(true)}>
-                <FileText className="h-4 w-4 mr-2" />
+                <FileText className="mr-2 h-4 w-4" />
                 Create Policy
               </Button>
             </div>
@@ -241,23 +267,23 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
 
         <CardContent>
           <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
-            <div className="flex items-center justify-between mb-4">
+            <div className="mb-4 flex items-center justify-between">
               <TabsList>
                 <TabsTrigger value="upcoming">
-                  <ListTodo className="h-4 w-4 mr-2" />
+                  <ListTodo className="mr-2 h-4 w-4" />
                   Upcoming
                 </TabsTrigger>
                 <TabsTrigger value="week">
-                  <CalendarDays className="h-4 w-4 mr-2" />
+                  <CalendarDays className="mr-2 h-4 w-4" />
                   Week
                 </TabsTrigger>
                 <TabsTrigger value="month">
-                  <Calendar className="h-4 w-4 mr-2" />
+                  <Calendar className="mr-2 h-4 w-4" />
                   Month
                 </TabsTrigger>
               </TabsList>
 
-              {viewMode !== 'upcoming' && (
+              {viewMode !== "upcoming" && (
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" onClick={navigatePrevious}>
                     <ChevronLeft className="h-4 w-4" />
@@ -268,10 +294,10 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
                   <Button variant="outline" size="sm" onClick={navigateNext}>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
-                  <span className="text-sm font-medium ml-2">
-                    {viewMode === 'week'
-                      ? `${format(dateRange.start, 'MMM d')} - ${format(dateRange.end, 'MMM d, yyyy')}`
-                      : format(selectedDate, 'MMMM yyyy')}
+                  <span className="ml-2 text-sm font-medium">
+                    {viewMode === "week"
+                      ? `${format(dateRange.start, "MMM d")} - ${format(dateRange.end, "MMM d, yyyy")}`
+                      : format(selectedDate, "MMMM yyyy")}
                   </span>
                 </div>
               )}
@@ -280,14 +306,16 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
             {/* Upcoming View */}
             <TabsContent value="upcoming" className="space-y-4">
               {isLoading ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Clock className="h-8 w-8 animate-spin mx-auto mb-4" />
+                <div className="text-muted-foreground py-8 text-center">
+                  <Clock className="mx-auto mb-4 h-8 w-8 animate-spin" />
                   <p>Loading activities...</p>
                 </div>
               ) : upcomingActivities && upcomingActivities.length > 0 ? (
                 <div className="space-y-3">
                   {upcomingActivities.map((activity, index) => {
-                    const ixTime = activity.scheduledIxTime ?? IxTime.convertToIxTime(activity.scheduledDate.getTime());
+                    const ixTime =
+                      activity.scheduledIxTime ??
+                      IxTime.convertToIxTime(activity.scheduledDate.getTime());
                     const ixDate = new Date(ixTime);
 
                     return (
@@ -297,38 +325,45 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.05 }}
                       >
-                        <div className="flex items-start gap-3 p-4 border rounded-lg bg-card hover:bg-accent/50 transition-colors">
-                          <div className="text-center min-w-[60px]">
-                            <div className="text-2xl font-bold">{format(ixDate, 'd')}</div>
-                            <div className="text-xs text-blue-600 uppercase font-semibold">
-                              {format(ixDate, 'MMM')} ILT
+                        <div className="bg-card hover:bg-accent/50 flex items-start gap-3 rounded-lg border p-4 transition-colors">
+                          <div className="min-w-[60px] text-center">
+                            <div className="text-2xl font-bold">{format(ixDate, "d")}</div>
+                            <div className="text-xs font-semibold text-blue-600 uppercase">
+                              {format(ixDate, "MMM")} ILT
                             </div>
-                            <div className="text-xs text-muted-foreground">{format(ixDate, 'EEE')}</div>
+                            <div className="text-muted-foreground text-xs">
+                              {format(ixDate, "EEE")}
+                            </div>
                           </div>
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="mb-2 flex items-center gap-2">
                               <span className="text-sm font-medium text-blue-600">
-                                {format(ixDate, 'HH:mm')} ILT
+                                {format(ixDate, "HH:mm")} ILT
                               </span>
                               <Badge variant="outline" className="text-xs">
-                                {activity.activityType.replace('_', ' ')}
+                                {activity.activityType.replace("_", " ")}
                               </Badge>
                               <Badge
                                 variant={
-                                  activity.priority === 'urgent' ? 'destructive' :
-                                  activity.priority === 'high' ? 'default' : 'secondary'
+                                  activity.priority === "urgent"
+                                    ? "destructive"
+                                    : activity.priority === "high"
+                                      ? "default"
+                                      : "secondary"
                                 }
                                 className="text-xs"
                               >
                                 {activity.priority}
                               </Badge>
                             </div>
-                            <h4 className="font-semibold mb-1">{activity.title}</h4>
+                            <h4 className="mb-1 font-semibold">{activity.title}</h4>
                             {activity.description && (
-                              <p className="text-sm text-muted-foreground line-clamp-2">{activity.description}</p>
+                              <p className="text-muted-foreground line-clamp-2 text-sm">
+                                {activity.description}
+                              </p>
                             )}
                             {activity.tags && activity.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2">
+                              <div className="mt-2 flex flex-wrap gap-1">
                                 {activity.tags.map((tag: string) => (
                                   <Badge key={tag} variant="secondary" className="text-xs">
                                     {tag}
@@ -336,7 +371,7 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
                                 ))}
                               </div>
                             )}
-                            <p className="text-xs text-blue-600 font-medium mt-2">
+                            <p className="mt-2 text-xs font-medium text-blue-600">
                               📅 {IxTime.formatIxTime(ixTime, true)}
                             </p>
                           </div>
@@ -346,9 +381,9 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
                   })}
                 </div>
               ) : (
-                <div className="text-center py-12 text-muted-foreground">
-                  <CalendarDays className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg font-medium mb-2">No upcoming activities</p>
+                <div className="text-muted-foreground py-12 text-center">
+                  <CalendarDays className="mx-auto mb-4 h-16 w-16 opacity-50" />
+                  <p className="mb-2 text-lg font-medium">No upcoming activities</p>
                   <p className="text-sm">Schedule meetings or create policies to get started</p>
                 </div>
               )}
@@ -357,30 +392,30 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
             {/* Week View */}
             <TabsContent value="week">
               {isLoading ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Clock className="h-8 w-8 animate-spin mx-auto mb-4" />
+                <div className="text-muted-foreground py-8 text-center">
+                  <Clock className="mx-auto mb-4 h-8 w-8 animate-spin" />
                   <p>Loading activities...</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-7 gap-2">
                   {weekDays.map((day, index) => {
-                    const dayKey = format(day, 'yyyy-MM-dd');
+                    const dayKey = format(day, "yyyy-MM-dd");
                     const dayActivities = activitiesByDay.get(dayKey) ?? [];
                     const isToday = isSameDay(day, new Date());
 
                     return (
                       <div
                         key={dayKey}
-                        className={`min-h-[200px] p-3 border rounded-lg ${
-                          isToday ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-300' : 'bg-card'
+                        className={`min-h-[200px] rounded-lg border p-3 ${
+                          isToday ? "border-blue-300 bg-blue-50 dark:bg-blue-950/20" : "bg-card"
                         }`}
                       >
-                        <div className="text-center mb-3">
-                          <div className="text-xs text-muted-foreground uppercase">
-                            {format(day, 'EEE')}
+                        <div className="mb-3 text-center">
+                          <div className="text-muted-foreground text-xs uppercase">
+                            {format(day, "EEE")}
                           </div>
-                          <div className={`text-lg font-bold ${isToday ? 'text-blue-600' : ''}`}>
-                            {format(day, 'd')}
+                          <div className={`text-lg font-bold ${isToday ? "text-blue-600" : ""}`}>
+                            {format(day, "d")}
                           </div>
                         </div>
                         <div className="space-y-2">
@@ -397,9 +432,9 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
 
             {/* Month View */}
             <TabsContent value="month">
-              <div className="text-center py-12 text-muted-foreground">
-                <Calendar className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium mb-2">Month view coming soon</p>
+              <div className="text-muted-foreground py-12 text-center">
+                <Calendar className="mx-auto mb-4 h-16 w-16 opacity-50" />
+                <p className="mb-2 text-lg font-medium">Month view coming soon</p>
                 <p className="text-sm">Use week view or upcoming view for now</p>
               </div>
             </TabsContent>
@@ -407,31 +442,32 @@ export function ActivityPlanner({ countryId, userId, className }: ActivityPlanne
 
           {/* Activity Statistics */}
           {activities && activities.length > 0 && (
-            <div className="mt-6 pt-6 border-t">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="mt-6 border-t pt-6">
+              <div className="grid grid-cols-2 gap-4 text-center md:grid-cols-4">
                 <div>
-                  <div className="text-2xl font-bold text-blue-600">
-                    {activities.length}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Total Activities</div>
+                  <div className="text-2xl font-bold text-blue-600">{activities.length}</div>
+                  <div className="text-muted-foreground text-sm">Total Activities</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-green-600">
-                    {activities.filter(a => a.status === 'completed').length}
+                    {activities.filter((a) => a.status === "completed").length}
                   </div>
-                  <div className="text-sm text-muted-foreground">Completed</div>
+                  <div className="text-muted-foreground text-sm">Completed</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-amber-600">
-                    {activities.filter(a => a.status === 'in_progress').length}
+                    {activities.filter((a) => a.status === "in_progress").length}
                   </div>
-                  <div className="text-sm text-muted-foreground">In Progress</div>
+                  <div className="text-muted-foreground text-sm">In Progress</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-purple-600">
-                    {activities.filter(a => a.priority === 'urgent' || a.priority === 'high').length}
+                    {
+                      activities.filter((a) => a.priority === "urgent" || a.priority === "high")
+                        .length
+                    }
                   </div>
-                  <div className="text-sm text-muted-foreground">High Priority</div>
+                  <div className="text-muted-foreground text-sm">High Priority</div>
                 </div>
               </div>
             </div>

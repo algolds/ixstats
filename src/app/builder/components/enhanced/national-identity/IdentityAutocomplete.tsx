@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Autocomplete } from '~/components/ui/autocomplete';
-import { api } from '~/trpc/react';
+import React, { useState } from "react";
+import { Autocomplete } from "~/components/ui/autocomplete";
+import { api } from "~/trpc/react";
 
 interface IdentityAutocompleteProps {
   fieldName: string;
@@ -36,9 +36,9 @@ export function IdentityAutocomplete({
 
   return (
     <div className="space-y-2">
-      <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+      <label className="text-foreground flex items-center gap-2 text-sm font-medium">
         <Icon className="h-4 w-4" />
-        {fieldName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+        {fieldName.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase())}
       </label>
       <Autocomplete
         fieldName={fieldName}
@@ -47,18 +47,22 @@ export function IdentityAutocomplete({
         onBlur={handleBlur}
         onOpenChange={setIsOpen}
         placeholder={placeholder}
-        globalSuggestions={data?.global.map(s => ({
-          id: s.id,
-          value: s.value,
-          usageCount: s.usageCount,
-          isGlobal: s.isGlobal
-        })) || []}
-        userSuggestions={data?.user.map(s => ({
-          id: s.id,
-          value: s.value,
-          usageCount: s.usageCount,
-          isGlobal: s.isGlobal
-        })) || []}
+        globalSuggestions={
+          data?.global.map((s) => ({
+            id: s.id,
+            value: s.value,
+            usageCount: s.usageCount,
+            isGlobal: s.isGlobal,
+          })) || []
+        }
+        userSuggestions={
+          data?.user.map((s) => ({
+            id: s.id,
+            value: s.value,
+            usageCount: s.usageCount,
+            isGlobal: s.isGlobal,
+          })) || []
+        }
         isLoading={isLoading}
         allowCustom={true}
       />

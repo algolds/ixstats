@@ -13,9 +13,9 @@ const db = new PrismaClient();
 async function initializeDatabase() {
   try {
     console.log("🚀 Initializing IxStats database...");
-    
+
     // Check if we're in production
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === "production") {
       console.log("⚠️  Production environment detected - skipping preview data seeding");
       console.log("✅ Database initialization complete (production mode)");
       return;
@@ -24,9 +24,11 @@ async function initializeDatabase() {
     // Check if database has any data
     const countryCount = await db.country.count();
     const userCount = await db.user.count();
-    
+
     if (countryCount > 0 || userCount > 0) {
-      console.log(`📊 Database already contains data: ${countryCount} countries, ${userCount} users`);
+      console.log(
+        `📊 Database already contains data: ${countryCount} countries, ${userCount} users`
+      );
       console.log("✅ Database initialization complete (data exists)");
       return;
     }
@@ -34,9 +36,8 @@ async function initializeDatabase() {
     // Seed preview data for development
     console.log("🌱 Seeding preview data for development...");
     await runPreviewSeeder();
-    
+
     console.log("✅ Database initialization complete!");
-    
   } catch (error) {
     console.error("❌ Database initialization failed:", error);
     process.exit(1);

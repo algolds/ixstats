@@ -3,7 +3,7 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 /**
  * National Identity Router
- * 
+ *
  * Handles CRUD operations for national identity data including:
  * - Autosave functionality with debouncing
  * - Upsert operations (create or update)
@@ -46,22 +46,24 @@ export const nationalIdentityRouter = createTRPCRouter({
    * Used by the builder for real-time persistence
    */
   autosave: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-      data: nationalIdentitySchema,
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        data: nationalIdentitySchema,
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       if (!ctx.auth?.userId) {
-        throw new Error('Not authenticated');
+        throw new Error("Not authenticated");
       }
 
       // Verify user owns this country
       const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId }
+        where: { clerkUserId: ctx.auth.userId },
       });
 
       if (!userProfile || userProfile.countryId !== input.countryId) {
-        throw new Error('You do not have permission to edit this country.');
+        throw new Error("You do not have permission to edit this country.");
       }
 
       try {
@@ -86,11 +88,13 @@ export const nationalIdentityRouter = createTRPCRouter({
         return {
           success: true,
           data: result,
-          message: 'National identity autosaved successfully',
+          message: "National identity autosaved successfully",
         };
       } catch (error) {
-        console.error('[NationalIdentity API] Autosave failed:', error);
-        throw new Error(`Failed to autosave national identity: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error("[NationalIdentity API] Autosave failed:", error);
+        throw new Error(
+          `Failed to autosave national identity: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
       }
     }),
 
@@ -99,22 +103,24 @@ export const nationalIdentityRouter = createTRPCRouter({
    * Used by the editor for manual saves
    */
   update: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-      data: nationalIdentitySchema,
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        data: nationalIdentitySchema,
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       if (!ctx.auth?.userId) {
-        throw new Error('Not authenticated');
+        throw new Error("Not authenticated");
       }
 
       // Verify user owns this country
       const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId }
+        where: { clerkUserId: ctx.auth.userId },
       });
 
       if (!userProfile || userProfile.countryId !== input.countryId) {
-        throw new Error('You do not have permission to edit this country.');
+        throw new Error("You do not have permission to edit this country.");
       }
 
       try {
@@ -135,11 +141,13 @@ export const nationalIdentityRouter = createTRPCRouter({
         return {
           success: true,
           data: result,
-          message: 'National identity updated successfully',
+          message: "National identity updated successfully",
         };
       } catch (error) {
-        console.error('[NationalIdentity API] Update failed:', error);
-        throw new Error(`Failed to update national identity: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error("[NationalIdentity API] Update failed:", error);
+        throw new Error(
+          `Failed to update national identity: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
       }
     }),
 
@@ -147,21 +155,23 @@ export const nationalIdentityRouter = createTRPCRouter({
    * Get national identity data for a country
    */
   getByCountryId: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       if (!ctx.auth?.userId) {
-        throw new Error('Not authenticated');
+        throw new Error("Not authenticated");
       }
 
       // Verify user owns this country
       const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId }
+        where: { clerkUserId: ctx.auth.userId },
       });
 
       if (!userProfile || userProfile.countryId !== input.countryId) {
-        throw new Error('You do not have permission to view this country.');
+        throw new Error("You do not have permission to view this country.");
       }
 
       try {
@@ -171,8 +181,10 @@ export const nationalIdentityRouter = createTRPCRouter({
 
         return result;
       } catch (error) {
-        console.error('[NationalIdentity API] Get failed:', error);
-        throw new Error(`Failed to get national identity: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error("[NationalIdentity API] Get failed:", error);
+        throw new Error(
+          `Failed to get national identity: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
       }
     }),
 
@@ -180,22 +192,24 @@ export const nationalIdentityRouter = createTRPCRouter({
    * Create national identity data for a new country
    */
   create: protectedProcedure
-    .input(z.object({
-      countryId: z.string(),
-      data: nationalIdentitySchema,
-    }))
+    .input(
+      z.object({
+        countryId: z.string(),
+        data: nationalIdentitySchema,
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       if (!ctx.auth?.userId) {
-        throw new Error('Not authenticated');
+        throw new Error("Not authenticated");
       }
 
       // Verify user owns this country
       const userProfile = await ctx.db.user.findUnique({
-        where: { clerkUserId: ctx.auth.userId }
+        where: { clerkUserId: ctx.auth.userId },
       });
 
       if (!userProfile || userProfile.countryId !== input.countryId) {
-        throw new Error('You do not have permission to edit this country.');
+        throw new Error("You do not have permission to edit this country.");
       }
 
       try {
@@ -215,11 +229,13 @@ export const nationalIdentityRouter = createTRPCRouter({
         return {
           success: true,
           data: result,
-          message: 'National identity created successfully',
+          message: "National identity created successfully",
         };
       } catch (error) {
-        console.error('[NationalIdentity API] Create failed:', error);
-        throw new Error(`Failed to create national identity: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error("[NationalIdentity API] Create failed:", error);
+        throw new Error(
+          `Failed to create national identity: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
       }
     }),
 });

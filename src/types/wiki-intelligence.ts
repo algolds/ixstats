@@ -31,10 +31,10 @@ export interface WikiSection {
   content: string;
 
   /** Security classification level determining access control */
-  classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
+  classification: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
 
   /** Relative importance for prioritization and display order */
-  importance: 'critical' | 'high' | 'medium' | 'low';
+  importance: "critical" | "high" | "medium" | "low";
 
   /** ISO 8601 timestamp of last modification on the wiki */
   lastModified: string;
@@ -113,10 +113,10 @@ export interface DataConflict {
   ixStatsValue: string | number | undefined;
 
   /** Type of conflict detected */
-  type: 'missing_in_wiki' | 'missing_in_ixstats' | 'value_mismatch' | 'format_difference';
+  type: "missing_in_wiki" | "missing_in_ixstats" | "value_mismatch" | "format_difference";
 
   /** Severity level for prioritizing resolution efforts */
-  severity: 'low' | 'medium' | 'high';
+  severity: "low" | "medium" | "high";
 }
 
 /**
@@ -160,7 +160,7 @@ export interface WikiIntelligenceTabProps {
   };
 
   /** Viewer's security clearance level for access control */
-  viewerClearanceLevel: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
+  viewerClearanceLevel: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL";
 
   /** Optional flag colors for UI theming */
   flagColors?: {

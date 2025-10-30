@@ -83,9 +83,9 @@ export function CountrySelector({
         className={cn(
           "glass-hierarchy-child rounded-lg p-4 transition-all duration-200",
           "border border-[--intel-gold]/20",
-          isSelected && "ring-2 ring-[--intel-gold]/50 border-[--intel-gold]/50",
-          !isDisabled && "hover:border-[--intel-gold]/40 cursor-pointer",
-          isDisabled && "opacity-50 cursor-not-allowed"
+          isSelected && "border-[--intel-gold]/50 ring-2 ring-[--intel-gold]/50",
+          !isDisabled && "cursor-pointer hover:border-[--intel-gold]/40",
+          isDisabled && "cursor-not-allowed opacity-50"
         )}
         onClick={() => !isDisabled && onCountryToggle(country.id)}
       >
@@ -110,9 +110,9 @@ export function CountrySelector({
           </div>
 
           {/* Content */}
-          <div className="flex-1 min-w-0 space-y-2">
+          <div className="min-w-0 flex-1 space-y-2">
             {/* Country Name */}
-            <h4 className="font-bold text-white truncate">{country.name}</h4>
+            <h4 className="truncate font-bold text-white">{country.name}</h4>
 
             {/* Economic Tier Badge */}
             <Badge className={cn("text-xs", getEconomicTierBadgeClass(country.economicTier))}>
@@ -127,26 +127,28 @@ export function CountrySelector({
   return (
     <div className="space-y-4">
       {/* Search Bar */}
-      <div className="glass-hierarchy-child rounded-lg p-4 space-y-4">
+      <div className="glass-hierarchy-child space-y-4 rounded-lg p-4">
         {/* Search Input */}
         <div className="relative">
-          <RiSearchLine className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <RiSearchLine className="absolute top-1/2 left-3 -translate-y-1/2 text-gray-400" />
           <Input
             type="text"
             placeholder="Search countries..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-black/20 border-[--intel-gold]/20 focus:border-[--intel-gold]/50"
+            className="border-[--intel-gold]/20 bg-black/20 pl-10 focus:border-[--intel-gold]/50"
           />
         </div>
 
         {/* Selection Counter */}
         <div className="flex items-center justify-between text-sm">
           <span className="text-gray-400">
-            Selected: <span className="text-[--intel-gold] font-medium">{selectedCountries.length}</span> / {maxSelections}
+            Selected:{" "}
+            <span className="font-medium text-[--intel-gold]">{selectedCountries.length}</span> /{" "}
+            {maxSelections}
           </span>
           {selectedCountries.length >= maxSelections && (
-            <span className="text-yellow-400 flex items-center gap-1">
+            <span className="flex items-center gap-1 text-yellow-400">
               <RiCheckLine />
               Maximum reached
             </span>
@@ -156,25 +158,22 @@ export function CountrySelector({
 
       {/* Country Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="glass-hierarchy-child rounded-lg p-4 h-32 animate-pulse bg-gray-800/50"
+              className="glass-hierarchy-child h-32 animate-pulse rounded-lg bg-gray-800/50 p-4"
             />
           ))}
         </div>
       ) : countries.length === 0 ? (
         <div className="glass-hierarchy-child rounded-lg p-8 text-center">
-          <RiSearchLine className="mx-auto h-12 w-12 text-gray-500 mb-3" />
+          <RiSearchLine className="mx-auto mb-3 h-12 w-12 text-gray-500" />
           <p className="text-gray-400">No countries found</p>
-          <p className="text-sm text-gray-500 mt-1">Try adjusting your search</p>
+          <p className="mt-1 text-sm text-gray-500">Try adjusting your search</p>
         </div>
       ) : (
-        <motion.div
-          layout
-          className="grid grid-cols-1 md:grid-cols-3 gap-4"
-        >
+        <motion.div layout className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <AnimatePresence mode="popLayout">
             {countries.map((country) => (
               <CountryCard key={country.id} country={country} />

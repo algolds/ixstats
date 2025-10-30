@@ -14,14 +14,11 @@ function normaliseText(value?: string): string {
   return (value || "").toLowerCase();
 }
 
-function findCategoryIndex(
-  taxState: TaxBuilderState,
-  keywords: string[],
-): number {
+function findCategoryIndex(taxState: TaxBuilderState, keywords: string[]): number {
   const lowered = keywords.map((keyword) => keyword.toLowerCase());
   return taxState.categories.findIndex((category) => {
     const haystack = `${normaliseText(category.categoryName)} ${normaliseText(
-      category.categoryType,
+      category.categoryType
     )}`.trim();
     return lowered.some((keyword) => haystack.includes(keyword));
   });
@@ -40,11 +37,7 @@ function extractBrackets(taxState: TaxBuilderState, index: number) {
   }));
 }
 
-function resolveRate(
-  taxState: TaxBuilderState,
-  index: number,
-  fallback: number,
-): number {
+function resolveRate(taxState: TaxBuilderState, index: number, fallback: number): number {
   if (index < 0) {
     return fallback;
   }
@@ -62,9 +55,7 @@ function resolveRate(
   return fallback;
 }
 
-export function buildTaxSyncPayload(
-  taxState: TaxBuilderState | null | undefined,
-): TaxSyncPayload {
+export function buildTaxSyncPayload(taxState: TaxBuilderState | null | undefined): TaxSyncPayload {
   if (!taxState) {
     return { ...EMPTY_TAX_PAYLOAD };
   }

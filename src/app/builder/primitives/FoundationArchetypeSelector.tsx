@@ -1,13 +1,17 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Globe, Sparkles, ChevronDown, ChevronRight, Check, Plus } from 'lucide-react';
-import { cn } from '~/lib/utils';
-import { EnhancedTooltip, InfoIcon } from '~/components/ui/enhanced-tooltip';
-import { GlassCard as EnhancedGlassCard } from '~/components/ui/enhanced-card';
-import { archetypes, archetypeCategories, type CategorizedCountryArchetype } from '../utils/country-archetypes';
-import type { RealCountryData } from '../lib/economy-data-service';
+import React, { useState, useMemo, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Globe, Sparkles, ChevronDown, ChevronRight, Check, Plus } from "lucide-react";
+import { cn } from "~/lib/utils";
+import { EnhancedTooltip, InfoIcon } from "~/components/ui/enhanced-tooltip";
+import { GlassCard as EnhancedGlassCard } from "~/components/ui/enhanced-card";
+import {
+  archetypes,
+  archetypeCategories,
+  type CategorizedCountryArchetype,
+} from "../utils/country-archetypes";
+import type { RealCountryData } from "../lib/economy-data-service";
 
 interface FoundationArchetypeSelectorProps {
   countries: RealCountryData[];
@@ -20,22 +24,22 @@ export function FoundationArchetypeSelector({
   countries,
   selectedArchetypes,
   onArchetypeSelect,
-  onCreateFromScratch
+  onCreateFromScratch,
 }: FoundationArchetypeSelectorProps) {
-  const filteredCountries = countries.filter(c => c.name !== "World");
+  const filteredCountries = countries.filter((c) => c.name !== "World");
   const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(
-    new Set(archetypeCategories.map(category => category.id))
+    new Set(archetypeCategories.map((category) => category.id))
   );
 
   // Group archetypes by category
   const archetypesByCategory = useMemo(() => {
     const grouped = new Map<string, CategorizedCountryArchetype[]>();
-    
-    archetypeCategories.forEach(category => {
+
+    archetypeCategories.forEach((category) => {
       grouped.set(category.id, []);
     });
 
-    archetypes.forEach(archetype => {
+    archetypes.forEach((archetype) => {
       const categoryArchetypes = grouped.get(archetype.categoryId) || [];
       categoryArchetypes.push(archetype);
       grouped.set(archetype.categoryId, categoryArchetypes);
@@ -57,19 +61,19 @@ export function FoundationArchetypeSelector({
       return;
     }
 
-    const archetype = archetypes.find(a => a.id === archetypeId);
+    const archetype = archetypes.find((a) => a.id === archetypeId);
     if (!archetype) return;
 
     const isCurrentlySelected = selectedArchetypes.includes(archetypeId);
-    
+
     if (isCurrentlySelected) {
       // Remove the archetype
-      const newSelection = selectedArchetypes.filter(id => id !== archetypeId);
+      const newSelection = selectedArchetypes.filter((id) => id !== archetypeId);
       onArchetypeSelect(newSelection);
     } else {
       // Add the archetype, but check category limits
-      const categoryCount = selectedArchetypes.filter(id => {
-        const a = archetypes.find(arch => arch.id === id);
+      const categoryCount = selectedArchetypes.filter((id) => {
+        const a = archetypes.find((arch) => arch.id === id);
         return a?.categoryId === archetype.categoryId;
       }).length;
 
@@ -86,24 +90,24 @@ export function FoundationArchetypeSelector({
   // Auto-expand categories when archetypes are selected in them
   useEffect(() => {
     const categoriesToExpand = new Set<string>();
-    selectedArchetypes.forEach(archetypeId => {
-      const archetype = archetypes.find(a => a.id === archetypeId);
+    selectedArchetypes.forEach((archetypeId) => {
+      const archetype = archetypes.find((a) => a.id === archetypeId);
       if (archetype) {
         categoriesToExpand.add(archetype.categoryId);
       }
     });
 
     if (categoriesToExpand.size > 0) {
-      setCollapsedCategories(prev => {
+      setCollapsedCategories((prev) => {
         const newSet = new Set(prev);
-        categoriesToExpand.forEach(categoryId => newSet.delete(categoryId));
+        categoriesToExpand.forEach((categoryId) => newSet.delete(categoryId));
         return newSet;
       });
     }
   }, [selectedArchetypes]);
 
   const toggleCategory = (categoryId: string) => {
-    setCollapsedCategories(prev => {
+    setCollapsedCategories((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(categoryId)) {
         newSet.delete(categoryId);
@@ -116,30 +120,27 @@ export function FoundationArchetypeSelector({
 
   // Check if category has selected archetypes and count them
   const categorySelectionInfo = (categoryId: string) => {
-    const selectedInCategory = selectedArchetypes.filter(archetypeId => {
-      const archetype = archetypes.find(a => a.id === archetypeId);
+    const selectedInCategory = selectedArchetypes.filter((archetypeId) => {
+      const archetype = archetypes.find((a) => a.id === archetypeId);
       return archetype?.categoryId === categoryId;
     });
-    
+
     return {
       hasSelection: selectedInCategory.length > 0,
       count: selectedInCategory.length,
-      selectedIds: selectedInCategory
+      selectedIds: selectedInCategory,
     };
   };
 
   return (
-    <div className="fixed left-6 top-6 bottom-6 w-80 z-30">
-      <EnhancedGlassCard 
-        variant="glass" 
-        glow="hover" 
-        hover="glow"
-        className="h-full flex flex-col"
-      >
-        <div className="flex-shrink-0 p-6 border-b border-[var(--color-border-primary)]/50">
-          <div className="flex items-center gap-2 justify-center">
+    <div className="fixed top-6 bottom-6 left-6 z-30 w-80">
+      <EnhancedGlassCard variant="glass" glow="hover" hover="glow" className="flex h-full flex-col">
+        <div className="flex-shrink-0 border-b border-[var(--color-border-primary)]/50 p-6">
+          <div className="flex items-center justify-center gap-2">
             <Sparkles className="h-5 w-5 text-amber-300" />
-            <h3 className="font-semibold text-[var(--color-text-primary)]">Foundation Archetypes</h3>
+            <h3 className="font-semibold text-[var(--color-text-primary)]">
+              Foundation Archetypes
+            </h3>
             <EnhancedTooltip
               content="Pre-defined categories to help you find countries that match your vision"
               position="top"
@@ -148,14 +149,14 @@ export function FoundationArchetypeSelector({
             </EnhancedTooltip>
           </div>
         </div>
-        
+
         <div className="flex-1 overflow-hidden p-6">
-          <div 
-            className="h-full overflow-y-auto pr-2" 
+          <div
+            className="h-full overflow-y-auto pr-2"
             data-scrollable="true"
             style={{
-              scrollbarWidth: 'thin',
-              scrollbarColor: 'var(--color-border-secondary) transparent'
+              scrollbarWidth: "thin",
+              scrollbarColor: "var(--color-border-secondary) transparent",
             }}
           >
             <div className="space-y-6">
@@ -168,16 +169,16 @@ export function FoundationArchetypeSelector({
                     whileTap={{ scale: 0.98 }}
                     onClick={() => handleArchetypeToggle("all")}
                     className={cn(
-                      'w-full p-4 rounded-lg border transition-all duration-300',
-                      'bg-gradient-to-br from-[var(--color-bg-secondary)]/20 to-[var(--color-bg-tertiary)]/20',
-                      'hover:shadow-lg hover:shadow-blue-500/20 hover:backdrop-blur-md',
+                      "w-full rounded-lg border p-4 transition-all duration-300",
+                      "bg-gradient-to-br from-[var(--color-bg-secondary)]/20 to-[var(--color-bg-tertiary)]/20",
+                      "hover:shadow-lg hover:shadow-blue-500/20 hover:backdrop-blur-md",
                       selectedArchetypes.length === 0
-                        ? 'border-blue-400/50 bg-blue-500/20 shadow-lg shadow-blue-500/30'
-                        : 'border-[var(--color-border-primary)] hover:border-[var(--color-border-secondary)]'
+                        ? "border-blue-400/50 bg-blue-500/20 shadow-lg shadow-blue-500/30"
+                        : "border-[var(--color-border-primary)] hover:border-[var(--color-border-secondary)]"
                     )}
                   >
-                    <Globe className="h-8 w-8 text-blue-400 mx-auto mb-3" />
-                    <div className="text-2xl font-bold text-[var(--color-text-primary)] mb-1">
+                    <Globe className="mx-auto mb-3 h-8 w-8 text-blue-400" />
+                    <div className="mb-1 text-2xl font-bold text-[var(--color-text-primary)]">
                       {filteredCountries.length}
                     </div>
                     <div className="text-sm text-[var(--color-text-secondary)]">All Countries</div>
@@ -201,37 +202,37 @@ export function FoundationArchetypeSelector({
                     whileTap={{ scale: 0.98 }}
                     onClick={() => onCreateFromScratch?.()}
                     className={cn(
-                      'w-full p-4 rounded-lg border transition-all duration-300',
-                      'bg-gradient-to-br from-amber-500/20 to-yellow-500/10',
-                      'hover:shadow-lg hover:shadow-amber-500/20 hover:backdrop-blur-md',
-                      'border-[var(--color-border-primary)] hover:border-amber-400/50'
+                      "w-full rounded-lg border p-4 transition-all duration-300",
+                      "bg-gradient-to-br from-amber-500/20 to-yellow-500/10",
+                      "hover:shadow-lg hover:shadow-amber-500/20 hover:backdrop-blur-md",
+                      "border-[var(--color-border-primary)] hover:border-amber-400/50"
                     )}
                   >
-                    <Plus className="h-8 w-8 text-amber-400 mx-auto mb-3" />
-                    <div className="text-lg font-bold text-amber-400 mb-1">
-                      Create New
+                    <Plus className="mx-auto mb-3 h-8 w-8 text-amber-400" />
+                    <div className="mb-1 text-lg font-bold text-amber-400">Create New</div>
+                    <div className="text-sm text-[var(--color-text-secondary)]">
+                      Create a new country
                     </div>
-                    <div className="text-sm text-[var(--color-text-secondary)]">Create a new country</div>
                   </motion.button>
                 </EnhancedTooltip>
               </div>
 
               {/* Categories */}
               {archetypeCategories
-                .filter(category => category.isActive)
+                .filter((category) => category.isActive)
                 .sort((a, b) => a.priority - b.priority)
                 .map((category) => {
                   const categoryArchetypes = archetypesByCategory.get(category.id) || [];
                   const isCollapsed = collapsedCategories.has(category.id);
                   const selectionInfo = categorySelectionInfo(category.id);
-                  
+
                   return (
                     <div key={category.id} className="space-y-2">
                       {/* Category Header */}
                       <button
                         onClick={() => toggleCategory(category.id)}
                         className={cn(
-                          "w-full flex items-center gap-2 p-2 rounded-lg transition-all duration-200",
+                          "flex w-full items-center gap-2 rounded-lg p-2 transition-all duration-200",
                           "hover:bg-[var(--color-bg-secondary)]/20 hover:backdrop-blur-sm",
                           selectionInfo.hasSelection && "bg-[var(--color-bg-secondary)]/10"
                         )}
@@ -245,14 +246,14 @@ export function FoundationArchetypeSelector({
                           {category.name}
                         </span>
                         {selectionInfo.hasSelection && (
-                          <div className="flex items-center gap-1 ml-1">
-                            <span className="text-xs bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded">
+                          <div className="ml-1 flex items-center gap-1">
+                            <span className="rounded bg-green-500/20 px-1.5 py-0.5 text-xs text-green-400">
                               {selectionInfo.count}/2
                             </span>
                             <Check className="h-3 w-3 text-green-400" />
                           </div>
                         )}
-                        <span className="text-xs text-[var(--color-text-muted)] ml-auto">
+                        <span className="ml-auto text-xs text-[var(--color-text-muted)]">
                           {categoryArchetypes.length}
                         </span>
                       </button>
@@ -271,8 +272,8 @@ export function FoundationArchetypeSelector({
                               const Icon = archetype.icon;
                               const count = filteredCountries.filter(archetype.filter).length;
                               const isSelected = selectedArchetypes.includes(archetype.id);
-                              const categoryCount = selectedArchetypes.filter(id => {
-                                const a = archetypes.find(arch => arch.id === id);
+                              const categoryCount = selectedArchetypes.filter((id) => {
+                                const a = archetypes.find((arch) => arch.id === id);
                                 return a?.categoryId === archetype.categoryId;
                               }).length;
                               const isAtLimit = categoryCount >= 2 && !isSelected;
@@ -301,30 +302,36 @@ export function FoundationArchetypeSelector({
                                   <motion.button
                                     whileHover={{ scale: 1.02 }}
                                     whileTap={{ scale: 0.98 }}
-                                    onClick={() => !isAtLimit && handleArchetypeToggle(archetype.id)}
+                                    onClick={() =>
+                                      !isAtLimit && handleArchetypeToggle(archetype.id)
+                                    }
                                     disabled={isAtLimit}
                                     className={cn(
-                                      'w-full p-3 rounded-lg border transition-all duration-300 text-left',
+                                      "w-full rounded-lg border p-3 text-left transition-all duration-300",
                                       `bg-gradient-to-br ${archetype.gradient}`,
-                                      'hover:shadow-lg hover:backdrop-blur-md',
+                                      "hover:shadow-lg hover:backdrop-blur-md",
                                       isSelected
-                                        ? 'border-current shadow-lg bg-opacity-30 ring-2 ring-current/20 shadow-current/30'
-                                        : 'border-[var(--color-border-primary)] hover:border-[var(--color-border-secondary)] hover:shadow-[var(--color-border-secondary)]/20',
-                                      isAtLimit && 'opacity-50 cursor-not-allowed hover:scale-100'
+                                        ? "bg-opacity-30 border-current shadow-lg ring-2 shadow-current/30 ring-current/20"
+                                        : "border-[var(--color-border-primary)] hover:border-[var(--color-border-secondary)] hover:shadow-[var(--color-border-secondary)]/20",
+                                      isAtLimit && "cursor-not-allowed opacity-50 hover:scale-100"
                                     )}
                                   >
                                     <div className="flex items-center gap-3">
-                                      <Icon className={cn('h-5 w-5 flex-shrink-0', archetype.color)} />
-                                      <div className="flex-1 min-w-0">
+                                      <Icon
+                                        className={cn("h-5 w-5 flex-shrink-0", archetype.color)}
+                                      />
+                                      <div className="min-w-0 flex-1">
                                         <div className="flex items-center gap-2">
-                                          <span className={cn('font-medium text-sm', archetype.color)}>
+                                          <span
+                                            className={cn("text-sm font-medium", archetype.color)}
+                                          >
                                             {count}
                                           </span>
-                                          <span className="text-xs text-[var(--color-text-secondary)] truncate">
+                                          <span className="truncate text-xs text-[var(--color-text-secondary)]">
                                             {archetype.name}
                                           </span>
                                           {isSelected && (
-                                            <Check className="h-3 w-3 text-green-400 ml-auto" />
+                                            <Check className="ml-auto h-3 w-3 text-green-400" />
                                           )}
                                         </div>
                                       </div>

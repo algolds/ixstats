@@ -9,8 +9,8 @@ export default function Home() {
   const { isSignedIn, isLoaded } = useUser();
 
   // Set page title based on authentication state
-  usePageTitle({ 
-    title: isSignedIn ? "Command Center" : "Home" 
+  usePageTitle({
+    title: isSignedIn ? "Command Center" : "Home",
   });
 
   // Show loading state while checking auth

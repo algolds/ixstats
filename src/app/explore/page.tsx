@@ -1,74 +1,70 @@
-'use client';
+"use client";
 
-import { useState, useMemo, useEffect } from 'react';
-import { usePageTitle } from '~/hooks/usePageTitle';
-import { useRouter } from 'next/navigation';
-import {
-  CountriesPageHeader,
-  CountriesSearch,
-  CountriesGrid
-} from '../countries/_components';
+import { useState, useMemo, useEffect } from "react";
+import { usePageTitle } from "~/hooks/usePageTitle";
+import { useRouter } from "next/navigation";
+import { CountriesPageHeader, CountriesSearch, CountriesGrid } from "../countries/_components";
 import type {
   SortField,
   SortDirection,
   TierFilter,
-  PopulationRange
-} from '../countries/_components/CountriesSearch';
-import { api } from '~/trpc/react';
-import CountriesFilterSidebar from '../countries/_components/CountriesFilterSidebar';
-import CountriesSortBar from '../countries/_components/CountriesSortBar';
-import { CountryComparisonModal } from '../countries/_components/CountryComparisonModal';
-import { useCountryComparison } from '~/hooks/useCountryComparison';
-import { createUrl } from '~/lib/url-utils';
+  PopulationRange,
+} from "../countries/_components/CountriesSearch";
+import { api } from "~/trpc/react";
+import CountriesFilterSidebar from "../countries/_components/CountriesFilterSidebar";
+import CountriesSortBar from "../countries/_components/CountriesSortBar";
+import { CountryComparisonModal } from "../countries/_components/CountryComparisonModal";
+import { useCountryComparison } from "~/hooks/useCountryComparison";
+import { createUrl } from "~/lib/url-utils";
 
-import type { PageCountryData } from '../countries/_components/CountriesGrid';
+import type { PageCountryData } from "../countries/_components/CountriesGrid";
 
 export default function ExplorePage() {
   usePageTitle({ title: "Explore" });
-  
+
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [tierFilter, setTierFilter] =
-    useState<TierFilter>('all');
-  const [continentFilter, setContinentFilter] =
-    useState<string>('all');
-  const [regionFilter, setRegionFilter] =
-    useState<string>('all');
-  const [populationRange, setPopulationRange] =
-    useState<PopulationRange>({});
-  const [sortField, setSortField] =
-    useState<SortField>('name');
-  const [sortDirection, setSortDirection] =
-    useState<SortDirection>('asc');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [tierFilter, setTierFilter] = useState<TierFilter>("all");
+  const [continentFilter, setContinentFilter] = useState<string>("all");
+  const [regionFilter, setRegionFilter] = useState<string>("all");
+  const [populationRange, setPopulationRange] = useState<PopulationRange>({});
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [page, setPage] = useState(1);
   const pageSize = 9;
-  
+
   // Comparison functionality
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
-  const { comparisonCountries, addCountryToComparison, removeCountryFromComparison, clearComparison, getAvailableCountries, isLoading: isLoadingComparison } = useCountryComparison();
+  const {
+    comparisonCountries,
+    addCountryToComparison,
+    removeCountryFromComparison,
+    clearComparison,
+    getAvailableCountries,
+    isLoading: isLoadingComparison,
+  } = useCountryComparison();
 
   // Get all countries without filtering at the API level to enable client-side filtering
   const {
     data: countriesResult,
     isLoading,
-    error
-  } = api.countries.getAll.useQuery({
-    limit: 1000 // Get all countries for client-side filtering
-  }, {
-    refetchOnWindowFocus: false,
-    staleTime: 30 * 1000
-  });
+    error,
+  } = api.countries.getAll.useQuery(
+    {
+      limit: 1000, // Get all countries for client-side filtering
+    },
+    {
+      refetchOnWindowFocus: false,
+      staleTime: 30 * 1000,
+    }
+  );
 
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600">
-            Error Loading Countries
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            {error.message}
-          </p>
+          <h1 className="text-2xl font-bold text-red-600">Error Loading Countries</h1>
+          <p className="text-muted-foreground mt-2">{error.message}</p>
         </div>
       </div>
     );
@@ -88,21 +84,17 @@ export default function ExplorePage() {
     landArea: c.landArea,
     populationDensity: c.populationDensity,
     gdpDensity: c.gdpDensity,
-    lastCalculated: c.lastCalculated
+    lastCalculated: c.lastCalculated,
   }));
 
   const availableContinents = useMemo(() => {
     return Array.from(
-      new Set(
-        processed
-          .map((c) => c.continent)
-          .filter((x): x is string => !!x)
-      )
+      new Set(processed.map((c) => c.continent).filter((x): x is string => !!x))
     ).sort();
   }, [processed]);
 
   const availableRegions = useMemo(() => {
-    if (continentFilter === 'all') return [];
+    if (continentFilter === "all") return [];
     return Array.from(
       new Set(
         processed
@@ -115,32 +107,33 @@ export default function ExplorePage() {
 
   const filtered = useMemo(() => {
     let arr = [...processed];
-    
+
     // Search filter
     const term = searchTerm.toLowerCase().trim();
     if (term) {
-      arr = arr.filter((c) =>
-        c.name.toLowerCase().includes(term) ||
-        c.continent?.toLowerCase().includes(term) ||
-        c.region?.toLowerCase().includes(term)
+      arr = arr.filter(
+        (c) =>
+          c.name.toLowerCase().includes(term) ||
+          c.continent?.toLowerCase().includes(term) ||
+          c.region?.toLowerCase().includes(term)
       );
     }
-    
+
     // Tier filter
-    if (tierFilter !== 'all') {
+    if (tierFilter !== "all") {
       arr = arr.filter((c) => c.economicTier === tierFilter);
     }
-    
+
     // Continent filter
-    if (continentFilter !== 'all') {
+    if (continentFilter !== "all") {
       arr = arr.filter((c) => c.continent === continentFilter);
     }
-    
+
     // Region filter
-    if (regionFilter !== 'all') {
+    if (regionFilter !== "all") {
       arr = arr.filter((c) => c.region === regionFilter);
     }
-    
+
     // Population range filter
     const { min, max } = populationRange;
     if (min !== undefined) {
@@ -149,44 +142,44 @@ export default function ExplorePage() {
     if (max !== undefined) {
       arr = arr.filter((c) => c.currentPopulation <= max);
     }
-    
+
     // Sorting
-    const m = sortDirection === 'asc' ? 1 : -1;
+    const m = sortDirection === "asc" ? 1 : -1;
     arr = arr.sort((a, b) => {
-      if (sortField === 'name') {
+      if (sortField === "name") {
         return m * a.name.localeCompare(b.name);
       }
       let va, vb;
       switch (sortField) {
-        case 'population':
+        case "population":
           va = a.currentPopulation ?? 0;
           vb = b.currentPopulation ?? 0;
           break;
-        case 'gdpPerCapita':
+        case "gdpPerCapita":
           va = a.currentGdpPerCapita ?? 0;
           vb = b.currentGdpPerCapita ?? 0;
           break;
-        case 'totalGdp':
+        case "totalGdp":
           va = a.currentTotalGdp ?? 0;
           vb = b.currentTotalGdp ?? 0;
           break;
-        case 'economicTier':
-          va = a.economicTier ?? '';
-          vb = b.economicTier ?? '';
+        case "economicTier":
+          va = a.economicTier ?? "";
+          vb = b.economicTier ?? "";
           return m * va.localeCompare(vb);
-        case 'continent':
-          va = a.continent ?? '';
-          vb = b.continent ?? '';
+        case "continent":
+          va = a.continent ?? "";
+          vb = b.continent ?? "";
           return m * va.localeCompare(vb);
-        case 'region':
-          va = a.region ?? '';
-          vb = b.region ?? '';
+        case "region":
+          va = a.region ?? "";
+          vb = b.region ?? "";
           return m * va.localeCompare(vb);
-        case 'landArea':
+        case "landArea":
           va = a.landArea ?? 0;
           vb = b.landArea ?? 0;
           break;
-        case 'populationDensity':
+        case "populationDensity":
           va = a.populationDensity ?? 0;
           vb = b.populationDensity ?? 0;
           break;
@@ -206,7 +199,7 @@ export default function ExplorePage() {
     regionFilter,
     populationRange,
     sortField,
-    sortDirection
+    sortDirection,
   ]);
 
   // Reset page when filters change
@@ -219,37 +212,30 @@ export default function ExplorePage() {
     regionFilter,
     populationRange,
     sortField,
-    sortDirection
+    sortDirection,
   ]);
 
   const pageCount = Math.ceil(filtered.length / pageSize);
-  const paged = filtered.slice(
-    (page - 1) * pageSize,
-    page * pageSize
-  );
+  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
 
-  const totalPop = filtered.reduce(
-    (sum, c) => sum + c.currentPopulation,
-    0
-  );
-  const totalGdp = filtered.reduce(
-    (sum, c) => sum + c.currentTotalGdp,
-    0
-  );
+  const totalPop = filtered.reduce((sum, c) => sum + c.currentPopulation, 0);
+  const totalGdp = filtered.reduce((sum, c) => sum + c.currentTotalGdp, 0);
 
   // Handler to clear all filters
   const handleClearAll = () => {
-    setSearchTerm('');
-    setTierFilter('all');
-    setContinentFilter('all');
-    setRegionFilter('all');
+    setSearchTerm("");
+    setTierFilter("all");
+    setContinentFilter("all");
+    setRegionFilter("all");
     setPopulationRange({});
-    setSortField('name');
-    setSortDirection('asc');
+    setSortField("name");
+    setSortDirection("asc");
   };
 
   // Wrapper function to handle tier filter changes
-  const handleTierFilterChange = (tier: string | 'all' | 'Advanced' | 'Developed' | 'Emerging' | 'Developing') => {
+  const handleTierFilterChange = (
+    tier: string | "all" | "Advanced" | "Developed" | "Emerging" | "Developing"
+  ) => {
     setTierFilter(tier as TierFilter);
   };
 
@@ -262,14 +248,14 @@ export default function ExplorePage() {
   const handleCountrySelect = (countryId: string) => {
     // Navigate to country detail page
     // Find country by ID to get slug, then navigate
-    const country = processed.find(c => c.id === countryId);
+    const country = processed.find((c) => c.id === countryId);
     if (country?.slug) {
       router.push(createUrl(`/countries/${country.slug}`));
     }
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background min-h-screen">
       <div className="container mx-auto px-4 py-8">
         <CountriesPageHeader
           isLoading={isLoading}
@@ -278,7 +264,7 @@ export default function ExplorePage() {
           filteredCountries={filtered}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[280px_1fr]">
           {/* Sidebar: Filters (sticky on desktop) */}
           <div className="hidden lg:block">
             <CountriesFilterSidebar
@@ -301,8 +287,8 @@ export default function ExplorePage() {
           {/* Main content: Sort/search bar, grid, pagination */}
           <div>
             {/* On mobile, show filter button to open modal (not implemented yet) */}
-            <div className="lg:hidden mb-4">
-              <button className="btn-secondary w-full py-2 rounded-md">Show Filters</button>
+            <div className="mb-4 lg:hidden">
+              <button className="btn-secondary w-full rounded-md py-2">Show Filters</button>
             </div>
 
             {/* Sort/search bar and compare button */}
@@ -340,4 +326,4 @@ export default function ExplorePage() {
       />
     </div>
   );
-} 
+}

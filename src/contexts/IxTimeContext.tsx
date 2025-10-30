@@ -1,8 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { IxTime } from '~/lib/ixtime';
-import { withBasePath } from '~/lib/base-path';
+import React, { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { IxTime } from "~/lib/ixtime";
+import { withBasePath } from "~/lib/base-path";
 
 interface IxTimeState {
   ixTimeTimestamp: number;
@@ -32,7 +32,7 @@ interface IxTimeProviderProps {
 export function IxTimeProvider({ children, updateInterval = 100 }: IxTimeProviderProps) {
   const [timeState, setTimeState] = useState<IxTimeState>({
     ixTimeTimestamp: Date.now(),
-    ixTimeFormatted: '',
+    ixTimeFormatted: "",
     multiplier: 2,
     isPaused: false,
     gameYear: 2040,
@@ -40,12 +40,12 @@ export function IxTimeProvider({ children, updateInterval = 100 }: IxTimeProvide
     isLoading: true,
     lastUpdated: Date.now(),
     referenceTimestamp: Date.now(),
-    referenceRealTime: Date.now()
+    referenceRealTime: Date.now(),
   });
 
   const fetchTimeFromAPI = async (): Promise<Partial<IxTimeState>> => {
     try {
-      const response = await fetch(withBasePath('/api/ixtime/current'));
+      const response = await fetch(withBasePath("/api/ixtime/current"));
       if (response.ok) {
         const data = await response.json();
         const now = Date.now();
@@ -57,14 +57,14 @@ export function IxTimeProvider({ children, updateInterval = 100 }: IxTimeProvide
           gameYear: data.gameYear,
           isNaturalProgression: data.status?.isMultiplierNatural ?? true,
           isLoading: false,
-          lastUpdated: now
+          lastUpdated: now,
         };
       } else {
         // Fallback to client-side calculation
         return fallbackToClientSide();
       }
     } catch (error) {
-      console.error('Error fetching time from API:', error);
+      console.error("Error fetching time from API:", error);
       return fallbackToClientSide();
     }
   };
@@ -80,7 +80,7 @@ export function IxTimeProvider({ children, updateInterval = 100 }: IxTimeProvide
       gameYear: IxTime.getCurrentGameYear(),
       isNaturalProgression: IxTime.isMultiplierNatural(),
       isLoading: false,
-      lastUpdated: now
+      lastUpdated: now,
     };
   };
 
@@ -91,7 +91,7 @@ export function IxTimeProvider({ children, updateInterval = 100 }: IxTimeProvide
       return {
         ...state,
         ixTimeTimestamp: state.referenceTimestamp,
-        ixTimeFormatted: IxTime.formatIxTime(state.referenceTimestamp, true)
+        ixTimeFormatted: IxTime.formatIxTime(state.referenceTimestamp, true),
       };
     }
 
@@ -104,13 +104,13 @@ export function IxTimeProvider({ children, updateInterval = 100 }: IxTimeProvide
       ...state,
       ixTimeTimestamp: currentIxTime,
       ixTimeFormatted: IxTime.formatIxTime(currentIxTime, true),
-      gameYear: IxTime.getCurrentGameYear(currentIxTime)
+      gameYear: IxTime.getCurrentGameYear(currentIxTime),
     };
   };
 
   const refreshTime = async () => {
     const newStateData = await fetchTimeFromAPI();
-    setTimeState(prevState => ({ ...prevState, ...newStateData }));
+    setTimeState((prevState) => ({ ...prevState, ...newStateData }));
   };
 
   useEffect(() => {
@@ -122,13 +122,13 @@ export function IxTimeProvider({ children, updateInterval = 100 }: IxTimeProvide
       if (!active) return;
       const newStateData = await fetchTimeFromAPI();
       if (active) {
-        setTimeState(prevState => ({ ...prevState, ...newStateData }));
+        setTimeState((prevState) => ({ ...prevState, ...newStateData }));
       }
     };
 
     const tick = () => {
       if (!active) return;
-      setTimeState(prevState => calculateProgressingTime(prevState));
+      setTimeState((prevState) => calculateProgressingTime(prevState));
     };
 
     // Initial sync
@@ -147,20 +147,16 @@ export function IxTimeProvider({ children, updateInterval = 100 }: IxTimeProvide
 
   const contextValue: IxTimeContextType = {
     ...timeState,
-    refreshTime
+    refreshTime,
   };
 
-  return (
-    <IxTimeContext.Provider value={contextValue}>
-      {children}
-    </IxTimeContext.Provider>
-  );
+  return <IxTimeContext.Provider value={contextValue}>{children}</IxTimeContext.Provider>;
 }
 
 export function useIxTime(): IxTimeContextType {
   const context = useContext(IxTimeContext);
   if (!context) {
-    throw new Error('useIxTime must be used within an IxTimeProvider');
+    throw new Error("useIxTime must be used within an IxTimeProvider");
   }
   return context;
 }

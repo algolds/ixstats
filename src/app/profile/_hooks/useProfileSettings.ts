@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 import { api } from "~/trpc/react";
 
 interface UseProfileSettingsProps {
@@ -17,10 +17,9 @@ export function useProfileSettings({ userProfileCountryId, userId }: UseProfileS
   const updateCountryNameMutation = api.countries.updateCountryName.useMutation();
   const updateCountryFlagMutation = api.countries.updateCountryFlag.useMutation();
 
-  const { refetch: refetchProfile } = api.users.getProfile.useQuery(
-    undefined,
-    { enabled: !!userId }
-  );
+  const { refetch: refetchProfile } = api.users.getProfile.useQuery(undefined, {
+    enabled: !!userId,
+  });
 
   const handleUpdateCountryName = useCallback(async () => {
     if (!userProfileCountryId || !newCountryName.trim()) return;
@@ -28,16 +27,16 @@ export function useProfileSettings({ userProfileCountryId, userId }: UseProfileS
     try {
       await updateCountryNameMutation.mutateAsync({
         countryId: userProfileCountryId,
-        name: newCountryName.trim()
+        name: newCountryName.trim(),
       });
 
       await refetchProfile();
       setIsEditingCountry(false);
       setNewCountryName("");
-      toast.success('Country name updated successfully!');
+      toast.success("Country name updated successfully!");
     } catch (error) {
-      console.error('Failed to update country name:', error);
-      toast.error('Failed to update country name');
+      console.error("Failed to update country name:", error);
+      toast.error("Failed to update country name");
     }
   }, [userProfileCountryId, newCountryName, updateCountryNameMutation, refetchProfile]);
 
@@ -45,14 +44,21 @@ export function useProfileSettings({ userProfileCountryId, userId }: UseProfileS
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp', 'image/svg+xml'];
+    const validTypes = [
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "image/gif",
+      "image/webp",
+      "image/svg+xml",
+    ];
     if (!validTypes.includes(file.type)) {
-      toast.error('Please upload a valid image file (PNG, JPG, GIF, WEBP, or SVG)');
+      toast.error("Please upload a valid image file (PNG, JPG, GIF, WEBP, or SVG)");
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size must be less than 5MB');
+      toast.error("File size must be less than 5MB");
       return;
     }
 
@@ -60,15 +66,15 @@ export function useProfileSettings({ userProfileCountryId, userId }: UseProfileS
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append("file", file);
 
-      const response = await fetch('/api/upload/image', {
-        method: 'POST',
+      const response = await fetch("/api/upload/image", {
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        throw new Error("Upload failed");
       }
 
       const result = await response.json();
@@ -77,11 +83,11 @@ export function useProfileSettings({ userProfileCountryId, userId }: UseProfileS
         setUploadedFlagUrl(result.dataUrl);
         toast.success('Image uploaded! Click "Save Flag" to apply.');
       } else {
-        throw new Error(result.error || 'Upload failed');
+        throw new Error(result.error || "Upload failed");
       }
     } catch (error) {
-      console.error('Failed to upload flag:', error);
-      toast.error('Failed to upload image. Please try again.');
+      console.error("Failed to upload flag:", error);
+      toast.error("Failed to upload image. Please try again.");
     } finally {
       setIsUploadingFlag(false);
     }
@@ -89,7 +95,7 @@ export function useProfileSettings({ userProfileCountryId, userId }: UseProfileS
 
   const handleFlagSave = useCallback(async () => {
     if (!userProfileCountryId || !uploadedFlagUrl) {
-      toast.error('No flag to save');
+      toast.error("No flag to save");
       return;
     }
 
@@ -102,10 +108,10 @@ export function useProfileSettings({ userProfileCountryId, userId }: UseProfileS
       await refetchProfile();
       setFlagUploadMode(false);
       setUploadedFlagUrl(null);
-      toast.success('Flag saved successfully!');
+      toast.success("Flag saved successfully!");
     } catch (error) {
-      console.error('Failed to save flag:', error);
-      toast.error('Failed to save flag');
+      console.error("Failed to save flag:", error);
+      toast.error("Failed to save flag");
     }
   }, [userProfileCountryId, uploadedFlagUrl, updateCountryFlagMutation, refetchProfile]);
 
@@ -124,6 +130,6 @@ export function useProfileSettings({ userProfileCountryId, userId }: UseProfileS
     handleUpdateCountryName,
     handleFlagUpload,
     handleFlagSave,
-    refetchProfile
+    refetchProfile,
   };
 }

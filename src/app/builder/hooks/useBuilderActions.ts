@@ -1,7 +1,7 @@
-import { useCallback, useMemo } from 'react';
-import type { BuilderStep } from '../components/enhanced/builderConfig';
-import type { BuilderState } from './useBuilderState';
-import { stepOrder } from '../components/enhanced/builderConfig';
+import { useCallback, useMemo } from "react";
+import type { BuilderStep } from "../components/enhanced/builderConfig";
+import type { BuilderState } from "./useBuilderState";
+import { stepOrder } from "../components/enhanced/builderConfig";
 
 /**
  * Return value interface for useBuilderActions hook.
@@ -132,13 +132,13 @@ export function useBuilderActions({
   const handleTabChange = useCallback(
     (step: BuilderStep, tab: string) => {
       switch (step) {
-        case 'core':
+        case "core":
           setBuilderState((prev) => ({ ...prev, activeCoreTab: tab }));
           break;
-        case 'government':
+        case "government":
           setBuilderState((prev) => ({ ...prev, activeGovernmentTab: tab }));
           break;
-        case 'economics':
+        case "economics":
           setBuilderState((prev) => ({ ...prev, activeEconomicsTab: tab }));
           break;
       }
@@ -151,47 +151,47 @@ export function useBuilderActions({
     const { step, activeCoreTab, activeGovernmentTab, selectedCountry } = builderState;
 
     switch (step) {
-      case 'foundation':
+      case "foundation":
         if (selectedCountry) {
           setBuilderState((prev) => ({
             ...prev,
-            step: 'core',
-            completedSteps: [...new Set([...prev.completedSteps, 'foundation' as BuilderStep])],
+            step: "core",
+            completedSteps: [...new Set([...prev.completedSteps, "foundation" as BuilderStep])],
           }));
         }
         break;
 
-      case 'core':
-        if (activeCoreTab === 'identity') {
-          handleTabChange('core', 'indicators');
+      case "core":
+        if (activeCoreTab === "identity") {
+          handleTabChange("core", "indicators");
         } else {
           setBuilderState((prev) => ({
             ...prev,
-            step: 'government',
-            completedSteps: [...new Set([...prev.completedSteps, 'core' as BuilderStep])],
+            step: "government",
+            completedSteps: [...new Set([...prev.completedSteps, "core" as BuilderStep])],
           }));
         }
         break;
 
-      case 'government':
-        const govTabs = ['components', 'structure', 'spending', 'preview'];
+      case "government":
+        const govTabs = ["components", "structure", "spending", "preview"];
         const currentGovIndex = govTabs.indexOf(activeGovernmentTab);
         if (currentGovIndex < govTabs.length - 1) {
-          handleTabChange('government', govTabs[currentGovIndex + 1]!);
+          handleTabChange("government", govTabs[currentGovIndex + 1]!);
         } else {
           setBuilderState((prev) => ({
             ...prev,
-            step: 'economics',
-            completedSteps: [...new Set([...prev.completedSteps, 'government' as BuilderStep])],
+            step: "economics",
+            completedSteps: [...new Set([...prev.completedSteps, "government" as BuilderStep])],
           }));
         }
         break;
 
-      case 'economics':
+      case "economics":
         setBuilderState((prev) => ({
           ...prev,
-          step: 'preview',
-          completedSteps: [...new Set([...prev.completedSteps, 'economics' as BuilderStep])],
+          step: "preview",
+          completedSteps: [...new Set([...prev.completedSteps, "economics" as BuilderStep])],
         }));
         break;
     }

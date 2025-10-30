@@ -12,7 +12,7 @@
  * Usage: DATABASE_URL="postgresql://postgres:postgres@localhost:5433/ixstats" npx tsx scripts/validate-postgis-geometries.ts
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const db = new PrismaClient();
 
@@ -129,11 +129,11 @@ async function validateLayer(layerName: string): Promise<ValidationResult> {
 }
 
 async function main() {
-  console.log('🔍 Validating PostGIS Geometries\n');
-  console.log('='.repeat(80));
-  console.log('\n');
+  console.log("🔍 Validating PostGIS Geometries\n");
+  console.log("=".repeat(80));
+  console.log("\n");
 
-  const layers = ['political', 'climate', 'altitudes', 'rivers', 'lakes', 'icecaps', 'background'];
+  const layers = ["political", "climate", "altitudes", "rivers", "lakes", "icecaps", "background"];
   const results: ValidationResult[] = [];
 
   for (const layer of layers) {
@@ -157,9 +157,11 @@ async function main() {
           console.log(`      ⚠️  NULL geometries: ${result.nullGeometries}`);
         }
         if (result.invalidGeometries > 0) {
-          console.log(`      ⚠️  Invalid geometries (ST_IsValid = false): ${result.invalidGeometries}`);
+          console.log(
+            `      ⚠️  Invalid geometries (ST_IsValid = false): ${result.invalidGeometries}`
+          );
           if (result.invalidFeatureIds.length > 0) {
-            console.log(`         Invalid feature IDs: ${result.invalidFeatureIds.join(', ')}`);
+            console.log(`         Invalid feature IDs: ${result.invalidFeatureIds.join(", ")}`);
           }
         }
         if (result.wrongSRID > 0) {
@@ -177,7 +179,7 @@ async function main() {
       // Show geometry types
       const typesList = Object.entries(result.geometryTypes)
         .map(([type, count]) => `${type}: ${count}`)
-        .join(', ');
+        .join(", ");
       console.log(`      Geometry types: ${typesList}`);
 
       // Check spatial index
@@ -187,16 +189,19 @@ async function main() {
         console.log(`      ⚠️  Missing spatial index (performance will be poor!)`);
       }
 
-      console.log('');
+      console.log("");
     } catch (error) {
-      console.error(`   ❌ Error validating ${layer}:`, error instanceof Error ? error.message : String(error));
-      console.log('');
+      console.error(
+        `   ❌ Error validating ${layer}:`,
+        error instanceof Error ? error.message : String(error)
+      );
+      console.log("");
     }
   }
 
   // Overall summary
-  console.log('='.repeat(80));
-  console.log('📋 OVERALL VALIDATION SUMMARY\n');
+  console.log("=".repeat(80));
+  console.log("📋 OVERALL VALIDATION SUMMARY\n");
 
   const totalFeatures = results.reduce((sum, r) => sum + r.totalFeatures, 0);
   const validGeometries = results.reduce((sum, r) => sum + r.validGeometries, 0);
@@ -211,15 +216,13 @@ async function main() {
 
   console.log(`Total features: ${totalFeatures.toLocaleString()}`);
   console.log(`Valid geometries: ${validGeometries.toLocaleString()}`);
-  console.log('');
+  console.log("");
 
   const criticalIssues =
-    totalIssues.nullGeometries +
-    totalIssues.invalidGeometries +
-    totalIssues.wrongSRID;
+    totalIssues.nullGeometries + totalIssues.invalidGeometries + totalIssues.wrongSRID;
 
   if (criticalIssues > 0) {
-    console.log('❌ CRITICAL ISSUES FOUND:');
+    console.log("❌ CRITICAL ISSUES FOUND:");
     if (totalIssues.nullGeometries > 0) {
       console.log(`   - NULL geometries: ${totalIssues.nullGeometries}`);
     }
@@ -229,30 +232,34 @@ async function main() {
     if (totalIssues.wrongSRID > 0) {
       console.log(`   - Wrong SRID: ${totalIssues.wrongSRID}`);
     }
-    console.log('');
-    console.log('⚠️  These issues must be fixed before production use!');
+    console.log("");
+    console.log("⚠️  These issues must be fixed before production use!");
   } else {
-    console.log('✅ No critical geometry issues found!');
+    console.log("✅ No critical geometry issues found!");
   }
 
   if (totalIssues.outOfBounds > 0) {
-    console.log('');
-    console.log(`⚠️  Warning: ${totalIssues.outOfBounds} features extend beyond Web Mercator bounds`);
-    console.log('   This may cause issues with tile generation');
-    console.log('   Consider running clamp script: psql $DATABASE_URL -f scripts/clamp-mercator-coordinates.sql');
+    console.log("");
+    console.log(
+      `⚠️  Warning: ${totalIssues.outOfBounds} features extend beyond Web Mercator bounds`
+    );
+    console.log("   This may cause issues with tile generation");
+    console.log(
+      "   Consider running clamp script: psql $DATABASE_URL -f scripts/clamp-mercator-coordinates.sql"
+    );
   }
 
   if (layersWithoutIndex > 0) {
-    console.log('');
+    console.log("");
     console.log(`⚠️  Performance Warning: ${layersWithoutIndex} layers missing spatial indexes`);
-    console.log('   Vector tile generation will be VERY slow!');
-    console.log('   Run: psql $DATABASE_URL -f scripts/create-vector-tile-indexes.sql');
+    console.log("   Vector tile generation will be VERY slow!");
+    console.log("   Run: psql $DATABASE_URL -f scripts/create-vector-tile-indexes.sql");
   } else {
-    console.log('');
-    console.log('✅ All layers have spatial indexes (good performance expected)');
+    console.log("");
+    console.log("✅ All layers have spatial indexes (good performance expected)");
   }
 
-  console.log('');
+  console.log("");
 
   // Exit with error if critical issues found
   if (criticalIssues > 0) {
@@ -262,7 +269,7 @@ async function main() {
 
 main()
   .catch((error) => {
-    console.error('❌ Validation failed:', error);
+    console.error("❌ Validation failed:", error);
     process.exit(1);
   })
   .finally(() => {

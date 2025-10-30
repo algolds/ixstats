@@ -1,12 +1,12 @@
 "use client";
 
-import React, { memo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Card, CardContent } from '~/components/ui/card';
-import { cn } from '~/lib/utils';
-import { stepConfig } from '../builderConfig';
-import type { BuilderStep } from '../builderConfig';
-import { useBuilderContext } from '../context/BuilderStateContext';
+import React, { memo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Card, CardContent } from "~/components/ui/card";
+import { cn } from "~/lib/utils";
+import { stepConfig } from "../builderConfig";
+import type { BuilderStep } from "../builderConfig";
+import { useBuilderContext } from "../context/BuilderStateContext";
 
 interface StepContentProps {
   children: React.ReactNode;
@@ -35,9 +35,9 @@ export const StepContent = memo(function StepContent({ children }: StepContentPr
       >
         <Card
           className={cn(
-            'max-w-6xl mx-auto border-2 shadow-2xl overflow-hidden',
+            "mx-auto max-w-6xl overflow-hidden border-2 shadow-2xl",
             currentStepConfig.borderColor,
-            'bg-gradient-to-br',
+            "bg-gradient-to-br",
             currentStepConfig.bgGradient
           )}
         >

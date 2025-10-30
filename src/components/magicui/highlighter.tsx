@@ -60,15 +60,7 @@ export function Highlighter({
         }
       };
     }
-  }, [
-    action,
-    color,
-    strokeWidth,
-    animationDuration,
-    iterations,
-    padding,
-    multiline,
-  ]);
+  }, [action, color, strokeWidth, animationDuration, iterations, padding, multiline]);
 
   return (
     <span ref={elementRef} className="relative inline-block bg-transparent">

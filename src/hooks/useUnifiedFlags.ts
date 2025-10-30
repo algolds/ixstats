@@ -3,8 +3,8 @@
 
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { unifiedFlagService } from '~/lib/unified-flag-service';
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { unifiedFlagService } from "~/lib/unified-flag-service";
 
 // Single flag hook result
 export interface UseFlagResult {
@@ -34,7 +34,7 @@ export interface UseFlagPreloaderResult {
 
 /**
  * Hook for loading a single flag
- * 
+ *
  * @param countryName - The name of the country
  * @returns Flag data and loading state
  */
@@ -68,7 +68,7 @@ export function useFlag(countryName?: string): UseFlagResult {
 
         // Fetch if not cached
         const url = await unifiedFlagService.getFlagUrl(countryName);
-        
+
         if (mounted) {
           setFlagUrl(url);
           setIsLoading(false);
@@ -78,7 +78,7 @@ export function useFlag(countryName?: string): UseFlagResult {
         if (mounted) {
           setError(true);
           setIsLoading(false);
-          setFlagUrl('/placeholder-flag.svg');
+          setFlagUrl("/placeholder-flag.svg");
         }
       }
     };
@@ -90,7 +90,7 @@ export function useFlag(countryName?: string): UseFlagResult {
     };
   }, [countryName]);
 
-  const isLocal = flagUrl ? unifiedFlagService.hasLocalFlag(countryName || '') : false;
+  const isLocal = flagUrl ? unifiedFlagService.hasLocalFlag(countryName || "") : false;
   const isPlaceholder = flagUrl ? unifiedFlagService.isPlaceholderFlag(flagUrl) : false;
 
   return {
@@ -104,18 +104,21 @@ export function useFlag(countryName?: string): UseFlagResult {
 
 /**
  * Hook for loading multiple flags efficiently
- * 
+ *
  * @param countryNames - Array of country names
  * @returns Bulk flag data and loading state
  */
-export function useBulkFlags(countryNames: string[], source: 'irl' | 'wiki' = 'wiki'): UseBulkFlagsResult {
+export function useBulkFlags(
+  countryNames: string[],
+  source: "irl" | "wiki" = "wiki"
+): UseBulkFlagsResult {
   const [flagUrls, setFlagUrls] = useState<Record<string, string | null>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Create a stable key for the country names to prevent unnecessary re-renders
   const countryNamesKey = useMemo(() => {
-    return countryNames.sort().join(',');
+    return countryNames.sort().join(",");
   }, [countryNames]);
 
   // Memoize the country names array to prevent unnecessary re-renders
@@ -124,60 +127,62 @@ export function useBulkFlags(countryNames: string[], source: 'irl' | 'wiki' = 'w
   }, [countryNamesKey]);
 
   // Main fetch function
-  const fetchFlags = useCallback(async (forceRefetch = false) => {
-    if (memoizedCountryNames.length === 0) {
-      setFlagUrls({});
-      return;
-    }
+  const fetchFlags = useCallback(
+    async (forceRefetch = false) => {
+      if (memoizedCountryNames.length === 0) {
+        setFlagUrls({});
+        return;
+      }
 
-    setIsLoading(true);
-    setError(null);
+      setIsLoading(true);
+      setError(null);
 
-    try {
-      // Step 1: Get all cached flags immediately (unless force refetching)
-      const cachedFlags: Record<string, string | null> = {};
-      const uncachedCountries: string[] = [];
-      
-      if (!forceRefetch) {
-        for (const countryName of memoizedCountryNames) {
-          const cachedFlag = unifiedFlagService.getCachedFlagUrl(countryName);
-          if (cachedFlag) {
-            cachedFlags[countryName] = cachedFlag;
-          } else {
-            uncachedCountries.push(countryName);
+      try {
+        // Step 1: Get all cached flags immediately (unless force refetching)
+        const cachedFlags: Record<string, string | null> = {};
+        const uncachedCountries: string[] = [];
+
+        if (!forceRefetch) {
+          for (const countryName of memoizedCountryNames) {
+            const cachedFlag = unifiedFlagService.getCachedFlagUrl(countryName);
+            if (cachedFlag) {
+              cachedFlags[countryName] = cachedFlag;
+            } else {
+              uncachedCountries.push(countryName);
+            }
           }
+
+          // Set cached flags immediately for instant display
+          setFlagUrls(cachedFlags);
+        } else {
+          uncachedCountries.push(...memoizedCountryNames);
         }
-        
-        // Set cached flags immediately for instant display
-        setFlagUrls(cachedFlags);
-      } else {
-        uncachedCountries.push(...memoizedCountryNames);
+
+        // Step 2: Batch fetch uncached flags only if needed
+        if (uncachedCountries.length > 0) {
+          const fetchedFlags = await unifiedFlagService.batchGetFlags(uncachedCountries);
+
+          // Merge cached and fetched flags
+          const finalFlags = { ...cachedFlags, ...fetchedFlags };
+          setFlagUrls(finalFlags);
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        setError(errorMessage);
+        console.error("[useBulkFlags] Fetch failed:", error);
+
+        // Set placeholder URLs for all countries on error
+        const placeholderFlags: Record<string, string | null> = {};
+        memoizedCountryNames.forEach((country) => {
+          placeholderFlags[country] = "/placeholder-flag.svg";
+        });
+        setFlagUrls(placeholderFlags);
+      } finally {
+        setIsLoading(false);
       }
-      
-      // Step 2: Batch fetch uncached flags only if needed
-      if (uncachedCountries.length > 0) {
-        
-        const fetchedFlags = await unifiedFlagService.batchGetFlags(uncachedCountries);
-        
-        // Merge cached and fetched flags
-        const finalFlags = { ...cachedFlags, ...fetchedFlags };
-        setFlagUrls(finalFlags);
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      setError(errorMessage);
-      console.error('[useBulkFlags] Fetch failed:', error);
-      
-      // Set placeholder URLs for all countries on error
-      const placeholderFlags: Record<string, string | null> = {};
-      memoizedCountryNames.forEach(country => {
-        placeholderFlags[country] = '/placeholder-flag.svg';
-      });
-      setFlagUrls(placeholderFlags);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [memoizedCountryNames, source]);
+    },
+    [memoizedCountryNames, source]
+  );
 
   // Initial fetch
   useEffect(() => {
@@ -191,15 +196,15 @@ export function useBulkFlags(countryNames: string[], source: 'irl' | 'wiki' = 'w
 
   // Calculate statistics
   const localCount = useMemo(() => {
-    return Object.values(flagUrls).filter(url => 
-      url && unifiedFlagService.hasLocalFlag(url.replace('/public/flags', '').split('.')[0] || '')
+    return Object.values(flagUrls).filter(
+      (url) =>
+        url && unifiedFlagService.hasLocalFlag(url.replace("/public/flags", "").split(".")[0] || "")
     ).length;
   }, [flagUrls]);
 
   const placeholderCount = useMemo(() => {
-    return Object.values(flagUrls).filter(url => 
-      url && unifiedFlagService.isPlaceholderFlag(url)
-    ).length;
+    return Object.values(flagUrls).filter((url) => url && unifiedFlagService.isPlaceholderFlag(url))
+      .length;
   }, [flagUrls]);
 
   return {
@@ -214,33 +219,35 @@ export function useBulkFlags(countryNames: string[], source: 'irl' | 'wiki' = 'w
 
 /**
  * Hook for preloading flags in the background
- * 
+ *
  * @returns Preloader functions and state
  */
 export function useFlagPreloader(): UseFlagPreloaderResult {
   const [isPreloading, setIsPreloading] = useState(false);
   const [preloadedCount, setPreloadedCount] = useState(0);
 
-  const preloadFlags = useCallback(async (countryNames: string[]) => {
-    if (countryNames.length === 0 || isPreloading) {
-      return;
-    }
+  const preloadFlags = useCallback(
+    async (countryNames: string[]) => {
+      if (countryNames.length === 0 || isPreloading) {
+        return;
+      }
 
-    setIsPreloading(true);
-    setPreloadedCount(0);
+      setIsPreloading(true);
+      setPreloadedCount(0);
 
-    try {
-      
-      // Initialize the flag service with these countries (will trigger background downloading)
-      unifiedFlagService.prefetchFlags(countryNames);
-      
-      setPreloadedCount(countryNames.length);
-    } catch (error) {
-      console.error('[useFlagPreloader] Preloading failed:', error);
-    } finally {
-      setIsPreloading(false);
-    }
-  }, [isPreloading]);
+      try {
+        // Initialize the flag service with these countries (will trigger background downloading)
+        unifiedFlagService.prefetchFlags(countryNames);
+
+        setPreloadedCount(countryNames.length);
+      } catch (error) {
+        console.error("[useFlagPreloader] Preloading failed:", error);
+      } finally {
+        setIsPreloading(false);
+      }
+    },
+    [isPreloading]
+  );
 
   return {
     preloadFlags,
@@ -260,7 +267,7 @@ export function useFlagServiceStats() {
     setIsRefreshing(true);
     try {
       // Small delay to allow for any pending operations
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
       setStats(unifiedFlagService.getStats());
     } finally {
       setIsRefreshing(false);

@@ -1,16 +1,22 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { Progress } from '~/components/ui/progress';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
-import { Input } from '~/components/ui/input';
-import { Label } from '~/components/ui/label';
-import { Slider } from '~/components/ui/slider';
+import React, { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Progress } from "~/components/ui/progress";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Slider } from "~/components/ui/slider";
 import {
   DollarSign,
   TrendingUp,
@@ -34,22 +40,22 @@ import {
   ArrowUp,
   ArrowDown,
   Equal,
-  Info
-} from 'lucide-react';
-import { BlurFade } from '~/components/magicui/blur-fade';
-import { ProgressiveBlur } from '~/components/ui/progressive-blur';
+  Info,
+} from "lucide-react";
+import { BlurFade } from "~/components/magicui/blur-fade";
+import { ProgressiveBlur } from "~/components/ui/progressive-blur";
 
 // Advanced Budget Types
 interface BudgetCategory {
   id: string;
   name: string;
-  type: 'MANDATORY' | 'DISCRETIONARY' | 'EMERGENCY';
+  type: "MANDATORY" | "DISCRETIONARY" | "EMERGENCY";
   allocatedAmount: number;
   allocatedPercent: number;
   spentAmount: number;
   encumberedAmount: number;
   availableAmount: number;
-  priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  priority: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
   department: string;
   color: string;
   icon: string;
@@ -65,16 +71,16 @@ interface BudgetScenario {
   totalBudget: number;
   categories: BudgetCategory[];
   assumptions: string[];
-  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  riskLevel: "LOW" | "MEDIUM" | "HIGH";
   feasibility: number;
 }
 
 interface FiscalPolicy {
   id: string;
   name: string;
-  type: 'TAX_POLICY' | 'SPENDING_POLICY' | 'DEBT_POLICY';
+  type: "TAX_POLICY" | "SPENDING_POLICY" | "DEBT_POLICY";
   impact: number;
-  implementation: 'IMMEDIATE' | 'SHORT_TERM' | 'LONG_TERM';
+  implementation: "IMMEDIATE" | "SHORT_TERM" | "LONG_TERM";
   cost: number;
   benefits: number;
   description: string;
@@ -96,89 +102,97 @@ interface AdvancedBudgetDashboardProps {
 // Sample Data for Advanced Features
 const sampleScenarios: BudgetScenario[] = [
   {
-    id: 'austere',
-    name: 'Fiscal Austerity',
-    description: 'Reduced spending across non-essential categories to balance budget',
+    id: "austere",
+    name: "Fiscal Austerity",
+    description: "Reduced spending across non-essential categories to balance budget",
     totalBudget: 800000000,
-    riskLevel: 'HIGH',
+    riskLevel: "HIGH",
     feasibility: 75,
     assumptions: [
-      'Economic downturn requires spending cuts',
-      'Public services may be reduced',
-      'Tax revenue remains stable'
+      "Economic downturn requires spending cuts",
+      "Public services may be reduced",
+      "Tax revenue remains stable",
     ],
-    categories: []
+    categories: [],
   },
   {
-    id: 'expansion',
-    name: 'Economic Expansion',
-    description: 'Increased spending to stimulate growth and development',
+    id: "expansion",
+    name: "Economic Expansion",
+    description: "Increased spending to stimulate growth and development",
     totalBudget: 1200000000,
-    riskLevel: 'MEDIUM',
+    riskLevel: "MEDIUM",
     feasibility: 80,
     assumptions: [
-      'Economic growth will increase tax revenue',
-      'Infrastructure investment will pay dividends',
-      'Moderate deficit financing acceptable'
+      "Economic growth will increase tax revenue",
+      "Infrastructure investment will pay dividends",
+      "Moderate deficit financing acceptable",
     ],
-    categories: []
+    categories: [],
   },
   {
-    id: 'balanced',
-    name: 'Balanced Approach',
-    description: 'Moderate spending with focus on efficiency and priorities',
+    id: "balanced",
+    name: "Balanced Approach",
+    description: "Moderate spending with focus on efficiency and priorities",
     totalBudget: 1000000000,
-    riskLevel: 'LOW',
+    riskLevel: "LOW",
     feasibility: 90,
     assumptions: [
-      'Steady economic conditions',
-      'Balanced fiscal position maintained',
-      'Focus on high-impact spending'
+      "Steady economic conditions",
+      "Balanced fiscal position maintained",
+      "Focus on high-impact spending",
     ],
-    categories: []
-  }
+    categories: [],
+  },
 ];
 
 const samplePolicies: FiscalPolicy[] = [
   {
-    id: 'tax_reform',
-    name: 'Progressive Tax Reform',
-    type: 'TAX_POLICY',
+    id: "tax_reform",
+    name: "Progressive Tax Reform",
+    type: "TAX_POLICY",
     impact: 15,
-    implementation: 'LONG_TERM',
+    implementation: "LONG_TERM",
     cost: 50000000,
     benefits: 120000000,
-    description: 'Reform tax system to be more progressive and efficient'
+    description: "Reform tax system to be more progressive and efficient",
   },
   {
-    id: 'infrastructure_boost',
-    name: 'Infrastructure Investment',
-    type: 'SPENDING_POLICY',
+    id: "infrastructure_boost",
+    name: "Infrastructure Investment",
+    type: "SPENDING_POLICY",
     impact: 25,
-    implementation: 'SHORT_TERM',
+    implementation: "SHORT_TERM",
     cost: 200000000,
     benefits: 300000000,
-    description: 'Major investment in roads, bridges, and digital infrastructure'
+    description: "Major investment in roads, bridges, and digital infrastructure",
   },
   {
-    id: 'debt_consolidation',
-    name: 'Debt Consolidation',
-    type: 'DEBT_POLICY',
+    id: "debt_consolidation",
+    name: "Debt Consolidation",
+    type: "DEBT_POLICY",
     impact: 10,
-    implementation: 'IMMEDIATE',
+    implementation: "IMMEDIATE",
     cost: 30000000,
     benefits: 80000000,
-    description: 'Consolidate and refinance existing debt at lower rates'
-  }
+    description: "Consolidate and refinance existing debt at lower rates",
+  },
 ];
 
 const iconMap: Record<string, any> = {
-  Shield, Users, GraduationCap, Heart, Briefcase, Gavel, Building2, Globe, Settings
+  Shield,
+  Users,
+  GraduationCap,
+  Heart,
+  Briefcase,
+  Gavel,
+  Building2,
+  Globe,
+  Settings,
 };
 
 export function AdvancedBudgetDashboard({
   totalBudget,
-  currency = 'USD',
+  currency = "USD",
   fiscalYear = new Date().getFullYear(),
   budgetCategories,
   scenarios = sampleScenarios,
@@ -186,11 +200,13 @@ export function AdvancedBudgetDashboard({
   onBudgetChange,
   onScenarioApply,
   onPolicyApply,
-  isReadOnly = false
+  isReadOnly = false,
 }: AdvancedBudgetDashboardProps) {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [selectedScenario, setSelectedScenario] = useState<string>('');
-  const [budgetOptimization, setBudgetOptimization] = useState<'EFFICIENCY' | 'GROWTH' | 'STABILITY'>('EFFICIENCY');
+  const [activeTab, setActiveTab] = useState("overview");
+  const [selectedScenario, setSelectedScenario] = useState<string>("");
+  const [budgetOptimization, setBudgetOptimization] = useState<
+    "EFFICIENCY" | "GROWTH" | "STABILITY"
+  >("EFFICIENCY");
   const [showAdvancedMetrics, setShowAdvancedMetrics] = useState(false);
 
   // Budget Analytics
@@ -199,12 +215,16 @@ export function AdvancedBudgetDashboard({
     const totalSpent = budgetCategories.reduce((sum, cat) => sum + cat.spentAmount, 0);
     const totalAvailable = budgetCategories.reduce((sum, cat) => sum + cat.availableAmount, 0);
     const totalEncumbered = budgetCategories.reduce((sum, cat) => sum + cat.encumberedAmount, 0);
-    
+
     const budgetUtilization = totalAllocated > 0 ? (totalSpent / totalAllocated) * 100 : 0;
     const budgetBalance = totalBudget - totalAllocated;
-    const efficiencyScore = budgetCategories.reduce((sum, cat) => sum + (cat.efficiency || 0), 0) / budgetCategories.length;
-    const performanceScore = budgetCategories.reduce((sum, cat) => sum + (cat.performance || 0), 0) / budgetCategories.length;
-    
+    const efficiencyScore =
+      budgetCategories.reduce((sum, cat) => sum + (cat.efficiency || 0), 0) /
+      budgetCategories.length;
+    const performanceScore =
+      budgetCategories.reduce((sum, cat) => sum + (cat.performance || 0), 0) /
+      budgetCategories.length;
+
     return {
       totalAllocated,
       totalSpent,
@@ -214,57 +234,72 @@ export function AdvancedBudgetDashboard({
       budgetBalance,
       efficiencyScore,
       performanceScore,
-      allocationRate: (totalAllocated / totalBudget) * 100
+      allocationRate: (totalAllocated / totalBudget) * 100,
     };
   }, [budgetCategories, totalBudget]);
 
   // Risk Assessment
   const riskAssessment = useMemo(() => {
-    const overBudgetCategories = budgetCategories.filter(cat => cat.spentAmount > cat.allocatedAmount);
-    const criticalCategories = budgetCategories.filter(cat => cat.priority === 'CRITICAL' && cat.availableAmount < cat.allocatedAmount * 0.1);
-    const underperformingCategories = budgetCategories.filter(cat => (cat.performance || 0) < 70);
-    
-    let riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' = 'LOW';
-    if (overBudgetCategories.length > budgetCategories.length * 0.3 || criticalCategories.length > 0) {
-      riskLevel = 'HIGH';
+    const overBudgetCategories = budgetCategories.filter(
+      (cat) => cat.spentAmount > cat.allocatedAmount
+    );
+    const criticalCategories = budgetCategories.filter(
+      (cat) => cat.priority === "CRITICAL" && cat.availableAmount < cat.allocatedAmount * 0.1
+    );
+    const underperformingCategories = budgetCategories.filter((cat) => (cat.performance || 0) < 70);
+
+    let riskLevel: "LOW" | "MEDIUM" | "HIGH" = "LOW";
+    if (
+      overBudgetCategories.length > budgetCategories.length * 0.3 ||
+      criticalCategories.length > 0
+    ) {
+      riskLevel = "HIGH";
     } else if (overBudgetCategories.length > budgetCategories.length * 0.1) {
-      riskLevel = 'MEDIUM';
+      riskLevel = "MEDIUM";
     }
-    
+
     return {
       riskLevel,
       overBudgetCategories,
       criticalCategories,
       underperformingCategories,
       recommendations: [
-        ...(overBudgetCategories.length > 0 ? ['Review over-budget categories for cost control measures'] : []),
-        ...(criticalCategories.length > 0 ? ['Immediate attention needed for critical underfunded areas'] : []),
-        ...(budgetAnalytics.budgetBalance < 0 ? ['Budget exceeds available funds - reallocation required'] : []),
-        ...(budgetAnalytics.efficiencyScore < 70 ? ['Focus on efficiency improvements across departments'] : [])
-      ]
+        ...(overBudgetCategories.length > 0
+          ? ["Review over-budget categories for cost control measures"]
+          : []),
+        ...(criticalCategories.length > 0
+          ? ["Immediate attention needed for critical underfunded areas"]
+          : []),
+        ...(budgetAnalytics.budgetBalance < 0
+          ? ["Budget exceeds available funds - reallocation required"]
+          : []),
+        ...(budgetAnalytics.efficiencyScore < 70
+          ? ["Focus on efficiency improvements across departments"]
+          : []),
+      ],
     };
   }, [budgetCategories, budgetAnalytics]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
       currency: currency,
-      notation: 'compact',
-      maximumFractionDigits: 1
+      notation: "compact",
+      maximumFractionDigits: 1,
     }).format(amount);
   };
 
   const handleCategoryUpdate = (categoryId: string, updates: Partial<BudgetCategory>) => {
     if (isReadOnly || !onBudgetChange) return;
-    
-    const updatedCategories = budgetCategories.map(cat => 
+
+    const updatedCategories = budgetCategories.map((cat) =>
       cat.id === categoryId ? { ...cat, ...updates } : cat
     );
     onBudgetChange(updatedCategories);
   };
 
   const handleScenarioApply = (scenarioId: string) => {
-    const scenario = scenarios.find(s => s.id === scenarioId);
+    const scenario = scenarios.find((s) => s.id === scenarioId);
     if (scenario && onScenarioApply) {
       onScenarioApply(scenario);
     }
@@ -280,9 +315,12 @@ export function AdvancedBudgetDashboard({
             Fiscal Year {fiscalYear} • Total Budget: {formatCurrency(totalBudget)}
           </p>
         </div>
-        
+
         <div className="flex items-center gap-4">
-          <Select value={budgetOptimization} onValueChange={(value) => setBudgetOptimization(value as any)}>
+          <Select
+            value={budgetOptimization}
+            onValueChange={(value) => setBudgetOptimization(value as any)}
+          >
             <SelectTrigger className="w-40">
               <SelectValue />
             </SelectTrigger>
@@ -292,39 +330,45 @@ export function AdvancedBudgetDashboard({
               <SelectItem value="STABILITY">Stability Focus</SelectItem>
             </SelectContent>
           </Select>
-          
-          <Button
-            variant="outline"
-            onClick={() => setShowAdvancedMetrics(!showAdvancedMetrics)}
-          >
-            {showAdvancedMetrics ? 'Basic View' : 'Advanced Metrics'}
+
+          <Button variant="outline" onClick={() => setShowAdvancedMetrics(!showAdvancedMetrics)}>
+            {showAdvancedMetrics ? "Basic View" : "Advanced Metrics"}
           </Button>
         </div>
       </div>
 
       {/* Key Performance Indicators */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Budget Utilization</p>
-                <p className="text-2xl font-bold">{budgetAnalytics.budgetUtilization.toFixed(1)}%</p>
+                <p className="text-muted-foreground text-sm">Budget Utilization</p>
+                <p className="text-2xl font-bold">
+                  {budgetAnalytics.budgetUtilization.toFixed(1)}%
+                </p>
               </div>
-              <div className={`p-2 rounded-lg ${
-                budgetAnalytics.budgetUtilization > 90 ? 'bg-red-100' :
-                budgetAnalytics.budgetUtilization > 75 ? 'bg-yellow-100' : 'bg-green-100'
-              }`}>
-                <Calculator className={`h-5 w-5 ${
-                  budgetAnalytics.budgetUtilization > 90 ? 'text-red-600' :
-                  budgetAnalytics.budgetUtilization > 75 ? 'text-yellow-600' : 'text-green-600'
-                }`} />
+              <div
+                className={`rounded-lg p-2 ${
+                  budgetAnalytics.budgetUtilization > 90
+                    ? "bg-red-100"
+                    : budgetAnalytics.budgetUtilization > 75
+                      ? "bg-yellow-100"
+                      : "bg-green-100"
+                }`}
+              >
+                <Calculator
+                  className={`h-5 w-5 ${
+                    budgetAnalytics.budgetUtilization > 90
+                      ? "text-red-600"
+                      : budgetAnalytics.budgetUtilization > 75
+                        ? "text-yellow-600"
+                        : "text-green-600"
+                  }`}
+                />
               </div>
             </div>
-            <Progress 
-              value={budgetAnalytics.budgetUtilization} 
-              className="mt-2"
-            />
+            <Progress value={budgetAnalytics.budgetUtilization} className="mt-2" />
           </CardContent>
         </Card>
 
@@ -332,16 +376,21 @@ export function AdvancedBudgetDashboard({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Budget Balance</p>
-                <p className={`text-2xl font-bold ${budgetAnalytics.budgetBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <p className="text-muted-foreground text-sm">Budget Balance</p>
+                <p
+                  className={`text-2xl font-bold ${budgetAnalytics.budgetBalance >= 0 ? "text-green-600" : "text-red-600"}`}
+                >
                   {formatCurrency(budgetAnalytics.budgetBalance)}
                 </p>
               </div>
-              <div className={`p-2 rounded-lg ${budgetAnalytics.budgetBalance >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
-                {budgetAnalytics.budgetBalance >= 0 ? 
-                  <TrendingUp className="h-5 w-5 text-green-600" /> :
+              <div
+                className={`rounded-lg p-2 ${budgetAnalytics.budgetBalance >= 0 ? "bg-green-100" : "bg-red-100"}`}
+              >
+                {budgetAnalytics.budgetBalance >= 0 ? (
+                  <TrendingUp className="h-5 w-5 text-green-600" />
+                ) : (
                   <TrendingDown className="h-5 w-5 text-red-600" />
-                }
+                )}
               </div>
             </div>
           </CardContent>
@@ -351,17 +400,27 @@ export function AdvancedBudgetDashboard({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Efficiency Score</p>
+                <p className="text-muted-foreground text-sm">Efficiency Score</p>
                 <p className="text-2xl font-bold">{budgetAnalytics.efficiencyScore.toFixed(0)}%</p>
               </div>
-              <div className={`p-2 rounded-lg ${
-                budgetAnalytics.efficiencyScore >= 80 ? 'bg-green-100' :
-                budgetAnalytics.efficiencyScore >= 60 ? 'bg-yellow-100' : 'bg-red-100'
-              }`}>
-                <Zap className={`h-5 w-5 ${
-                  budgetAnalytics.efficiencyScore >= 80 ? 'text-green-600' :
-                  budgetAnalytics.efficiencyScore >= 60 ? 'text-yellow-600' : 'text-red-600'
-                }`} />
+              <div
+                className={`rounded-lg p-2 ${
+                  budgetAnalytics.efficiencyScore >= 80
+                    ? "bg-green-100"
+                    : budgetAnalytics.efficiencyScore >= 60
+                      ? "bg-yellow-100"
+                      : "bg-red-100"
+                }`}
+              >
+                <Zap
+                  className={`h-5 w-5 ${
+                    budgetAnalytics.efficiencyScore >= 80
+                      ? "text-green-600"
+                      : budgetAnalytics.efficiencyScore >= 60
+                        ? "text-yellow-600"
+                        : "text-red-600"
+                  }`}
+                />
               </div>
             </div>
           </CardContent>
@@ -371,22 +430,37 @@ export function AdvancedBudgetDashboard({
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Risk Level</p>
-                <p className={`text-xl font-bold ${
-                  riskAssessment.riskLevel === 'LOW' ? 'text-green-600' :
-                  riskAssessment.riskLevel === 'MEDIUM' ? 'text-yellow-600' : 'text-red-600'
-                }`}>
+                <p className="text-muted-foreground text-sm">Risk Level</p>
+                <p
+                  className={`text-xl font-bold ${
+                    riskAssessment.riskLevel === "LOW"
+                      ? "text-green-600"
+                      : riskAssessment.riskLevel === "MEDIUM"
+                        ? "text-yellow-600"
+                        : "text-red-600"
+                  }`}
+                >
                   {riskAssessment.riskLevel}
                 </p>
               </div>
-              <div className={`p-2 rounded-lg ${
-                riskAssessment.riskLevel === 'LOW' ? 'bg-green-100' :
-                riskAssessment.riskLevel === 'MEDIUM' ? 'bg-yellow-100' : 'bg-red-100'
-              }`}>
-                <Shield className={`h-5 w-5 ${
-                  riskAssessment.riskLevel === 'LOW' ? 'text-green-600' :
-                  riskAssessment.riskLevel === 'MEDIUM' ? 'text-yellow-600' : 'text-red-600'
-                }`} />
+              <div
+                className={`rounded-lg p-2 ${
+                  riskAssessment.riskLevel === "LOW"
+                    ? "bg-green-100"
+                    : riskAssessment.riskLevel === "MEDIUM"
+                      ? "bg-yellow-100"
+                      : "bg-red-100"
+                }`}
+              >
+                <Shield
+                  className={`h-5 w-5 ${
+                    riskAssessment.riskLevel === "LOW"
+                      ? "text-green-600"
+                      : riskAssessment.riskLevel === "MEDIUM"
+                        ? "text-yellow-600"
+                        : "text-red-600"
+                  }`}
+                />
               </div>
             </div>
           </CardContent>
@@ -395,15 +469,20 @@ export function AdvancedBudgetDashboard({
 
       {/* Risk Assessment Alert */}
       {riskAssessment.recommendations.length > 0 && (
-        <Alert className={`${
-          riskAssessment.riskLevel === 'HIGH' ? 'border-red-500 bg-red-50' :
-          riskAssessment.riskLevel === 'MEDIUM' ? 'border-yellow-500 bg-yellow-50' : 'border-blue-500 bg-blue-50'
-        }`}>
+        <Alert
+          className={`${
+            riskAssessment.riskLevel === "HIGH"
+              ? "border-red-500 bg-red-50"
+              : riskAssessment.riskLevel === "MEDIUM"
+                ? "border-yellow-500 bg-yellow-50"
+                : "border-blue-500 bg-blue-50"
+          }`}
+        >
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             <div className="space-y-2">
               <p className="font-medium">Budget Analysis Recommendations:</p>
-              <ul className="text-sm space-y-1">
+              <ul className="space-y-1 text-sm">
                 {riskAssessment.recommendations.map((rec, index) => (
                   <li key={index}>• {rec}</li>
                 ))}
@@ -425,7 +504,7 @@ export function AdvancedBudgetDashboard({
 
         <TabsContent value="overview" className="space-y-6">
           {/* Budget Allocation Overview */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -435,26 +514,33 @@ export function AdvancedBudgetDashboard({
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {budgetCategories.slice(0, 6).map(category => {
+                  {budgetCategories.slice(0, 6).map((category) => {
                     const IconComponent = iconMap[category.icon] || Building2;
                     return (
                       <div key={category.id} className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div 
-                            className="p-2 rounded-lg"
-                            style={{ backgroundColor: category.color + '20', color: category.color }}
+                          <div
+                            className="rounded-lg p-2"
+                            style={{
+                              backgroundColor: category.color + "20",
+                              color: category.color,
+                            }}
                           >
                             <IconComponent className="h-4 w-4" />
                           </div>
                           <div>
-                            <p className="font-medium text-sm">{category.name}</p>
-                            <p className="text-xs text-muted-foreground">{category.department}</p>
+                            <p className="text-sm font-medium">{category.name}</p>
+                            <p className="text-muted-foreground text-xs">{category.department}</p>
                           </div>
                         </div>
-                        
+
                         <div className="text-right">
-                          <p className="font-medium text-sm">{formatCurrency(category.allocatedAmount)}</p>
-                          <p className="text-xs text-muted-foreground">{category.allocatedPercent.toFixed(1)}%</p>
+                          <p className="text-sm font-medium">
+                            {formatCurrency(category.allocatedAmount)}
+                          </p>
+                          <p className="text-muted-foreground text-xs">
+                            {category.allocatedPercent.toFixed(1)}%
+                          </p>
                         </div>
                       </div>
                     );
@@ -472,23 +558,23 @@ export function AdvancedBudgetDashboard({
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {budgetCategories.slice(0, 6).map(category => {
-                    const spendingRate = category.allocatedAmount > 0 ?
-                      Math.min(100, (category.spentAmount / category.allocatedAmount) * 100) : 0;
-                    const safeSpendingRate = isNaN(spendingRate) || !isFinite(spendingRate) ? 0 : spendingRate;
+                  {budgetCategories.slice(0, 6).map((category) => {
+                    const spendingRate =
+                      category.allocatedAmount > 0
+                        ? Math.min(100, (category.spentAmount / category.allocatedAmount) * 100)
+                        : 0;
+                    const safeSpendingRate =
+                      isNaN(spendingRate) || !isFinite(spendingRate) ? 0 : spendingRate;
 
                     return (
                       <div key={category.id} className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium">{category.name}</span>
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-muted-foreground text-sm">
                             {safeSpendingRate.toFixed(1)}%
                           </span>
                         </div>
-                        <Progress
-                          value={safeSpendingRate}
-                          className="h-2"
-                        />
+                        <Progress value={safeSpendingRate} className="h-2" />
                       </div>
                     );
                   })}
@@ -503,29 +589,29 @@ export function AdvancedBudgetDashboard({
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button 
-                  variant="outline" 
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <Button
+                  variant="outline"
                   className="justify-start"
-                  onClick={() => setActiveTab('scenarios')}
+                  onClick={() => setActiveTab("scenarios")}
                 >
-                  <Target className="h-4 w-4 mr-2" />
+                  <Target className="mr-2 h-4 w-4" />
                   Apply Budget Scenario
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="justify-start"
-                  onClick={() => setActiveTab('policies')}
+                  onClick={() => setActiveTab("policies")}
                 >
-                  <Settings className="h-4 w-4 mr-2" />
+                  <Settings className="mr-2 h-4 w-4" />
                   Review Fiscal Policies
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="justify-start"
-                  onClick={() => setActiveTab('analytics')}
+                  onClick={() => setActiveTab("analytics")}
                 >
-                  <TrendingUp className="h-4 w-4 mr-2" />
+                  <TrendingUp className="mr-2 h-4 w-4" />
                   View Analytics
                 </Button>
               </div>
@@ -536,120 +622,156 @@ export function AdvancedBudgetDashboard({
         <TabsContent value="categories" className="space-y-6">
           {/* Category Management */}
           <div className="space-y-4">
-            {budgetCategories.map(category => {
-              const spendingRate = category.allocatedAmount > 0 ?
-                Math.min(100, (category.spentAmount / category.allocatedAmount) * 100) : 0;
-              const safeSpendingRate = isNaN(spendingRate) || !isFinite(spendingRate) ? 0 : spendingRate;
+            {budgetCategories.map((category) => {
+              const spendingRate =
+                category.allocatedAmount > 0
+                  ? Math.min(100, (category.spentAmount / category.allocatedAmount) * 100)
+                  : 0;
+              const safeSpendingRate =
+                isNaN(spendingRate) || !isFinite(spendingRate) ? 0 : spendingRate;
               const IconComponent = iconMap[category.icon] || Building2;
-              
+
               return (
                 <Card key={category.id}>
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div 
-                          className="p-2 rounded-lg"
-                          style={{ backgroundColor: category.color + '20', color: category.color }}
+                        <div
+                          className="rounded-lg p-2"
+                          style={{ backgroundColor: category.color + "20", color: category.color }}
                         >
                           <IconComponent className="h-5 w-5" />
                         </div>
                         <div>
                           <CardTitle className="text-lg">{category.name}</CardTitle>
-                          <p className="text-sm text-muted-foreground">{category.department}</p>
+                          <p className="text-muted-foreground text-sm">{category.department}</p>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-4">
-                        <Badge variant={
-                          category.priority === 'CRITICAL' ? 'destructive' :
-                          category.priority === 'HIGH' ? 'default' : 'secondary'
-                        }>
+                        <Badge
+                          variant={
+                            category.priority === "CRITICAL"
+                              ? "destructive"
+                              : category.priority === "HIGH"
+                                ? "default"
+                                : "secondary"
+                          }
+                        >
                           {category.priority}
                         </Badge>
-                        
-                        <Badge variant="outline">
-                          {category.type}
-                        </Badge>
+
+                        <Badge variant="outline">{category.type}</Badge>
                       </div>
                     </div>
                   </CardHeader>
-                  
+
                   <CardContent>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                       {/* Budget Allocation */}
                       <div className="space-y-4">
                         <h4 className="font-medium">Budget Allocation</h4>
-                        
+
                         <div className="space-y-3">
                           <div className="flex justify-between text-sm">
                             <span>Allocated:</span>
-                            <span className="font-medium">{formatCurrency(category.allocatedAmount)}</span>
+                            <span className="font-medium">
+                              {formatCurrency(category.allocatedAmount)}
+                            </span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span>Spent:</span>
-                            <span className="font-medium">{formatCurrency(category.spentAmount)}</span>
+                            <span className="font-medium">
+                              {formatCurrency(category.spentAmount)}
+                            </span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span>Available:</span>
-                            <span className="font-medium text-green-600">{formatCurrency(category.availableAmount)}</span>
+                            <span className="font-medium text-green-600">
+                              {formatCurrency(category.availableAmount)}
+                            </span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span>Encumbered:</span>
-                            <span className="font-medium text-yellow-600">{formatCurrency(category.encumberedAmount)}</span>
+                            <span className="font-medium text-yellow-600">
+                              {formatCurrency(category.encumberedAmount)}
+                            </span>
                           </div>
                         </div>
-                        
+
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
                             <span>Spending Rate:</span>
-                            <span className={`font-medium ${
-                              safeSpendingRate > 100 ? 'text-red-600' :
-                              safeSpendingRate > 85 ? 'text-yellow-600' : 'text-green-600'
-                            }`}>
+                            <span
+                              className={`font-medium ${
+                                safeSpendingRate > 100
+                                  ? "text-red-600"
+                                  : safeSpendingRate > 85
+                                    ? "text-yellow-600"
+                                    : "text-green-600"
+                              }`}
+                            >
                               {safeSpendingRate.toFixed(1)}%
                             </span>
                           </div>
                           <Progress value={safeSpendingRate} />
                         </div>
                       </div>
-                      
+
                       {/* Performance Metrics */}
                       {showAdvancedMetrics && (
                         <div className="space-y-4">
                           <h4 className="font-medium">Performance Metrics</h4>
-                          
+
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
                               <span className="text-sm">Efficiency Score:</span>
                               <div className="flex items-center gap-2">
-                                <Progress value={Math.min(100, Math.max(0, category.efficiency || 0))} className="w-16" />
-                                <span className="text-sm font-medium">{category.efficiency || 0}%</span>
+                                <Progress
+                                  value={Math.min(100, Math.max(0, category.efficiency || 0))}
+                                  className="w-16"
+                                />
+                                <span className="text-sm font-medium">
+                                  {category.efficiency || 0}%
+                                </span>
                               </div>
                             </div>
 
                             <div className="flex items-center justify-between">
                               <span className="text-sm">Performance Score:</span>
                               <div className="flex items-center gap-2">
-                                <Progress value={Math.min(100, Math.max(0, category.performance || 0))} className="w-16" />
-                                <span className="text-sm font-medium">{category.performance || 0}%</span>
+                                <Progress
+                                  value={Math.min(100, Math.max(0, category.performance || 0))}
+                                  className="w-16"
+                                />
+                                <span className="text-sm font-medium">
+                                  {category.performance || 0}%
+                                </span>
                               </div>
                             </div>
-                            
+
                             {category.growthRate && (
                               <div className="flex items-center justify-between">
                                 <span className="text-sm">Growth Rate:</span>
                                 <div className="flex items-center gap-1">
-                                  {category.growthRate > 0 ? 
-                                    <ArrowUp className="h-3 w-3 text-green-600" /> :
-                                    category.growthRate < 0 ?
-                                    <ArrowDown className="h-3 w-3 text-red-600" /> :
+                                  {category.growthRate > 0 ? (
+                                    <ArrowUp className="h-3 w-3 text-green-600" />
+                                  ) : category.growthRate < 0 ? (
+                                    <ArrowDown className="h-3 w-3 text-red-600" />
+                                  ) : (
                                     <Equal className="h-3 w-3 text-gray-600" />
-                                  }
-                                  <span className={`text-sm font-medium ${
-                                    category.growthRate > 0 ? 'text-green-600' :
-                                    category.growthRate < 0 ? 'text-red-600' : 'text-gray-600'
-                                  }`}>
-                                    {category.growthRate > 0 ? '+' : ''}{category.growthRate.toFixed(1)}%
+                                  )}
+                                  <span
+                                    className={`text-sm font-medium ${
+                                      category.growthRate > 0
+                                        ? "text-green-600"
+                                        : category.growthRate < 0
+                                          ? "text-red-600"
+                                          : "text-gray-600"
+                                    }`}
+                                  >
+                                    {category.growthRate > 0 ? "+" : ""}
+                                    {category.growthRate.toFixed(1)}%
                                   </span>
                                 </div>
                               </div>
@@ -670,55 +792,66 @@ export function AdvancedBudgetDashboard({
           <Card>
             <CardHeader>
               <CardTitle>Budget Scenarios</CardTitle>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Apply different budget scenarios to see their impact
               </p>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {scenarios.map(scenario => (
-                  <Card key={scenario.id} className="cursor-pointer hover:shadow-lg transition-shadow">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                {scenarios.map((scenario) => (
+                  <Card
+                    key={scenario.id}
+                    className="cursor-pointer transition-shadow hover:shadow-lg"
+                  >
                     <CardHeader>
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg">{scenario.name}</CardTitle>
-                        <Badge variant={
-                          scenario.riskLevel === 'LOW' ? 'default' :
-                          scenario.riskLevel === 'MEDIUM' ? 'secondary' : 'destructive'
-                        }>
+                        <Badge
+                          variant={
+                            scenario.riskLevel === "LOW"
+                              ? "default"
+                              : scenario.riskLevel === "MEDIUM"
+                                ? "secondary"
+                                : "destructive"
+                          }
+                        >
                           {scenario.riskLevel} Risk
                         </Badge>
                       </div>
                     </CardHeader>
-                    
+
                     <CardContent>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        {scenario.description}
-                      </p>
-                      
+                      <p className="text-muted-foreground mb-4 text-sm">{scenario.description}</p>
+
                       <div className="space-y-3">
                         <div className="flex justify-between text-sm">
                           <span>Total Budget:</span>
-                          <span className="font-medium">{formatCurrency(scenario.totalBudget)}</span>
+                          <span className="font-medium">
+                            {formatCurrency(scenario.totalBudget)}
+                          </span>
                         </div>
-                        
+
                         <div className="flex justify-between text-sm">
                           <span>Feasibility:</span>
                           <span className="font-medium">{scenario.feasibility}%</span>
                         </div>
 
-                        <Progress value={Math.min(100, Math.max(0, scenario.feasibility || 0))} className="h-2" />
-                        
+                        <Progress
+                          value={Math.min(100, Math.max(0, scenario.feasibility || 0))}
+                          className="h-2"
+                        />
+
                         <div className="pt-2">
-                          <p className="text-xs font-medium mb-2">Key Assumptions:</p>
-                          <ul className="text-xs text-muted-foreground space-y-1">
+                          <p className="mb-2 text-xs font-medium">Key Assumptions:</p>
+                          <ul className="text-muted-foreground space-y-1 text-xs">
                             {scenario.assumptions.slice(0, 2).map((assumption, index) => (
                               <li key={index}>• {assumption}</li>
                             ))}
                           </ul>
                         </div>
-                        
-                        <Button 
-                          className="w-full mt-4"
+
+                        <Button
+                          className="mt-4 w-full"
                           onClick={() => handleScenarioApply(scenario.id)}
                           disabled={isReadOnly}
                         >
@@ -738,7 +871,7 @@ export function AdvancedBudgetDashboard({
           <Card>
             <CardHeader>
               <CardTitle>Fiscal Policy Options</CardTitle>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Review and apply fiscal policies to improve budget performance
               </p>
             </CardHeader>
@@ -760,46 +893,59 @@ export function AdvancedBudgetDashboard({
                       >
                         <Card>
                           <CardContent className="p-4">
-                            <div className="flex items-start justify-between mb-3">
+                            <div className="mb-3 flex items-start justify-between">
                               <div>
                                 <h4 className="font-medium">{policy.name}</h4>
-                                <p className="text-sm text-muted-foreground">{policy.description}</p>
+                                <p className="text-muted-foreground text-sm">
+                                  {policy.description}
+                                </p>
                               </div>
 
-                              <Badge variant="outline">
-                                {policy.type.replace('_', ' ')}
-                              </Badge>
+                              <Badge variant="outline">{policy.type.replace("_", " ")}</Badge>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                               <div>
-                                <p className="text-xs text-muted-foreground">Impact</p>
+                                <p className="text-muted-foreground text-xs">Impact</p>
                                 <p className="font-medium">+{policy.impact}%</p>
                               </div>
 
                               <div>
-                                <p className="text-xs text-muted-foreground">Cost</p>
-                                <p className="font-medium text-red-600">{formatCurrency(policy.cost)}</p>
+                                <p className="text-muted-foreground text-xs">Cost</p>
+                                <p className="font-medium text-red-600">
+                                  {formatCurrency(policy.cost)}
+                                </p>
                               </div>
 
                               <div>
-                                <p className="text-xs text-muted-foreground">Benefits</p>
-                                <p className="font-medium text-green-600">{formatCurrency(policy.benefits)}</p>
+                                <p className="text-muted-foreground text-xs">Benefits</p>
+                                <p className="font-medium text-green-600">
+                                  {formatCurrency(policy.benefits)}
+                                </p>
                               </div>
 
                               <div>
-                                <p className="text-xs text-muted-foreground">Timeline</p>
-                                <p className="font-medium">{policy.implementation.replace('_', ' ')}</p>
+                                <p className="text-muted-foreground text-xs">Timeline</p>
+                                <p className="font-medium">
+                                  {policy.implementation.replace("_", " ")}
+                                </p>
                               </div>
                             </div>
 
-                            <div className="flex items-center justify-between mt-4">
+                            <div className="mt-4 flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <span className="text-sm">ROI:</span>
-                                <span className={`font-medium ${
-                                  policy.benefits > policy.cost ? 'text-green-600' : 'text-red-600'
-                                }`}>
-                                  {((policy.benefits - policy.cost) / policy.cost * 100).toFixed(1)}%
+                                <span
+                                  className={`font-medium ${
+                                    policy.benefits > policy.cost
+                                      ? "text-green-600"
+                                      : "text-red-600"
+                                  }`}
+                                >
+                                  {(((policy.benefits - policy.cost) / policy.cost) * 100).toFixed(
+                                    1
+                                  )}
+                                  %
                                 </span>
                               </div>
 
@@ -832,46 +978,53 @@ export function AdvancedBudgetDashboard({
                     >
                       <Card>
                         <CardContent className="p-4">
-                          <div className="flex items-start justify-between mb-3">
+                          <div className="mb-3 flex items-start justify-between">
                             <div>
                               <h4 className="font-medium">{policy.name}</h4>
-                              <p className="text-sm text-muted-foreground">{policy.description}</p>
+                              <p className="text-muted-foreground text-sm">{policy.description}</p>
                             </div>
 
-                            <Badge variant="outline">
-                              {policy.type.replace('_', ' ')}
-                            </Badge>
+                            <Badge variant="outline">{policy.type.replace("_", " ")}</Badge>
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                             <div>
-                              <p className="text-xs text-muted-foreground">Impact</p>
+                              <p className="text-muted-foreground text-xs">Impact</p>
                               <p className="font-medium">+{policy.impact}%</p>
                             </div>
 
                             <div>
-                              <p className="text-xs text-muted-foreground">Cost</p>
-                              <p className="font-medium text-red-600">{formatCurrency(policy.cost)}</p>
+                              <p className="text-muted-foreground text-xs">Cost</p>
+                              <p className="font-medium text-red-600">
+                                {formatCurrency(policy.cost)}
+                              </p>
                             </div>
 
                             <div>
-                              <p className="text-xs text-muted-foreground">Benefits</p>
-                              <p className="font-medium text-green-600">{formatCurrency(policy.benefits)}</p>
+                              <p className="text-muted-foreground text-xs">Benefits</p>
+                              <p className="font-medium text-green-600">
+                                {formatCurrency(policy.benefits)}
+                              </p>
                             </div>
 
                             <div>
-                              <p className="text-xs text-muted-foreground">Timeline</p>
-                              <p className="font-medium">{policy.implementation.replace('_', ' ')}</p>
+                              <p className="text-muted-foreground text-xs">Timeline</p>
+                              <p className="font-medium">
+                                {policy.implementation.replace("_", " ")}
+                              </p>
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-between mt-4">
+                          <div className="mt-4 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <span className="text-sm">ROI:</span>
-                              <span className={`font-medium ${
-                                policy.benefits > policy.cost ? 'text-green-600' : 'text-red-600'
-                              }`}>
-                                {((policy.benefits - policy.cost) / policy.cost * 100).toFixed(1)}%
+                              <span
+                                className={`font-medium ${
+                                  policy.benefits > policy.cost ? "text-green-600" : "text-red-600"
+                                }`}
+                              >
+                                {(((policy.benefits - policy.cost) / policy.cost) * 100).toFixed(1)}
+                                %
                               </span>
                             </div>
 
@@ -896,27 +1049,30 @@ export function AdvancedBudgetDashboard({
 
         <TabsContent value="analytics" className="space-y-6">
           {/* Advanced Analytics */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Budget Efficiency Analysis</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                  <div className="bg-muted flex items-center justify-between rounded-lg p-3">
                     <span className="font-medium">Overall Efficiency Score</span>
                     <span className="text-2xl font-bold text-blue-600">
                       {budgetAnalytics.efficiencyScore.toFixed(0)}%
                     </span>
                   </div>
-                  
+
                   <div className="space-y-3">
-                    {budgetCategories.slice(0, 5).map(category => (
+                    {budgetCategories.slice(0, 5).map((category) => (
                       <div key={category.id} className="flex items-center justify-between">
                         <span className="text-sm">{category.name}</span>
                         <div className="flex items-center gap-2">
-                          <Progress value={Math.min(100, Math.max(0, category.efficiency || 0))} className="w-20" />
-                          <span className="text-sm font-medium w-12">
+                          <Progress
+                            value={Math.min(100, Math.max(0, category.efficiency || 0))}
+                            className="w-20"
+                          />
+                          <span className="w-12 text-sm font-medium">
                             {category.efficiency || 0}%
                           </span>
                         </div>
@@ -933,20 +1089,23 @@ export function AdvancedBudgetDashboard({
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                  <div className="bg-muted flex items-center justify-between rounded-lg p-3">
                     <span className="font-medium">Overall Performance Score</span>
                     <span className="text-2xl font-bold text-green-600">
                       {budgetAnalytics.performanceScore.toFixed(0)}%
                     </span>
                   </div>
-                  
+
                   <div className="space-y-3">
-                    {budgetCategories.slice(0, 5).map(category => (
+                    {budgetCategories.slice(0, 5).map((category) => (
                       <div key={category.id} className="flex items-center justify-between">
                         <span className="text-sm">{category.name}</span>
                         <div className="flex items-center gap-2">
-                          <Progress value={Math.min(100, Math.max(0, category.performance || 0))} className="w-20" />
-                          <span className="text-sm font-medium w-12">
+                          <Progress
+                            value={Math.min(100, Math.max(0, category.performance || 0))}
+                            className="w-20"
+                          />
+                          <span className="w-12 text-sm font-medium">
                             {category.performance || 0}%
                           </span>
                         </div>
@@ -971,23 +1130,25 @@ export function AdvancedBudgetDashboard({
                 <Info className="h-4 w-4" />
                 <AlertDescription>
                   <div className="space-y-2">
-                    <p className="font-medium">Budget Optimization Strategy: {budgetOptimization}</p>
-                    <ul className="text-sm space-y-1">
-                      {budgetOptimization === 'EFFICIENCY' && (
+                    <p className="font-medium">
+                      Budget Optimization Strategy: {budgetOptimization}
+                    </p>
+                    <ul className="space-y-1 text-sm">
+                      {budgetOptimization === "EFFICIENCY" && (
                         <>
                           <li>• Focus on departments with efficiency scores below 70%</li>
                           <li>• Implement process improvements in underperforming areas</li>
                           <li>• Consider consolidating overlapping functions</li>
                         </>
                       )}
-                      {budgetOptimization === 'GROWTH' && (
+                      {budgetOptimization === "GROWTH" && (
                         <>
                           <li>• Prioritize investment in high-performing categories</li>
                           <li>• Increase funding for infrastructure and development</li>
                           <li>• Consider deficit financing for strategic initiatives</li>
                         </>
                       )}
-                      {budgetOptimization === 'STABILITY' && (
+                      {budgetOptimization === "STABILITY" && (
                         <>
                           <li>• Maintain balanced allocations across critical functions</li>
                           <li>• Build emergency reserves for unexpected needs</li>

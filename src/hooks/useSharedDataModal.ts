@@ -29,6 +29,6 @@ export function useSharedDataModal(): UseSharedDataModalReturn {
   return {
     showSharedData,
     openModal,
-    closeModal
+    closeModal,
   };
 }

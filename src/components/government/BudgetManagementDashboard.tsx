@@ -1,29 +1,29 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
-import { Button } from '~/components/ui/button';
-import { Badge } from '~/components/ui/badge';
-import { Progress } from '~/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { safeFormatCurrency } from '~/lib/format-utils';
-import { 
-  PieChart, 
-  Pie, 
-  Cell, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
+import React, { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+import { Progress } from "~/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { safeFormatCurrency } from "~/lib/format-utils";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
   ResponsiveContainer,
   LineChart,
   Line,
   Area,
-  AreaChart
-} from 'recharts';
+  AreaChart,
+} from "recharts";
 import {
   DollarSign,
   TrendingUp,
@@ -36,17 +36,17 @@ import {
   Target,
   Clock,
   Users,
-  Building2
-} from 'lucide-react';
-import { IxTime } from '~/lib/ixtime';
-import type { 
-  GovernmentStructure, 
-  GovernmentDepartment, 
+  Building2,
+} from "lucide-react";
+import { IxTime } from "~/lib/ixtime";
+import type {
+  GovernmentStructure,
+  GovernmentDepartment,
   BudgetAllocation,
   RevenueSource,
   BudgetSummary,
-  RevenueSummary 
-} from '~/types/government';
+  RevenueSummary,
+} from "~/types/government";
 
 interface BudgetManagementDashboardProps {
   governmentStructure: GovernmentStructure;
@@ -63,25 +63,29 @@ export function BudgetManagementDashboard({
   budgetAllocations,
   revenueSources,
   onUpdateBudget,
-  isReadOnly = false
+  isReadOnly = false,
 }: BudgetManagementDashboardProps) {
-  const [selectedView, setSelectedView] = useState<'overview' | 'departments' | 'revenue' | 'analysis'>('overview');
-  const [selectedYear, setSelectedYear] = useState(new Date(IxTime.getCurrentIxTime()).getFullYear());
+  const [selectedView, setSelectedView] = useState<
+    "overview" | "departments" | "revenue" | "analysis"
+  >("overview");
+  const [selectedYear, setSelectedYear] = useState(
+    new Date(IxTime.getCurrentIxTime()).getFullYear()
+  );
 
   // Calculate budget summary
   const budgetSummary: BudgetSummary = useMemo(() => {
-    const currentYearAllocations = budgetAllocations.filter(a => a.budgetYear === selectedYear);
+    const currentYearAllocations = budgetAllocations.filter((a) => a.budgetYear === selectedYear);
     const totalAllocated = currentYearAllocations.reduce((sum, a) => sum + a.allocatedAmount, 0);
     const totalSpent = currentYearAllocations.reduce((sum, a) => sum + a.spentAmount, 0);
     const totalAvailable = totalAllocated - totalSpent;
     const utilizationRate = totalAllocated > 0 ? (totalSpent / totalAllocated) * 100 : 0;
 
     const topSpendingDepartments = currentYearAllocations
-      .map(allocation => ({
-        department: departments.find(d => d.id === allocation.departmentId)!,
-        allocation
+      .map((allocation) => ({
+        department: departments.find((d) => d.id === allocation.departmentId)!,
+        allocation,
       }))
-      .filter(item => item.department)
+      .filter((item) => item.department)
       .sort((a, b) => b.allocation.allocatedAmount - a.allocation.allocatedAmount)
       .slice(0, 5);
 
@@ -92,7 +96,7 @@ export function BudgetManagementDashboard({
       totalAvailable,
       utilizationRate,
       departmentCount: departments.length,
-      topSpendingDepartments
+      topSpendingDepartments,
     };
   }, [budgetAllocations, departments, governmentStructure.totalBudget, selectedYear]);
 
@@ -100,21 +104,29 @@ export function BudgetManagementDashboard({
   const revenueSummary: RevenueSummary = useMemo(() => {
     const totalRevenue = revenueSources.reduce((sum, r) => sum + r.revenueAmount, 0);
     const totalTaxRevenue = revenueSources
-      .filter(r => r.category.includes('Tax'))
+      .filter((r) => r.category.includes("Tax"))
       .reduce((sum, r) => sum + r.revenueAmount, 0);
     const totalNonTaxRevenue = totalRevenue - totalTaxRevenue;
 
-    const revenueCategories = ['Direct Tax', 'Indirect Tax', 'Non-Tax Revenue', 'Fees and Fines', 'Other'] as const;
-    const revenueBreakdown = revenueCategories.map(category => {
-      const amount = revenueSources
-        .filter(r => r.category === category)
-        .reduce((sum, r) => sum + r.revenueAmount, 0);
-      return {
-        category,
-        amount,
-        percent: totalRevenue > 0 ? (amount / totalRevenue) * 100 : 0
-      };
-    }).filter(item => item.amount > 0);
+    const revenueCategories = [
+      "Direct Tax",
+      "Indirect Tax",
+      "Non-Tax Revenue",
+      "Fees and Fines",
+      "Other",
+    ] as const;
+    const revenueBreakdown = revenueCategories
+      .map((category) => {
+        const amount = revenueSources
+          .filter((r) => r.category === category)
+          .reduce((sum, r) => sum + r.revenueAmount, 0);
+        return {
+          category,
+          amount,
+          percent: totalRevenue > 0 ? (amount / totalRevenue) * 100 : 0,
+        };
+      })
+      .filter((item) => item.amount > 0);
 
     const topRevenueSources = revenueSources
       .sort((a, b) => b.revenueAmount - a.revenueAmount)
@@ -125,12 +137,12 @@ export function BudgetManagementDashboard({
       totalTaxRevenue,
       totalNonTaxRevenue,
       revenueBreakdown,
-      topRevenueSources
+      topRevenueSources,
     };
   }, [revenueSources]);
 
   const formatCurrency = (amount: number) => {
-    return safeFormatCurrency(amount, governmentStructure.budgetCurrency, false, 'USD');
+    return safeFormatCurrency(amount, governmentStructure.budgetCurrency, false, "USD");
   };
 
   const formatNumber = (num: number) => {
@@ -143,41 +155,44 @@ export function BudgetManagementDashboard({
 
   // Prepare chart data
   const departmentChartData = budgetAllocations
-    .filter(a => a.budgetYear === selectedYear)
-    .map(allocation => {
-      const department = departments.find(d => d.id === allocation.departmentId);
+    .filter((a) => a.budgetYear === selectedYear)
+    .map((allocation) => {
+      const department = departments.find((d) => d.id === allocation.departmentId);
       return {
-        name: department?.shortName || department?.name || 'Unknown',
+        name: department?.shortName || department?.name || "Unknown",
         allocated: allocation.allocatedAmount,
         spent: allocation.spentAmount,
         available: allocation.availableAmount,
         percent: allocation.allocatedPercent,
-        color: department?.color || '#6b7280'
+        color: department?.color || "#6b7280",
       };
     })
     .sort((a, b) => b.allocated - a.allocated);
 
-  const revenueChartData = revenueSummary.revenueBreakdown.map(item => ({
+  const revenueChartData = revenueSummary.revenueBreakdown.map((item) => ({
     name: item.category,
     value: item.amount,
-    percent: item.percent
+    percent: item.percent,
   }));
 
-  const budgetTrendData = [2020, 2021, 2022, 2023, 2024].map(year => ({
+  const budgetTrendData = [2020, 2021, 2022, 2023, 2024].map((year) => ({
     year: year.toString(),
     budget: governmentStructure.totalBudget * (0.95 + Math.random() * 0.1), // Mock trend data
     spent: governmentStructure.totalBudget * (0.85 + Math.random() * 0.1),
-    revenue: revenueSummary.totalRevenue * (0.9 + Math.random() * 0.2)
+    revenue: revenueSummary.totalRevenue * (0.9 + Math.random() * 0.2),
   }));
 
   const getBudgetHealthStatus = () => {
     const deficit = revenueSummary.totalRevenue - budgetSummary.totalSpent;
-    const deficitPercent = revenueSummary.totalRevenue > 0 ? (deficit / revenueSummary.totalRevenue) * 100 : 0;
-    
-    if (deficitPercent > 5) return { status: 'surplus', color: 'text-green-600', label: 'Surplus' };
-    if (deficitPercent > -3) return { status: 'balanced', color: 'text-blue-600', label: 'Balanced' };
-    if (deficitPercent > -10) return { status: 'moderate', color: 'text-yellow-600', label: 'Moderate Deficit' };
-    return { status: 'deficit', color: 'text-red-600', label: 'High Deficit' };
+    const deficitPercent =
+      revenueSummary.totalRevenue > 0 ? (deficit / revenueSummary.totalRevenue) * 100 : 0;
+
+    if (deficitPercent > 5) return { status: "surplus", color: "text-green-600", label: "Surplus" };
+    if (deficitPercent > -3)
+      return { status: "balanced", color: "text-blue-600", label: "Balanced" };
+    if (deficitPercent > -10)
+      return { status: "moderate", color: "text-yellow-600", label: "Moderate Deficit" };
+    return { status: "deficit", color: "text-red-600", label: "High Deficit" };
   };
 
   const budgetHealth = getBudgetHealthStatus();
@@ -190,7 +205,7 @@ export function BudgetManagementDashboard({
           <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">
             {governmentStructure.governmentName} Budget
           </h1>
-          <p className="text-[var(--color-text-muted)] mt-1">
+          <p className="mt-1 text-[var(--color-text-muted)]">
             {governmentStructure.governmentType} • {selectedYear} {governmentStructure.fiscalYear}
           </p>
         </div>
@@ -198,23 +213,23 @@ export function BudgetManagementDashboard({
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-            className="px-3 py-2 border border-[var(--color-border-primary)] rounded-md bg-[var(--color-bg-primary)]"
+            className="rounded-md border border-[var(--color-border-primary)] bg-[var(--color-bg-primary)] px-3 py-2"
           >
             {Array.from({ length: 5 }, (_, i) => {
               const currentIxYear = new Date(IxTime.getCurrentIxTime()).getFullYear();
               return currentIxYear - i;
-            }).map(year => (
-              <option key={year} value={year}>{year}</option>
+            }).map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
             ))}
           </select>
-          <Badge className={budgetHealth.color}>
-            {budgetHealth.label}
-          </Badge>
+          <Badge className={budgetHealth.color}>{budgetHealth.label}</Badge>
         </div>
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -247,7 +262,10 @@ export function BudgetManagementDashboard({
             </div>
             <div className="mt-2">
               <p className="text-xs text-[var(--color-text-muted)]">
-                {budgetSummary.totalBudget > 0 ? ((budgetSummary.totalAllocated / budgetSummary.totalBudget) * 100).toFixed(1) : 0}% of total
+                {budgetSummary.totalBudget > 0
+                  ? ((budgetSummary.totalAllocated / budgetSummary.totalBudget) * 100).toFixed(1)
+                  : 0}
+                % of total
               </p>
             </div>
           </CardContent>
@@ -285,7 +303,12 @@ export function BudgetManagementDashboard({
             </div>
             <div className="mt-2">
               <p className="text-xs text-[var(--color-text-muted)]">
-                {revenueSummary.totalTaxRevenue > 0 ? ((revenueSummary.totalTaxRevenue / revenueSummary.totalRevenue) * 100).toFixed(1) : 0}% from taxes
+                {revenueSummary.totalTaxRevenue > 0
+                  ? ((revenueSummary.totalTaxRevenue / revenueSummary.totalRevenue) * 100).toFixed(
+                      1
+                    )
+                  : 0}
+                % from taxes
               </p>
             </div>
           </CardContent>
@@ -303,7 +326,7 @@ export function BudgetManagementDashboard({
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Budget Allocation Chart */}
             <Card>
               <CardHeader>
@@ -319,7 +342,9 @@ export function BudgetManagementDashboard({
                         cy="50%"
                         outerRadius={100}
                         dataKey="allocated"
-                        label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(1)}%`}
+                        label={({ name, percent }) =>
+                          `${name}: ${((percent ?? 0) * 100).toFixed(1)}%`
+                        }
                       >
                         {departmentChartData.slice(0, 8).map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
@@ -367,9 +392,27 @@ export function BudgetManagementDashboard({
                     <YAxis />
                     <Tooltip formatter={(value) => formatCurrency(value as number)} />
                     <Legend />
-                    <Line type="monotone" dataKey="budget" stroke="#6366f1" name="Budget" strokeWidth={2} />
-                    <Line type="monotone" dataKey="spent" stroke="#ef4444" name="Spending" strokeWidth={2} />
-                    <Line type="monotone" dataKey="revenue" stroke="#10b981" name="Revenue" strokeWidth={2} />
+                    <Line
+                      type="monotone"
+                      dataKey="budget"
+                      stroke="#6366f1"
+                      name="Budget"
+                      strokeWidth={2}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="spent"
+                      stroke="#ef4444"
+                      name="Spending"
+                      strokeWidth={2}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="revenue"
+                      stroke="#10b981"
+                      name="Revenue"
+                      strokeWidth={2}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -383,10 +426,10 @@ export function BudgetManagementDashboard({
             {budgetSummary.topSpendingDepartments.map(({ department, allocation }) => (
               <Card key={department.id}>
                 <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-4 h-4 rounded"
+                        className="h-4 w-4 rounded"
                         style={{ backgroundColor: department.color }}
                       />
                       <div>
@@ -394,7 +437,8 @@ export function BudgetManagementDashboard({
                           {department.name}
                         </h3>
                         <p className="text-sm text-[var(--color-text-muted)]">
-                          {department.category} • {department.ministerTitle}: {department.minister || 'Vacant'}
+                          {department.category} • {department.ministerTitle}:{" "}
+                          {department.minister || "Vacant"}
                         </p>
                       </div>
                     </div>
@@ -412,11 +456,18 @@ export function BudgetManagementDashboard({
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-[var(--color-text-muted)]">Budget Utilization</span>
                       <span className="font-medium">
-                        {allocation.allocatedAmount > 0 ? ((allocation.spentAmount / allocation.allocatedAmount) * 100).toFixed(1) : 0}%
+                        {allocation.allocatedAmount > 0
+                          ? ((allocation.spentAmount / allocation.allocatedAmount) * 100).toFixed(1)
+                          : 0}
+                        %
                       </span>
                     </div>
-                    <Progress 
-                      value={allocation.allocatedAmount > 0 ? (allocation.spentAmount / allocation.allocatedAmount) * 100 : 0}
+                    <Progress
+                      value={
+                        allocation.allocatedAmount > 0
+                          ? (allocation.spentAmount / allocation.allocatedAmount) * 100
+                          : 0
+                      }
                       className="h-2"
                     />
                     <div className="grid grid-cols-3 gap-4 text-sm">
@@ -442,39 +493,57 @@ export function BudgetManagementDashboard({
 
         {/* Revenue Tab */}
         <TabsContent value="revenue" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Tax vs Non-Tax Revenue</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-[var(--color-bg-tertiary)] rounded-lg">
+                  <div className="flex items-center justify-between rounded-lg bg-[var(--color-bg-tertiary)] p-4">
                     <div>
                       <p className="font-semibold text-[var(--color-text-primary)]">Tax Revenue</p>
-                      <p className="text-sm text-[var(--color-text-muted)]">Direct & Indirect Taxes</p>
+                      <p className="text-sm text-[var(--color-text-muted)]">
+                        Direct & Indirect Taxes
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-bold text-green-600">
                         {formatNumber(revenueSummary.totalTaxRevenue)}
                       </p>
                       <p className="text-sm text-[var(--color-text-muted)]">
-                        {revenueSummary.totalRevenue > 0 ? ((revenueSummary.totalTaxRevenue / revenueSummary.totalRevenue) * 100).toFixed(1) : 0}%
+                        {revenueSummary.totalRevenue > 0
+                          ? (
+                              (revenueSummary.totalTaxRevenue / revenueSummary.totalRevenue) *
+                              100
+                            ).toFixed(1)
+                          : 0}
+                        %
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 bg-[var(--color-bg-tertiary)] rounded-lg">
+                  <div className="flex items-center justify-between rounded-lg bg-[var(--color-bg-tertiary)] p-4">
                     <div>
-                      <p className="font-semibold text-[var(--color-text-primary)]">Non-Tax Revenue</p>
-                      <p className="text-sm text-[var(--color-text-muted)]">Fees, Fines & Other Sources</p>
+                      <p className="font-semibold text-[var(--color-text-primary)]">
+                        Non-Tax Revenue
+                      </p>
+                      <p className="text-sm text-[var(--color-text-muted)]">
+                        Fees, Fines & Other Sources
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-bold text-blue-600">
                         {formatNumber(revenueSummary.totalNonTaxRevenue)}
                       </p>
                       <p className="text-sm text-[var(--color-text-muted)]">
-                        {revenueSummary.totalRevenue > 0 ? ((revenueSummary.totalNonTaxRevenue / revenueSummary.totalRevenue) * 100).toFixed(1) : 0}%
+                        {revenueSummary.totalRevenue > 0
+                          ? (
+                              (revenueSummary.totalNonTaxRevenue / revenueSummary.totalRevenue) *
+                              100
+                            ).toFixed(1)
+                          : 0}
+                        %
                       </p>
                     </div>
                   </div>
@@ -491,12 +560,16 @@ export function BudgetManagementDashboard({
                   {revenueSummary.topRevenueSources.map((source, index) => (
                     <div key={source.id} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 bg-[var(--color-brand-primary)] text-white rounded-full flex items-center justify-center text-xs font-bold">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-brand-primary)] text-xs font-bold text-white">
                           {index + 1}
                         </span>
                         <div>
-                          <p className="font-medium text-[var(--color-text-primary)]">{source.name}</p>
-                          <p className="text-xs text-[var(--color-text-muted)]">{source.category}</p>
+                          <p className="font-medium text-[var(--color-text-primary)]">
+                            {source.name}
+                          </p>
+                          <p className="text-xs text-[var(--color-text-muted)]">
+                            {source.category}
+                          </p>
                         </div>
                       </div>
                       <div className="text-right">
@@ -517,34 +590,38 @@ export function BudgetManagementDashboard({
 
         {/* Analysis Tab */}
         <TabsContent value="analysis" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Budget Health Indicators</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-[var(--color-bg-tertiary)] rounded-lg">
+                <div className="flex items-center justify-between rounded-lg bg-[var(--color-bg-tertiary)] p-3">
                   <span className="text-sm font-medium">Fiscal Balance</span>
-                  <Badge className={budgetHealth.color}>
-                    {budgetHealth.label}
-                  </Badge>
+                  <Badge className={budgetHealth.color}>{budgetHealth.label}</Badge>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-[var(--color-bg-tertiary)] rounded-lg">
+                <div className="flex items-center justify-between rounded-lg bg-[var(--color-bg-tertiary)] p-3">
                   <span className="text-sm font-medium">Budget Utilization</span>
-                  <span className={`font-bold ${budgetSummary.utilizationRate > 90 ? 'text-green-600' : budgetSummary.utilizationRate > 70 ? 'text-yellow-600' : 'text-red-600'}`}>
+                  <span
+                    className={`font-bold ${budgetSummary.utilizationRate > 90 ? "text-green-600" : budgetSummary.utilizationRate > 70 ? "text-yellow-600" : "text-red-600"}`}
+                  >
                     {budgetSummary.utilizationRate.toFixed(1)}%
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-[var(--color-bg-tertiary)] rounded-lg">
+                <div className="flex items-center justify-between rounded-lg bg-[var(--color-bg-tertiary)] p-3">
                   <span className="text-sm font-medium">Revenue Adequacy</span>
-                  <span className={`font-bold ${revenueSummary.totalRevenue > budgetSummary.totalAllocated ? 'text-green-600' : 'text-red-600'}`}>
-                    {revenueSummary.totalRevenue > budgetSummary.totalAllocated ? 'Adequate' : 'Insufficient'}
+                  <span
+                    className={`font-bold ${revenueSummary.totalRevenue > budgetSummary.totalAllocated ? "text-green-600" : "text-red-600"}`}
+                  >
+                    {revenueSummary.totalRevenue > budgetSummary.totalAllocated
+                      ? "Adequate"
+                      : "Insufficient"}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-[var(--color-bg-tertiary)] rounded-lg">
+                <div className="flex items-center justify-between rounded-lg bg-[var(--color-bg-tertiary)] p-3">
                   <span className="text-sm font-medium">Departments</span>
                   <span className="font-bold text-[var(--color-text-primary)]">
                     {budgetSummary.departmentCount} Active
@@ -558,9 +635,17 @@ export function BudgetManagementDashboard({
                 <CardTitle>Budget Efficiency Score</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-center space-y-4">
+                <div className="space-y-4 text-center">
                   <div className="text-4xl font-bold text-[var(--color-brand-primary)]">
-                    {Math.min(100, Math.round((budgetSummary.utilizationRate + (revenueSummary.totalRevenue > budgetSummary.totalSpent ? 20 : -20) + (budgetSummary.departmentCount > 5 ? 10 : 0)) * 0.8))}
+                    {Math.min(
+                      100,
+                      Math.round(
+                        (budgetSummary.utilizationRate +
+                          (revenueSummary.totalRevenue > budgetSummary.totalSpent ? 20 : -20) +
+                          (budgetSummary.departmentCount > 5 ? 10 : 0)) *
+                          0.8
+                      )
+                    )}
                   </div>
                   <p className="text-sm text-[var(--color-text-muted)]">Overall Efficiency Score</p>
                   <div className="space-y-2 text-left">

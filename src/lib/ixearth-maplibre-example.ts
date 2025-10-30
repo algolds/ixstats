@@ -14,7 +14,7 @@ import {
   IXEARTH_TO_EARTH_RATIOS,
   type IxEarthLayer,
   type IxEarthProjection,
-} from './ixearth-constants';
+} from "./ixearth-constants";
 
 // =============================================================================
 // MAPLIBRE MAP INITIALIZATION
@@ -37,10 +37,10 @@ export function createIxEarthMap(container: string | HTMLElement) {
 
     // Vector tile source configuration
     sources: {
-      'ixearth-tiles': {
-        type: 'vector',
+      "ixearth-tiles": {
+        type: "vector",
         tiles: [
-          `${window.location.origin}${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/tiles/{layer}/{z}/{x}/{y}?v=v12-roster-integration`,
+          `${window.location.origin}${process.env.NEXT_PUBLIC_BASE_PATH || ""}/api/tiles/{layer}/{z}/{x}/{y}?v=v12-roster-integration`,
         ],
         minzoom: MAPLIBRE_CONFIG.minZoom,
         maxzoom: MAPLIBRE_CONFIG.maxZoom,
@@ -48,9 +48,9 @@ export function createIxEarthMap(container: string | HTMLElement) {
     },
   };
 
-  console.log('[IxEarth] Map initialized with configuration:', mapConfig);
-  console.log('[IxEarth] Planetary metrics:', IXEARTH_PLANETARY_METRICS);
-  console.log('[IxEarth] Scale factor:', IXEARTH_SCALE_SYSTEM.ixearthScaleFactor);
+  console.log("[IxEarth] Map initialized with configuration:", mapConfig);
+  console.log("[IxEarth] Planetary metrics:", IXEARTH_PLANETARY_METRICS);
+  console.log("[IxEarth] Scale factor:", IXEARTH_SCALE_SYSTEM.ixearthScaleFactor);
 
   return mapConfig;
 }
@@ -104,17 +104,19 @@ export function convertToEarthScaleArea(canonicalAreaSqMi: number): number {
  */
 export function getVectorTileUrl(
   layer: IxEarthLayer,
-  version: string = 'v12-roster-integration'
+  version: string = "v12-roster-integration"
 ): string {
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
   return `${baseUrl}${basePath}/api/tiles/${layer}/{z}/{x}/{y}?v=${version}`;
 }
 
 /**
  * Get all available layers with their tile URLs
  */
-export function getAllLayerUrls(version: string = 'v12-roster-integration'): Record<IxEarthLayer, string> {
+export function getAllLayerUrls(
+  version: string = "v12-roster-integration"
+): Record<IxEarthLayer, string> {
   const layers = {} as Record<IxEarthLayer, string>;
 
   for (const layer of MAPLIBRE_CONFIG.availableLayers) {
@@ -213,7 +215,7 @@ export {
   IXEARTH_SCALE_SYSTEM,
   MAPLIBRE_CONFIG,
   IXEARTH_TO_EARTH_RATIOS,
-} from './ixearth-constants';
+} from "./ixearth-constants";
 
 // =============================================================================
 // USAGE EXAMPLES
@@ -225,7 +227,7 @@ export {
 export function example1_DisplayComparison() {
   const stats = getIxEarthStats();
 
-  console.log('=== IxEarth vs Earth ===');
+  console.log("=== IxEarth vs Earth ===");
   console.log(`Land Area: ${stats.totalLand} (${stats.vsEarthLand} larger than Earth)`);
   console.log(`Water Area: ${stats.totalWater} (${stats.vsEarthWater} larger than Earth)`);
   console.log(`Total Surface: ${stats.totalSurface} (${stats.vsEarthTotal} larger than Earth)`);
@@ -253,7 +255,7 @@ export function example2_ConvertArea() {
 export function example3_CountryInfo() {
   // Example country data
   const country = {
-    name: 'Caphiria',
+    name: "Caphiria",
     areaSqMi: 2335110,
     currentPopulation: 619435970,
     currentTotalGdp: 39810000000000,
@@ -261,7 +263,7 @@ export function example3_CountryInfo() {
 
   const info = getCountryDisplayInfo(country);
 
-  console.log('=== Country Information ===');
+  console.log("=== Country Information ===");
   console.log(`Name: ${info.name}`);
   console.log(`Area: ${info.area}`);
   console.log(`Population: ${info.population}`);

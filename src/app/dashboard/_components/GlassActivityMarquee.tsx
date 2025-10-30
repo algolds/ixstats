@@ -5,11 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Marquee } from "~/components/ui/marquee";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { 
-  Activity, 
-  TrendingUp, 
-  Users, 
-  Globe, 
+import {
+  Activity,
+  TrendingUp,
+  Users,
+  Globe,
   Crown,
   Settings,
   DollarSign,
@@ -21,7 +21,7 @@ import {
   AlertTriangle,
   BarChart3,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
 } from "lucide-react";
 import { SimpleFlag } from "~/components/SimpleFlag";
 import { formatCurrency, formatPopulation } from "~/lib/chart-utils";
@@ -61,7 +61,11 @@ interface GlassActivityMarqueeProps {
 
 type FeedMode = "global" | "domestic" | "custom";
 
-export function GlassActivityMarquee({ countries, userCountry, isLoading }: GlassActivityMarqueeProps) {
+export function GlassActivityMarquee({
+  countries,
+  userCountry,
+  isLoading,
+}: GlassActivityMarqueeProps) {
   const [feedMode, setFeedMode] = useState<FeedMode>("global");
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -109,7 +113,7 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
           icon: Zap,
           color: "text-green-400",
           bgColor: "bg-green-500/20",
-          isGlobal: true
+          isGlobal: true,
         });
       });
 
@@ -126,7 +130,7 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
           icon: Trophy,
           color: "text-yellow-400",
           bgColor: "bg-yellow-500/20",
-          isGlobal: true
+          isGlobal: true,
         });
       });
 
@@ -143,7 +147,7 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
           icon: Users,
           color: "text-blue-400",
           bgColor: "bg-blue-500/20",
-          isGlobal: true
+          isGlobal: true,
         });
       });
 
@@ -160,7 +164,7 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
           icon: Crown,
           color: "text-purple-400",
           bgColor: "bg-purple-500/20",
-          isGlobal: false
+          isGlobal: false,
         });
 
         items.push({
@@ -174,7 +178,7 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
           icon: BarChart3,
           color: "text-orange-400",
           bgColor: "bg-orange-500/20",
-          isGlobal: false
+          isGlobal: false,
         });
       }
 
@@ -190,7 +194,7 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
         icon: AlertTriangle,
         color: "text-indigo-400",
         bgColor: "bg-indigo-500/20",
-        isGlobal: true
+        isGlobal: true,
       });
 
       return items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
@@ -203,9 +207,9 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
   const filteredActivities = useMemo(() => {
     switch (feedMode) {
       case "domestic":
-        return activities.filter(activity => !activity.isGlobal);
+        return activities.filter((activity) => !activity.isGlobal);
       case "global":
-        return activities.filter(activity => activity.isGlobal);
+        return activities.filter((activity) => activity.isGlobal);
       case "custom":
         // For now, show all - could be customizable in the future
         return activities;
@@ -217,38 +221,54 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
   // Get activity type icon (for tags)
   const getActivityTypeIcon = (type: ActivityItem["type"]) => {
     switch (type) {
-      case "economic": return Zap;
-      case "demographic": return Users;
-      case "milestone": return Trophy;
-      case "alert": return AlertTriangle;
-      default: return Activity;
+      case "economic":
+        return Zap;
+      case "demographic":
+        return Users;
+      case "milestone":
+        return Trophy;
+      case "alert":
+        return AlertTriangle;
+      default:
+        return Activity;
     }
   };
 
   // Get activity type color
   const getActivityTypeColor = (type: ActivityItem["type"]) => {
     switch (type) {
-      case "economic": return "text-green-400";
-      case "demographic": return "text-blue-400";
-      case "milestone": return "text-yellow-400";
-      case "alert": return "text-red-400";
-      default: return "text-gray-400";
+      case "economic":
+        return "text-green-400";
+      case "demographic":
+        return "text-blue-400";
+      case "milestone":
+        return "text-yellow-400";
+      case "alert":
+        return "text-red-400";
+      default:
+        return "text-gray-400";
     }
   };
 
   const getFeedModeIcon = (mode: FeedMode) => {
     switch (mode) {
-      case "global": return Globe;
-      case "domestic": return Crown;
-      case "custom": return Settings;
+      case "global":
+        return Globe;
+      case "domestic":
+        return Crown;
+      case "custom":
+        return Settings;
     }
   };
 
   const getFeedModeLabel = (mode: FeedMode) => {
     switch (mode) {
-      case "global": return "Global Intel";
-      case "domestic": return "Domestic";
-      case "custom": return "Custom";
+      case "global":
+        return "Global Intel";
+      case "domestic":
+        return "Domestic";
+      case "custom":
+        return "Custom";
     }
   };
 
@@ -257,12 +277,12 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-hierarchy-parent glass-refraction rounded-xl border border-neutral-200 dark:border-white/[0.2] p-4 mb-6"
+        className="glass-hierarchy-parent glass-refraction mb-6 rounded-xl border border-neutral-200 p-4 dark:border-white/[0.2]"
       >
-        <div className="flex items-center justify-center h-16">
+        <div className="flex h-16 items-center justify-center">
           <div className="flex items-center gap-3">
-            <div className="w-6 h-6 rounded-full bg-muted animate-pulse" />
-            <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+            <div className="bg-muted h-6 w-6 animate-pulse rounded-full" />
+            <div className="bg-muted h-4 w-32 animate-pulse rounded" />
           </div>
         </div>
       </motion.div>
@@ -276,18 +296,21 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="glass-hierarchy-parent glass-refraction rounded-lg border border-neutral-200 dark:border-white/[0.2] p-2 mb-4 relative overflow-hidden cursor-pointer"
+        className="glass-hierarchy-parent glass-refraction relative mb-4 cursor-pointer overflow-hidden rounded-lg border border-neutral-200 p-2 dark:border-white/[0.2]"
         onClick={() => setIsCollapsed(false)}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Activity className="h-4 w-4 text-blue-400" />
-            <span className="text-sm font-medium text-foreground">Live Activity Stream</span>
-            <Badge variant="outline" className="text-xs bg-green-500/10 text-green-400 border-green-400/30">
+            <span className="text-foreground text-sm font-medium">Live Activity Stream</span>
+            <Badge
+              variant="outline"
+              className="border-green-400/30 bg-green-500/10 text-xs text-green-400"
+            >
               {filteredActivities.length}
             </Badge>
           </div>
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          <ChevronDown className="text-muted-foreground h-4 w-4" />
         </div>
       </motion.div>
     );
@@ -298,31 +321,34 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="glass-hierarchy-parent glass-refraction rounded-lg border border-neutral-200 dark:border-white/[0.2] p-3 mb-4 relative overflow-hidden"
+      className="glass-hierarchy-parent glass-refraction relative mb-4 overflow-hidden rounded-lg border border-neutral-200 p-3 dark:border-white/[0.2]"
     >
       {/* Glass shimmer background */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-400/10 to-transparent transform skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-3000 ease-in-out" />
-      
+      <div className="absolute inset-0 -translate-x-full skew-x-12 transform bg-gradient-to-r from-transparent via-blue-400/10 to-transparent transition-transform duration-3000 ease-in-out group-hover:translate-x-full" />
+
       {/* Header with toggle buttons */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="relative">
             <Activity className="h-5 w-5 text-blue-400" />
-            <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+            <div className="absolute -top-1 -right-1 h-2 w-2 animate-pulse rounded-full bg-green-400" />
           </div>
-          <h3 className="text-sm font-semibold text-foreground">Live Activity Stream</h3>
-          <Badge variant="outline" className="text-xs bg-green-500/10 text-green-400 border-green-400/30">
+          <h3 className="text-foreground text-sm font-semibold">Live Activity Stream</h3>
+          <Badge
+            variant="outline"
+            className="border-green-400/30 bg-green-500/10 text-xs text-green-400"
+          >
             LIVE
           </Badge>
         </div>
-        
+
         <div className="flex items-center gap-1">
           {/* Feed mode toggles */}
           {(["global", "domestic", "custom"] as FeedMode[]).map((mode) => {
             const Icon = getFeedModeIcon(mode);
             const isActive = feedMode === mode;
             const isDisabled = mode === "domestic" && !userCountry;
-            
+
             return (
               <Button
                 key={mode}
@@ -331,23 +357,23 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
                 onClick={() => !isDisabled && setFeedMode(mode)}
                 disabled={isDisabled}
                 className={cn(
-                  "h-8 px-3 text-xs glass-hierarchy-interactive transition-all duration-200",
+                  "glass-hierarchy-interactive h-8 px-3 text-xs transition-all duration-200",
                   isActive && "bg-primary/20 text-primary",
-                  isDisabled && "opacity-50 cursor-not-allowed"
+                  isDisabled && "cursor-not-allowed opacity-50"
                 )}
               >
-                <Icon className="h-3 w-3 mr-1" />
+                <Icon className="mr-1 h-3 w-3" />
                 {getFeedModeLabel(mode)}
               </Button>
             );
           })}
-          
+
           {/* Collapse button */}
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setIsCollapsed(true)}
-            className="h-8 px-2 text-xs glass-hierarchy-interactive transition-all duration-200 hover:bg-muted/20"
+            className="glass-hierarchy-interactive hover:bg-muted/20 h-8 px-2 text-xs transition-all duration-200"
           >
             <ChevronUp className="h-4 w-4" />
           </Button>
@@ -356,10 +382,10 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
 
       {/* Marquee container */}
       <div className="relative overflow-hidden rounded-lg">
-        <Marquee 
+        <Marquee
           speed={30}
           pauseOnHover={true}
-          className="py-2 bg-transparent"
+          className="bg-transparent py-2"
           gap="1.5rem"
           autoFill={true}
           fade={true}
@@ -369,55 +395,61 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
             return (
               <motion.div
                 key={activity.id}
-                className="flex items-center gap-2 px-3 py-1.5 mx-1 glass-hierarchy-child rounded-md hover:scale-[1.02] transition-transform cursor-pointer group min-w-0 whitespace-nowrap"
+                className="glass-hierarchy-child group mx-1 flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 whitespace-nowrap transition-transform hover:scale-[1.02]"
                 whileHover={{ y: -1 }}
               >
                 {/* Icon with colored background */}
-                <div className={cn(
-                  "p-2 rounded-full transition-all duration-200",
-                  activity.bgColor,
-                  "group-hover:scale-105"
-                )}>
+                <div
+                  className={cn(
+                    "rounded-full p-2 transition-all duration-200",
+                    activity.bgColor,
+                    "group-hover:scale-105"
+                  )}
+                >
                   <IconComponent className={cn("h-4 w-4", activity.color)} />
                 </div>
 
                 {/* Content */}
-                <div className="flex items-center gap-2 min-w-0">
+                <div className="flex min-w-0 items-center gap-2">
                   {/* Activity type icon tag */}
-                  <div className={cn(
-                    "p-1 rounded border transition-all duration-200",
-                    getActivityTypeColor(activity.type).replace("text-", "border-"),
-                    "bg-background/30"
-                  )}>
+                  <div
+                    className={cn(
+                      "rounded border p-1 transition-all duration-200",
+                      getActivityTypeColor(activity.type).replace("text-", "border-"),
+                      "bg-background/30"
+                    )}
+                  >
                     {React.createElement(getActivityTypeIcon(activity.type), {
-                      className: cn("h-3 w-3", getActivityTypeColor(activity.type))
+                      className: cn("h-3 w-3", getActivityTypeColor(activity.type)),
                     })}
                   </div>
-                  
+
                   {/* Country flag and name (if not system activity) */}
                   {activity.country !== "System" && (
                     <div className="flex items-center gap-1">
-                      <div className="w-4 h-3 rounded-sm overflow-hidden border border-white/20">
-                        <SimpleFlag 
-                          countryName={activity.country} 
-                          className="w-full h-full object-cover"
+                      <div className="h-3 w-4 overflow-hidden rounded-sm border border-white/20">
+                        <SimpleFlag
+                          countryName={activity.country}
+                          className="h-full w-full object-cover"
                           showPlaceholder={true}
                         />
                       </div>
-                      <span className="text-xs font-medium text-foreground/80 whitespace-nowrap">
+                      <span className="text-foreground/80 text-xs font-medium whitespace-nowrap">
                         {activity.country}
                       </span>
                     </div>
                   )}
-                  
-                  <span className="text-sm font-medium text-foreground whitespace-nowrap">
+
+                  <span className="text-foreground text-sm font-medium whitespace-nowrap">
                     {activity.title}
                   </span>
-                  
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">
-                    {activity.description.replace(new RegExp(`^${activity.country}\\s*`, 'i'), '').trim()}
+
+                  <span className="text-muted-foreground text-sm whitespace-nowrap">
+                    {activity.description
+                      .replace(new RegExp(`^${activity.country}\\s*`, "i"), "")
+                      .trim()}
                   </span>
-                  
+
                   <span className={cn("text-sm font-semibold whitespace-nowrap", activity.color)}>
                     {activity.value}
                   </span>
@@ -429,15 +461,13 @@ export function GlassActivityMarquee({ countries, userCountry, isLoading }: Glas
       </div>
 
       {/* Footer info */}
-      <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
+      <div className="text-muted-foreground mt-3 flex items-center justify-between text-xs">
         <span>
           Showing {filteredActivities.length} activities • {getFeedModeLabel(feedMode)} feed
         </span>
         <div className="flex items-center gap-2">
-          <span>
-            Updates every 2min
-          </span>
-          <div className="w-1 h-1 bg-green-400 rounded-full animate-pulse" />
+          <span>Updates every 2min</span>
+          <div className="h-1 w-1 animate-pulse rounded-full bg-green-400" />
         </div>
       </div>
     </motion.div>

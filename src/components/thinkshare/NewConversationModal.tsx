@@ -1,10 +1,10 @@
 "use client";
 
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '~/components/ui/dialog';
-import { Input } from '~/components/ui/input';
-import { Button } from '~/components/ui/button';
-import { Search, Send, UserPlus, Crown, Hash, Globe, Loader2 } from 'lucide-react';
+import React from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
+import { Search, Send, UserPlus, Crown, Hash, Globe, Loader2 } from "lucide-react";
 
 interface Account {
   id: string; // Clerk userId
@@ -39,32 +39,34 @@ export function NewConversationModal({
 
   const getAccountTypeIcon = (accountType: string) => {
     switch (accountType) {
-      case 'government': return <Crown className="h-3 w-3 text-amber-500" />;
-      case 'media': return <Hash className="h-3 w-3 text-blue-500" />;
-      case 'citizen': return <Globe className="h-3 w-3 text-green-500" />;
-      default: return null;
+      case "government":
+        return <Crown className="h-3 w-3 text-amber-500" />;
+      case "media":
+        return <Hash className="h-3 w-3 text-blue-500" />;
+      case "citizen":
+        return <Globe className="h-3 w-3 text-green-500" />;
+      default:
+        return null;
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
+      <DialogContent className="flex max-h-[90vh] max-w-md flex-col">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-500/20 rounded-lg">
+            <div className="rounded-lg bg-green-500/20 p-2">
               <Send className="h-6 w-6 text-green-400" />
             </div>
             <div>
               <DialogTitle className="text-lg">Start New Conversation</DialogTitle>
-              <p className="text-sm text-muted-foreground">
-                Search and message users
-              </p>
+              <p className="text-muted-foreground text-sm">Search and message users</p>
             </div>
           </div>
         </DialogHeader>
-        <div className="p-6 overflow-y-auto overflow-x-visible space-y-4">
+        <div className="space-y-4 overflow-x-visible overflow-y-auto p-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
             <Input
               type="text"
               value={searchQuery}
@@ -77,43 +79,47 @@ export function NewConversationModal({
           <div className="max-h-60 overflow-y-auto">
             {isLoading ? (
               <div className="flex justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
               </div>
             ) : searchQuery.length === 0 ? (
               <div className="space-y-4">
-                <div className="text-center py-4 text-muted-foreground">
-                  <UserPlus className="h-8 w-8 mx-auto mb-2" />
+                <div className="text-muted-foreground py-4 text-center">
+                  <UserPlus className="mx-auto mb-2 h-8 w-8" />
                   <p className="text-sm">Start typing to search for users</p>
-                  <p className="text-xs mt-1">You can search by name or @username</p>
+                  <p className="mt-1 text-xs">You can search by name or @username</p>
                 </div>
-                
-                {currentAccount && <div className="border-t border-border pt-4">
-                  <p className="text-xs text-muted-foreground mb-2">Quick Actions:</p>
-                  <div
-                    className="p-3 rounded-lg hover:bg-muted cursor-pointer flex items-center gap-3 transition-colors border border-border"
-                    onClick={() => {
-                      if (currentAccount) {
-                        onCreateConversation(currentAccount.id);
-                      }
-                    }}
-                  >
-                    <div className="relative">
-                      <div className="w-10 h-10 rounded-full overflow-hidden border border-border bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-semibold text-sm">
-                        📝
+
+                {currentAccount && (
+                  <div className="border-border border-t pt-4">
+                    <p className="text-muted-foreground mb-2 text-xs">Quick Actions:</p>
+                    <div
+                      className="hover:bg-muted border-border flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors"
+                      onClick={() => {
+                        if (currentAccount) {
+                          onCreateConversation(currentAccount.id);
+                        }
+                      }}
+                    >
+                      <div className="relative">
+                        <div className="border-border flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border bg-gradient-to-br from-green-500 to-emerald-600 text-sm font-semibold text-white">
+                          📝
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-sm">Message Myself</h4>
-                        <span className="text-xs text-muted-foreground">(Notes & Testing)</span>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-medium">Message Myself</h4>
+                          <span className="text-muted-foreground text-xs">(Notes & Testing)</span>
+                        </div>
+                        <p className="text-muted-foreground text-xs">
+                          Create a personal chat for notes and testing
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground">Create a personal chat for notes and testing</p>
                     </div>
                   </div>
-                </div>}
+                )}
               </div>
             ) : accounts.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
+              <div className="text-muted-foreground py-4 text-center">
                 <p className="text-sm">No users found</p>
               </div>
             ) : (
@@ -121,26 +127,33 @@ export function NewConversationModal({
                 {accounts.map((account) => (
                   <div
                     key={account.id}
-                    className="p-3 rounded-lg hover:bg-muted cursor-pointer flex items-center gap-3 transition-colors"
+                    className="hover:bg-muted flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-colors"
                     onClick={() => onCreateConversation(account.id)}
                   >
                     <div className="relative">
-                      <div className="w-10 h-10 rounded-full overflow-hidden border border-border">
+                      <div className="border-border h-10 w-10 overflow-hidden rounded-full border">
                         {account.profileImageUrl ? (
-                          <img src={account.profileImageUrl} alt={account.displayName} className="w-full h-full object-cover" />
+                          <img
+                            src={account.profileImageUrl}
+                            alt={account.displayName}
+                            className="h-full w-full object-cover"
+                          />
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-semibold text-sm">
-                            {account.displayName.split(' ').map((n: string) => n[0]).join('')}
+                          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-green-500 to-emerald-600 text-sm font-semibold text-white">
+                            {account.displayName
+                              .split(" ")
+                              .map((n: string) => n[0])
+                              .join("")}
                           </div>
                         )}
                       </div>
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-sm">{account.displayName}</h4>
+                        <h4 className="text-sm font-medium">{account.displayName}</h4>
                         {getAccountTypeIcon(account.accountType)}
                       </div>
-                      <p className="text-xs text-muted-foreground">@{account.username}</p>
+                      <p className="text-muted-foreground text-xs">@{account.username}</p>
                     </div>
                   </div>
                 ))}

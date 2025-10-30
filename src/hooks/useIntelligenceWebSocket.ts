@@ -1,14 +1,14 @@
 // React Hook for Intelligence WebSocket Integration
 // Provides real-time intelligence updates with automatic connection management
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useUser } from '~/context/auth-context';
-import { IntelligenceWebSocketClient } from '~/lib/websocket/intelligence-websocket-client';
-import type { 
-  IntelligenceUpdate, 
-  WebSocketClientState, 
-  IntelligenceWebSocketHookOptions 
-} from '~/lib/websocket/types';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useUser } from "~/context/auth-context";
+import { IntelligenceWebSocketClient } from "~/lib/websocket/intelligence-websocket-client";
+import type {
+  IntelligenceUpdate,
+  WebSocketClientState,
+  IntelligenceWebSocketHookOptions,
+} from "~/lib/websocket/types";
 
 interface UseIntelligenceWebSocketReturn {
   // Connection state
@@ -16,13 +16,13 @@ interface UseIntelligenceWebSocketReturn {
   authenticated: boolean;
   connecting: boolean;
   error: string | null;
-  
+
   // Intelligence data
   latestUpdate: IntelligenceUpdate | null;
   latestAlert: IntelligenceUpdate | null;
   updateCount: number;
   alertCount: number;
-  
+
   // Actions
   connect: () => Promise<void>;
   disconnect: () => void;
@@ -31,7 +31,7 @@ interface UseIntelligenceWebSocketReturn {
   subscribeToGlobal: () => void;
   subscribeToAlerts: () => void;
   unsubscribe: (channel: string) => void;
-  
+
   // Client reference for advanced usage
   client: IntelligenceWebSocketClient | null;
 }
@@ -45,13 +45,13 @@ export function useIntelligenceWebSocket(
 ): UseIntelligenceWebSocketReturn {
   const { user, isLoaded } = useUser();
   const clientRef = useRef<IntelligenceWebSocketClient | null>(null);
-  
+
   // Connection state
   const [connected, setConnected] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Intelligence data
   const [latestUpdate, setLatestUpdate] = useState<IntelligenceUpdate | null>(null);
   const [latestAlert, setLatestAlert] = useState<IntelligenceUpdate | null>(null);
@@ -74,12 +74,12 @@ export function useIntelligenceWebSocket(
       ...optionsRef.current,
       onUpdate: (update: IntelligenceUpdate) => {
         setLatestUpdate(update);
-        setUpdateCount(prev => prev + 1);
+        setUpdateCount((prev) => prev + 1);
         optionsRef.current.onUpdate?.(update);
       },
       onAlert: (alert: IntelligenceUpdate) => {
         setLatestAlert(alert);
-        setAlertCount(prev => prev + 1);
+        setAlertCount((prev) => prev + 1);
         optionsRef.current.onAlert?.(alert);
       },
       onConnect: () => {
@@ -99,7 +99,7 @@ export function useIntelligenceWebSocket(
         setError(err.message);
         setConnecting(false);
         optionsRef.current.onError?.(err);
-      }
+      },
     };
 
     clientRef.current = new IntelligenceWebSocketClient(enhancedOptions);
@@ -110,7 +110,7 @@ export function useIntelligenceWebSocket(
    */
   const connect = useCallback(async (): Promise<void> => {
     if (!user?.id || !isLoaded) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
 
     if (connecting || connected) {
@@ -127,7 +127,7 @@ export function useIntelligenceWebSocket(
 
       await clientRef.current!.connect(user.id, optionsRef.current.countryId);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Connection failed';
+      const errorMessage = err instanceof Error ? err.message : "Connection failed";
       setError(errorMessage);
       setConnecting(false);
       throw err;
@@ -152,7 +152,7 @@ export function useIntelligenceWebSocket(
    */
   const reconnect = useCallback(async (): Promise<void> => {
     if (!user?.id || !isLoaded) {
-      throw new Error('User not authenticated');
+      throw new Error("User not authenticated");
     }
 
     setConnecting(true);
@@ -165,7 +165,7 @@ export function useIntelligenceWebSocket(
         await connect();
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Reconnection failed';
+      const errorMessage = err instanceof Error ? err.message : "Reconnection failed";
       setError(errorMessage);
       setConnecting(false);
       throw err;
@@ -214,7 +214,7 @@ export function useIntelligenceWebSocket(
   useEffect(() => {
     if (isLoaded && user?.id && optionsRef.current.countryId && !connected && !connecting) {
       connect().catch((err) => {
-        console.error('Auto-connect failed:', err);
+        console.error("Auto-connect failed:", err);
       });
     }
   }, [isLoaded, user?.id, connected, connecting, connect]);
@@ -263,13 +263,13 @@ export function useIntelligenceWebSocket(
     authenticated,
     connecting,
     error,
-    
+
     // Intelligence data
     latestUpdate,
     latestAlert,
     updateCount,
     alertCount,
-    
+
     // Actions
     connect,
     disconnect,
@@ -278,9 +278,9 @@ export function useIntelligenceWebSocket(
     subscribeToGlobal,
     subscribeToAlerts,
     unsubscribe,
-    
+
     // Client reference
-    client: clientRef.current
+    client: clientRef.current,
   };
 }
 
@@ -290,13 +290,13 @@ export function useIntelligenceWebSocket(
  */
 export function useCountryIntelligenceWebSocket(
   countryId: string,
-  options: Omit<IntelligenceWebSocketHookOptions, 'countryId'> = {}
+  options: Omit<IntelligenceWebSocketHookOptions, "countryId"> = {}
 ): UseIntelligenceWebSocketReturn {
   return useIntelligenceWebSocket({
     ...options,
     countryId,
     subscribeToGlobal: false,
-    subscribeToAlerts: true
+    subscribeToAlerts: true,
   });
 }
 
@@ -305,13 +305,13 @@ export function useCountryIntelligenceWebSocket(
  * Does not subscribe to country-specific updates
  */
 export function useGlobalIntelligenceWebSocket(
-  options: Omit<IntelligenceWebSocketHookOptions, 'countryId' | 'subscribeToGlobal'> = {}
+  options: Omit<IntelligenceWebSocketHookOptions, "countryId" | "subscribeToGlobal"> = {}
 ): UseIntelligenceWebSocketReturn {
   return useIntelligenceWebSocket({
     ...options,
     countryId: undefined,
     subscribeToGlobal: true,
-    subscribeToAlerts: true
+    subscribeToAlerts: true,
   });
 }
 
@@ -320,12 +320,12 @@ export function useGlobalIntelligenceWebSocket(
  * Subscribes to critical alerts across all channels
  */
 export function useIntelligenceAlertsWebSocket(
-  options: Omit<IntelligenceWebSocketHookOptions, 'subscribeToAlerts'> = {}
+  options: Omit<IntelligenceWebSocketHookOptions, "subscribeToAlerts"> = {}
 ): UseIntelligenceWebSocketReturn {
   return useIntelligenceWebSocket({
     ...options,
     subscribeToGlobal: false,
-    subscribeToAlerts: true
+    subscribeToAlerts: true,
   });
 }
 

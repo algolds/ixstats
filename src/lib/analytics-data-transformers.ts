@@ -7,7 +7,7 @@
  * @module analytics-data-transformers
  */
 
-import { DEFAULT_CHART_COLORS } from '~/lib/chart-colors';
+import { DEFAULT_CHART_COLORS } from "~/lib/chart-colors";
 
 // ===== TYPES =====
 
@@ -80,8 +80,8 @@ export interface ComparativeBenchmark {
 }
 
 export interface AnalyticsTrends {
-  gdp?: 'growing' | 'declining' | 'stable';
-  overall?: 'growing' | 'declining' | 'stable';
+  gdp?: "growing" | "declining" | "stable";
+  overall?: "growing" | "declining" | "stable";
 }
 
 export interface AnalyticsVolatility {
@@ -91,7 +91,7 @@ export interface AnalyticsVolatility {
 }
 
 export interface PredictiveScenario {
-  scenario: 'optimistic' | 'realistic' | 'pessimistic';
+  scenario: "optimistic" | "realistic" | "pessimistic";
   projectedGdp: number;
   projectedGdpPerCapita: number;
   projectedPopulation?: number;
@@ -120,11 +120,14 @@ export function transformEconomicChartData(
   if (!historicalData || historicalData.length === 0) return [];
 
   return historicalData.slice(-limit).map((point, index) => ({
-    date: new Date(point.ixTimeTimestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    date: new Date(point.ixTimeTimestamp).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    }),
     gdp: point.totalGdp ?? 0,
     gdpPerCapita: point.gdpPerCapita ?? 0,
     population: point.population ?? 0,
-    index
+    index,
   }));
 }
 
@@ -139,19 +142,24 @@ export function transformEconomicChartData(
  * @returns Array of sector performance metrics
  */
 export function generateSectorPerformanceData(
-  economicProfile?: { sectorBreakdown?: string; exportsGDPPercent?: number; importsGDPPercent?: number } | null,
+  economicProfile?: {
+    sectorBreakdown?: string;
+    exportsGDPPercent?: number;
+    importsGDPPercent?: number;
+  } | null,
   laborMarket?: { employmentBySector?: string; wageBySector?: string } | null,
   historicalData?: HistoricalDataPoint[] | null
 ): SectorPerformance[] {
   // Parse sector breakdown from economic profile
-  let sectorData: Record<string, { performance: number; growth: number; contribution: number }> = {};
-  
+  let sectorData: Record<string, { performance: number; growth: number; contribution: number }> =
+    {};
+
   if (economicProfile?.sectorBreakdown) {
     try {
       const breakdown = JSON.parse(economicProfile.sectorBreakdown);
       sectorData = breakdown;
     } catch (e) {
-      console.warn('Failed to parse sector breakdown:', e);
+      console.warn("Failed to parse sector breakdown:", e);
     }
   }
 
@@ -161,7 +169,7 @@ export function generateSectorPerformanceData(
     try {
       employmentData = JSON.parse(laborMarket.employmentBySector);
     } catch (e) {
-      console.warn('Failed to parse employment by sector:', e);
+      console.warn("Failed to parse employment by sector:", e);
     }
   }
 
@@ -172,7 +180,7 @@ export function generateSectorPerformanceData(
     const recentGrowth = historicalData[historicalData.length - 1]?.gdpGrowthRate || 0;
     const previousGrowth = historicalData[historicalData.length - 2]?.gdpGrowthRate || 0;
     const baseGrowth = (recentGrowth + previousGrowth) / 2;
-    
+
     // Distribute growth across sectors with some variation
     Object.keys(sectorData).forEach((sector, index) => {
       const variation = (Math.random() - 0.5) * 0.02; // ±1% variation
@@ -182,33 +190,40 @@ export function generateSectorPerformanceData(
 
   // Default sectors if no data available
   const defaultSectors = [
-    'Agriculture', 'Manufacturing', 'Services', 'Technology', 'Finance', 'Energy'
+    "Agriculture",
+    "Manufacturing",
+    "Services",
+    "Technology",
+    "Finance",
+    "Energy",
   ];
 
   const sectors = Object.keys(sectorData).length > 0 ? Object.keys(sectorData) : defaultSectors;
-  const colors = ['emerald', 'blue', 'purple', 'cyan', 'orange', 'yellow'];
+  const colors = ["emerald", "blue", "purple", "cyan", "orange", "yellow"];
 
   return sectors.map((sector, index) => {
     const sectorInfo = sectorData[sector] || {};
     const employment = employmentData[sector] || 0;
-    
+
     // Calculate performance based on employment and contribution
-    const performance = Math.min(100, Math.max(20, 
-      (sectorInfo.performance || 70) + 
-      (employment * 0.1) + 
-      ((sectorInfo.contribution || 15) * 0.5)
-    ));
+    const performance = Math.min(
+      100,
+      Math.max(
+        20,
+        (sectorInfo.performance || 70) + employment * 0.1 + (sectorInfo.contribution || 15) * 0.5
+      )
+    );
 
     // Calculate growth rate
-    const growth = growthRates[sector] || sectorInfo.growth || (2 + Math.random() * 4);
+    const growth = growthRates[sector] || sectorInfo.growth || 2 + Math.random() * 4;
 
     return {
       sector,
       performance: Math.round(performance * 10) / 10,
       growth: Math.round(growth * 100) / 100,
-      contribution: sectorInfo.contribution || (100 / sectors.length),
+      contribution: sectorInfo.contribution || 100 / sectors.length,
       color: colors[index % colors.length] as any,
-      trend: growth > 3 ? 'up' : growth < 1 ? 'down' : 'stable'
+      trend: growth > 3 ? "up" : growth < 1 ? "down" : "stable",
     };
   });
 }
@@ -226,17 +241,21 @@ export function generateSectorPerformanceData(
  */
 export function calculateEconomicHealthIndicators(
   historicalData?: HistoricalDataPoint[] | null,
-  economicProfile?: { gdpGrowthVolatility?: number; innovationIndex?: number; competitivenessRank?: number } | null,
+  economicProfile?: {
+    gdpGrowthVolatility?: number;
+    innovationIndex?: number;
+    competitivenessRank?: number;
+  } | null,
   laborMarket?: { youthUnemploymentRate?: number; femaleParticipationRate?: number } | null,
   country?: { currentGdpPerCapita?: number; populationGrowthRate?: number } | null
 ): EconomicHealthIndicator[] {
   if (!historicalData || historicalData.length < 2) {
     return [
-      { indicator: 'GDP Growth', value: 50, trend: 'stable' },
-      { indicator: 'Employment', value: 50, trend: 'stable' },
-      { indicator: 'Trade Balance', value: 50, trend: 'stable' },
-      { indicator: 'Innovation', value: 50, trend: 'stable' },
-      { indicator: 'Stability', value: 50, trend: 'stable' },
+      { indicator: "GDP Growth", value: 50, trend: "stable" },
+      { indicator: "Employment", value: 50, trend: "stable" },
+      { indicator: "Trade Balance", value: 50, trend: "stable" },
+      { indicator: "Innovation", value: 50, trend: "stable" },
+      { indicator: "Stability", value: 50, trend: "stable" },
     ];
   }
 
@@ -263,30 +282,30 @@ export function calculateEconomicHealthIndicators(
   const stabilityValue = Math.max(0, 100 - volatility * 100);
 
   return [
-    { 
-      indicator: 'GDP Growth', 
-      value: Math.round(gdpGrowthValue), 
-      trend: gdpGrowthRate > 2 ? 'up' : gdpGrowthRate < -1 ? 'down' : 'stable' 
+    {
+      indicator: "GDP Growth",
+      value: Math.round(gdpGrowthValue),
+      trend: gdpGrowthRate > 2 ? "up" : gdpGrowthRate < -1 ? "down" : "stable",
     },
-    { 
-      indicator: 'Employment', 
-      value: Math.round(employmentValue), 
-      trend: unemploymentRate < 5 ? 'up' : unemploymentRate > 15 ? 'down' : 'stable' 
+    {
+      indicator: "Employment",
+      value: Math.round(employmentValue),
+      trend: unemploymentRate < 5 ? "up" : unemploymentRate > 15 ? "down" : "stable",
     },
-    { 
-      indicator: 'Trade Balance', 
-      value: Math.round(tradeBalanceValue), 
-      trend: exportsPercent > 30 ? 'up' : exportsPercent < 15 ? 'down' : 'stable' 
+    {
+      indicator: "Trade Balance",
+      value: Math.round(tradeBalanceValue),
+      trend: exportsPercent > 30 ? "up" : exportsPercent < 15 ? "down" : "stable",
     },
-    { 
-      indicator: 'Innovation', 
-      value: Math.round(innovationValue), 
-      trend: innovationIndex > 70 ? 'up' : innovationIndex < 40 ? 'down' : 'stable' 
+    {
+      indicator: "Innovation",
+      value: Math.round(innovationValue),
+      trend: innovationIndex > 70 ? "up" : innovationIndex < 40 ? "down" : "stable",
     },
-    { 
-      indicator: 'Stability', 
-      value: Math.round(stabilityValue), 
-      trend: volatility < 0.05 ? 'up' : volatility > 0.2 ? 'down' : 'stable' 
+    {
+      indicator: "Stability",
+      value: Math.round(stabilityValue),
+      trend: volatility < 0.05 ? "up" : volatility > 0.2 ? "down" : "stable",
     },
   ];
 }
@@ -301,7 +320,11 @@ export function calculateEconomicHealthIndicators(
  * @returns Array of policy distribution by category
  */
 export function generatePolicyDistributionData(
-  governmentBudget?: { spendingCategories?: string; socialSpendingPercent?: number; publicInvestmentRate?: number } | null,
+  governmentBudget?: {
+    spendingCategories?: string;
+    socialSpendingPercent?: number;
+    publicInvestmentRate?: number;
+  } | null,
   fiscalSystem?: { spendingByCategory?: string } | null
 ): PolicyDistribution[] {
   let spendingData: Record<string, number> = {};
@@ -311,7 +334,7 @@ export function generatePolicyDistributionData(
     try {
       spendingData = JSON.parse(governmentBudget.spendingCategories);
     } catch (e) {
-      console.warn('Failed to parse spending categories:', e);
+      console.warn("Failed to parse spending categories:", e);
     }
   }
 
@@ -321,7 +344,7 @@ export function generatePolicyDistributionData(
       const fiscalSpending = JSON.parse(fiscalSystem.spendingByCategory);
       spendingData = { ...spendingData, ...fiscalSpending };
     } catch (e) {
-      console.warn('Failed to parse fiscal spending by category:', e);
+      console.warn("Failed to parse fiscal spending by category:", e);
     }
   }
 
@@ -329,21 +352,21 @@ export function generatePolicyDistributionData(
   if (Object.keys(spendingData).length === 0 && governmentBudget?.socialSpendingPercent) {
     const socialPercent = governmentBudget.socialSpendingPercent;
     spendingData = {
-      'Social': socialPercent,
-      'Economic': Math.max(10, 100 - socialPercent - 20),
-      'Infrastructure': 15,
-      'Security': 5
+      Social: socialPercent,
+      Economic: Math.max(10, 100 - socialPercent - 20),
+      Infrastructure: 15,
+      Security: 5,
     };
   }
 
   // Default distribution if no data available
   if (Object.keys(spendingData).length === 0) {
     spendingData = {
-      'Economic': 35,
-      'Social': 25,
-      'Infrastructure': 20,
-      'Security': 15,
-      'Environmental': 5
+      Economic: 35,
+      Social: 25,
+      Infrastructure: 20,
+      Security: 15,
+      Environmental: 5,
     };
   }
 
@@ -352,7 +375,7 @@ export function generatePolicyDistributionData(
   const normalizedData = Object.entries(spendingData).map(([name, value], index) => ({
     name,
     value: Math.round((value / total) * 100),
-    color: DEFAULT_CHART_COLORS[index % DEFAULT_CHART_COLORS.length]!
+    color: DEFAULT_CHART_COLORS[index % DEFAULT_CHART_COLORS.length]!,
   }));
 
   return normalizedData.sort((a, b) => b.value - a.value);
@@ -371,21 +394,25 @@ export function generatePolicyDistributionData(
  */
 export function calculateProjectionData(
   predictiveModels: PredictiveModels | null | undefined,
-  dateRange: '6months' | '1year' | '2years' | '5years',
-  selectedScenarios: Array<'optimistic' | 'realistic' | 'pessimistic'>,
+  dateRange: "6months" | "1year" | "2years" | "5years",
+  selectedScenarios: Array<"optimistic" | "realistic" | "pessimistic">,
   baseValue: number
 ): ProjectionDataPoint[] {
   if (!predictiveModels) return [];
 
-  const periods = dateRange === '6months' ? 6 : dateRange === '2years' ? 24 : dateRange === '5years' ? 60 : 12;
+  const periods =
+    dateRange === "6months" ? 6 : dateRange === "2years" ? 24 : dateRange === "5years" ? 60 : 12;
 
   return Array.from({ length: periods }, (_, i) => {
     const month = i + 1;
-    const dateLabel = new Date(Date.now() + month * 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+    const dateLabel = new Date(Date.now() + month * 30 * 24 * 60 * 60 * 1000).toLocaleDateString(
+      "en-US",
+      { month: "short", year: "2-digit" }
+    );
 
     const data: ProjectionDataPoint = { date: dateLabel, month };
 
-    selectedScenarios.forEach(scenario => {
+    selectedScenarios.forEach((scenario) => {
       const scenarioData = predictiveModels.scenarios?.find((s) => s.scenario === scenario);
       if (scenarioData) {
         const growthRate = (scenarioData.projectedGdpPerCapita - baseValue) / baseValue / periods;
@@ -410,7 +437,7 @@ export function transformDiplomaticInfluenceData(
 ): Array<EconomicChartDataPoint & { influence: number }> {
   return economicChartData.map((d, i) => ({
     ...d,
-    influence: 70 + Math.sin(i / 3) * 10
+    influence: 70 + Math.sin(i / 3) * 10,
   }));
 }
 
@@ -427,7 +454,7 @@ export function transformEmbassyNetworkData(
 ): Array<EconomicChartDataPoint & { embassies: number }> {
   return economicChartData.map((d, i) => ({
     ...d,
-    embassies: Math.floor(15 + i * 0.5)
+    embassies: Math.floor(15 + i * 0.5),
   }));
 }
 
@@ -442,10 +469,10 @@ export function transformEmbassyNetworkData(
 export function calculateBudgetImpactData(
   policyDistributionData: PolicyDistribution[]
 ): BudgetImpact[] {
-  return policyDistributionData.map(p => ({
+  return policyDistributionData.map((p) => ({
     ...p,
     impact: p.value * 1.2,
-    cost: p.value * 0.8
+    cost: p.value * 0.8,
   }));
 }
 
@@ -458,10 +485,10 @@ export function calculateBudgetImpactData(
  */
 export function generateRelationshipDistributionData(): RelationshipDistribution[] {
   return [
-    { name: 'Strong Allies', value: 35, color: DEFAULT_CHART_COLORS[1]! },
-    { name: 'Partners', value: 40, color: DEFAULT_CHART_COLORS[0]! },
-    { name: 'Neutral', value: 20, color: DEFAULT_CHART_COLORS[5]! },
-    { name: 'Strained', value: 5, color: DEFAULT_CHART_COLORS[3]! },
+    { name: "Strong Allies", value: 35, color: DEFAULT_CHART_COLORS[1]! },
+    { name: "Partners", value: 40, color: DEFAULT_CHART_COLORS[0]! },
+    { name: "Neutral", value: 20, color: DEFAULT_CHART_COLORS[5]! },
+    { name: "Strained", value: 5, color: DEFAULT_CHART_COLORS[3]! },
   ];
 }
 
@@ -470,7 +497,7 @@ export function generateRelationshipDistributionData(): RelationshipDistribution
 export interface SummaryMetric {
   title: string;
   value: number;
-  trend: 'up' | 'down' | 'stable';
+  trend: "up" | "down" | "stable";
   icon: any;
   color: string;
   bg: string;
@@ -496,42 +523,46 @@ export function calculateSummaryMetrics(
     Globe: any;
   }
 ): SummaryMetric[] {
-  const gdpGrowth = economicChartData.length > 1
-    ? ((economicChartData[economicChartData.length - 1]!.gdpPerCapita - economicChartData[economicChartData.length - 2]!.gdpPerCapita) / economicChartData[economicChartData.length - 2]!.gdpPerCapita * 100)
-    : 3.2;
+  const gdpGrowth =
+    economicChartData.length > 1
+      ? ((economicChartData[economicChartData.length - 1]!.gdpPerCapita -
+          economicChartData[economicChartData.length - 2]!.gdpPerCapita) /
+          economicChartData[economicChartData.length - 2]!.gdpPerCapita) *
+        100
+      : 3.2;
 
   return [
     {
-      title: 'Overall Health',
-      value: analytics?.trends?.overall === 'growing' ? 85 : 72,
-      trend: 'up' as const,
+      title: "Overall Health",
+      value: analytics?.trends?.overall === "growing" ? 85 : 72,
+      trend: "up" as const,
       icon: icons.Activity,
-      color: 'text-purple-600',
-      bg: 'bg-purple-50 dark:bg-purple-950/20'
+      color: "text-purple-600",
+      bg: "bg-purple-50 dark:bg-purple-950/20",
     },
     {
-      title: 'GDP Growth',
+      title: "GDP Growth",
       value: gdpGrowth,
-      trend: 'up' as const,
+      trend: "up" as const,
       icon: icons.TrendingUp,
-      color: 'text-green-600',
-      bg: 'bg-green-50 dark:bg-green-950/20'
+      color: "text-green-600",
+      bg: "bg-green-50 dark:bg-green-950/20",
     },
     {
-      title: 'Active Policies',
+      title: "Active Policies",
       value: policyDistributionData.reduce((sum, p) => sum + p.value, 0),
-      trend: 'stable' as const,
+      trend: "stable" as const,
       icon: icons.Target,
-      color: 'text-blue-600',
-      bg: 'bg-blue-50 dark:bg-blue-950/20'
+      color: "text-blue-600",
+      bg: "bg-blue-50 dark:bg-blue-950/20",
     },
     {
-      title: 'Diplomatic Strength',
+      title: "Diplomatic Strength",
       value: 78,
-      trend: 'up' as const,
+      trend: "up" as const,
       icon: icons.Globe,
-      color: 'text-orange-600',
-      bg: 'bg-orange-50 dark:bg-orange-950/20'
+      color: "text-orange-600",
+      bg: "bg-orange-50 dark:bg-orange-950/20",
     },
   ];
 }
@@ -541,7 +572,7 @@ export function calculateSummaryMetrics(
 export interface VolatilityMetric {
   label: string;
   value: number;
-  status: 'low' | 'medium' | 'high';
+  status: "low" | "medium" | "high";
 }
 
 /**
@@ -554,9 +585,17 @@ export function calculateVolatilityMetrics(
   analytics?: { volatility?: AnalyticsVolatility } | null
 ): VolatilityMetric[] {
   return [
-    { label: 'GDP Volatility', value: analytics?.volatility?.gdp ?? 0, status: 'low' as const },
-    { label: 'Population Volatility', value: analytics?.volatility?.population ?? 0, status: 'low' as const },
-    { label: 'Overall Volatility', value: analytics?.volatility?.overall ?? 0, status: 'medium' as const },
+    { label: "GDP Volatility", value: analytics?.volatility?.gdp ?? 0, status: "low" as const },
+    {
+      label: "Population Volatility",
+      value: analytics?.volatility?.population ?? 0,
+      status: "low" as const,
+    },
+    {
+      label: "Overall Volatility",
+      value: analytics?.volatility?.overall ?? 0,
+      status: "medium" as const,
+    },
   ];
 }
 
@@ -569,10 +608,10 @@ export function calculateVolatilityMetrics(
  */
 export function generateComparativeBenchmarkingData(): ComparativeBenchmark[] {
   return [
-    { metric: 'GDP per Capita', country: 'Your Country', value: 85, peer: 72 },
-    { metric: 'Economic Growth', country: 'Your Country', value: 78, peer: 68 },
-    { metric: 'Innovation Index', country: 'Your Country', value: 88, peer: 75 },
-    { metric: 'Trade Balance', country: 'Your Country', value: 72, peer: 80 },
+    { metric: "GDP per Capita", country: "Your Country", value: 85, peer: 72 },
+    { metric: "Economic Growth", country: "Your Country", value: 78, peer: 68 },
+    { metric: "Innovation Index", country: "Your Country", value: 88, peer: 75 },
+    { metric: "Trade Balance", country: "Your Country", value: 72, peer: 80 },
   ];
 }
 
@@ -582,7 +621,7 @@ export interface DiplomaticNetworkStat {
   label: string;
   value: number;
   icon: any;
-  color: 'purple' | 'blue' | 'green' | 'orange';
+  color: "purple" | "blue" | "green" | "orange";
 }
 
 /**
@@ -602,10 +641,25 @@ export function calculateDiplomaticNetworkStats(
   }
 ): DiplomaticNetworkStat[] {
   return [
-    { label: 'Network Power', value: 0, icon: icons.Zap, color: 'purple' as const },
-    { label: 'Active Embassies', value: diplomaticInfluence?.length ?? 0, icon: icons.Building, color: 'blue' as const },
-    { label: 'Strong Relationships', value: diplomaticInfluence?.filter((r) => (r.strength ?? 0) >= 75).length ?? 0, icon: icons.Users, color: 'green' as const },
-    { label: 'Active Treaties', value: diplomaticInfluence?.reduce((sum, r) => sum + (r.treaties?.length ?? 0), 0) ?? 0, icon: icons.FileText, color: 'orange' as const }
+    { label: "Network Power", value: 0, icon: icons.Zap, color: "purple" as const },
+    {
+      label: "Active Embassies",
+      value: diplomaticInfluence?.length ?? 0,
+      icon: icons.Building,
+      color: "blue" as const,
+    },
+    {
+      label: "Strong Relationships",
+      value: diplomaticInfluence?.filter((r) => (r.strength ?? 0) >= 75).length ?? 0,
+      icon: icons.Users,
+      color: "green" as const,
+    },
+    {
+      label: "Active Treaties",
+      value: diplomaticInfluence?.reduce((sum, r) => sum + (r.treaties?.length ?? 0), 0) ?? 0,
+      icon: icons.FileText,
+      color: "orange" as const,
+    },
   ];
 }
 
@@ -618,9 +672,9 @@ export function calculateDiplomaticNetworkStats(
  */
 export function generateMissionSuccessData(): MissionSuccess[] {
   return [
-    { type: 'Trade Missions', success: 88, total: 45 },
-    { type: 'Peace Talks', success: 75, total: 12 },
-    { type: 'Cultural Exchange', success: 92, total: 28 },
-    { type: 'Economic Forums', success: 82, total: 18 },
+    { type: "Trade Missions", success: 88, total: 45 },
+    { type: "Peace Talks", success: 75, total: 12 },
+    { type: "Cultural Exchange", success: 92, total: 28 },
+    { type: "Economic Forums", success: 82, total: 18 },
   ];
 }

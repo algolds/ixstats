@@ -16,10 +16,10 @@
  * Usage: npx tsx scripts/validate-geojson-coordinates.ts
  */
 
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
-const SOURCE_DIR = '/ixwiki/public/projects/ixstats/scripts/geojson_wgs84';
+const SOURCE_DIR = "/ixwiki/public/projects/ixstats/scripts/geojson_wgs84";
 
 // Validation thresholds
 const VALID_LON_MIN = -180;
@@ -73,7 +73,7 @@ function validateCoordinates(
   featureName?: string,
   depth = 0
 ): void {
-  if (typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+  if (typeof coords[0] === "number" && typeof coords[1] === "number") {
     // This is a single coordinate pair [lng, lat]
     const [lng, lat] = coords;
     result.totalCoordinates++;
@@ -86,7 +86,7 @@ function validateCoordinates(
         featureId,
         featureName,
         coordinate: [lng, lat],
-        type: 'NaN/Infinity',
+        type: "NaN/Infinity",
       });
       return;
     }
@@ -131,10 +131,7 @@ function validateCoordinates(
     }
 
     // Check for extreme outliers (likely corrupted data)
-    if (
-      Math.abs(lng) > 1000 ||
-      Math.abs(lat) > 1000
-    ) {
+    if (Math.abs(lng) > 1000 || Math.abs(lat) > 1000) {
       result.issues.extremeOutliers++;
       result.affectedFeatures.add(featureId);
       result.extremeCoords.push({
@@ -149,18 +146,11 @@ function validateCoordinates(
     coords.forEach((c) => validateCoordinates(c, result, featureId, featureName, depth + 1));
 
     // Check if this is a polygon ring (depth === 1 for Polygon, depth === 2 for MultiPolygon)
-    if (
-      depth === 1 &&
-      coords.length > 0 &&
-      typeof coords[0][0] === 'number'
-    ) {
+    if (depth === 1 && coords.length > 0 && typeof coords[0][0] === "number") {
       // This is a polygon ring - check if it's closed
       const first = coords[0];
       const last = coords[coords.length - 1];
-      if (
-        first[0] !== last[0] ||
-        first[1] !== last[1]
-      ) {
+      if (first[0] !== last[0] || first[1] !== last[1]) {
         result.issues.unclosedRings++;
         result.affectedFeatures.add(featureId);
       }
@@ -175,7 +165,7 @@ async function validateLayer(layerName: string): Promise<ValidationResult> {
     throw new Error(`File not found: ${inputPath}`);
   }
 
-  const data = JSON.parse(fs.readFileSync(inputPath, 'utf-8')) as GeoJSONFeatureCollection;
+  const data = JSON.parse(fs.readFileSync(inputPath, "utf-8")) as GeoJSONFeatureCollection;
 
   const result: ValidationResult = {
     layer: layerName,
@@ -195,16 +185,11 @@ async function validateLayer(layerName: string): Promise<ValidationResult> {
 
   // Validate each feature
   for (const feature of data.features) {
-    const featureId = feature.id ?? feature.properties?.id ?? 'unknown';
+    const featureId = feature.id ?? feature.properties?.id ?? "unknown";
     const featureName = feature.properties?.name ?? feature.properties?.id;
 
     if (feature.geometry && feature.geometry.coordinates) {
-      validateCoordinates(
-        feature.geometry.coordinates,
-        result,
-        featureId,
-        featureName
-      );
+      validateCoordinates(feature.geometry.coordinates, result, featureId, featureName);
     }
   }
 
@@ -212,11 +197,11 @@ async function validateLayer(layerName: string): Promise<ValidationResult> {
 }
 
 async function main() {
-  console.log('🔍 Validating GeoJSON Coordinate Data\n');
-  console.log('='.repeat(80));
-  console.log('\n');
+  console.log("🔍 Validating GeoJSON Coordinate Data\n");
+  console.log("=".repeat(80));
+  console.log("\n");
 
-  const layers = ['political', 'climate', 'altitudes', 'rivers', 'lakes', 'icecaps', 'background'];
+  const layers = ["political", "climate", "altitudes", "rivers", "lakes", "icecaps", "background"];
   const allResults: ValidationResult[] = [];
 
   for (const layer of layers) {
@@ -234,7 +219,9 @@ async function main() {
 
       if (hasIssues) {
         console.log(`   ❌ ISSUES FOUND:`);
-        console.log(`      Features: ${result.totalFeatures}, Coordinates: ${result.totalCoordinates.toLocaleString()}`);
+        console.log(
+          `      Features: ${result.totalFeatures}, Coordinates: ${result.totalCoordinates.toLocaleString()}`
+        );
         console.log(`      Affected features: ${result.affectedFeatures.size}`);
         if (result.issues.invalidLongitude > 0) {
           console.log(`      ⚠️  Invalid longitude: ${result.issues.invalidLongitude}`);
@@ -259,8 +246,10 @@ async function main() {
         if (result.extremeCoords.length > 0) {
           console.log(`\n      📍 Extreme coordinates (showing first 10):`);
           result.extremeCoords.slice(0, 10).forEach((coord) => {
-            const name = coord.featureName ? ` (${coord.featureName})` : '';
-            console.log(`         ${coord.type}: [${coord.coordinate[0].toFixed(4)}, ${coord.coordinate[1].toFixed(4)}] - Feature: ${coord.featureId}${name}`);
+            const name = coord.featureName ? ` (${coord.featureName})` : "";
+            console.log(
+              `         ${coord.type}: [${coord.coordinate[0].toFixed(4)}, ${coord.coordinate[1].toFixed(4)}] - Feature: ${coord.featureId}${name}`
+            );
           });
           if (result.extremeCoords.length > 10) {
             console.log(`         ... and ${result.extremeCoords.length - 10} more`);
@@ -268,28 +257,34 @@ async function main() {
         }
       } else {
         console.log(`   ✅ No issues found`);
-        console.log(`      Features: ${result.totalFeatures}, Coordinates: ${result.totalCoordinates.toLocaleString()}`);
+        console.log(
+          `      Features: ${result.totalFeatures}, Coordinates: ${result.totalCoordinates.toLocaleString()}`
+        );
         if (result.issues.beyondMercator > 0) {
-          console.log(`      ℹ️  Beyond Mercator (±85.05°): ${result.issues.beyondMercator} (will be clamped)`);
+          console.log(
+            `      ℹ️  Beyond Mercator (±85.05°): ${result.issues.beyondMercator} (will be clamped)`
+          );
         }
       }
 
-      console.log('');
+      console.log("");
     } catch (error) {
-      console.error(`   ❌ Error validating ${layer}:`, error instanceof Error ? error.message : String(error));
-      console.log('');
+      console.error(
+        `   ❌ Error validating ${layer}:`,
+        error instanceof Error ? error.message : String(error)
+      );
+      console.log("");
     }
   }
 
   // Overall summary
-  console.log('='.repeat(80));
-  console.log('📋 OVERALL VALIDATION SUMMARY\n');
+  console.log("=".repeat(80));
+  console.log("📋 OVERALL VALIDATION SUMMARY\n");
 
   const totalFeatures = allResults.reduce((sum, r) => sum + r.totalFeatures, 0);
   const totalCoordinates = allResults.reduce((sum, r) => sum + r.totalCoordinates, 0);
-  const totalAffectedFeatures = new Set(
-    allResults.flatMap((r) => Array.from(r.affectedFeatures))
-  ).size;
+  const totalAffectedFeatures = new Set(allResults.flatMap((r) => Array.from(r.affectedFeatures)))
+    .size;
 
   const totalIssues = {
     invalidLongitude: allResults.reduce((sum, r) => sum + r.issues.invalidLongitude, 0),
@@ -303,7 +298,7 @@ async function main() {
   console.log(`Total features validated: ${totalFeatures.toLocaleString()}`);
   console.log(`Total coordinates checked: ${totalCoordinates.toLocaleString()}`);
   console.log(`Features with issues: ${totalAffectedFeatures}`);
-  console.log('');
+  console.log("");
 
   const criticalIssues =
     totalIssues.invalidLongitude +
@@ -312,7 +307,7 @@ async function main() {
     totalIssues.nanOrInfinity;
 
   if (criticalIssues > 0) {
-    console.log('❌ CRITICAL ISSUES FOUND:');
+    console.log("❌ CRITICAL ISSUES FOUND:");
     if (totalIssues.invalidLongitude > 0) {
       console.log(`   - Invalid longitude values: ${totalIssues.invalidLongitude}`);
     }
@@ -325,26 +320,28 @@ async function main() {
     if (totalIssues.nanOrInfinity > 0) {
       console.log(`   - NaN/Infinity values: ${totalIssues.nanOrInfinity}`);
     }
-    console.log('');
-    console.log('⚠️  These issues MUST be fixed before import!');
-    console.log('   Run: npx tsx scripts/sanitize-geojson-coordinates.ts');
+    console.log("");
+    console.log("⚠️  These issues MUST be fixed before import!");
+    console.log("   Run: npx tsx scripts/sanitize-geojson-coordinates.ts");
   } else {
-    console.log('✅ No critical coordinate issues found!');
+    console.log("✅ No critical coordinate issues found!");
   }
 
   if (totalIssues.beyondMercator > 0) {
-    console.log('');
-    console.log(`ℹ️  Info: ${totalIssues.beyondMercator} coordinates beyond Web Mercator limits (±85.05°)`);
-    console.log('   These will be clamped during sanitization (expected for polar regions)');
+    console.log("");
+    console.log(
+      `ℹ️  Info: ${totalIssues.beyondMercator} coordinates beyond Web Mercator limits (±85.05°)`
+    );
+    console.log("   These will be clamped during sanitization (expected for polar regions)");
   }
 
   if (totalIssues.unclosedRings > 0) {
-    console.log('');
+    console.log("");
     console.log(`⚠️  Warning: ${totalIssues.unclosedRings} unclosed polygon rings found`);
-    console.log('   These will be fixed during sanitization');
+    console.log("   These will be fixed during sanitization");
   }
 
-  console.log('');
+  console.log("");
 
   // Exit with error code if critical issues found
   if (criticalIssues > 0) {
@@ -353,6 +350,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error('❌ Validation failed:', error);
+  console.error("❌ Validation failed:", error);
   process.exit(1);
 });

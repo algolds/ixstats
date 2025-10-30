@@ -7,8 +7,8 @@ interface AnimatedNumberProps {
   prefix?: string;
   suffix?: string;
   decimals?: number;
-  format?: 'default' | 'currency' | 'population' | 'percentage';
-  trend?: 'up' | 'down' | 'stable';
+  format?: "default" | "currency" | "population" | "percentage";
+  trend?: "up" | "down" | "stable";
   className?: string;
 }
 
@@ -16,15 +16,15 @@ interface AnimatedNumberProps {
  * Legacy AnimatedNumber component - now uses NumberFlow under the hood
  * @deprecated Use NumberFlowDisplay directly for new components
  */
-export function AnimatedNumber({ 
-  value, 
-  duration = 1000, 
-  prefix = '', 
-  suffix = '', 
+export function AnimatedNumber({
+  value,
+  duration = 1000,
+  prefix = "",
+  suffix = "",
   decimals = 0,
-  format = 'default',
+  format = "default",
   trend,
-  className 
+  className,
 }: AnimatedNumberProps) {
   return (
     <NumberFlowDisplay
@@ -38,4 +38,4 @@ export function AnimatedNumber({
       className={className}
     />
   );
-} 
+}

@@ -27,7 +27,7 @@ interface HyperTextProps extends MotionProps {
 }
 
 const DEFAULT_CHARACTER_SET = Object.freeze(
-  "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("")
 ) as readonly string[];
 
 const getRandomInt = (max: number): number => Math.floor(Math.random() * max);
@@ -47,9 +47,7 @@ export function HyperText({
     forwardMotionProps: true,
   });
 
-  const [displayText, setDisplayText] = useState<string[]>(() =>
-    children.split(""),
-  );
+  const [displayText, setDisplayText] = useState<string[]>(() => children.split(""));
   const [isAnimating, setIsAnimating] = useState(false);
   const iterationCount = useRef(0);
   const elementRef = useRef<HTMLElement>(null);
@@ -79,7 +77,7 @@ export function HyperText({
           observer.disconnect();
         }
       },
-      { threshold: 0.1, rootMargin: "-30% 0px -30% 0px" },
+      { threshold: 0.1, rootMargin: "-30% 0px -30% 0px" }
     );
 
     if (elementRef.current) {
@@ -104,13 +102,15 @@ export function HyperText({
       iterationCount.current = progress * maxIterations;
 
       setDisplayText((currentText) =>
-        currentText.map((letter, index) =>
-          letter === " "
-            ? letter
-            : index <= iterationCount.current
-              ? children[index] || ""
-              : characterSet[getRandomInt(characterSet.length)] || "",
-        ).filter((char): char is string => char != null),
+        currentText
+          .map((letter, index) =>
+            letter === " "
+              ? letter
+              : index <= iterationCount.current
+                ? children[index] || ""
+                : characterSet[getRandomInt(characterSet.length)] || ""
+          )
+          .filter((char): char is string => char != null)
       );
 
       if (progress < 1) {
@@ -134,10 +134,7 @@ export function HyperText({
     >
       <AnimatePresence>
         {displayText.map((letter, index) => (
-          <motion.span
-            key={index}
-            className={cn("font-mono", letter === " " ? "w-3" : "")}
-          >
+          <motion.span key={index} className={cn("font-mono", letter === " " ? "w-3" : "")}>
             {letter.toUpperCase()}
           </motion.span>
         ))}

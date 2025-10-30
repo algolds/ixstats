@@ -3,26 +3,56 @@
 
 "use client";
 
-import React from 'react';
-import { motion } from 'framer-motion';
+import React from "react";
+import { motion } from "framer-motion";
 import {
-  Building2, Shield, Info, HelpCircle, Settings, Crown, Coins, Eye,
-  Atom, Blocks, Zap, CheckCircle, AlertTriangle, BookOpen, Users,
-  Scale, Heart, Globe, TrendingUp, GraduationCap, Sparkles, Trees, Target
-} from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { Alert, AlertDescription } from '~/components/ui/alert';
-import { Badge } from '~/components/ui/badge';
-import { Button } from '~/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '~/components/ui/dialog';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components/ui/tooltip';
-import { cn } from '~/lib/utils';
-import { stepConfig } from '../builderConfig';
-import { AtomicComponentSelector, type ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
-import { GovernmentBuilder } from '~/components/government/GovernmentBuilder';
-import { GovernmentSpendingSection } from '~/app/builder/sections/GovernmentSpendingSection';
-import { GovernmentStructurePreview } from '../GovernmentStructurePreview';
-import type { EconomicInputs, RealCountryData } from '~/app/builder/lib/economy-data-service';
+  Building2,
+  Shield,
+  Info,
+  HelpCircle,
+  Settings,
+  Crown,
+  Coins,
+  Eye,
+  Atom,
+  Blocks,
+  Zap,
+  CheckCircle,
+  AlertTriangle,
+  BookOpen,
+  Users,
+  Scale,
+  Heart,
+  Globe,
+  TrendingUp,
+  GraduationCap,
+  Sparkles,
+  Trees,
+  Target,
+} from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
+import { cn } from "~/lib/utils";
+import { stepConfig } from "../builderConfig";
+import {
+  AtomicComponentSelector,
+  type ComponentType,
+} from "~/components/government/atoms/AtomicGovernmentComponents";
+import { GovernmentBuilder } from "~/components/government/GovernmentBuilder";
+import { GovernmentSpendingSection } from "~/app/builder/sections/GovernmentSpendingSection";
+import { GovernmentStructurePreview } from "../GovernmentStructurePreview";
+import type { EconomicInputs, RealCountryData } from "~/app/builder/lib/economy-data-service";
 
 // Help System
 // import { GovernmentHelpSystem } from '../help/GovernmentHelpSystem';
@@ -41,11 +71,15 @@ interface GovernmentStepProps {
 }
 
 // Enhanced tab components
-function EnhancedTabsList({ children, className, ...props }: React.ComponentProps<typeof TabsList>) {
+function EnhancedTabsList({
+  children,
+  className,
+  ...props
+}: React.ComponentProps<typeof TabsList>) {
   return (
     <TabsList
       className={cn(
-        "grid w-full bg-muted/50 backdrop-blur-sm border border-border/50 p-1 rounded-xl",
+        "bg-muted/50 border-border/50 grid w-full rounded-xl border p-1 backdrop-blur-sm",
         className
       )}
       {...props}
@@ -68,7 +102,7 @@ function EnhancedTabsTrigger({
   return (
     <TabsTrigger
       className={cn(
-        "relative flex flex-col gap-1.5 p-3 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all duration-200",
+        "data-[state=active]:bg-background relative flex flex-col gap-1.5 p-3 transition-all duration-200 data-[state=active]:shadow-sm",
         "hover:bg-background/50",
         className
       )}
@@ -79,7 +113,10 @@ function EnhancedTabsTrigger({
       </div>
       <span className="text-xs font-medium">{children}</span>
       {badge !== undefined && (
-        <Badge variant="secondary" className="absolute -top-1 -right-1 h-5 min-w-[20px] p-0 flex items-center justify-center text-[10px]">
+        <Badge
+          variant="secondary"
+          className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center p-0 text-[10px]"
+        >
           {badge}
         </Badge>
       )}
@@ -93,7 +130,7 @@ function HelpTooltip({ text }: { text: string }) {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <HelpCircle className="h-4 w-4 text-muted-foreground cursor-help" />
+          <HelpCircle className="text-muted-foreground h-4 w-4 cursor-help" />
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
           <p className="text-xs">{text}</p>
@@ -113,26 +150,23 @@ export function GovernmentStep({
   onGovernmentStructureChange,
   onGovernmentStructureSave,
   onEconomicInputsChange,
-  onTabChange
+  onTabChange,
 }: GovernmentStepProps) {
   return (
     <div className="space-y-6">
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-4"
+        className="space-y-4 text-center"
       >
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-600 shadow-lg mb-4">
+        <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-600 shadow-lg">
           <Building2 className="h-8 w-8 text-white" />
         </div>
         <div className="flex items-center justify-center gap-2">
           <h2 className="text-3xl font-bold">MyGovernment Builder</h2>
           <HelpTooltip text={stepConfig.government.help} />
         </div>
-        
       </motion.div>
-
-     
 
       <Tabs value={activeGovernmentTab} onValueChange={onTabChange} className="space-y-6">
         <div className="flex items-center justify-between">
@@ -144,22 +178,13 @@ export function GovernmentStep({
             >
               Atomic Components
             </EnhancedTabsTrigger>
-            <EnhancedTabsTrigger
-              value="structure"
-              icon={Crown}
-            >
+            <EnhancedTabsTrigger value="structure" icon={Crown}>
               MyGovernment Builder
             </EnhancedTabsTrigger>
-            <EnhancedTabsTrigger
-              value="spending"
-              icon={Coins}
-            >
+            <EnhancedTabsTrigger value="spending" icon={Coins}>
               Policies
             </EnhancedTabsTrigger>
-            <EnhancedTabsTrigger
-              value="preview"
-              icon={Eye}
-            >
+            <EnhancedTabsTrigger value="preview" icon={Eye}>
               Preview
             </EnhancedTabsTrigger>
           </EnhancedTabsList>
@@ -168,16 +193,15 @@ export function GovernmentStep({
 
         {/* COMPONENTS TAB */}
         <TabsContent value="components" className="mt-6">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2 text-sm">
                   <Info className="h-4 w-4" />
-                  <span>Each component adds unique characteristics to your country and influences some of the calculations</span>
+                  <span>
+                    Each component adds unique characteristics to your country and influences some
+                    of the calculations
+                  </span>
                 </div>
                 {/* Atomic Components Info Dialog - continues below for space */}
                 <AtomicComponentsHelpDialog />
@@ -194,16 +218,14 @@ export function GovernmentStep({
 
         {/* STRUCTURE TAB */}
         <TabsContent value="structure" className="mt-6">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
-          >
-            <div className="space-y-4 mb-6">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
+            <div className="mb-6 space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2 text-sm">
                   <Info className="h-4 w-4" />
-                  <span>Configure your government structure, departments, budget, and revenue sources</span>
+                  <span>
+                    Configure your government structure, departments, budget, and revenue sources
+                  </span>
                 </div>
                 <GovernmentBuilderHelpDialog />
               </div>
@@ -214,7 +236,7 @@ export function GovernmentStep({
               onSave={onGovernmentStructureSave}
               gdpData={{
                 nominalGDP: economicInputs?.coreIndicators?.nominalGDP || 0,
-                countryName: selectedCountry?.name
+                countryName: selectedCountry?.name,
               }}
             />
           </motion.div>
@@ -222,16 +244,14 @@ export function GovernmentStep({
 
         {/* SPENDING/POLICIES TAB */}
         <TabsContent value="spending" className="mt-6">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1 }}
-          >
-            <div className="space-y-4 mb-6">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
+            <div className="mb-6 space-y-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="text-muted-foreground flex items-center gap-2 text-sm">
                   <Info className="h-4 w-4" />
-                  <span>Select policies that align with your atomic components and government structure</span>
+                  <span>
+                    Select policies that align with your atomic components and government structure
+                  </span>
                 </div>
                 <PoliciesHelpDialog />
               </div>
@@ -269,7 +289,7 @@ function AtomicComponentsHelpDialog() {
           What are Atomic Components?
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Atom className="h-6 w-6 text-purple-600" />
@@ -280,37 +300,38 @@ function AtomicComponentsHelpDialog() {
           {/* Dialog content continues - implementing the full help content */}
           <div>
             <p className="text-muted-foreground leading-relaxed">
-              Atomic Components are the building blocks of your government.
-              Instead of choosing a pre-defined government type, you assemble a custom structure from fundamental
-              building blocks that interact with each other to create emergent behaviors and effectiveness levels.
+              Atomic Components are the building blocks of your government. Instead of choosing a
+              pre-defined government type, you assemble a custom structure from fundamental building
+              blocks that interact with each other to create emergent behaviors and effectiveness
+              levels.
             </p>
           </div>
 
           {/* Core Principles */}
           <div>
-            <h3 className="text-lg font-semibold mb-3">Core Principles</h3>
+            <h3 className="mb-3 text-lg font-semibold">Core Principles</h3>
             <div className="space-y-3">
               <div className="flex gap-3">
-                <div className="p-2 bg-purple-500/20 rounded-lg h-fit">
-                  <Blocks className="w-4 h-4 text-purple-600" />
+                <div className="h-fit rounded-lg bg-purple-500/20 p-2">
+                  <Blocks className="h-4 w-4 text-purple-600" />
                 </div>
                 <div>
                   <h4 className="font-medium">Modularity</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Each component is independent. Mix and match Power Distribution, Decision Processes,
-                    Legitimacy Sources, Institutions, and more freely.
+                  <p className="text-muted-foreground text-sm">
+                    Each component is independent. Mix and match Power Distribution, Decision
+                    Processes, Legitimacy Sources, Institutions, and more freely.
                   </p>
                 </div>
               </div>
               <div className="flex gap-3">
-                <div className="p-2 bg-blue-500/20 rounded-lg h-fit">
-                  <Zap className="w-4 h-4 text-blue-600" />
+                <div className="h-fit rounded-lg bg-blue-500/20 p-2">
+                  <Zap className="h-4 w-4 text-blue-600" />
                 </div>
                 <div>
                   <h4 className="font-medium">Synergy Effects</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Components interact dynamically. Certain combinations unlock bonuses while others
-                    create tensions requiring management.
+                  <p className="text-muted-foreground text-sm">
+                    Components interact dynamically. Certain combinations unlock bonuses while
+                    others create tensions requiring management.
                   </p>
                 </div>
               </div>
@@ -319,27 +340,82 @@ function AtomicComponentsHelpDialog() {
 
           {/* Component Categories */}
           <div>
-            <h3 className="text-lg font-semibold mb-3">Component Categories (72 Total)</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <h3 className="mb-3 text-lg font-semibold">Component Categories (72 Total)</h3>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {[
-                { icon: Crown, name: "Power Distribution (4)", color: "purple", desc: "Centralized, Federal, Confederate, Unitary systems" },
-                { icon: Settings, name: "Decision Processes (4)", color: "blue", desc: "Democratic, Autocratic, Consensus, Technocratic" },
-                { icon: Shield, name: "Legitimacy Sources (4)", color: "green", desc: "Electoral, Traditional, Performance, Charismatic" },
-                { icon: Building2, name: "Institutions (8)", color: "orange", desc: "Judiciary, Bureaucracy, Military, Security, etc." },
-                { icon: Scale, name: "Control Mechanisms (8)", color: "red", desc: "Checks and balances, oversight systems" },
-                { icon: Coins, name: "Economic Governance (8)", color: "yellow", desc: "Market, Command, Mixed economy systems" },
-                { icon: Users, name: "Administrative (8)", color: "indigo", desc: "Efficiency, decentralization, management" },
-                { icon: Heart, name: "Social Policy (8)", color: "pink", desc: "Welfare, education, healthcare systems" },
-                { icon: Globe, name: "International Relations (8)", color: "cyan", desc: "Diplomacy, alliances, trade policies" },
-                { icon: TrendingUp, name: "Innovation & Development (8)", color: "emerald", desc: "R&D, technology, entrepreneurship" },
-                { icon: AlertTriangle, name: "Crisis Management (4)", color: "amber", desc: "Emergency response, risk management" }
+                {
+                  icon: Crown,
+                  name: "Power Distribution (4)",
+                  color: "purple",
+                  desc: "Centralized, Federal, Confederate, Unitary systems",
+                },
+                {
+                  icon: Settings,
+                  name: "Decision Processes (4)",
+                  color: "blue",
+                  desc: "Democratic, Autocratic, Consensus, Technocratic",
+                },
+                {
+                  icon: Shield,
+                  name: "Legitimacy Sources (4)",
+                  color: "green",
+                  desc: "Electoral, Traditional, Performance, Charismatic",
+                },
+                {
+                  icon: Building2,
+                  name: "Institutions (8)",
+                  color: "orange",
+                  desc: "Judiciary, Bureaucracy, Military, Security, etc.",
+                },
+                {
+                  icon: Scale,
+                  name: "Control Mechanisms (8)",
+                  color: "red",
+                  desc: "Checks and balances, oversight systems",
+                },
+                {
+                  icon: Coins,
+                  name: "Economic Governance (8)",
+                  color: "yellow",
+                  desc: "Market, Command, Mixed economy systems",
+                },
+                {
+                  icon: Users,
+                  name: "Administrative (8)",
+                  color: "indigo",
+                  desc: "Efficiency, decentralization, management",
+                },
+                {
+                  icon: Heart,
+                  name: "Social Policy (8)",
+                  color: "pink",
+                  desc: "Welfare, education, healthcare systems",
+                },
+                {
+                  icon: Globe,
+                  name: "International Relations (8)",
+                  color: "cyan",
+                  desc: "Diplomacy, alliances, trade policies",
+                },
+                {
+                  icon: TrendingUp,
+                  name: "Innovation & Development (8)",
+                  color: "emerald",
+                  desc: "R&D, technology, entrepreneurship",
+                },
+                {
+                  icon: AlertTriangle,
+                  name: "Crisis Management (4)",
+                  color: "amber",
+                  desc: "Emergency response, risk management",
+                },
               ].map((category, idx) => (
                 <div key={idx} className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <category.icon className={`w-4 h-4 text-${category.color}-600`} />
+                    <category.icon className={`h-4 w-4 text-${category.color}-600`} />
                     <span className="font-medium">{category.name}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground pl-6">{category.desc}</p>
+                  <p className="text-muted-foreground pl-6 text-sm">{category.desc}</p>
                 </div>
               ))}
             </div>
@@ -359,7 +435,7 @@ function GovernmentBuilderHelpDialog() {
           Government Builder Guide
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Crown className="h-6 w-6 text-blue-600" />
@@ -369,9 +445,10 @@ function GovernmentBuilderHelpDialog() {
         <div className="space-y-6">
           <div>
             <p className="text-muted-foreground leading-relaxed">
-              The Government Builder transforms your selected atomic components into a complete government structure.
-              It automatically generates departments, budget allocations, and revenue sources based on your choices,
-              while allowing you to customize and fine-tune the details.
+              The Government Builder transforms your selected atomic components into a complete
+              government structure. It automatically generates departments, budget allocations, and
+              revenue sources based on your choices, while allowing you to customize and fine-tune
+              the details.
             </p>
           </div>
         </div>
@@ -389,7 +466,7 @@ function PoliciesHelpDialog() {
           Policies Guide
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[80vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="h-6 w-6 text-green-600" />
@@ -399,9 +476,9 @@ function PoliciesHelpDialog() {
         <div className="space-y-6">
           <div>
             <p className="text-muted-foreground leading-relaxed">
-              Government policies are specific spending priorities and programs that complement your atomic components.
-              They are dynamically filtered based on your selected components, ensuring that only relevant and
-              compatible policies are available for selection.
+              Government policies are specific spending priorities and programs that complement your
+              atomic components. They are dynamically filtered based on your selected components,
+              ensuring that only relevant and compatible policies are available for selection.
             </p>
           </div>
         </div>
@@ -412,7 +489,7 @@ function PoliciesHelpDialog() {
 
 function GovernmentPreviewTab({
   governmentStructure,
-  governmentComponents
+  governmentComponents,
 }: {
   governmentStructure: any;
   governmentComponents: ComponentType[];
@@ -424,8 +501,6 @@ function GovernmentPreviewTab({
       transition={{ delay: 0.1 }}
       className="space-y-6"
     >
-     
-
       <GovernmentStructurePreview
         governmentStructure={governmentStructure}
         governmentComponents={governmentComponents}

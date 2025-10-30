@@ -12,15 +12,15 @@ export interface Section {
 export interface PolicyAdvisorTip {
   id: string;
   section: string;
-  type: 'warning' | 'suggestion' | 'optimization';
+  type: "warning" | "suggestion" | "optimization";
   title: string;
   description: string;
   impact: string;
 }
 
 export interface BuilderLayoutProps {
-  builderStyle?: 'modern' | 'classic';
-  builderMode?: 'basic' | 'advanced';
+  builderStyle?: "modern" | "classic";
+  builderMode?: "basic" | "advanced";
 }
 
 export interface SectionContentProps {

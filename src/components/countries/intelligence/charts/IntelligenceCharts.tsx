@@ -21,7 +21,7 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
-  Cell
+  Cell,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { CHART_COLORS, CHART_DEFAULTS, commonChartProps } from "./chartConfig";
@@ -51,7 +51,7 @@ export const IntelligenceLineChart: React.FC<LineChartProps> = ({
   showGrid = true,
   height = 300,
   color = CHART_COLORS.primary,
-  className
+  className,
 }) => {
   return (
     <Card className={className}>
@@ -64,26 +64,14 @@ export const IntelligenceLineChart: React.FC<LineChartProps> = ({
       <CardContent>
         <ResponsiveContainer width="100%" height={height}>
           <RechartsLineChart data={data} {...commonChartProps}>
-            {showGrid && (
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke={CHART_DEFAULTS.gridStroke}
-              />
-            )}
-            <XAxis
-              dataKey={xAxisKey}
-              stroke={CHART_COLORS.muted}
-              fontSize={12}
-            />
-            <YAxis
-              stroke={CHART_COLORS.muted}
-              fontSize={12}
-            />
+            {showGrid && <CartesianGrid strokeDasharray="3 3" stroke={CHART_DEFAULTS.gridStroke} />}
+            <XAxis dataKey={xAxisKey} stroke={CHART_COLORS.muted} fontSize={12} />
+            <YAxis stroke={CHART_COLORS.muted} fontSize={12} />
             <Tooltip
               contentStyle={{
                 backgroundColor: CHART_DEFAULTS.tooltipBackground,
                 border: `1px solid ${CHART_DEFAULTS.tooltipBorder}`,
-                borderRadius: '8px'
+                borderRadius: "8px",
               }}
             />
             <Line
@@ -119,7 +107,7 @@ export const IntelligenceBarChart: React.FC<BarChartProps> = ({
   height = 300,
   color = CHART_COLORS.primary,
   colors,
-  className
+  className,
 }) => {
   return (
     <Card className={className}>
@@ -132,26 +120,14 @@ export const IntelligenceBarChart: React.FC<BarChartProps> = ({
       <CardContent>
         <ResponsiveContainer width="100%" height={height}>
           <RechartsBarChart data={data} {...commonChartProps}>
-            {showGrid && (
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke={CHART_DEFAULTS.gridStroke}
-              />
-            )}
-            <XAxis
-              dataKey={xAxisKey}
-              stroke={CHART_COLORS.muted}
-              fontSize={12}
-            />
-            <YAxis
-              stroke={CHART_COLORS.muted}
-              fontSize={12}
-            />
+            {showGrid && <CartesianGrid strokeDasharray="3 3" stroke={CHART_DEFAULTS.gridStroke} />}
+            <XAxis dataKey={xAxisKey} stroke={CHART_COLORS.muted} fontSize={12} />
+            <YAxis stroke={CHART_COLORS.muted} fontSize={12} />
             <Tooltip
               contentStyle={{
                 backgroundColor: CHART_DEFAULTS.tooltipBackground,
                 border: `1px solid ${CHART_DEFAULTS.tooltipBorder}`,
-                borderRadius: '8px'
+                borderRadius: "8px",
               }}
             />
             <Bar dataKey={dataKey} radius={[4, 4, 0, 0]}>
@@ -188,7 +164,7 @@ export const IntelligenceAreaChart: React.FC<AreaChartProps> = ({
   height = 300,
   color = CHART_COLORS.primary,
   gradientId = "areaGradient",
-  className
+  className,
 }) => {
   return (
     <Card className={className}>
@@ -207,26 +183,14 @@ export const IntelligenceAreaChart: React.FC<AreaChartProps> = ({
                 <stop offset="95%" stopColor={color} stopOpacity={0} />
               </linearGradient>
             </defs>
-            {showGrid && (
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke={CHART_DEFAULTS.gridStroke}
-              />
-            )}
-            <XAxis
-              dataKey={xAxisKey}
-              stroke={CHART_COLORS.muted}
-              fontSize={12}
-            />
-            <YAxis
-              stroke={CHART_COLORS.muted}
-              fontSize={12}
-            />
+            {showGrid && <CartesianGrid strokeDasharray="3 3" stroke={CHART_DEFAULTS.gridStroke} />}
+            <XAxis dataKey={xAxisKey} stroke={CHART_COLORS.muted} fontSize={12} />
+            <YAxis stroke={CHART_COLORS.muted} fontSize={12} />
             <Tooltip
               contentStyle={{
                 backgroundColor: CHART_DEFAULTS.tooltipBackground,
                 border: `1px solid ${CHART_DEFAULTS.tooltipBorder}`,
-                borderRadius: '8px'
+                borderRadius: "8px",
               }}
             />
             <Area
@@ -257,7 +221,7 @@ export const IntelligenceRadarChart: React.FC<RadarChartProps> = ({
   angleKey = "name",
   height = 300,
   color = CHART_COLORS.primary,
-  className
+  className,
 }) => {
   return (
     <Card className={className}>
@@ -271,27 +235,14 @@ export const IntelligenceRadarChart: React.FC<RadarChartProps> = ({
         <ResponsiveContainer width="100%" height={height}>
           <RadarChart data={data}>
             <PolarGrid stroke={CHART_DEFAULTS.gridStroke} />
-            <PolarAngleAxis
-              dataKey={angleKey}
-              stroke={CHART_COLORS.muted}
-              fontSize={12}
-            />
-            <PolarRadiusAxis
-              stroke={CHART_COLORS.muted}
-              fontSize={10}
-            />
-            <Radar
-              name="Metrics"
-              dataKey={dataKey}
-              stroke={color}
-              fill={color}
-              fillOpacity={0.3}
-            />
+            <PolarAngleAxis dataKey={angleKey} stroke={CHART_COLORS.muted} fontSize={12} />
+            <PolarRadiusAxis stroke={CHART_COLORS.muted} fontSize={10} />
+            <Radar name="Metrics" dataKey={dataKey} stroke={color} fill={color} fillOpacity={0.3} />
             <Tooltip
               contentStyle={{
                 backgroundColor: CHART_DEFAULTS.tooltipBackground,
                 border: `1px solid ${CHART_DEFAULTS.tooltipBorder}`,
-                borderRadius: '8px'
+                borderRadius: "8px",
               }}
             />
           </RadarChart>
@@ -321,7 +272,7 @@ export const IntelligenceMultiLineChart: React.FC<MultiLineChartProps> = ({
   xAxisKey = "name",
   showGrid = true,
   height = 300,
-  className
+  className,
 }) => {
   return (
     <Card className={className}>
@@ -334,26 +285,14 @@ export const IntelligenceMultiLineChart: React.FC<MultiLineChartProps> = ({
       <CardContent>
         <ResponsiveContainer width="100%" height={height}>
           <RechartsLineChart data={data} {...commonChartProps}>
-            {showGrid && (
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke={CHART_DEFAULTS.gridStroke}
-              />
-            )}
-            <XAxis
-              dataKey={xAxisKey}
-              stroke={CHART_COLORS.muted}
-              fontSize={12}
-            />
-            <YAxis
-              stroke={CHART_COLORS.muted}
-              fontSize={12}
-            />
+            {showGrid && <CartesianGrid strokeDasharray="3 3" stroke={CHART_DEFAULTS.gridStroke} />}
+            <XAxis dataKey={xAxisKey} stroke={CHART_COLORS.muted} fontSize={12} />
+            <YAxis stroke={CHART_COLORS.muted} fontSize={12} />
             <Tooltip
               contentStyle={{
                 backgroundColor: CHART_DEFAULTS.tooltipBackground,
                 border: `1px solid ${CHART_DEFAULTS.tooltipBorder}`,
-                borderRadius: '8px'
+                borderRadius: "8px",
               }}
             />
             {lines.map((line) => (

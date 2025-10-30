@@ -5,15 +5,15 @@ import { formatCurrency, formatPopulation, formatGrowthRateFromDecimal } from "~
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
-import { 
-  Users, 
-  DollarSign, 
-  TrendingUp, 
-  Globe, 
-  Building2, 
+import {
+  Users,
+  DollarSign,
+  TrendingUp,
+  Globe,
+  Building2,
   MapPin,
   Activity,
-  Target
+  Target,
 } from "lucide-react";
 import type { GlobalEconomicSnapshot } from "~/types/ixstats";
 
@@ -33,7 +33,7 @@ export function GlobalStatsOverview({ globalStats, isLoading }: GlobalStatsOverv
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="space-y-2">
                 <Skeleton className="h-4 w-20" />
@@ -94,51 +94,47 @@ export function GlobalStatsOverview({ globalStats, isLoading }: GlobalStatsOverv
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           {stats.map((stat, index) => (
             <div key={index} className="text-center">
-              <div className={`inline-flex items-center justify-center w-12 h-12 rounded-lg mb-3 ${stat.bgColor}`}>
+              <div
+                className={`mb-3 inline-flex h-12 w-12 items-center justify-center rounded-lg ${stat.bgColor}`}
+              >
                 <stat.icon className={`h-6 w-6 ${stat.color}`} />
               </div>
-              <div className="text-2xl font-bold text-foreground">
-                {stat.value}
-              </div>
-              <div className="text-sm text-muted-foreground font-medium">
-                {stat.label}
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {stat.subValue}
-              </div>
+              <div className="text-foreground text-2xl font-bold">{stat.value}</div>
+              <div className="text-muted-foreground text-sm font-medium">{stat.label}</div>
+              <div className="text-muted-foreground mt-1 text-xs">{stat.subValue}</div>
             </div>
           ))}
         </div>
 
         {/* Additional metrics */}
-        <div className="mt-6 pt-6 border-t">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="mt-6 border-t pt-6">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
             <div className="flex items-center gap-3">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <MapPin className="text-muted-foreground h-4 w-4" />
               <div>
                 <div className="text-sm font-medium">Avg Population Density</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-muted-foreground text-xs">
                   {globalStats.averagePopulationDensity.toLocaleString()}/km²
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Activity className="h-4 w-4 text-muted-foreground" />
+              <Activity className="text-muted-foreground h-4 w-4" />
               <div>
                 <div className="text-sm font-medium">Avg GDP Density</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-muted-foreground text-xs">
                   {formatCurrency(globalStats.averageGdpDensity)}/km²
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Target className="h-4 w-4 text-muted-foreground" />
+              <Target className="text-muted-foreground h-4 w-4" />
               <div>
                 <div className="text-sm font-medium">Last Updated</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-muted-foreground text-xs">
                   {new Date(globalStats.timestamp).toLocaleTimeString()}
                 </div>
               </div>
@@ -148,4 +144,4 @@ export function GlobalStatsOverview({ globalStats, isLoading }: GlobalStatsOverv
       </CardContent>
     </Card>
   );
-} 
+}

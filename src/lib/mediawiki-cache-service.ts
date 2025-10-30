@@ -228,11 +228,7 @@ export class MediaWikiCacheService {
   /**
    * Validate cached content
    */
-  async validateContent<T = any>(
-    type: string,
-    identifier: string,
-    freshData: T
-  ): Promise<boolean> {
+  async validateContent<T = any>(type: string, identifier: string, freshData: T): Promise<boolean> {
     return externalApiCache.validateContent(
       {
         service: "mediawiki",
