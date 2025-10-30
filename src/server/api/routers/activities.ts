@@ -642,7 +642,7 @@ export const activitiesRouter = createTRPCRouter({
       try {
         const now = new Date();
         let fromDate: Date;
-        
+
         switch (input.timeRange) {
           case '24h':
             fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -686,6 +686,162 @@ export const activitiesRouter = createTRPCRouter({
           totalShares: 0,
           totalViews: 0,
         };
+      }
+    }),
+
+  // Get country-specific activity feed combining ActivityFeed and ThinkPages posts
+  getCountryActivity: publicProcedure
+    .input(z.object({
+      countryId: z.string(),
+      limit: z.number().min(1).max(50).default(5),
+      timeRange: z.enum(['24h', '7d', '30d', '90d']).default('7d'),
+      cursor: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      try {
+        // Calculate time range
+        const now = new Date();
+        let fromDate: Date;
+
+        switch (input.timeRange) {
+          case '24h':
+            fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            break;
+          case '7d':
+            fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case '30d':
+            fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+          case '90d':
+            fromDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+            break;
+        }
+
+        // Get country data for context
+        const country = await ctx.db.country.findUnique({
+          where: { id: input.countryId },
+          select: { id: true, name: true },
+        });
+
+        if (!country) {
+          return { activities: [], nextCursor: undefined };
+        }
+
+        // Get ActivityFeed entries for this country
+        const activityFeedEntries = await ctx.db.activityFeed.findMany({
+          where: {
+            countryId: input.countryId,
+            createdAt: { gte: fromDate },
+            visibility: 'public',
+          },
+          orderBy: { createdAt: 'desc' },
+          take: input.limit,
+        });
+
+        // Get ThinkPages posts from country's accounts
+        const countryAccounts = await ctx.db.thinkpagesAccount.findMany({
+          where: { countryId: input.countryId },
+          select: { id: true, username: true, accountType: true },
+        });
+
+        const accountIds = countryAccounts.map(acc => acc.id);
+
+        const thinkpagesPosts = accountIds.length > 0 ? await ctx.db.thinkpagesPost.findMany({
+          where: {
+            accountId: { in: accountIds },
+            createdAt: { gte: fromDate },
+            visibility: 'public',
+          },
+          orderBy: { createdAt: 'desc' },
+          take: input.limit,
+          include: {
+            account: {
+              select: {
+                username: true,
+                accountType: true,
+                verified: true,
+              },
+            },
+          },
+        }) : [];
+
+        // Combine and transform activities
+        const combinedActivities: Array<{
+          id: string;
+          type: string;
+          source: 'activity' | 'thinkpages';
+          title: string;
+          description: string;
+          timestamp: Date;
+          metadata?: any;
+          engagement?: {
+            likes: number;
+            comments: number;
+            shares: number;
+          };
+        }> = [];
+
+        // Add ActivityFeed entries
+        activityFeedEntries.forEach(activity => {
+          let metadata: any = {};
+          try {
+            if (activity.metadata) {
+              metadata = JSON.parse(activity.metadata);
+            }
+          } catch (e) {
+            console.warn('Failed to parse activity metadata:', e);
+          }
+
+          combinedActivities.push({
+            id: activity.id,
+            type: activity.type,
+            source: 'activity',
+            title: activity.title,
+            description: activity.description,
+            timestamp: activity.createdAt,
+            metadata,
+            engagement: {
+              likes: activity.likes,
+              comments: activity.comments,
+              shares: activity.shares,
+            },
+          });
+        });
+
+        // Add ThinkPages posts
+        thinkpagesPosts.forEach(post => {
+          combinedActivities.push({
+            id: post.id,
+            type: 'social',
+            source: 'thinkpages',
+            title: `@${post.account.username} posted on ThinkPages`,
+            description: post.content,
+            timestamp: post.createdAt,
+            metadata: {
+              accountType: post.account.accountType,
+              verified: post.account.verified,
+              trending: post.trending,
+            },
+            engagement: {
+              likes: post.likeCount,
+              comments: post.replyCount,
+              shares: post.repostCount,
+            },
+          });
+        });
+
+        // Sort by timestamp (most recent first) and limit
+        combinedActivities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+        const limitedActivities = combinedActivities.slice(0, input.limit);
+
+        return {
+          activities: limitedActivities,
+          nextCursor: undefined, // Could implement cursor-based pagination if needed
+        };
+      } catch (error) {
+        console.error('Error fetching country activity:', error);
+        return { activities: [], nextCursor: undefined };
       }
     }),
 });

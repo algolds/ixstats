@@ -56,7 +56,8 @@ wikiCache.ts           wikiImporter.ts
 - Prisma schema: `prisma/schema.prisma` (131 models)
 - Seed scripts: `scripts/setup/`
 - ETL & audits: `scripts/audit/` (wiring verifier, CRUD sweeps, economic calculators)
-- SQLite dev/prod files: `prisma/dev.db`, `prisma/prod.db`
+- PostgreSQL database: `localhost:5433/ixstats` (migrated from SQLite in October 2025)
+- Legacy SQLite backups: `prisma/backups/sqlite-legacy/`
 
 ## Realtime Infrastructure
 - `server.mjs` boots Next.js and attaches Socket.IO in production

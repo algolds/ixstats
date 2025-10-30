@@ -2,13 +2,17 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Globe, 
-  Users, 
-  Plus, 
-  Search, 
-  Crown, 
-  Shield, 
+import {
+  FixedSizeList as List,
+  type FixedSizeListHandle,
+} from '~/lib/react-window-compat';
+import {
+  Globe,
+  Users,
+  Plus,
+  Search,
+  Crown,
+  Shield,
   Briefcase,
   MessageSquare,
   TrendingUp,
@@ -94,6 +98,87 @@ interface ThinktankGroup {
 }
 
 const categories = ['All', 'Worldbuilding', 'Nation Sim', 'Diplomacy', 'Economics', 'History & Lore', 'Culture', 'Geography', 'Politics'];
+
+/**
+ * Memoized MessageBubble component to prevent unnecessary re-renders.
+ * Used within virtualized list for optimal performance with large message lists.
+ */
+const MessageBubble = React.memo(function MessageBubble({
+  message,
+  currentUserId,
+  userDisplayName,
+}: {
+  message: GroupChatMessage;
+  currentUserId: string | null;
+  userDisplayName: string;
+}) {
+  const isOwnMessage = message.userId === currentUserId;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} px-4`}
+    >
+      <div className={`max-w-[70%] ${isOwnMessage ? 'order-2' : 'order-1'}`}>
+        {!isOwnMessage && (
+          <div className="flex items-center gap-2 mb-1">
+            <Avatar className="h-6 w-6">
+              <AvatarFallback className="text-xs">
+                {userDisplayName.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-xs text-muted-foreground font-medium">
+              {userDisplayName}
+            </span>
+          </div>
+        )}
+
+        <div
+          className={`p-3 rounded-2xl ${
+            isOwnMessage
+              ? 'bg-gradient-to-r from-orange-600 to-yellow-600 text-white ml-4'
+              : 'bg-background/50 border border-orange-200/30 mr-4'
+          }`}
+        >
+          <div
+            className="text-sm whitespace-pre-wrap"
+            // SECURITY: formatContentEnhanced now includes sanitizeUserContent to prevent XSS
+            dangerouslySetInnerHTML={{ __html: formatContentEnhanced(message.content) }}
+          />
+        </div>
+
+        <div className={`flex items-center gap-1 mt-1 px-3 ${
+          isOwnMessage ? 'justify-end' : 'justify-start'
+        }`}>
+          <span className="text-xs text-muted-foreground">
+            {new Date(message.ixTimeTimestamp).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
+          </span>
+          {isOwnMessage && (
+            <div className="flex items-center gap-1">
+              {/* Enhanced read receipts for groups */}
+              {message.readReceipts && message.readReceipts.length > 0 ? (
+                <div className="flex items-center gap-1" title={`Read by ${message.readReceipts.length} members`}>
+                  <CheckCheck className="h-3 w-3 text-orange-500" />
+                  {message.readReceipts.length > 1 && (
+                    <span className="text-xs text-orange-500 font-medium">
+                      {message.readReceipts.length}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <Check className="h-3 w-3 text-muted-foreground" />
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+});
 
 // Enhanced text formatting with better mention and hashtag styling
 const formatContentEnhanced = (content: string) => {
@@ -183,30 +268,10 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
   const [view, setView] = useState<'list' | 'chat' | 'collaboration'>('list');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const richTextEditorRef = useRef<RichTextEditorRef>(null);
+  const listRef = useRef<FixedSizeListHandle>(null);
 
   // Use the global user ID instead of account-based system
   const currentUserId = userId;
-
-  // Extract unique user IDs from messages for profile fetching
-  const uniqueUserIds = React.useMemo(() => {
-    if (!groupMessages?.messages) return [];
-    const userIds = new Set<string>();
-    groupMessages.messages.forEach((msg: GroupChatMessage) => {
-      if (msg.userId && msg.userId !== currentUserId) {
-        userIds.add(msg.userId);
-      }
-    });
-    // Also add typing indicator user IDs
-    Array.from(clientState.typingIndicators.values()).forEach(indicator => {
-      if (indicator.accountId !== currentUserId) {
-        userIds.add(indicator.accountId);
-      }
-    });
-    return Array.from(userIds);
-  }, [groupMessages?.messages, currentUserId, clientState.typingIndicators]);
-
-  // Fetch user profiles for all participants
-  const { userDisplayNames } = useUserProfiles(uniqueUserIds);
 
   // Real-time WebSocket functionality
   const {
@@ -275,12 +340,33 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
       groupId: selectedGroup?.id || 'INVALID',
       userId: currentUserId || 'ANONYMOUS'
     },
-    { 
+    {
       enabled: false, // NEVER auto-enable
       retry: 0,
       refetchOnWindowFocus: false
     }
   );
+
+  // Extract unique user IDs from messages for profile fetching
+  const uniqueUserIds = React.useMemo(() => {
+    if (!groupMessages?.messages) return [];
+    const userIds = new Set<string>();
+    groupMessages.messages.forEach((msg: GroupChatMessage) => {
+      if (msg.userId && msg.userId !== currentUserId) {
+        userIds.add(msg.userId);
+      }
+    });
+    // Also add typing indicator user IDs
+    Array.from(clientState.typingIndicators.values()).forEach(indicator => {
+      if (indicator.accountId !== currentUserId) {
+        userIds.add(indicator.accountId);
+      }
+    });
+    return Array.from(userIds);
+  }, [groupMessages?.messages, currentUserId, clientState.typingIndicators]);
+
+  // Fetch user profiles for all participants
+  const { userDisplayNames } = useUserProfiles(uniqueUserIds);
 
   // Manual fetch for messages
   React.useEffect(() => {
@@ -324,13 +410,15 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
     }
   });
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const scrollToBottom = useCallback(() => {
+    if (listRef.current && groupMessages?.messages && groupMessages.messages.length > 0) {
+      listRef.current.scrollToItem(groupMessages.messages.length - 1, 'end');
+    }
+  }, [groupMessages?.messages]);
 
   useEffect(() => {
     scrollToBottom();
-  }, [groupMessages?.messages]);
+  }, [scrollToBottom, groupMessages?.messages.length]);
 
   const handleSendMessage = useCallback((content?: string, plainText?: string) => {
     const finalContent = content || messageText;
@@ -387,7 +475,7 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
     }
   };
 
-  const filteredGroups = groups?.filter(group => {
+  const filteredGroups = groups?.filter((group: ThinktankGroup | null) => {
     if (!group) return false;
     const query = searchQuery.toLowerCase();
     const matchesSearch = (group.name?.toLowerCase() || '').includes(query) ||
@@ -459,85 +547,54 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
 
         {/* Chat Messages */}
         <Card className="glass-hierarchy-child h-[600px] flex flex-col">
-          <div className="flex-1 p-4">
-            <ScrollArea className="h-full">
-              <div className="space-y-4">
-                {isLoadingMessages ? (
-                  <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  </div>
-                ) : (
-                  groupMessages?.messages.map((message: GroupChatMessage) => (
-                    <motion.div
-                      key={message.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className={`flex ${message.userId === currentUserId ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div className={`max-w-[70%] ${message.userId === currentUserId ? 'order-2' : 'order-1'}`}>
-                        {message.userId !== currentUserId && (
-                          <div className="flex items-center gap-2 mb-1">
-                            <Avatar className="h-6 w-6">
-                              <AvatarFallback className="text-xs">
-                                {(userDisplayNames.get(message.userId) || message.userId).substring(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-xs text-muted-foreground font-medium">
-                              {userDisplayNames.get(message.userId) || `User ${message.userId.substring(0, 8)}`}
-                            </span>
-                          </div>
-                        )}
-                        
-                        <div
-                          className={`p-3 rounded-2xl ${
-                            message.userId === currentUserId
-                              ? 'bg-gradient-to-r from-orange-600 to-yellow-600 text-white ml-4'
-                              : 'bg-background/50 border border-orange-200/30 mr-4'
-                          }`}
-                        >
-                          <div
-                            className="text-sm whitespace-pre-wrap"
-                            // SECURITY: formatContentEnhanced now includes sanitizeUserContent to prevent XSS
-                            dangerouslySetInnerHTML={{ __html: formatContentEnhanced(message.content) }}
-                          />
-                        </div>
-                        
-                        <div className={`flex items-center gap-1 mt-1 px-3 ${
-                          message.userId === currentUserId ? 'justify-end' : 'justify-start'
-                        }`}>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(message.ixTimeTimestamp).toLocaleTimeString([], { 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
-                            })}
-                          </span>
-                          {message.userId === currentUserId && (
-                            <div className="flex items-center gap-1">
-                              {/* Enhanced read receipts for groups */}
-                              {message.readReceipts && message.readReceipts.length > 0 ? (
-                                <div className="flex items-center gap-1" title={`Read by ${message.readReceipts.length} members`}>
-                                  <CheckCheck className="h-3 w-3 text-orange-500" />
-                                  {message.readReceipts.length > 1 && (
-                                    <span className="text-xs text-orange-500 font-medium">
-                                      {message.readReceipts.length}
-                                    </span>
-                                  )}
-                                </div>
-                              ) : (
-                                <Check className="h-3 w-3 text-muted-foreground" />
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))
-                )}
-                
-                {/* Enhanced Group Typing Indicators */}
+          <div className="flex-1">
+            {isLoadingMessages ? (
+              <div className="flex justify-center items-center h-full">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : groupMessages?.messages && groupMessages.messages.length > 0 ? (
+              <List
+                ref={listRef}
+                height={520} // 600px card - 80px for input area
+                itemCount={groupMessages.messages.length}
+                itemSize={120} // Estimated height per message (accommodates variable content)
+                width="100%"
+                overscanCount={5} // Render 5 extra items for smoother scrolling
+              >
+                {({ index, style }) => {
+                  const message = groupMessages.messages[index];
+                  if (!message) return null;
+
+                  const displayName = userDisplayNames.get(message.userId) || `User ${message.userId.substring(0, 8)}`;
+
+                  return (
+                    <div style={style} className="py-2">
+                      <MessageBubble
+                        message={message}
+                        currentUserId={currentUserId}
+                        userDisplayName={displayName}
+                      />
+                    </div>
+                  );
+                }}
+              </List>
+            ) : (
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                <div className="text-center">
+                  <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-sm">No messages yet. Start the conversation!</p>
+                </div>
+              </div>
+            )}
+
+            {/* Enhanced Group Typing Indicators */}
+            {Array.from(clientState.typingIndicators.values())
+              .filter((indicator: any) => indicator.groupId === selectedGroup?.id && indicator.accountId !== currentUserId)
+              .length > 0 && (
+              <div className="px-4 pb-4 space-y-2">
                 {Array.from(clientState.typingIndicators.values())
-                  .filter(indicator => indicator.groupId === selectedGroup?.id && indicator.accountId !== currentUserId)
-                  .map(indicator => {
+                  .filter((indicator: any) => indicator.groupId === selectedGroup?.id && indicator.accountId !== currentUserId)
+                  .map((indicator: any) => {
                     // Get the display name from fetched user profiles
                     const displayName = userDisplayNames.get(indicator.accountId) || `User ${indicator.accountId.substring(0, 8)}`;
 
@@ -565,10 +622,8 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
                       </div>
                     );
                   })}
-                
-                <div ref={messagesEndRef} />
               </div>
-            </ScrollArea>
+            )}
           </div>
 
           <Separator />
@@ -836,11 +891,15 @@ export function ThinktankGroups({ userId, userAccounts = [], viewOnly = false }:
   );
 }
 
-function ThinktankCard({ 
-  group, 
-  onJoin, 
-  onEnter 
-}: { 
+/**
+ * Memoized ThinktankCard component to prevent unnecessary re-renders when group props haven't changed.
+ * This helps performance when rendering large lists of groups in the grid.
+ */
+const ThinktankCard = React.memo(function ThinktankCard({
+  group,
+  onJoin,
+  onEnter
+}: {
   group: ThinktankGroup;
   onJoin: (groupId: string) => void;
   onEnter: (group: ThinktankGroup) => void;
@@ -955,9 +1014,13 @@ function ThinktankCard({
       </Card>
     </motion.div>
   );
-}
+});
 
-function CreateGroupModal({
+/**
+ * Memoized CreateGroupModal component to prevent unnecessary re-renders.
+ * Modal components should be memoized as they often receive stable callback props.
+ */
+const CreateGroupModal = React.memo(function CreateGroupModal({
   isOpen,
   onClose,
   onCreateGroup
@@ -1116,7 +1179,7 @@ function CreateGroupModal({
             </div>
             {formData.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
-                {formData.tags.map(tag => (
+                {formData.tags.map((tag: string) => (
                   <span
                     key={tag}
                     onClick={() => removeTag(tag)}
@@ -1149,4 +1212,4 @@ function CreateGroupModal({
       </DialogContent>
     </Dialog>
   );
-}
+});

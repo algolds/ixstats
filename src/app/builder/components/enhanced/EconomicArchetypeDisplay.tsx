@@ -48,56 +48,30 @@ import {
   Building,
   Landmark
 } from 'lucide-react';
-import { 
-  EconomicArchetypeService
-} from '~/app/builder/services/EconomicArchetypeService';
-import type { 
-  EconomicArchetype
-} from '~/app/builder/services/EconomicArchetypeService';
+import type { EconomicArchetype } from '~/app/builder/data/archetype-types';
 import type { EconomyBuilderState } from '~/types/economy-builder';
+import { useArchetypes } from '~/hooks/useArchetypes';
 
 interface EconomicArchetypeDisplayProps {
   className?: string;
   currentState?: EconomyBuilderState;
-  onArchetypeApplied?: (newState: EconomyBuilderState) => void;
+  onArchetypeApplied?: (newState: EconomyBuilderState, archetypeId?: string) => void;
 }
 
-export function EconomicArchetypeDisplay({ 
-  className, 
-  currentState, 
-  onArchetypeApplied 
+export function EconomicArchetypeDisplay({
+  className,
+  currentState,
+  onArchetypeApplied
 }: EconomicArchetypeDisplayProps) {
-  const [archetypes, setArchetypes] = useState<EconomicArchetype[]>([]);
   const [selectedArchetype, setSelectedArchetype] = useState<EconomicArchetype | null>(null);
-  const [recommendations, setRecommendations] = useState<EconomicArchetype[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('browse');
 
-  const archetypeService = EconomicArchetypeService.getInstance();
-
-  useEffect(() => {
-    loadArchetypes();
-    loadRecommendations();
-  }, [currentState]);
-
-  const loadArchetypes = () => {
-    const allArchetypes = archetypeService.getAllArchetypes();
-    setArchetypes(Array.from(allArchetypes.values()));
-  };
-
-  const loadRecommendations = () => {
-    if (!currentState) return;
-    const recs = archetypeService.getArchetypeRecommendations(currentState, {
-      growthFocus: true,
-      stabilityFocus: true,
-      innovationFocus: true,
-      complexity: 'medium'
-    });
-    setRecommendations(recs.map(r => r.archetype));
-  };
+  // Fetch archetypes from database with fallback
+  const { archetypes } = useArchetypes('all');
 
   const handleArchetypeSelect = (archetypeId: string) => {
-    const archetype = archetypeService.getArchetype(archetypeId);
+    const archetype = archetypes.find(a => a.id === archetypeId || (a as any).key === archetypeId);
     setSelectedArchetype(archetype ?? null);
   };
 
@@ -106,9 +80,12 @@ export function EconomicArchetypeDisplay({
 
     setIsLoading(true);
     try {
+      // Get archetype ID (prefer id over key for database tracking)
+      const archetypeId = (selectedArchetype as any).id || selectedArchetype.id;
+
       // Apply archetype to current state
-      onArchetypeApplied?.(currentState);
-      
+      onArchetypeApplied?.(currentState, archetypeId);
+
       // Show success message
       setActiveTab('browse');
       setSelectedArchetype(null);
@@ -188,10 +165,10 @@ export function EconomicArchetypeDisplay({
     return colorMap[archetypeId] || { bg: 'from-blue-500 to-purple-600', border: 'border-blue-200/50 dark:border-blue-800/50', text: 'text-blue-600 dark:text-blue-400' };
   };
 
-  const renderArchetypeCard = (archetype: EconomicArchetype, showSelectButton: boolean = false, isRecommended: boolean = false) => {
+  const renderArchetypeCard = (archetype: EconomicArchetype, showSelectButton: boolean = false) => {
     const IconComponent = getArchetypeIcon(archetype.id);
     const colors = getArchetypeColors(archetype.id);
-    
+
     return (
     <div key={archetype.id} className="group">
       <Card className="transition-all duration-300 hover:shadow-lg hover:scale-[1.02] bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-900 dark:to-gray-800/50 border-2 hover:border-primary/30">
@@ -211,17 +188,12 @@ export function EconomicArchetypeDisplay({
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center justify-between gap-2 mt-2">
             <div className="flex items-center gap-2">
               <Badge className={`${getComplexityColor(archetype.implementationComplexity)} text-xs px-2 py-0.5 shrink-0 capitalize font-medium`}>
                 {archetype.implementationComplexity}
               </Badge>
-              {isRecommended && (
-                <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 text-xs px-2 py-0.5 font-medium shrink-0">
-                  Recommended
-                </Badge>
-              )}
             </div>
             <div className="flex items-center gap-1">
               <div className="text-xs font-medium text-blue-600 dark:text-blue-400">
@@ -541,12 +513,25 @@ export function EconomicArchetypeDisplay({
         </TabsList>
 
         <TabsContent value="browse" className="space-y-6 mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {archetypes.map(archetype => {
-              const isRecommended = recommendations.some(rec => rec.id === archetype.id);
-              return renderArchetypeCard(archetype, true, isRecommended);
-            })}
-          </div>
+          {archetypes.length === 0 ? (
+            <Card className="border-2 border-dashed border-muted-foreground/25">
+              <CardContent className="flex items-center justify-center py-16">
+                <div className="text-center space-y-4">
+                  <div className="p-4 rounded-full bg-muted/50 mx-auto w-fit">
+                    <Target className="h-8 w-8 text-muted-foreground/50" />
+                  </div>
+                  <h3 className="text-lg font-semibold">No Archetypes Available</h3>
+                  <p className="text-sm text-muted-foreground max-w-md">
+                    Economic archetypes are being loaded. If this persists, contact the administrator.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {archetypes.map(archetype => renderArchetypeCard(archetype, true))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="details" className="mt-5">

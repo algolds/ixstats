@@ -518,8 +518,8 @@ export const StepRenderer = memo(function StepRenderer({
                   </div>
                 </div>
                 <AtomicComponentSelector
-                  selectedComponents={builderState.governmentComponents}
-                  onComponentChange={(components) => {
+                  initialComponents={builderState.governmentComponents}
+                  onChange={(components) => {
                     setBuilderState((prev) => ({
                       ...prev,
                       governmentComponents: components,

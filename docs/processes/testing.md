@@ -25,8 +25,10 @@ IxStats combines automated Jest suites, wiring audits, and manual verification t
 - `tests/setup.ts` – Registers jest-dom and global test utilities
 
 ## Data Considerations
-- Local tests default to SQLite dev database (`file:./prisma/dev.db`)
+- **Migration Notice (October 2025)**: Tests now use PostgreSQL database (`localhost:5433/ixstats`)
+- Local tests connect to PostgreSQL database (migrated from SQLite)
 - Automated scripts may require seeded data; run `npm run db:setup` before executing test suites
+- Legacy SQLite test databases archived in `prisma/backups/sqlite-legacy/`
 
 ## Manual QA Checklist
 1. Verify MyCountry tabs load with seeded data

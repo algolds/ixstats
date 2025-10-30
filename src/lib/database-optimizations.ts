@@ -351,22 +351,22 @@ export class OptimizedCountryQueries {
     
     try {
       const result = await db.$queryRaw`
-        SELECT 
-          COUNT(*) as totalCountries,
-          SUM(COALESCE(currentPopulation, 0)) as totalPopulation,
-          SUM(COALESCE(currentTotalGdp, 0)) as totalGdp,
-          SUM(COALESCE(landArea, 0)) as totalLand,
-          COUNT(CASE WHEN economicTier = 'Advanced' THEN 1 END) as advancedCount,
-          COUNT(CASE WHEN economicTier = 'Developed' THEN 1 END) as developedCount,
-          COUNT(CASE WHEN economicTier = 'Emerging' THEN 1 END) as emergingCount,
-          COUNT(CASE WHEN economicTier = 'Developing' THEN 1 END) as developingCount,
-          COUNT(CASE WHEN economicTier = 'Impoverished' THEN 1 END) as impoverishedCount,
-          COUNT(CASE WHEN populationTier = '1' THEN 1 END) as popTier1Count,
-          COUNT(CASE WHEN populationTier = '2' THEN 1 END) as popTier2Count,
-          COUNT(CASE WHEN populationTier = '3' THEN 1 END) as popTier3Count,
-          COUNT(CASE WHEN populationTier = '4' THEN 1 END) as popTier4Count,
-          COUNT(CASE WHEN populationTier = '5' THEN 1 END) as popTier5Count
-        FROM Country
+        SELECT
+          COUNT(*) as "totalCountries",
+          SUM(COALESCE("currentPopulation", 0)) as "totalPopulation",
+          SUM(COALESCE("currentTotalGdp", 0)) as "totalGdp",
+          SUM(COALESCE("landArea", 0)) as "totalLand",
+          COUNT(CASE WHEN "economicTier" = 'Advanced' THEN 1 END) as "advancedCount",
+          COUNT(CASE WHEN "economicTier" = 'Developed' THEN 1 END) as "developedCount",
+          COUNT(CASE WHEN "economicTier" = 'Emerging' THEN 1 END) as "emergingCount",
+          COUNT(CASE WHEN "economicTier" = 'Developing' THEN 1 END) as "developingCount",
+          COUNT(CASE WHEN "economicTier" = 'Impoverished' THEN 1 END) as "impoverishedCount",
+          COUNT(CASE WHEN "populationTier" = '1' THEN 1 END) as "popTier1Count",
+          COUNT(CASE WHEN "populationTier" = '2' THEN 1 END) as "popTier2Count",
+          COUNT(CASE WHEN "populationTier" = '3' THEN 1 END) as "popTier3Count",
+          COUNT(CASE WHEN "populationTier" = '4' THEN 1 END) as "popTier4Count",
+          COUNT(CASE WHEN "populationTier" = '5' THEN 1 END) as "popTier5Count"
+        FROM "public"."Country"
       `;
 
       const duration = performance.now() - startTime;

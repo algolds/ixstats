@@ -295,6 +295,7 @@ const countriesRouter = createTRPCRouter({
 
       const countries: CountryWithEconomicData[] = rawCountries.map((country: any) => ({
         ...country,
+        flagUrl: country.flag ?? undefined,
         // Ensure critical fields are properly mapped
         currentPopulation: country.currentPopulation ?? country.baselinePopulation ?? 0,
         currentGdpPerCapita: country.currentGdpPerCapita ?? country.baselineGdpPerCapita ?? 0,
@@ -388,6 +389,12 @@ const countriesRouter = createTRPCRouter({
         dmInputs: {
           where: { isActive: true },
           orderBy: { ixTimeTimestamp: "desc" },
+        },
+        users: {
+          select: {
+            clerkUserId: true,
+          },
+          take: 1,
         },
       };
 
@@ -564,6 +571,7 @@ const countriesRouter = createTRPCRouter({
 
       const response: CountryWithEconomicData = {
         ...country,  // All database fields including economic indicators
+        flagUrl: country.flag ?? undefined,
 
         // Override ONLY the calculated population and GDP fields from calculation engine
         currentPopulation: result.newStats.currentPopulation,
@@ -650,7 +658,13 @@ const countriesRouter = createTRPCRouter({
       console.log('Response laborForceParticipationRate:', response.laborForceParticipationRate);
       console.log('=== END DEBUG ===');
 
-      return response;
+      // Include owner's clerkUserId for ThinkPages profile integration
+      const ownerClerkUserId = country.users?.[0]?.clerkUserId ?? null;
+
+      return {
+        ...response,
+        ownerClerkUserId,
+      };
     }),
 
   // IMPORTANT: This mutation updates ECONOMIC INDICATORS only.
@@ -1277,22 +1291,22 @@ const countriesRouter = createTRPCRouter({
       }
 
       const result = await ctx.db.$queryRaw`
-        SELECT 
-          COUNT(*) as totalCountries,
-          SUM(COALESCE(currentPopulation, 0)) as totalPopulation,
-          SUM(COALESCE(currentTotalGdp, 0)) as totalGdp,
-          SUM(COALESCE(landArea, 0)) as totalLand,
-          COUNT(CASE WHEN economicTier = 'Advanced' THEN 1 END) as advancedCount,
-          COUNT(CASE WHEN economicTier = 'Developed' THEN 1 END) as developedCount,
-          COUNT(CASE WHEN economicTier = 'Emerging' THEN 1 END) as emergingCount,
-          COUNT(CASE WHEN economicTier = 'Developing' THEN 1 END) as developingCount,
-          COUNT(CASE WHEN economicTier = 'Impoverished' THEN 1 END) as impoverishedCount,
-          COUNT(CASE WHEN populationTier = '1' THEN 1 END) as popTier1Count,
-          COUNT(CASE WHEN populationTier = '2' THEN 1 END) as popTier2Count,
-          COUNT(CASE WHEN populationTier = '3' THEN 1 END) as popTier3Count,
-          COUNT(CASE WHEN populationTier = '4' THEN 1 END) as popTier4Count,
-          COUNT(CASE WHEN populationTier = '5' THEN 1 END) as popTier5Count
-        FROM Country
+        SELECT
+          COUNT(*) as "totalCountries",
+          SUM(COALESCE("currentPopulation", 0)) as "totalPopulation",
+          SUM(COALESCE("currentTotalGdp", 0)) as "totalGdp",
+          SUM(COALESCE("landArea", 0)) as "totalLand",
+          COUNT(CASE WHEN "economicTier" = 'Advanced' THEN 1 END) as "advancedCount",
+          COUNT(CASE WHEN "economicTier" = 'Developed' THEN 1 END) as "developedCount",
+          COUNT(CASE WHEN "economicTier" = 'Emerging' THEN 1 END) as "emergingCount",
+          COUNT(CASE WHEN "economicTier" = 'Developing' THEN 1 END) as "developingCount",
+          COUNT(CASE WHEN "economicTier" = 'Impoverished' THEN 1 END) as "impoverishedCount",
+          COUNT(CASE WHEN "populationTier" = '1' THEN 1 END) as "popTier1Count",
+          COUNT(CASE WHEN "populationTier" = '2' THEN 1 END) as "popTier2Count",
+          COUNT(CASE WHEN "populationTier" = '3' THEN 1 END) as "popTier3Count",
+          COUNT(CASE WHEN "populationTier" = '4' THEN 1 END) as "popTier4Count",
+          COUNT(CASE WHEN "populationTier" = '5' THEN 1 END) as "popTier5Count"
+        FROM "public"."Country"
       `;
 
       const stats = (result as any[])[0];
@@ -4501,13 +4515,19 @@ const countriesRouter = createTRPCRouter({
           // Calculate final government effectiveness (0-100 range)
           const governmentEffectiveness = Math.max(0, Math.min(100, baseEffectiveness + totalSynergyBonus - conflictPenalty));
 
-          // Update country with government effectiveness score
-          await tx.country.update({
-            where: { id: country.id },
-            data: {
-              governmentEffectiveness: governmentEffectiveness
-            }
+          // Update government structure with effectiveness score (if it exists)
+          const existingGovStructure = await tx.governmentStructure.findUnique({
+            where: { countryId: country.id }
           });
+
+          if (existingGovStructure) {
+            await tx.governmentStructure.update({
+              where: { id: existingGovStructure.id },
+              data: {
+                governmentEffectiveness: governmentEffectiveness
+              }
+            });
+          }
 
           console.log(`  ✅ Government effectiveness: ${governmentEffectiveness.toFixed(1)}% (base: ${baseEffectiveness.toFixed(1)}%, synergy: +${totalSynergyBonus}, conflicts: -${conflictPenalty})`);
         }
@@ -4703,7 +4723,6 @@ const countriesRouter = createTRPCRouter({
                   interestRate: 3.5,
                   exchangeRate: coreIndicators.currencyExchangeRate || 1.0,
                   populationGrowthRate: economyState.demographics?.populationGrowthRate || 1.0,
-                  consumptionShare: 0.65,
                   investmentRate: 0.25,
                   fiscalBalance: 0,
                   tradeBalance: 0,
@@ -4712,37 +4731,40 @@ const countriesRouter = createTRPCRouter({
             }
 
             // Calculate total GDP from sectors
-            const totalSectorGDP = economyState.sectors.reduce((sum, sector) => {
-              return sum + (economyState.structure.totalGDP * sector.gdpContribution / 100);
-            }, 0);
+            if (economyState.structure?.totalGDP) {
+              const structureTotalGDP = economyState.structure.totalGDP;
+              const totalSectorGDP = economyState.sectors.reduce((sum, sector) => {
+                return sum + (structureTotalGDP * sector.gdpContribution / 100);
+              }, 0);
 
-            // Create sectoral output for current year
-            const currentYear = new Date().getFullYear();
+              // Create sectoral output for current year
+              const currentYear = new Date().getFullYear();
 
-            // Group sectors by category
-            const agricultureGDP = economyState.sectors
-              .filter(s => s.category === 'Primary')
-              .reduce((sum, s) => sum + (economyState.structure.totalGDP * s.gdpContribution / 100), 0);
+              // Group sectors by category
+              const agricultureGDP = economyState.sectors
+                .filter(s => s.category === 'Primary')
+                .reduce((sum, s) => sum + (structureTotalGDP * s.gdpContribution / 100), 0);
 
-            const industryGDP = economyState.sectors
-              .filter(s => s.category === 'Secondary')
-              .reduce((sum, s) => sum + (economyState.structure.totalGDP * s.gdpContribution / 100), 0);
+              const industryGDP = economyState.sectors
+                .filter(s => s.category === 'Secondary')
+                .reduce((sum, s) => sum + (structureTotalGDP * s.gdpContribution / 100), 0);
 
-            const servicesGDP = economyState.sectors
-              .filter(s => s.category === 'Tertiary')
-              .reduce((sum, s) => sum + (economyState.structure.totalGDP * s.gdpContribution / 100), 0);
+              const servicesGDP = economyState.sectors
+                .filter(s => s.category === 'Tertiary')
+                .reduce((sum, s) => sum + (structureTotalGDP * s.gdpContribution / 100), 0);
 
-            await tx.sectoralOutput.create({
-              data: {
-                economicModelId: economicModel.id,
-                year: currentYear,
-                agriculture: agricultureGDP,
-                industry: industryGDP,
-                services: servicesGDP,
-                government: economyState.structure.totalGDP * 0.15, // Default 15% government
-                totalGDP: economyState.structure.totalGDP,
-              }
-            });
+              await tx.sectoralOutput.create({
+                data: {
+                  economicModelId: economicModel.id,
+                  year: currentYear,
+                  agriculture: agricultureGDP,
+                  industry: industryGDP,
+                  services: servicesGDP,
+                  government: structureTotalGDP * 0.15, // Default 15% government
+                  totalGDP: structureTotalGDP,
+                }
+              });
+            }
 
             console.log(`  ✅ Created sectoral output records for ${economyState.sectors.length} sectors`);
           }

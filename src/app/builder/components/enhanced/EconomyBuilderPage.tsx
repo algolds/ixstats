@@ -47,9 +47,9 @@ import {
   EconomicImpactPreview
 } from '~/components/economy/atoms/AtomicEconomicUI';
 import {
-  EconomicComponentType,
-  ATOMIC_ECONOMIC_COMPONENTS
+  EconomicComponentType
 } from '~/components/economy/atoms/AtomicEconomicComponents';
+import { ATOMIC_ECONOMIC_COMPONENTS } from '~/lib/atomic-economic-data';
 
 // Types and Services
 import type {
@@ -59,7 +59,7 @@ import type {
   CrossBuilderIntegration
 } from '~/types/economy-builder';
 import type { EconomicInputs } from '../../lib/economy-data-service';
-import type { TaxBuilderState } from '~/components/tax-system/TaxBuilder';
+import type { TaxBuilderState } from '~/hooks/useTaxBuilderState';
 import { economyIntegrationService } from '../../services/EconomyIntegrationService';
 
 // Tab Components (lazy-loaded)

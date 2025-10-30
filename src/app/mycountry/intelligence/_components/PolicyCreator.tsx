@@ -18,9 +18,8 @@
  * - Cost-benefit analysis
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner';
 import {
   Building2,
   TrendingUp,
@@ -32,16 +31,11 @@ import {
   FileText,
   DollarSign,
   Users,
-  Globe,
-  Briefcase,
-  Shield,
   Sparkles,
   AlertCircle,
   Info,
   Target,
-  BarChart3,
   Activity,
-  Zap,
   X
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '~/components/ui/card';
@@ -51,19 +45,18 @@ import { Label } from '~/components/ui/label';
 import { Textarea } from '~/components/ui/textarea';
 import { Badge } from '~/components/ui/badge';
 import { Progress } from '~/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/components/ui/select';
 import { Alert, AlertDescription } from '~/components/ui/alert';
 import { Slider } from '~/components/ui/slider';
 import { Switch } from '~/components/ui/switch';
-import { api } from '~/trpc/react';
 import { LoadingState } from '~/components/shared/feedback';
-import { ATOMIC_COMPONENTS, ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
-import { unifiedBuilderService } from '~/app/builder/services/UnifiedBuilderIntegrationService';
-
-// Policy types matching the schema
-type PolicyType = 'economic' | 'social' | 'diplomatic' | 'infrastructure' | 'governance';
-type PolicyPriority = 'critical' | 'high' | 'medium' | 'low';
+import { ATOMIC_COMPONENTS, type ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
+import { usePolicyCreator } from '~/hooks/usePolicyCreator';
+import {
+  POLICY_TEMPLATES,
+  POLICY_TYPE_CONFIG,
+  type PolicyType,
+  type PolicyPriority
+} from '~/lib/policy-templates';
 
 // Step definitions
 const STEPS = [
@@ -73,89 +66,6 @@ const STEPS = [
   { id: 4, title: 'Timeline', icon: Calendar },
   { id: 5, title: 'Review', icon: CheckCircle }
 ] as const;
-
-interface PolicyTemplate {
-  id: string;
-  name: string;
-  description: string;
-  policyType: PolicyType;
-  category: string;
-  defaultSettings: {
-    implementationCost?: number;
-    maintenanceCost?: number;
-    priority?: PolicyPriority;
-    targetMetrics?: Record<string, number>;
-  };
-}
-
-// Pre-configured policy templates
-const POLICY_TEMPLATES: PolicyTemplate[] = [
-  {
-    id: 'stimulus',
-    name: 'Economic Stimulus Package',
-    description: 'Boost economic growth through targeted spending and tax incentives',
-    policyType: 'economic',
-    category: 'economic',
-    defaultSettings: {
-      implementationCost: 5000000,
-      maintenanceCost: 0,
-      priority: 'high',
-      targetMetrics: { gdpGrowth: 2.5, unemployment: -1.0 }
-    }
-  },
-  {
-    id: 'healthcare',
-    name: 'Universal Healthcare Initiative',
-    description: 'Expand healthcare coverage to all citizens',
-    policyType: 'social',
-    category: 'healthcare',
-    defaultSettings: {
-      implementationCost: 10000000,
-      maintenanceCost: 5000000,
-      priority: 'critical',
-      targetMetrics: { healthcareAccess: 100, lifeExpectancy: 5 }
-    }
-  },
-  {
-    id: 'infrastructure',
-    name: 'Infrastructure Modernization',
-    description: 'Upgrade national infrastructure and transportation systems',
-    policyType: 'infrastructure',
-    category: 'infrastructure',
-    defaultSettings: {
-      implementationCost: 15000000,
-      maintenanceCost: 3000000,
-      priority: 'high',
-      targetMetrics: { infrastructureQuality: 25, economicEfficiency: 15 }
-    }
-  },
-  {
-    id: 'education',
-    name: 'Education Reform',
-    description: 'Improve education quality and access',
-    policyType: 'social',
-    category: 'education',
-    defaultSettings: {
-      implementationCost: 8000000,
-      maintenanceCost: 4000000,
-      priority: 'high',
-      targetMetrics: { literacyRate: 10, skillLevel: 20 }
-    }
-  },
-  {
-    id: 'trade',
-    name: 'Trade Agreement Initiative',
-    description: 'Negotiate favorable trade agreements with partner nations',
-    policyType: 'diplomatic',
-    category: 'trade',
-    defaultSettings: {
-      implementationCost: 2000000,
-      maintenanceCost: 500000,
-      priority: 'medium',
-      targetMetrics: { tradeVolume: 20, diplomaticInfluence: 10 }
-    }
-  }
-];
 
 interface PolicyCreatorProps {
   countryId: string;
@@ -172,238 +82,17 @@ export function PolicyCreator({
   onCancel,
   initialDraft
 }: PolicyCreatorProps) {
-  // Wizard state
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  // Policy form state
-  const [policyType, setPolicyType] = useState<PolicyType>('economic');
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
-  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
-  const [selectedComponents, setSelectedComponents] = useState<ComponentType[]>([]);
-  const [implementationCost, setImplementationCost] = useState(1000000);
-  const [maintenanceCost, setMaintenanceCost] = useState(100000);
-  const [priority, setPriority] = useState<PolicyPriority>('medium');
-  const [effectiveDate, setEffectiveDate] = useState<Date | null>(null);
-  const [expiryDate, setExpiryDate] = useState<Date | null>(null);
-  const [targetMetrics, setTargetMetrics] = useState<Record<string, number>>({});
-  const [autoActivate, setAutoActivate] = useState(false);
-
-  // Fetch government builder data
-  const { data: governmentData } = api.government.getByCountryId.useQuery(
-    { countryId },
-    { enabled: !!countryId }
-  );
-
-  // Fetch economy data
-  const { data: economyData } = api.economics.getEconomyBuilderState.useQuery(
-    { countryId },
-    { enabled: !!countryId }
-  );
-
-  // Fetch tax system data
-  const { data: taxData } = api.taxSystem.getByCountryId.useQuery(
-    { countryId },
-    { enabled: !!countryId }
-  );
-
-  // Create policy mutation
-  const createPolicyMutation = api.policies.createPolicy.useMutation({
-    onSuccess: (policy) => {
-      toast.success('Policy Created', {
-        description: `"${policy.name}" has been successfully created`
-      });
-
-      // Auto-activate if requested
-      if (autoActivate) {
-        activatePolicyMutation.mutate({ id: policy.id });
-      }
-
-      onComplete?.(policy.id);
-    },
-    onError: (error) => {
-      toast.error('Failed to Create Policy', {
-        description: error.message
-      });
-      setIsProcessing(false);
-    }
+  // Use policy creator hook for all state and logic
+  const policy = usePolicyCreator({
+    countryId,
+    userId,
+    onSuccess: onComplete,
+    initialDraft
   });
-
-  // Activate policy mutation
-  const activatePolicyMutation = api.policies.activatePolicy.useMutation({
-    onSuccess: () => {
-      toast.success('Policy Activated', {
-        description: 'The policy is now in effect'
-      });
-    }
-  });
-
-  // Load builder context
-  const builderState = useMemo(() => {
-    return unifiedBuilderService.getState();
-  }, []);
-
-  // Calculate policy impact based on builder context
-  const calculatedImpact = useMemo(() => {
-    if (!economyData || !governmentData) {
-      return {
-        gdpImpact: 0,
-        revenueImpact: 0,
-        employmentImpact: 0,
-        budgetBalance: 0,
-        effectiveness: 50
-      };
-    }
-
-    const gdp = economyData.structure.totalGDP;
-    const totalBudget = governmentData?.totalBudget || 0;
-
-    // Base impact calculations
-    let gdpImpact = 0;
-    let revenueImpact = 0;
-    let employmentImpact = 0;
-
-    // Calculate based on policy type and cost
-    switch (policyType) {
-      case 'economic':
-        gdpImpact = (implementationCost / gdp) * 100 * 0.5; // Stimulus effect
-        employmentImpact = (implementationCost / 100000) * 0.01; // Job creation
-        revenueImpact = gdpImpact * 0.3; // Tax revenue from growth
-        break;
-      case 'social':
-        employmentImpact = (implementationCost / 150000) * 0.01;
-        gdpImpact = employmentImpact * 0.5; // Indirect economic benefit
-        revenueImpact = -maintenanceCost; // Ongoing cost
-        break;
-      case 'infrastructure':
-        gdpImpact = (implementationCost / gdp) * 100 * 0.8; // High multiplier
-        employmentImpact = (implementationCost / 80000) * 0.01;
-        revenueImpact = gdpImpact * 0.2;
-        break;
-      case 'diplomatic':
-        gdpImpact = (implementationCost / gdp) * 100 * 0.3; // Trade benefits
-        revenueImpact = gdpImpact * 0.25;
-        break;
-      case 'governance':
-        gdpImpact = (implementationCost / gdp) * 100 * 0.2; // Efficiency gains
-        revenueImpact = -maintenanceCost;
-        break;
-    }
-
-    // Component synergy bonus
-    const synergyBonus = selectedComponents.length > 0
-      ? selectedComponents.reduce((acc, comp) => {
-          const component = ATOMIC_COMPONENTS[comp];
-          return acc + (component?.effectiveness || 0);
-        }, 0) / selectedComponents.length / 100
-      : 0;
-
-    gdpImpact *= (1 + synergyBonus);
-    revenueImpact *= (1 + synergyBonus);
-    employmentImpact *= (1 + synergyBonus);
-
-    const budgetBalance = totalBudget - implementationCost - maintenanceCost;
-    const effectiveness = Math.min(95, 50 + synergyBonus * 100 + (priority === 'critical' ? 20 : priority === 'high' ? 10 : 0));
-
-    return {
-      gdpImpact: Math.round(gdpImpact * 100) / 100,
-      revenueImpact: Math.round(revenueImpact),
-      employmentImpact: Math.round(employmentImpact * 100) / 100,
-      budgetBalance: Math.round(budgetBalance),
-      effectiveness: Math.round(effectiveness)
-    };
-  }, [policyType, implementationCost, maintenanceCost, selectedComponents, priority, economyData, governmentData]);
-
-  // Apply policy template
-  const applyTemplate = useCallback((template: PolicyTemplate) => {
-    setPolicyType(template.policyType);
-    setName(template.name);
-    setDescription(template.description);
-    setCategory(template.category);
-    setImplementationCost(template.defaultSettings.implementationCost || 1000000);
-    setMaintenanceCost(template.defaultSettings.maintenanceCost || 100000);
-    setPriority(template.defaultSettings.priority || 'medium');
-    setTargetMetrics(template.defaultSettings.targetMetrics || {});
-
-    toast.success('Template Applied', {
-      description: `Loaded "${template.name}" template`
-    });
-  }, []);
-
-  // Validation for each step
-  const validateStep = useCallback((step: number): boolean => {
-    switch (step) {
-      case 1:
-        return !!policyType && !!name && name.length >= 3 && !!description;
-      case 2:
-        return true; // Department is optional
-      case 3:
-        return implementationCost > 0;
-      case 4:
-        return true; // Dates are optional
-      case 5:
-        return true; // Review step
-      default:
-        return false;
-    }
-  }, [policyType, name, description, implementationCost]);
-
-  // Navigation handlers
-  const nextStep = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(5, prev + 1));
-    } else {
-      toast.error('Please complete all required fields');
-    }
-  };
-
-  const prevStep = () => {
-    setCurrentStep(prev => Math.max(1, prev - 1));
-  };
-
-  // Submit handler
-  const handleSubmit = async () => {
-    if (!validateStep(5)) {
-      toast.error('Please complete all required fields');
-      return;
-    }
-
-    setIsProcessing(true);
-
-    try {
-      await createPolicyMutation.mutateAsync({
-        countryId,
-        userId,
-        name,
-        description,
-        policyType,
-        category: category || policyType,
-        effectiveDate: effectiveDate || undefined,
-        expiryDate: expiryDate || undefined,
-        targetMetrics: JSON.stringify(targetMetrics),
-        implementationCost,
-        maintenanceCost,
-        priority
-      });
-    } catch (error) {
-      setIsProcessing(false);
-    }
-  };
-
-  // Policy type icons
-  const policyTypeConfig = {
-    economic: { icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-950/20' },
-    social: { icon: Users, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-950/20' },
-    diplomatic: { icon: Globe, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950/20' },
-    infrastructure: { icon: Briefcase, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-950/20' },
-    governance: { icon: Shield, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-950/20' }
-  };
 
   // Render step content
   const renderStepContent = () => {
-    switch (currentStep) {
+    switch (policy.currentStep) {
       case 1:
         return (
           <div className="space-y-6">
@@ -415,7 +104,7 @@ export function PolicyCreator({
               </Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {POLICY_TEMPLATES.map(template => {
-                  const config = policyTypeConfig[template.policyType];
+                  const config = POLICY_TYPE_CONFIG[template.policyType];
                   const Icon = config.icon;
 
                   return (
@@ -426,7 +115,7 @@ export function PolicyCreator({
                     >
                       <Card
                         className="cursor-pointer hover:shadow-md transition-all border-2 hover:border-primary"
-                        onClick={() => applyTemplate(template)}
+                        onClick={() => policy.applyTemplate(template)}
                       >
                         <CardContent className="p-4">
                           <div className="flex items-start gap-3">
@@ -454,10 +143,10 @@ export function PolicyCreator({
                 Policy Type *
               </Label>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                {(Object.keys(policyTypeConfig) as PolicyType[]).map(type => {
-                  const config = policyTypeConfig[type];
+                {(Object.keys(POLICY_TYPE_CONFIG) as PolicyType[]).map(type => {
+                  const config = POLICY_TYPE_CONFIG[type];
                   const Icon = config.icon;
-                  const isSelected = policyType === type;
+                  const isSelected = policy.formData.policyType === type;
 
                   return (
                     <motion.div
@@ -471,7 +160,7 @@ export function PolicyCreator({
                             ? 'border-primary bg-primary/5'
                             : 'border-border hover:border-primary/50'
                         }`}
-                        onClick={() => setPolicyType(type)}
+                        onClick={() => policy.updateField('policyType', type)}
                       >
                         <Icon className={`h-6 w-6 mx-auto mb-2 ${config.color}`} />
                         <p className="text-xs font-medium capitalize">{type}</p>
@@ -489,8 +178,8 @@ export function PolicyCreator({
               </Label>
               <Input
                 id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={policy.formData.name}
+                onChange={(e) => policy.updateField('name', e.target.value)}
                 placeholder="Enter a clear, descriptive policy name"
                 className="text-base"
               />
@@ -503,8 +192,8 @@ export function PolicyCreator({
               </Label>
               <Textarea
                 id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={policy.formData.description}
+                onChange={(e) => policy.updateField('description', e.target.value)}
                 placeholder="Describe the policy's goals, scope, and expected outcomes"
                 rows={4}
                 className="text-base"
@@ -518,8 +207,8 @@ export function PolicyCreator({
               </Label>
               <Input
                 id="category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                value={policy.formData.category}
+                onChange={(e) => policy.updateField('category', e.target.value)}
                 placeholder="e.g., healthcare, education, defense"
                 className="text-base"
               />
@@ -539,19 +228,19 @@ export function PolicyCreator({
             </Alert>
 
             {/* Department Selection */}
-            {governmentData?.departments && governmentData.departments.length > 0 && (
+            {policy.governmentData?.departments && policy.governmentData.departments.length > 0 && (
               <div className="space-y-3">
                 <Label className="text-base font-semibold">Implementing Department</Label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {governmentData.departments.map((dept: any, index: number) => (
+                  {policy.governmentData.departments.map((dept: any, index: number) => (
                     <Card
                       key={index}
                       className={`cursor-pointer hover:shadow-md transition-all border-2 ${
-                        selectedDepartment === index.toString()
+                        policy.formData.selectedDepartment === index.toString()
                           ? 'border-primary bg-primary/5'
                           : 'border-border'
                       }`}
-                      onClick={() => setSelectedDepartment(index.toString())}
+                      onClick={() => policy.updateField('selectedDepartment', index.toString())}
                     >
                       <CardContent className="p-4">
                         <div className="flex items-center gap-3">
@@ -562,7 +251,7 @@ export function PolicyCreator({
                             <h4 className="font-semibold">{dept.name}</h4>
                             <p className="text-xs text-muted-foreground">{dept.description}</p>
                           </div>
-                          {selectedDepartment === index.toString() && (
+                          {policy.formData.selectedDepartment === index.toString() && (
                             <CheckCircle className="h-5 w-5 text-primary" />
                           )}
                         </div>
@@ -578,7 +267,7 @@ export function PolicyCreator({
               <Label className="text-base font-semibold">
                 Related Government Components
                 <Badge variant="outline" className="ml-2">
-                  {selectedComponents.length} selected
+                  {policy.formData.selectedComponents.length} selected
                 </Badge>
               </Label>
               <p className="text-sm text-muted-foreground">
@@ -590,7 +279,7 @@ export function PolicyCreator({
                   .slice(0, 20)
                   .map(([key, component]) => {
                     if (!component) return null;
-                    const isSelected = selectedComponents.includes(key as ComponentType);
+                    const isSelected = policy.formData.selectedComponents.includes(key as ComponentType);
 
                     return (
                       <Card
@@ -601,10 +290,11 @@ export function PolicyCreator({
                             : 'border-border'
                         }`}
                         onClick={() => {
-                          setSelectedComponents(prev =>
+                          policy.updateField(
+                            'selectedComponents',
                             isSelected
-                              ? prev.filter(c => c !== key)
-                              : [...prev, key as ComponentType]
+                              ? policy.formData.selectedComponents.filter(c => c !== key)
+                              : [...policy.formData.selectedComponents, key as ComponentType]
                           );
                         }}
                       >
@@ -650,28 +340,28 @@ export function PolicyCreator({
                   <div className="text-center p-3 rounded-lg bg-background">
                     <TrendingUp className="h-5 w-5 mx-auto mb-1 text-green-600" />
                     <p className="text-2xl font-bold text-green-600">
-                      {calculatedImpact.gdpImpact > 0 ? '+' : ''}{calculatedImpact.gdpImpact}%
+                      {policy.calculatedImpact.gdpImpact > 0 ? '+' : ''}{policy.calculatedImpact.gdpImpact}%
                     </p>
                     <p className="text-xs text-muted-foreground">GDP Impact</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-background">
                     <DollarSign className="h-5 w-5 mx-auto mb-1 text-blue-600" />
                     <p className="text-2xl font-bold text-blue-600">
-                      ${(calculatedImpact.revenueImpact / 1000000).toFixed(1)}M
+                      ${(policy.calculatedImpact.revenueImpact / 1000000).toFixed(1)}M
                     </p>
                     <p className="text-xs text-muted-foreground">Revenue Impact</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-background">
                     <Users className="h-5 w-5 mx-auto mb-1 text-purple-600" />
                     <p className="text-2xl font-bold text-purple-600">
-                      {calculatedImpact.employmentImpact > 0 ? '+' : ''}{calculatedImpact.employmentImpact}%
+                      {policy.calculatedImpact.employmentImpact > 0 ? '+' : ''}{policy.calculatedImpact.employmentImpact}%
                     </p>
                     <p className="text-xs text-muted-foreground">Employment</p>
                   </div>
                   <div className="text-center p-3 rounded-lg bg-background">
                     <Target className="h-5 w-5 mx-auto mb-1 text-orange-600" />
                     <p className="text-2xl font-bold text-orange-600">
-                      {calculatedImpact.effectiveness}%
+                      {policy.calculatedImpact.effectiveness}%
                     </p>
                     <p className="text-xs text-muted-foreground">Effectiveness</p>
                   </div>
@@ -691,21 +381,21 @@ export function PolicyCreator({
                     min={100000}
                     max={50000000}
                     step={100000}
-                    value={[implementationCost]}
-                    onValueChange={([value]) => setImplementationCost(value || 100000)}
+                    value={[policy.formData.implementationCost]}
+                    onValueChange={([value]) => policy.updateField('implementationCost', value || 100000)}
                     className="flex-1"
                   />
                   <div className="w-32">
                     <Input
                       type="number"
-                      value={implementationCost}
-                      onChange={(e) => setImplementationCost(Number(e.target.value))}
+                      value={policy.formData.implementationCost}
+                      onChange={(e) => policy.updateField('implementationCost', Number(e.target.value))}
                       className="text-right"
                     />
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  ${(implementationCost / 1000000).toFixed(2)}M implementation cost
+                  ${(policy.formData.implementationCost / 1000000).toFixed(2)}M implementation cost
                 </p>
               </div>
 
@@ -719,21 +409,21 @@ export function PolicyCreator({
                     min={0}
                     max={10000000}
                     step={50000}
-                    value={[maintenanceCost]}
-                    onValueChange={([value]) => setMaintenanceCost(value || 0)}
+                    value={[policy.formData.maintenanceCost]}
+                    onValueChange={([value]) => policy.updateField('maintenanceCost', value || 0)}
                     className="flex-1"
                   />
                   <div className="w-32">
                     <Input
                       type="number"
-                      value={maintenanceCost}
-                      onChange={(e) => setMaintenanceCost(Number(e.target.value))}
+                      value={policy.formData.maintenanceCost}
+                      onChange={(e) => policy.updateField('maintenanceCost', Number(e.target.value))}
                       className="text-right"
                     />
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  ${(maintenanceCost / 1000000).toFixed(2)}M annual maintenance
+                  ${(policy.formData.maintenanceCost / 1000000).toFixed(2)}M annual maintenance
                 </p>
               </div>
             </div>
@@ -745,8 +435,8 @@ export function PolicyCreator({
                 {(['critical', 'high', 'medium', 'low'] as PolicyPriority[]).map(level => (
                   <Button
                     key={level}
-                    variant={priority === level ? 'default' : 'outline'}
-                    onClick={() => setPriority(level)}
+                    variant={policy.formData.priority === level ? 'default' : 'outline'}
+                    onClick={() => policy.updateField('priority', level)}
                     className="capitalize"
                   >
                     {level}
@@ -756,13 +446,13 @@ export function PolicyCreator({
             </div>
 
             {/* Budget Impact Warning */}
-            {economyData && calculatedImpact.budgetBalance < 0 && (
+            {policy.economyData && policy.calculatedImpact.budgetBalance < 0 && (
               <Alert className="border-red-200 dark:border-red-800">
                 <AlertCircle className="h-4 w-4 text-red-600" />
                 <AlertDescription>
                   <span className="font-semibold text-red-600">Budget Deficit Warning:</span>
                   {' '}This policy will create a budget deficit of $
-                  {Math.abs(calculatedImpact.budgetBalance / 1000000).toFixed(2)}M.
+                  {Math.abs(policy.calculatedImpact.budgetBalance / 1000000).toFixed(2)}M.
                   Consider reducing costs or adjusting your budget.
                 </AlertDescription>
               </Alert>
@@ -782,8 +472,8 @@ export function PolicyCreator({
                 <Input
                   id="effectiveDate"
                   type="date"
-                  value={effectiveDate?.toISOString().split('T')[0] || ''}
-                  onChange={(e) => setEffectiveDate(e.target.value ? new Date(e.target.value) : null)}
+                  value={policy.formData.effectiveDate?.toISOString().split('T')[0] || ''}
+                  onChange={(e) => policy.updateField('effectiveDate', e.target.value ? new Date(e.target.value) : null)}
                 />
                 <p className="text-sm text-muted-foreground">
                   When should this policy take effect? (Leave blank for immediate)
@@ -797,9 +487,9 @@ export function PolicyCreator({
                 <Input
                   id="expiryDate"
                   type="date"
-                  value={expiryDate?.toISOString().split('T')[0] || ''}
-                  onChange={(e) => setExpiryDate(e.target.value ? new Date(e.target.value) : null)}
-                  min={effectiveDate?.toISOString().split('T')[0] || ''}
+                  value={policy.formData.expiryDate?.toISOString().split('T')[0] || ''}
+                  onChange={(e) => policy.updateField('expiryDate', e.target.value ? new Date(e.target.value) : null)}
+                  min={policy.formData.effectiveDate?.toISOString().split('T')[0] || ''}
                 />
                 <p className="text-sm text-muted-foreground">
                   When should this policy expire? (Leave blank for permanent)
@@ -821,8 +511,8 @@ export function PolicyCreator({
                   </div>
                   <Switch
                     id="autoActivate"
-                    checked={autoActivate}
-                    onCheckedChange={setAutoActivate}
+                    checked={policy.formData.autoActivate}
+                    onCheckedChange={(checked) => policy.updateField('autoActivate', checked)}
                   />
                 </div>
               </CardContent>
@@ -875,12 +565,12 @@ export function PolicyCreator({
               <CardContent className="space-y-4">
                 {/* Basic Info */}
                 <div>
-                  <h4 className="font-semibold text-lg mb-2">{name}</h4>
-                  <p className="text-sm text-muted-foreground mb-2">{description}</p>
+                  <h4 className="font-semibold text-lg mb-2">{policy.formData.name}</h4>
+                  <p className="text-sm text-muted-foreground mb-2">{policy.formData.description}</p>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="capitalize">{policyType}</Badge>
-                    <Badge variant="outline" className="capitalize">{priority} Priority</Badge>
-                    {category && <Badge variant="outline">{category}</Badge>}
+                    <Badge variant="outline" className="capitalize">{policy.formData.policyType}</Badge>
+                    <Badge variant="outline" className="capitalize">{policy.formData.priority} Priority</Badge>
+                    {policy.formData.category && <Badge variant="outline">{policy.formData.category}</Badge>}
                   </div>
                 </div>
 
@@ -890,40 +580,40 @@ export function PolicyCreator({
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground">Implementation Cost</p>
-                      <p className="font-semibold">${(implementationCost / 1000000).toFixed(2)}M</p>
+                      <p className="font-semibold">${(policy.formData.implementationCost / 1000000).toFixed(2)}M</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Annual Maintenance</p>
-                      <p className="font-semibold">${(maintenanceCost / 1000000).toFixed(2)}M</p>
+                      <p className="font-semibold">${(policy.formData.maintenanceCost / 1000000).toFixed(2)}M</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Projected GDP Impact</p>
                       <p className="font-semibold text-green-600">
-                        {calculatedImpact.gdpImpact > 0 ? '+' : ''}{calculatedImpact.gdpImpact}%
+                        {policy.calculatedImpact.gdpImpact > 0 ? '+' : ''}{policy.calculatedImpact.gdpImpact}%
                       </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Effectiveness Score</p>
-                      <p className="font-semibold text-blue-600">{calculatedImpact.effectiveness}%</p>
+                      <p className="font-semibold text-blue-600">{policy.calculatedImpact.effectiveness}%</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Timeline */}
-                {(effectiveDate || expiryDate) && (
+                {(policy.formData.effectiveDate || policy.formData.expiryDate) && (
                   <div className="p-4 rounded-lg bg-muted space-y-2">
                     <h5 className="font-semibold mb-2">Timeline</h5>
                     <div className="grid grid-cols-2 gap-4 text-sm">
-                      {effectiveDate && (
+                      {policy.formData.effectiveDate && (
                         <div>
                           <p className="text-muted-foreground">Effective Date</p>
-                          <p className="font-semibold">{effectiveDate.toLocaleDateString()}</p>
+                          <p className="font-semibold">{policy.formData.effectiveDate.toLocaleDateString()}</p>
                         </div>
                       )}
-                      {expiryDate && (
+                      {policy.formData.expiryDate && (
                         <div>
                           <p className="text-muted-foreground">Expiry Date</p>
-                          <p className="font-semibold">{expiryDate.toLocaleDateString()}</p>
+                          <p className="font-semibold">{policy.formData.expiryDate.toLocaleDateString()}</p>
                         </div>
                       )}
                     </div>
@@ -931,11 +621,11 @@ export function PolicyCreator({
                 )}
 
                 {/* Components */}
-                {selectedComponents.length > 0 && (
+                {policy.formData.selectedComponents.length > 0 && (
                   <div>
                     <h5 className="font-semibold mb-2">Related Components</h5>
                     <div className="flex flex-wrap gap-2">
-                      {selectedComponents.map(comp => (
+                      {policy.formData.selectedComponents.map(comp => (
                         <Badge key={comp} variant="secondary">
                           {ATOMIC_COMPONENTS[comp]?.name}
                         </Badge>
@@ -945,7 +635,7 @@ export function PolicyCreator({
                 )}
 
                 {/* Warnings */}
-                {calculatedImpact.budgetBalance < 0 && (
+                {policy.calculatedImpact.budgetBalance < 0 && (
                   <Alert className="border-yellow-200 dark:border-yellow-800">
                     <AlertCircle className="h-4 w-4 text-yellow-600" />
                     <AlertDescription>
@@ -981,8 +671,8 @@ export function PolicyCreator({
           <div className="flex items-center justify-between">
             {STEPS.map((step, index) => {
               const StepIcon = step.icon;
-              const isActive = currentStep === step.id;
-              const isComplete = currentStep > step.id;
+              const isActive = policy.currentStep === step.id;
+              const isComplete = policy.currentStep > step.id;
 
               return (
                 <React.Fragment key={step.id}>
@@ -1022,7 +712,7 @@ export function PolicyCreator({
           </div>
 
           {/* Progress Bar */}
-          <Progress value={(currentStep / 5) * 100} className="h-2 mt-4" />
+          <Progress value={(policy.currentStep / 5) * 100} className="h-2 mt-4" />
         </CardHeader>
       </Card>
 
@@ -1031,7 +721,7 @@ export function PolicyCreator({
         <CardContent className="pt-6">
           <AnimatePresence mode="wait">
             <motion.div
-              key={currentStep}
+              key={policy.currentStep}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -1049,8 +739,8 @@ export function PolicyCreator({
           <div className="flex items-center justify-between">
             <Button
               variant="outline"
-              onClick={prevStep}
-              disabled={currentStep === 1 || isProcessing}
+              onClick={policy.prevStep}
+              disabled={policy.currentStep === 1 || policy.isProcessing}
             >
               <ChevronLeft className="h-4 w-4 mr-2" />
               Previous
@@ -1058,23 +748,23 @@ export function PolicyCreator({
 
             <div className="flex items-center gap-3">
               {onCancel && (
-                <Button variant="ghost" onClick={onCancel} disabled={isProcessing}>
+                <Button variant="ghost" onClick={onCancel} disabled={policy.isProcessing}>
                   Cancel
                 </Button>
               )}
 
-              {currentStep < 5 ? (
-                <Button onClick={nextStep} disabled={!validateStep(currentStep)}>
+              {policy.currentStep < 5 ? (
+                <Button onClick={policy.nextStep} disabled={!policy.canProceed}>
                   Next
                   <ChevronRight className="h-4 w-4 ml-2" />
                 </Button>
               ) : (
                 <Button
-                  onClick={handleSubmit}
-                  disabled={isProcessing || !validateStep(5)}
+                  onClick={policy.handleSubmit}
+                  disabled={policy.isProcessing || !policy.canProceed}
                   className="min-w-32"
                 >
-                  {isProcessing ? (
+                  {policy.isProcessing ? (
                     <>
                       <LoadingState variant="spinner" size="sm" />
                       Creating...

@@ -1,5 +1,14 @@
 # IxStats Production Environment Setup Guide
 
+> **ARCHIVED DOCUMENTATION (v1.1.1 - Pre-October 2025)**
+>
+> This environment setup guide is from the v1.1.1 era. While most environment variables remain current, database configuration has changed significantly with the PostgreSQL migration.
+>
+> **For current environment setup**, see:
+> - `docs/operations/environments.md` - Current environment variables reference
+> - `docs/CREDENTIALS.md` - Credential management guide
+> - `README.md` - Quick start configuration
+
 This guide provides comprehensive instructions for setting up the production environment for IxStats.
 
 ## Overview

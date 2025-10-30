@@ -13,7 +13,7 @@ import { EconomyBuilderPage } from '../EconomyBuilderPage';
 import { BuilderStepLoading } from '../../GlobalBuilderLoading';
 import type { EconomicInputs, RealCountryData } from '~/app/builder/lib/economy-data-service';
 import type { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
-import type { TaxBuilderState } from '~/components/tax-system/TaxBuilder';
+import type { TaxBuilderState } from '~/hooks/useTaxBuilderState';
 
 interface EconomicsStepProps {
   economicInputs: EconomicInputs | null;

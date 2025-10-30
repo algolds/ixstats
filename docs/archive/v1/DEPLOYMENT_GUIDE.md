@@ -1,5 +1,14 @@
 # IxStats Deployment Guide
 
+> **ARCHIVED DOCUMENTATION (SQLite Era - Pre-October 2025)**
+>
+> This deployment guide reflects the SQLite-based architecture used before the PostgreSQL migration in October 2025. Database-related instructions are outdated.
+>
+> **For current deployment instructions**, see:
+> - `docs/operations/deployment.md` - Current deployment procedures
+> - `docs/operations/environments.md` - PostgreSQL environment setup
+> - `README.md` - Current installation guide
+
 **Version:** 1.1.1
 **Last Updated:** October 17, 2025
 

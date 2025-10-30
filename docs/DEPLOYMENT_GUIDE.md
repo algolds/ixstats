@@ -44,7 +44,7 @@ Complete guide for deploying IxStats to production on November 1, 2025.
 - **npm**: >= 9.0.0
 - **Disk Space**: 10GB+ available
 - **Memory**: 2GB+ available
-- **Database**: PostgreSQL (recommended) or SQLite
+- **Database**: PostgreSQL 15+ (required, port 5433)
 - **Redis**: Optional (for rate limiting)
 
 ### Required Access

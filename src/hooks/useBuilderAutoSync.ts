@@ -13,7 +13,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { api } from '~/trpc/react';
 import type { GovernmentBuilderState } from '~/types/government';
-import type { TaxBuilderState } from '~/components/tax-system/TaxBuilder';
+import type { TaxBuilderState } from '~/hooks/useTaxBuilderState';
 import type { ConflictWarning } from '~/server/services/builderIntegrationService';
 
 // ==================== TYPES ====================

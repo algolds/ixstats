@@ -1,14 +1,15 @@
-# IxStats
+# IxStats v1.2.0
 
-IxStats is a modern nation simulation and worldbuilding platform built on the Next.js App Router. The codebase combines a rich React front end with a tRPC API layer, Prisma schema, and a custom server runtime that enables real-time updates for executive intelligence, diplomacy, economics, and collaborative storytelling features.
+IxStats is a modern nation simulation and worldbuilding platform. The codebase combines a rich React front end with a tRPC API layer, Prisma schema, and a custom server runtime that enables real-time updates for executive intelligence, diplomacy, economics, and collaborative storytelling features.
 
 ## Platform Overview
 - Next.js 15.4.1 App Router with client and server components under `src/app`
 - React 19 + TypeScript 5.8 with an extensive shared component library in `src/components`
-- tRPC 11.4 API layer (`src/server/api/routers`) with 35 routers and 546 typed procedures (274 queries / 272 mutations)
-- Prisma 6.12 schema (`prisma/schema.prisma`) covering 131 models with SQLite by default and PostgreSQL compatibility
+- tRPC 11.4 API layer (`src/server/api/routers`) with 37 routers and 580+ typed procedures (290+ queries / 290+ mutations)
+- Prisma 6.12 schema (`prisma/schema.prisma`) covering 131 models with PostgreSQL database
 - Custom Node server (`server.mjs`) that loads environment tiers and enables production WebSocket feeds for live intelligence updates
 - Documentation-first approach with Markdown guides in `docs/` and an in-app help center at `/help`
+- **✅ 100% Dynamic Content Management**: All game content now database-driven (14,677 lines migrated from hardcoded TypeScript)
 
 ## Feature Pillars
 - **MyCountry Command Suite** – Unified dashboard at `src/app/mycountry` with executive briefing, compliance, defense, economic, and analytics modules powered by hooks such as `useMyCountryCompliance`
@@ -17,6 +18,7 @@ IxStats is a modern nation simulation and worldbuilding platform built on the Ne
 - **Economic Simulation & Builder Tools** – Country builder flows (`src/app/builder`, `src/components/builders`) with tier-based economic calculations and historical data services in `src/server/api/routers/economics.ts`
 - **Social & Collaboration Systems** – ThinkPages and ThinkShare social experiences (`src/app/thinkpages`, `src/components/thinkshare`) with activity feeds, comments, and shared research hubs
 - **Achievements & Leaderboards** – Global achievement tracking and ranking interfaces (`src/app/achievements`, `src/app/leaderboards`) driven by routers such as `achievements.ts`
+- **Content Management System** – 12 admin interfaces (`/admin/*`) for dynamic content management including diplomatic scenarios, NPC personalities, military equipment, economic archetypes, and more
 - **Integrated Help & Knowledge Base** – Rich help center under `src/app/help` plus curated Markdown documentation within the repository
 
 ## Technology Snapshot
@@ -26,14 +28,14 @@ IxStats is a modern nation simulation and worldbuilding platform built on the Ne
 | Framework | Next.js 15.4.1, React 19.1.0 |
 | Language | TypeScript 5.8.3 |
 | API Layer | tRPC 11.4 with superjson + Clerk auth context |
-| Data | Prisma 6.12 ORM, SQLite dev database (`prisma/dev.db`), PostgreSQL ready |
+| Data | Prisma 6.12 ORM, PostgreSQL database (`localhost:5433/ixstats`), PostgreSQL-native |
 | Styling | Tailwind CSS 4, custom "glass physics" design tokens, Lucide icons |
 | Realtime | Socket.IO server enabled in production via `server.mjs` and `src/lib/websocket-server.ts` |
 
 ## Getting Started
 ### Prerequisites
 - Node.js 18.17 or later and npm 9+
-- SQLite (bundled with the repo) – optionally point `DATABASE_URL` to PostgreSQL for production
+- PostgreSQL database (port 5433, database name `ixstats`)
 - Optional Clerk credentials for authentication (demo mode works without keys)
 
 ### Installation
@@ -46,7 +48,7 @@ npm run dev        # wraps start-development.sh and launches Next.js on http://l
 The development script loads `.env.local.dev` or `.env.local` if present. At minimum set:
 
 ```dotenv
-DATABASE_URL="file:./prisma/dev.db"
+DATABASE_URL="postgresql://ixstats:ixstats@localhost:5433/ixstats?schema=public"
 NEXT_PUBLIC_MEDIAWIKI_URL="https://ixwiki.com/"
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_your_key"   # optional
 CLERK_SECRET_KEY="sk_test_your_key"                    # optional
@@ -86,7 +88,7 @@ More details on required and optional variables are tracked in `docs/operations/
 │  │  └─ db/                   # Prisma client helpers
 │  ├─ lib/                     # Utilities (rate limiter, websocket server, formatting)
 │  └─ services/                # Domain services and adapters
-├─ prisma/                     # Schema, migrations, dev/prod SQLite databases
+├─ prisma/                     # Schema, migrations, PostgreSQL database
 ├─ scripts/                    # Operational and audit scripts
 ├─ docs/                       # Markdown documentation suite (refreshed in this update)
 └─ tests/                      # Jest setup, mocks, integration utilities

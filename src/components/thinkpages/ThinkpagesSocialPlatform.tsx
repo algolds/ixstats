@@ -1,15 +1,20 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { 
-  Users, 
-  TrendingUp, 
-  Search, 
+import {
+  VariableSizeList,
+  type VariableSizeListHandle,
+} from '~/lib/react-window-compat';
+import {
+  Users,
+  TrendingUp,
+  Search,
   RefreshCw,
   Loader2,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Rss
 } from 'lucide-react';
 import { Button } from '~/components/ui/button';
 import { Input } from '~/components/ui/input';
@@ -36,6 +41,8 @@ interface ThinkpagesSocialPlatformProps {
   onAccountSelect?: (account: any) => void;
   onAccountSettings?: (account: any) => void;
   onCreateAccount?: () => void;
+  profileMode?: boolean; // When true, show only posts from this country's owner
+  countryOwnerClerkUserId?: string; // The clerkUserId of the country owner
 }
 
 export function ThinkpagesSocialPlatform({
@@ -46,7 +53,9 @@ export function ThinkpagesSocialPlatform({
   accounts = [],
   onAccountSelect,
   onAccountSettings,
-  onCreateAccount
+  onCreateAccount,
+  profileMode = false,
+  countryOwnerClerkUserId
 }: ThinkpagesSocialPlatformProps) {
   const [feedFilter, setFeedFilter] = useState<'recent' | 'trending' | 'hot'>('recent');
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,9 +63,39 @@ export function ThinkpagesSocialPlatform({
   const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
   const [isRepostModalOpen, setIsRepostModalOpen] = useState(false);
   const [repostingPost, setRepostingPost] = useState<any>(null);
-  // Show all posts from all countries, not filtered by countryId
-  const { data: feed, isLoading: isLoadingFeed, refetch: refetchFeed } = api.thinkpages.getFeed.useQuery({ filter: feedFilter });
+
+  // State for infinite scroll
+  const [allPosts, setAllPosts] = useState<any[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const listRef = useRef<VariableSizeListHandle>(null);
+  const itemSizeCache = useRef<Map<number, number>>(new Map());
+
+  // In profile mode, show only posts from this user's accounts
+  // Otherwise show global feed
+  const { data: feed, isLoading: isLoadingFeed, refetch: refetchFeed } = api.thinkpages.getFeed.useQuery(
+    { filter: feedFilter, limit: 20 },
+    { enabled: !profileMode }
+  );
+
+  const { data: userFeed, isLoading: isLoadingUserFeed, refetch: refetchUserFeed } = api.thinkpages.getPostsByClerkUserId.useQuery(
+    { clerkUserId: countryOwnerClerkUserId!, limit: 20 },
+    { enabled: profileMode && !!countryOwnerClerkUserId }
+  );
+
   const { data: trendingTopics, isLoading: isLoadingTrending, refetch: refetchTrending } = api.thinkpages.getTrendingTopics.useQuery({ limit: 5 });
+
+  // Use the appropriate feed based on mode
+  const displayFeed = profileMode ? userFeed : feed;
+  const isLoadingDisplayFeed = profileMode ? isLoadingUserFeed : isLoadingFeed;
+
+  // Update posts when initial feed loads
+  useEffect(() => {
+    if (displayFeed?.posts) {
+      setAllPosts(displayFeed.posts);
+      setNextCursor(displayFeed.nextCursor || null);
+    }
+  }, [displayFeed]);
   const calculateTrendingMutation = api.thinkpages.calculateTrendingTopics.useMutation({
     onSuccess: () => {
       toast.success("Trending topics calculated successfully!");
@@ -99,6 +138,7 @@ export function ThinkpagesSocialPlatform({
       // Properly await cache invalidation
       await Promise.all([
         utils.thinkpages.getFeed.invalidate(),
+        utils.thinkpages.getPostsByClerkUserId.invalidate(),
         utils.thinkpages.getPost.invalidate()
       ]);
     },
@@ -107,104 +147,320 @@ export function ThinkpagesSocialPlatform({
     }
   });
 
+  // Load more posts for infinite scroll
+  const loadMorePosts = useCallback(async () => {
+    if (!nextCursor || isLoadingMore) return;
 
-  const filteredPosts = feed?.posts.filter(post => {
-    // Show all posts globally, only filter by search query if provided
-    if (searchQuery) {
-      return post.content.toLowerCase().includes(searchQuery.toLowerCase());
+    setIsLoadingMore(true);
+    try {
+      let newData;
+      if (profileMode && countryOwnerClerkUserId) {
+        newData = await utils.thinkpages.getPostsByClerkUserId.fetch({
+          clerkUserId: countryOwnerClerkUserId,
+          limit: 20,
+          cursor: nextCursor
+        });
+      } else {
+        newData = await utils.thinkpages.getFeed.fetch({
+          filter: feedFilter,
+          limit: 20,
+          cursor: nextCursor
+        });
+      }
+
+      if (newData?.posts && newData.posts.length > 0) {
+        setAllPosts(prev => [...prev, ...newData.posts]);
+        setNextCursor(newData.nextCursor || null);
+      } else {
+        setNextCursor(null);
+      }
+    } catch (error) {
+      console.error('Failed to load more posts:', error);
+      toast.error('Failed to load more posts');
+    } finally {
+      setIsLoadingMore(false);
     }
-    return true;
-  });
+  }, [nextCursor, isLoadingMore, profileMode, countryOwnerClerkUserId, feedFilter, utils]);
+
+  // Refetch function that handles both modes
+  const refetchDisplayFeed = useCallback(() => {
+    if (profileMode) {
+      refetchUserFeed();
+    } else {
+      refetchFeed();
+    }
+    // Clear pagination state
+    setAllPosts([]);
+    setNextCursor(null);
+    itemSizeCache.current.clear();
+    if (listRef.current) {
+      listRef.current.resetAfterIndex(0);
+    }
+  }, [profileMode, refetchFeed, refetchUserFeed]);
+
+  // Reset posts when filter changes
+  useEffect(() => {
+    setAllPosts([]);
+    setNextCursor(null);
+    itemSizeCache.current.clear();
+  }, [feedFilter]);
+
+  const filteredPosts = useMemo(() => {
+    return allPosts.filter((post: any) => {
+      // Show all posts globally (or user posts in profile mode), only filter by search query if provided
+      if (searchQuery) {
+        return post.content.toLowerCase().includes(searchQuery.toLowerCase());
+      }
+      return true;
+    });
+  }, [allPosts, searchQuery]);
+
+  // Calculate dynamic item size based on post content
+  const getItemSize = useCallback((index: number) => {
+    // Check cache first
+    if (itemSizeCache.current.has(index)) {
+      return itemSizeCache.current.get(index)!;
+    }
+
+    const post = filteredPosts[index];
+    if (!post) return 400; // Default size
+
+    // Base height: 200px for basic post structure
+    let height = 200;
+
+    // Add height for content (estimate ~0.3px per character)
+    if (post.content) {
+      const lines = Math.ceil(post.content.length / 60); // ~60 chars per line
+      height += Math.min(lines * 20, 200); // Max 200px for content
+    }
+
+    // Add height for images
+    if (post.images?.length > 0) {
+      height += 300; // ~300px per image group
+    }
+
+    // Add height for media attachments
+    if (post.mediaAttachments?.length > 0) {
+      height += post.mediaAttachments.length * 250;
+    }
+
+    // Add height for replies preview
+    if (post._count?.replies > 0) {
+      height += 40;
+    }
+
+    // Add height for repost
+    if (post.repostOf || post.isRepost) {
+      height += 150;
+    }
+
+    // Add height for parent post (if it's a reply)
+    if (post.parentPost) {
+      height += 100;
+    }
+
+    // Clamp between reasonable bounds
+    const finalHeight = Math.max(250, Math.min(800, height));
+
+    // Cache the calculated size
+    itemSizeCache.current.set(index, finalHeight);
+
+    return finalHeight;
+  }, [filteredPosts]);
+
+  // Handle scroll for infinite loading
+  const handleScroll = useCallback(({ scrollOffset, scrollUpdateWasRequested }: any) => {
+    if (scrollUpdateWasRequested || isLoadingMore || !nextCursor) return;
+
+    // Calculate total height of all items
+    const totalHeight = filteredPosts.reduce((sum, _, i) => sum + getItemSize(i), 0);
+    const viewportHeight = 800; // Match the List height
+    const threshold = 300; // Load when 300px from bottom
+
+    // If scrolled near bottom, load more
+    if (scrollOffset + viewportHeight > totalHeight - threshold) {
+      loadMorePosts();
+    }
+  }, [isLoadingMore, nextCursor, filteredPosts, getItemSize, loadMorePosts]);
+
+  // Get post stats for profile mode
+  const postCount = profileMode ? (userFeed?.posts?.length ?? 0) : (feed?.posts?.length ?? 0);
+  const totalPosts = allPosts.length;
 
   return (
     <div className="space-y-6 lg:space-y-8 touch-pan-y">
-      {/* ThinkPages Global Feed Header */}
-      
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Feed - Takes up most space */}
-        <div className="lg:col-span-2 space-y-4">
-          <Card className="glass-hierarchy-child">
-            <CardContent className="p-4">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
-                <div className="relative w-full md:max-w-md">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search posts across all nations..."
-                    className="pl-10 pr-4 h-11 rounded-xl"
-                    inputMode="search"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-end md:gap-4 w-full md:w-auto">
-                  <ToggleGroup
-                    type="single"
-                    value={feedFilter}
-                    onValueChange={(value) => value && setFeedFilter(value as typeof feedFilter)}
-                    className="flex w-full flex-wrap justify-center gap-2 rounded-full bg-white/5 p-1 [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden sm:w-auto sm:flex-nowrap sm:gap-1"
-                  >
-                    {(['recent', 'trending', 'hot'] as const).map((filter) => (
-                      <ToggleGroupItem
-                        key={filter}
-                        value={filter}
-                        className="flex min-w-[90px] items-center justify-center rounded-full px-4 py-1.5 text-sm font-medium capitalize transition-all data-[state=on]:border-primary data-[state=on]:bg-primary/10 sm:min-w-[80px]"
-                      >
-                        {filter}
-                      </ToggleGroupItem>
-                    ))}
-                  </ToggleGroup>
-
-                  <div className="flex w-full gap-2 sm:w-auto sm:justify-end">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 rounded-full sm:h-10 sm:flex-none"
-                      onClick={() => refetchFeed()}
-                    >
-                      {isLoadingFeed ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 rounded-full sm:h-10 sm:flex-none"
-                      onClick={() => calculateTrendingMutation.mutate()}
-                    >
-                      {calculateTrendingMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <TrendingUp className="h-4 w-4" />}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 rounded-full sm:h-10 sm:flex-none"
-                      onClick={() => {
-                        console.log('Accounts button clicked, setting modal to true');
-                        setIsAccountModalOpen(true);
-                      }}
-                    >
-                      <Users className="h-4 w-4 mr-1" />
-                      <span className="hidden sm:inline">Accounts</span>
-                    </Button>
+      {/* Profile Mode: Activity Feed Header */}
+      {profileMode && countryOwnerClerkUserId && (
+        <div className="glass-hierarchy-child rounded-xl overflow-hidden">
+          {/* Header Section */}
+          <div className="p-4 md:p-6 border-b border-white/10">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center">
+                    <Rss className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold">ThinkPages Activity</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Posts and updates from {countryName.replace(/_/g, ' ')}
+                    </p>
                   </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex items-center gap-2">
+                {isOwner && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="rounded-full"
+                    onClick={() => setIsAccountModalOpen(true)}
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Manage Accounts</span>
+                    <span className="sm:hidden">Accounts</span>
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => refetchDisplayFeed()}
+                  disabled={isLoadingDisplayFeed}
+                >
+                  <RefreshCw className={`h-4 w-4 ${isLoadingDisplayFeed ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
+            </div>
+          </div>
 
-          {/* Glass Canvas Composer - Only show when account is selected */}
-          {selectedAccount && (
+          {/* Stats Bar */}
+          <div className="px-4 md:px-6 py-3 bg-white/5 flex items-center gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-white">{totalPosts}</span>
+              <span className="text-muted-foreground">{totalPosts === 1 ? 'Post' : 'Posts'}</span>
+            </div>
+            {totalPosts > 0 && (
+              <>
+                <div className="h-4 w-px bg-white/10" />
+                <div className="text-muted-foreground">
+                  Latest activity from official accounts
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Tips for owners with no posts */}
+          {isOwner && totalPosts === 0 && (
+            <div className="p-4 md:p-6 bg-gradient-to-br from-blue-500/10 to-purple-500/10">
+              <div className="flex gap-3">
+                <div className="text-2xl">💡</div>
+                <div className="flex-1">
+                  <h4 className="font-semibold mb-1 text-blue-200">Get started with ThinkPages</h4>
+                  <p className="text-sm text-blue-200/80 mb-3">
+                    Share updates, announcements, and engage with other nations on the global stage.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full border-blue-400/30 hover:bg-blue-400/10"
+                    onClick={() => setIsAccountModalOpen(true)}
+                  >
+                    Create Your First Account
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className={profileMode ? "w-full" : "grid grid-cols-1 lg:grid-cols-3 gap-6"}>
+        {/* Main Feed - Takes up most space */}
+        <div className={profileMode ? "w-full" : "lg:col-span-2 space-y-4"}>
+          {!profileMode && (
+            <Card className="glass-hierarchy-child">
+              <CardContent className="p-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
+                  <div className="relative w-full md:max-w-md">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search posts across all nations..."
+                      className="pl-10 pr-4 h-11 rounded-xl"
+                      inputMode="search"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-end md:gap-4 w-full md:w-auto">
+                    <ToggleGroup
+                      type="single"
+                      value={feedFilter}
+                      onValueChange={(value) => value && setFeedFilter(value as typeof feedFilter)}
+                      className="flex w-full flex-wrap justify-center gap-2 rounded-full bg-white/5 p-1 [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden sm:w-auto sm:flex-nowrap sm:gap-1"
+                    >
+                      {(['recent', 'trending', 'hot'] as const).map((filter) => (
+                        <ToggleGroupItem
+                          key={filter}
+                          value={filter}
+                          className="flex min-w-[90px] items-center justify-center rounded-full px-4 py-1.5 text-sm font-medium capitalize transition-all data-[state=on]:border-primary data-[state=on]:bg-primary/10 sm:min-w-[80px]"
+                        >
+                          {filter}
+                        </ToggleGroupItem>
+                      ))}
+                    </ToggleGroup>
+
+                    <div className="flex w-full gap-2 sm:w-auto sm:justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 rounded-full sm:h-10 sm:flex-none"
+                        onClick={() => refetchFeed()}
+                      >
+                        {isLoadingFeed ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 rounded-full sm:h-10 sm:flex-none"
+                        onClick={() => calculateTrendingMutation.mutate()}
+                      >
+                        {calculateTrendingMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <TrendingUp className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 rounded-full sm:h-10 sm:flex-none"
+                        onClick={() => {
+                          console.log('Accounts button clicked, setting modal to true');
+                          setIsAccountModalOpen(true);
+                        }}
+                      >
+                        <Users className="h-4 w-4 mr-1" />
+                        <span className="hidden sm:inline">Accounts</span>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Glass Canvas Composer - Only show when account is selected and not in profile mode */}
+          {!profileMode && selectedAccount && (
             <GlassCanvasComposer
               account={selectedAccount}
               onPost={() => {
                 toast.success('Posted successfully!');
-                refetchFeed();
+                refetchDisplayFeed();
               } }
               placeholder="What's happening across the nations?"
               countryId={countryId} accounts={[]} isOwner={false}            />
           )}
 
-          {/* Account Selection Prompt */}
-          {!selectedAccount && !isAccountModalOpen && (
+          {/* Account Selection Prompt - Only show when not in profile mode */}
+          {!profileMode && !selectedAccount && !isAccountModalOpen && (
             <Card className="glass-hierarchy-child">
               <CardContent className="p-6 text-center">
                 <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -227,115 +483,164 @@ export function ThinkpagesSocialPlatform({
           )}
 
           <div className="space-y-4">
-            <AnimatePresence>
-              {isLoadingFeed ? <div className="flex justify-center items-center p-8"><Loader2 className="animate-spin h-8 w-8"/></div> : filteredPosts?.map((post, index) => (
-                <BlurFade key={post.id} delay={0.05 * index} inView={true}>
-                  <ThinkpagesPost
-                    post={post}
-                    currentUserAccountId={selectedAccount?.id || ''}
-                    accounts={accounts}
-                    countryId={countryId}
-                    isOwner={isOwner}
-                    onAccountSelect={onAccountSelect}
-                    onAccountSettings={onAccountSettings}
-                    onCreateAccount={onCreateAccount}
-                    onLike={(postId) => {
-                      console.log('🎯 ThinkpagesSocialPlatform onLike called:', { 
-                        postId, 
-                        selectedAccount: !!selectedAccount, 
-                        accountId: selectedAccount?.id,
-                        accountName: selectedAccount?.username || selectedAccount?.displayName
-                      });
-                      
-                      if (selectedAccount) {
-                        console.log('✅ Adding like reaction via mutation');
-                        addReactionMutation.mutate({ 
-                          postId, 
-                          accountId: selectedAccount.id, 
-                          reactionType: 'like' 
-                        });
-                      } else {
-                        console.warn('❌ No selected account for like reaction');
-                        toast.error('Please select an account first');
-                      }
-                    }}
-                    onRepost={(postId) => {
-                      if (selectedAccount) {
-                        const postToRepost = filteredPosts?.find(p => p.id === postId);
-                        if (postToRepost) {
-                          setRepostingPost(postToRepost);
-                          setIsRepostModalOpen(true);
-                        }
-                      } else {
-                        toast.error('Please select an account first');
-                      }
-                    }}
-                    onReply={(postId) => {
-                      // Reply functionality is handled directly in ThinkpagesPost component
-                      // This callback is kept for consistency but not actively used
-                      if (!selectedAccount) {
-                        toast.error('Please select an account first');
-                      }
-                    }}
-                    onShare={(postId) => {
-                      if (navigator.share) {
-                        navigator.share({
-                          title: 'ThinkPages Post',
-                          text: 'Check out this post on ThinkPages',
-                          url: window.location.href
-                        });
-                      } else {
-                        navigator.clipboard.writeText(window.location.href);
-                        toast.success('Link copied to clipboard!');
-                      }
-                    }}
-                    onReaction={(postId, reactionType) => {
-                      console.log('🎭 ThinkpagesSocialPlatform onReaction called:', { 
-                        postId, 
-                        reactionType,
-                        selectedAccount: !!selectedAccount, 
-                        accountId: selectedAccount?.id,
-                        accountName: selectedAccount?.username || selectedAccount?.displayName
-                      });
-                      
-                      if (selectedAccount) {
-                        // Validate and cast reaction type to enum
-                        const validReactions = ['like', 'laugh', 'angry', 'sad', 'fire', 'thumbsup', 'thumbsdown'] as const;
-                        type ValidReaction = typeof validReactions[number];
-                        
-                        if (validReactions.includes(reactionType as ValidReaction)) {
-                          console.log('✅ Adding reaction via mutation:', { postId, accountId: selectedAccount.id, reactionType });
-                          addReactionMutation.mutate({ 
-                            postId, 
-                            accountId: selectedAccount.id, 
-                            reactionType: reactionType as ValidReaction
-                          });
-                        } else {
-                          console.warn('❌ Invalid reaction type:', reactionType);
-                        }
-                      } else {
-                        console.warn('❌ No selected account for reaction');
-                        toast.error('Please select an account first');
-                      }
-                    }}
-                    onAccountClick={(accountId) => {
-                      toast.info('Account profile view coming soon!');
-                    }}
-                    showThread={true}
-                  />
-                </BlurFade>
-              ))}
-            </AnimatePresence>
-
-            {filteredPosts?.length === 0 && !isLoadingFeed && (
+            {profileMode && !countryOwnerClerkUserId ? (
               <Card className="glass-hierarchy-child">
                 <CardContent className="p-8 text-center">
                   <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Posts Yet</h3>
+                  <h3 className="text-lg font-semibold mb-2">No Owner Found</h3>
                   <p className="text-muted-foreground">
-                    {searchQuery 
-                      ? "No posts match your search criteria." 
-                      : "Be the first to share something on ThinkPages!"}
+                    This country hasn't been claimed yet. Once claimed, ThinkPages posts will appear here.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : isLoadingDisplayFeed ? (
+              <div className="flex justify-center items-center p-8">
+                <Loader2 className="animate-spin h-8 w-8"/>
+              </div>
+            ) : filteredPosts && filteredPosts.length > 0 ? (
+              <>
+                <VariableSizeList
+                  ref={listRef}
+                  height={800}
+                  itemCount={filteredPosts.length}
+                  itemSize={getItemSize}
+                  width="100%"
+                  overscanCount={3}
+                  onScroll={handleScroll}
+                  className="scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+                >
+                  {({ index, style }) => {
+                    const post = filteredPosts[index];
+                    if (!post) return null;
+
+                    return (
+                      <div style={style} className="px-1 pb-4">
+                        <ThinkpagesPost
+                          post={post}
+                          currentUserAccountId={selectedAccount?.id || ''}
+                          accounts={accounts}
+                          countryId={countryId}
+                          isOwner={isOwner}
+                          onAccountSelect={onAccountSelect}
+                          onAccountSettings={onAccountSettings}
+                          onCreateAccount={onCreateAccount}
+                          onLike={(postId) => {
+                            console.log('🎯 ThinkpagesSocialPlatform onLike called:', {
+                              postId,
+                              selectedAccount: !!selectedAccount,
+                              accountId: selectedAccount?.id,
+                              accountName: selectedAccount?.username || selectedAccount?.displayName
+                            });
+
+                            if (selectedAccount) {
+                              console.log('✅ Adding like reaction via mutation');
+                              addReactionMutation.mutate({
+                                postId,
+                                accountId: selectedAccount.id,
+                                reactionType: 'like'
+                              });
+                            } else {
+                              console.warn('❌ No selected account for like reaction');
+                              toast.error('Please select an account first');
+                            }
+                          }}
+                          onRepost={(postId) => {
+                            if (selectedAccount) {
+                              const postToRepost = filteredPosts?.find(p => p.id === postId);
+                              if (postToRepost) {
+                                setRepostingPost(postToRepost);
+                                setIsRepostModalOpen(true);
+                              }
+                            } else {
+                              toast.error('Please select an account first');
+                            }
+                          }}
+                          onReply={(postId) => {
+                            // Reply functionality is handled directly in ThinkpagesPost component
+                            // This callback is kept for consistency but not actively used
+                            if (!selectedAccount) {
+                              toast.error('Please select an account first');
+                            }
+                          }}
+                          onShare={(postId) => {
+                            if (navigator.share) {
+                              navigator.share({
+                                title: 'ThinkPages Post',
+                                text: 'Check out this post on ThinkPages',
+                                url: window.location.href
+                              });
+                            } else {
+                              navigator.clipboard.writeText(window.location.href);
+                              toast.success('Link copied to clipboard!');
+                            }
+                          }}
+                          onReaction={(postId, reactionType) => {
+                            console.log('🎭 ThinkpagesSocialPlatform onReaction called:', {
+                              postId,
+                              reactionType,
+                              selectedAccount: !!selectedAccount,
+                              accountId: selectedAccount?.id,
+                              accountName: selectedAccount?.username || selectedAccount?.displayName
+                            });
+
+                            if (selectedAccount) {
+                              // Validate and cast reaction type to enum
+                              const validReactions = ['like', 'laugh', 'angry', 'sad', 'fire', 'thumbsup', 'thumbsdown'] as const;
+                              type ValidReaction = typeof validReactions[number];
+
+                              if (validReactions.includes(reactionType as ValidReaction)) {
+                                console.log('✅ Adding reaction via mutation:', { postId, accountId: selectedAccount.id, reactionType });
+                                addReactionMutation.mutate({
+                                  postId,
+                                  accountId: selectedAccount.id,
+                                  reactionType: reactionType as ValidReaction
+                                });
+                              } else {
+                                console.warn('❌ Invalid reaction type:', reactionType);
+                              }
+                            } else {
+                              console.warn('❌ No selected account for reaction');
+                              toast.error('Please select an account first');
+                            }
+                          }}
+                          onAccountClick={(accountId) => {
+                            toast.info('Account profile view coming soon!');
+                          }}
+                          showThread={true}
+                        />
+                      </div>
+                    );
+                  }}
+                </VariableSizeList>
+
+                {/* Loading indicator for infinite scroll */}
+                {isLoadingMore && (
+                  <div className="flex justify-center items-center p-4">
+                    <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                    <span className="text-sm text-muted-foreground">Loading more posts...</span>
+                  </div>
+                )}
+
+                {/* End of feed indicator */}
+                {!nextCursor && !isLoadingMore && filteredPosts.length > 0 && (
+                  <div className="text-center p-4 text-sm text-muted-foreground">
+                    You've reached the end of the feed
+                  </div>
+                )}
+              </>
+            ) : (
+              <Card className="glass-hierarchy-child">
+                <CardContent className="p-8 text-center">
+                  <Rss className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">
+                    {profileMode ? 'No Posts Yet' : 'No Posts Found'}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {profileMode
+                      ? `${countryName.replace(/_/g, ' ')} hasn't shared any posts yet.`
+                      : searchQuery
+                        ? "No posts match your search criteria."
+                        : "Be the first to share something on ThinkPages!"}
                   </p>
                 </CardContent>
               </Card>
@@ -343,67 +648,69 @@ export function ThinkpagesSocialPlatform({
           </div>
         </div>
 
-        {/* Right Sidebar - Trending & Live Events */}
-        <div className="lg:col-span-1 space-y-4">
-          {/* Trending Topics */}
-          <Card className="glass-hierarchy-child">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-orange-500" />
-                Trending Topics
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                What's happening across the network
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {isLoadingTrending ? (
-                <div className="flex justify-center py-4">
-                  <Loader2 className="animate-spin h-6 w-6" />
-                </div>
-              ) : (
-                <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 sm:mx-0 sm:px-0 sm:flex-col sm:overflow-visible [&::-webkit-scrollbar]:hidden [-webkit-overflow-scrolling:touch]">
-                  {trendingTopics?.map((topic, index) => (
-                    <BlurFade key={topic.hashtag} delay={0.1 + 0.03 * index}>
-                      <button
-                        className="flex min-w-[200px] items-center justify-between rounded-lg border border-transparent bg-background/40 p-3 text-left transition-colors hover:border-border hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-w-0"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#fcc309]/20 text-xs font-bold text-[#800000]">
-                            {index + 1}
-                          </div>
-                          <div>
-                            <div className="font-medium text-sm leading-tight">#{topic.hashtag}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {topic.postCount} thinks
+        {/* Right Sidebar - Trending & Live Events - Only show when not in profile mode */}
+        {!profileMode && (
+          <div className="lg:col-span-1 space-y-4">
+            {/* Trending Topics */}
+            <Card className="glass-hierarchy-child">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-orange-500" />
+                  Trending Topics
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  What's happening across the network
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {isLoadingTrending ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="animate-spin h-6 w-6" />
+                  </div>
+                ) : (
+                  <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2 sm:mx-0 sm:px-0 sm:flex-col sm:overflow-visible [&::-webkit-scrollbar]:hidden [-webkit-overflow-scrolling:touch]">
+                    {trendingTopics?.map((topic, index) => (
+                      <BlurFade key={topic.hashtag} delay={0.1 + 0.03 * index}>
+                        <button
+                          className="flex min-w-[200px] items-center justify-between rounded-lg border border-transparent bg-background/40 p-3 text-left transition-colors hover:border-border hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-w-0"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#fcc309]/20 text-xs font-bold text-[#800000]">
+                              {index + 1}
+                            </div>
+                            <div>
+                              <div className="font-medium text-sm leading-tight">#{topic.hashtag}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {topic.postCount} thinks
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-1 whitespace-nowrap">
-                          <TrendingUp className="h-3 w-3 text-green-500" />
-                          <span className="text-xs font-medium text-green-600">
-                            {topic.engagement > 0
-                              ? `${Math.round((topic.engagement / topic.postCount) * 10)}`
-                              : '0'} eng
-                          </span>
-                        </div>
-                      </button>
-                    </BlurFade>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                          <div className="flex items-center gap-1 whitespace-nowrap">
+                            <TrendingUp className="h-3 w-3 text-green-500" />
+                            <span className="text-xs font-medium text-green-600">
+                              {topic.engagement > 0
+                                ? `${Math.round((topic.engagement / topic.postCount) * 10)}`
+                                : '0'} eng
+                            </span>
+                          </div>
+                        </button>
+                      </BlurFade>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-          {/* Live Events Feed */}
-          <LiveEventsFeed 
-            countryId={countryId}
-            onEventClick={(eventId) => console.log('Event clicked:', eventId)}
-          />
+            {/* Live Events Feed */}
+            <LiveEventsFeed
+              countryId={countryId}
+              onEventClick={(eventId) => console.log('Event clicked:', eventId)}
+            />
 
-          {/* ThinkPages Guide */}
-          <ThinkPagesGuide />
-        </div>
+            {/* ThinkPages Guide */}
+            <ThinkPagesGuide />
+          </div>
+        )}
       </div>
 
       {/* Account Manager Modal */}

@@ -324,9 +324,9 @@ export interface GovernmentBuilderState {
   isValid: boolean;
   errors: {
     structure?: string[];
-    departments?: { [key: number]: string[] };
+    departments?: Record<number, string[]>;
     budget?: string[];
-    revenue?: string[];
+    revenue?: Record<number, string[]>;
   };
   atomicComponentCosts?: {
     annualMaintenanceCost: number;

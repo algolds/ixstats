@@ -75,6 +75,7 @@ const CreatePostSchema = z.object({
       displayOptions: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
     }).passthrough(), // Allow additional custom properties
   })).optional(), // Data visualizations embedded in post
+  mediaUrls: z.array(z.string().url()).max(4).optional(), // Up to 4 images per post
 });
 
 const AddReactionSchema = z.object({
@@ -220,21 +221,35 @@ export const thinkpagesRouter = createTRPCRouter({
 
   searchWiki: rateLimitedPublicProcedure
     .input(z.object({
-      query: z.string(),
+      query: z.string().min(1, "Search query is required"),
       wiki: z.enum(['iiwiki', 'ixwiki']),
       cursor: z.string().optional(),
       limit: z.number().min(1).max(100).default(30)
-    }))
+    }).refine(
+      (data) => data.query && data.query.trim().length > 0,
+      { message: "Search query cannot be empty or whitespace", path: ["query"] }
+    ))
     .query(async ({ input, ctx }) => {
       const { query, wiki, cursor, limit } = input;
       const startTime = Date.now();
 
+      // Trim the query after validation
+      const trimmedQuery = query.trim();
+
+      // Final defensive check
+      if (!trimmedQuery || trimmedQuery.length === 0) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Search query cannot be empty'
+        });
+      }
+
       try {
-        console.log(`[WikiImageSearch] Starting image search - Wiki: ${wiki}, Query: "${query}", Cursor: ${cursor || 'none'}`);
+        console.log(`[WikiImageSearch] Starting image search - Wiki: ${wiki}, Query: "${trimmedQuery}", Cursor: ${cursor || 'none'}`);
 
         // Import searchWikiImages function for image-specific search
         const { searchWikiImagesWithPagination } = await import('~/lib/wiki-search-service');
-        const results = await searchWikiImagesWithPagination(query, wiki, cursor, limit);
+        const results = await searchWikiImagesWithPagination(trimmedQuery, wiki, cursor, limit);
 
         const duration = Date.now() - startTime;
         console.log(`[WikiImageSearch] Success - Found ${results.images.length} images in ${duration}ms, hasMore: ${results.hasMore}`);
@@ -626,17 +641,31 @@ export const thinkpagesRouter = createTRPCRouter({
         include: {
           account: true,
           parentPost: {
-            include: { 
+            include: {
               account: true
             }
           },
           repostOf: {
-            include: { 
+            include: {
               account: true
             }
           }
         }
       });
+
+      // Create media attachments if any
+      if (input.mediaUrls && input.mediaUrls.length > 0) {
+        await db.mediaAttachment.createMany({
+          data: input.mediaUrls.map((url, index) => ({
+            postId: post.id,
+            type: 'image',
+            url: url,
+            filename: `image_${index + 1}`,
+            mimeType: url.startsWith('data:') ? url.split(';')[0]!.split(':')[1] : 'image/jpeg',
+            fileSize: null
+          }))
+        });
+      }
       
       // Update account post count
       await db.thinkpagesAccount.update({
@@ -1005,6 +1034,7 @@ export const thinkpagesRouter = createTRPCRouter({
             }
           },
           reactions: true,
+          mediaAttachments: true,
           _count: {
             select: {
               // reactions: true // Relation doesn't exist,
@@ -1147,6 +1177,108 @@ export const thinkpagesRouter = createTRPCRouter({
         ...post,
         hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
         timestamp: post.createdAt.toISOString()
+      };
+    }),
+
+  // Get posts by Clerk User ID - shows all posts from all accounts owned by this user
+  getPostsByClerkUserId: rateLimitedPublicProcedure
+    .input(z.object({
+      clerkUserId: z.string(),
+      limit: z.number().min(1).max(50).default(20),
+      cursor: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      // Get all accounts owned by this user
+      const accounts = await db.thinkpagesAccount.findMany({
+        where: { clerkUserId: input.clerkUserId },
+        select: { id: true }
+      });
+
+      const accountIds = accounts.map(acc => acc.id);
+
+      if (accountIds.length === 0) {
+        return { posts: [], nextCursor: null };
+      }
+
+      // Get all posts from these accounts
+      const posts = await db.thinkpagesPost.findMany({
+        where: {
+          accountId: { in: accountIds },
+          visibility: 'public'
+        },
+        include: {
+          account: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              profileImageUrl: true,
+              accountType: true,
+              verified: true,
+            }
+          },
+          parentPost: {
+            include: {
+              account: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  profileImageUrl: true,
+                  accountType: true,
+                  verified: true,
+                }
+              }
+            }
+          },
+          repostOf: {
+            include: {
+              account: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  profileImageUrl: true,
+                  accountType: true,
+                  verified: true,
+                }
+              }
+            }
+          },
+          reactions: true,
+          mediaAttachments: true,
+          _count: {
+            select: {
+              replies: true,
+              reposts: true
+            }
+          }
+        },
+        orderBy: [
+          { pinned: 'desc' },
+          { createdAt: 'desc' }
+        ],
+        take: input.limit,
+        cursor: input.cursor ? { id: input.cursor } : undefined,
+        skip: input.cursor ? 1 : 0
+      });
+
+      // Transform posts to include parsed hashtags and reaction counts
+      const transformedPosts = posts.map(post => ({
+        ...post,
+        hashtags: post.hashtags ? JSON.parse(post.hashtags) : [],
+        reactionCounts: (post as any).reactions.reduce((acc: any, reaction: any) => {
+          acc[reaction.reactionType] = (acc[reaction.reactionType] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+        timestamp: post.createdAt.toISOString()
+      }));
+
+      return {
+        posts: transformedPosts,
+        nextCursor: posts.length === input.limit ? posts[posts.length - 1]?.id : null
       };
     }),
 

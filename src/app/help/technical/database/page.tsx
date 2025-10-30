@@ -13,7 +13,8 @@ export default function DatabaseArticle() {
       <Section title="Schema Basics">
         <ul className="list-disc pl-6 space-y-2">
           <li>Prisma schema (`prisma/schema.prisma`) defines 131 models across economy, diplomacy, social, defense, and notifications.</li>
-          <li>SQLite in development (`file:./prisma/dev.db`) and SQLite/PostgreSQL in production.</li>
+          <li>PostgreSQL in all environments (`localhost:5433/ixstats` for development) with PostGIS extension for geographic data.</li>
+          <li>Migration Note (October 2025): Migrated from SQLite to PostgreSQL for better performance and spatial features.</li>
           <li>Enums mirror TypeScript unions to keep routers and UI in sync.</li>
         </ul>
       </Section>
@@ -23,7 +24,8 @@ export default function DatabaseArticle() {
           <ul className="list-disc pl-6 space-y-1">
             <li>`npm run db:migrate` / `npm run db:migrate:deploy` – apply migrations.</li>
             <li>`npm run db:push` – sync schema quickly in dev (use with care).</li>
-            <li>`npm run db:backup` / `restore` – manage SQLite backups.</li>
+            <li>`npm run db:studio` – open Prisma Studio to browse data.</li>
+            <li>PostgreSQL backups: Use `pg_dump` and standard PostgreSQL tools.</li>
           </ul>
         </InfoBox>
       </Section>
@@ -32,7 +34,8 @@ export default function DatabaseArticle() {
         <ul className="list-disc pl-6 space-y-2">
           <li>Co-locate schema changes with router updates and documentation.</li>
           <li>Seed sample data if new models need default values (see `scripts/setup`).</li>
-          <li>Update `docs/reference/database.md` for new model families.</li>
+          <li>Use PostgreSQL-specific features (PostGIS, full-text search) when beneficial.</li>
+          <li>Update `docs/architecture/data.md` for new model families or schema changes.</li>
         </ul>
       </Section>
 

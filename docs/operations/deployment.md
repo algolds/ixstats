@@ -26,10 +26,12 @@ IxStats ships as a Next.js app with a custom Node server (`server.mjs`). Product
 - Update `NEXT_PUBLIC_BASE_PATH` and reverse-proxy settings if hosting path changes
 - Ensure static assets under `public/` are served with the same base path
 
-## Database Promotion
-- Dev/Prod SQLite files live under `prisma/`
-- Use `npm run db:backup` before promotion; store backups securely
-- For PostgreSQL deployments, update `DATABASE_URL` and run `npm run db:migrate:deploy`
+## Database Management
+- **Migration Notice (October 2025)**: IxStats now uses PostgreSQL exclusively (migrated from SQLite)
+- Production database: PostgreSQL with PostGIS extension for geographic features
+- Use `pg_dump` for backups before promotions; store backups securely
+- For schema changes, update `DATABASE_URL` and run `npm run db:migrate:deploy`
+- Legacy SQLite files archived in `prisma/backups/sqlite-legacy/`
 
 ## Health & Monitoring
 - Rate limiter and error logger configured via environment toggles (`ENABLE_RATE_LIMITING`, `DISCORD_WEBHOOK_ENABLED`)

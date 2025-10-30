@@ -175,6 +175,15 @@ export class IxTime {
   }
 
   /**
+   * Get the in-game month (1-12) from an IxTime timestamp
+   */
+  static getMonthFromTimestamp(ixTime: number | Date): number {
+    const timeMs = ixTime instanceof Date ? ixTime.getTime() : ixTime;
+    const date = new Date(timeMs);
+    return date.getUTCMonth() + 1;
+  }
+
+  /**
    * Create an IxTime timestamp from in-game date components
    * Year should be relative to the game world (2028+)
    */

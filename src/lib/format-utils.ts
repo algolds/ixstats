@@ -228,17 +228,17 @@ export function formatPercent(value: number, decimals: number = 1): string {
 }
 
 /**
- * Format compact number (no K/M/B/T, just comma-separated)
+ * Format number with fixed decimals and commas (no K/M/B/T, just comma-separated)
  *
  * @param num - The number to format
  * @param decimals - Number of decimal places (default: 0)
  * @returns Formatted number with commas
  *
  * @example
- * formatCompactNumber(1234567) → "1,234,567"
- * formatCompactNumber(123.456, 2) → "123.46"
+ * formatNumberWithDecimals(1234567) → "1,234,567"
+ * formatNumberWithDecimals(123.456, 2) → "123.46"
  */
-export function formatCompactNumber(num: number, decimals: number = 0): string {
+export function formatNumberWithDecimals(num: number, decimals: number = 0): string {
   return num.toLocaleString('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
@@ -484,4 +484,189 @@ export function parseNumberInput(input: string | number): number {
   // Apply multiplier if suffix exists
   const multiplier = suffix ? suffixMultipliers[suffix] || 1 : 1;
   return baseNum * multiplier;
+}
+
+/**
+ * Format number with compact notation (K/M/B/T) using Intl.NumberFormat
+ * Provides null/undefined safety with configurable fallback
+ *
+ * @param value - The number to format
+ * @param fallback - Fallback string for null/undefined/NaN values (default: "N/A")
+ * @returns Formatted compact number string
+ *
+ * @example
+ * formatCompactNumber(1234567) → "1.2M"
+ * formatCompactNumber(null) → "N/A"
+ * formatCompactNumber(5000, "Unknown") → "5K"
+ */
+export function formatCompactNumber(
+  value: number | null | undefined,
+  fallback = "N/A"
+): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return fallback;
+  }
+  return new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
+/**
+ * Format currency with compact notation (K/M/B/T) using Intl.NumberFormat
+ * Provides null/undefined safety with configurable fallback
+ *
+ * @param value - The currency amount to format
+ * @param fallback - Fallback string for null/undefined/NaN values (default: "N/A")
+ * @param currency - ISO 4217 currency code (default: "USD")
+ * @returns Formatted compact currency string
+ *
+ * @example
+ * formatCompactCurrency(1234567) → "$1.2M"
+ * formatCompactCurrency(null) → "N/A"
+ * formatCompactCurrency(5000, "Unknown", "EUR") → "€5K"
+ */
+export function formatCompactCurrency(
+  value: number | null | undefined,
+  fallback = "N/A",
+  currency = "USD"
+): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return fallback;
+  }
+
+  // Handle custom currencies
+  if (!isISOCurrency(currency)) {
+    const customCurrency = getCustomCurrency(currency);
+    if (customCurrency) {
+      const absValue = Math.abs(value);
+      if (absValue >= 1e12) {
+        return `${customCurrency.symbol}${(value / 1e12).toFixed(1)}T`;
+      } else if (absValue >= 1e9) {
+        return `${customCurrency.symbol}${(value / 1e9).toFixed(1)}B`;
+      } else if (absValue >= 1e6) {
+        return `${customCurrency.symbol}${(value / 1e6).toFixed(1)}M`;
+      } else if (absValue >= 1e3) {
+        return `${customCurrency.symbol}${(value / 1e3).toFixed(1)}K`;
+      } else {
+        return `${customCurrency.symbol}${value.toFixed(0)}`;
+      }
+    }
+  }
+
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(value);
+  } catch (error) {
+    console.warn(`Failed to format compact currency ${currency}:`, error);
+    return formatCompactNumber(value, fallback);
+  }
+}
+
+/**
+ * Format time duration in years
+ * Provides null/undefined safety with configurable fallback
+ *
+ * @param value - The number of years
+ * @param fallback - Fallback string for null/undefined/NaN values (default: "N/A")
+ * @returns Formatted years string
+ *
+ * @example
+ * formatYears(5.5) → "5.5 yrs"
+ * formatYears(null) → "N/A"
+ * formatYears(10.2, "Unknown") → "10.2 yrs"
+ */
+export function formatYears(
+  value: number | null | undefined,
+  fallback = "N/A"
+): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return fallback;
+  }
+  return `${value.toFixed(1)} yrs`;
+}
+
+/**
+ * Format time duration in hours
+ * Provides null/undefined safety with configurable fallback
+ *
+ * @param value - The number of hours
+ * @param fallback - Fallback string for null/undefined/NaN values (default: "N/A")
+ * @returns Formatted hours string
+ *
+ * @example
+ * formatHours(40.5) → "40.5 hrs"
+ * formatHours(null) → "N/A"
+ * formatHours(35.0, "Unknown") → "35.0 hrs"
+ */
+export function formatHours(
+  value: number | null | undefined,
+  fallback = "N/A"
+): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return fallback;
+  }
+  return `${value.toFixed(1)} hrs`;
+}
+
+/**
+ * Format percentage with automatic normalization
+ * Intelligently handles both decimal (0.15) and percentage (15) inputs
+ * Provides null/undefined safety with configurable fallback
+ *
+ * @param value - The percentage value (auto-normalized if <= 1)
+ * @param fallback - Fallback string for null/undefined/NaN values (default: "N/A")
+ * @param digits - Number of decimal places (default: 1)
+ * @returns Formatted percentage string
+ *
+ * @example
+ * formatPercentWithNormalization(0.155) → "15.5%"
+ * formatPercentWithNormalization(15.5) → "15.5%"
+ * formatPercentWithNormalization(null) → "N/A"
+ * formatPercentWithNormalization(0.155, "N/A", 2) → "15.50%"
+ */
+export function formatPercentWithNormalization(
+  value: number | null | undefined,
+  fallback = "N/A",
+  digits = 1
+): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return fallback;
+  }
+  const normalized = Math.abs(value) <= 1 ? value * 100 : value;
+  return `${normalized.toFixed(digits)}%`;
+}
+
+/**
+ * Format population numbers with appropriate scaling
+ * Optimized for demographic data visualization
+ *
+ * @param population - The population number to format
+ * @param fallback - Fallback string for null/undefined/NaN values (default: "N/A")
+ * @returns Formatted population string
+ *
+ * @example
+ * formatPopulation(1234567) → "1.2M"
+ * formatPopulation(5678) → "5.7K"
+ * formatPopulation(null) → "N/A"
+ */
+export function formatPopulation(
+  population: number | null | undefined,
+  fallback = "N/A"
+): string {
+  if (population === null || population === undefined || Number.isNaN(population)) {
+    return fallback;
+  }
+  const absPopulation = Math.abs(population);
+  if (absPopulation >= 1e6) {
+    return `${(population / 1e6).toFixed(1)}M`;
+  }
+  if (absPopulation >= 1e3) {
+    return `${(population / 1e3).toFixed(1)}K`;
+  }
+  return population.toFixed(0);
 }

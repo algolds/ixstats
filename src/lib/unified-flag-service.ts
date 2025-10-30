@@ -118,13 +118,24 @@ class UnifiedFlagService {
 
 
   /**
+   * Normalize country name for consistent cache key generation
+   * Handles case sensitivity, whitespace, and special characters
+   */
+  private normalizeCountryName(countryName: string): string {
+    return countryName
+      .trim()                    // Remove leading/trailing whitespace
+      .toLowerCase()             // Normalize case
+      .replace(/\s+/g, ' ');    // Normalize multiple spaces to single space
+  }
+
+  /**
    * Get flag URL - intelligent multi-wiki caching with fallback
    */
   async getFlagUrl(countryName: string): Promise<string | null> {
     if (!countryName) return null;
 
     this.stats.totalRequests++;
-    const cacheKey = countryName.toLowerCase();
+    const cacheKey = this.normalizeCountryName(countryName);
 
     // 1. Check local file first (fastest) - for fictional nations
     const localUrl = this.getLocalFlagUrl(countryName);
@@ -196,7 +207,7 @@ class UnifiedFlagService {
     if (localUrl) return localUrl;
 
     // Check memory cache - NO TTL validation, cache is permanent
-    const cacheKey = countryName.toLowerCase();
+    const cacheKey = this.normalizeCountryName(countryName);
     const cachedFlag = this.memoryCache[cacheKey];
 
     if (cachedFlag && cachedFlag.url) {
@@ -214,7 +225,7 @@ class UnifiedFlagService {
   cacheDatabaseFlag(countryName: string, flagUrl: string): void {
     if (!countryName || !flagUrl) return;
 
-    const cacheKey = countryName.toLowerCase();
+    const cacheKey = this.normalizeCountryName(countryName);
 
     // Cache in memory with database source
     this.memoryCache[cacheKey] = {
@@ -232,7 +243,7 @@ class UnifiedFlagService {
    * Get local flag URL if file exists
    */
   getLocalFlagUrl(countryName: string): string | null {
-    const cacheKey = countryName.toLowerCase();
+    const cacheKey = this.normalizeCountryName(countryName);
     const metadata = this.localMetadata[cacheKey];
     if (metadata) {
       return `${this.FLAGS_BASE_URL}/${metadata.fileName}`;
@@ -244,7 +255,7 @@ class UnifiedFlagService {
    * Check if flag is cached locally
    */
   hasLocalFlag(countryName: string): boolean {
-    const cacheKey = countryName.toLowerCase();
+    const cacheKey = this.normalizeCountryName(countryName);
     return !!this.localMetadata[cacheKey];
   }
 
@@ -380,7 +391,7 @@ class UnifiedFlagService {
    * Fetch flag from multiple wiki sources with intelligent fallback
    */
   private async fetchFlagFromMultipleWikis(countryName: string): Promise<string | null> {
-    const cacheKey = countryName.toLowerCase();
+    const cacheKey = this.normalizeCountryName(countryName);
     const now = Date.now();
 
     // Check if global fetch is disabled but should be re-enabled
@@ -897,7 +908,7 @@ class UnifiedFlagService {
    */
   private async downloadFlagToLocal(countryName: string, flagUrl: string, source: WikiSource): Promise<void> {
     try {
-      const cacheKey = countryName.toLowerCase();
+      const cacheKey = this.normalizeCountryName(countryName);
       
       // Skip if already downloaded
       if (this.localMetadata[cacheKey]) {

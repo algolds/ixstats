@@ -6,7 +6,7 @@
  * and providing economic impact feedback for tax policy changes.
  */
 
-import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from '~/components/economy/atoms/AtomicEconomicComponents';
+import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from '~/lib/atomic-economic-data';
 import type { EconomyBuilderState } from '~/types/economy-builder';
 import type { TaxSystem, TaxCategory, TaxBracket } from '~/types/tax-system';
 

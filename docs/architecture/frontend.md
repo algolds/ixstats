@@ -14,6 +14,56 @@ The frontend is built entirely on the Next.js 15 App Router. Client and server c
 - **Domain Widgets (`src/components/*`)** – Intelligence dashboards, diplomatic feeds, economic charts, and compliance modals. Components are grouped by domain to encourage reuse.
 - **Feature Shells (`src/app/**/components`)** – Lightweight wrappers that stitch together UI primitives and data hooks for specific pages.
 
+## Modular Component Architecture
+
+The codebase follows a strict modular architecture pattern for complex components, separating concerns into distinct layers:
+
+### Layer Separation
+1. **Business Logic Layer** (`src/lib/*.ts`)
+   - Pure functions for calculations, transformations, validations
+   - No React dependencies
+   - Fully testable in isolation
+   - Examples: `synergy-calculator.ts`, `wiki-markup-parser.ts`, `tax-builder-validation.ts`
+
+2. **State Management Layer** (`src/hooks/*.ts`)
+   - Custom React hooks for data fetching and state management
+   - Encapsulate tRPC queries and mutations
+   - Use React.useMemo for expensive computations
+   - Examples: `useEmbassyNetworkData.ts`, `useIntelligenceMetrics.ts`, `useTaxBuilderState.ts`
+
+3. **Presentation Layer** (`src/components/**/component-name/*.tsx`)
+   - Focused UI components with single responsibilities
+   - Optimized with React.memo to prevent unnecessary re-renders
+   - Barrel exports via `index.ts` for clean imports
+   - Examples: `embassy-network/`, `intelligence-briefing/`, `tax-builder/`
+
+4. **Orchestration Layer** (main component)
+   - Thin wrapper that composes hooks and UI components
+   - Minimal logic, primarily composition
+   - Clear, readable component structure
+   - Examples: `EnhancedEmbassyNetwork.tsx`, `EnhancedIntelligenceBriefing.tsx`
+
+### Refactoring Pattern
+Large monolithic components (>1000 lines) are refactored into modular architectures:
+- Extract business logic to `src/lib/` utilities
+- Create custom hooks in `src/hooks/` for state management
+- Split UI into focused components under `src/components/domain/feature/`
+- Optimize all components with React.memo
+- Add comprehensive JSDoc documentation
+
+This pattern has been successfully applied to:
+- `EnhancedIntelligenceBriefing` (2,724 → 445 lines, 83.7% reduction)
+- `TaxBuilder` (1,851 → 567 lines, 69.4% reduction)
+- `EnhancedEmbassyNetwork` (402 → 103 lines, 74.4% reduction)
+
+### Benefits
+- **Maintainability**: Clear separation of concerns, single responsibility principle
+- **Reusability**: Hooks and utilities can be shared across features
+- **Testability**: Each layer can be tested independently
+- **Performance**: React.memo prevents unnecessary re-renders
+- **Readability**: Main components are simple orchestrators
+- **Type Safety**: TypeScript interfaces distributed across modules
+
 ## Styling & Theming
 - Tailwind CSS 4 with `prettier-plugin-tailwindcss` ensures consistent class ordering.
 - Dark/light mode friendly gradients, blur, and depth levels implemented via utility classes and helper components (`src/components/magicui`).

@@ -29,12 +29,19 @@ interface WikiCacheEntry<T> {
 interface WikiSection {
   id: string;
   title: string;
+  sourcePage?: string;
+  sourceUrl?: string;
   content: string;
   classification: 'PUBLIC' | 'RESTRICTED' | 'CONFIDENTIAL';
   importance: 'critical' | 'high' | 'medium' | 'low';
   lastModified: string;
   wordCount: number;
   images?: string[];
+  links?: string[];
+  linkCount?: number;
+  lastFetched?: number;
+  wikitextLength?: number;
+  apiCallCount?: number;
 }
 
 interface WikiCountryProfile {
@@ -445,15 +452,33 @@ export class WikiCacheService {
     // Transform sections (simplified - full transformation logic would match WikiIntelligenceTab)
     const sections: WikiSection[] = sectionResults
       .filter(result => result.content && result.content.length > 100)
-      .map((result, index) => ({
-        id: `section-${index}`,
-        title: result.pageName,
-        content: result.content || '',
-        classification: 'PUBLIC' as const,
-        importance: 'medium' as const,
-        lastModified: new Date().toISOString(),
-        wordCount: result.content?.split(' ').length || 0,
-      }));
+      .map((result, index) => {
+        const content = result.content || '';
+        const cleanId = result.pageName
+          ? result.pageName.toLowerCase().replace(/\s+/g, '-')
+          : `section-${index}`;
+        const linkMatches = Array.from(content.matchAll(/\[\[([^\]|]+)/g))
+          .map(match => match[1])
+          .filter(link => !link.startsWith('File:') && !link.startsWith('Category:'));
+
+        return {
+          id: cleanId || `section-${index}`,
+          title: result.pageName,
+          sourcePage: result.pageName,
+          sourceUrl: `https://ixwiki.com/wiki/${encodeURIComponent(result.pageName)}`,
+          content,
+          classification: 'PUBLIC' as const,
+          importance: 'medium' as const,
+          lastModified: new Date().toISOString(),
+          wordCount: content ? content.split(/\s+/).filter(Boolean).length : 0,
+          images: Array.from(content.matchAll(/\[\[File:([^\]|]+)/g)).map(match => match[1]),
+          links: linkMatches,
+          linkCount: linkMatches.length,
+          lastFetched: result.metadata?.lastFetched,
+          wikitextLength: result.metadata?.wikitextLength,
+          apiCallCount: result.metadata?.apiCallCount,
+        };
+      });
 
     return {
       countryName,
@@ -777,4 +802,3 @@ export const wikiCacheService = new WikiCacheService();
 
 // Export types
 export type { WikiCacheEntry, WikiSection, WikiCountryProfile };
-

@@ -12,6 +12,7 @@ export interface SuggestionItem<T = any> {
   severity: 'info' | 'warning' | 'critical';
   diff?: string;
   payload?: T;
+  action?: () => void;
 }
 
 interface SuggestionsPanelProps<T = any> {

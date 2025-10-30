@@ -10,7 +10,6 @@ import {
   CardDescription,
 } from "~/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -25,7 +24,6 @@ import {
   BarChart3,
   Building,
   Users,
-  Globe,
   Activity,
   PieChart,
   Briefcase,
@@ -44,86 +42,14 @@ import type { CountryInfobox } from "~/lib/mediawiki-service";
 import { GdpDetailsModal } from "~/components/modals/GdpDetailsModal";
 import { GdpPerCapitaDetailsModal } from "~/components/modals/GdpPerCapitaDetailsModal";
 import { PopulationDetailsModal } from "~/components/modals/PopulationDetailsModal";
-
-const compactNumberFormatter = new Intl.NumberFormat("en-US", {
-  notation: "compact",
-  maximumFractionDigits: 1,
-});
-
-const compactCurrencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  notation: "compact",
-  maximumFractionDigits: 1,
-});
-
-const currencyFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  maximumFractionDigits: 0,
-});
-
-function formatCompactNumber(
-  value: number | null | undefined,
-  fallback = "N/A"
-): string {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return fallback;
-  }
-  return compactNumberFormatter.format(value);
-}
-
-function formatCompactCurrency(
-  value: number | null | undefined,
-  fallback = "N/A"
-): string {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return fallback;
-  }
-  return compactCurrencyFormatter.format(value);
-}
-
-function formatCurrency(
-  value: number | null | undefined,
-  fallback = "N/A"
-): string {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return fallback;
-  }
-  return currencyFormatter.format(value);
-}
-
-function formatPercent(
-  value: number | null | undefined,
-  fallback = "N/A",
-  digits = 1
-): string {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return fallback;
-  }
-  const normalized = Math.abs(value) <= 1 ? value * 100 : value;
-  return `${normalized.toFixed(digits)}%`;
-}
-
-function formatYears(
-  value: number | null | undefined,
-  fallback = "N/A"
-): string {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return fallback;
-  }
-  return `${value.toFixed(1)} yrs`;
-}
-
-function formatHours(
-  value: number | null | undefined,
-  fallback = "N/A"
-): string {
-  if (value === null || value === undefined || Number.isNaN(value)) {
-    return fallback;
-  }
-  return `${value.toFixed(1)} hrs`;
-}
+import {
+  formatCompactNumber,
+  formatCompactCurrency,
+  formatCurrency,
+  formatPercentWithNormalization as formatPercent,
+  formatYears,
+  formatHours,
+} from "~/lib/format-utils";
 
 const PUBLIC_POLICY_FLAGS: Array<{
   key: keyof GovernmentSpendingData;
@@ -652,9 +578,7 @@ export function CountryEconomicPanel({
                 <h2 className="text-2xl font-bold md:text-3xl">
                   {country.name.replace(/_/g, " ")}
                 </h2>
-                <p className="text-sm text-muted-foreground md:text-base">
-                  Curated MyCountry® snapshot featuring public-facing intelligence for international audiences.
-                </p>
+              
               </div>
             </div>
             {isOwnCountry && (
@@ -688,12 +612,7 @@ export function CountryEconomicPanel({
         </CardContent>
       </Card>
 
-      <Alert className="border border-amber-200/60 bg-amber-50/80 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-        <AlertDescription>
-          This MyCountry® panel features the public intelligence stack only. Operational tooling, advanced analytics,
-          and classified dashboards remain available exclusively inside the authenticated MyCountry experience.
-        </AlertDescription>
-      </Alert>
+     
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
         <div className="overflow-x-auto">

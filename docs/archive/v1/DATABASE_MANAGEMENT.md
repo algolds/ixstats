@@ -1,5 +1,14 @@
 # Database Management Guide
 
+> **ARCHIVED DOCUMENTATION (SQLite Era - Pre-October 2025)**
+>
+> This document describes the SQLite database management approach used before the PostgreSQL migration in October 2025. It is preserved for historical reference only.
+>
+> **For current PostgreSQL database management**, see:
+> - `docs/architecture/data.md` - Current database architecture
+> - `docs/operations/environments.md` - PostgreSQL configuration
+> - `README.md` - Current setup instructions
+
 **Version**: v1.1.1
 **Last Updated**: October 17, 2025
 

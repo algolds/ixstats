@@ -12,7 +12,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DATABASE_URL || 'file:./prisma/prod.db'
+      url: process.env.DATABASE_URL
     }
   }
 });
@@ -55,7 +55,7 @@ async function testSchemaIntegrity() {
   try {
     // Test Category enum (skip priority check - column may not exist)
     try {
-      const crisisEvents = await prisma.$queryRaw`SELECT DISTINCT category FROM CrisisEvent LIMIT 10`;
+      const crisisEvents = await prisma.$queryRaw`SELECT DISTINCT "category" FROM "CrisisEvent" LIMIT 10`;
       logResult('ENUM_CATEGORY', 'PASS', 'Category enum values verified', {
         sampleCategories: (crisisEvents as any[]).slice(0, 3)
       });
@@ -63,10 +63,15 @@ async function testSchemaIntegrity() {
       logResult('ENUM_CATEGORY', 'WARN', 'Could not verify category enum - table may be empty');
     }
 
-    // Test table existence
-    const tables = await prisma.$queryRaw`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`;
+    // Test table existence (PostgreSQL)
+    const tables = await prisma.$queryRaw`
+      SELECT "table_name" as name
+      FROM information_schema.tables
+      WHERE "table_schema" = 'public'
+      ORDER BY "table_name"
+    `;
     const tableCount = (tables as any[]).length;
-    logResult('TABLE_STRUCTURE', 'PASS', `Found ${tableCount} tables in database`);
+    logResult('TABLE_STRUCTURE', 'PASS', `Found ${tableCount} tables in database (PostgreSQL)`);
 
     // Test critical tables exist
     const criticalTables = ['User', 'Country', 'Notification', 'ThinkpagesPost', 'GovernmentComponent'];
@@ -325,7 +330,7 @@ async function main() {
   console.log('═══════════════════════════════════════════════════════');
   console.log('       IxStats Production Database Audit Tool');
   console.log('═══════════════════════════════════════════════════════');
-  console.log(`Database: ${process.env.DATABASE_URL || 'file:./prisma/prod.db'}`);
+  console.log(`Database: ${process.env.DATABASE_URL || 'NOT_SET'}`);
   console.log(`Timestamp: ${new Date().toISOString()}\n`);
 
   const testUserId = process.argv[2]; // Optional test user Clerk ID

@@ -73,6 +73,7 @@ import { createUrl } from "~/lib/url-utils";
 import { getCountryPath } from "~/lib/slug-utils";
 import { usePermissions } from "~/hooks/usePermissions";
 import { useFlag } from "~/hooks/useUnifiedFlags";
+import { unifiedFlagService } from "~/lib/unified-flag-service";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
 
 // Country Card Component - separate to handle hooks properly
@@ -693,7 +694,7 @@ function SmartDashboardContent({
                             intelligence={executiveIntelligence}
                             country={{
                               name: userCountry.name,
-                              flag: userCountry.flagUrl || "/flags/default.png",
+                              flag: unifiedFlagService.getCachedFlagUrl(userCountry.name) || userCountry.flagUrl || null,
                               leader: userCountry.leader || "Unknown"
                             }}
                             isOwner

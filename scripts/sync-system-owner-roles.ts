@@ -24,16 +24,17 @@ async function syncSystemOwnerRoles(): Promise<void> {
   console.log("🔄 Syncing System Owner Roles Across Databases");
   console.log("==============================================");
   
+  // Use environment DATABASE_URL for current database
+  if (!process.env.DATABASE_URL) {
+    console.error("❌ DATABASE_URL environment variable is not set");
+    process.exit(1);
+  }
+
   const databases: DatabaseInfo[] = [
     {
-      name: "Development",
-      path: "prisma/dev.db",
-      db: new PrismaClient({ datasources: { db: { url: "file:./prisma/dev.db" } } })
-    },
-    {
-      name: "Production", 
-      path: "prisma/prod.db",
-      db: new PrismaClient({ datasources: { db: { url: "file:./prisma/prod.db" } } })
+      name: "Current Database",
+      path: process.env.DATABASE_URL,
+      db: new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } })
     }
   ];
 
@@ -42,13 +43,6 @@ async function syncSystemOwnerRoles(): Promise<void> {
     console.log("=" + "=".repeat(50));
     
     try {
-      // Check if database file exists
-      const fs = await import('fs');
-      if (!fs.existsSync(dbInfo.path)) {
-        console.log(`⚠️  Database file not found: ${dbInfo.path}`);
-        continue;
-      }
-
       // Ensure roles exist
       const userService = new UserManagementService(dbInfo.db);
       await userService.ensureRolesExist(dbInfo.db);

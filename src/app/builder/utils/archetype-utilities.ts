@@ -7,7 +7,7 @@
 
 import type { EconomicArchetype, ArchetypeComparison } from '../data/archetype-types';
 import type { EconomyBuilderState } from '~/types/economy-builder';
-import { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
+import { EconomicComponentType } from '~/lib/atomic-economic-data';
 
 /**
  * Calculate how well an archetype fits a given economic state

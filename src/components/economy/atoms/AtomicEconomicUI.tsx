@@ -22,13 +22,9 @@ import {
   Lightbulb,
   Leaf
 } from 'lucide-react';
-import type {
-  AtomicEconomicComponent
-} from './AtomicEconomicComponents';
-import {
-  EconomicComponentType,
-  ATOMIC_ECONOMIC_COMPONENTS
-} from './AtomicEconomicComponents';
+import { EconomicComponentType } from './AtomicEconomicComponents';
+import type { AtomicEconomicComponent } from '~/lib/atomic-economic-data';
+import { ATOMIC_ECONOMIC_COMPONENTS } from '~/lib/atomic-economic-data';
 
 // ============================================
 // ECONOMIC COMPONENT CARD

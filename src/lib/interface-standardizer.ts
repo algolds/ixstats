@@ -148,6 +148,11 @@ export function standardizeCountryData(data: any): CountryWithEconomicData {
     lastCalculated: data?.lastCalculated || new Date(),
     baselineDate: data?.baselineDate || new Date(),
     realGDPGrowthRate: safeNumber(data?.realGDPGrowthRate || data?.gdpGrowthRate),
+    flagUrl: typeof data?.flagUrl === 'string' && data.flagUrl.trim().length > 0
+      ? data.flagUrl
+      : typeof data?.flag === 'string' && data.flag.trim().length > 0
+        ? data.flag
+        : undefined,
   });
 }
 

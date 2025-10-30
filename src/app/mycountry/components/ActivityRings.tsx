@@ -376,17 +376,17 @@ export function createDefaultActivityRings(countryData: {
     },
     {
       id: 'diplomatic-standing',
-      title: 'Diplomatic Standing',
-      description: 'International relationships, treaties, trade partnerships, and global reputation',
+      title: 'Diplomatic Health',
+      description: 'Embassy network strength, relationship quality, mission success, and cultural exchange participation',
       value: countryData.diplomaticStanding,
       max: 100,
       color: RING_COLORS.diplomatic,
       icon: Globe,
       metrics: {
-        primary: `${countryData.diplomaticMetrics.allies} allies`,
+        primary: `${countryData.diplomaticMetrics.allies} embassies`,
         secondary: countryData.diplomaticMetrics.reputation,
         trend: 'up',
-        change: `${countryData.diplomaticMetrics.treaties} treaties`,
+        change: `${countryData.diplomaticMetrics.treaties} active missions`,
       },
     },
     {

@@ -32,9 +32,9 @@ else
     export NODE_ENV=development
 fi
 
-# Override DATABASE_URL to use development database
-export DATABASE_URL="file:./prisma/dev.db"
-echo "🔄 Overriding DATABASE_URL to use development database: $DATABASE_URL"
+# Use PostgreSQL database from .env.local.dev (October 2025: migrated from SQLite to PostgreSQL with PostGIS)
+# DATABASE_URL is now set from .env.local.dev and should not be overridden
+echo "🔄 Using PostgreSQL database from environment: ${DATABASE_URL}"
 
 # Use development port 3000 (3001 is used by Discord bot API, 3002 by IxMaps production, 3003 by IxMaps dev)
 DEVELOPMENT_PORT=3000
@@ -69,26 +69,17 @@ fi
 
 echo "✅ Port $DEVELOPMENT_PORT is available"
 
-# Check database file
-DB_FILE=${DATABASE_URL#file:./}
-if [ -f "$DB_FILE" ]; then
-    echo "✅ Development database found: $DB_FILE"
-    # Show database size
-    DB_SIZE=$(du -h "$DB_FILE" | cut -f1)
-    echo "   Database size: $DB_SIZE"
+# Check PostgreSQL database connection
+if [[ "$DATABASE_URL" == postgresql://* ]]; then
+    echo "✅ PostgreSQL database configured (with PostGIS support)"
+    # Test connection by counting countries
+    PGPASSWORD=postgres psql -h localhost -p 5433 -U postgres -d ixstats -tAc "SELECT COUNT(*) FROM \"Country\";" > /dev/null 2>&1 && \
+        echo "   Database connection verified ✓" || \
+        echo "   ⚠️  Warning: Could not verify database connection"
 else
-    echo "❌ Development database not found: $DB_FILE"
-    echo "   Creating development database from production copy..."
-    if [ -f "prisma/prod.db" ]; then
-        cp prisma/prod.db "$DB_FILE"
-        echo "✅ Development database created from production copy"
-        DB_SIZE=$(du -h "$DB_FILE" | cut -f1)
-        echo "   Database size: $DB_SIZE"
-    else
-        echo "❌ Production database not found to copy from: prisma/prod.db"
-        echo "   Please ensure the production database exists at: prisma/prod.db"
-        exit 1
-    fi
+    echo "⚠️  Warning: DATABASE_URL is not configured for PostgreSQL"
+    echo "   Current: $DATABASE_URL"
+    echo "   Expected: postgresql://postgres:postgres@localhost:5433/ixstats"
 fi
 
 echo ""

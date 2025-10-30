@@ -112,27 +112,27 @@ export async function getOptimizedGlobalStats(db: PrismaClient) {
 
   // Use a more efficient aggregation query
   const result = await db.$queryRaw`
-    SELECT 
-      COUNT(*) as totalCountries,
-      COALESCE(SUM(currentPopulation), 0) as totalPopulation,
-      COALESCE(SUM(currentTotalGdp), 0) as totalGdp,
-      COALESCE(SUM(landArea), 0) as totalLand,
-      COUNT(CASE WHEN economicTier = 'Impoverished' THEN 1 END) as impoverishedCount,
-      COUNT(CASE WHEN economicTier = 'Developing' THEN 1 END) as developingCount,
-      COUNT(CASE WHEN economicTier = 'Developed' THEN 1 END) as developedCount,
-      COUNT(CASE WHEN economicTier = 'Healthy' THEN 1 END) as healthyCount,
-      COUNT(CASE WHEN economicTier = 'Strong' THEN 1 END) as strongCount,
-      COUNT(CASE WHEN economicTier = 'Very Strong' THEN 1 END) as veryStrongCount,
-      COUNT(CASE WHEN economicTier = 'Extravagant' THEN 1 END) as extravagantCount,
-      COUNT(CASE WHEN populationTier = '1' THEN 1 END) as popTier1Count,
-      COUNT(CASE WHEN populationTier = '2' THEN 1 END) as popTier2Count,
-      COUNT(CASE WHEN populationTier = '3' THEN 1 END) as popTier3Count,
-      COUNT(CASE WHEN populationTier = '4' THEN 1 END) as popTier4Count,
-      COUNT(CASE WHEN populationTier = '5' THEN 1 END) as popTier5Count,
-      COUNT(CASE WHEN populationTier = '6' THEN 1 END) as popTier6Count,
-      COUNT(CASE WHEN populationTier = '7' THEN 1 END) as popTier7Count,
-      COUNT(CASE WHEN populationTier = 'X' THEN 1 END) as popTierXCount
-    FROM Country
+    SELECT
+      COUNT(*) as "totalCountries",
+      COALESCE(SUM("currentPopulation"), 0) as "totalPopulation",
+      COALESCE(SUM("currentTotalGdp"), 0) as "totalGdp",
+      COALESCE(SUM("landArea"), 0) as "totalLand",
+      COUNT(CASE WHEN "economicTier" = 'Impoverished' THEN 1 END) as "impoverishedCount",
+      COUNT(CASE WHEN "economicTier" = 'Developing' THEN 1 END) as "developingCount",
+      COUNT(CASE WHEN "economicTier" = 'Developed' THEN 1 END) as "developedCount",
+      COUNT(CASE WHEN "economicTier" = 'Healthy' THEN 1 END) as "healthyCount",
+      COUNT(CASE WHEN "economicTier" = 'Strong' THEN 1 END) as "strongCount",
+      COUNT(CASE WHEN "economicTier" = 'Very Strong' THEN 1 END) as "veryStrongCount",
+      COUNT(CASE WHEN "economicTier" = 'Extravagant' THEN 1 END) as "extravagantCount",
+      COUNT(CASE WHEN "populationTier" = '1' THEN 1 END) as "popTier1Count",
+      COUNT(CASE WHEN "populationTier" = '2' THEN 1 END) as "popTier2Count",
+      COUNT(CASE WHEN "populationTier" = '3' THEN 1 END) as "popTier3Count",
+      COUNT(CASE WHEN "populationTier" = '4' THEN 1 END) as "popTier4Count",
+      COUNT(CASE WHEN "populationTier" = '5' THEN 1 END) as "popTier5Count",
+      COUNT(CASE WHEN "populationTier" = '6' THEN 1 END) as "popTier6Count",
+      COUNT(CASE WHEN "populationTier" = '7' THEN 1 END) as "popTier7Count",
+      COUNT(CASE WHEN "populationTier" = 'X' THEN 1 END) as "popTierXCount"
+    FROM "Country"
   ` as any[];
 
   const stats = result[0];

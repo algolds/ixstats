@@ -3,7 +3,7 @@
 import React from 'react';
 import { TaxBuilder } from '~/components/tax-system/TaxBuilder';
 import { toast } from 'sonner';
-import type { TaxBuilderState } from '~/components/tax-system/TaxBuilder';
+import type { TaxBuilderState } from '~/hooks/useTaxBuilderState';
 import type { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
 import type { EconomicInputs, EconomyBuilderState } from '~/types/economy-builder';
 

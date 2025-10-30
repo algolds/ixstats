@@ -6,7 +6,7 @@
  * based on the current state of all builder systems.
  */
 
-import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from '~/components/economy/atoms/AtomicEconomicComponents';
+import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from '~/lib/atomic-economic-data';
 import { ComponentType, ATOMIC_COMPONENTS } from '~/components/government/atoms/AtomicGovernmentComponents';
 import { CrossBuilderSynergyService } from '~/app/builder/services/CrossBuilderSynergyService';
 import { UnifiedEffectivenessCalculator } from '~/app/builder/services/UnifiedEffectivenessCalculator';
@@ -495,9 +495,9 @@ export class BuilderPolicyIntegrationService {
       const newEffectiveness = await this.calculateNewEffectiveness(context, appliedChanges);
 
       const builderUpdates: BuilderUpdateSummary = {
-        economyUpdates: appliedChanges.filter(c => c.system === 'economy').length,
-        governmentUpdates: appliedChanges.filter(c => c.system === 'government').length,
-        taxUpdates: appliedChanges.filter(c => c.system === 'tax').length,
+        economyUpdates: appliedChanges.filter((c: { system: string }) => c.system === 'economy').length,
+        governmentUpdates: appliedChanges.filter((c: { system: string }) => c.system === 'government').length,
+        taxUpdates: appliedChanges.filter((c: { system: string }) => c.system === 'tax').length,
         totalChanges: appliedChanges.length
       };
 

@@ -1,24 +1,26 @@
 # Development Database Setup
 
+> **MIGRATION NOTICE (October 2025)**: IxStats has migrated from SQLite to PostgreSQL. This document reflects the legacy SQLite setup and is preserved for historical reference. For current PostgreSQL setup instructions, see `docs/operations/database.md`.
+
 ## Overview
 The development server is now configured to use a copy of the production database, ensuring that development work is done with real production data.
 
 ## Configuration Changes
 
 ### 1. Development Startup Script (`start-development.sh`)
-- **Modified**: Added automatic override of `DATABASE_URL` to use production database
+- **Legacy (SQLite)**: Previously used `export DATABASE_URL="file:./prisma/prod.db"`
+- **Current (PostgreSQL)**: Now uses `postgresql://ixstats:ixstats@localhost:5433/ixstats?schema=public`
 - **Location**: `/ixwiki/public/projects/ixstats/start-development.sh`
-- **Change**: `export DATABASE_URL="file:./prisma/prod.db"`
 
 ### 2. Database Sync Scripts
 - **New Script**: `scripts/sync-prod-to-dev.sh` - Syncs production database to development
 - **Package.json**: Added `npm run db:sync:dev-from-prod` command
 - **Purpose**: Keep development database in sync with production
 
-### 3. Database Files
-- **Production DB**: `prisma/prod.db` (2.6M)
-- **Development DB**: `prisma/dev.db` (synced from production)
-- **Backup**: `prisma/dev-prod-copy.db` (additional copy)
+### 3. Database Files (Legacy SQLite)
+- **Legacy Production DB**: `prisma/prod.db` (2.6M) - No longer used
+- **Legacy Development DB**: `prisma/dev.db` - No longer used
+- **Current Database**: PostgreSQL at `localhost:5433/ixstats`
 
 ## Usage
 
@@ -29,16 +31,10 @@ npm run dev
 ./start-development.sh
 ```
 
-The development server will automatically use the production database (`prisma/prod.db`).
+The development server will automatically connect to the PostgreSQL database at `localhost:5433/ixstats`.
 
 ### Syncing Production Data to Development
-```bash
-# Sync production database to development
-npm run db:sync:dev-from-prod
-
-# Or run the script directly
-./scripts/sync-prod-to-dev.sh
-```
+> **Note**: These SQLite-era commands are deprecated. PostgreSQL uses standard database backup/restore tools.
 
 ### Database Management
 ```bash
@@ -59,54 +55,61 @@ The development startup script will show:
 ```
 🔍 Development Environment Summary:
    NODE_ENV: development
-   Database: file:./prisma/prod.db (Production Database Copy)
+   Database: postgresql://localhost:5433/ixstats (PostgreSQL)
    Port: 3000
 ```
 
-### Verify Database Sync
+### Verify Database Connection
 ```bash
-# Check database sizes match
-ls -la prisma/*.db
+# Check database connection
+psql -h localhost -p 5433 -U ixstats -d ixstats -c "\dt"
 
 # Validate database schema
-DATABASE_URL="file:./prisma/prod.db" npx prisma validate
+npx prisma validate
 ```
 
-## Benefits
+## Benefits (PostgreSQL Migration)
 
-1. **Real Data**: Development work with actual production data
-2. **Data Consistency**: No discrepancies between dev and prod
-3. **Realistic Testing**: Features tested with real user data
-4. **Easy Sync**: Simple commands to keep databases in sync
+1. **Better Performance**: PostgreSQL offers superior query performance
+2. **PostGIS Support**: Native geographic data handling for map features
+3. **Production Parity**: Both dev and prod use the same database engine
+4. **Standard Tooling**: Use industry-standard PostgreSQL tools
 
 ## Important Notes
 
-- **Data Safety**: Production database is read-only in development
-- **Backups**: Development database is backed up before sync operations
-- **Size**: Production database is 2.6M (manageable for development)
-- **Performance**: Development server performance may be affected by larger database
+- **Database Engine**: PostgreSQL 15+ required (port 5433)
+- **Connection Pooling**: Configured via DATABASE_URL parameters
+- **Migrations**: Use `npx prisma migrate dev` for schema changes
+- **Backups**: Use `pg_dump` for PostgreSQL backups
 
-## Troubleshooting
+## Troubleshooting (PostgreSQL)
 
-### If Production Database is Missing
+### If PostgreSQL Connection Fails
 ```bash
-# Check if production database exists
-ls -la prisma/prod.db
+# Check if PostgreSQL is running
+sudo systemctl status postgresql
 
-# If missing, restore from backup or sync from another source
+# Verify port 5433 is listening
+sudo lsof -i :5433
+
+# Test connection manually
+psql -h localhost -p 5433 -U ixstats -d ixstats
 ```
 
-### If Development Server Won't Start
+### If Schema Issues Occur
 ```bash
-# Check database file permissions
-ls -la prisma/prod.db
+# Reset database (WARNING: destroys all data)
+npx prisma migrate reset
 
-# Verify database integrity
-DATABASE_URL="file:./prisma/prod.db" npx prisma validate
+# Apply pending migrations
+npx prisma migrate deploy
+
+# Verify schema
+npx prisma validate
 ```
 
-### Reset to Development Database
+### Legacy SQLite Files
 ```bash
-# If you need to use a separate development database
-# Edit start-development.sh and change DATABASE_URL back to dev.db
+# Old SQLite files can be safely archived or deleted
+# They are located in prisma/backups/sqlite-legacy/
 ```

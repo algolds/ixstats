@@ -21,14 +21,15 @@ export function SetupRedirect() {
 
   // Skip setup redirect for these paths
   const skipSetupPaths = [
-    '/setup', 
-    '/sign-in', 
-    '/sign-up', 
-    '/api', 
+    '/setup',
+    '/sign-in',
+    '/sign-up',
+    '/api',
     '/trpc',
     '/_next',
     '/favicon.ico',
-    '/admin' // <-- Add this line to always skip setup redirect for admin page
+    '/admin', // Always skip setup redirect for admin page
+    '/countries' // Skip setup redirect for country pages
   ];
   
   const shouldSkipSetup = skipSetupPaths.some(path => 
@@ -59,19 +60,7 @@ export function SetupRedirect() {
 
       // System owners or admins may not need a linked country—skip redirect
       if (isSystemOwnerUser || isAdminOrHigher) {
-        console.log('[SetupRedirect] System owner or admin detected, checking for country redirect');
-        console.log('[SetupRedirect] User profile:', userProfile);
-        
-        // If system owner has a country, redirect to it
-        if (userProfile && userProfile.countryId) {
-          console.log('[SetupRedirect] System owner has country, redirecting to MyCountry page');
-          hasRedirected.current = true;
-          // Redirect to MyCountry page which will handle the country-specific content
-          navigateTo(router, '/mycountry');
-          return;
-        }
-        
-        console.log('[SetupRedirect] System owner has no country, skipping redirect');
+        console.log('[SetupRedirect] System owner or admin detected, skipping setup redirect');
         return;
       }
 

@@ -7,6 +7,27 @@ import type { CountryWithEconomicData } from '~/types/ixstats';
 import type { IntelligenceItem } from '~/types/intelligence-unified';
 import type { ExecutiveAction, QuickAction } from '~/types/actions';
 
+/**
+ * Normalize country name for consistent storage and lookups
+ * - Removes leading/trailing whitespace
+ * - Normalizes multiple consecutive spaces to single space
+ * - Preserves case and special characters
+ *
+ * @param name - Country name to normalize
+ * @returns Normalized country name
+ *
+ * @example
+ * normalizeCountryName("  Daxia  ") // "Daxia"
+ * normalizeCountryName("North  America") // "North America"
+ */
+export function normalizeCountryName(name: string | null | undefined): string {
+  if (!name) return '';
+
+  return name
+    .trim()                    // Remove leading/trailing whitespace
+    .replace(/\s+/g, ' ');    // Normalize multiple spaces to single space
+}
+
 // Null/undefined safety utilities (fixes 23+ "possibly undefined" errors)
 export function isDefined<T>(value: T | null | undefined): value is T {
   return value !== null && value !== undefined;
@@ -57,6 +78,7 @@ export function ensureCountryData(data: CountryWithEconomicData | undefined | nu
     lastCalculated: new Date(),
     baselineDate: new Date(),
     realGDPGrowthRate: 0,
+    flagUrl: undefined as string | undefined,
   };
   
   // Calculate vitality properties from actual economic data
@@ -64,8 +86,18 @@ export function ensureCountryData(data: CountryWithEconomicData | undefined | nu
   const gdpGrowth = baseData.adjustedGdpGrowth || baseData.realGDPGrowthRate || 0;
   const population = baseData.currentPopulation || 1;
   
+  const baseFlagUrl = (baseData as { flagUrl?: string | null }).flagUrl;
+  const fallbackFlag = (baseData as { flag?: string | null }).flag;
+  const normalizedFlagUrl =
+    typeof baseFlagUrl === 'string' && baseFlagUrl.trim().length > 0
+      ? baseFlagUrl
+      : typeof fallbackFlag === 'string' && fallbackFlag.trim().length > 0
+        ? fallbackFlag
+        : undefined;
+
   return {
     ...baseData,
+    flagUrl: normalizedFlagUrl,
     // Economic vitality based on GDP per capita and growth rate
     economicVitality: Math.min(100, Math.max(0, 
       (gdpPerCapita / 1000) * 10 + (gdpGrowth * 20) + 30

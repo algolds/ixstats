@@ -91,7 +91,7 @@ export function AtomicDashboard({
   className 
 }: AtomicDashboardProps) {
   const { state, getSystemHealth } = useAtomicState();
-  const { selectedComponents, effectivenessScore } = useAtomicComponents();
+const { selectedComponents, effectivenessScore, setSelectedComponents } = useAtomicComponents();
   const { systemHealth, realTimeMetrics } = useAtomicAnalytics();
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -328,8 +328,8 @@ export function AtomicDashboard({
           onToggleExpand={() => toggleSection('components')}
         >
           <AtomicComponentSelector
-            selectedComponents={selectedComponents}
-            onComponentChange={() => {}} // Handled by context
+            initialComponents={selectedComponents}
+            onChange={setSelectedComponents}
           />
         </DashboardSection>
       )}

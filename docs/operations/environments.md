@@ -6,7 +6,7 @@ IxStats relies on layered environment files loaded by `server.mjs` (`.env.produc
 
 ## Minimum Development Setup
 ```dotenv
-DATABASE_URL="file:./prisma/dev.db"
+DATABASE_URL="postgresql://ixstats:ixstats@localhost:5433/ixstats?schema=public"
 NEXT_PUBLIC_MEDIAWIKI_URL="https://ixwiki.com/"
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_your_key"   # optional for Clerk-auth flows
 CLERK_SECRET_KEY="sk_test_your_key"                    # optional
@@ -14,6 +14,7 @@ IXTIME_BOT_URL="http://localhost:3001"
 NEXT_PUBLIC_IXTIME_BOT_URL="http://localhost:3001"
 ENABLE_RATE_LIMITING=false
 ```
+> **Migration Note (October 2025)**: IxStats now uses PostgreSQL instead of SQLite. Legacy SQLite files are backed up in `prisma/backups/sqlite-legacy/`.
 Set any value to an empty string if you intentionally disable a service.
 
 ## Server-Side Variables
@@ -24,7 +25,7 @@ Set any value to an empty string if you intentionally disable a service.
 | `CACHE_TTL_SECONDS` | Global cache TTL for select services |
 | `CLERK_SECRET_KEY` | Clerk backend secret (required for production auth) |
 | `CRON_SECRET` | Token for scheduled job authentication |
-| `DATABASE_URL` | Prisma connection string (SQLite or PostgreSQL) |
+| `DATABASE_URL` | Prisma connection string (PostgreSQL with schema parameter) |
 | `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_GUILD_ID` | Discord bot configuration |
 | `DISCORD_WEBHOOK_ENABLED`, `DISCORD_WEBHOOK_URL` | Error/alert webhook delivery |
 | `E2E_USER_EMAIL`, `E2E_USER_PASSWORD` | Credentials for automated testing |

@@ -16,7 +16,7 @@ import {
 import { SECTOR_TEMPLATES, getSectorCategory, calculateSectorTotals } from './utils/sectorCalculations';
 import type { EconomyBuilderState, SectorConfiguration } from '~/types/economy-builder';
 import type { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
-import { ATOMIC_ECONOMIC_COMPONENTS } from '~/components/economy/atoms/AtomicEconomicComponents';
+import { ATOMIC_ECONOMIC_COMPONENTS } from '~/lib/atomic-economic-data';
 
 /**
  * Props for the EconomySectorsTab component

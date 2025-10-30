@@ -163,26 +163,23 @@ BACKUP_FILE="$BACKUP_DIR/pre-deployment-$TIMESTAMP.backup"
 if [ -n "$DATABASE_URL" ]; then
     log "Creating database backup..."
 
-    # For SQLite databases
-    if [[ "$DATABASE_URL" == file:* ]]; then
-        DB_PATH=$(echo "$DATABASE_URL" | sed 's/file://')
-        if [ -f "$DB_PATH" ]; then
-            cp "$DB_PATH" "$BACKUP_FILE" || error "Database backup failed"
-            BACKUP_SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
-            success "✓ Database backup created: $BACKUP_FILE (${BACKUP_SIZE})"
-        else
-            warn "Database file not found: $DB_PATH"
-        fi
-    # For PostgreSQL databases
-    elif [[ "$DATABASE_URL" == postgres* ]]; then
+    # PostgreSQL database backup
+    if [[ "$DATABASE_URL" == postgres* ]] || [[ "$DATABASE_URL" == postgresql* ]]; then
         # Extract connection details from DATABASE_URL
-        npm run db:backup || warn "Database backup failed (manual backup recommended)"
+        log "Backing up PostgreSQL database..."
+        npm run db:backup || warn "Database backup script failed (manual backup recommended)"
+
+        # Alternative: Use pg_dump directly if db:backup script not available
+        # Note: This requires PostgreSQL client tools installed
+        # pg_dump "$DATABASE_URL" -F c -f "$BACKUP_FILE" || warn "pg_dump backup failed"
+
         success "✓ PostgreSQL backup initiated"
+        log "Backup recommendation: Verify backup exists and is valid"
     else
-        warn "Unknown database type, skipping backup"
+        error "Production requires PostgreSQL database. Current DATABASE_URL format not recognized."
     fi
 else
-    warn "DATABASE_URL not set, skipping backup"
+    error "DATABASE_URL not set - cannot proceed with production deployment"
 fi
 
 # ============================================================================

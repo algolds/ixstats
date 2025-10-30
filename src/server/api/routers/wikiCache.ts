@@ -70,13 +70,14 @@ export const wikiCacheRouter = createTRPCRouter({
       countryName: z.string().min(1),
       includePageVariants: z.boolean().default(true),
       maxSections: z.number().min(1).max(20).default(8),
+      customPages: z.array(z.string()).default([]),
     }))
     .query(async ({ input }) => {
-      const { countryName, includePageVariants, maxSections } = input;
-      
+      const { countryName, includePageVariants, maxSections, customPages } = input;
+
       // Build page variants based on settings
       const pageVariants: string[] = [countryName];
-      
+
       if (includePageVariants) {
         const topics = [
           `Economy of ${countryName}`,
@@ -89,12 +90,17 @@ export const wikiCacheRouter = createTRPCRouter({
           `Education in ${countryName}`,
           `Culture of ${countryName}`,
         ];
-        
+
         pageVariants.push(...topics.slice(0, maxSections - 1));
       }
-      
+
+      // Add custom pages from settings
+      if (customPages.length > 0) {
+        pageVariants.push(...customPages);
+      }
+
       const profile = await wikiCacheService.getCountryProfile(countryName, pageVariants);
-      
+
       return profile;
     }),
 

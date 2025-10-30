@@ -5,13 +5,8 @@
 
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: 'file:./prisma/prod.db'
-    }
-  }
-});
+// Note: Uses DATABASE_URL from environment (PostgreSQL, October 2025)
+const prisma = new PrismaClient();
 
 async function checkDuplicates() {
   console.log('🔍 Checking for duplicate countries in production database...\n');

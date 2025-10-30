@@ -43,6 +43,7 @@ import { formatCurrency } from '~/lib/format-utils';
 import { cn } from '~/lib/utils';
 import { UnifiedCountryFlag } from '~/components/UnifiedCountryFlag';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '~/components/ui/dialog';
+import type { TaxBuilderState } from '~/hooks/useTaxBuilderState';
 
 // Import government preview components
 import { StructureOverview } from '../government-preview/StructureOverview';
@@ -898,8 +899,8 @@ export function BuilderPreviewStep() {
                         Tax Categories
                       </h4>
                       <div className="space-y-3">
-                        {taxSystemData.categories.map((category, index) => (
-                          <Collapsible key={index} open={openDepartments[`tax-${index}`]} onOpenChange={(open) => setOpenDepartments(prev => ({ ...prev, [`tax-${index}`]: open }))}>
+                        {taxSystemData.categories.map((category: TaxBuilderState['categories'][number], index: number) => (
+                          <Collapsible key={index} open={openDepartments[`tax-${index}`]} onOpenChange={(open: boolean) => setOpenDepartments(prev => ({ ...prev, [`tax-${index}`]: open }))}>
                             <Card className="border">
                               <CollapsibleTrigger className="w-full">
                                 <div className="flex items-center justify-between p-3 hover:bg-muted/30 transition-colors cursor-pointer">
@@ -927,13 +928,13 @@ export function BuilderPreviewStep() {
                               <CollapsibleContent>
                                 <div className="p-3 border-t bg-muted/20">
                                   <p className="text-sm text-muted-foreground mb-3">{category.description}</p>
-                                  
+
                                   {/* Tax Brackets */}
                                   {taxSystemData.brackets && taxSystemData.brackets[index.toString()] && (
                                     <div className="space-y-2">
                                       <h5 className="font-medium text-sm">Tax Brackets:</h5>
                                       <div className="space-y-1">
-                                        {taxSystemData.brackets[index.toString()].map((bracket, bracketIndex) => (
+                                        {taxSystemData.brackets[index.toString()].map((bracket: TaxBuilderState['brackets'][string][number], bracketIndex: number) => (
                                           <div key={bracketIndex} className="text-xs bg-white/50 p-2 rounded border">
                                             {bracket.minIncome && bracket.maxIncome ? (
                                               `${formatCurrencyLocal(bracket.minIncome)} - ${formatCurrencyLocal(bracket.maxIncome)}: ${bracket.rate}%`
@@ -963,7 +964,7 @@ export function BuilderPreviewStep() {
                         <div className="space-y-2">
                           <h5 className="font-medium text-sm">Exemptions:</h5>
                           <div className="space-y-1">
-                            {taxSystemData.exemptions.map((exemption, index) => (
+                            {taxSystemData.exemptions.map((exemption: TaxBuilderState['exemptions'][number], index: number) => (
                               <div key={index} className="text-xs bg-white/50 p-2 rounded border">
                                 <div className="font-medium">{exemption.exemptionName}</div>
                                 <div className="text-muted-foreground">{exemption.description}</div>
@@ -978,8 +979,8 @@ export function BuilderPreviewStep() {
                         <div className="space-y-2">
                           <h5 className="font-medium text-sm">Deductions:</h5>
                           <div className="space-y-1">
-                            {Object.entries(taxSystemData.deductions || {}).flatMap(([categoryIndex, deductions]) =>
-                              deductions.map((deduction, index) => (
+                            {Object.entries(taxSystemData.deductions || {}).flatMap(([categoryIndex, deductions]: [string, TaxBuilderState['deductions'][string]]) =>
+                              deductions.map((deduction: TaxBuilderState['deductions'][string][number], index: number) => (
                                 <div key={`${categoryIndex}-${index}`} className="text-xs bg-white/50 p-2 rounded border">
                                   <div className="font-medium">{deduction.deductionName}</div>
                                   <div className="text-muted-foreground">{deduction.description}</div>

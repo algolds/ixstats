@@ -372,3 +372,40 @@
     opacity: 0;
   }
 }
+
+/* MapLibre GL Controls - Ensure they appear above navigation (z-10005) */
+.maplibregl-ctrl-top-right,
+.maplibregl-ctrl-top-left,
+.maplibregl-ctrl-bottom-right,
+.maplibregl-ctrl-bottom-left {
+  z-index: 10100 !important;
+}
+
+/* Hide MapLibre's built-in loading indicator and attribution */
+.maplibregl-ctrl-attrib-button,
+.maplibregl-ctrl-logo,
+.maplibregl-ctrl-attrib {
+  display: none !important;
+}
+
+/* Hide any MapLibre loading spinners */
+.mapboxgl-canary,
+.maplibregl-canary,
+.maplibregl-ctrl-loading {
+  display: none !important;
+}
+
+/* Hide the default MapLibre loading indicator (spinning compass) */
+.maplibregl-map.maplibregl-crosshair,
+.maplibregl-map canvas.maplibregl-canvas:not([data-engine="true"]) {
+  cursor: default !important;
+}
+
+/* Ensure smooth cursor during tile loading */
+.maplibregl-canvas-container.maplibregl-interactive {
+  cursor: pointer;
+}
+
+.maplibregl-canvas-container.maplibregl-interactive.maplibregl-track-pointer {
+  cursor: pointer !important;
+}

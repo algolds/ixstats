@@ -47,9 +47,16 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
     api.createClient({
       links: [
         loggerLink({
-          enabled: (op) =>
-            // Only log errors, not all queries in development
-            (op.direction === "down" && op.result instanceof Error),
+          enabled: (op) => {
+            // Only log errors, and suppress noisy analytics errors in dev
+            const isError = op.direction === "down" && op.result instanceof Error;
+            if (!isError) return false;
+            // Suppress unifiedIntelligence.getAnalytics errors in the client console
+            if (typeof op.path === "string" && op.path.startsWith("unifiedIntelligence.getAnalytics")) {
+              return false;
+            }
+            return true;
+          },
         }),
         httpBatchStreamLink({
           transformer: SuperJSON,

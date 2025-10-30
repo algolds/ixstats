@@ -1,5 +1,5 @@
 // Enhanced ixwiki.com API integration with complete template parsing
-import { MEDIAWIKI_CONFIG, buildApiUrl, getMediaWikiApiUrl } from '~/lib/mediawiki-config';
+import { MEDIAWIKI_CONFIG, buildApiUrl, getMediaWikiApiUrl, getWikiUserAgent, type WikiSource } from '~/lib/mediawiki-config';
 
 // Main interface that allows additional dynamic string properties
 export interface CountryInfobox {
@@ -222,21 +222,28 @@ class LRUCache<K, V> extends Map<K, V> {
 }
 
 export class IxnayWikiService {
+  private readonly wikiSource: WikiSource;
+
   private get API_BASE_URL(): string {
-    return getMediaWikiApiUrl();
+    return getMediaWikiApiUrl(this.wikiSource);
   }
+
+  private get USER_AGENT(): string {
+    return getWikiUserAgent(this.wikiSource);
+  }
+
   private readonly FLAG_CACHE = new LRUCache<string, CacheEntry<string | null>>(MEDIAWIKI_CONFIG.cache.maxSize);
   private readonly INFOBOX_CACHE = new LRUCache<string, CacheEntry<CountryInfoboxWithDynamicProps | null>>(MEDIAWIKI_CONFIG.cache.maxSize);
   private readonly TEMPLATE_CACHE = new LRUCache<string, CacheEntry<string | null>>(MEDIAWIKI_CONFIG.cache.maxSize);
   private readonly FILE_CACHE = new LRUCache<string, CacheEntry<string | null>>(MEDIAWIKI_CONFIG.cache.maxSize);
   private readonly WIKITEXT_CACHE = new LRUCache<string, CacheEntry<string | null>>(MEDIAWIKI_CONFIG.cache.maxSize);
   private readonly RENDERED_HTML_CACHE = new LRUCache<string, CacheEntry<string | null>>(MEDIAWIKI_CONFIG.cache.maxSize);
-  
+
   // Request deduplication
   private readonly REQUEST_QUEUE = new Map<string, Promise<any>>();
   private isPreloading = false;
   private cleanupInterval: NodeJS.Timeout | null = null;
-  
+
   // Cache TTLs
   private readonly FLAG_TTL = MEDIAWIKI_CONFIG.cache.flagTtl;
   private readonly INFOBOX_TTL = MEDIAWIKI_CONFIG.cache.infoboxTtl;
@@ -244,8 +251,9 @@ export class IxnayWikiService {
   private readonly FILE_TTL = MEDIAWIKI_CONFIG.cache.flagTtl;
   private readonly WIKITEXT_TTL = MEDIAWIKI_CONFIG.cache.infoboxTtl;
   private readonly RENDERED_HTML_TTL = MEDIAWIKI_CONFIG.cache.infoboxTtl;
-  
-  constructor() {
+
+  constructor(wikiSource: WikiSource = 'ixwiki') {
+    this.wikiSource = wikiSource;
     this.startCacheCleanup();
   }
   
@@ -406,7 +414,8 @@ export class IxnayWikiService {
             format: 'json',
             formatversion: '2'
           });
-          const apiUrl = `/api/mediawiki?${params.toString()}`;
+          const baseUrl = getMediaWikiApiUrl();
+          const apiUrl = `${baseUrl}?${params.toString()}`;
           console.log(`[MediaWiki] Fetching wikitext for: ${pageName}`);
           
           // Create an AbortController for timeout
@@ -414,7 +423,10 @@ export class IxnayWikiService {
           const timeoutId = setTimeout(() => controller.abort(), MEDIAWIKI_CONFIG.timeout);
           
           const response = await fetch(apiUrl, {
-            headers: { 'Accept': 'application/json' },
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': this.USER_AGENT,
+            },
             cache: 'no-store',
             signal: controller.signal
           });
@@ -520,6 +532,7 @@ export class IxnayWikiService {
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
+            'User-Agent': this.USER_AGENT,
           },
           body: JSON.stringify(requestData),
           cache: 'no-store'
@@ -534,12 +547,14 @@ export class IxnayWikiService {
           }
         });
 
-        const apiUrl = `/api/mediawiki?${params.toString()}`;
+        const baseUrl = getMediaWikiApiUrl();
+        const apiUrl = `${baseUrl}?${params.toString()}`;
         console.log(`[MediaWiki] Using GET for short wikitext`);
 
         response = await fetch(apiUrl, {
           headers: {
             'Accept': 'application/json',
+            'User-Agent': this.USER_AGENT,
           },
           cache: 'no-store'
         });
@@ -1546,9 +1561,12 @@ export class IxnayWikiService {
             formatversion: '2',
             redirects: '1', // Always follow redirects
           });
-          const templateUrl = `${MEDIAWIKI_CONFIG.baseUrl}${MEDIAWIKI_CONFIG.apiEndpoint}?${params.toString()}`;
+          const templateUrl = `${this.API_BASE_URL}?${params.toString()}`;
           const response = await fetch(templateUrl, {
-            headers: { 'Accept': 'application/json' },
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': this.USER_AGENT,
+            },
             cache: 'no-store'
           });
           if (!response.ok) {

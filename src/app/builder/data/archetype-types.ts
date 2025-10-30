@@ -9,7 +9,7 @@
  * @module archetype-types
  */
 
-import { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
+import { EconomicComponentType } from '~/lib/atomic-economic-data';
 import { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
 
 /**

@@ -1,6 +1,11 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import {
+  VariableSizeList,
+  type VariableSizeListHandle,
+} from '~/lib/react-window-compat';
+const List = VariableSizeList;
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertTriangle,
@@ -29,7 +34,8 @@ import {
   Lock,
   Unlock,
   BarChart3,
-  Play
+  Play,
+  Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Button } from '~/components/ui/button';
@@ -40,6 +46,7 @@ import { api } from '~/trpc/react';
 import { IxTime } from '~/lib/ixtime';
 import { toast } from 'sonner';
 import { cn } from '~/lib/utils';
+import { formatCompactCurrency, formatPercent } from '~/lib/format-utils';
 
 // ===== TYPES =====
 
@@ -117,6 +124,10 @@ interface IntelligenceFeedProps {
 }
 
 // ===== CONFIGURATION =====
+
+const ITEMS_PER_PAGE = 20;
+const VIEWPORT_HEIGHT = 600; // Height of the virtualized list viewport
+const OVERSCAN_COUNT = 3; // Number of items to render above/below viewport
 
 const severityConfig = {
   critical: {
@@ -203,21 +214,20 @@ const formatTimeAgo = (timestamp: Date): string => {
 };
 
 const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    notation: 'compact',
-    maximumFractionDigits: 1
-  }).format(value);
+  return formatCompactCurrency(value);
 };
 
 const formatPercentage = (value: number): string => {
-  return `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
+  return `${value > 0 ? '+' : ''}${formatPercent(value, 1)}`;
 };
 
 // ===== SUB-COMPONENTS =====
 
-const AlertCard = ({
+/**
+ * Memoized AlertCard component to prevent unnecessary re-renders when alert props haven't changed.
+ * This helps performance when rendering large lists of alerts in the feed.
+ */
+const AlertCard = React.memo(({
   alert,
   isExpanded,
   onToggle,
@@ -351,9 +361,14 @@ const AlertCard = ({
       </AnimatePresence>
     </motion.div>
   );
-};
+});
+AlertCard.displayName = 'AlertCard';
 
-const BriefingCard = ({
+/**
+ * Memoized BriefingCard component to prevent unnecessary re-renders when briefing props haven't changed.
+ * This helps performance when rendering large lists of briefings in the feed.
+ */
+const BriefingCard = React.memo(({
   briefing,
   isExpanded,
   onToggle
@@ -470,9 +485,14 @@ const BriefingCard = ({
       </AnimatePresence>
     </motion.div>
   );
-};
+});
+BriefingCard.displayName = 'BriefingCard';
 
-const RecommendationCard = ({
+/**
+ * Memoized RecommendationCard component to prevent unnecessary re-renders when recommendation props haven't changed.
+ * This helps performance when rendering large lists of recommendations in the feed.
+ */
+const RecommendationCard = React.memo(({
   recommendation,
   isExpanded,
   onToggle,
@@ -588,9 +608,14 @@ const RecommendationCard = ({
       </AnimatePresence>
     </motion.div>
   );
-};
+});
+RecommendationCard.displayName = 'RecommendationCard';
 
-const TrendCard = ({
+/**
+ * Memoized TrendCard component to prevent unnecessary re-renders when trend props haven't changed.
+ * This helps performance when rendering large lists of trends in the feed.
+ */
+const TrendCard = React.memo(({
   trend,
   isExpanded,
   onToggle
@@ -697,7 +722,8 @@ const TrendCard = ({
       </AnimatePresence>
     </motion.div>
   );
-};
+});
+TrendCard.displayName = 'TrendCard';
 
 // ===== MAIN COMPONENT =====
 
@@ -708,6 +734,18 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
   const [showArchived, setShowArchived] = useState(false);
   const [selectedSeverity, setSelectedSeverity] = useState<AlertSeverity | 'all'>('all');
   const [selectedUrgency, setSelectedUrgency] = useState<RecommendationUrgency | 'all'>('all');
+  const [currentPage, setCurrentPage] = useState<Record<FeedCategory, number>>({
+    alerts: 1,
+    briefings: 1,
+    recommendations: 1,
+    trends: 1
+  });
+
+  // Refs for virtualized lists (one per tab)
+  const alertsListRef = useRef<VariableSizeListHandle>(null);
+  const briefingsListRef = useRef<VariableSizeListHandle>(null);
+  const recommendationsListRef = useRef<VariableSizeListHandle>(null);
+  const trendsListRef = useRef<VariableSizeListHandle>(null);
 
   // Live API data fetching
   const { data: overviewData, refetch: refetchOverview } = api.unifiedIntelligence.getOverview.useQuery(
@@ -722,7 +760,7 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
 
   const { data: analyticsData } = api.unifiedIntelligence.getAnalytics.useQuery(
     { countryId, timeframe: '30d' },
-    { enabled: !!countryId, refetchInterval: 60000 }
+    { enabled: !!countryId && activeTab === 'trends', refetchInterval: 60000, retry: false }
   );
 
   const acknowledgeAlertMutation = api.unifiedIntelligence.acknowledgeAlert.useMutation({
@@ -748,7 +786,7 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
   // Transform API data to component format
   const alerts: Alert[] = useMemo(() => {
     if (!overviewData?.alerts?.items) return [];
-    return overviewData.alerts.items.map(alert => ({
+    return overviewData.alerts.items.map((alert: any) => ({
       id: alert.id,
       title: alert.title,
       message: alert.description,
@@ -769,7 +807,7 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
 
   const briefings: Briefing[] = useMemo(() => {
     if (!overviewData?.briefings?.items) return [];
-    return overviewData.briefings.items.map(briefing => ({
+    return overviewData.briefings.items.map((briefing: any) => ({
       id: briefing.id,
       title: briefing.title,
       content: briefing.description,
@@ -784,7 +822,7 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
 
   const recommendations: Recommendation[] = useMemo(() => {
     if (!recommendationsData?.actions) return [];
-    return recommendationsData.actions.map(action => ({
+    return recommendationsData.actions.map((action: any) => ({
       id: action.id,
       title: action.title,
       description: action.description,
@@ -821,8 +859,8 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
     }
   }, [wsConnected]);
 
-  // Toggle item expansion
-  const toggleExpand = useCallback((id: string) => {
+  // Toggle item expansion and reset size cache
+  const toggleExpand = useCallback((id: string, category: FeedCategory) => {
     setExpandedItems(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -832,6 +870,21 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
       }
       return next;
     });
+
+    // Reset size cache for the affected list after state update
+    // Use setTimeout to ensure state has updated before resetting cache
+    setTimeout(() => {
+      const listRef =
+        category === 'alerts' ? alertsListRef :
+        category === 'briefings' ? briefingsListRef :
+        category === 'recommendations' ? recommendationsListRef :
+        trendsListRef;
+
+      if (listRef.current) {
+        // Reset the entire list cache
+        listRef.current.resetAfterIndex(0);
+      }
+    }, 0);
   }, []);
 
   // Alert actions with API integration
@@ -878,7 +931,7 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
 
   // Filtered data
   const filteredAlerts = useMemo(() => {
-    return alerts.filter(alert => {
+    return alerts.filter((alert: Alert) => {
       if (!showArchived && !alert.isActive) return false;
       if (selectedSeverity !== 'all' && alert.severity !== selectedSeverity) return false;
       if (searchQuery && !alert.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
@@ -888,7 +941,7 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
   }, [alerts, showArchived, selectedSeverity, searchQuery]);
 
   const filteredBriefings = useMemo(() => {
-    return briefings.filter(briefing => {
+    return briefings.filter((briefing: Briefing) => {
       if (searchQuery && !briefing.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
           !briefing.content.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       return true;
@@ -896,7 +949,7 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
   }, [briefings, searchQuery]);
 
   const filteredRecommendations = useMemo(() => {
-    return recommendations.filter(rec => {
+    return recommendations.filter((rec: Recommendation) => {
       if (selectedUrgency !== 'all' && rec.urgency !== selectedUrgency) return false;
       if (searchQuery && !rec.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
           !rec.description.toLowerCase().includes(searchQuery.toLowerCase())) return false;
@@ -905,11 +958,139 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
   }, [recommendations, selectedUrgency, searchQuery]);
 
   const filteredTrends = useMemo(() => {
-    return trends.filter(trend => {
+    return trends.filter((trend: Trend) => {
       if (searchQuery && !trend.metric.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       return true;
     });
   }, [trends, searchQuery]);
+
+  // Paginated data (load more items progressively)
+  const displayedAlerts = useMemo(() => {
+    const endIdx = currentPage.alerts * ITEMS_PER_PAGE;
+    return filteredAlerts.slice(0, endIdx);
+  }, [filteredAlerts, currentPage.alerts]);
+
+  const displayedBriefings = useMemo(() => {
+    const endIdx = currentPage.briefings * ITEMS_PER_PAGE;
+    return filteredBriefings.slice(0, endIdx);
+  }, [filteredBriefings, currentPage.briefings]);
+
+  const displayedRecommendations = useMemo(() => {
+    const endIdx = currentPage.recommendations * ITEMS_PER_PAGE;
+    return filteredRecommendations.slice(0, endIdx);
+  }, [filteredRecommendations, currentPage.recommendations]);
+
+  const displayedTrends = useMemo(() => {
+    const endIdx = currentPage.trends * ITEMS_PER_PAGE;
+    return filteredTrends.slice(0, endIdx);
+  }, [filteredTrends, currentPage.trends]);
+
+  // Load more handlers
+  const loadMore = useCallback((category: FeedCategory) => {
+    setCurrentPage(prev => ({
+      ...prev,
+      [category]: prev[category] + 1
+    }));
+  }, []);
+
+  // Has more checks
+  const hasMoreAlerts = displayedAlerts.length < filteredAlerts.length;
+  const hasMoreBriefings = displayedBriefings.length < filteredBriefings.length;
+  const hasMoreRecommendations = displayedRecommendations.length < filteredRecommendations.length;
+  const hasMoreTrends = displayedTrends.length < filteredTrends.length;
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage({
+      alerts: 1,
+      briefings: 1,
+      recommendations: 1,
+      trends: 1
+    });
+  }, [searchQuery, selectedSeverity, selectedUrgency, showArchived]);
+
+  // Item size calculation functions for variable-height virtualization
+  const getAlertItemSize = useCallback((index: number) => {
+    const alert = displayedAlerts[index];
+    if (!alert) return 120;
+    const isExpanded = expandedItems.has(alert.id);
+
+    // Base height
+    let height = 120;
+
+    // Add height for expanded content
+    if (isExpanded) {
+      height += 80; // Action buttons
+      if (alert.relatedEntities.length > 0) {
+        height += 60 + Math.ceil(alert.relatedEntities.length / 3) * 30; // Entity badges
+      }
+    }
+
+    return height;
+  }, [displayedAlerts, expandedItems]);
+
+  const getBriefingItemSize = useCallback((index: number) => {
+    const briefing = displayedBriefings[index];
+    if (!briefing) return 150;
+    const isExpanded = expandedItems.has(briefing.id);
+
+    let height = 150;
+
+    if (isExpanded) {
+      // Content lines (estimate 20px per line)
+      const contentLines = Math.ceil(briefing.content.length / 80);
+      height += Math.min(contentLines * 20, 200);
+
+      // Attachments
+      if (briefing.attachments.length > 0) {
+        height += 40 + briefing.attachments.length * 25;
+      }
+
+      // Tags
+      if (briefing.tags.length > 0) {
+        height += 40 + Math.ceil(briefing.tags.length / 4) * 30;
+      }
+
+      // Expiration date
+      if (briefing.expiresAt) {
+        height += 30;
+      }
+    }
+
+    return height;
+  }, [displayedBriefings, expandedItems]);
+
+  const getRecommendationItemSize = useCallback((index: number) => {
+    const rec = displayedRecommendations[index];
+    if (!rec) return 140;
+    const isExpanded = expandedItems.has(rec.id);
+
+    let height = 140;
+
+    if (isExpanded) {
+      height += 120; // Cost/benefit grid
+      height += 60; // Execute button or implemented status
+    }
+
+    return height;
+  }, [displayedRecommendations, expandedItems]);
+
+  const getTrendItemSize = useCallback((index: number) => {
+    const trend = displayedTrends[index];
+    if (!trend) return 110;
+    const isExpanded = expandedItems.has(trend.id);
+
+    let height = 110;
+
+    if (isExpanded) {
+      height += 120; // Forecast grid
+      if (trend.implications.length > 0) {
+        height += 40 + trend.implications.length * 30;
+      }
+    }
+
+    return height;
+  }, [displayedTrends, expandedItems]);
 
   // Stats
   const unreadAlerts = alerts.filter(a => !a.isRead && a.isActive).length;
@@ -1061,94 +1242,222 @@ export function IntelligenceFeed({ countryId, className, wsConnected = false }: 
           {/* Feed content */}
           <div className="p-6">
             <TabsContent value="alerts" className="m-0">
-              <div className="space-y-3">
-                {filteredAlerts.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Shield className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p className="text-sm">No alerts to display</p>
-                  </div>
-                ) : (
-                  <AnimatePresence mode="popLayout">
-                    {filteredAlerts.map((alert) => (
-                      <AlertCard
-                        key={alert.id}
-                        alert={alert}
-                        isExpanded={expandedItems.has(alert.id)}
-                        onToggle={() => toggleExpand(alert.id)}
-                        onAcknowledge={() => acknowledgeAlert(alert.id)}
-                        onArchive={() => archiveAlert(alert.id)}
-                      />
-                    ))}
-                  </AnimatePresence>
-                )}
-              </div>
+              {filteredAlerts.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Shield className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">No alerts to display</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <List
+                    ref={alertsListRef}
+                    height={VIEWPORT_HEIGHT}
+                    itemCount={displayedAlerts.length}
+                    itemSize={getAlertItemSize}
+                    width="100%"
+                    overscanCount={OVERSCAN_COUNT}
+                  >
+                    {({ index, style }: { index: number; style: React.CSSProperties }) => {
+                      const alert = displayedAlerts[index];
+                      if (!alert) return null;
+
+                      return (
+                        <div style={style} className="pb-3">
+                          <AlertCard
+                            alert={alert}
+                            isExpanded={expandedItems.has(alert.id)}
+                            onToggle={() => toggleExpand(alert.id, 'alerts')}
+                            onAcknowledge={() => acknowledgeAlert(alert.id)}
+                            onArchive={() => archiveAlert(alert.id)}
+                          />
+                        </div>
+                      );
+                    }}
+                  </List>
+
+                  {hasMoreAlerts && (
+                    <div className="flex justify-center pt-4">
+                      <Button
+                        onClick={() => loadMore('alerts')}
+                        variant="outline"
+                        size="lg"
+                      >
+                        Load More
+                        <ChevronDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  {!hasMoreAlerts && displayedAlerts.length > 0 && (
+                    <div className="text-center pt-4 text-sm text-muted-foreground">
+                      All alerts loaded ({displayedAlerts.length} total)
+                    </div>
+                  )}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="briefings" className="m-0">
-              <div className="space-y-3">
-                {filteredBriefings.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p className="text-sm">No briefings to display</p>
-                  </div>
-                ) : (
-                  <AnimatePresence mode="popLayout">
-                    {filteredBriefings.map((briefing) => (
-                      <BriefingCard
-                        key={briefing.id}
-                        briefing={briefing}
-                        isExpanded={expandedItems.has(briefing.id)}
-                        onToggle={() => toggleExpand(briefing.id)}
-                      />
-                    ))}
-                  </AnimatePresence>
-                )}
-              </div>
+              {filteredBriefings.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">No briefings to display</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <List
+                    ref={briefingsListRef}
+                    height={VIEWPORT_HEIGHT}
+                    itemCount={displayedBriefings.length}
+                    itemSize={getBriefingItemSize}
+                    width="100%"
+                    overscanCount={OVERSCAN_COUNT}
+                  >
+                    {({ index, style }: { index: number; style: React.CSSProperties }) => {
+                      const briefing = displayedBriefings[index];
+                      if (!briefing) return null;
+
+                      return (
+                        <div style={style} className="pb-3">
+                          <BriefingCard
+                            briefing={briefing}
+                            isExpanded={expandedItems.has(briefing.id)}
+                            onToggle={() => toggleExpand(briefing.id, 'briefings')}
+                          />
+                        </div>
+                      );
+                    }}
+                  </List>
+
+                  {hasMoreBriefings && (
+                    <div className="flex justify-center pt-4">
+                      <Button
+                        onClick={() => loadMore('briefings')}
+                        variant="outline"
+                        size="lg"
+                      >
+                        Load More
+                        <ChevronDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  {!hasMoreBriefings && displayedBriefings.length > 0 && (
+                    <div className="text-center pt-4 text-sm text-muted-foreground">
+                      All briefings loaded ({displayedBriefings.length} total)
+                    </div>
+                  )}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="recommendations" className="m-0">
-              <div className="space-y-3">
-                {filteredRecommendations.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <Target className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p className="text-sm">No recommendations to display</p>
-                  </div>
-                ) : (
-                  <AnimatePresence mode="popLayout">
-                    {filteredRecommendations.map((recommendation) => (
-                      <RecommendationCard
-                        key={recommendation.id}
-                        recommendation={recommendation}
-                        isExpanded={expandedItems.has(recommendation.id)}
-                        onToggle={() => toggleExpand(recommendation.id)}
-                        onExecute={() => executeRecommendation(recommendation.id)}
-                      />
-                    ))}
-                  </AnimatePresence>
-                )}
-              </div>
+              {filteredRecommendations.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Target className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">No recommendations to display</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <List
+                    ref={recommendationsListRef}
+                    height={VIEWPORT_HEIGHT}
+                    itemCount={displayedRecommendations.length}
+                    itemSize={getRecommendationItemSize}
+                    width="100%"
+                    overscanCount={OVERSCAN_COUNT}
+                  >
+                    {({ index, style }: { index: number; style: React.CSSProperties }) => {
+                      const recommendation = displayedRecommendations[index];
+                      if (!recommendation) return null;
+
+                      return (
+                        <div style={style} className="pb-3">
+                          <RecommendationCard
+                            recommendation={recommendation}
+                            isExpanded={expandedItems.has(recommendation.id)}
+                            onToggle={() => toggleExpand(recommendation.id, 'recommendations')}
+                            onExecute={() => executeRecommendation(recommendation.id)}
+                          />
+                        </div>
+                      );
+                    }}
+                  </List>
+
+                  {hasMoreRecommendations && (
+                    <div className="flex justify-center pt-4">
+                      <Button
+                        onClick={() => loadMore('recommendations')}
+                        variant="outline"
+                        size="lg"
+                      >
+                        Load More
+                        <ChevronDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  {!hasMoreRecommendations && displayedRecommendations.length > 0 && (
+                    <div className="text-center pt-4 text-sm text-muted-foreground">
+                      All recommendations loaded ({displayedRecommendations.length} total)
+                    </div>
+                  )}
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="trends" className="m-0">
-              <div className="space-y-3">
-                {filteredTrends.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p className="text-sm">No trends to display</p>
-                  </div>
-                ) : (
-                  <AnimatePresence mode="popLayout">
-                    {filteredTrends.map((trend) => (
-                      <TrendCard
-                        key={trend.id}
-                        trend={trend}
-                        isExpanded={expandedItems.has(trend.id)}
-                        onToggle={() => toggleExpand(trend.id)}
-                      />
-                    ))}
-                  </AnimatePresence>
-                )}
-              </div>
+              {filteredTrends.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">No trends to display</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <List
+                    ref={trendsListRef}
+                    height={VIEWPORT_HEIGHT}
+                    itemCount={displayedTrends.length}
+                    itemSize={getTrendItemSize}
+                    width="100%"
+                    overscanCount={OVERSCAN_COUNT}
+                  >
+                    {({ index, style }: { index: number; style: React.CSSProperties }) => {
+                      const trend = displayedTrends[index];
+                      if (!trend) return null;
+
+                      return (
+                        <div style={style} className="pb-3">
+                          <TrendCard
+                            trend={trend}
+                            isExpanded={expandedItems.has(trend.id)}
+                            onToggle={() => toggleExpand(trend.id, 'trends')}
+                          />
+                        </div>
+                      );
+                    }}
+                  </List>
+
+                  {hasMoreTrends && (
+                    <div className="flex justify-center pt-4">
+                      <Button
+                        onClick={() => loadMore('trends')}
+                        variant="outline"
+                        size="lg"
+                      >
+                        Load More
+                        <ChevronDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+
+                  {!hasMoreTrends && displayedTrends.length > 0 && (
+                    <div className="text-center pt-4 text-sm text-muted-foreground">
+                      All trends loaded ({displayedTrends.length} total)
+                    </div>
+                  )}
+                </div>
+              )}
             </TabsContent>
           </div>
         </Tabs>

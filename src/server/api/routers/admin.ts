@@ -932,6 +932,7 @@ export const adminRouter = createTRPCRouter({
     return users.map(u => ({
       id: u.id,
       clerkUserId: u.clerkUserId,
+      membershipTier: u.membershipTier || 'basic',
       country: u.country ? { id: u.country.id, name: u.country.name } : null,
       createdAt: u.createdAt,
       updatedAt: u.updatedAt,
@@ -992,7 +993,7 @@ export const adminRouter = createTRPCRouter({
     }),
 
   // Get navigation settings (wiki/cards/labs visibility)
-  getNavigationSettings: protectedProcedure
+  getNavigationSettings: publicProcedure
     .query(async ({ ctx }) => {
       try {
         const settings = await ctx.db.systemConfig.findMany({
@@ -1526,6 +1527,259 @@ export const adminRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to create maintenance notification"
+        });
+      }
+    }),
+
+  // ============================================================================
+  // DIPLOMATIC OPTIONS MANAGEMENT
+  // ============================================================================
+
+  /**
+   * Get all diplomatic options (with optional filtering)
+   */
+  getDiplomaticOptions: adminProcedure
+    .input(
+      z.object({
+        type: z.enum(['strategic_priority', 'partnership_goal', 'key_achievement']).optional(),
+        category: z.string().optional(),
+        isActive: z.boolean().optional(),
+      }).optional()
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const where: any = {};
+
+        if (input?.type) {
+          where.type = input.type;
+        }
+        if (input?.category) {
+          where.category = input.category;
+        }
+        if (input?.isActive !== undefined) {
+          where.isActive = input.isActive;
+        }
+
+        const options = await ctx.db.diplomaticOption.findMany({
+          where,
+          orderBy: [
+            { type: 'asc' },
+            { sortOrder: 'asc' },
+            { value: 'asc' }
+          ]
+        });
+
+        return options;
+      } catch (error) {
+        console.error("Failed to get diplomatic options:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to retrieve diplomatic options"
+        });
+      }
+    }),
+
+  /**
+   * Create a new diplomatic option
+   */
+  createDiplomaticOption: adminProcedure
+    .input(
+      z.object({
+        type: z.enum(['strategic_priority', 'partnership_goal', 'key_achievement']),
+        value: z.string().min(1, "Value is required"),
+        category: z.string().optional(),
+        description: z.string().optional(),
+        sortOrder: z.number().default(0),
+        isActive: z.boolean().default(true),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const option = await ctx.db.diplomaticOption.create({
+          data: input
+        });
+
+        // Log the creation
+        await ctx.db.adminAuditLog.create({
+          data: {
+            action: "DIPLOMATIC_OPTION_CREATED",
+            targetType: "diplomatic_option",
+            targetId: option.id,
+            targetName: option.value,
+            changes: JSON.stringify({ type: option.type, category: option.category }),
+            adminId: ctx.user?.id || "system",
+            adminName: ctx.user?.clerkUserId || "System",
+            timestamp: new Date(),
+            ipAddress: ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown"
+          }
+        });
+
+        return {
+          success: true,
+          message: "Diplomatic option created successfully",
+          option
+        };
+      } catch (error) {
+        console.error("Failed to create diplomatic option:", error);
+
+        // Check for unique constraint violation
+        if (error instanceof Error && error.message.includes('Unique constraint')) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "A diplomatic option with this type and value already exists"
+          });
+        }
+
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create diplomatic option"
+        });
+      }
+    }),
+
+  /**
+   * Update an existing diplomatic option
+   */
+  updateDiplomaticOption: adminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        data: z.object({
+          value: z.string().min(1).optional(),
+          category: z.string().optional(),
+          description: z.string().optional(),
+          sortOrder: z.number().optional(),
+          isActive: z.boolean().optional(),
+        })
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const option = await ctx.db.diplomaticOption.update({
+          where: { id: input.id },
+          data: input.data
+        });
+
+        // Log the update
+        await ctx.db.adminAuditLog.create({
+          data: {
+            action: "DIPLOMATIC_OPTION_UPDATED",
+            targetType: "diplomatic_option",
+            targetId: option.id,
+            targetName: option.value,
+            changes: JSON.stringify(input.data),
+            adminId: ctx.user?.id || "system",
+            adminName: ctx.user?.clerkUserId || "System",
+            timestamp: new Date(),
+            ipAddress: ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown"
+          }
+        });
+
+        return {
+          success: true,
+          message: "Diplomatic option updated successfully",
+          option
+        };
+      } catch (error) {
+        console.error("Failed to update diplomatic option:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update diplomatic option"
+        });
+      }
+    }),
+
+  /**
+   * Delete (soft delete) a diplomatic option
+   */
+  deleteDiplomaticOption: adminProcedure
+    .input(
+      z.object({
+        id: z.string()
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Soft delete by setting isActive to false
+        const option = await ctx.db.diplomaticOption.update({
+          where: { id: input.id },
+          data: { isActive: false }
+        });
+
+        // Log the deletion
+        await ctx.db.adminAuditLog.create({
+          data: {
+            action: "DIPLOMATIC_OPTION_DELETED",
+            targetType: "diplomatic_option",
+            targetId: option.id,
+            targetName: option.value,
+            changes: JSON.stringify({ isActive: false }),
+            adminId: ctx.user?.id || "system",
+            adminName: ctx.user?.clerkUserId || "System",
+            timestamp: new Date(),
+            ipAddress: ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown"
+          }
+        });
+
+        return {
+          success: true,
+          message: "Diplomatic option deleted successfully"
+        };
+      } catch (error) {
+        console.error("Failed to delete diplomatic option:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete diplomatic option"
+        });
+      }
+    }),
+
+  /**
+   * Bulk toggle active status for diplomatic options
+   */
+  bulkToggleDiplomaticOptions: adminProcedure
+    .input(
+      z.object({
+        ids: z.array(z.string()),
+        isActive: z.boolean()
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const result = await ctx.db.diplomaticOption.updateMany({
+          where: {
+            id: { in: input.ids }
+          },
+          data: {
+            isActive: input.isActive
+          }
+        });
+
+        // Log the bulk operation
+        await ctx.db.adminAuditLog.create({
+          data: {
+            action: "DIPLOMATIC_OPTIONS_BULK_TOGGLE",
+            targetType: "diplomatic_option",
+            targetId: "bulk",
+            targetName: `${input.ids.length} options`,
+            changes: JSON.stringify({ ids: input.ids, isActive: input.isActive }),
+            adminId: ctx.user?.id || "system",
+            adminName: ctx.user?.clerkUserId || "System",
+            timestamp: new Date(),
+            ipAddress: ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown"
+          }
+        });
+
+        return {
+          success: true,
+          message: `Successfully ${input.isActive ? 'activated' : 'deactivated'} ${result.count} diplomatic options`,
+          count: result.count
+        };
+      } catch (error) {
+        console.error("Failed to bulk toggle diplomatic options:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to bulk toggle diplomatic options"
         });
       }
     }),

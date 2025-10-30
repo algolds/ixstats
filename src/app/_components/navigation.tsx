@@ -383,6 +383,13 @@ export function Navigation() {
       description: "Your national dashboard and executive command center",
     },
     {
+      name: "Maps",
+      href: "/maps",
+      icon: Compass,
+      requiresAuth: false,
+      description: "Interactive world map and geographic exploration",
+    },
+    {
       name: "Intelligence",
       href: "/mycountry/intelligence",
       icon: Shield,

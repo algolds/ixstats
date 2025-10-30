@@ -9,9 +9,12 @@ import {
   DialogDescription,
 } from '~/components/ui/dialog';
 import { Button } from '~/components/ui/button';
-import { Sparkles, Info } from 'lucide-react';
+import { Alert, AlertDescription } from '~/components/ui/alert';
+import { Sparkles, Info, AlertTriangle } from 'lucide-react';
 import { EconomicArchetypeDisplay } from './EconomicArchetypeDisplay';
 import type { EconomyBuilderState } from '~/types/economy-builder';
+import { useArchetypes } from '~/hooks/useArchetypes';
+import { api } from '~/trpc/react';
 
 interface EconomicArchetypeModalProps {
   open: boolean;
@@ -26,6 +29,23 @@ export function EconomicArchetypeModal({
   currentState,
   onArchetypeApplied,
 }: EconomicArchetypeModalProps) {
+  // Fetch archetypes from database with fallback
+  const { isUsingFallback } = useArchetypes('all');
+
+  // Track archetype usage
+  const incrementUsage = api.economicArchetypes.incrementArchetypeUsage.useMutation();
+
+  const handleArchetypeApplied = (newState: EconomyBuilderState, archetypeId?: string) => {
+    // Track usage if archetype has database ID
+    if (archetypeId) {
+      incrementUsage.mutate({ archetypeId });
+    }
+
+    // Apply archetype and close modal
+    onArchetypeApplied?.(newState);
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] w-full max-h-[95vh] flex flex-col p-0 gap-0 economic-archetype-modal-v2">
@@ -48,15 +68,24 @@ export function EconomicArchetypeModal({
           </div>
         </DialogHeader>
 
+        {/* Fallback Warning */}
+        {isUsingFallback && (
+          <div className="px-6 pt-4">
+            <Alert variant="default" className="bg-yellow-500/10 border-yellow-500/30">
+              <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+              <AlertDescription className="text-xs text-yellow-600 dark:text-yellow-400">
+                Using offline archetype data. Admin should seed database with economic archetypes.
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+
         {/* Content Area - Scrollable */}
         <div className="flex-1 overflow-y-auto min-h-0">
           <div className="p-4">
             <EconomicArchetypeDisplay
               currentState={currentState}
-              onArchetypeApplied={(newState) => {
-                onArchetypeApplied?.(newState);
-                onOpenChange(false);
-              }}
+              onArchetypeApplied={handleArchetypeApplied}
             />
           </div>
         </div>

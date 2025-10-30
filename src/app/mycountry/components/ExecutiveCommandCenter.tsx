@@ -17,7 +17,13 @@ import {
   Target,
   AlertTriangle,
   Brain,
-  Sparkles
+  Sparkles,
+  Globe,
+  MessageSquare,
+  Building,
+  Calendar,
+  ArrowUpRight,
+  ArrowDownRight
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card';
 import { Button } from '~/components/ui/button';
@@ -38,6 +44,8 @@ import { api } from '~/trpc/react';
 import { useUser } from '~/context/auth-context';
 import { toast } from 'sonner';
 import { withBasePath } from '~/lib/base-path';
+import { DiplomaticHealthRing } from '~/components/diplomatic/DiplomaticHealthRing';
+import { DiplomaticMeetingScheduler } from '~/components/executive/DiplomaticMeetingScheduler';
 
 interface ExecutiveCommandCenterProps extends IntelligenceComponentProps {
   intelligence: ExecutiveIntelligence;
@@ -90,13 +98,40 @@ const urgencyConfig = {
 function CriticalAlertsSection({
   alerts,
   onAlertClick,
-  onNavigateToFeed
+  onNavigateToFeed,
+  countryId
 }: {
   alerts: CriticalAlert[];
   onAlertClick?: (alert: CriticalAlert) => void;
   onNavigateToFeed?: () => void;
+  countryId?: string;
 }) {
-  if (alerts.length === 0) return null;
+  // Add diplomatic alerts to the critical alerts
+  const { data: diplomaticChanges = [] } = api.diplomatic.getRecentChanges.useQuery(
+    { countryId: countryId || '', hours: 48 },
+    { enabled: !!countryId }
+  );
+
+  const diplomaticAlerts = React.useMemo(() => {
+    const criticalDiplomaticEvents = diplomaticChanges.filter((change: any) =>
+      change.changeType === 'relationship_change' ||
+      change.changeType === 'embassy_update' ||
+      change.changeType === 'mission_failed'
+    ).slice(0, 2);
+
+    return criticalDiplomaticEvents.map((event: any) => ({
+      id: `diplomatic-${event.id}`,
+      title: `Diplomatic Update: ${event.targetCountry}`,
+      message: event.description || `${event.changeType.replace('_', ' ')} detected`,
+      severity: event.changeType === 'mission_failed' ? 'critical' : 'warning',
+      priority: event.changeType === 'mission_failed' ? 'high' : 'medium',
+      actionRequired: event.changeType === 'mission_failed',
+    } as CriticalAlert));
+  }, [diplomaticChanges]);
+
+  const allAlerts = [...alerts, ...diplomaticAlerts];
+
+  if (allAlerts.length === 0) return null;
 
   return (
     <motion.div
@@ -110,10 +145,10 @@ function CriticalAlertsSection({
           <AlertTriangle className="h-4 w-4 text-red-600" />
           <span className="font-semibold text-red-600">Critical Alerts</span>
           <Badge variant="destructive" className="text-xs">
-            {alerts.length}
+            {allAlerts.length}
           </Badge>
         </div>
-        {onNavigateToFeed && alerts.length > 0 && (
+        {onNavigateToFeed && allAlerts.length > 0 && (
           <button
             onClick={onNavigateToFeed}
             className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
@@ -124,7 +159,7 @@ function CriticalAlertsSection({
       </div>
       
       <div className="space-y-2">
-        {alerts.slice(0, 3).map((alert, index) => {
+        {allAlerts.slice(0, 3).map((alert, index) => {
           const config = severityConfig[alert.severity];
           const Icon = config.icon;
           
@@ -160,10 +195,10 @@ function CriticalAlertsSection({
             </motion.div>
           );
         })}
-        
-        {alerts.length > 3 && (
+
+        {allAlerts.length > 3 && (
           <Button variant="outline" size="sm" className="w-full text-xs">
-            View All Alerts ({alerts.length})
+            View All Alerts ({allAlerts.length})
           </Button>
         )}
       </div>
@@ -322,6 +357,127 @@ function QuickActionsSection({
   );
 }
 
+// Helper components for diplomatic section
+function DiplomaticStat({ countryId, statType }: { countryId: string; statType: 'embassies' | 'relationships' | 'pending' }) {
+  const { data: embassies = [] } = api.diplomatic.getEmbassies.useQuery({ countryId }, { enabled: !!countryId && statType === 'embassies' });
+  const { data: recentChanges = [] } = api.diplomatic.getRecentChanges.useQuery({ countryId, hours: 24 }, { enabled: !!countryId && statType === 'relationships' });
+
+  if (statType === 'embassies') {
+    const activeEmbassies = embassies.filter((e: any) => e.status === 'ACTIVE' || e.status === 'active');
+    return (
+      <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center gap-2">
+          <Building className="h-3 w-3 text-muted-foreground" />
+          <span className="text-muted-foreground">Active Embassies</span>
+        </div>
+        <span className="font-medium">{activeEmbassies.length}</span>
+      </div>
+    );
+  }
+
+  if (statType === 'relationships') {
+    const relationshipChanges = recentChanges.filter((c: any) =>
+      c.changeType === 'relationship_change' || c.changeType === 'mission_completed'
+    ).slice(0, 3);
+
+    if (relationshipChanges.length === 0) {
+      return (
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center gap-2">
+            <Activity className="h-3 w-3 text-muted-foreground" />
+            <span className="text-muted-foreground">Recent Changes</span>
+          </div>
+          <span className="text-xs text-muted-foreground">None</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-1">
+        <div className="text-xs font-medium text-muted-foreground">Recent Changes:</div>
+        {relationshipChanges.map((change: any, idx: number) => (
+          <div key={change.id || idx} className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground truncate flex-1">{change.targetCountry}</span>
+            <Badge variant="outline" className="text-xs">
+              {change.changeType.replace('_', ' ')}
+            </Badge>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // pending actions
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <div className="flex items-center gap-2">
+        <Clock className="h-3 w-3 text-muted-foreground" />
+        <span className="text-muted-foreground">Pending Actions</span>
+      </div>
+      <Badge variant="secondary" className="text-xs">0</Badge>
+    </div>
+  );
+}
+
+function DiplomaticRecommendations({ countryId }: { countryId: string }) {
+  const { data: embassies = [] } = api.diplomatic.getEmbassies.useQuery({ countryId }, { enabled: !!countryId });
+  const { data: relations = [] } = api.diplomatic.getRelationships.useQuery({ countryId }, { enabled: !!countryId });
+
+  const recommendations: Array<{ text: string; action: string; icon: any }> = [];
+
+  // Recommend establishing more embassies if count is low
+  if (embassies.length < 5) {
+    recommendations.push({
+      text: 'Expand embassy network to strengthen diplomatic presence',
+      action: 'Establish Embassy',
+      icon: Building,
+    });
+  }
+
+  // Recommend improving weak relationships
+  const weakRelations = relations.filter((r: any) => r.strength < 40);
+  if (weakRelations.length > 0) {
+    recommendations.push({
+      text: `Improve ${weakRelations.length} weak relationship${weakRelations.length !== 1 ? 's' : ''}`,
+      action: 'Launch Mission',
+      icon: Target,
+    });
+  }
+
+  // Recommend cultural exchange if none active
+  recommendations.push({
+    text: 'Host cultural exchange to boost diplomatic goodwill',
+    action: 'Create Exchange',
+    icon: Globe,
+  });
+
+  if (recommendations.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="text-xs font-medium text-muted-foreground">Recommendations:</div>
+      {recommendations.slice(0, 2).map((rec, idx) => {
+        const Icon = rec.icon;
+        return (
+          <div
+            key={idx}
+            className="p-2 rounded-md bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 text-xs"
+          >
+            <div className="flex items-start gap-2">
+              <Icon className="h-3 w-3 text-purple-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-purple-900 dark:text-purple-100">{rec.text}</p>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function ExecutiveCommandCenter({
   intelligence,
   country,
@@ -339,6 +495,7 @@ export function ExecutiveCommandCenter({
 }: ExecutiveCommandCenterProps) {
   const { user } = useUser();
   const [viewMode, setViewMode] = useState<'overview' | 'detailed'>('overview');
+  const [diplomaticMeetingOpen, setDiplomaticMeetingOpen] = useState(false);
 
   // Get country ID from countryStats
   const countryId = countryStats?.id || '';
@@ -499,11 +656,17 @@ export function ExecutiveCommandCenter({
             <div className="flex items-center gap-4">
               <div className="relative">
                 <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-border">
-                  <img 
-                    src={country.flag} 
-                    alt={`${country.name} flag`}
-                    className="w-full h-full object-cover"
-                  />
+                  {country.flag ? (
+                    <img
+                      src={country.flag}
+                      alt={`${country.name} flag`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-muted flex items-center justify-center text-xs font-semibold">
+                      {(country.name || '').slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
                 </div>
                 <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-background ${
                   intelligence.overallStatus === 'excellent' ? 'bg-green-500' :
@@ -574,6 +737,7 @@ export function ExecutiveCommandCenter({
                   alerts={intelligence.criticalAlerts}
                   onAlertClick={onAlertClick}
                   onNavigateToFeed={onNavigateToIntelligence}
+                  countryId={countryId}
                 />
                 
                 <TrendingInsightsSection 
@@ -677,6 +841,85 @@ export function ExecutiveCommandCenter({
                     </div>
                   </motion.div>
                 )}
+
+                {/* Diplomatic Operations Section */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.4 }}
+                  className="space-y-4"
+                >
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-purple-600" />
+                      <span className="font-semibold text-purple-600">Diplomatic Operations</span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDiplomaticMeetingOpen(true)}
+                      className="text-xs"
+                    >
+                      <Calendar className="h-3 w-3 mr-1" />
+                      Schedule Meeting
+                    </Button>
+                  </div>
+
+                  {/* Diplomatic Health Ring and Quick Stats */}
+                  <div className="flex items-start gap-4">
+                    <DiplomaticHealthRing
+                      countryId={countryId}
+                      size="sm"
+                      interactive={true}
+                      onClick={() => window.location.href = withBasePath('/diplomatic')}
+                    />
+
+                    <div className="flex-1 space-y-3">
+                      {/* Active Embassies */}
+                      <DiplomaticStat
+                        countryId={countryId}
+                        statType="embassies"
+                      />
+
+                      {/* Recent Relationship Changes */}
+                      <DiplomaticStat
+                        countryId={countryId}
+                        statType="relationships"
+                      />
+
+                      {/* Pending Actions */}
+                      <DiplomaticStat
+                        countryId={countryId}
+                        statType="pending"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Quick Action Buttons */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.location.href = withBasePath('/diplomatic')}
+                      className="text-xs"
+                    >
+                      <Building className="h-3 w-3 mr-1" />
+                      View Embassies
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.location.href = withBasePath('/diplomatic?tab=messages')}
+                      className="text-xs"
+                    >
+                      <MessageSquare className="h-3 w-3 mr-1" />
+                      Send Message
+                    </Button>
+                  </div>
+
+                  {/* Diplomatic Recommendations */}
+                  <DiplomaticRecommendations countryId={countryId} />
+                </motion.div>
               </motion.div>
             ) : (
               <motion.div
@@ -772,6 +1015,13 @@ export function ExecutiveCommandCenter({
           )}
         </CardContent>
       </Card>
+
+      {/* Diplomatic Meeting Scheduler Modal */}
+      <DiplomaticMeetingScheduler
+        countryId={countryId}
+        open={diplomaticMeetingOpen}
+        onOpenChange={setDiplomaticMeetingOpen}
+      />
     </motion.div>
   );
 }

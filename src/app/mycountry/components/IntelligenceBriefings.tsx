@@ -495,6 +495,22 @@ export function IntelligenceBriefings({
     { enabled: !!countryId }
   );
 
+  // Fetch diplomatic data for briefings
+  const { data: diplomaticRelations } = api.diplomatic.getRelationships.useQuery(
+    { countryId: countryId! },
+    { enabled: !!countryId }
+  );
+
+  const { data: recentDiplomaticChanges } = api.diplomatic.getRecentChanges.useQuery(
+    { countryId: countryId!, hours: 48 },
+    { enabled: !!countryId }
+  );
+
+  const { data: embassies } = api.diplomatic.getEmbassies.useQuery(
+    { countryId: countryId! },
+    { enabled: !!countryId }
+  );
+
   // Generate atomic briefings from recommendations
   const atomicBriefings = useMemo(() => {
     if (!atomicRecommendations || !atomicEffectiveness) return [];
@@ -588,11 +604,150 @@ export function IntelligenceBriefings({
     return briefings;
   }, [atomicRecommendations, atomicEffectiveness]);
 
+  // Generate diplomatic briefings
+  const diplomaticBriefings = useMemo(() => {
+    if (!diplomaticRelations && !recentDiplomaticChanges && !embassies) return [];
+
+    const briefings: IntelligenceBriefing[] = [];
+
+    // Weak relationship alerts
+    if (diplomaticRelations) {
+      const weakRelationships = diplomaticRelations.filter((r: any) => r.strength < 35 && r.relationship !== 'hostile');
+      if (weakRelationships.length > 0) {
+        briefings.push({
+          id: `diplomatic-weak-relationships-${Date.now()}`,
+          title: '⚠️ Weak Diplomatic Relationships',
+          description: `${weakRelationships.length} relationships have low strength (<35%). Proactive engagement recommended to prevent deterioration.`,
+          type: 'risk_mitigation',
+          priority: 'high',
+          area: 'diplomatic',
+          confidence: 90,
+          urgency: 'this_week',
+          impact: {
+            magnitude: 'medium',
+            timeframe: '1-2 months',
+            scope: ['diplomatic', 'regional_standing']
+          },
+          evidence: {
+            metrics: weakRelationships.slice(0, 3).map((r: any) => `${r.targetCountry}: ${r.strength}% strength`),
+            trends: [`${weakRelationships.length} relationships below 35% threshold`],
+            comparisons: []
+          },
+          recommendations: [{
+            id: 'strengthen-weak-relations',
+            title: 'Launch Diplomatic Engagement Campaign',
+            description: 'Start cultural exchanges and trade missions to strengthen weak relationships',
+            category: 'diplomatic',
+            urgency: 'important',
+            difficulty: 'moderate',
+            estimatedDuration: '3-6 weeks',
+            estimatedCost: '$25,000',
+            successProbability: 75,
+            estimatedBenefit: 'medium',
+            prerequisites: ['Embassy presence', 'Budget allocation'],
+            risks: ['Limited immediate impact'],
+            impact: { diplomatic: 7, economic: 3 }
+          }]
+        } as any);
+      }
+    }
+
+    // Recent diplomatic changes
+    if (recentDiplomaticChanges && recentDiplomaticChanges.length > 0) {
+      const significantChanges = recentDiplomaticChanges.slice(0, 5);
+      briefings.push({
+        id: `diplomatic-recent-changes-${Date.now()}`,
+        title: '📋 Recent Diplomatic Activity',
+        description: `${significantChanges.length} recent diplomatic events in the past 48 hours requiring your attention.`,
+        type: 'hot_issue',
+        priority: 'medium',
+        area: 'diplomatic',
+        confidence: 95,
+        urgency: 'this_week',
+        impact: {
+          magnitude: 'medium',
+          timeframe: 'immediate',
+          scope: ['diplomatic', 'relationships']
+        },
+        evidence: {
+          metrics: significantChanges.map((c: any) => `${c.targetCountry}: ${c.changeType}`),
+          trends: [`${recentDiplomaticChanges.length} total events in 48h`],
+          comparisons: []
+        },
+        recommendations: [{
+          id: 'review-diplomatic-events',
+          title: 'Review Diplomatic Events',
+          description: 'Assess recent changes and determine strategic response',
+          category: 'diplomatic',
+          urgency: 'important',
+          difficulty: 'easy',
+          estimatedDuration: '1 week',
+          estimatedCost: '$0',
+          successProbability: 90,
+          estimatedBenefit: 'low',
+          prerequisites: [],
+          risks: [],
+          impact: { diplomatic: 2 }
+        }]
+      } as any);
+    }
+
+    // Embassy expansion opportunities
+    if (embassies && diplomaticRelations) {
+      const strongRelationsWithoutEmbassy = diplomaticRelations.filter((r: any) => {
+        const hasEmbassy = embassies.some((e: any) =>
+          e.country === r.targetCountry || e.countryId === r.targetCountryId
+        );
+        return !hasEmbassy && r.strength > 65;
+      });
+
+      if (strongRelationsWithoutEmbassy.length > 0) {
+        briefings.push({
+          id: `diplomatic-embassy-expansion-${Date.now()}`,
+          title: '🏛️ Embassy Expansion Opportunities',
+          description: `${strongRelationsWithoutEmbassy.length} strong relationships exist without embassy presence. Establishing embassies unlocks missions and benefits.`,
+          type: 'opportunity',
+          priority: 'high',
+          area: 'diplomatic',
+          confidence: 85,
+          urgency: 'this_month',
+          impact: {
+            magnitude: 'high',
+            timeframe: '2-4 weeks',
+            scope: ['diplomatic', 'intelligence', 'economic']
+          },
+          evidence: {
+            metrics: strongRelationsWithoutEmbassy.slice(0, 3).map((r: any) => `${r.targetCountry}: ${r.strength}% strength, no embassy`),
+            trends: [`${strongRelationsWithoutEmbassy.length} expansion opportunities`],
+            comparisons: [`Current embassies: ${embassies.length}`]
+          },
+          recommendations: [{
+            id: 'establish-strategic-embassy',
+            title: 'Establish Strategic Embassy',
+            description: `Open embassy in ${strongRelationsWithoutEmbassy[0]?.targetCountry} to leverage strong relationship`,
+            category: 'diplomatic',
+            urgency: 'important',
+            difficulty: 'moderate',
+            estimatedDuration: '2-4 weeks',
+            estimatedCost: '$50,000',
+            successProbability: 85,
+            estimatedBenefit: 'high',
+            prerequisites: ['Budget allocation', 'Ambassador appointment'],
+            risks: ['Maintenance costs'],
+            impact: { diplomatic: 8, intelligence: 5, economic: 4 }
+          }]
+        } as any);
+      }
+    }
+
+    return briefings;
+  }, [diplomaticRelations, recentDiplomaticChanges, embassies]);
+
   // Generate briefings with memoization for performance
   const allBriefings = useMemo(() => {
     const vitalityBriefings = generateIntelligenceBriefings(vitalityData);
-    return [...atomicBriefings, ...vitalityBriefings];
-  }, [vitalityData, atomicBriefings]);
+    return [...atomicBriefings, ...diplomaticBriefings, ...vitalityBriefings];
+  }, [vitalityData, atomicBriefings, diplomaticBriefings]);
 
   // Filter briefings based on tab and priority
   const filteredBriefings = useMemo(() => {

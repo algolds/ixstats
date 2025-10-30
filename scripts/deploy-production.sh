@@ -94,12 +94,14 @@ else
     echo "ℹ️  Clerk authentication disabled (no keys provided)"
 fi
 
-# Validate database URL (allow SQLite for now)
-if [[ "$DATABASE_URL" == file:* ]]; then
-    echo "⚠️  Warning: Using SQLite database in production."
-    echo "   Database file: $DATABASE_URL"
+# Validate database URL (PostgreSQL required for production)
+if [[ "$DATABASE_URL" == postgres* ]] || [[ "$DATABASE_URL" == postgresql* ]]; then
+    echo "✅ Using PostgreSQL database: ${DATABASE_URL%%\?*}"
 else
-    echo "✅ Using external database: $DATABASE_URL"
+    echo "❌ Error: Production requires PostgreSQL database."
+    echo "   Current DATABASE_URL does not appear to be PostgreSQL."
+    echo "   Expected format: postgresql://user:password@host:port/database"
+    exit 1
 fi
 
 echo "✅ Environment variables validated"

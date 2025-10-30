@@ -26,6 +26,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/component
 import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
 import { api } from '~/trpc/react';
 import { toast } from 'sonner';
+import { MediaSearchModal } from '~/components/MediaSearchModal';
 
 interface GlassCanvasComposerProps {
   account: any;
@@ -51,14 +52,14 @@ interface DataVisualization {
   config: any;
 }
 
-export function GlassCanvasComposer({ 
-  account, 
+export function GlassCanvasComposer({
+  account,
   accounts,
   onAccountSelect,
   onAccountSettings,
   onCreateAccount,
   isOwner,
-  onPost, 
+  onPost,
   placeholder = "What's happening in your nation?",
   countryId,
   repostData
@@ -68,6 +69,9 @@ export function GlassCanvasComposer({
   const [showVisualizationPanel, setShowVisualizationPanel] = useState(false);
   const [isGeneratingVisualization, setIsGeneratingVisualization] = useState(false);
   const [showAccountManager, setShowAccountManager] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const [showMediaModal, setShowMediaModal] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Get latest economic data for visualizations - live wired
   const { data: economicData, isLoading: isLoadingEconomic } = api.countries.getEconomicData.useQuery(
@@ -98,6 +102,7 @@ export function GlassCanvasComposer({
       toast.success("Post shared successfully!");
       setContent('');
       setSelectedVisualizations([]);
+      setSelectedImages([]);
       onPost();
     },
     onError: (error) => {
@@ -106,12 +111,12 @@ export function GlassCanvasComposer({
   });
 
   const handleSubmit = useCallback(() => {
-    if (!content.trim() && selectedVisualizations.length === 0) {
-      toast.error("Please add content or a visualization");
+    if (!content.trim() && selectedVisualizations.length === 0 && selectedImages.length === 0) {
+      toast.error("Please add content, a visualization, or an image");
       return;
     }
 
-    // Create post with embedded visualizations
+    // Create post with embedded visualizations and media
     const postData = {
       accountId: account.id,
       content: content.trim(),
@@ -123,11 +128,12 @@ export function GlassCanvasComposer({
         title: viz.title,
         config: viz.config
       })),
+      mediaUrls: selectedImages,
       repostOfId: repostData?.originalPost?.id
     };
 
     createPostMutation.mutate(postData);
-  }, [content, selectedVisualizations, account.id, createPostMutation, repostData]);
+  }, [content, selectedVisualizations, selectedImages, account.id, createPostMutation, repostData]);
 
   const extractHashtags = (text: string): string[] => {
     const hashtags = text.match(/#[\w]+/g);
@@ -243,6 +249,52 @@ export function GlassCanvasComposer({
     setSelectedVisualizations(prev => prev.filter(viz => viz.id !== id));
   };
 
+  const handleImageSelect = (imageUrl: string) => {
+    if (selectedImages.length >= 4) {
+      toast.error("Maximum 4 images per post");
+      return;
+    }
+    setSelectedImages(prev => [...prev, imageUrl]);
+    setShowMediaModal(false);
+    toast.success("Image added to post");
+  };
+
+  const removeImage = (imageUrl: string) => {
+    setSelectedImages(prev => prev.filter(url => url !== imageUrl));
+  };
+
+  const handleFileUpload = async (file: File) => {
+    if (selectedImages.length >= 4) {
+      toast.error("Maximum 4 images per post");
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSelectedImages(prev => [...prev, result.dataUrl]);
+        toast.success("Image uploaded successfully");
+      } else {
+        toast.error(result.error || "Failed to upload image");
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error("Failed to upload image");
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   const getVisualizationPreview = (viz: DataVisualization) => {
     switch (viz.type) {
       case 'economic_chart':
@@ -300,9 +352,12 @@ export function GlassCanvasComposer({
           {/* Account Info with Manager */}
           <Collapsible open={showAccountManager} onOpenChange={setShowAccountManager}>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
-                {account.displayName.charAt(0)}
-              </div>
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={account.profileImageUrl} alt={account.displayName} />
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+                  {account.displayName.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
               <div className="flex-1">
                 <div className="font-medium text-sm">{account.displayName}</div>
                 <div className="text-xs text-muted-foreground">@{account.username}</div>
@@ -385,9 +440,12 @@ export function GlassCanvasComposer({
                 <span>Reposting</span>
               </div>
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center text-white text-xs font-semibold">
-                  {repostData.originalPost.account?.displayName?.charAt(0) || '?'}
-                </div>
+                <Avatar className="h-6 w-6">
+                  <AvatarImage src={repostData.originalPost.account?.profileImageUrl} alt={repostData.originalPost.account?.displayName} />
+                  <AvatarFallback className="bg-gradient-to-br from-gray-400 to-gray-600 text-white text-xs font-semibold">
+                    {repostData.originalPost.account?.displayName?.charAt(0) || '?'}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1">
                     <span className="font-semibold text-sm">{repostData.originalPost.account?.displayName || 'Unknown'}</span>
@@ -429,6 +487,40 @@ export function GlassCanvasComposer({
               </span>
             </div>
           </div>
+
+          {/* Selected Images */}
+          <AnimatePresence>
+            {selectedImages.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="grid grid-cols-2 gap-2"
+              >
+                {selectedImages.map((imageUrl, index) => (
+                  <motion.div
+                    key={imageUrl}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="relative aspect-video rounded-lg overflow-hidden border border-white/10 bg-white/5"
+                  >
+                    <button
+                      onClick={() => removeImage(imageUrl)}
+                      className="absolute top-2 right-2 p-1 bg-black/60 hover:bg-red-500/80 rounded-full transition-colors z-10"
+                    >
+                      <X className="h-4 w-4 text-white" />
+                    </button>
+                    <img
+                      src={imageUrl}
+                      alt={`Selected image ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Selected Visualizations */}
           <AnimatePresence>
@@ -574,15 +666,30 @@ export function GlassCanvasComposer({
                 )}
                 Data Viz
               </Button>
-              <Button variant="ghost" size="sm" className="text-green-400 hover:text-green-300">
-                <Image className="h-4 w-4" />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowMediaModal(true)}
+                disabled={isUploadingImage || selectedImages.length >= 4}
+                className="text-green-400 hover:text-green-300"
+              >
+                {isUploadingImage ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Image className="h-4 w-4" />
+                )}
                 Media
+                {selectedImages.length > 0 && (
+                  <Badge variant="outline" className="ml-1 text-[10px] px-1 py-0 h-4">
+                    {selectedImages.length}/4
+                  </Badge>
+                )}
               </Button>
             </div>
 
             <Button
               onClick={handleSubmit}
-              disabled={createPostMutation.isPending || (!content.trim() && selectedVisualizations.length === 0)}
+              disabled={createPostMutation.isPending || (!content.trim() && selectedVisualizations.length === 0 && selectedImages.length === 0)}
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               {createPostMutation.isPending ? (
@@ -595,6 +702,13 @@ export function GlassCanvasComposer({
           </div>
         </div>
       </CardContent>
+
+      {/* Media Search Modal */}
+      <MediaSearchModal
+        isOpen={showMediaModal}
+        onClose={() => setShowMediaModal(false)}
+        onImageSelect={handleImageSelect}
+      />
     </Card>
   );
 }

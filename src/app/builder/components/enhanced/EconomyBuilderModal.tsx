@@ -41,10 +41,10 @@ import {
   EconomicEffectiveness,
   EconomicImpactPreview
 } from '~/components/economy/atoms/AtomicEconomicUI';
-import { 
-  EconomicComponentType,
-  ATOMIC_ECONOMIC_COMPONENTS 
+import {
+  EconomicComponentType
 } from '~/components/economy/atoms/AtomicEconomicComponents';
+import { ATOMIC_ECONOMIC_COMPONENTS } from '~/lib/atomic-economic-data';
 
 // Types and Services
 import type { 

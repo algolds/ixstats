@@ -481,7 +481,11 @@ export function transformApiDataToExecutiveIntelligence(
       competitiveIntelligence: generateCompetitiveIntelligence(country, vitalityIntelligence)
     },
     overallStatus,
-    confidenceLevel: Math.round(intelligenceItems.reduce((sum, item) => sum + item.confidence, 0.8) / Math.max(intelligenceItems.length, 1) * 100),
+    confidenceLevel: (() => {
+      if (!intelligenceItems || intelligenceItems.length === 0) return 80; // sensible default
+      const avg = intelligenceItems.reduce((sum, item) => sum + (item.confidence ?? 0), 0) / intelligenceItems.length;
+      return Math.max(0, Math.min(100, Math.round(avg * 100)));
+    })(),
     lastMajorChange: {
       date: country.lastCalculated,
       description: 'Economic vitality recalculated',
@@ -494,7 +498,7 @@ export function transformApiDataToExecutiveIntelligence(
 
 // Helper functions
 function calculateTrend(current?: number, previous?: number): 'up' | 'down' | 'stable' {
-  if (!current || !previous) return 'stable';
+  if (current === undefined || previous === undefined) return 'stable';
   const change = current - previous;
   if (Math.abs(change) < 0.01) return 'stable';
   return change > 0 ? 'up' : 'down';

@@ -1,0 +1,2457 @@
+[
+  {
+    "Country": "Daxia",
+    "Continent": "Audonia",
+    "Region": "Dolong",
+    "Government Type": "Unitary one-party presidential republic",
+    "Religion": "Irreligious",
+    "Leader": "Chancellor Prib Dodd",
+    "Population": 702357707,
+    "GDP PC": 36262.7,
+    "Area (km²)": 4786479.327,
+    "Area (sq mi)": 1848070,
+    "Max GDPPC Grow Rt": 0.035,
+    "Adj GDPPC Growth": 0.0011235,
+    "Pop Growth Rate": 0.006,
+    "2041 Population": 706571853.242,
+    "2041 GDP": 25650989687789.336,
+    "2041 GDP PC": 36303.44114345,
+    "Actual GDP Growth": 0.00707976060069472
+  },
+  {
+    "Country": "Argyrea",
+    "Continent": "Audonia",
+    "Region": "Daria",
+    "Government Type": "Federal Bolshevist-Livasist one-party socialist republic",
+    "Religion": "Irreligious",
+    "Leader": "Chairwoman Zoe Alafouzos",
+    "Population": 332559894,
+    "GDP PC": 24627.15,
+    "Area (km²)": 1669972.53,
+    "Area (sq mi)": 644780,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.010841201070595,
+    "2041 Population": 336165242.6788698,
+    "2041 GDP": 8298723047632.823,
+    "2041 GDP PC": 24686.439863625,
+    "Actual GDP Growth": 0.013100889556946329
+  },
+  {
+    "Country": "Yanuban ",
+    "Continent": "Audonia",
+    "Region": "Daria",
+    "Government Type": "Unitary presidential republic",
+    "Religion": "Islamic (Sunni)",
+    "Leader": "President Simone al Zayd",
+    "Population": 551912462,
+    "GDP PC": 14536.91,
+    "Area (km²)": 852831.285,
+    "Area (sq mi)": 329280,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.031,
+    "2041 Population": 569021748.322,
+    "2041 GDP": 8291732345098.3,
+    "2041 GDP PC": 14571.907610825,
+    "Actual GDP Growth": 0.0323973985104189
+  },
+  {
+    "Country": "Battganuur ",
+    "Continent": "Audonia",
+    "Region": "Daria",
+    "Government Type": "Unitary presidential republic",
+    "Religion": "Islamic (Sunni)",
+    "Leader": "Chief of Ministers Faisal-Jallal Asayesh Aslani",
+    "Population": 326580302,
+    "GDP PC": 18376.13,
+    "Area (km²)": 1525943.29,
+    "Area (sq mi)": 589170,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.034,
+    "2041 Population": 337684032.268,
+    "2041 GDP": 6220264997445.646,
+    "2041 GDP PC": 18420.370532975,
+    "Actual GDP Growth": 0.03520475615497268
+  },
+  {
+    "Country": "Metzetta ",
+    "Continent": "Audonia",
+    "Region": "Dolong",
+    "Government Type": "Unitary absolute monarchy",
+    "Religion": "Chulcheoist",
+    "Leader": "Emperor Hachi",
+    "Population": 78901900,
+    "GDP PC": 38867.95,
+    "Area (km²)": 821078.031,
+    "Area (sq mi)": 317020,
+    "Max GDPPC Grow Rt": 0.035,
+    "Adj GDPPC Growth": 0.0011235,
+    "Pop Growth Rate": 0.0247,
+    "2041 Population": 80850776.93,
+    "2041 GDP": 3146034558370.034,
+    "2041 GDP PC": 38911.618141825,
+    "Actual GDP Growth": 0.025199804005366363
+  },
+  {
+    "Country": "Rusana ",
+    "Continent": "Audonia",
+    "Region": "Dolong",
+    "Government Type": "Unitary presidential republic",
+    "Religion": "Islamic (Shi'ite)",
+    "Leader": "President Rostam Khosa",
+    "Population": 81111561,
+    "GDP PC": 27985.85,
+    "Area (km²)": 794582,
+    "Area (sq mi)": 306790,
+    "Max GDPPC Grow Rt": 0.05,
+    "Adj GDPPC Growth": 0.0016049999999999999,
+    "Pop Growth Rate": 0.021,
+    "2041 Population": 82814903.781,
+    "2041 GDP": 2321365295966.841,
+    "2041 GDP PC": 28030.767289249998,
+    "Actual GDP Growth": 0.022137539767771556
+  },
+  {
+    "Country": "Pursat ",
+    "Continent": "Audonia",
+    "Region": "Daria",
+    "Government Type": "Unitary Druze theocracy",
+    "Religion": "Druze",
+    "Leader": "Supreme Professor Amin al-Atrash",
+    "Population": 165407080,
+    "GDP PC": 12631.34,
+    "Area (km²)": 610667.397,
+    "Area (sq mi)": 235780,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.027,
+    "2041 Population": 169873071.16,
+    "2041 GDP": 2150890350444.8433,
+    "2041 GDP PC": 12661.74995105,
+    "Actual GDP Growth": 0.028628741834704874,
+    "__EMPTY": "Global Growth Factor",
+    "__EMPTY_2": 0.0321
+  },
+  {
+    "Country": "Zaclaria ",
+    "Continent": "Audonia",
+    "Region": "Al'qarra",
+    "Government Type": "Unitary Islamic crowned republic",
+    "Religion": "Islamic (Nizari Shi'ite)",
+    "Leader": "Sultana Arabella IX",
+    "Population": 84576469,
+    "GDP PC": 23195.71,
+    "Area (km²)": 1041745.02,
+    "Area (sq mi)": 402220,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.03,
+    "2041 Population": 87113763.07,
+    "2041 GDP": 2025530337576.7515,
+    "2041 GDP PC": 23251.553671825,
+    "Actual GDP Growth": 0.031457978508972605
+  },
+  {
+    "Country": "Oyashima ",
+    "Continent": "Audonia",
+    "Region": "Dolong",
+    "Government Type": "Federal elective constitutional monarchy",
+    "Religion": "Shinto",
+    "Leader": "Lord of Lords Koshamain Itakshir",
+    "Population": 47579405,
+    "GDP PC": 31543.55,
+    "Area (km²)": 495412.926,
+    "Area (sq mi)": 191280,
+    "Max GDPPC Grow Rt": 0.05,
+    "Adj GDPPC Growth": 0.0016049999999999999,
+    "Pop Growth Rate": 0.027,
+    "2041 Population": 48864048.935,
+    "2041 GDP": 1543819430424.727,
+    "2041 GDP PC": 31594.17739775,
+    "Actual GDP Growth": 0.027850465533490666
+  },
+  {
+    "Country": "Tapakdore",
+    "Continent": "Audonia",
+    "Region": "Daria",
+    "Government Type": "Unitary absolute monarchy",
+    "Religion": "Buddhist (Mahayana)",
+    "Leader": "Queen Chandrika IV",
+    "Population": 69360825,
+    "GDP PC": 17241.73,
+    "Area (km²)": 728511.856,
+    "Area (sq mi)": 281280,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.034,
+    "2041 Population": 71719093.05,
+    "2041 GDP": 1239538259393.974,
+    "2041 GDP PC": 17283.239464975,
+    "Actual GDP Growth": 0.03520475615497267
+  },
+  {
+    "Country": "Canpei",
+    "Continent": "Audonia",
+    "Region": "Dolong",
+    "Government Type": "Unitary presidential republic",
+    "Religion": "Tianist",
+    "Leader": "President Dong Bao",
+    "Population": 40153898,
+    "GDP PC": 26666.73,
+    "Area (km²)": 558660.435,
+    "Area (sq mi)": 215700,
+    "Max GDPPC Grow Rt": 0.05,
+    "Adj GDPPC Growth": 0.0016049999999999999,
+    "Pop Growth Rate": 0.025,
+    "2041 Population": 41157745.45,
+    "2041 GDP": 1099304041012.8234,
+    "2041 GDP PC": 26709.530101649998,
+    "Actual GDP Growth": 0.02595358839306815
+  },
+  {
+    "Country": "Umardwal",
+    "Continent": "Audonia",
+    "Region": "Daria",
+    "Government Type": "Unitary theocratic Islamic republic",
+    "Religion": "Islamic (Sunni)",
+    "Leader": "Ayatollah Fener Jîlwan",
+    "Population": 78773083,
+    "GDP PC": 13075.83,
+    "Area (km²)": 1140993.36,
+    "Area (sq mi)": 440540,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.038,
+    "2041 Population": 81766460.154,
+    "2041 GDP": 1071738345806.394,
+    "2041 GDP PC": 13107.310060725,
+    "Actual GDP Growth": 0.038922656901967084
+  },
+  {
+    "Country": "Huoxia",
+    "Continent": "Audonia",
+    "Region": "Dolong",
+    "Government Type": "Unitary semi-presidential republic",
+    "Religion": "Confucian",
+    "Leader": "President Eje Tsaka",
+    "Population": 67457491,
+    "GDP PC": 14881.74,
+    "Area (km²)": 1393828,
+    "Area (sq mi)": 538160,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.04,
+    "2041 Population": 70155790.64,
+    "2041 GDP": 1046553762666.5995,
+    "2041 GDP PC": 14917.56778905,
+    "Actual GDP Growth": 0.040770882561771034
+  },
+  {
+    "Country": "Pukhgundi ",
+    "Continent": "Audonia",
+    "Region": "Daria",
+    "Government Type": "Unitary parliamentary republic",
+    "Religion": "Hindu",
+    "Leader": "Prime Minister K. P. Yadav",
+    "Population": 43835812,
+    "GDP PC": 21355.29,
+    "Area (km²)": 387669.42,
+    "Area (sq mi)": 149680,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.029,
+    "2041 Population": 45107050.548,
+    "2041 GDP": 965593228002.4834,
+    "2041 GDP PC": 21406.702860675,
+    "Actual GDP Growth": 0.030516732618310817
+  },
+  {
+    "Country": "Mehristan ",
+    "Continent": "Audonia",
+    "Region": "Al'qarra",
+    "Government Type": "Federal presidential constitutional republic",
+    "Religion": "Islamic (Sunni)",
+    "Leader": "Marshall Ramana Medres",
+    "Population": 22991392,
+    "GDP PC": 39501.33,
+    "Area (km²)": 345504.414,
+    "Area (sq mi)": 133400,
+    "Max GDPPC Grow Rt": 0.035,
+    "Adj GDPPC Growth": 0.0011235,
+    "Pop Growth Rate": 0.03,
+    "2041 Population": 23681133.76,
+    "2041 GDP": 936487242087.8381,
+    "2041 GDP PC": 39545.709744255,
+    "Actual GDP Growth": 0.030215766178931087
+  },
+  {
+    "Country": "Thervala ",
+    "Continent": "Audonia",
+    "Region": "Dolong",
+    "Government Type": "Unitary parliamentary constitutional monarchy",
+    "Religion": "Buddhist (Vattaya)",
+    "Leader": "Prime Minister Chatchai Suriyawan",
+    "Population": 83200000,
+    "GDP PC": 7022.47,
+    "Area (km²)": 1921563.98,
+    "Area (sq mi)": 741920,
+    "Max GDPPC Grow Rt": 0.1,
+    "Adj GDPPC Growth": 0.0032099999999999997,
+    "Pop Growth Rate": 0.04,
+    "2041 Population": 86528000,
+    "2041 GDP": 609590809472.1536,
+    "2041 GDP PC": 7045.012128699999,
+    "Actual GDP Growth": 0.04153820083685211
+  },
+  {
+    "Country": "Nasastan ",
+    "Continent": "Audonia",
+    "Region": "Al'qarra",
+    "Government Type": "Federal parliamentary republic",
+    "Religion": "Islamic (Brewer-Alawist)",
+    "Leader": "Stantop Wojnek Kréstofer Dógén & Načelnik Tadeuš Ewéartič",
+    "Population": 70619648,
+    "GDP PC": 6942.21,
+    "Area (km²)": 870676.303,
+    "Area (sq mi)": 336170,
+    "Max GDPPC Grow Rt": 0.1,
+    "Adj GDPPC Growth": 0.0032099999999999997,
+    "Pop Growth Rate": 0.0473,
+    "2041 Population": 73959957.3504,
+    "2041 GDP": 515093715750.7316,
+    "2041 GDP PC": 6964.4944941,
+    "Actual GDP Growth": 0.04821897151754628
+  },
+  {
+    "Country": "Bulkh ",
+    "Continent": "Audonia",
+    "Region": "Daria",
+    "Government Type": "Federal consociational presidential republic",
+    "Religion": "Islamic (Sunni)",
+    "Leader": "Most Elected Minister Rahani Bintuta",
+    "Population": 8772557,
+    "GDP PC": 22490.48,
+    "Area (km²)": 824056.517,
+    "Area (sq mi)": 318170,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.032,
+    "2041 Population": 9053278.824000001,
+    "2041 GDP": 204102783627.1744,
+    "2041 GDP PC": 22544.625830599998,
+    "Actual GDP Growth": 0.03333499793046705
+  },
+  {
+    "Country": "Kandara ",
+    "Continent": "Audonia",
+    "Region": "Al'qarra",
+    "Government Type": "Unitary stratocratic republic",
+    "Religion": "Islamic (Shi'ite)",
+    "Leader": "Admiral-General Stephan Mojalefa",
+    "Population": 19400304,
+    "GDP PC": 1758.63,
+    "Area (km²)": 1515583.34,
+    "Area (sq mi)": 585170,
+    "Max GDPPC Grow Rt": 0.1,
+    "Adj GDPPC Growth": 0.0032099999999999997,
+    "Pop Growth Rate": 0.05,
+    "2041 Population": 20370319.2,
+    "2041 GDP": 35938849027.495575,
+    "2041 GDP PC": 1764.2752023,
+    "Actual GDP Growth": 0.05066640844792977
+  },
+  {
+    "Country": "Timbia ",
+    "Continent": "Australis",
+    "Region": "Peratra",
+    "Government Type": "Federal presidential constitutional republic",
+    "Religion": "Irreligious",
+    "Leader": "President Iakopo Hsin",
+    "Population": 95124071,
+    "GDP PC": 33929.37,
+    "Area (km²)": 1111156.7,
+    "Area (sq mi)": 429020,
+    "Max GDPPC Grow Rt": 0.05,
+    "Adj GDPPC Growth": 0.0016049999999999999,
+    "Pop Growth Rate": 0.0075,
+    "2041 Population": 95837501.5325,
+    "2041 GDP": 3256925037581.0015,
+    "2041 GDP PC": 33983.826638850005,
+    "Actual GDP Growth": 0.009034668092203404
+  },
+  {
+    "Country": "Tierrador ",
+    "Continent": "Crona",
+    "Region": "South Crona",
+    "Government Type": "Unitary semi-constitutional woqalate",
+    "Religion": "Catholic (Coscivian Rite)",
+    "Leader": "Woqali Mokhar III",
+    "Population": 211901123,
+    "GDP PC": 65108.47,
+    "Area (km²)": 5074979,
+    "Area (sq mi)": 1959460,
+    "Max GDPPC Grow Rt": 0.005,
+    "Adj GDPPC Growth": 0.0001605,
+    "Pop Growth Rate": 0.00339676059973203,
+    "2041 Population": 212620900.38564536,
+    "2041 GDP": 13845643383284.799,
+    "2041 GDP PC": 65118.919909435004,
+    "Actual GDP Growth": 0.0035451926728263775,
+    "__EMPTY_3": "Rand Num Form"
+  },
+  {
+    "Country": "Varshan ",
+    "Continent": "Crona",
+    "Region": "Central Crona",
+    "Government Type": "Federal presidential constitutional republic",
+    "Religion": "State Arzalist",
+    "Leader": "King-among-Citizens Yananzak",
+    "Population": 714367183,
+    "GDP PC": 17900.99,
+    "Area (km²)": 7931165,
+    "Area (sq mi)": 3062240,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.021,
+    "2041 Population": 729368893.843,
+    "2041 GDP": 13087858618844.156,
+    "2041 GDP PC": 17944.086633425002,
+    "Actual GDP Growth": 0.022920389680942073,
+    "__EMPTY_3": -0.11306832250301468
+  },
+  {
+    "Country": "Paulastra ",
+    "Continent": "Crona",
+    "Region": "South Crona",
+    "Government Type": "Unitary constitutional monarchy",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "King Paul III",
+    "Population": 249559087,
+    "GDP PC": 47732.65,
+    "Area (km²)": 3814690,
+    "Area (sq mi)": 1472860,
+    "Max GDPPC Grow Rt": 0.0275,
+    "Adj GDPPC Growth": 0.00088275,
+    "Pop Growth Rate": 0.00357,
+    "2041 Population": 250450012.94059,
+    "2041 GDP": 11965195771129.348,
+    "2041 GDP PC": 47774.785996787505,
+    "Actual GDP Growth": 0.00443613443976161
+  },
+  {
+    "Country": "Alstin ",
+    "Continent": "Crona",
+    "Region": "South Crona",
+    "Government Type": "Federal presidential constitutional republic",
+    "Religion": "Chantrist",
+    "Leader": "President James Hickel",
+    "Population": 169242631,
+    "GDP PC": 65931.77,
+    "Area (km²)": 1202168.88,
+    "Area (sq mi)": 464160,
+    "Max GDPPC Grow Rt": 0.005,
+    "Adj GDPPC Growth": 0.0001605,
+    "Pop Growth Rate": 0.014,
+    "2041 Population": 171612027.834,
+    "2041 GDP": 11316500755287.002,
+    "2041 GDP PC": 65942.352049085,
+    "Actual GDP Growth": 0.013964964737557947
+  },
+  {
+    "Country": "The Cape ",
+    "Continent": "Crona",
+    "Region": "South Crona",
+    "Government Type": "Federal parliamentary constitutional republic",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "Prime Executive Taresa Lanerā",
+    "Population": 133029277,
+    "GDP PC": 35583.93,
+    "Area (km²)": 2335077,
+    "Area (sq mi)": 467730,
+    "Max GDPPC Grow Rt": 0.035,
+    "Adj GDPPC Growth": 0.0011235,
+    "Pop Growth Rate": 0.04,
+    "2041 Population": 138350448.08,
+    "2041 GDP": 4928583709610.806,
+    "2041 GDP PC": 35623.908545355,
+    "Actual GDP Growth": 0.039540614581056656
+  },
+  {
+    "Country": "Canespa ",
+    "Continent": "Crona",
+    "Region": "Cusinaut",
+    "Government Type": "Unitary parliamentary elective constitutional monarchy",
+    "Religion": "M'acunism",
+    "Leader": "Wasi King III",
+    "Population": 92368210,
+    "GDP PC": 29554.36,
+    "Area (km²)": 1357956.67,
+    "Area (sq mi)": 524310,
+    "Max GDPPC Grow Rt": 0.05,
+    "Adj GDPPC Growth": 0.0016049999999999999,
+    "Pop Growth Rate": 0.0117,
+    "2041 Population": 93448918.057,
+    "2041 GDP": 2766255691727.2954,
+    "2041 GDP PC": 29601.794747800002,
+    "Actual GDP Growth": 0.013148589604521994
+  },
+  {
+    "Country": "Ceylonia ",
+    "Continent": "Crona",
+    "Region": "South Crona",
+    "Government Type": "Unitary semi-presidential constitutional republic",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "President Miguel Sousa",
+    "Population": 43852417,
+    "GDP PC": 48333.63,
+    "Area (km²)": 892458,
+    "Area (sq mi)": 344580,
+    "Max GDPPC Grow Rt": 0.0275,
+    "Adj GDPPC Growth": 0.00088275,
+    "Pop Growth Rate": 0.0203,
+    "2041 Population": 44742621.0651,
+    "2041 GDP": 2164482303364.0774,
+    "2041 GDP PC": 48376.296511882494,
+    "Actual GDP Growth": 0.02076053262737579
+  },
+  {
+    "Country": "Porlos ",
+    "Continent": "Crona",
+    "Region": "South Crona",
+    "Government Type": "Unitary semi-constitutional Woqalate",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "Woqali Furtado II",
+    "Population": 36298773,
+    "GDP PC": 41572.65,
+    "Area (km²)": 701225,
+    "Area (sq mi)": 270744,
+    "Max GDPPC Grow Rt": 0.035,
+    "Adj GDPPC Growth": 0.0011235,
+    "Pop Growth Rate": 0.016,
+    "2041 Population": 36879553.368,
+    "2041 GDP": 1534903292912.9033,
+    "2041 GDP PC": 41619.356872275,
+    "Actual GDP Growth": 0.016852597602656373
+  },
+  {
+    "Country": "Quetzenkel ",
+    "Continent": "Crona",
+    "Region": "Greater Nysdra",
+    "Government Type": "Unitary parliamentary constitutional monarchy",
+    "Religion": "M'acunist",
+    "Leader": "King Telucti I",
+    "Population": 66969944,
+    "GDP PC": 19227.98,
+    "Area (km²)": 1111493.4,
+    "Area (sq mi)": 429150,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.029,
+    "2041 Population": 68912072.376,
+    "2041 GDP": 1328229983082.4712,
+    "2041 GDP PC": 19274.27136185,
+    "Actual GDP Growth": 0.03051673261831085
+  },
+  {
+    "Country": "Atapakona ",
+    "Continent": "Crona",
+    "Region": "South Crona",
+    "Government Type": "Unitary semi-constitutional woqalate",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "Woqali Tahináása VI",
+    "Population": 28697316,
+    "GDP PC": 34113.66,
+    "Area (km²)": 1091157,
+    "Area (sq mi)": 421298,
+    "Max GDPPC Grow Rt": 0.05,
+    "Adj GDPPC Growth": 0.0016049999999999999,
+    "Pop Growth Rate": 0.035,
+    "2041 Population": 29701722.06,
+    "2041 GDP": 1014860689058.0095,
+    "2041 GDP PC": 34168.412424300004,
+    "Actual GDP Growth": 0.0353646648337149
+  },
+  {
+    "Country": "Mid-Atrassic States ",
+    "Continent": "Crona",
+    "Region": "Greater Nysdra",
+    "Government Type": "Confederal crowned republic",
+    "Religion": "Chulcheoist",
+    "Leader": "Governor-General Ivoŕ Arolian",
+    "Population": 28552092,
+    "GDP PC": 29610.45,
+    "Area (km²)": 1698358.8,
+    "Area (sq mi)": 655740,
+    "Max GDPPC Grow Rt": 0.05,
+    "Adj GDPPC Growth": 0.0016049999999999999,
+    "Pop Growth Rate": 0.021,
+    "2041 Population": 29151685.932,
+    "2041 GDP": 864579965939.8113,
+    "2041 GDP PC": 29657.974772250003,
+    "Actual GDP Growth": 0.022137539767771677
+  },
+  {
+    "Country": "Istrenya ",
+    "Continent": "Crona",
+    "Region": "South Crona",
+    "Government Type": "Unitary presidential constitutional republic",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "President M'Kole Tysh'le",
+    "Population": 34392042,
+    "GDP PC": 23683.92,
+    "Area (km²)": 1092386,
+    "Area (sq mi)": 421773,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.0172,
+    "2041 Population": 34983585.1224,
+    "2041 GDP": 830543161700.592,
+    "2041 GDP PC": 23740.9390374,
+    "Actual GDP Growth": 0.01927026923342705
+  },
+  {
+    "Country": "Asteria ",
+    "Continent": "Crona",
+    "Region": "South Crona",
+    "Government Type": "Unitary presidential constitutional republic",
+    "Religion": "Chantrist (Episcopalian)",
+    "Leader": "President Katja Stark",
+    "Population": 14781574,
+    "GDP PC": 45972.55,
+    "Area (km²)": 373930,
+    "Area (sq mi)": 144380,
+    "Max GDPPC Grow Rt": 0.0275,
+    "Adj GDPPC Growth": 0.00088275,
+    "Pop Growth Rate": 0.00171685295484312,
+    "2041 Population": 14806951.788999133,
+    "2041 GDP": 681314231160.705,
+    "2041 GDP PC": 46013.132268512505,
+    "Actual GDP Growth": 0.0025943702423382297
+  },
+  {
+    "Country": "New Harren ",
+    "Continent": "Crona",
+    "Region": "Cusinaut",
+    "Government Type": "Confederal constitutional monarchy",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "King Riordan I",
+    "Population": 29224682,
+    "GDP PC": 26765.54,
+    "Area (km²)": 878394.468,
+    "Area (sq mi)": 339150,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.018,
+    "2041 Population": 29750726.276,
+    "2041 GDP": 798211332586.2417,
+    "2041 GDP PC": 26829.97803755,
+    "Actual GDP Growth": 0.020040980220276818
+  },
+  {
+    "Country": "Malentina ",
+    "Continent": "Crona",
+    "Region": "South Crona",
+    "Government Type": "Confederal presidential directorial republic",
+    "Religion": "Neo-Ænglican (Malentine Rite)",
+    "Leader": "Presidents Siwasyan T'ukri, Daniel Duke, & Pedro Čivok",
+    "Population": 27107910,
+    "GDP PC": 23931.48,
+    "Area (km²)": 68375.69,
+    "Area (sq mi)": 26400,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.024,
+    "2041 Population": 27758499.84,
+    "2041 GDP": 665901290776.8436,
+    "2041 GDP PC": 23989.0950381,
+    "Actual GDP Growth": 0.025782927601798573
+  },
+  {
+    "Country": "New Archduchy ",
+    "Continent": "Crona",
+    "Region": "South Crona",
+    "Government Type": "Unitary parliamentary republic",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "Chancellor Marius Felen",
+    "Population": 7310786,
+    "GDP PC": 71413.46,
+    "Area (km²)": 54260.251,
+    "Area (sq mi)": 20950,
+    "Max GDPPC Grow Rt": 0.005,
+    "Adj GDPPC Growth": 0.0001605,
+    "Pop Growth Rate": 0.0084,
+    "2041 Population": 7372196.6024,
+    "2041 GDP": 526558566265.4104,
+    "2041 GDP PC": 71424.92186033001,
+    "Actual GDP Growth": 0.00848916525573573
+  },
+  {
+    "Country": "Kelekona ",
+    "Continent": "Crona",
+    "Region": "Central Crona",
+    "Government Type": "Federal parliamentary tetrarchic semi-constitutional co-qhapaqate",
+    "Religion": "Nahibian",
+    "Leader": "Umalliq Tupaq Caian IV",
+    "Population": 134150062,
+    "GDP PC": 3666.44,
+    "Area (km²)": 518748.719,
+    "Area (sq mi)": 200290,
+    "Max GDPPC Grow Rt": 0.1,
+    "Adj GDPPC Growth": 0.0032099999999999997,
+    "Pop Growth Rate": 0.03,
+    "2041 Population": 138174563.86,
+    "2041 GDP": 508234961999.678,
+    "2041 GDP PC": 3678.2092724,
+    "Actual GDP Growth": 0.03223274647604493
+  },
+  {
+    "Country": "Telokona ",
+    "Continent": "Crona",
+    "Region": "South Crona",
+    "Government Type": "Unitary absolute monarchy",
+    "Religion": "Nahibian",
+    "Leader": "King Akbal III",
+    "Population": 36989648,
+    "GDP PC": 10526.28,
+    "Area (km²)": 562415.918,
+    "Area (sq mi)": 217150,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.039,
+    "2041 Population": 38432244.272,
+    "2041 GDP": 405522514903.8651,
+    "2041 GDP PC": 10551.622019100001,
+    "Actual GDP Growth": 0.039847659157114516
+  },
+  {
+    "Country": "Netansett ",
+    "Continent": "Crona",
+    "Region": "Cusinaut",
+    "Government Type": "Semi-federal assembly-independent republic",
+    "Religion": "M'acunist",
+    "Leader": "Autocrat Maitsoi Taphanso",
+    "Population": 21825382,
+    "GDP PC": 15642.57,
+    "Area (km²)": 637240.68,
+    "Area (sq mi)": 246040,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.035,
+    "2041 Population": 22589270.37,
+    "2041 GDP": 354204943351.7014,
+    "2041 GDP PC": 15680.229487274997,
+    "Actual GDP Growth": 0.03613692547269736
+  },
+  {
+    "Country": "Algosh Republic ",
+    "Continent": "Crona",
+    "Region": "Cusinaut",
+    "Government Type": "Federal Julian republic",
+    "Religion": "M'acunist",
+    "Leader": "Hierarch Paka-antini & Chancellor Jala-meni",
+    "Population": 53357776,
+    "GDP PC": 13441.66,
+    "Area (km²)": 566948.397,
+    "Area (sq mi)": 218900,
+    "Max GDPPC Grow Rt": 0.1,
+    "Adj GDPPC Growth": 0.0032099999999999997,
+    "Pop Growth Rate": 0.037,
+    "2041 Population": 55332013.712,
+    "2041 GDP": 746141566142.5787,
+    "2041 GDP PC": 13484.8077286,
+    "Actual GDP Growth": 0.038765408746698315
+  },
+  {
+    "Country": "Caracua ",
+    "Continent": "Crona",
+    "Region": "Cusinaut",
+    "Government Type": "Federal parliamentary republic",
+    "Religion": "M'acunist",
+    "Leader": "President Cornamale of Toposa",
+    "Population": 30339893,
+    "GDP PC": 8162.12,
+    "Area (km²)": 850811.094,
+    "Area (sq mi)": 328500,
+    "Max GDPPC Grow Rt": 0.1,
+    "Adj GDPPC Growth": 0.0032099999999999997,
+    "Pop Growth Rate": 0.027,
+    "2041 Population": 31159070.111,
+    "2041 GDP": 255140449596.95874,
+    "2041 GDP PC": 8188.3204052,
+    "Actual GDP Growth": 0.029405772999343993
+  },
+  {
+    "Country": "New Veltorina ",
+    "Continent": "Crona",
+    "Region": "Greater Nysdra",
+    "Government Type": "Unitary Julian republic",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "State-Overseer Niko Meletine & Majority Leader Makis Lucerna",
+    "Population": 11168413,
+    "GDP PC": 24528.2,
+    "Area (km²)": 654645.395,
+    "Area (sq mi)": 252760,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.025,
+    "2041 Population": 11447623.325,
+    "2041 GDP": 281465595388.8799,
+    "2041 GDP PC": 24587.251641499995,
+    "Actual GDP Growth": 0.026733383282186947
+  },
+  {
+    "Country": "Caldera ",
+    "Continent": "Crona",
+    "Region": "Cusinaut",
+    "Government Type": "Unitary presidential republic",
+    "Religion": "Volinist",
+    "Leader": "President Ben Goodstein",
+    "Population": 10181855,
+    "GDP PC": 5226.72,
+    "Area (km²)": 250,
+    "Area (sq mi)": 97,
+    "Max GDPPC Grow Rt": 0.1,
+    "Adj GDPPC Growth": 0.0032099999999999997,
+    "Pop Growth Rate": 0.0162,
+    "2041 Population": 10346801.050999999,
+    "2041 GDP": 54253428249.968315,
+    "2041 GDP PC": 5243.4977712,
+    "Actual GDP Growth": 0.019090463363832015
+  },
+  {
+    "Country": "Chenango Confederacy ",
+    "Continent": "Crona",
+    "Region": "Cusinaut ",
+    "Government Type": "Confederal presidential republic",
+    "Religion": "M'acunist",
+    "Leader": "President Helki Adohy",
+    "Population": 11731083,
+    "GDP PC": 9105.66,
+    "Area (km²)": 230612.54,
+    "Area (sq mi)": 89040,
+    "Max GDPPC Grow Rt": 0.1,
+    "Adj GDPPC Growth": 0.0032099999999999997,
+    "Pop Growth Rate": 0.034,
+    "2041 Population": 12129939.822,
+    "2041 GDP": 110805655895.75763,
+    "2041 GDP PC": 9134.8891686,
+    "Actual GDP Growth": 0.03597652695389402
+  },
+  {
+    "Country": "Mandatory Venua'tino ",
+    "Continent": "Crona",
+    "Region": "Greater Nysdra",
+    "Government Type": "League of Nations Mandate",
+    "Religion": "Venua",
+    "Leader": "Commissioner Phillip Danicetus",
+    "Population": 2164881,
+    "GDP PC": 15523.28,
+    "Area (km²)": 1383804.75,
+    "Area (sq mi)": 534290,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.036,
+    "2041 Population": 2242816.716,
+    "2041 GDP": 34899691082.678276,
+    "2041 GDP PC": 15560.652296600003,
+    "Actual GDP Growth": 0.03706729523575483
+  },
+  {
+    "Country": "Copake ",
+    "Continent": "Crona",
+    "Region": "Greater Nysdra",
+    "Government Type": "Federal presidential republic",
+    "Religion": "Venua",
+    "Leader": "President Melun Alacantan",
+    "Population": 2425113,
+    "GDP PC": 8401.53,
+    "Area (km²)": 508595.965,
+    "Area (sq mi)": 196370,
+    "Max GDPPC Grow Rt": 0.1,
+    "Adj GDPPC Growth": 0.0032099999999999997,
+    "Pop Growth Rate": 0.031,
+    "2041 Population": 2500291.503,
+    "2041 GDP": 21073704210.968143,
+    "2041 GDP PC": 8428.498911300001,
+    "Actual GDP Growth": 0.03317141500516608
+  },
+  {
+    "Country": "Housatonic ",
+    "Continent": "Crona",
+    "Region": "Cusinaut",
+    "Government Type": "Unitary Julian republic",
+    "Religion": "M'acunist",
+    "Leader": "Chief of State Chilinash Wempa & Paramount Councilor Tiegale Hamis",
+    "Population": 73679,
+    "GDP PC": 25492.66,
+    "Area (km²)": 24915.69,
+    "Area (sq mi)": 9620,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.029,
+    "2041 Population": 75815.691,
+    "2041 GDP": 1937396713.6252973,
+    "2041 GDP PC": 25554.03357895,
+    "Actual GDP Growth": 0.030516732618310772
+  },
+  {
+    "Country": "East Arctic Mandate ",
+    "Continent": "Crona",
+    "Region": "Greater Nysdra",
+    "Government Type": "League of Nations Mandate",
+    "Religion": "Animist",
+    "Leader": "Administratrix Máire Cinnéad",
+    "Population": 17350,
+    "GDP PC": 25293.53,
+    "Area (km²)": 179227.18,
+    "Area (sq mi)": 69200,
+    "Max GDPPC Grow Rt": 0.05,
+    "Adj GDPPC Growth": 0.0016049999999999999,
+    "Pop Growth Rate": 0.0063,
+    "2041 Population": 17459.305,
+    "2041 GDP": 442316234.76159865,
+    "2041 GDP PC": 25334.12611565,
+    "Actual GDP Growth": 0.007852954489610361
+  },
+  {
+    "Country": "Chakailan ",
+    "Continent": "Crona",
+    "Region": "South Crona",
+    "Government Type": "Federal semi-presidential republic",
+    "Religion": "Solar Arzalist",
+    "Leader": "President Lursa T'artok",
+    "Population": 311794,
+    "GDP PC": 1025.28,
+    "Area (km²)": 93731.67,
+    "Area (sq mi)": 36190,
+    "Max GDPPC Grow Rt": 0.1,
+    "Adj GDPPC Growth": 0.0032099999999999997,
+    "Pop Growth Rate": 0.02,
+    "2041 Population": 318029.88,
+    "2041 GDP": 327116359.02432615,
+    "2041 GDP PC": 1028.5711488,
+    "Actual GDP Growth": 0.02274483222581008
+  },
+  {
+    "Country": "International Nature Preserve ",
+    "Continent": "Crona",
+    "Region": "Greater Nysdra",
+    "Government Type": "League of Nations administration",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "Deputy Commissioner Patrice Cesco",
+    "Population": 2485,
+    "GDP PC": 48701.95,
+    "Area (km²)": 1815478.07,
+    "Area (sq mi)": 700960,
+    "Max GDPPC Grow Rt": 0.0275,
+    "Adj GDPPC Growth": 0.00088275,
+    "Pop Growth Rate": 0,
+    "2041 Population": 2485,
+    "2041 GDP": 121131179.9912108,
+    "2041 GDP PC": 48744.941646362495,
+    "Actual GDP Growth": 0.0008819714397115194
+  },
+  {
+    "Country": "Kiravia ",
+    "Continent": "Kiroborea",
+    "Region": "Great Kirav",
+    "Government Type": "Federal crowned republic",
+    "Religion": "Catholic (Coscivian Rite)",
+    "Leader": "Prime Executive Adheritus Ilkaśvar",
+    "Population": 719869547,
+    "GDP PC": 51045.02,
+    "Area (km²)": 7705447.73,
+    "Area (sq mi)": 2975090,
+    "Max GDPPC Grow Rt": 0.0275,
+    "Adj GDPPC Growth": 0.00088275,
+    "Pop Growth Rate": 0.0059,
+    "2041 Population": 724116777.3273,
+    "2041 GDP": 36995184076770.16,
+    "2041 GDP PC": 51090.079991405,
+    "Actual GDP Growth": 0.006742192503938339
+  },
+  {
+    "Country": "Olmeria ",
+    "Continent": "Kiroborea",
+    "Region": "Borealis",
+    "Government Type": "Unitary presidential republic",
+    "Religion": "Protestant (Lindberghist)",
+    "Leader": "President Këil Frieden",
+    "Population": 24383713,
+    "GDP PC": 51158.75,
+    "Area (km²)": 498805.81,
+    "Area (sq mi)": 192590,
+    "Max GDPPC Grow Rt": 0.0275,
+    "Adj GDPPC Growth": 0.00088275,
+    "Pop Growth Rate": 0.0175,
+    "2041 Population": 24810427.9775,
+    "2041 GDP": 1270390930812.173,
+    "2041 GDP PC": 51203.9103865625,
+    "Actual GDP Growth": 0.018065819596768156
+  },
+  {
+    "Country": "Urcea ",
+    "Continent": "Levantia",
+    "Region": "Great Levantia",
+    "Government Type": "Federal parliamentary constitutional monarchy",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "Procurator Caelian Agricola & Chancellor Cassia Mac-Niall",
+    "Population": 782899712,
+    "GDP PC": 56820.35,
+    "Area (km²)": 5511313.4,
+    "Area (sq mi)": 2127930,
+    "Max GDPPC Grow Rt": 0.015,
+    "Adj GDPPC Growth": 0.00048149999999999994,
+    "Pop Growth Rate": 0.0099,
+    "2041 Population": 790650419.1488,
+    "2041 GDP": 44946664947332.8,
+    "2041 GDP PC": 56847.70899852499,
+    "Actual GDP Growth": 0.010279501207375322
+  },
+  {
+    "Country": "Fiannria ",
+    "Continent": "Levantia",
+    "Region": "Gallia Magna",
+    "Government Type": "Federal semi-presidential republic",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "President Colm Brennan",
+    "Population": 409717515,
+    "GDP PC": 55966.89,
+    "Area (km²)": 3937300,
+    "Area (sq mi)": 1520200,
+    "Max GDPPC Grow Rt": 0.015,
+    "Adj GDPPC Growth": 0.00048149999999999994,
+    "Pop Growth Rate": 0.008,
+    "2041 Population": 412995255.12,
+    "2041 GDP": 23125189433719.633,
+    "2041 GDP PC": 55993.838057535,
+    "Actual GDP Growth": 0.008413956616397085
+  },
+  {
+    "Country": "Burgundie ",
+    "Continent": "Levantia",
+    "Region": "Great Levantia",
+    "Government Type": "Unitary thalattocractic parliamentary constitutional monarchy",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "Chief Minister Ermengarde-Cecil de Pristoria",
+    "Population": 396202653,
+    "GDP PC": 50214.29,
+    "Area (km²)": 2943262.505,
+    "Area (sq mi)": 1136400.006,
+    "Max GDPPC Grow Rt": 0.0275,
+    "Adj GDPPC Growth": 0.00088275,
+    "Pop Growth Rate": 0.00625,
+    "2041 Population": 398678919.58125,
+    "2041 GDP": 20037050991450.07,
+    "2041 GDP PC": 50258.6166644975,
+    "Actual GDP Growth": 0.007087673480458693
+  },
+  {
+    "Country": "Faneria ",
+    "Continent": "Levantia",
+    "Region": "Gallia Magna",
+    "Government Type": "Unitary quaternalist republic",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "Director Cían Walaerin",
+    "Population": 394843690,
+    "GDP PC": 49782.32,
+    "Area (km²)": 3087291,
+    "Area (sq mi)": 1192010,
+    "Max GDPPC Grow Rt": 0.0275,
+    "Adj GDPPC Growth": 0.00088275,
+    "Pop Growth Rate": 0.0015,
+    "2041 Population": 395435955.535,
+    "2041 GDP": 19703096846641.75,
+    "2041 GDP PC": 49826.26534298,
+    "Actual GDP Growth": 0.002378403833960573
+  },
+  {
+    "Country": "Galata ",
+    "Continent": "Levantia",
+    "Region": "Gallia Magna",
+    "Government Type": "Unitary parliamentary council republic",
+    "Religion": "Galatan Church",
+    "Leader": "Remos Segomāros Uoreton",
+    "Population": 182756633,
+    "GDP PC": 22527,
+    "Area (km²)": 1665077,
+    "Area (sq mi)": 642890,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.0209,
+    "2041 Population": 186576246.6297,
+    "2041 GDP": 4213121837809.346,
+    "2041 GDP PC": 22581.2337525,
+    "Actual GDP Growth": 0.022824682010228112
+  },
+  {
+    "Country": "Lapody ",
+    "Continent": "Levantia",
+    "Region": "Great Levantia",
+    "Government Type": "Unitary parliamentary constitutional monarchy",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "President Dumini o-Matia",
+    "Population": 181964483,
+    "GDP PC": 40892.49,
+    "Area (km²)": 1622420.35,
+    "Area (sq mi)": 626420,
+    "Max GDPPC Grow Rt": 0.035,
+    "Adj GDPPC Growth": 0.0011235,
+    "Pop Growth Rate": 0.0082,
+    "2041 Population": 183456591.7606,
+    "2041 GDP": 7510425337458.657,
+    "2041 GDP PC": 40938.432712515,
+    "Actual GDP Growth": 0.009246418532333833
+  },
+  {
+    "Country": "Maresteyn ",
+    "Continent": "Levantia",
+    "Region": "Gothica",
+    "Government Type": "Federal parliamentary semi-constitutional monarchy",
+    "Religion": "National Catholic (Maresteyner Rite)",
+    "Leader": "Emperor Willem-Alexander II",
+    "Population": 128980189,
+    "GDP PC": 50949,
+    "Area (km²)": 1822692,
+    "Area (sq mi)": 703745,
+    "Max GDPPC Grow Rt": 0.0275,
+    "Adj GDPPC Growth": 0.00088275,
+    "Pop Growth Rate": 0.0104,
+    "2041 Population": 130321582.9656,
+    "2041 GDP": 6645615573649.616,
+    "2041 GDP PC": 50993.97522975,
+    "Actual GDP Growth": 0.011165846634710644
+  },
+  {
+    "Country": "Yonderre ",
+    "Continent": "Levantia",
+    "Region": "Gothica",
+    "Government Type": "Federal parliamentary elective constitutional monarchy",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "Steward Hercule d'Arcaneaux",
+    "Population": 100471875,
+    "GDP PC": 62070.43,
+    "Area (km²)": 1261724,
+    "Area (sq mi)": 487154,
+    "Max GDPPC Grow Rt": 0.015,
+    "Adj GDPPC Growth": 0.00048149999999999994,
+    "Pop Growth Rate": 0.0023566,
+    "2041 Population": 100708647.020625,
+    "2041 GDP": 6254038895764.089,
+    "2041 GDP PC": 62100.316912045004,
+    "Actual GDP Growth": 0.002831196272193248
+  },
+  {
+    "Country": "Caergwynn ",
+    "Continent": "Levantia",
+    "Region": "Gallia Magna",
+    "Government Type": "Unitary constitutional republic",
+    "Religion": "Protestant (Caergwynnist)",
+    "Leader": "Arlywydd Seisyll ap Morgan ap Ieuan",
+    "Population": 134262553,
+    "GDP PC": 42839.08,
+    "Area (km²)": 1767288.5,
+    "Area (sq mi)": 682353.9,
+    "Max GDPPC Grow Rt": 0.035,
+    "Adj GDPPC Growth": 0.0011235,
+    "Pop Growth Rate": 0.0106,
+    "2041 Population": 135685736.0618,
+    "2041 GDP": 5819182616646.944,
+    "2041 GDP PC": 42887.20970638,
+    "Actual GDP Growth": 0.011599286725013822
+  },
+  {
+    "Country": "Rhotia ",
+    "Continent": "Levantia",
+    "Region": "Great Levantia",
+    "Government Type": "Federal presidential constitutional republic",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "President Alexandru Lash",
+    "Population": 140983864,
+    "GDP PC": 39732.19,
+    "Area (km²)": 1595173.68,
+    "Area (sq mi)": 615900,
+    "Max GDPPC Grow Rt": 0.035,
+    "Adj GDPPC Growth": 0.0011235,
+    "Pop Growth Rate": 0.0075,
+    "2041 Population": 142041242.98,
+    "2041 GDP": 5649950249363.702,
+    "2041 GDP PC": 39776.829115465,
+    "Actual GDP Growth": 0.008558053761090633
+  },
+  {
+    "Country": "Hendalarsk ",
+    "Continent": "Levantia",
+    "Region": "Gothica",
+    "Government Type": "Federal parliamentary constitutional republic",
+    "Religion": "National Catholic (Hendalarsker Rite)",
+    "Leader": "Primarch Judka Haller",
+    "Population": 82746553,
+    "GDP PC": 16062.58,
+    "Area (km²)": 1173860,
+    "Area (sq mi)": 453230,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.00603712399529123,
+    "2041 Population": 83246104.20064394,
+    "2041 GDP": 1340366390315.4292,
+    "2041 GDP PC": 16101.250661349999,
+    "Actual GDP Growth": 0.008388201248498425
+  },
+  {
+    "Country": "Hollona and Diorisia ",
+    "Continent": "Levantia",
+    "Region": "Gothica",
+    "Government Type": "Federal parliamentary republic",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "Speaker-President Ioannes Marcellino",
+    "Population": 23976018,
+    "GDP PC": 51302.25,
+    "Area (km²)": 276118.632,
+    "Area (sq mi)": 106610,
+    "Max GDPPC Grow Rt": 0.0275,
+    "Adj GDPPC Growth": 0.00088275,
+    "Pop Growth Rate": 0.0097,
+    "2041 Population": 24208585.3746,
+    "2041 GDP": 1243051234721.195,
+    "2041 GDP PC": 51347.5370611875,
+    "Actual GDP Growth": 0.0104803124093409
+  },
+  {
+    "Country": "Ardmore ",
+    "Continent": "Levantia",
+    "Region": "Gothica",
+    "Government Type": "Unitary dominant-party syndicalist parliamentary republic",
+    "Religion": "Fellowist",
+    "Leader": "Chairman Kellen Melns",
+    "Population": 23125604,
+    "GDP PC": 35893.28,
+    "Area (km²)": 73270.76,
+    "Area (sq mi)": 28290,
+    "Max GDPPC Grow Rt": 0.035,
+    "Adj GDPPC Growth": 0.0011235,
+    "Pop Growth Rate": 0.04,
+    "2041 Population": 24050628.16,
+    "2041 GDP": 864225798760.9318,
+    "2041 GDP PC": 35933.60610008,
+    "Actual GDP Growth": 0.03954061458105658
+  },
+  {
+    "Country": "Avonia ",
+    "Continent": "Levantia",
+    "Region": "Gothica",
+    "Government Type": "Federal elective constitutional monarchy",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "Prince Andrew IV",
+    "Population": 17029588,
+    "GDP PC": 45222.89,
+    "Area (km²)": 308234.485,
+    "Area (sq mi)": 119010,
+    "Max GDPPC Grow Rt": 0.0275,
+    "Adj GDPPC Growth": 0.00088275,
+    "Pop Growth Rate": 0.0087,
+    "2041 Population": 17177745.4156,
+    "2041 GDP": 777513035669.1469,
+    "2041 GDP PC": 45262.8105061475,
+    "Actual GDP Growth": 0.009499327292269074
+  },
+  {
+    "Country": "Alba Concordia ",
+    "Continent": "Levantia",
+    "Region": "Great Levantia",
+    "Government Type": "League of Nations headquarters",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "Provost-General Brenna Daenlaine",
+    "Population": 97085,
+    "GDP PC": 57369.61,
+    "Area (km²)": 647.497,
+    "Area (sq mi)": 250,
+    "Max GDPPC Grow Rt": 0.015,
+    "Adj GDPPC Growth": 0.00048149999999999994,
+    "Pop Growth Rate": 0.0071,
+    "2041 Population": 97774.3035,
+    "2041 GDP": 5611974525.083837,
+    "2041 GDP PC": 57397.233467215,
+    "Actual GDP Growth": 0.0075278207420596
+  },
+  {
+    "Country": "Papal State ",
+    "Continent": "Levantia",
+    "Region": "Great Levantia",
+    "Government Type": "Unitary theocratic Catholic elective absolute monarchy",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "Pope Gregory XVII",
+    "Population": 61489,
+    "GDP PC": 58596.2,
+    "Area (km²)": 3.315185,
+    "Area (sq mi)": 1.28,
+    "Max GDPPC Grow Rt": 0.015,
+    "Adj GDPPC Growth": 0.00048149999999999994,
+    "Pop Growth Rate": 0.0058,
+    "2041 Population": 61845.6362,
+    "2041 GDP": 3625664185.029935,
+    "2041 GDP PC": 58624.414070299994,
+    "Actual GDP Growth": 0.0062450469967472244
+  },
+  {
+    "Country": "Caphiria ",
+    "Continent": "Sarpedon",
+    "Region": "Latium",
+    "Government Type": "Unitary constitutional republic",
+    "Religion": "Catholic (Caphiric Rite)",
+    "Leader": "Imperator Constantinus I",
+    "Population": 619435970,
+    "GDP PC": 64272.93,
+    "Area (km²)": 6047907,
+    "Area (sq mi)": 2335110,
+    "Max GDPPC Grow Rt": 0.015,
+    "Adj GDPPC Growth": 0.00048149999999999994,
+    "Pop Growth Rate": 0.0036,
+    "2041 Population": 621665939.492,
+    "2041 GDP": 39975530366668.6,
+    "2041 GDP PC": 64303.877415795,
+    "Actual GDP Growth": 0.004066628407062897
+  },
+  {
+    "Country": "Cartadania ",
+    "Continent": "Sarpedon",
+    "Region": "Taino-Kindreds",
+    "Government Type": "Federal presidential republic",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "President Anteros Ballas",
+    "Population": 378465929,
+    "GDP PC": 75450.11,
+    "Area (km²)": 4122251,
+    "Area (sq mi)": 1591610,
+    "Max GDPPC Grow Rt": 0.005,
+    "Adj GDPPC Growth": 0.0001605,
+    "Pop Growth Rate": 0.00083395352500448,
+    "2041 Population": 378781551.99558365,
+    "2041 GDP": 28583696711154.633,
+    "2041 GDP PC": 75462.219742655,
+    "Actual GDP Growth": 0.000993599153371865
+  },
+  {
+    "Country": "Pelaxia ",
+    "Continent": "Sarpedon",
+    "Region": "Taino-Kindreds",
+    "Government Type": "Federal parliamentary republic",
+    "Religion": "Irreligious",
+    "Leader": "Prime Minister Pedro Meireles",
+    "Population": 246427667,
+    "GDP PC": 32338.17,
+    "Area (km²)": 1879476.67,
+    "Area (sq mi)": 725670,
+    "Max GDPPC Grow Rt": 0.05,
+    "Adj GDPPC Growth": 0.0016049999999999999,
+    "Pop Growth Rate": 0.004,
+    "2041 Population": 247413377.668,
+    "2041 GDP": 8013737305169.008,
+    "2041 GDP PC": 32390.07276285,
+    "Actual GDP Growth": 0.005580107672206143
+  },
+  {
+    "Country": "Castadilla ",
+    "Continent": "Sarpedon",
+    "Region": "Vallos",
+    "Government Type": "Federal Marxist-Livasist parliamentary socialist semi-elective semi-constitutional monarchy",
+    "Religion": "Catholic Apostolic (Vallosi Rite)",
+    "Leader": "Interregnum",
+    "Population": 241131069,
+    "GDP PC": 30167,
+    "Area (km²)": 1811618.98,
+    "Area (sq mi)": 699470,
+    "Max GDPPC Grow Rt": 0.05,
+    "Adj GDPPC Growth": 0.0016049999999999999,
+    "Pop Growth Rate": 0.0101510022228425,
+    "2041 Population": 243578791.01741537,
+    "2041 GDP": 7359834995051.108,
+    "2041 GDP PC": 30215.418035,
+    "Actual GDP Growth": 0.0116353201648801
+  },
+  {
+    "Country": "Lucrecia ",
+    "Continent": "Sarpedon",
+    "Region": "Vallos",
+    "Government Type": "Federal semi-presidential diarchic semi-aristocratic directorial republic",
+    "Religion": "Catholic (Caphiric Rite)",
+    "Leader": "Consuls Maruxa Estévez & Juana Igea",
+    "Population": 30932247,
+    "GDP PC": 65187.46,
+    "Area (km²)": 348586.5,
+    "Area (sq mi)": 134590,
+    "Max GDPPC Grow Rt": 0.005,
+    "Adj GDPPC Growth": 0.0001605,
+    "Pop Growth Rate": 0.024,
+    "2041 Population": 31674620.928,
+    "2041 GDP": 2065119483246.7668,
+    "2041 GDP PC": 65197.92258733,
+    "Actual GDP Growth": 0.023594213128792948
+  },
+  {
+    "Country": "Volonia ",
+    "Continent": "Sarpedon",
+    "Region": "Sarposlavia",
+    "Government Type": "Unitary presidential republic",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "National Tribune Serghei Predoiu",
+    "Population": 55523508,
+    "GDP PC": 32696.39,
+    "Area (km²)": 879611.762,
+    "Area (sq mi)": 339620,
+    "Max GDPPC Grow Rt": 0.05,
+    "Adj GDPPC Growth": 0.0016049999999999999,
+    "Pop Growth Rate": 0.028,
+    "2041 Population": 57078166.224,
+    "2041 GDP": 1869245314567.9998,
+    "2041 GDP PC": 32748.86770595,
+    "Actual GDP Growth": 0.028796136286862818
+  },
+  {
+    "Country": "Lariana ",
+    "Continent": "Sarpedon",
+    "Region": "Latium",
+    "Government Type": "Unitary constitutional monarchy",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "King Riordan I",
+    "Population": 42052474,
+    "GDP PC": 42812.05,
+    "Area (km²)": 101980,
+    "Area (sq mi)": 39370,
+    "Max GDPPC Grow Rt": 0.035,
+    "Adj GDPPC Growth": 0.0011235,
+    "Pop Growth Rate": 0.0134,
+    "2041 Population": 42615977.1516,
+    "2041 GDP": 1826527144909.83,
+    "2041 GDP PC": 42860.149338175004,
+    "Actual GDP Growth": 0.014330214292775834
+  },
+  {
+    "Country": "Slaconia ",
+    "Continent": "Sarpedon",
+    "Region": "Sarposlavia",
+    "Government Type": "Unitary parliamentary republic",
+    "Religion": "Catholic (Caphiric Rite)",
+    "Leader": "Regent Lozan Razumikhin",
+    "Population": 90149750,
+    "GDP PC": 15687.68,
+    "Area (km²)": 1184531,
+    "Area (sq mi)": 457350,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.055,
+    "2041 Population": 95107986.25,
+    "2041 GDP": 1495615700680.7656,
+    "2041 GDP PC": 15725.4480896,
+    "Actual GDP Growth": 0.054409211245726896
+  },
+  {
+    "Country": "Almadaria ",
+    "Continent": "Sarpedon",
+    "Region": "Vallos",
+    "Government Type": "Unitary Valverdist one-party state",
+    "Religion": "Catholic Apostolic (Vallosi Rite)",
+    "Leader": "President Ernesto Allende",
+    "Population": 52760497,
+    "GDP PC": 25603.03,
+    "Area (km²)": 1087043.91,
+    "Area (sq mi)": 419710,
+    "Max GDPPC Grow Rt": 0.05,
+    "Adj GDPPC Growth": 0.0016049999999999999,
+    "Pop Growth Rate": 0.009,
+    "2041 Population": 53235341.473,
+    "2041 GDP": 1365173637395.3564,
+    "2041 GDP PC": 25644.122863149998,
+    "Actual GDP Growth": 0.01050785738641698
+  },
+  {
+    "Country": "Drasenia ",
+    "Continent": "Sarpedon",
+    "Region": "Vallos",
+    "Government Type": "Federal semi-parliamentary demarchy",
+    "Religion": "Catholic Apostolic (Vallosi Rite)",
+    "Leader": "Prior Marcu Arbore",
+    "Population": 196521822,
+    "GDP PC": 31655,
+    "Area (km²)": 1572174.583,
+    "Area (sq mi)": 607020,
+    "Max GDPPC Grow Rt": 0.05,
+    "Adj GDPPC Growth": 0.0016049999999999999,
+    "Pop Growth Rate": 0.009,
+    "2041 Population": 198290518.398,
+    "2041 GDP": 6286960762496.312,
+    "2041 GDP PC": 31705.806275,
+    "Actual GDP Growth": 0.010507857386417128
+  },
+  {
+    "Country": "Kabasa ",
+    "Continent": "Sarpedon",
+    "Region": "Vallos",
+    "Government Type": "Unitary one-party socialist republic",
+    "Religion": "Voodoo (Kabasan Rite)",
+    "Leader": "President Paul Laguerre",
+    "Population": 86158896,
+    "GDP PC": 13071.39,
+    "Area (km²)": 183267.56,
+    "Area (sq mi)": 70760,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.014,
+    "2041 Population": 87365120.544,
+    "2041 GDP": 1144732888455.6252,
+    "2041 GDP PC": 13102.859371425,
+    "Actual GDP Growth": 0.016175264165919065
+  },
+  {
+    "Country": "Arona ",
+    "Continent": "Sarpedon",
+    "Region": "Vallos",
+    "Government Type": "Unitary Julian republic",
+    "Religion": "Catholic (Latin Rite)",
+    "Leader": "President Alfons Elan",
+    "Population": 4583001,
+    "GDP PC": 18545.54,
+    "Area (km²)": 83553.016,
+    "Area (sq mi)": 32260,
+    "Max GDPPC Grow Rt": 0.075,
+    "Adj GDPPC Growth": 0.0024074999999999995,
+    "Pop Growth Rate": 0.024,
+    "2041 Population": 4692993.024,
+    "2041 GDP": 87243624417.61798,
+    "2041 GDP PC": 18590.188387550003,
+    "Actual GDP Growth": 0.025782927601798823
+  },
+  {
+    "Country": "Kostava ",
+    "Continent": "Sarpedon",
+    "Region": "Sarposlavia",
+    "Government Type": "Unitary semi-presidential republic",
+    "Religion": "Irreligious",
+    "Leader": "President Mikhail Kevartli",
+    "Population": 224000000,
+    "GDP PC": 35000,
+    "Area (km²)": 568661,
+    "Area (sq mi)": 219561,
+    "Max GDPPC Grow Rt": 0.035,
+    "Adj GDPPC Growth": 0.0011235,
+    "Pop Growth Rate": 0.004,
+    "2041 Population": 224896000,
+    "2041 GDP": 7880203472960,
+    "2041 GDP PC": 35039.3225,
+    "Actual GDP Growth": 0.005101831836951106
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0,
+    "__EMPTY_3": "Economic Tiers (GDP PC)",
+    "__EMPTY_7": "Population Tier"
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0,
+    "__EMPTY_3": "Tier",
+    "__EMPTY_4": "Range",
+    "__EMPTY_5": "Max Growth Rate",
+    "__EMPTY_7": "Tier",
+    "__EMPTY_8": "Range"
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0,
+    "__EMPTY_3": "Impoverished",
+    "__EMPTY_4": "$0-$9,999",
+    "__EMPTY_5": 0.1,
+    "__EMPTY_7": 1,
+    "__EMPTY_8": "0-9,999,999"
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0,
+    "__EMPTY_3": "Developing",
+    "__EMPTY_4": "$10,000-$24,999",
+    "__EMPTY_5": 0.075,
+    "__EMPTY_7": 2,
+    "__EMPTY_8": "10,000,000-29,999,999"
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0,
+    "__EMPTY_3": "Developed",
+    "__EMPTY_4": "$25,000-$34,999",
+    "__EMPTY_5": 0.05,
+    "__EMPTY_7": 3,
+    "__EMPTY_8": "30,000,000-49,999,999"
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0,
+    "__EMPTY_3": "Healthy",
+    "__EMPTY_4": "$35,000-$44,999",
+    "__EMPTY_5": 0.035,
+    "__EMPTY_7": 4,
+    "__EMPTY_8": "50,000,000-79,999,999"
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0,
+    "__EMPTY_3": "Strong",
+    "__EMPTY_4": "$45,000-$54,999",
+    "__EMPTY_5": 0.0275,
+    "__EMPTY_7": 5,
+    "__EMPTY_8": "80,000,000-119,999,999"
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0,
+    "__EMPTY_3": "Very Strong",
+    "__EMPTY_4": "$55,000-$64,999",
+    "__EMPTY_5": 0.015,
+    "__EMPTY_7": 6,
+    "__EMPTY_8": "120,000,000-349,999,999"
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0,
+    "__EMPTY_3": "Extravagant",
+    "__EMPTY_4": "$65,000+",
+    "__EMPTY_5": 0.005,
+    "__EMPTY_7": 7,
+    "__EMPTY_8": "350,000,000-499,999,999"
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0,
+    "__EMPTY_7": "X",
+    "__EMPTY_8": "500,000,000+"
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  },
+  {
+    "Adj GDPPC Growth": 0,
+    "2041 Population": 0
+  }
+]

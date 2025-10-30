@@ -140,7 +140,7 @@ echo "📊 Configuration Summary:"
 echo "   Development Server: localhost:3000 (root path)"
 echo "   Production Server:  localhost:3550 (/projects/ixstats basePath)"
 echo "   Database (Dev):     SQLite (./dev.db)"
-echo "   Database (Prod):    SQLite (./prisma/prod.db)"
+echo "   Database (Prod):    PostgreSQL (localhost:5433/ixstats)"
 echo ""
 
 echo "🎯 Ready to run:"

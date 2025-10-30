@@ -14,7 +14,7 @@
 import type { EconomicArchetype } from '../data/archetype-types';
 import { EconomicArchetypeService } from '../services/EconomicArchetypeService';
 import type { EconomyBuilderState } from '~/types/economy-builder';
-import { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
+import { EconomicComponentType } from '~/lib/atomic-economic-data';
 
 /**
  * Country characteristics used for archetype recommendations

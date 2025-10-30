@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
-import type { TaxBuilderState } from "~/components/tax-system/TaxBuilder";
+import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import type { GovernmentBuilderState } from "~/types/government";
 import {
   detectTaxConflicts,
@@ -295,14 +295,14 @@ export const taxSystemRouter = createTRPCRouter({
             complianceRate: data.taxSystem.complianceRate,
             collectionEfficiency: data.taxSystem.collectionEfficiency,
             taxCategories: {
-              create: data.categories.map((cat, catIdx) => ({
+              create: data.categories.map((cat: TaxBuilderState['categories'][number], catIdx: number) => ({
                 categoryName: cat.categoryName,
                 categoryType: cat.categoryType,
                 description: cat.description,
                 baseRate: cat.baseRate,
                 calculationMethod: cat.calculationMethod,
                 taxBrackets: {
-                  create: (data.brackets[catIdx.toString()] || []).map((bracket) => ({
+                  create: (data.brackets[catIdx.toString()] || []).map((bracket: TaxBuilderState['brackets'][string][number]) => ({
                     minIncome: bracket.minIncome,
                     maxIncome: bracket.maxIncome,
                     rate: bracket.rate,
@@ -315,8 +315,8 @@ export const taxSystemRouter = createTRPCRouter({
                 },
                 taxExemptions: {
                   create: data.exemptions
-                    .filter((ex) => ex.exemptionName)
-                    .map((exemption) => ({
+                    .filter((ex: TaxBuilderState['exemptions'][number]) => ex.exemptionName)
+                    .map((exemption: TaxBuilderState['exemptions'][number]) => ({
                       exemptionName: exemption.exemptionName,
                       exemptionType: exemption.exemptionType,
                       description: exemption.description,
@@ -328,7 +328,7 @@ export const taxSystemRouter = createTRPCRouter({
                     })),
                 },
                 taxDeductions: {
-                  create: (data.deductions[catIdx.toString()] || []).map((deduction) => ({
+                  create: (data.deductions[catIdx.toString()] || []).map((deduction: TaxBuilderState['deductions'][string][number]) => ({
                     deductionName: deduction.deductionName,
                     deductionType: deduction.deductionType,
                     description: deduction.description,
@@ -382,14 +382,14 @@ export const taxSystemRouter = createTRPCRouter({
             complianceRate: data.taxSystem.complianceRate,
             collectionEfficiency: data.taxSystem.collectionEfficiency,
             taxCategories: {
-              create: data.categories.map((cat, catIdx) => ({
+              create: data.categories.map((cat: TaxBuilderState['categories'][number], catIdx: number) => ({
                 categoryName: cat.categoryName,
                 categoryType: cat.categoryType,
                 description: cat.description,
                 baseRate: cat.baseRate,
                 calculationMethod: cat.calculationMethod,
                 taxBrackets: {
-                  create: (data.brackets[catIdx.toString()] || []).map((bracket) => ({
+                  create: (data.brackets[catIdx.toString()] || []).map((bracket: TaxBuilderState['brackets'][string][number]) => ({
                     minIncome: bracket.minIncome,
                     maxIncome: bracket.maxIncome,
                     rate: bracket.rate,
@@ -402,8 +402,8 @@ export const taxSystemRouter = createTRPCRouter({
                 },
                 taxExemptions: {
                   create: data.exemptions
-                    .filter((ex) => ex.exemptionName)
-                    .map((exemption) => ({
+                    .filter((ex: TaxBuilderState['exemptions'][number]) => ex.exemptionName)
+                    .map((exemption: TaxBuilderState['exemptions'][number]) => ({
                       exemptionName: exemption.exemptionName,
                       exemptionType: exemption.exemptionType,
                       description: exemption.description,
@@ -415,7 +415,7 @@ export const taxSystemRouter = createTRPCRouter({
                     })),
                 },
                 taxDeductions: {
-                  create: (data.deductions[catIdx.toString()] || []).map((deduction) => ({
+                  create: (data.deductions[catIdx.toString()] || []).map((deduction: TaxBuilderState['deductions'][string][number]) => ({
                     deductionName: deduction.deductionName,
                     deductionType: deduction.deductionType,
                     description: deduction.description,

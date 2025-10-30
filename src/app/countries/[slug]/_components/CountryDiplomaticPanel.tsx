@@ -107,8 +107,7 @@ export function CountryDiplomaticPanel({
         <SecureDiplomaticChannels
           currentCountryId={country.id}
           currentCountryName={country.name}
-          channels={[]}
-          messages={[]}
+          viewerClearanceLevel={isOwnCountry ? "CONFIDENTIAL" : "PUBLIC"}
         />
       )}
 
@@ -121,7 +120,6 @@ export function CountryDiplomaticPanel({
             flagUrl: flagUrl ?? undefined,
             economicTier: country.economicTier,
           }}
-          exchanges={[]}
         />
       )}
     </div>

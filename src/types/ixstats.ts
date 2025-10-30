@@ -75,6 +75,7 @@ export interface CountryStats extends BaseCountryData {
   governmentType?: string | null;
   religion?: string | null;
   leader?: string | null;
+  flagUrl?: string | null;
   areaSqMi?: number | null;
 
   // Calculated current values
@@ -642,6 +643,7 @@ export interface CountryWithEconomicData {
   slug?: string | null;
   continent?: string | null;
   region?: string | null;
+  flagUrl?: string | null;
   governmentType?: string | null;
   religion?: string | null;
   leader?: string | null;

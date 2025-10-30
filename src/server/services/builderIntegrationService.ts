@@ -16,7 +16,7 @@
 
 import type { PrismaClient } from "@prisma/client";
 import type { GovernmentBuilderState } from "~/types/government";
-import type { TaxBuilderState } from "~/components/tax-system/TaxBuilder";
+import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 
 // Type for government data without validation state
 export type GovernmentBuilderData = Omit<GovernmentBuilderState, 'isValid' | 'errors'>;
@@ -454,9 +454,9 @@ export async function syncGovernmentData(
       if (govBudget) {
         // Calculate spending by category from departments
         const spendingByCategory: Record<string, number> = {};
-        
-        governmentData.departments.forEach((dept, index) => {
-          const allocation = governmentData.budgetAllocations.find(a => a.departmentId === index.toString());
+
+        governmentData.departments.forEach((dept: GovernmentBuilderState['departments'][number], index: number) => {
+          const allocation = governmentData.budgetAllocations.find((a: { departmentId: string }) => a.departmentId === index.toString());
           const category = DEPARTMENT_TO_SPENDING_CATEGORY[dept.category] || 'other';
           spendingByCategory[category] = (spendingByCategory[category] || 0) + (allocation?.allocatedAmount || 0);
         });
@@ -472,8 +472,8 @@ export async function syncGovernmentData(
       } else {
         // Create if doesn't exist
         const spendingByCategory: Record<string, number> = {};
-        governmentData.departments.forEach((dept, index) => {
-          const allocation = governmentData.budgetAllocations.find(a => a.departmentId === index.toString());
+        governmentData.departments.forEach((dept: GovernmentBuilderState['departments'][number], index: number) => {
+          const allocation = governmentData.budgetAllocations.find((a: { departmentId: string }) => a.departmentId === index.toString());
           const category = DEPARTMENT_TO_SPENDING_CATEGORY[dept.category] || 'other';
           spendingByCategory[category] = (spendingByCategory[category] || 0) + (allocation?.allocatedAmount || 0);
         });
@@ -529,11 +529,11 @@ export async function syncTaxData(
       const fiscalSystem = await tx.fiscalSystem.findUnique({ where: { countryId } });
       
       // Extract tax rates from categories
-      const incomeTax = taxData.categories.find(c => c.categoryType === 'Income Tax');
-      const corpTax = taxData.categories.find(c => c.categoryType === 'Corporate Tax');
-      const salesTax = taxData.categories.find(c => c.categoryType === 'Sales Tax' || c.categoryType === 'Value-Added Tax (VAT)');
-      const propertyTax = taxData.categories.find(c => c.categoryType === 'Property Tax');
-      const payrollTax = taxData.categories.find(c => c.categoryType === 'Payroll Tax');
+      const incomeTax = taxData.categories.find((c: { categoryType: string }) => c.categoryType === 'Income Tax');
+      const corpTax = taxData.categories.find((c: { categoryType: string }) => c.categoryType === 'Corporate Tax');
+      const salesTax = taxData.categories.find((c: { categoryType: string }) => c.categoryType === 'Sales Tax' || c.categoryType === 'Value-Added Tax (VAT)');
+      const propertyTax = taxData.categories.find((c: { categoryType: string }) => c.categoryType === 'Property Tax');
+      const payrollTax = taxData.categories.find((c: { categoryType: string }) => c.categoryType === 'Payroll Tax');
       
       if (fiscalSystem) {
         await tx.fiscalSystem.update({

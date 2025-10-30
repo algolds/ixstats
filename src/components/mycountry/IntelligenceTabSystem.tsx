@@ -22,6 +22,7 @@ import { Badge } from "~/components/ui/badge";
 import { ThemedTabContent } from "~/components/ui/themed-tab-content";
 import { useMyCountryUnifiedData } from "./primitives";
 import { useUser } from "~/context/auth-context";
+import { useFlag } from "~/hooks/useUnifiedFlags";
 import { ExecutiveCommandCenter } from "~/app/mycountry/components/ExecutiveCommandCenter";
 import { MeetingScheduler as QuickActionsMeetingScheduler } from "~/components/quickactions/MeetingScheduler";
 import { PolicyCreator as QuickActionsPolicyCreator } from "~/components/quickactions/PolicyCreator";
@@ -90,6 +91,9 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
   }, [normalizedPolicies]);
 
   if (!country) return null;
+
+  // Resolve flag via UnifiedFlagService
+  const { flagUrl: resolvedFlagUrl } = useFlag(country.name);
 
   const renderTabsList = () => {
     const baseTabs = [
@@ -166,7 +170,7 @@ export function IntelligenceTabSystem({ variant = "unified" }: IntelligenceTabSy
               intelligence={executiveIntelligence}
               country={{
                 name: country.name,
-                flag: country.flagUrl || "/flags/default.png",
+                flag: resolvedFlagUrl || country.flagUrl || null,
                 leader: country.headOfGovernment || "Unknown"
               }}
               isOwner

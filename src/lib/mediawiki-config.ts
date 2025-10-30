@@ -27,8 +27,8 @@ export interface MediaWikiConfig {
 export const MEDIAWIKI_CONFIG: MediaWikiConfig = {
   baseUrl: env.NEXT_PUBLIC_MEDIAWIKI_URL || 'https://ixwiki.com',
   apiEndpoint: '/api.php',
-  userAgent: 'IxStats-Builder',
-  timeout: 10000, // 10 seconds
+  userAgent: 'IxStats-Builder/1.0 (https://ixstats.com; contact@ixstats.com)',
+  timeout: 20000, // 20 seconds
   
   rateLimit: {
     maxRequests: 90,
@@ -50,24 +50,54 @@ export const MEDIAWIKI_CONFIG: MediaWikiConfig = {
   },
 };
 
+// Multi-wiki support configuration
+export const WIKI_SOURCES = {
+  ixwiki: {
+    name: 'IxWiki',
+    baseUrl: 'https://ixwiki.com',
+    apiEndpoint: '/api.php',
+    description: 'The bespoke two-decades old geopolitical worldbuilding community & fictional encyclopedia',
+    userAgent: 'IxStats-Builder/1.0 (https://ixstats.com; contact@ixstats.com)',
+  },
+  iiwiki: {
+    name: 'IIWiki',
+    baseUrl: 'https://iiwiki.us',
+    apiEndpoint: '/mediawiki/api.php',
+    description: 'SimFic and Alt-History Encyclopedia',
+    userAgent: 'IxStats-Builder/1.0 (https://ixstats.com; contact@ixstats.com)',
+  },
+} as const;
+
+export type WikiSource = keyof typeof WIKI_SOURCES;
+
 /**
- * Get the appropriate MediaWiki API URL based on context
- * - Client-side: Use proxy route for same-server optimization
+ * Get the appropriate MediaWiki API URL based on context and wiki source
+ * - Client-side: Use proxy route for same-server optimization (IxWiki only)
  * - Server-side: Use direct URL or local path if available
  */
-export function getMediaWikiApiUrl(): string {
-  // Client-side: use proxy route
-  if (typeof window !== 'undefined') {
+export function getMediaWikiApiUrl(source: WikiSource = 'ixwiki'): string {
+  const wikiConfig = WIKI_SOURCES[source];
+
+  // Client-side: use proxy route for IxWiki only (same server optimization)
+  if (typeof window !== 'undefined' && source === 'ixwiki') {
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
     return `${basePath}/api/ixwiki-proxy/api.php`;
   }
-  
-  // Server-side: use direct URL or local path
-  if (process.env.IXWIKI_LOCAL_PATH) {
+
+  // Server-side: use direct URL or local path (IxWiki only)
+  if (source === 'ixwiki' && process.env.IXWIKI_LOCAL_PATH) {
     return `${process.env.IXWIKI_LOCAL_PATH}/api.php`;
   }
-  
-  return `${MEDIAWIKI_CONFIG.baseUrl}${MEDIAWIKI_CONFIG.apiEndpoint}`;
+
+  // Default: use the configured base URL for the wiki source
+  return `${wikiConfig.baseUrl}${wikiConfig.apiEndpoint}`;
+}
+
+/**
+ * Get the user agent for a specific wiki source
+ */
+export function getWikiUserAgent(source: WikiSource = 'ixwiki'): string {
+  return WIKI_SOURCES[source].userAgent;
 }
 
 // Common country name variations and their canonical forms

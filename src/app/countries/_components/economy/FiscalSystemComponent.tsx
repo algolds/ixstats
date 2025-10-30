@@ -1,7 +1,7 @@
 // src/app/countries/_components/economy/FiscalSystemComponent.tsx
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import {
   Building,
   PieChart,
@@ -37,11 +37,11 @@ import { Input } from "~/components/ui/input";
 import { Progress } from "~/components/ui/progress";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
-import { 
-  PieChart as RechartsPieChart, 
-  Pie, 
-  Cell, 
-  ResponsiveContainer, 
+import {
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
   Tooltip as RechartsTooltip,
   BarChart,
   Bar,
@@ -52,10 +52,12 @@ import {
   LabelList,
   Label as RechartsLabel
 } from 'recharts';
-import { formatCurrency, formatPercentage, calculateBudgetHealth } from "./utils";
+import { formatCurrency, formatPercentage } from "./utils";
 import type { FiscalSystemData } from "~/types/economics";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { Button } from "~/components/ui/button";
+import { useFiscalData } from "~/hooks/useFiscalData";
+import { FISCAL_CHART_COLORS } from "~/lib/fiscal-calculations";
 
 interface FiscalSystemComponentProps {
   fiscalData: FiscalSystemData;
@@ -68,7 +70,7 @@ interface FiscalSystemComponentProps {
   countryId?: string; // For fetching government data
 }
 
-const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6b7280'];
+const COLORS = FISCAL_CHART_COLORS;
 
 export function FiscalSystemComponent({
   fiscalData,
@@ -80,116 +82,29 @@ export function FiscalSystemComponent({
   governmentStructure,
   countryId,
 }: FiscalSystemComponentProps) {
-  const [view, setView] = useState<"overview" | "revenue" | "spending" | "debt" | "taxes" | "analysis">("overview");
-  const [editMode, setEditMode] = useState(false);
-
-  const budgetHealth = calculateBudgetHealth({
-    budgetDeficitSurplus: fiscalData.budgetDeficitSurplus,
-    nominalGDP: nominalGDP,
+  // Use custom hook for all fiscal data logic
+  const fiscal = useFiscalData({
+    fiscalData,
+    nominalGDP,
+    totalPopulation,
+    onFiscalDataChange,
+    isReadOnly,
+    governmentStructure,
   });
 
-  const handleFieldChange = (field: keyof FiscalSystemData, value: any) => {
-    if (isReadOnly || !onFiscalDataChange) return;
-    
-    const updatedData = { ...fiscalData, [field]: value };
-    
-    // Recalculate derived values
-    if (field === 'taxRevenueGDPPercent') {
-      updatedData.governmentRevenueTotal = (nominalGDP * value) / 100;
-      updatedData.taxRevenuePerCapita = updatedData.governmentRevenueTotal / totalPopulation;
-    }
-    
-    if (field === 'governmentBudgetGDPPercent') {
-      const totalSpending = (nominalGDP * value) / 100;
-      updatedData.budgetDeficitSurplus = updatedData.governmentRevenueTotal - totalSpending;
-    }
-    
-    if (field === 'internalDebtGDPPercent' || field === 'externalDebtGDPPercent') {
-      updatedData.totalDebtGDPRatio = updatedData.internalDebtGDPPercent + updatedData.externalDebtGDPPercent;
-      updatedData.debtPerCapita = (nominalGDP * updatedData.totalDebtGDPRatio) / (100 * totalPopulation);
-      updatedData.debtServiceCosts = (nominalGDP * updatedData.totalDebtGDPRatio * updatedData.interestRates) / 10000;
-    }
-    
-    onFiscalDataChange(updatedData);
-  };
-
-  const handleTaxRateChange = (type: string, value: number) => {
-    if (isReadOnly || !onFiscalDataChange) return;
-    
-    const updatedTaxRates = { ...fiscalData.taxRates };
-    
-    if (type === 'salesTaxRate') updatedTaxRates.salesTaxRate = value;
-    if (type === 'propertyTaxRate') updatedTaxRates.propertyTaxRate = value;
-    if (type === 'payrollTaxRate') updatedTaxRates.payrollTaxRate = value;
-    if (type === 'wealthTaxRate') updatedTaxRates.wealthTaxRate = value;
-    
-    onFiscalDataChange({
-      ...fiscalData,
-      taxRates: updatedTaxRates
-    });
-  };
-
-  // Prepare data for visualizations
-  const revenueData = [
-    { name: 'Income Tax', value: fiscalData.taxRevenueGDPPercent * 0.4, color: COLORS[0] },
-    { name: 'Corporate Tax', value: fiscalData.taxRevenueGDPPercent * 0.25, color: COLORS[1] },
-    { name: 'Sales Tax', value: fiscalData.taxRevenueGDPPercent * 0.2, color: COLORS[2] },
-    { name: 'Other Taxes', value: fiscalData.taxRevenueGDPPercent * 0.15, color: COLORS[3] },
-  ];
-
-  const debtComposition = [
-    { name: 'Internal Debt', value: fiscalData.internalDebtGDPPercent, color: COLORS[0] },
-    { name: 'External Debt', value: fiscalData.externalDebtGDPPercent, color: COLORS[1] },
-  ];
-  
-  // Generate dynamic spending data based on government structure if available
-  const generateSpendingData = () => {
-    if (governmentStructure?.budgetAllocations?.length > 0) {
-      // Use actual government structure budget data
-      const totalBudget = governmentStructure.totalBudget;
-      return governmentStructure.budgetAllocations.map((allocation: any) => {
-        const department = governmentStructure.departments?.find((d: any) => d.id === allocation.departmentId);
-        return {
-          category: department?.name || department?.category || 'Unknown',
-          amount: allocation.allocatedAmount,
-          percent: allocation.allocatedPercent,
-        };
-      });
-    }
-    
-    // Fallback to default spending if no government structure
-    return fiscalData.governmentSpendingByCategory || [
-      { category: 'Defense', amount: nominalGDP * 0.04, percent: 20 },
-      { category: 'Education', amount: nominalGDP * 0.035, percent: 17.5 },
-      { category: 'Healthcare', amount: nominalGDP * 0.035, percent: 17.5 },
-      { category: 'Infrastructure', amount: nominalGDP * 0.025, percent: 12.5 },
-      { category: 'Social Security', amount: nominalGDP * 0.045, percent: 22.5 },
-      { category: 'Other', amount: nominalGDP * 0.02, percent: 10 },
-    ];
-  };
-
-  const spendingData = generateSpendingData();
-
-  const fiscalMetrics = [
-    {
-      label: "Tax Revenue",
-      value: fiscalData.taxRevenueGDPPercent,
-      optimal: { min: 15, max: 30 },
-      color: fiscalData.taxRevenueGDPPercent >= 15 && fiscalData.taxRevenueGDPPercent <= 30 ? "text-green-600" : "text-yellow-600",
-    },
-    {
-      label: "Gov Budget",
-      value: fiscalData.governmentBudgetGDPPercent,
-      optimal: { min: 18, max: 32 },
-      color: fiscalData.governmentBudgetGDPPercent >= 18 && fiscalData.governmentBudgetGDPPercent <= 32 ? "text-green-600" : "text-yellow-600",
-    },
-    {
-      label: "Total Debt",
-      value: fiscalData.totalDebtGDPRatio,
-      optimal: { min: 20, max: 60 },
-      color: fiscalData.totalDebtGDPRatio <= 60 ? "text-green-600" : fiscalData.totalDebtGDPRatio <= 90 ? "text-yellow-600" : "text-red-600",
-    },
-  ];
+  const {
+    view,
+    editMode,
+    budgetHealth,
+    revenueChartData,
+    spendingChartData,
+    debtChartData,
+    fiscalMetrics,
+    handleFieldChange,
+    handleTaxRateChange,
+    setView,
+    toggleEditMode,
+  } = fiscal;
 
   // Get icon for category
   const getCategoryIcon = (category: string) => {
@@ -228,7 +143,7 @@ export function FiscalSystemComponent({
               <Button
                 variant={editMode ? "default" : "outline"}
                 size="sm"
-                onClick={() => setEditMode(!editMode)}
+                onClick={toggleEditMode}
               >
                 {editMode ? <Eye className="h-4 w-4 mr-1" /> : <Pencil className="h-4 w-4 mr-1" />}
                 {editMode ? "View" : "Edit"}
@@ -430,7 +345,7 @@ export function FiscalSystemComponent({
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsPieChart>
                         <Pie
-                          data={revenueData}
+                          data={revenueChartData}
                           cx="50%"
                           cy="50%"
                           innerRadius={40}
@@ -440,7 +355,7 @@ export function FiscalSystemComponent({
                           label={renderPieLabel}
                           labelLine={false}
                         >
-                          {revenueData.map((entry, index) => (
+                          {revenueChartData.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
@@ -464,7 +379,7 @@ export function FiscalSystemComponent({
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {spendingData.slice(0, 5).map((item: { category: string; amount: number; percent: number }) => (
+                    {spendingChartData.slice(0, 5).map((item: { category: string; amount: number; percent: number }) => (
                       <div key={item.category} className="space-y-1">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
@@ -633,13 +548,13 @@ export function FiscalSystemComponent({
                     {/* Revenue Composition Chart */}
                     <div className="h-64 mt-4">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={revenueData}>
+                        <BarChart data={revenueChartData}>
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis dataKey="name" />
                           <YAxis tickFormatter={(value) => `${value}%`} />
                           <RechartsTooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
                           <Bar dataKey="value" name="% of GDP">
-                            {revenueData.map((entry, index) => (
+                            {revenueChartData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                           </Bar>
@@ -758,9 +673,9 @@ export function FiscalSystemComponent({
                     {/* Debt Composition Chart */}
                     <div className="h-56 mt-4">
                       <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
+                        <RechartsPieChart>
                           <Pie
-                            data={debtComposition}
+                            data={debtChartData}
                             cx="50%"
                             cy="50%"
                             innerRadius={60}
@@ -769,13 +684,13 @@ export function FiscalSystemComponent({
                             dataKey="value"
                             label={({name, value}: any) => `${name}: ${value ? value.toFixed(1) : '0'}%`}
                           >
-                            {debtComposition.map((entry, index) => (
+                            {debtChartData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                           </Pie>
                           <RechartsTooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
                           <Legend />
-                        </PieChart>
+                        </RechartsPieChart>
                       </ResponsiveContainer>
                     </div>
                     
@@ -834,24 +749,24 @@ export function FiscalSystemComponent({
                   {/* Enhanced Spending Chart */}
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={spendingData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                      <BarChart data={spendingChartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                          dataKey="category" 
+                        <XAxis
+                          dataKey="category"
                           angle={-45}
                           textAnchor="end"
                           height={100}
                         />
-                        <YAxis 
+                        <YAxis
                           yAxisId="left"
                           label={{ value: '% of Budget', angle: -90, position: 'insideLeft' }}
                         />
-                        <YAxis 
+                        <YAxis
                           yAxisId="right"
                           orientation="right"
                           label={{ value: 'Amount (Billions)', angle: 90, position: 'insideRight' }}
                         />
-                        <RechartsTooltip 
+                        <RechartsTooltip
                           formatter={(value: number, name: string) => [
                             name === 'percent' ? `${value.toFixed(1)}%` : formatCurrency(value),
                             name === 'percent' ? '% of Budget' : 'Amount'
@@ -870,7 +785,7 @@ export function FiscalSystemComponent({
 
                   {/* Spending Analysis Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {spendingData.map((item: any) => (
+                    {spendingChartData.map((item: any) => (
                       <Card key={item.category}>
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between mb-2">
@@ -903,13 +818,13 @@ export function FiscalSystemComponent({
                           <div className="flex justify-between items-center">
                             <span className="text-sm">Total Spending/GDP</span>
                             <Badge variant="outline">
-                              {((spendingData.reduce((sum: number, item: any) => sum + item.amount, 0) / nominalGDP) * 100).toFixed(1)}%
+                              {((spendingChartData.reduce((sum: number, item: any) => sum + item.amount, 0) / nominalGDP) * 100).toFixed(1)}%
                             </Badge>
                           </div>
                           <div className="flex justify-between items-center">
                             <span className="text-sm">Per Capita Spending</span>
                             <Badge variant="outline">
-                              {formatCurrency(spendingData.reduce((sum: number, item: any) => sum + item.amount, 0) / totalPopulation)}
+                              {formatCurrency(spendingChartData.reduce((sum: number, item: any) => sum + item.amount, 0) / totalPopulation)}
                             </Badge>
                           </div>
                           <div className="flex justify-between items-center">
@@ -926,7 +841,7 @@ export function FiscalSystemComponent({
                       </CardHeader>
                       <CardContent>
                         <div className="space-y-2">
-                          {spendingData
+                          {spendingChartData
                             .sort((a: any, b: any) => b.percent - a.percent)
                             .slice(0, 3)
                             .map((item: any, index: number) => (

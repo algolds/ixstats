@@ -34,7 +34,7 @@ async function restoreDatabase() {
       }
       
       const backups = readdirSync(backupDir)
-        .filter((file: string) => file.startsWith('backup_') && file.endsWith('.db'))
+        .filter((file: string) => file.startsWith('backup_') && file.endsWith('.sql'))
         .sort()
         .reverse();
       
@@ -48,7 +48,7 @@ async function restoreDatabase() {
       });
       
       console.log("\n💡 Usage: npm run db:restore -- <backup-filename>");
-      console.log("💡 Example: npm run db:restore -- backup_2024-01-15T10-30-00.db");
+      console.log("💡 Example: npm run db:restore -- backup_2024-01-15T10-30-00.sql");
       process.exit(0);
     }
     
@@ -58,30 +58,18 @@ async function restoreDatabase() {
       console.error(`❌ Backup file not found: ${backupPath}`);
       process.exit(1);
     }
-    
-    // Determine target database path
-    const dbPath = process.env.DATABASE_URL?.replace('file:', '') || './prisma/dev.db';
-    
-    // Create backup of current database before restore
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const currentBackupPath = join(backupDir, `pre-restore_${timestamp}.db`);
-    
-    if (existsSync(dbPath)) {
-      execSync(`cp "${dbPath}" "${currentBackupPath}"`, { stdio: 'inherit' });
-      console.log(`💾 Current database backed up to: ${currentBackupPath}`);
-    }
-    
-    // Restore from backup
-    if (dbPath.endsWith('.db')) {
-      // SQLite database
-      execSync(`cp "${backupPath}" "${dbPath}"`, { stdio: 'inherit' });
-      console.log(`✅ Database restored from: ${backupFile}`);
-    } else {
-      // PostgreSQL or other database
-      console.log("⚠️  PostgreSQL restore not implemented yet");
-      console.log("💡 Use psql for PostgreSQL restores");
+
+    // Validate DATABASE_URL is set
+    if (!process.env.DATABASE_URL) {
+      console.error("❌ DATABASE_URL environment variable is not set");
       process.exit(1);
     }
+
+    // PostgreSQL restore
+    console.log("⚠️  PostgreSQL restore not implemented yet");
+    console.log("💡 Use psql for PostgreSQL restores:");
+    console.log(`   psql $DATABASE_URL < ${backupPath}`);
+    process.exit(1);
     
     // Verify restore
     const countryCount = await db.country.count();

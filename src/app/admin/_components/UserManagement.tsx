@@ -60,8 +60,10 @@ import {
   Edit,
   Trash2,
   Search,
-  Settings
+  Settings,
+  Sparkles
 } from "lucide-react";
+import { Switch } from "~/components/ui/switch";
 import { toast } from "sonner";
 
 interface UserManagementProps {
@@ -190,6 +192,24 @@ export function UserManagement({ className }: UserManagementProps) {
       toast.error(`Failed to remove role: ${error.message}`);
     },
   });
+
+  const updateMembershipTier = api.users.updateMembershipTier.useMutation({
+    onSuccess: (data) => {
+      refetchUsers();
+      toast.success(data.message);
+    },
+    onError: (error) => {
+      toast.error(`Failed to update membership: ${error.message}`);
+    },
+  });
+
+  const handleTogglePremium = (clerkUserId: string, currentTier: string) => {
+    const newTier = currentTier === 'mycountry_premium' ? 'basic' : 'mycountry_premium';
+    updateMembershipTier.mutate({
+      userId: clerkUserId,
+      tier: newTier as 'basic' | 'mycountry_premium',
+    });
+  };
 
   const handleAssignUser = () => {
     if (!selectedUser || !selectedCountry) {
@@ -412,46 +432,65 @@ export function UserManagement({ className }: UserManagementProps) {
                       key={user.id}
                       className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/30 rounded-lg"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-1">
                         <User className="h-4 w-4 text-green-600" />
-                        <div>
+                        <div className="flex-1">
                           <div className="font-medium">{user.clerkUserId}</div>
-                          <div className="text-sm text-muted-foreground flex items-center gap-1">
+                          <div className="text-sm text-muted-foreground flex items-center gap-2">
                             <Crown className="h-3 w-3" />
-                            {user.country?.name}
+                            <span>{user.country?.name}</span>
+                            <Badge 
+                              variant={user.membershipTier === 'mycountry_premium' ? 'default' : 'outline'}
+                              className={user.membershipTier === 'mycountry_premium' ? 'bg-purple-600 text-white' : ''}
+                            >
+                              {user.membershipTier === 'mycountry_premium' ? 'Premium' : 'Basic'}
+                            </Badge>
                           </div>
                         </div>
                       </div>
-                      <AlertDialog>
-                        <AlertDialogTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 px-3">
-                          <Unlink className="h-4 w-4 mr-2" />
-                          Unlink
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Unlink User from Country</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to unlink <strong>{user.clerkUserId}</strong> from <strong>{user.country?.name}</strong>? 
-                              This action will remove their access to country-specific features.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogClose>Cancel</AlertDialogClose>
-                            <AlertDialogClose
-                              onClick={() => user.country && handleUnlinkUser(user.clerkUserId, user.country.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              disabled={unassignUserMutation.isPending}
-                            >
-                              {unassignUserMutation.isPending ? (
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              ) : (
-                                <Unlink className="h-4 w-4 mr-2" />
-                              )}
-                              Unlink
-                            </AlertDialogClose>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="h-4 w-4 text-purple-500" />
+                          <label className="text-sm font-medium cursor-pointer">
+                            Premium
+                          </label>
+                          <Switch
+                            checked={user.membershipTier === 'mycountry_premium'}
+                            onCheckedChange={() => handleTogglePremium(user.clerkUserId, user.membershipTier || 'basic')}
+                            disabled={updateMembershipTier.isPending}
+                          />
+                        </div>
+                        <AlertDialog>
+                          <AlertDialogTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 px-3">
+                            <Unlink className="h-4 w-4 mr-2" />
+                            Unlink
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Unlink User from Country</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to unlink <strong>{user.clerkUserId}</strong> from <strong>{user.country?.name}</strong>? 
+                                This action will remove their access to country-specific features.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogClose>Cancel</AlertDialogClose>
+                              <AlertDialogClose
+                                onClick={() => user.country && handleUnlinkUser(user.clerkUserId, user.country.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                disabled={unassignUserMutation.isPending}
+                              >
+                                {unassignUserMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                ) : (
+                                  <Unlink className="h-4 w-4 mr-2" />
+                                )}
+                                Unlink
+                              </AlertDialogClose>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </div>
                   ))
                 )}
@@ -473,18 +512,37 @@ export function UserManagement({ className }: UserManagementProps) {
                       key={user.id}
                       className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-1">
                         <User className="h-4 w-4 text-amber-600" />
-                        <div>
+                        <div className="flex-1">
                           <div className="font-medium">{user.clerkUserId}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Not linked to any country
+                          <div className="text-sm text-muted-foreground flex items-center gap-2">
+                            <span>Not linked to any country</span>
+                            <Badge 
+                              variant={user.membershipTier === 'mycountry_premium' ? 'default' : 'outline'}
+                              className={user.membershipTier === 'mycountry_premium' ? 'bg-purple-600 text-white' : ''}
+                            >
+                              {user.membershipTier === 'mycountry_premium' ? 'Premium' : 'Basic'}
+                            </Badge>
                           </div>
                         </div>
                       </div>
-                      <Badge variant="outline" className="text-amber-600 border-amber-600">
-                        Unlinked
-                      </Badge>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="h-4 w-4 text-purple-500" />
+                          <label className="text-sm font-medium cursor-pointer">
+                            Premium
+                          </label>
+                          <Switch
+                            checked={user.membershipTier === 'mycountry_premium'}
+                            onCheckedChange={() => handleTogglePremium(user.clerkUserId, user.membershipTier || 'basic')}
+                            disabled={updateMembershipTier.isPending}
+                          />
+                        </div>
+                        <Badge variant="outline" className="text-amber-600 border-amber-600">
+                          Unlinked
+                        </Badge>
+                      </div>
                     </div>
                   ))
                 )}
@@ -730,6 +788,7 @@ export function UserManagement({ className }: UserManagementProps) {
                   <TableHead>Role</TableHead>
                   <TableHead>Country</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Premium</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -761,6 +820,21 @@ export function UserManagement({ className }: UserManagementProps) {
                       ) : (
                         <Badge className="bg-red-100 text-red-800">Inactive</Badge>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={user.membershipTier === 'mycountry_premium'}
+                          onCheckedChange={() => handleTogglePremium(user.clerkUserId, user.membershipTier || 'basic')}
+                          disabled={updateMembershipTier.isPending}
+                        />
+                        <Badge 
+                          variant={user.membershipTier === 'mycountry_premium' ? 'default' : 'outline'}
+                          className={user.membershipTier === 'mycountry_premium' ? 'bg-purple-600 text-white' : ''}
+                        >
+                          {user.membershipTier === 'mycountry_premium' ? 'Premium' : 'Basic'}
+                        </Badge>
+                      </div>
                     </TableCell>
                     <TableCell>
                       {user.role && (

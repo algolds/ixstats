@@ -213,7 +213,9 @@ Database schema is out of sync
 
 **Solutions:**
 
-**For Development (SQLite):**
+**For Development (PostgreSQL):**
+> **Note**: IxStats migrated to PostgreSQL in October 2025. Legacy SQLite instructions archived.
+
 ```bash
 # Nuclear option: Reset database
 npm run db:reset
@@ -260,33 +262,41 @@ npx prisma migrate resolve --rolled-back "migration_name"
 
 ---
 
-### Problem: Database Locked (SQLite)
+### Problem: Database Connection Issues (PostgreSQL)
+
+> **Migration Note**: This section was updated for PostgreSQL (October 2025). Legacy SQLite lock issues no longer applicable.
 
 **Symptoms:**
 ```bash
-Error: SQLITE_BUSY: database is locked
-Error: database is locked
+Error: Can't reach database server
+Error: Connection timeout
+Error: Connection refused
 ```
 
-**Root Cause:** Multiple processes accessing SQLite database simultaneously.
+**Root Cause:** PostgreSQL server not running, wrong credentials, or network issues.
 
 **Solutions:**
 
 ```bash
-# 1. Close Prisma Studio
-kill $(lsof -ti:5555)
+# 1. Check PostgreSQL service status
+sudo systemctl status postgresql
 
-# 2. Stop development server
-# Press Ctrl+C in terminal running npm run dev
+# 2. Start PostgreSQL if stopped
+sudo systemctl start postgresql
 
-# 3. Check for other processes using database
-lsof prisma/dev.db
-# Kill any processes shown
+# 3. Verify port 5433 is listening
+sudo lsof -i :5433
 
-# 4. If database is corrupted, restore from backup
-cp prisma/backups/dev-backup-YYYYMMDD.db prisma/dev.db
+# 4. Test connection manually
+psql -h localhost -p 5433 -U ixstats -d ixstats
 
-# 5. Restart fresh
+# 5. Check DATABASE_URL in .env.local
+cat .env.local | grep DATABASE_URL
+
+# 6. Verify credentials match PostgreSQL configuration
+sudo cat /etc/postgresql/*/main/pg_hba.conf
+
+# 7. Restart fresh
 npm run dev
 ```
 
@@ -1923,7 +1933,7 @@ When asking for help, include:
 - OS: [e.g., macOS 14.0, Ubuntu 22.04, Windows 11]
 - Node.js: [e.g., v18.17.0]
 - npm: [e.g., 9.8.0]
-- Database: [SQLite/PostgreSQL version]
+- Database: [PostgreSQL version, e.g., PostgreSQL 15.4]
 
 ## Problem Description
 [Clear description of the issue]

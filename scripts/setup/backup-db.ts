@@ -15,73 +15,29 @@ const db = new PrismaClient();
 async function backupDatabase() {
   try {
     console.log("💾 Creating database backup...");
-    
-    // Determine database path
-    let dbPath = process.env.DATABASE_URL?.replace('file:', '') || './prisma/dev.db';
-    
-    // If path doesn't start with ./, make it relative to current directory
-    if (!dbPath.startsWith('./') && !dbPath.startsWith('/')) {
-      dbPath = './' + dbPath;
-    }
-    
-    // If the file doesn't exist, try the prisma directory
-    if (!existsSync(dbPath) && !dbPath.includes('prisma/')) {
-      const prismaPath = './prisma/' + dbPath.replace('./', '');
-      if (existsSync(prismaPath)) {
-        dbPath = prismaPath;
-      }
-    }
-    
-    // Ensure the path is absolute and exists
-    if (!existsSync(dbPath)) {
-      console.error(`❌ Database file not found: ${dbPath}`);
-      console.log("💡 Available database files:");
-      try {
-        const files = readdirSync('./prisma').filter((file: string) => file.endsWith('.db'));
-        files.forEach((file: string) => console.log(`  - ./prisma/${file}`));
-      } catch (e) {
-        console.log("  No database files found in ./prisma/");
-      }
+
+    // Validate DATABASE_URL is set
+    if (!process.env.DATABASE_URL) {
+      console.error("❌ DATABASE_URL environment variable is not set");
       process.exit(1);
     }
+
+    // PostgreSQL backup
+    console.log("⚠️  PostgreSQL backup not implemented yet");
+    console.log("💡 Use pg_dump for PostgreSQL backups:");
+    console.log("   pg_dump $DATABASE_URL > backup_$(date +%Y%m%d_%H%M%S).sql");
+    process.exit(1);
+
     const backupDir = './prisma/backups';
-    
+
     // Create backup directory if it doesn't exist
     if (!existsSync(backupDir)) {
       mkdirSync(backupDir, { recursive: true });
     }
-    
+
     // Generate timestamp
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const backupPath = join(backupDir, `backup_${timestamp}.db`);
-    
-    // Create backup using SQLite command
-    if (dbPath.endsWith('.db')) {
-      // SQLite database
-      execSync(`cp "${dbPath}" "${backupPath}"`, { stdio: 'inherit' });
-      console.log(`✅ SQLite backup created: ${backupPath}`);
-    } else {
-      // PostgreSQL or other database
-      console.log("⚠️  PostgreSQL backup not implemented yet");
-      console.log("💡 Use pg_dump for PostgreSQL backups");
-      process.exit(1);
-    }
-    
-    // Get backup size
-    const stats = statSync(backupPath);
-    const sizeMB = (stats.size / (1024 * 1024)).toFixed(2);
-    console.log(`📊 Backup size: ${sizeMB} MB`);
-    
-    // List recent backups
-    console.log("\n📋 Recent backups:");
-    const backups = readdirSync(backupDir)
-      .filter((file: string) => file.startsWith('backup_') && file.endsWith('.db'))
-      .sort()
-      .slice(-5);
-    
-    backups.forEach((backup: string) => {
-      console.log(`  - ${backup}`);
-    });
+    const backupPath = join(backupDir, `backup_${timestamp}.sql`);
     
   } catch (error) {
     console.error("❌ Database backup failed:", error);

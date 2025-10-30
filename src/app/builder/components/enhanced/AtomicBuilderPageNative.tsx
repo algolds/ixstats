@@ -279,8 +279,8 @@ export function AtomicBuilderPageNative({
               </GlassCardHeader>
               <GlassCardContent>
                 <AtomicComponentSelector
-                  selectedComponents={selectedComponents}
-                  onComponentChange={handleComponentChange}
+                  initialComponents={selectedComponents}
+                  onChange={handleComponentChange}
                 />
               </GlassCardContent>
             </GlassCard>

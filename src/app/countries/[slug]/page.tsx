@@ -237,6 +237,8 @@ export default function PublicCountryPage({ params }: PublicCountryPageProps) {
             countryId={country.id}
             countryName={country.name}
             isOwner={!!isOwnCountry}
+            profileMode={true}
+            countryOwnerClerkUserId={(country as any).ownerClerkUserId}
           />
         )}
 

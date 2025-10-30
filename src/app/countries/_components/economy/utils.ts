@@ -1,25 +1,33 @@
 import type { EconomyData, CoreEconomicIndicatorsData, LaborEmploymentData } from "~/types/economics";
+import {
+  formatCurrency as formatCurrencyUtil,
+  formatPopulation as formatPopulationUtil,
+  formatPercent,
+} from "~/lib/format-utils";
 
+/**
+ * @deprecated Use formatCurrency from ~/lib/format-utils instead
+ * Legacy wrapper for backward compatibility
+ */
 export function formatCurrency(amount: number | null | undefined, precision = 1): string {
-  if (amount === null || amount === undefined) return 'N/A';
-  const prefix = '$';
-  if (Math.abs(amount) >= 1e12) return `${prefix}${(amount / 1e12).toFixed(precision)}T`;
-  if (Math.abs(amount) >= 1e9) return `${prefix}${(amount / 1e9).toFixed(precision)}B`;
-  if (Math.abs(amount) >= 1e6) return `${prefix}${(amount / 1e6).toFixed(precision)}M`;
-  if (Math.abs(amount) >= 1e3) return `${prefix}${(amount / 1e3).toFixed(precision)}K`;
-  return `${prefix}${amount.toFixed(precision)}`;
+  return formatCurrencyUtil(amount ?? 0, 'USD', precision > 0);
 }
 
+/**
+ * @deprecated Use formatPopulation from ~/lib/format-utils instead
+ * Legacy wrapper for backward compatibility
+ */
 export function formatPopulation(population: number | null | undefined): string {
-  if (population === null || population === undefined) return 'N/A';
-  if (Math.abs(population) >= 1e6) return `${(population / 1e6).toFixed(1)}M`;
-  if (Math.abs(population) >= 1e3) return `${(population / 1e3).toFixed(1)}K`;
-  return population.toFixed(0);
+  return formatPopulationUtil(population);
 }
 
+/**
+ * @deprecated Use formatPercent from ~/lib/format-utils instead
+ * Legacy wrapper for backward compatibility
+ */
 export function formatPercentage(value: number | null | undefined, precision = 1): string {
   if (value === null || value === undefined) return 'N/A';
-  return `${value.toFixed(precision)}%`;
+  return formatPercent(value, precision);
 }
 
 export function getEconomicTier(gdpPerCapita: number): 'Developing' | 'Emerging' | 'Developed' | 'Advanced' {

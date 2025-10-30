@@ -14,7 +14,7 @@ import type {
   SectorConfiguration
 } from '~/types/economy-builder';
 import type { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
-import { ATOMIC_ECONOMIC_COMPONENTS } from '~/components/economy/atoms/AtomicEconomicComponents';
+import { ATOMIC_ECONOMIC_COMPONENTS } from '~/lib/atomic-economic-data';
 
 /**
  * Aggregated summary of all economic sectors

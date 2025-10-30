@@ -68,7 +68,8 @@ import {
 import type { EconomicInputs } from '../lib/economy-data-service';
 import type { EconomyBuilderState } from '~/types/economy-builder';
 import { EconomyBuilderModal } from '../components/enhanced/EconomyBuilderModal';
-import { EconomicComponentType, ATOMIC_ECONOMIC_COMPONENTS } from '~/components/economy/atoms/AtomicEconomicComponents';
+import { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
+import { ATOMIC_ECONOMIC_COMPONENTS } from '~/lib/atomic-economic-data';
 
 interface EconomySectionComponentProps extends ExtendedSectionProps {
   onToggleAdvanced?: () => void;

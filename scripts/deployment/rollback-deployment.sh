@@ -261,32 +261,40 @@ elif [ -n "$DATABASE_URL" ]; then
     if [ -n "$BACKUP_FILE" ] && [ -f "$BACKUP_FILE" ]; then
         log "Restoring database from: $BACKUP_FILE"
 
-        # For SQLite databases
-        if [[ "$DATABASE_URL" == file:* ]]; then
-            DB_PATH=$(echo "$DATABASE_URL" | sed 's/file://')
+        # PostgreSQL database restoration
+        if [[ "$DATABASE_URL" == postgres* ]] || [[ "$DATABASE_URL" == postgresql* ]]; then
+            log "PostgreSQL database detected - initiating restoration"
 
-            # Backup current database before restore
+            # Create backup of current state before restore
             CURRENT_DB_BACKUP="$BACKUP_DIR/before-rollback-$TIMESTAMP.backup"
-            if [ -f "$DB_PATH" ]; then
-                cp "$DB_PATH" "$CURRENT_DB_BACKUP" || warn "Failed to backup current database"
-                log "Current database backed up to: $CURRENT_DB_BACKUP"
+            log "Creating backup of current database state..."
+            npm run db:backup 2>/dev/null || warn "Failed to backup current database state"
+
+            # Restore from backup
+            log "Restoring database from backup file: $BACKUP_FILE"
+            warn "⚠️  Manual PostgreSQL restoration required:"
+            warn "   1. Review backup file: $BACKUP_FILE"
+            warn "   2. Use: npm run db:restore --backup=$BACKUP_FILE"
+            warn "   3. Or use: pg_restore -d ixstats $BACKUP_FILE"
+            warn "   4. Or manually restore from SQL dump if available"
+            warn ""
+            warn "Database rollback must be completed manually before proceeding."
+
+            # Attempt automated restore if db:restore script exists
+            if npm run db:restore --backup="$BACKUP_FILE" 2>/dev/null; then
+                success "✓ Database restored successfully via npm script"
+            else
+                warn "Automated restore not available - manual intervention required"
+                warn "Press Enter when database has been manually restored, or Ctrl+C to abort"
+                read -r
             fi
-
-            # Restore backup
-            cp "$BACKUP_FILE" "$DB_PATH" || error "Failed to restore database backup"
-            success "✓ Database restored successfully"
-
-        # For PostgreSQL databases
-        elif [[ "$DATABASE_URL" == postgres* ]]; then
-            warn "PostgreSQL database detected - manual restoration recommended"
-            warn "Backup file: $BACKUP_FILE"
-            warn "Use: npm run db:restore or pg_restore command"
         else
-            warn "Unknown database type - manual restoration required"
+            error "Production requires PostgreSQL database. Current DATABASE_URL format not recognized."
         fi
     else
         warn "No backup file found - database not restored"
         warn "If database migrations were run, you may need to manually restore"
+        warn "Check backup directory: $BACKUP_DIR"
     fi
 else
     warn "DATABASE_URL not set, skipping database restoration"

@@ -1,7 +1,7 @@
 // src/app/admin/_components/AdminSidebar.tsx
 // Admin panel navigation sidebar
 
-import { Shield, Settings, Monitor, Code, Gamepad2, Clock, Bot, Upload, BarChart3, Users, Bell, List, TrendingUp } from "lucide-react";
+import { Shield, Settings, Monitor, Code, Gamepad2, Clock, Bot, Upload, BarChart3, Users, Bell, List, TrendingUp, Flag, Rocket, Factory, Drama, UserCog } from "lucide-react";
 import { Users as UsersIcon } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -123,6 +123,64 @@ export function AdminSidebar({ selectedSection, onSectionChange }: AdminSidebarP
                   <span className="text-sm font-medium">{item.label}</span>
                 </button>
               ))}
+            </div>
+          </div>
+
+          {/* Reference Data */}
+          <div>
+            <h3 className="px-4 mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Reference Data
+            </h3>
+            <div className="space-y-1">
+              <a
+                href="/admin/diplomatic-options"
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 hover:bg-muted/30 text-muted-foreground hover:text-foreground"
+              >
+                <Flag className="h-5 w-5" />
+                <span className="text-sm font-medium">Diplomatic Options</span>
+              </a>
+              <a
+                href="/admin/diplomatic-scenarios"
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 hover:bg-muted/30 text-muted-foreground hover:text-foreground"
+              >
+                <Drama className="h-5 w-5" />
+                <span className="text-sm font-medium">Diplomatic Scenarios</span>
+              </a>
+              <a
+                href="/admin/diplomatic-scenarios/analytics"
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 hover:bg-muted/30 text-muted-foreground hover:text-foreground"
+              >
+                <TrendingUp className="h-5 w-5" />
+                <span className="text-sm font-medium">Scenario Analytics</span>
+              </a>
+              <a
+                href="/admin/military-equipment"
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 hover:bg-muted/30 text-muted-foreground hover:text-foreground"
+              >
+                <Rocket className="h-5 w-5" />
+                <span className="text-sm font-medium">Military Equipment</span>
+              </a>
+              <a
+                href="/admin/military-equipment/manufacturers"
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 hover:bg-muted/30 text-muted-foreground hover:text-foreground"
+              >
+                <Factory className="h-5 w-5" />
+                <span className="text-sm font-medium">Manufacturers</span>
+              </a>
+              <a
+                href="/admin/military-equipment/analytics"
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 hover:bg-muted/30 text-muted-foreground hover:text-foreground"
+              >
+                <TrendingUp className="h-5 w-5" />
+                <span className="text-sm font-medium">Equipment Analytics</span>
+              </a>
+              <a
+                href="/admin/npc-personalities"
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 hover:bg-muted/30 text-muted-foreground hover:text-foreground"
+              >
+                <UserCog className="h-5 w-5" />
+                <span className="text-sm font-medium">NPC Personalities 🎉</span>
+              </a>
             </div>
           </div>
 

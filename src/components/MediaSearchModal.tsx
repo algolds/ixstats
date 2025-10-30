@@ -4,14 +4,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '~/lib/utils';
-import { X, Search, Loader2, Check, Download } from 'lucide-react';
+import { X, Search, Loader2, Check, Download, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Input } from '~/components/ui/input';
 import { Button } from '~/components/ui/button';
 import * as SelectPrimitive from '@radix-ui/react-select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '~/components/ui/tabs';
 import { api } from '~/trpc/react';
 import { toast } from 'sonner';
-import { useInView } from 'react-intersection-observer';
 import { processImageSelection, isExternalImageUrl } from '~/lib/image-download-service';
 import type { BaseImageResult, WikiImageResult } from '~/types/media-search';
 
@@ -19,13 +18,15 @@ interface MediaSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
   onImageSelect: (imageUrl: string) => void;
+  onFileUpload?: (file: File) => Promise<void>;
 }
 
-export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearchModalProps) {
+export function MediaSearchModal({ isOpen, onClose, onImageSelect, onFileUpload }: MediaSearchModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'repository' | 'wiki-commons' | 'wiki'>('repository');
+  const [activeTab, setActiveTab] = useState<'repository' | 'wiki-commons' | 'wiki' | 'upload'>('repository');
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const [wikiCommonsSearchQuery, setWikiCommonsSearchQuery] = useState('');
   const [wikiSearchQuery, setWikiSearchQuery] = useState('');
@@ -52,10 +53,6 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
     return () => clearTimeout(timer);
   }, [wikiSearchQuery]);
 
-  const { ref: repoRef, inView: repoInView } = useInView();
-  const { ref: commonsRef, inView: commonsInView } = useInView();
-  const { ref: wikiRef, inView: wikiInView } = useInView();
-
   const [repoPage, setRepoPage] = useState(1);
   const [commonsPage, setCommonsPage] = useState(1);
 
@@ -72,9 +69,11 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
     }
   );
 
-  // Memoize fetch functions to prevent infinite re-renders
+  // Pagination functions
   const fetchNextRepoPage = useCallback(() => setRepoPage(prev => prev + 1), []);
+  const fetchPrevRepoPage = useCallback(() => setRepoPage(prev => Math.max(1, prev - 1)), []);
   const hasNextRepoPage = imagesData && imagesData.length >= 6; // Only load more if we got a full page
+  const hasPrevRepoPage = repoPage > 1;
 
   const {
     data: wikiCommonsImagesData,
@@ -90,7 +89,9 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
   );
 
   const fetchNextCommonsPage = useCallback(() => setCommonsPage(prev => prev + 1), []);
+  const fetchPrevCommonsPage = useCallback(() => setCommonsPage(prev => Math.max(1, prev - 1)), []);
   const hasNextCommonsPage = wikiCommonsImagesData && wikiCommonsImagesData.length >= 6; // Only load more if we got a full page
+  const hasPrevCommonsPage = commonsPage > 1;
 
   const [wikiCursor, setWikiCursor] = useState<string | undefined>(undefined);
 
@@ -100,50 +101,51 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
     isFetching: isFetchingNextWikiPage,
     refetch: refetchWiki,
   } = api.thinkpages.searchWiki.useQuery(
-    { query: debouncedWikiQuery, wiki: wikiSource, limit: 30, cursor: wikiCursor },
     {
-      enabled: activeTab === 'wiki' && !!debouncedWikiQuery,
+      query: debouncedWikiQuery && debouncedWikiQuery.trim().length > 0 ? debouncedWikiQuery : 'placeholder_prevent_empty_query',
+      wiki: wikiSource,
+      limit: 30,
+      cursor: wikiCursor
+    },
+    {
+      enabled: activeTab === 'wiki' && !!debouncedWikiQuery && debouncedWikiQuery.trim().length > 0,
       staleTime: 5 * 60 * 1000, // 5 minutes cache
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
+      retry: false, // Don't retry on error
     }
   );
 
+  const [wikiCursorHistory, setWikiCursorHistory] = useState<string[]>([]);
+
   const fetchNextWikiPage = useCallback(() => {
     if (wikiData?.nextCursor) {
+      setWikiCursorHistory(prev => [...prev, wikiCursor || '']);
       setWikiCursor(wikiData.nextCursor);
     }
-  }, [wikiData?.nextCursor]);
+  }, [wikiData?.nextCursor, wikiCursor]);
+
+  const fetchPrevWikiPage = useCallback(() => {
+    if (wikiCursorHistory.length > 0) {
+      const prevCursor = wikiCursorHistory[wikiCursorHistory.length - 1];
+      setWikiCursor(prevCursor || undefined);
+      setWikiCursorHistory(prev => prev.slice(0, -1));
+    }
+  }, [wikiCursorHistory]);
+
   const hasNextWikiPage = wikiData?.hasMore ?? false;
+  const hasPrevWikiPage = wikiCursorHistory.length > 0;
 
   const wikiImages = wikiData?.images || [];
 
-  // Throttled infinite scroll to prevent excessive API calls
-  useEffect(() => {
-    if (repoInView && hasNextRepoPage && !isFetchingNextRepoPage) {
-      const timer = setTimeout(() => {
-        fetchNextRepoPage();
-      }, 300); // 300ms throttle
-      return () => clearTimeout(timer);
-    }
-  }, [repoInView, hasNextRepoPage, isFetchingNextRepoPage, fetchNextRepoPage]);
+  // Remove infinite scroll - using manual pagination instead to prevent loops
 
+  // Reset wiki cursor and search when source changes
   useEffect(() => {
-    if (commonsInView && hasNextCommonsPage && !isFetchingNextCommonsPage) {
-      const timer = setTimeout(() => {
-        fetchNextCommonsPage();
-      }, 300); // 300ms throttle
-      return () => clearTimeout(timer);
-    }
-  }, [commonsInView, hasNextCommonsPage, isFetchingNextCommonsPage, fetchNextCommonsPage]);
-
-  useEffect(() => {
-    if (wikiInView && hasNextWikiPage && !isFetchingNextWikiPage) {
-      const timer = setTimeout(() => {
-        fetchNextWikiPage();
-      }, 300); // 300ms throttle
-      return () => clearTimeout(timer);
-    }
-  }, [wikiInView, hasNextWikiPage, isFetchingNextWikiPage, fetchNextWikiPage]);
+    setWikiCursor(undefined);
+    setWikiCursorHistory([]);
+    setWikiSearchQuery(''); // Also clear search to prevent empty queries
+    setDebouncedWikiQuery('');
+  }, [wikiSource]);
 
   useEffect(() => {
     if (isOpen) {
@@ -156,13 +158,17 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
       setDebouncedRepoQuery('');
       setDebouncedCommonsQuery('');
       setDebouncedWikiQuery('');
+      setRepoPage(1);
+      setCommonsPage(1);
+      setWikiCursor(undefined);
+      setWikiCursorHistory([]);
       // Prevent body scroll when modal is open
       document.body.style.overflow = 'hidden';
     } else {
       // Restore body scroll when modal is closed
       document.body.style.overflow = '';
     }
-    
+
     // Cleanup on unmount
     return () => {
       document.body.style.overflow = '';
@@ -243,11 +249,12 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
               </button>
             </div>
 
-            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'repository' | 'wiki-commons' | 'wiki')} className="flex flex-col flex-1 min-h-0">
-              <TabsList className="grid w-full grid-cols-3 rounded-none border-b border-white/10 bg-transparent p-0">
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'repository' | 'wiki-commons' | 'wiki' | 'upload')} className="flex flex-col flex-1 min-h-0">
+              <TabsList className="grid w-full grid-cols-4 rounded-none border-b border-white/10 bg-transparent p-0">
                 <TabsTrigger value="repository" className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:shadow-none data-[state=active]:text-white">Repository</TabsTrigger>
                 <TabsTrigger value="wiki-commons" className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:shadow-none data-[state=active]:text-white">Wiki Commons</TabsTrigger>
                 <TabsTrigger value="wiki" className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:shadow-none data-[state=active]:text-white">Wiki</TabsTrigger>
+                <TabsTrigger value="upload" className="rounded-none data-[state=active]:bg-white/10 data-[state=active]:shadow-none data-[state=active]:text-white">Upload</TabsTrigger>
               </TabsList>
 
               <TabsContent value="repository" className="flex-1 flex flex-col data-[state=inactive]:hidden min-h-0">
@@ -296,9 +303,6 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                           )}
                         </div>
                       ))}
-                      <div ref={repoRef} className="col-span-2 md:col-span-3 flex justify-center items-center p-4">
-                        {isFetchingNextRepoPage && <Loader2 className="animate-spin h-8 w-8 text-blue-400" />}
-                      </div>
                     </>
                   ) : (
                     <div className="col-span-2 md:col-span-3 text-center text-muted-foreground p-8">
@@ -306,6 +310,33 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                     </div>
                   )}
                   </div>
+
+                  {/* Pagination Controls */}
+                  {images.length > 0 && (
+                    <div className="flex items-center justify-center gap-2 p-4 border-t border-white/10">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchPrevRepoPage}
+                        disabled={!hasPrevRepoPage || isFetchingNextRepoPage}
+                      >
+                        <ChevronLeft className="h-4 w-4 mr-1" />
+                        Previous
+                      </Button>
+                      <span className="text-sm text-muted-foreground px-3">
+                        Page {repoPage}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchNextRepoPage}
+                        disabled={!hasNextRepoPage || isFetchingNextRepoPage}
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
 
@@ -355,9 +386,6 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                           )}
                         </div>
                       ))}
-                      <div ref={commonsRef} className="col-span-2 md:col-span-3 flex justify-center items-center p-4">
-                        {isFetchingNextCommonsPage && <Loader2 className="animate-spin h-8 w-8 text-blue-400" />}
-                      </div>
                     </>
                   ) : (
                     <div className="col-span-2 md:col-span-3 text-center text-muted-foreground p-8">
@@ -365,6 +393,33 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                     </div>
                   )}
                   </div>
+
+                  {/* Pagination Controls */}
+                  {wikiCommonsImages.length > 0 && (
+                    <div className="flex items-center justify-center gap-2 p-4 border-t border-white/10">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchPrevCommonsPage}
+                        disabled={!hasPrevCommonsPage || isFetchingNextCommonsPage}
+                      >
+                        <ChevronLeft className="h-4 w-4 mr-1" />
+                        Previous
+                      </Button>
+                      <span className="text-sm text-muted-foreground px-3">
+                        Page {commonsPage}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchNextCommonsPage}
+                        disabled={!hasNextCommonsPage || isFetchingNextCommonsPage}
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </TabsContent>
 
@@ -461,19 +516,6 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                           )}
                         </div>
                       ))}
-                      
-                      {/* Infinite Scroll Trigger */}
-                      {hasNextWikiPage && (
-                        <div ref={wikiRef} className="col-span-2 md:col-span-3 flex justify-center py-4">
-                          {isFetchingNextWikiPage ? (
-                            <Loader2 className="animate-spin h-6 w-6 text-blue-400" />
-                          ) : (
-                            <Button variant="outline" size="sm" onClick={() => fetchNextWikiPage()}>
-                              Load More Images
-                            </Button>
-                          )}
-                        </div>
-                      )}
                     </>
                   ) : debouncedWikiQuery ? (
                     <div className="col-span-2 md:col-span-3 text-center text-muted-foreground p-8">
@@ -485,32 +527,153 @@ export function MediaSearchModal({ isOpen, onClose, onImageSelect }: MediaSearch
                     </div>
                   )}
                   </div>
+
+                  {/* Pagination Controls */}
+                  {wikiImages.length > 0 && (
+                    <div className="flex items-center justify-center gap-2 p-4 border-t border-white/10">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchPrevWikiPage}
+                        disabled={!hasPrevWikiPage || isFetchingNextWikiPage}
+                      >
+                        <ChevronLeft className="h-4 w-4 mr-1" />
+                        Previous
+                      </Button>
+                      <span className="text-sm text-muted-foreground px-3">
+                        {hasPrevWikiPage ? `Page ${wikiCursorHistory.length + 1}` : 'Page 1'}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchNextWikiPage}
+                        disabled={!hasNextWikiPage || isFetchingNextWikiPage}
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              {/* Upload Tab */}
+              <TabsContent value="upload" className="flex-1 flex flex-col data-[state=inactive]:hidden min-h-0">
+                <div className="flex-1 p-8 overflow-y-auto max-h-[60vh]">
+                  <div className="max-w-md mx-auto">
+                    <div className="border-2 border-dashed border-white/20 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
+                      <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <h3 className="text-lg font-semibold mb-2">Upload an Image</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        PNG, JPG, GIF, WEBP, or SVG (max 5MB)
+                      </p>
+                      <input
+                        type="file"
+                        id="file-upload"
+                        accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/svg+xml"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+
+                          // Validate file size
+                          if (file.size > 5 * 1024 * 1024) {
+                            toast.error('File size exceeds 5MB limit');
+                            return;
+                          }
+
+                          // Validate file type
+                          const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp', 'image/svg+xml'];
+                          if (!allowedTypes.includes(file.type)) {
+                            toast.error('Invalid file type. Please upload PNG, JPG, GIF, WEBP, or SVG');
+                            return;
+                          }
+
+                          setIsUploading(true);
+                          try {
+                            const formData = new FormData();
+                            formData.append('file', file);
+
+                            const response = await fetch('/api/upload/image', {
+                              method: 'POST',
+                              body: formData,
+                            });
+
+                            const result = await response.json();
+
+                            if (result.success) {
+                              onImageSelect(result.dataUrl);
+                              onClose();
+                              toast.success('Image uploaded successfully');
+                            } else {
+                              toast.error(result.error || 'Failed to upload image');
+                            }
+                          } catch (error) {
+                            console.error('Upload error:', error);
+                            toast.error('Failed to upload image');
+                          } finally {
+                            setIsUploading(false);
+                            // Reset file input
+                            e.target.value = '';
+                          }
+                        }}
+                      />
+                      <Button
+                        onClick={() => document.getElementById('file-upload')?.click()}
+                        disabled={isUploading}
+                        className="mt-4"
+                      >
+                        {isUploading ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            Choose File
+                          </>
+                        )}
+                      </Button>
+                    </div>
+
+                    <div className="mt-6 space-y-2 text-sm text-muted-foreground">
+                      <p className="font-medium">File Requirements:</p>
+                      <ul className="list-disc list-inside space-y-1 ml-2">
+                        <li>Maximum file size: 5MB</li>
+                        <li>Supported formats: PNG, JPG, GIF, WEBP, SVG</li>
+                        <li>Images will be embedded directly in your post</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               </TabsContent>
             </Tabs>
 
-            {/* Always visible Select Image button */}
-            <div className="p-4 border-t border-white/10 flex justify-end items-center gap-3">
-              {isDownloading && (
-                <div className="flex items-center gap-2 text-sm text-blue-400">
-                  <Download className="h-4 w-4 animate-bounce" />
-                  <span>Downloading image...</span>
-                </div>
-              )}
-              <Button 
-                onClick={handleSelectImage} 
-                disabled={!selectedImage || isDownloading}
-              >
-                {isDownloading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Downloading...
-                  </>
-                ) : (
-                  'Select Image'
+            {/* Select Image button - hidden on upload tab */}
+            {activeTab !== 'upload' && (
+              <div className="p-4 border-t border-white/10 flex justify-end items-center gap-3">
+                {isDownloading && (
+                  <div className="flex items-center gap-2 text-sm text-blue-400">
+                    <Download className="h-4 w-4 animate-bounce" />
+                    <span>Downloading image...</span>
+                  </div>
                 )}
-              </Button>
-            </div>
+                <Button
+                  onClick={handleSelectImage}
+                  disabled={!selectedImage || isDownloading}
+                >
+                  {isDownloading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Downloading...
+                    </>
+                  ) : (
+                    'Select Image'
+                  )}
+                </Button>
+              </div>
+            )}
           </motion.div>
         </div>
       )}

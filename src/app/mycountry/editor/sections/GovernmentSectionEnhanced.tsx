@@ -66,7 +66,7 @@ export function GovernmentSectionEnhanced({
   // Initialize selected components from database
   useEffect(() => {
     if (existingComponents && existingComponents.length > 0) {
-      const componentTypes = existingComponents.map(c => c.componentType);
+      const componentTypes = existingComponents.map((c: any) => c.componentType);
       setSelectedComponents(componentTypes);
     }
   }, [existingComponents]);
@@ -118,8 +118,8 @@ export function GovernmentSectionEnhanced({
 
       // Find components to remove (in existing but not in selected)
       const componentsToRemove = (existingComponents || [])
-        .filter(c => !selectedComponentTypes.has(c.componentType))
-        .map(c => c.id);
+        .filter((c: any) => !selectedComponentTypes.has(c.componentType))
+        .map((c: any) => c.id);
 
       // Add new components
       for (const componentType of componentsToAdd) {
@@ -289,8 +289,8 @@ export function GovernmentSectionEnhanced({
                 </div>
               ) : (
                 <AtomicComponentSelector
-                  selectedComponents={selectedComponents}
-                  onComponentChange={handleComponentChange}
+                  initialComponents={selectedComponents}
+                  onChange={handleComponentChange}
                   maxComponents={10}
                   isReadOnly={isLocked('governmentComponents')}
                 />
@@ -423,7 +423,7 @@ export function GovernmentSectionEnhanced({
                 <>
                   <div className="pt-4 border-t">
                     <p className="text-sm font-medium mb-2">Total Costs</p>
-                    <p className="text-xl">${effectivenessData.totalCost.toLocaleString()}</p>
+                    <p className="text-xl">${effectivenessData.totalCost?.toLocaleString() ?? '0'}</p>
                   </div>
 
                   {effectivenessData.recommendations.length > 0 && (
@@ -452,7 +452,7 @@ export function GovernmentSectionEnhanced({
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {Object.entries(effectivenessData.categoryBreakdown).map(([category, data]) => (
+                  {Object.entries(effectivenessData.categoryBreakdown).map(([category, data]: [string, any]) => (
                     <div key={category} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-900/50">
                       <div>
                         <p className="text-sm font-medium">{category}</p>

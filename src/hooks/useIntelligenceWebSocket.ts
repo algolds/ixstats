@@ -160,7 +160,7 @@ export function useIntelligenceWebSocket(
 
     try {
       if (clientRef.current) {
-        await clientRef.current.reconnect(user.id, options.countryId);
+        await clientRef.current.reconnect(user.id, optionsRef.current.countryId);
       } else {
         await connect();
       }
@@ -170,7 +170,7 @@ export function useIntelligenceWebSocket(
       setConnecting(false);
       throw err;
     }
-  }, [user?.id, isLoaded, options.countryId, connect]);
+  }, [user?.id, isLoaded, connect]);
 
   /**
    * Subscribe to country-specific intelligence

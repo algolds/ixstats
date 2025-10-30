@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/components/ui/tooltip';
 import type { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
-import { ATOMIC_ECONOMIC_COMPONENTS } from '~/components/economy/atoms/AtomicEconomicComponents';
+import { ATOMIC_ECONOMIC_COMPONENTS } from '~/lib/atomic-economic-data';
 import type { EconomicHealthMetrics } from '~/types/economy-builder';
 
 interface BuilderIntegrationSidebarProps {

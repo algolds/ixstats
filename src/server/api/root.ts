@@ -18,6 +18,7 @@ import { diplomaticIntelligenceRouter } from "./routers/diplomatic-intelligence"
 import { diplomaticRouter } from "./routers/diplomatic";
 import { thinkpagesRouter } from "./routers/thinkpages";
 import { archetypesRouter } from "./routers/archetypes";
+import { economicArchetypesRouter } from "./routers/economicArchetypes";
 import { activitiesRouter } from "./routers/activities";
 import { enhancedEconomicsRouter } from "./routers/enhanced-economics";
 import { rolesRouter } from "./routers/roles";
@@ -39,6 +40,14 @@ import { customTypesRouter } from "./routers/customTypes";
 import { economicsRouter } from "./routers/economics";
 import { unifiedIntelligenceRouter } from "./routers/unified-intelligence";
 import { nationalIdentityRouter } from "./routers/nationalIdentity";
+import { cacheRouter } from "./routers/cache";
+import { governmentComponentsRouter } from "./routers/governmentComponents";
+import { economicComponentsRouter } from "./routers/economicComponents";
+import { militaryEquipmentRouter } from "./routers/militaryEquipment";
+import { smallArmsEquipmentRouter } from "./routers/smallArmsEquipment";
+import { diplomaticScenariosRouter } from "./routers/diplomaticScenarios";
+import { npcPersonalitiesRouter } from "./routers/npcPersonalities";
+import { geoRouter } from "./routers/geo";
 
 /**
  * This is the primary router for your server.
@@ -65,6 +74,7 @@ export const appRouter = createTRPCRouter({
   diplomatic: diplomaticRouter, // Diplomatic relations management
   thinkpages: thinkpagesRouter, // Thinkpages social platform
   archetypes: archetypesRouter, // Enhanced archetype system for country filtering
+  economicArchetypes: economicArchetypesRouter, // Economic archetype system for builder (Phase 3 migration)
   activities: activitiesRouter, // Live activity feed system
   enhancedEconomics: enhancedEconomicsRouter, // Enhanced economic analysis system
   government: governmentRouter, // Government structure and budget management system
@@ -84,6 +94,14 @@ export const appRouter = createTRPCRouter({
   customTypes: customTypesRouter, // Custom government types and field autocomplete system
   economics: economicsRouter, // Economy builder and economic data management
   nationalIdentity: nationalIdentityRouter, // National identity CRUD and autosave
+  cache: cacheRouter, // External API cache management (MediaWiki, Unsplash, flags, etc.)
+  governmentComponents: governmentComponentsRouter, // Government component library and synergy system (Phase 4)
+  economicComponents: economicComponentsRouter, // Economic component library system (Phase 5)
+  militaryEquipment: militaryEquipmentRouter, // Military equipment catalog and manufacturer system (Phase 6)
+  smallArmsEquipment: smallArmsEquipmentRouter, // Small arms equipment catalog (Phase 9 - October 2025)
+  diplomaticScenarios: diplomaticScenariosRouter, // Diplomatic scenario generation and choice tracking (Phase 7B)
+  npcPersonalities: npcPersonalitiesRouter, // NPC personality system for behavioral prediction (Phase 8 - FINAL PHASE)
+  geo: geoRouter, // Geographic router for country border management with PostGIS integration
   system: adminRouter, // Alias for global stats
 });
 

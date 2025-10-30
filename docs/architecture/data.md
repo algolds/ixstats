@@ -10,8 +10,9 @@ IxStats stores structured gameplay data using Prisma 6.12. The schema models cou
 - Enum duplication (e.g., `Priority`, `Category`) retains legacy casing for compatibility across services
 
 ## Database Targets
-- **Development** – SQLite (`file:./prisma/dev.db`) for fast local iteration
-- **Production** – SQLite (`file:./prisma/prod.db`) by default; swap to PostgreSQL by updating `DATABASE_URL`
+- **Development** – PostgreSQL (`localhost:5433/ixstats`) for full feature parity with production
+- **Production** – PostgreSQL with PostGIS extension for geographic data
+- **Migration Note (October 2025)** – Migrated from SQLite to PostgreSQL for better performance and PostGIS support
 - Migrations applied via `prisma migrate deploy` or `npm run db:migrate`
 
 ## Data Lifecycle

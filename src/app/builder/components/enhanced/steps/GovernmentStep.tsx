@@ -183,8 +183,8 @@ export function GovernmentStep({
                 <AtomicComponentsHelpDialog />
               </div>
               <AtomicComponentSelector
-                selectedComponents={governmentComponents}
-                onComponentChange={onGovernmentComponentsChange}
+                initialComponents={governmentComponents}
+                onChange={onGovernmentComponentsChange}
                 maxComponents={15}
                 isReadOnly={false}
               />

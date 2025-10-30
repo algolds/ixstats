@@ -15,7 +15,7 @@ module.exports = {
         BASE_PATH: '/projects/ixstats',
         NEXT_PUBLIC_BASE_PATH: '/projects/ixstats',
         PORT: '3550',
-        DATABASE_URL: 'file:./prisma/prod.db',
+        DATABASE_URL: 'postgresql://postgres:postgres@localhost:5433/ixstats',
       },
       error_file: '/ixwiki/private/logs/ixstats-error.log',
       out_file: '/ixwiki/private/logs/ixstats-out.log',

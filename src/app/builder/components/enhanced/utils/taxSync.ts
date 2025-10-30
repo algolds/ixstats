@@ -1,4 +1,4 @@
-import type { TaxBuilderState } from "~/components/tax-system/TaxBuilder";
+import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 
 type TaxSyncPayload = Record<string, string | number | boolean | null>;
 

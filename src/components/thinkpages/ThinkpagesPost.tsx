@@ -92,7 +92,7 @@ const REACTION_ICONS: { [key: string]: React.ElementType } = {
   thumbsdown: ThumbsDown
 };
 
-export function ThinkpagesPost({
+const ThinkpagesPostComponent = ({
   post,
   currentUserAccountId = '',
   accounts = [],
@@ -109,7 +109,7 @@ export function ThinkpagesPost({
   onAccountClick,
   compact = false,
   showThread = false
-}: ThinkpagesPostProps) {
+}: ThinkpagesPostProps) => {
   const [showReplies, setShowReplies] = useState(false);
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [showReplyComposer, setShowReplyComposer] = useState(false);
@@ -401,6 +401,40 @@ export function ThinkpagesPost({
               <div dangerouslySetInnerHTML={{ __html: formatContentEnhanced(post.content) }} />
             )}
           </div>
+
+          {/* Media Attachments */}
+          {post.mediaAttachments && post.mediaAttachments.length > 0 && (
+            <div className={cn(
+              "mt-3 rounded-lg overflow-hidden",
+              post.mediaAttachments.length === 1 && "max-w-md",
+              post.mediaAttachments.length === 2 && "grid grid-cols-2 gap-1",
+              post.mediaAttachments.length === 3 && "grid grid-cols-2 gap-1",
+              post.mediaAttachments.length === 4 && "grid grid-cols-2 gap-1"
+            )}>
+              {post.mediaAttachments.map((media: any, index: number) => (
+                <div
+                  key={media.id}
+                  className={cn(
+                    "relative bg-muted rounded-lg overflow-hidden",
+                    post.mediaAttachments.length === 1 && "aspect-video",
+                    post.mediaAttachments.length === 2 && "aspect-square",
+                    post.mediaAttachments.length === 3 && index === 0 ? "col-span-2 aspect-video" : "aspect-square",
+                    post.mediaAttachments.length === 4 && "aspect-square"
+                  )}
+                >
+                  <img
+                    src={media.url}
+                    alt={media.filename || `Image ${index + 1}`}
+                    className="w-full h-full object-cover hover:opacity-90 transition-opacity cursor-pointer"
+                    onClick={() => {
+                      // Open image in new tab
+                      window.open(media.url, '_blank');
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
           {post.hashtags && post.hashtags.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-3">
@@ -815,4 +849,18 @@ export function ThinkpagesPost({
       </div>
     </motion.div>
   );
-}
+};
+
+// Memoize the component for better performance in virtualized lists
+export const ThinkpagesPost = React.memo(ThinkpagesPostComponent, (prevProps, nextProps) => {
+  // Custom comparison function to optimize re-renders
+  return (
+    prevProps.post.id === nextProps.post.id &&
+    prevProps.currentUserAccountId === nextProps.currentUserAccountId &&
+    prevProps.post.updatedAt === nextProps.post.updatedAt &&
+    JSON.stringify(prevProps.post.reactionCounts) === JSON.stringify(nextProps.post.reactionCounts) &&
+    prevProps.post._count?.replies === nextProps.post._count?.replies
+  );
+});
+
+ThinkpagesPost.displayName = 'ThinkpagesPost';

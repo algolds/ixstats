@@ -1,6 +1,6 @@
 import type { GovernmentBuilderState } from '~/types/government';
 import type { SuggestionItem } from '~/components/builders/SuggestionsPanel';
-import type { TaxBuilderState } from '~/components/tax-system/TaxBuilder';
+import type { TaxBuilderState } from '~/hooks/useTaxBuilderState';
 
 export function computeGovernmentSuggestions(state: GovernmentBuilderState): SuggestionItem[] {
   const suggestions: SuggestionItem[] = [];

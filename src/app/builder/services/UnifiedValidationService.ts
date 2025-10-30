@@ -5,7 +5,7 @@
  * across economy, government, and tax systems.
  */
 
-import { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
+import { EconomicComponentType } from '~/lib/atomic-economic-data';
 import { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
 import type { TaxSystem } from '~/types/tax-system';
 import type { EconomyBuilderState } from '~/types/economy-builder';

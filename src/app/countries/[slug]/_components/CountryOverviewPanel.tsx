@@ -4,11 +4,15 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
 import { VitalityRings } from "~/components/mycountry/primitives/VitalityRings";
-import { BookOpen, ExternalLink, Building, Crown, Users, MapPin, Heart, Globe, TrendingUp, Activity } from "lucide-react";
+import { BookOpen, ExternalLink, Building, Crown, Users, MapPin, Heart, Globe, TrendingUp, Activity, Trophy, MessageSquare, ArrowRight, Clock } from "lucide-react";
 import type { CountryInfobox } from "~/lib/mediawiki-service";
 import { sanitizeWikiContent } from "~/lib/sanitize-html";
 import { safeFormatCurrency } from "~/lib/format-utils";
+import { api } from "~/trpc/react";
+import { formatDistanceToNow } from "date-fns";
+import { CountryActivityModal } from "./CountryActivityModal";
 
 interface CountryOverviewPanelProps {
   country: {
@@ -61,10 +65,19 @@ export function CountryOverviewPanel({
   onTabChange,
 }: CountryOverviewPanelProps) {
   const [showFullWikiIntro, setShowFullWikiIntro] = useState(false);
+  const [showActivityModal, setShowActivityModal] = useState(false);
+
+  // Fetch recent activity for this country
+  const { data: activityData, isLoading: activityLoading } = api.activities.getCountryActivity.useQuery({
+    countryId: country.id,
+    limit: 5,
+    timeRange: '7d',
+  });
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Wiki Overview Section */}
@@ -192,9 +205,7 @@ export function CountryOverviewPanel({
                 <Building className="h-5 w-5" />
                 Government & National Identity
               </CardTitle>
-              <CardDescription>
-                Live government structure (builder) and identity from the database
-              </CardDescription>
+             
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -341,36 +352,148 @@ export function CountryOverviewPanel({
             </CardContent>
           </Card>
 
-          {/* Recent Activity Feed */}
+          {/* Recent Activity Feed - Live Wired */}
           <Card className="backdrop-blur-sm bg-card/50">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                Recent Activity
-              </CardTitle>
-              <CardDescription>Latest developments and updates</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3 pb-3 border-b border-border/50">
-                  <div className="w-2 h-2 rounded-full bg-blue-400 mt-2"></div>
-                  <div className="flex-1">
-                    <p className="text-sm">Economic data updated</p>
-                    <p className="text-xs text-muted-foreground">
-                      {country.lastCalculated && new Date(country.lastCalculated).toLocaleDateString()}
-                    </p>
-                  </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Recent Activity
+                  </CardTitle>
+                  <CardDescription>Latest developments and milestones</CardDescription>
                 </div>
-                {wikiInfobox && (
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 rounded-full bg-green-400 mt-2"></div>
-                    <div className="flex-1">
-                      <p className="text-sm">Wiki profile connected</p>
-                      <p className="text-xs text-muted-foreground">Live data from IxWiki</p>
-                    </div>
-                  </div>
+                {activityData && activityData.activities.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowActivityModal(true)}
+                    className="text-xs"
+                  >
+                    View All
+                    <ArrowRight className="h-3 w-3 ml-1" />
+                  </Button>
                 )}
               </div>
+            </CardHeader>
+            <CardContent>
+              {activityLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="animate-pulse flex items-start gap-3">
+                      <div className="w-2 h-2 rounded-full bg-muted mt-2"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-muted rounded w-3/4"></div>
+                        <div className="h-3 bg-muted rounded w-1/2"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : activityData && activityData.activities.length > 0 ? (
+                <div className="space-y-3">
+                  {activityData.activities.slice(0, 5).map((activity, idx) => {
+                    const getActivityIcon = () => {
+                      switch (activity.type) {
+                        case 'achievement':
+                          return <Trophy className="h-4 w-4 text-yellow-500" />;
+                        case 'economic':
+                          return <TrendingUp className="h-4 w-4 text-blue-500" />;
+                        case 'diplomatic':
+                          return <Users className="h-4 w-4 text-purple-500" />;
+                        case 'social':
+                          return <MessageSquare className="h-4 w-4 text-green-500" />;
+                        default:
+                          return <Activity className="h-4 w-4 text-muted-foreground" />;
+                      }
+                    };
+
+                    const getActivityColor = () => {
+                      switch (activity.type) {
+                        case 'achievement':
+                          return 'bg-yellow-400';
+                        case 'economic':
+                          return 'bg-blue-400';
+                        case 'diplomatic':
+                          return 'bg-purple-400';
+                        case 'social':
+                          return 'bg-green-400';
+                        default:
+                          return 'bg-muted-foreground';
+                      }
+                    };
+
+                    return (
+                      <div
+                        key={activity.id}
+                        className={`flex items-start gap-3 ${
+                          idx < activityData.activities.length - 1 ? 'pb-3 border-b border-border/50' : ''
+                        }`}
+                      >
+                        <div className={`w-2 h-2 rounded-full ${getActivityColor()} mt-2 flex-shrink-0`}></div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              {getActivityIcon()}
+                              <p className="text-sm font-medium truncate">{activity.title}</p>
+                            </div>
+                            {activity.source === 'thinkpages' && (
+                              <Badge variant="outline" className="text-xs flex-shrink-0">
+                                ThinkPages
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                            {activity.description}
+                          </p>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
+                            </div>
+                            {activity.engagement && (
+                              <>
+                                {activity.engagement.likes > 0 && (
+                                  <span className="flex items-center gap-1">
+                                    <Heart className="h-3 w-3" />
+                                    {activity.engagement.likes}
+                                  </span>
+                                )}
+                                {activity.engagement.comments > 0 && (
+                                  <span className="flex items-center gap-1">
+                                    <MessageSquare className="h-3 w-3" />
+                                    {activity.engagement.comments}
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3 pb-3 border-b border-border/50">
+                    <div className="w-2 h-2 rounded-full bg-blue-400 mt-2"></div>
+                    <div className="flex-1">
+                      <p className="text-sm">Economic data updated</p>
+                      <p className="text-xs text-muted-foreground">
+                        {country.lastCalculated && new Date(country.lastCalculated).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  {wikiInfobox && (
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 rounded-full bg-green-400 mt-2"></div>
+                      <div className="flex-1">
+                        <p className="text-sm">Wiki profile connected</p>
+                        <p className="text-xs text-muted-foreground">Live data from IxWiki</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -430,5 +553,14 @@ export function CountryOverviewPanel({
         </div>
       </div>
     </div>
+
+      {/* Activity Modal */}
+      <CountryActivityModal
+        isOpen={showActivityModal}
+        onClose={() => setShowActivityModal(false)}
+        countryId={country.id}
+        countryName={country.name}
+      />
+    </>
   );
 }

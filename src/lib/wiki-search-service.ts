@@ -46,12 +46,12 @@ function getWikiConfigs(): Record<string, WikiConfig> {
   return {
     ixwiki: {
       baseUrl: `${baseUrl}/api/ixwiki-proxy`,
-      apiEndpoint: "/wiki/api.php",
+      apiEndpoint: "/api.php",
       searchNamespace: [0, 6], // Main and Media namespaces
     },
     iiwiki: {
       baseUrl: `${baseUrl}/api/iiwiki-proxy`,
-      apiEndpoint: "/wiki/api.php",
+      apiEndpoint: "/api.php",
       searchNamespace: [0, 6], // Main and Media namespaces
     },
     althistory: {

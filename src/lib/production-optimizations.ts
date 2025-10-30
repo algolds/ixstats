@@ -206,24 +206,9 @@ export class DatabaseOptimizer {
    */
   static async optimizeConnection(): Promise<void> {
     try {
-      // These optimizations are SQLite-specific
-      if (process.env.DATABASE_URL?.includes('sqlite')) {
-        const { db } = await import('~/server/db');
-        
-        // Enable WAL mode for better concurrency
-        await db.$executeRaw`PRAGMA journal_mode = WAL`;
-        
-        // Optimize for better performance
-        await db.$executeRaw`PRAGMA synchronous = NORMAL`;
-        await db.$executeRaw`PRAGMA cache_size = 10000`;
-        await db.$executeRaw`PRAGMA temp_store = MEMORY`;
-        await db.$executeRaw`PRAGMA mmap_size = 268435456`;
-        
-        // Enable query optimization
-        await db.$executeRaw`PRAGMA optimize`;
-        
-        console.log('[DatabaseOptimizer] Database optimized for production');
-      }
+      // PostgreSQL connection optimizations are handled via connection string parameters
+      // Example: ?connection_limit=10&pool_timeout=30
+      console.log('[DatabaseOptimizer] PostgreSQL connection optimization handled via connection parameters');
     } catch (error) {
       console.error('[DatabaseOptimizer] Failed to optimize database:', error);
     }
@@ -235,23 +220,27 @@ export class DatabaseOptimizer {
   static async analyzeSlowQueries(): Promise<void> {
     try {
       const { db } = await import('~/server/db');
-      
-      // Get query statistics (SQLite-specific)
-      if (process.env.DATABASE_URL?.includes('sqlite')) {
-        const stats = await db.$queryRaw`
-          SELECT sql, exec_count, total_time, avg_time 
-          FROM sqlite_stat1 
-          WHERE avg_time > 10 
-          ORDER BY avg_time DESC 
-          LIMIT 10
-        `;
-        
-        if ((stats as any[]).length > 0) {
-          console.warn('[DatabaseOptimizer] Slow queries detected:', stats);
-        }
+
+      // PostgreSQL slow query analysis using pg_stat_statements
+      // Requires pg_stat_statements extension to be enabled
+      const stats = await db.$queryRaw`
+        SELECT
+          query,
+          calls,
+          total_exec_time,
+          mean_exec_time
+        FROM pg_stat_statements
+        WHERE mean_exec_time > 10
+        ORDER BY mean_exec_time DESC
+        LIMIT 10
+      `;
+
+      if ((stats as any[]).length > 0) {
+        console.warn('[DatabaseOptimizer] Slow queries detected:', stats);
       }
     } catch (error) {
-      console.error('[DatabaseOptimizer] Failed to analyze slow queries:', error);
+      // Silently fail if pg_stat_statements is not enabled
+      console.debug('[DatabaseOptimizer] Slow query analysis unavailable (pg_stat_statements may not be enabled)');
     }
   }
 }

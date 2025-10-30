@@ -8,7 +8,7 @@
  */
 
 import { ComponentType } from '~/components/government/atoms/AtomicGovernmentComponents';
-import { EconomicComponentType } from '~/components/economy/atoms/AtomicEconomicComponents';
+import { EconomicComponentType } from '~/lib/atomic-economic-data';
 import type { GovernmentBuilderState } from '~/types/government';
 import type { EconomyBuilderState } from '~/types/economy-builder';
 import type { EconomicInputs } from '../lib/economy-data-service';

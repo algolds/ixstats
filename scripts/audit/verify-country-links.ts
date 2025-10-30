@@ -7,10 +7,7 @@
  *  - Detects ThinkPages accounts whose owners are not linked to their country.
  *
  * Run with:
- *   tsx scripts/audit/verify-country-links.ts
- *
- * For production database:
- *   DATABASE_URL=file:./prisma/prod.db tsx scripts/audit/verify-country-links.ts
+ *   tsx scripts/audit/verify-country-links.ts (uses DATABASE_URL from environment)
  */
 
 import { PrismaClient } from "@prisma/client";

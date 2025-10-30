@@ -109,8 +109,10 @@ openssl rand -hex 32
 
 ### 5. Database Credentials
 
+> **Migration Note (October 2025)**: IxStats has migrated from SQLite to PostgreSQL for all environments.
+
 **Development:**
-- `DATABASE_URL="file:./prisma/dev.db"` - SQLite (no credentials needed)
+- `DATABASE_URL="postgresql://ixstats:ixstats@localhost:5433/ixstats?schema=public"`
 
 **Production:**
 - `DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"`
