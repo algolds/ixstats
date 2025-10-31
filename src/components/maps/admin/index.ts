@@ -1,8 +1,9 @@
 /**
- * Maps admin components barrel export
+ * Map Admin Components - Barrel Export
+ *
+ * Components for admin review of user-submitted map features
  */
 
-export { MapContainer } from "./MapContainer";
-export { MapDebugPanel } from "./MapDebugPanel";
-export { MapLoadingState } from "./MapLoadingState";
-export { MapErrorState } from "./MapErrorState";
+export { ReviewQueue } from "./ReviewQueue";
+export { ReviewPanel } from "./ReviewPanel";
+export { BulkActions } from "./BulkActions";

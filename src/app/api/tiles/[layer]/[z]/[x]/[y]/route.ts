@@ -12,6 +12,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { Redis } from "ioredis";
 import { env } from "~/env";
 
+// Global error logging flags to reduce log noise
+declare global {
+  // eslint-disable-next-line no-var
+  var __martinConnectionErrorLogged: boolean | undefined;
+}
+
 // Valid layer names
 const VALID_LAYERS = ["political", "rivers", "lakes", "icecaps", "climate", "altitudes"] as const;
 
@@ -46,6 +52,8 @@ export async function GET(
   request: NextRequest,
   context: { params: Promise<{ layer: string; z: string; x: string; y: string }> }
 ) {
+  const startTime = Date.now();
+
   try {
     const params = await context.params;
     const { layer, z, x, y } = params;
@@ -73,12 +81,14 @@ export async function GET(
       try {
         const cachedTile = await redis.getBuffer(cacheKey);
         if (cachedTile && cachedTile.length > 0) {
+          const duration = Date.now() - startTime;
           return new NextResponse(cachedTile, {
             status: 200,
             headers: {
               "Content-Type": "application/x-protobuf",
               "Cache-Control": "public, max-age=2592000, immutable", // 30 days
               "X-Cache-Status": "HIT-REDIS",
+              "X-Response-Time": `${duration}ms`,
             },
           });
         }
@@ -94,7 +104,10 @@ export async function GET(
     });
 
     if (!martinResponse.ok) {
-      console.error(`[TileProxy] Martin returned ${martinResponse.status} for ${martinUrl}`);
+      // Only log errors on first occurrence to reduce log noise
+      if (martinResponse.status !== 404) {
+        console.warn(`[TileProxy] ${layer}/${z}/${x}/${y}: HTTP ${martinResponse.status}`);
+      }
       return new NextResponse(Buffer.from([]), {
         status: 200,
         headers: {
@@ -118,16 +131,29 @@ export async function GET(
     }
 
     // Return tile with appropriate headers
+    const duration = Date.now() - startTime;
     return new NextResponse(tileData, {
       status: 200,
       headers: {
         "Content-Type": "application/x-protobuf",
         "Cache-Control": "public, max-age=2592000, immutable", // 30 days
         "X-Cache-Status": redis ? "MISS-CACHED" : "MISS-NO-REDIS",
+        "X-Response-Time": `${duration}ms`,
       },
     });
   } catch (error) {
-    console.error("[TileProxy] Error:", error);
+    // Simplified error logging - only log connection errors once per startup
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    if (errorMsg.includes("ECONNREFUSED")) {
+      // Only log first occurrence to reduce noise
+      if (!globalThis.__martinConnectionErrorLogged) {
+        console.warn("[TileProxy] Martin tile server not responding (further errors suppressed)");
+        globalThis.__martinConnectionErrorLogged = true;
+      }
+    } else if (!errorMsg.includes("ETIMEDOUT")) {
+      // Log unexpected errors but keep them concise
+      console.warn(`[TileProxy] ${layer}/${z}/${x}/${y}:`, errorMsg);
+    }
 
     // Return empty tile on error (MapLibre handles gracefully)
     return new NextResponse(Buffer.from([]), {

@@ -143,6 +143,9 @@ model Country {
   users                       User[]                    @relation("UserCountry")
   borderHistory               BorderHistory[]
   territories                 Territory[]
+  subdivisions                Subdivision[]             @relation("CountrySubdivisions")
+  cities                      City[]                    @relation("CountryCities")
+  pointsOfInterest            PointOfInterest[]         @relation("CountryPOIs")
 
   @@index([name])
   @@index([economicTier])
@@ -3886,4 +3889,113 @@ enum ThreatStatus {
   responding
   contained
   resolved
+}
+
+// Map Editor Models - User-generated geographic content
+
+model Subdivision {
+  id            String   @id @default(cuid())
+  countryId     String
+  name          String
+  type          String   // "state", "province", "region", "territory"
+  geometry      Json     // GeoJSON polygon
+  level         Int      // Administrative level (1=state, 2=county, 3=district)
+  population    Float?
+  capital       String?
+  areaSqKm      Float?
+  status        String   @default("pending") // "pending", "approved", "rejected"
+  submittedBy   String   // Clerk user ID
+  reviewedBy    String?  // Admin who reviewed
+  reviewedAt    DateTime?
+  rejectionReason String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  geom_postgis  Unsupported("geometry")?
+
+  country       Country  @relation("CountrySubdivisions", fields: [countryId], references: [id], onDelete: Cascade)
+  cities        City[]   @relation("SubdivisionCities")
+  pois          PointOfInterest[] @relation("SubdivisionPOIs")
+
+  @@index([countryId, status])
+  @@index([status, createdAt])
+  @@index([geom_postgis], map: "idx_subdivision_geom", type: Gist)
+  @@map("subdivisions")
+}
+
+model City {
+  id                   String   @id @default(cuid())
+  countryId            String
+  subdivisionId        String?
+  name                 String
+  type                 String   // "capital", "city", "town", "village"
+  coordinates          Json     // GeoJSON Point [lng, lat]
+  population           Float?
+  isNationalCapital    Boolean  @default(false)
+  isSubdivisionCapital Boolean  @default(false)
+  elevation            Float?
+  foundedYear          Int?
+  status               String   @default("pending")
+  submittedBy          String
+  reviewedBy           String?
+  reviewedAt           DateTime?
+  rejectionReason      String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  geom_postgis         Unsupported("geometry")?
+
+  country      Country      @relation("CountryCities", fields: [countryId], references: [id], onDelete: Cascade)
+  subdivision  Subdivision? @relation("SubdivisionCities", fields: [subdivisionId], references: [id], onDelete: SetNull)
+
+  @@index([countryId, status])
+  @@index([type, isNationalCapital])
+  @@index([status, createdAt])
+  @@index([geom_postgis], map: "idx_city_geom", type: Gist)
+  @@map("cities")
+}
+
+model PointOfInterest {
+  id            String   @id @default(cuid())
+  countryId     String
+  subdivisionId String?
+  name          String
+  category      String   // "monument", "landmark", "military", "cultural", "natural", "religious", "government"
+  icon          String?  // Icon identifier for rendering
+  coordinates   Json     // GeoJSON Point [lng, lat]
+  description   String?
+  images        Json?    // Array of image URLs
+  metadata      Json?    // Additional category-specific data
+  status        String   @default("pending")
+  submittedBy   String
+  reviewedBy    String?
+  reviewedAt    DateTime?
+  rejectionReason String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  geom_postgis  Unsupported("geometry")?
+
+  country      Country      @relation("CountryPOIs", fields: [countryId], references: [id], onDelete: Cascade)
+  subdivision  Subdivision? @relation("SubdivisionPOIs", fields: [subdivisionId], references: [id], onDelete: SetNull)
+
+  @@index([countryId, status, category])
+  @@index([category, status])
+  @@index([status, createdAt])
+  @@index([geom_postgis], map: "idx_poi_geom", type: Gist)
+  @@map("points_of_interest")
+}
+
+model MapEditLog {
+  id         String   @id @default(cuid())
+  entityType String   // "subdivision", "city", "poi", "border"
+  entityId   String
+  action     String   // "create", "update", "delete", "approve", "reject", "modify"
+  userId     String   // Who performed the action
+  changes    Json?    // Old/new values for auditing
+  reason     String?  // Reason for rejection or major change
+  metadata   Json?    // Additional context
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+  @@map("map_edit_logs")
 }

@@ -14,6 +14,7 @@ import {
 import { isSystemOwner } from "~/lib/system-owner-constants";
 import { IxTime } from "~/lib/ixtime";
 import { getDefaultEconomicConfig, CONFIG_CONSTANTS } from "~/lib/config-service";
+import { IXMAPS_COORDINATE_SYSTEM } from "~/lib/ixearth-constants";
 import { parseRosterFile } from "~/lib/data-parser";
 import { IxStatsCalculator } from "~/lib/calculations";
 import {
@@ -277,7 +278,7 @@ const countriesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const where: Record<string, unknown> = {};
       if (input?.search) {
-        where.name = { contains: input.search };
+        where.name = { contains: input.search, mode: "insensitive" };
       }
       if (input?.continent) {
         where.continent = input.continent;
@@ -303,9 +304,45 @@ const countriesRouter = createTRPCRouter({
         ctx.db.country.count({ where }),
       ]);
 
-      const countries: CountryWithEconomicData[] = rawCountries.map((country: any) => ({
+      const countries: CountryWithEconomicData[] = rawCountries.map((country: any) => {
+        // Extract bounding box coordinates if available
+        // boundingBox format: [minLat, minLng, maxLat, maxLng]
+        // IMPORTANT: Apply prime meridian offset to longitude values
+        const boundingBox = country.boundingBox as any;
+        const bounds = boundingBox && Array.isArray(boundingBox) && boundingBox.length === 4
+          ? {
+              minLat: boundingBox[0],
+              minLng: boundingBox[1] - IXMAPS_COORDINATE_SYSTEM.primeMeridianOffset,
+              maxLat: boundingBox[2],
+              maxLng: boundingBox[3] - IXMAPS_COORDINATE_SYSTEM.primeMeridianOffset,
+            }
+          : boundingBox?.minLng !== undefined
+          ? {
+              minLat: boundingBox.minLat,
+              minLng: boundingBox.minLng - IXMAPS_COORDINATE_SYSTEM.primeMeridianOffset,
+              maxLat: boundingBox.maxLat,
+              maxLng: boundingBox.maxLng - IXMAPS_COORDINATE_SYSTEM.primeMeridianOffset,
+            }
+          : {};
+
+        // Extract centroid coordinates for map navigation
+        // centroid format: { type: "Point", coordinates: [lng, lat] }
+        // IMPORTANT: Apply prime meridian offset (Country table uses offset coordinates)
+        const centroid = country.centroid as any;
+        const centerCoords = centroid?.coordinates && Array.isArray(centroid.coordinates) && centroid.coordinates.length === 2
+          ? {
+              centerLng: centroid.coordinates[0] - IXMAPS_COORDINATE_SYSTEM.primeMeridianOffset,
+              centerLat: centroid.coordinates[1],
+            }
+          : {};
+
+        return {
         ...country,
         flagUrl: country.flag ?? undefined,
+        // Add bounding box coordinates for map search (fallback)
+        ...bounds,
+        // Add centroid coordinates for map navigation (primary)
+        ...centerCoords,
         // Ensure critical fields are properly mapped
         currentPopulation: country.currentPopulation ?? country.baselinePopulation ?? 0,
         currentGdpPerCapita: country.currentGdpPerCapita ?? country.baselineGdpPerCapita ?? 0,
@@ -382,7 +419,8 @@ const countriesRouter = createTRPCRouter({
           tierChangeProjection: { year: new Date().getFullYear(), newTier: country.economicTier },
           vulnerabilities: [],
         },
-      }));
+      };
+      });
 
       return { countries, total };
     }),
@@ -581,16 +619,6 @@ const countriesRouter = createTRPCRouter({
       // CRITICAL FIX: Preserve all database fields, only override calculated population/GDP fields
       // Do NOT spread result.newStats as it wipes out economic indicators!
 
-      // DEBUG LOGGING
-      console.log("=== getByIdWithEconomicData DEBUG ===");
-      console.log("Country Name:", country.name);
-      console.log("Database unemploymentRate:", country.unemploymentRate);
-      console.log("Database taxRevenueGDPPercent:", country.taxRevenueGDPPercent);
-      console.log("Database totalDebtGDPRatio:", country.totalDebtGDPRatio);
-      console.log("Database laborForceParticipationRate:", country.laborForceParticipationRate);
-      console.log("Database currentPopulation:", country.currentPopulation);
-      console.log("Calculated currentPopulation:", result.newStats.currentPopulation);
-
       const response: CountryWithEconomicData = {
         ...country, // All database fields including economic indicators
         flagUrl: country.flag ?? undefined,
@@ -682,18 +710,56 @@ const countriesRouter = createTRPCRouter({
               : Date.now(),
       };
 
-      // DEBUG: Log what we're actually returning
-      console.log("Response unemploymentRate:", response.unemploymentRate);
-      console.log("Response taxRevenueGDPPercent:", response.taxRevenueGDPPercent);
-      console.log("Response laborForceParticipationRate:", response.laborForceParticipationRate);
-      console.log("=== END DEBUG ===");
-
       // Include owner's clerkUserId for ThinkPages profile integration
       const ownerClerkUserId = country.users?.[0]?.clerkUserId ?? null;
 
       return {
         ...response,
         ownerClerkUserId,
+      };
+    }),
+
+  // Lightweight endpoint for basic country data (optimized for map info windows)
+  // Client-side usage: api.countries.getByIdBasic.useQuery({ id }, { staleTime: 300000 }) // 5 min cache
+  getByIdBasic: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const country = await ctx.db.country.findFirst({
+        where: {
+          OR: [
+            { id: input.id },
+            { slug: input.id.toLowerCase() },
+            { name: input.id },
+          ],
+        },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          flag: true,
+          continent: true,
+          currentPopulation: true,
+          currentGdpPerCapita: true,
+          landArea: true,
+        },
+      });
+
+      if (!country) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `Country with identifier ${input.id} not found`,
+        });
+      }
+
+      return {
+        id: country.id,
+        name: country.name,
+        slug: country.slug,
+        flagUrl: country.flag ?? undefined,
+        continent: country.continent,
+        currentPopulation: country.currentPopulation,
+        currentGdpPerCapita: country.currentGdpPerCapita,
+        landArea: country.landArea,
       };
     }),
 

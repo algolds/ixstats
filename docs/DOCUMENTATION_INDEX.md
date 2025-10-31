@@ -9,6 +9,9 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 - **Database Reference** – [`docs/reference/database.md`](reference/database.md)
 - **Environment Reference** – [`docs/operations/environments.md`](operations/environments.md)
 - **Help System Authoring** – [`docs/systems/help.md`](systems/help.md)
+- **Tax System Reference** – [`TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md`](TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md)
+- **Map Editor Guide** – [`VECTOR_TILES_COMPLETE_GUIDE.md`](VECTOR_TILES_COMPLETE_GUIDE.md)
+- **Rate Limiting Guide** – [`RATE_LIMITING_GUIDE.md`](RATE_LIMITING_GUIDE.md)
 
 ## Category Breakdown
 
@@ -54,6 +57,49 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 | [`reference/api.md`](reference/api.md) | Generated table of routers, procedures, input/output, and auth requirements |
 | [`reference/database.md`](reference/database.md) | Prisma models, relations, derived views, and data ownership |
 | [`reference/events.md`](reference/events.md) | WebSocket channels, notification payloads, cron/scheduled jobs |
+| [`SYNERGY_REFERENCE.md`](SYNERGY_REFERENCE.md) | Government component synergy system and interaction patterns |
+| [`ADMIN_ENDPOINT_SECURITY_MAP.md`](ADMIN_ENDPOINT_SECURITY_MAP.md) | Admin endpoint security mappings and authentication requirements |
+| [`USER_PROFILE_UTILS_USAGE.md`](USER_PROFILE_UTILS_USAGE.md) | User profile utilities and display name implementation |
+| [`DEV_DATABASE_SETUP.md`](DEV_DATABASE_SETUP.md) | Development database setup and management guide |
+| [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md) | Comprehensive API documentation and usage patterns |
+
+### Tax System Reference
+| Document | Summary |
+| --- | --- |
+| [`TAX_SYSTEM_PERSISTENCE.md`](TAX_SYSTEM_PERSISTENCE.md) | Tax system persistence architecture and implementation |
+| [`TAX_SYSTEM_DATA_STRUCTURE.md`](TAX_SYSTEM_DATA_STRUCTURE.md) | Tax system data structures and type definitions |
+| [`TAX_SYSTEM_FRONTEND_EXAMPLE.md`](TAX_SYSTEM_FRONTEND_EXAMPLE.md) | Tax system frontend integration examples |
+| [`TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md`](TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md) | Complete tax system implementation summary |
+
+### Map Editor & Vector Tiles Reference
+| Document | Summary |
+| --- | --- |
+| [`VECTOR_TILES_COMPLETE_GUIDE.md`](VECTOR_TILES_COMPLETE_GUIDE.md) | Comprehensive vector tiles implementation guide |
+| [`VECTOR_TILES_API.md`](VECTOR_TILES_API.md) | Vector tiles API reference and endpoints |
+| [`VECTOR_TILES_IMPLEMENTATION.md`](VECTOR_TILES_IMPLEMENTATION.md) | Vector tiles technical implementation details |
+| [`MAP_EDITOR_IMPLEMENTATION_SUMMARY.md`](MAP_EDITOR_IMPLEMENTATION_SUMMARY.md) | Map editor implementation summary |
+| [`MAP_EDITOR_SPRINT2_COMPLETE.md`](MAP_EDITOR_SPRINT2_COMPLETE.md) | Map editor sprint 2 completion report |
+| [`MAP_PROJECTION_GUIDE.md`](MAP_PROJECTION_GUIDE.md) | Map projection and coordinate systems guide |
+| [`MAP_DATA_VALIDATION.md`](MAP_DATA_VALIDATION.md) | Map data validation procedures |
+| [`MAPS_MONITORING_GUIDE.md`](MAPS_MONITORING_GUIDE.md) | Maps system monitoring and observability |
+| [`MAPS_OPTIMIZATION_COMPLETE.md`](MAPS_OPTIMIZATION_COMPLETE.md) | Maps performance optimization report |
+| [`MARTIN_TILE_SERVER.md`](MARTIN_TILE_SERVER.md) | Martin tile server configuration and setup |
+| [`BORDER_EDITING_SYSTEM.md`](BORDER_EDITING_SYSTEM.md) | Border editing system architecture |
+| [`BORDER_EDITING_QUICK_START.md`](BORDER_EDITING_QUICK_START.md) | Border editing quick start guide |
+
+### Operations & Deployment Reference
+| Document | Summary |
+| --- | --- |
+| [`DEPLOYMENT_CHECKLIST.md`](DEPLOYMENT_CHECKLIST.md) | Production deployment checklist |
+| [`PRE_DEPLOYMENT_CHECKLIST.md`](PRE_DEPLOYMENT_CHECKLIST.md) | Pre-deployment verification steps |
+| [`MIGRATION_v1.1_to_v1.2.md`](MIGRATION_v1.1_to_v1.2.md) | Version migration guide |
+| [`TROUBLESHOOTING_v1.2.md`](TROUBLESHOOTING_v1.2.md) | Troubleshooting guide for v1.2 |
+| [`CREDENTIALS.md`](CREDENTIALS.md) | Credentials and secrets management |
+| [`PERFORMANCE_BENCHMARKS.md`](PERFORMANCE_BENCHMARKS.md) | Performance metrics and benchmarks |
+| [`EXTERNAL_API_CACHE.md`](EXTERNAL_API_CACHE.md) | External API caching strategies |
+| [`CACHE_INTEGRATION_EXAMPLE.md`](CACHE_INTEGRATION_EXAMPLE.md) | Cache integration implementation examples |
+| [`IXEARTH_METRICS.md`](IXEARTH_METRICS.md) | IxEarth platform metrics and analytics |
+| [`WORLD_ROSTER_INTEGRATION.md`](WORLD_ROSTER_INTEGRATION.md) | World roster system integration guide |
 
 ## Legacy Material
 - All previous documentation remains available under [`docs/archive/v1`](archive/v1/)

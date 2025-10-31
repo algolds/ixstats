@@ -93,6 +93,16 @@ fi
 echo "✅ Dependencies installed"
 echo ""
 
+# Start Redis cache for tile caching
+echo "💾 Starting Redis cache server..."
+./scripts/setup-redis.sh start
+echo ""
+
+# Start Martin tile server for map functionality
+echo "🗺️  Starting Martin tile server..."
+./scripts/martin-tiles.sh start
+echo ""
+
 # Start the development server
 echo "🌐 Starting Next.js development server..."
 echo "   Development URL: http://localhost:$DEVELOPMENT_PORT/"

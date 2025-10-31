@@ -48,16 +48,26 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
       links: [
         loggerLink({
           enabled: (op) => {
-            // Only log errors, and suppress noisy analytics errors in dev
+            // Disable all logging in development to reduce console noise
+            // Only log actual errors in production
+            if (process.env.NODE_ENV !== "production") return false;
+
+            // Only log errors in production
             const isError = op.direction === "down" && op.result instanceof Error;
             if (!isError) return false;
-            // Suppress unifiedIntelligence.getAnalytics errors in the client console
-            if (
-              typeof op.path === "string" &&
-              op.path.startsWith("unifiedIntelligence.getAnalytics")
-            ) {
-              return false;
+
+            // Suppress known noisy errors
+            if (typeof op.path === "string") {
+              // Suppress analytics errors
+              if (op.path.startsWith("unifiedIntelligence.getAnalytics")) {
+                return false;
+              }
+              // Suppress map editor search queries (expected to have empty results)
+              if (op.path.includes("mapEditor") && op.path.includes("get")) {
+                return false;
+              }
             }
+
             return true;
           },
         }),

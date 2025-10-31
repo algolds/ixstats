@@ -123,18 +123,18 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 - **Solid Data Foundation**: Comprehensive Prisma schema with economic modeling
 - **Performance Optimized**: React best practices with memoization and error boundaries
 
-### Key Documentation Resources (v1.1.3)
-- **[API_REFERENCE.md](./docs/API_REFERENCE.md)** - Complete tRPC API catalog (304 endpoints across 36 routers)
-- **[ATOMIC_COMPONENTS_GUIDE.md](./docs/ATOMIC_COMPONENTS_GUIDE.md)** - Atomic government system guide (106 components)
-- **[FORMULAS_AND_CALCULATIONS.md](./docs/FORMULAS_AND_CALCULATIONS.md)** - Economic calculation engine (15+ systems)
-- **[DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md)** - Glass physics UI framework
-- **[BUILDER_SYSTEM.md](./docs/BUILDER_SYSTEM.md)** - Country builder system (7-step workflow)
-- **[MYCOUNTRY_SYSTEM.md](./docs/MYCOUNTRY_SYSTEM.md)** - Executive intelligence dashboard (8 tabs)
-- **[INTELLIGENCE_SYSTEM.md](./docs/INTELLIGENCE_SYSTEM.md)** - Intelligence operations and analytics
-- **[SOCIAL_PLATFORM_GUIDE.md](./docs/SOCIAL_PLATFORM_GUIDE.md)** - ThinkPages/ThinkShare/ThinkTanks guide
-- **[RATE_LIMITING_IMPLEMENTATION_GUIDE.md](./docs/RATE_LIMITING_IMPLEMENTATION_GUIDE.md)** - Rate limiting implementation guide
-- **[SYNERGY_REFERENCE.md](./docs/SYNERGY_REFERENCE.md)** - Government component synergy system
-- **[USER_PROFILE_UTILS_USAGE.md](./docs/USER_PROFILE_UTILS_USAGE.md)** - User profile and display name utilities
+### Key Documentation Resources (v1.2.0)
+- **[docs/README.md](./docs/README.md)** - Documentation hub and navigation guide
+- **[docs/DOCUMENTATION_INDEX.md](./docs/DOCUMENTATION_INDEX.md)** - Complete documentation index
+- **[docs/reference/api.md](./docs/reference/api.md)** - Complete tRPC API catalog (580+ endpoints across 37 routers)
+- **[docs/reference/database.md](./docs/reference/database.md)** - Prisma schema and data models (131 models)
+- **[docs/systems/](./docs/systems/)** - System-specific guides (MyCountry, Intelligence, Diplomacy, Economy, etc.)
+- **[docs/SYNERGY_REFERENCE.md](./docs/SYNERGY_REFERENCE.md)** - Government component synergy system
+- **[docs/RATE_LIMITING_GUIDE.md](./docs/RATE_LIMITING_GUIDE.md)** - Rate limiting configuration and Redis setup
+- **[docs/USER_PROFILE_UTILS_USAGE.md](./docs/USER_PROFILE_UTILS_USAGE.md)** - User profile and display name utilities
+- **[docs/TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md](./docs/TAX_SYSTEM_IMPLEMENTATION_SUMMARY.md)** - Complete tax system reference
+- **[docs/VECTOR_TILES_COMPLETE_GUIDE.md](./docs/VECTOR_TILES_COMPLETE_GUIDE.md)** - Map editor and vector tiles guide
+- **[docs/API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md)** - Comprehensive API documentation
 
 ### Development Focus Areas (v1.1.3 Status)
 - ✅ **Authentication System**: COMPLETE - 13 security fixes, 8-layer middleware, audit logging

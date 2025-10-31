@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { createGoogleMapsStyle } from '~/lib/maps/google-map-style';
@@ -12,14 +12,16 @@ interface GoogleMapContainerProps {
   onZoomIn?: () => void;
   onZoomOut?: () => void;
   mapType?: 'map' | 'climate' | 'terrain';
+  onMapReady?: (map: maplibregl.Map) => void;
 }
 
-export default function GoogleMapContainer({
+function GoogleMapContainer({
   onCountryClick,
   selectedCountryId,
   onZoomIn,
   onZoomOut,
   mapType = 'map',
+  onMapReady,
 }: GoogleMapContainerProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -59,6 +61,9 @@ export default function GoogleMapContainer({
 
     map.current.on('load', () => {
       setIsMapLoaded(true);
+      if (onMapReady && map.current) {
+        onMapReady(map.current);
+      }
     });
 
     // Dynamic projection switching based on zoom level (Google Maps-like)
@@ -241,3 +246,7 @@ export default function GoogleMapContainer({
 
   return <div ref={mapContainer} className="h-full w-full" />;
 }
+
+GoogleMapContainer.displayName = 'GoogleMapContainer';
+
+export default memo(GoogleMapContainer);

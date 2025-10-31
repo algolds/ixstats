@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { X } from 'lucide-react';
 import { api } from '~/trpc/react';
 import { formatNumber, formatCurrency } from '~/lib/ixearth-constants';
@@ -11,13 +12,16 @@ interface GoogleInfoWindowProps {
   onClose: () => void;
 }
 
-export default function GoogleInfoWindow({
+function GoogleInfoWindow({
   countryId,
   countryName,
   position,
   onClose,
 }: GoogleInfoWindowProps) {
-  const { data: country, isLoading } = api.countries.getByIdWithEconomicData.useQuery({ id: countryId });
+  const { data: country, isLoading } = api.countries.getByIdBasic.useQuery(
+    { id: countryId },
+    { staleTime: 300000 } // Cache for 5 minutes - info window data rarely changes
+  );
 
   return (
     <div
@@ -71,7 +75,7 @@ export default function GoogleInfoWindow({
                 <div className="flex justify-between py-1 border-b border-gray-100">
                   <span className="text-gray-600">Population</span>
                   <span className="text-gray-900 font-medium">
-                    {formatNumber(country.currentPopulation)}
+                    {formatNumber(country.population)}
                   </span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-gray-100">
@@ -83,7 +87,7 @@ export default function GoogleInfoWindow({
                 <div className="flex justify-between py-1 border-b border-gray-100">
                   <span className="text-gray-600">GDP per Capita</span>
                   <span className="text-gray-900 font-medium">
-                    ${formatNumber(Math.round(country.currentGdpPerCapita))}
+                    ${formatNumber(Math.round(country.gdpPerCapita))}
                   </span>
                 </div>
                 {country.continent && (
@@ -96,7 +100,7 @@ export default function GoogleInfoWindow({
 
               {/* View Details Link */}
               <a
-                href={`/countries/${country.slug || country.id}`}
+                href={`/countries/${country.slug ?? country.id}`}
                 className="block px-4 py-3 text-blue-600 hover:bg-blue-50 transition-colors text-sm font-medium border-t border-gray-100"
               >
                 View details →
@@ -108,3 +112,7 @@ export default function GoogleInfoWindow({
     </div>
   );
 }
+
+GoogleInfoWindow.displayName = 'GoogleInfoWindow';
+
+export default memo(GoogleInfoWindow);

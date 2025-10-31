@@ -216,7 +216,7 @@ export const MAPLIBRE_CONFIG = {
   tileMaxZoom: 18,
 
   /** Zoom level threshold for globe → mercator transition */
-  globeToMercatorZoom: 4,
+  globeToMercatorZoom: 2.8,
 
   /** Tile extent for MVT generation */
   tileExtent: 512,

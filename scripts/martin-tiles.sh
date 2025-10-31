@@ -9,13 +9,29 @@ MARTIN_PORT=3800
 
 case "$1" in
   start)
-    echo "Starting Martin tile server..."
+    # Check if container already exists
+    if docker ps -a -f "name=$MARTIN_CONTAINER" --format "{{.Names}}" | grep -q "^${MARTIN_CONTAINER}$"; then
+      # Container exists, check if it's running
+      if docker ps -f "name=$MARTIN_CONTAINER" --format "{{.Names}}" | grep -q "^${MARTIN_CONTAINER}$"; then
+        echo "Martin tile server is already running on port $MARTIN_PORT"
+        exit 0
+      else
+        # Container exists but not running, start it
+        echo "Starting existing Martin container..."
+        docker start "$MARTIN_CONTAINER" > /dev/null
+        echo "Martin started on port $MARTIN_PORT"
+        exit 0
+      fi
+    fi
+
+    # Container doesn't exist, create and start it
+    echo "Creating Martin tile server container..."
     docker run -d \
       --name "$MARTIN_CONTAINER" \
       --network host \
       -v "$MARTIN_CONFIG:/config.yaml" \
       ghcr.io/maplibre/martin:latest \
-      --config /config.yaml
+      --config /config.yaml > /dev/null
     echo "Martin started on port $MARTIN_PORT"
     ;;
 

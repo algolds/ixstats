@@ -48,6 +48,8 @@ import { smallArmsEquipmentRouter } from "./routers/smallArmsEquipment";
 import { diplomaticScenariosRouter } from "./routers/diplomaticScenarios";
 import { npcPersonalitiesRouter } from "./routers/npcPersonalities";
 import { geoRouter } from "./routers/geo";
+import { mapEditorRouter } from "./routers/mapEditor";
+import { mapMonitoringRouter } from "./routers/mapMonitoring";
 
 /**
  * This is the primary router for your server.
@@ -102,6 +104,8 @@ export const appRouter = createTRPCRouter({
   diplomaticScenarios: diplomaticScenariosRouter, // Diplomatic scenario generation and choice tracking (Phase 7B)
   npcPersonalities: npcPersonalitiesRouter, // NPC personality system for behavioral prediction (Phase 8 - FINAL PHASE)
   geo: geoRouter, // Geographic router for country border management with PostGIS integration
+  mapEditor: mapEditorRouter, // Map Editor for CRUD operations on subdivisions, cities, and POIs
+  mapMonitoring: mapMonitoringRouter, // Map system monitoring and statistics (Admin only)
   system: adminRouter, // Alias for global stats
 });
 

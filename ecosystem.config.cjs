@@ -1,6 +1,21 @@
 module.exports = {
   apps: [
     {
+      name: 'ixstats-martin',
+      script: '/ixwiki/public/projects/ixstats/scripts/martin-tiles.sh',
+      args: 'start',
+      cwd: '/ixwiki/public/projects/ixstats',
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: false, // Don't auto-restart, Docker handles container lifecycle
+      watch: false,
+      error_file: '/ixwiki/private/logs/ixstats-martin-error.log',
+      out_file: '/ixwiki/private/logs/ixstats-martin-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      merge_logs: true,
+      time: true,
+    },
+    {
       name: 'ixstats',
       script: 'node_modules/next/dist/bin/next',
       args: 'start -p 3550',

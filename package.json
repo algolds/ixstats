@@ -18,6 +18,7 @@
     "martin:start": "./scripts/martin-tiles.sh start",
     "martin:stop": "./scripts/martin-tiles.sh stop",
     "martin:test": "./scripts/martin-tiles.sh test",
+    "services:check": "./scripts/check-services.sh",
     "dev:simple": "./start-development.sh",
     "dev:server": "node server.mjs",
     "start": "NODE_ENV=production ./scripts/with-base-path.sh node server.mjs",

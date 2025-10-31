@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Plus, Minus } from 'lucide-react';
 
 interface GoogleMapControlsProps {
@@ -9,7 +10,7 @@ interface GoogleMapControlsProps {
   onMapTypeChange: (type: 'map' | 'climate' | 'terrain') => void;
 }
 
-export default function GoogleMapControls({
+function GoogleMapControls({
   onZoomIn,
   onZoomOut,
   mapType,
@@ -75,3 +76,7 @@ export default function GoogleMapControls({
     </>
   );
 }
+
+GoogleMapControls.displayName = 'GoogleMapControls';
+
+export default memo(GoogleMapControls);
