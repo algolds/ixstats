@@ -201,13 +201,19 @@ export const MAPLIBRE_CONFIG = {
   defaultCenter: [0, 0] as [number, number],
 
   /** Default zoom level (globe view - Google Maps style) */
-  defaultZoom: 2.5,
+  defaultZoom: 1.5,
 
-  /** Min zoom level */
-  minZoom: 0,
+  /** Min zoom level (user interaction constraint) */
+  minZoom: 1.5,
 
-  /** Max zoom level */
+  /** Max zoom level (user interaction constraint) */
   maxZoom: 18,
+
+  /** Tile source min zoom (must be integer, 0 = terrain visible on globe immediately) */
+  tileMinZoom: 0,
+
+  /** Tile source max zoom (must be integer) */
+  tileMaxZoom: 18,
 
   /** Zoom level threshold for globe → mercator transition */
   globeToMercatorZoom: 4,

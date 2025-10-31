@@ -1,4 +1,5 @@
 import type { StyleSpecification } from 'maplibre-gl';
+import { MAPLIBRE_CONFIG } from '~/lib/ixearth-constants';
 
 export const createGoogleMapsStyle = (
   basePath: string = '',
@@ -15,38 +16,38 @@ export const createGoogleMapsStyle = (
     political: {
       type: 'vector',
       tiles: [`${origin}${cleanBasePath}/api/tiles/political/{z}/{x}/{y}`],
-      minzoom: 0,
-      maxzoom: 14,
+      minzoom: MAPLIBRE_CONFIG.tileMinZoom,
+      maxzoom: MAPLIBRE_CONFIG.tileMaxZoom,
     },
     altitudes: {
       type: 'vector',
       tiles: [`${origin}${cleanBasePath}/api/tiles/altitudes/{z}/{x}/{y}`],
-      minzoom: 0,
-      maxzoom: 14,
+      minzoom: MAPLIBRE_CONFIG.tileMinZoom,
+      maxzoom: MAPLIBRE_CONFIG.tileMaxZoom,
     },
     lakes: {
       type: 'vector',
       tiles: [`${origin}${cleanBasePath}/api/tiles/lakes/{z}/{x}/{y}`],
-      minzoom: 0,
-      maxzoom: 14,
+      minzoom: MAPLIBRE_CONFIG.tileMinZoom,
+      maxzoom: MAPLIBRE_CONFIG.tileMaxZoom,
     },
     rivers: {
       type: 'vector',
       tiles: [`${origin}${cleanBasePath}/api/tiles/rivers/{z}/{x}/{y}`],
-      minzoom: 3, // Match layer minzoom - don't load river tiles when not visible
-      maxzoom: 14,
+      minzoom: 3, // Rivers only visible from zoom 3+ (layer-specific override)
+      maxzoom: MAPLIBRE_CONFIG.tileMaxZoom,
     },
     climate: {
       type: 'vector',
       tiles: [`${origin}${cleanBasePath}/api/tiles/climate/{z}/{x}/{y}`],
-      minzoom: 0,
-      maxzoom: 14,
+      minzoom: MAPLIBRE_CONFIG.tileMinZoom,
+      maxzoom: MAPLIBRE_CONFIG.tileMaxZoom,
     },
     icecaps: {
       type: 'vector',
       tiles: [`${origin}${cleanBasePath}/api/tiles/icecaps/{z}/{x}/{y}`],
-      minzoom: 0,
-      maxzoom: 14,
+      minzoom: MAPLIBRE_CONFIG.tileMinZoom,
+      maxzoom: MAPLIBRE_CONFIG.tileMaxZoom,
     },
   },
   layers: [
@@ -66,7 +67,7 @@ export const createGoogleMapsStyle = (
       'source-layer': 'map_layer_altitudes',
       paint: {
         'fill-color': ['get', 'fill'],
-        'fill-opacity': mapType === 'terrain' ? 1 : 0,
+        'fill-opacity': 1, // Always show terrain colors
       },
     },
     // Climate zones (overlays on terrain when climate mode)
@@ -80,18 +81,7 @@ export const createGoogleMapsStyle = (
         'fill-opacity': mapType === 'climate' ? 0.7 : 0, // 70% opacity when climate mode for visibility
       },
     },
-    // Flat beige background when not in terrain mode
-    {
-      id: 'flat-background',
-      type: 'fill',
-      source: 'altitudes',
-      'source-layer': 'map_layer_altitudes',
-      paint: {
-        'fill-color': '#f2efea',
-        'fill-opacity': mapType === 'terrain' || mapType === 'climate' ? 0 : 1,
-      },
-    },
-    // Country fills (uses colors from data, invisible in terrain/climate modes, ALWAYS queryable)
+    // Country fills (uses colors from data, terrain shows through in terrain/climate modes, ALWAYS queryable)
     {
       id: 'countries',
       type: 'fill',
@@ -103,7 +93,7 @@ export const createGoogleMapsStyle = (
           'case',
           ['boolean', ['feature-state', 'hover'], false],
           (mapType === 'terrain' || mapType === 'climate') ? 0.3 : 0.8, // Hover - subtle in terrain/climate, slightly transparent in map
-          (mapType === 'terrain' || mapType === 'climate') ? 0.01 : 1, // Default - nearly invisible in terrain/climate (but queryable), full opacity in map
+          (mapType === 'terrain' || mapType === 'climate') ? 0.01 : 1, // Default - nearly invisible in terrain/climate, full opacity in map
         ],
       },
     },
@@ -124,11 +114,12 @@ export const createGoogleMapsStyle = (
           'interpolate',
           ['exponential', 1.5],
           ['zoom'],
-          0, ['case', ['boolean', ['feature-state', 'hover'], false], 2, 1],    // Global view - thin but visible
-          4, ['case', ['boolean', ['feature-state', 'hover'], false], 2.5, 1.5], // Transition zoom
-          8, ['case', ['boolean', ['feature-state', 'hover'], false], 3, 2],     // Medium zoom
-          14, ['case', ['boolean', ['feature-state', 'hover'], false], 4, 2.5],  // Close zoom
-          18, ['case', ['boolean', ['feature-state', 'hover'], false], 5, 3]     // Street-level zoom
+          0, ['case', ['boolean', ['feature-state', 'hover'], false], 1.5, 0.8], // Far zoom - very thin
+          2, ['case', ['boolean', ['feature-state', 'hover'], false], 2, 1],      // Default view
+          4, ['case', ['boolean', ['feature-state', 'hover'], false], 2.5, 1.5],  // Transition zoom
+          8, ['case', ['boolean', ['feature-state', 'hover'], false], 3, 2],      // Medium zoom
+          14, ['case', ['boolean', ['feature-state', 'hover'], false], 4, 2.5],   // Close zoom
+          18, ['case', ['boolean', ['feature-state', 'hover'], false], 5, 3]      // Max zoom
         ],
         'line-opacity': 1, // Always fully visible
       },
@@ -195,8 +186,8 @@ export const createGoogleMapsStyle = (
           'interpolate',
           ['linear'],
           ['zoom'],
-          0, 8,   // Small at global view
-          2, 10,  // Readable at default zoom
+          0, 8,   // Small at far zoom
+          2, 10,  // Readable at default view
           4, 12,  // Slightly larger
           8, 18,  // Medium zoom
           14, 24  // Large at close zoom
@@ -211,7 +202,8 @@ export const createGoogleMapsStyle = (
           'interpolate',
           ['linear'],
           ['zoom'],
-          0, 1,    // Thinner halo at global view
+          0, 0.8,  // Very thin halo at far zoom
+          2, 1,    // Thinner halo at default
           4, 1.5,  // Standard halo
           8, 2     // Thicker halo at close zoom
         ],
@@ -219,8 +211,8 @@ export const createGoogleMapsStyle = (
           'interpolate',
           ['linear'],
           ['zoom'],
-          0, 0.7,  // Slightly transparent at global view
-          2, 1     // Fully opaque at default zoom and above
+          0, 0.7,  // Slightly transparent at far zoom
+          2, 1     // Fully opaque at default and above
         ],
       },
     },
