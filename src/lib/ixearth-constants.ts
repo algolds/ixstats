@@ -201,10 +201,10 @@ export const MAPLIBRE_CONFIG = {
   defaultCenter: [0, 0] as [number, number],
 
   /** Default zoom level (globe view - Google Maps style) */
-  defaultZoom: 1.5,
+  defaultZoom: 2.2,
 
   /** Min zoom level (user interaction constraint) */
-  minZoom: 1.5,
+  minZoom: 2.2,
 
   /** Max zoom level (user interaction constraint) */
   maxZoom: 18,

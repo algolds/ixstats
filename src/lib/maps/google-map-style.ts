@@ -1,6 +1,56 @@
 import type { StyleSpecification } from 'maplibre-gl';
 import { MAPLIBRE_CONFIG } from '~/lib/ixearth-constants';
 
+/**
+ * Generate GeoJSON for latitude/longitude grid lines (graticule)
+ */
+function generateGraticule() {
+  const features = [];
+
+  // Generate latitude lines (horizontal, -80 to 80 degrees, every 20 degrees)
+  for (let lat = -80; lat <= 80; lat += 20) {
+    const coordinates = [];
+    for (let lon = -180; lon <= 180; lon += 5) {
+      coordinates.push([lon, lat]);
+    }
+    features.push({
+      type: 'Feature',
+      properties: {
+        type: lat === 0 ? 'equator' : 'latitude',
+        value: lat
+      },
+      geometry: {
+        type: 'LineString',
+        coordinates,
+      },
+    });
+  }
+
+  // Generate longitude lines (vertical, -180 to 180 degrees, every 20 degrees)
+  for (let lon = -180; lon <= 180; lon += 20) {
+    const coordinates = [];
+    for (let lat = -85; lat <= 85; lat += 5) {
+      coordinates.push([lon, lat]);
+    }
+    features.push({
+      type: 'Feature',
+      properties: {
+        type: 'longitude',
+        value: lon
+      },
+      geometry: {
+        type: 'LineString',
+        coordinates,
+      },
+    });
+  }
+
+  return {
+    type: 'FeatureCollection',
+    features,
+  };
+}
+
 export const createGoogleMapsStyle = (
   basePath: string = '',
   mapType: 'map' | 'climate' | 'terrain' = 'map'
@@ -11,8 +61,26 @@ export const createGoogleMapsStyle = (
 
   return {
   version: 8,
-  projection: { type: 'globe' }, // Start with globe projection
+  projection: { type: 'globe' },
+  sky: {
+    'sky-color': '#e8f4f8',  // Very light blue-white to blend with ice caps
+    'horizon-color': '#ffffff',  // White horizon
+    'sky-horizon-blend': 0.8,  // High blend to soften transitions
+    'atmosphere-blend': [
+      'interpolate',
+      ['linear'],
+      ['zoom'],
+      0, 0.95,  // Strong atmosphere at far zoom (masks pole artifacts)
+      3, 0.6,
+      6, 0.2,
+      8, 0   // Minimal atmosphere at close zoom
+    ],
+  },
   sources: {
+    graticule: {
+      type: 'geojson',
+      data: generateGraticule() as any,
+    },
     political: {
       type: 'vector',
       tiles: [`${origin}${cleanBasePath}/api/tiles/political/{z}/{x}/{y}`],
@@ -59,6 +127,35 @@ export const createGoogleMapsStyle = (
         'background-color': '#a5d8f3',
       },
     },
+    // Graticule (lat/lon grid lines) - Google Maps style
+    {
+      id: 'graticule',
+      type: 'line',
+      source: 'graticule',
+      paint: {
+        'line-color': [
+          'case',
+          ['==', ['get', 'type'], 'equator'],
+          '#b0b0b0', // Slightly darker for equator
+          '#d0d0d0'  // Light gray for other lines
+        ],
+        'line-width': [
+          'case',
+          ['==', ['get', 'type'], 'equator'],
+          0.8,  // Slightly thicker equator
+          0.5   // Thin grid lines
+        ],
+        'line-opacity': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          0, 0.3,   // Subtle at far zoom
+          2, 0.4,   // More visible at default view
+          4, 0.5,   // Clear at closer zoom
+          8, 0.2    // Fade out at very close zoom
+        ],
+      },
+    },
     // Terrain/land with elevation colors
     {
       id: 'terrain',
@@ -68,6 +165,18 @@ export const createGoogleMapsStyle = (
       paint: {
         'fill-color': ['get', 'fill'],
         'fill-opacity': 1, // Always show terrain colors
+      },
+    },
+    // Ice caps (imprinted on globe with terrain)
+    {
+      id: 'icecaps-fill',
+      type: 'fill',
+      source: 'icecaps',
+      'source-layer': 'map_layer_icecaps',
+      paint: {
+        'fill-color': ['get', 'fill'], // Use color from data
+        'fill-opacity': 0.9,
+        'fill-outline-color': 'transparent', // Hide polygon edges (removes circular artifacts on globe)
       },
     },
     // Climate zones (overlays on terrain when climate mode)
@@ -161,17 +270,6 @@ export const createGoogleMapsStyle = (
           6, 0.8,   // More opaque at zoom 6
           10, 1     // Fully opaque at zoom 10
         ],
-      },
-    },
-    // Ice caps
-    {
-      id: 'icecaps-fill',
-      type: 'fill',
-      source: 'icecaps',
-      'source-layer': 'map_layer_icecaps',
-      paint: {
-        'fill-color': '#ffffff',
-        'fill-opacity': 0.9,
       },
     },
     // Country labels (Google Maps style) - LAST so they're on top, visible at all zooms
