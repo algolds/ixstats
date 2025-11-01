@@ -16,6 +16,7 @@ export interface HistoricalDataPoint {
   totalGdp: number | null;
   gdpPerCapita: number | null;
   population: number | null;
+  gdpGrowthRate?: number | null;
 }
 
 export interface EconomicChartDataPoint {
@@ -24,6 +25,7 @@ export interface EconomicChartDataPoint {
   gdpPerCapita: number;
   population: number;
   index: number;
+  growth?: number;
 }
 
 export interface SectorPerformance {
@@ -31,11 +33,14 @@ export interface SectorPerformance {
   performance: number;
   growth: number;
   color: string;
+  contribution?: number;
+  trend?: "up" | "down" | "stable";
 }
 
 export interface EconomicHealthIndicator {
   indicator: string;
   value: number;
+  trend?: "up" | "down" | "stable";
 }
 
 export interface PolicyDistribution {
@@ -202,7 +207,7 @@ export function generateSectorPerformanceData(
   const colors = ["emerald", "blue", "purple", "cyan", "orange", "yellow"];
 
   return sectors.map((sector, index) => {
-    const sectorInfo = sectorData[sector] || {};
+    const sectorInfo = sectorData[sector] as { performance?: number; growth?: number; contribution?: number } | undefined;
     const employment = employmentData[sector] || 0;
 
     // Calculate performance based on employment and contribution
@@ -210,20 +215,20 @@ export function generateSectorPerformanceData(
       100,
       Math.max(
         20,
-        (sectorInfo.performance || 70) + employment * 0.1 + (sectorInfo.contribution || 15) * 0.5
+        (sectorInfo?.performance || 70) + employment * 0.1 + (sectorInfo?.contribution || 15) * 0.5
       )
     );
 
     // Calculate growth rate
-    const growth = growthRates[sector] || sectorInfo.growth || 2 + Math.random() * 4;
+    const growth = growthRates[sector] || sectorInfo?.growth || 2 + Math.random() * 4;
 
     return {
       sector,
       performance: Math.round(performance * 10) / 10,
       growth: Math.round(growth * 100) / 100,
-      contribution: sectorInfo.contribution || 100 / sectors.length,
+      contribution: sectorInfo?.contribution || 100 / sectors.length,
       color: colors[index % colors.length] as any,
-      trend: growth > 3 ? "up" : growth < 1 ? "down" : "stable",
+      trend: growth > 3 ? ("up" as const) : growth < 1 ? ("down" as const) : ("stable" as const),
     };
   });
 }
@@ -245,6 +250,7 @@ export function calculateEconomicHealthIndicators(
     gdpGrowthVolatility?: number;
     innovationIndex?: number;
     competitivenessRank?: number;
+    exportsGDPPercent?: number;
   } | null,
   laborMarket?: { youthUnemploymentRate?: number; femaleParticipationRate?: number } | null,
   country?: { currentGdpPerCapita?: number; populationGrowthRate?: number } | null
@@ -573,6 +579,10 @@ export interface VolatilityMetric {
   label: string;
   value: number;
   status: "low" | "medium" | "high";
+  metric?: string;
+  volatility?: string;
+  risk?: string;
+  trend?: "up" | "down" | "stable";
 }
 
 /**

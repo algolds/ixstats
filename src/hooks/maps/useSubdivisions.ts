@@ -112,12 +112,15 @@ export function useSubdivisions(params: UseSubdivisionsParams = {}): UseSubdivis
     ? query.data?.subdivisions.filter(sub => sub.level === params.level) ?? []
     : query.data?.subdivisions ?? [];
 
+  // Wrap error to ensure it has a name property
+  const wrappedError = query.error ? new Error(query.error.message || 'Unknown error') : null;
+
   return {
     subdivisions: filteredSubdivisions,
     total: query.data?.total ?? 0,
     hasMore: query.data?.hasMore ?? false,
     loading: query.isLoading,
-    error: query.error,
+    error: wrappedError,
     refetch: () => {
       void query.refetch();
     },
@@ -159,11 +162,14 @@ export function useCountrySubdivisions(
     }
   );
 
+  // Wrap error to ensure it has a name property
+  const wrappedError = query.error ? new Error(query.error.message || 'Unknown error') : null;
+
   return {
     subdivisions: query.data?.subdivisions ?? [],
     count: query.data?.count ?? 0,
     loading: query.isLoading,
-    error: query.error,
+    error: wrappedError,
     refetch: () => {
       void query.refetch();
     },

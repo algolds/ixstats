@@ -16,12 +16,35 @@
  */
 
 import { useMemo } from "react";
+import * as Icons from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { api } from "~/trpc/react";
 import {
   ATOMIC_ECONOMIC_COMPONENTS,
   type AtomicEconomicComponent,
   type EconomicComponentType,
 } from "~/lib/atomic-economic-data";
+
+const ICON_REGISTRY = Icons as unknown as Record<string, LucideIcon | undefined>;
+const DEFAULT_COMPONENT_ICON =
+  ICON_REGISTRY.BriefcaseBusiness ??
+  ICON_REGISTRY.PieChart ??
+  ICON_REGISTRY.Activity ??
+  ICON_REGISTRY.HelpCircle!;
+
+function resolveComponentIcon(iconName?: string | null): LucideIcon {
+  if (!iconName) return DEFAULT_COMPONENT_ICON;
+
+  const candidates = [iconName, iconName.charAt(0).toUpperCase() + iconName.slice(1)];
+  for (const candidate of candidates) {
+    const icon = ICON_REGISTRY[candidate];
+    if (icon) {
+      return icon;
+    }
+  }
+
+  return DEFAULT_COMPONENT_ICON;
+}
 
 /**
  * useEconomicComponentsData - Fetch economic component reference data
@@ -186,7 +209,7 @@ function transformDatabaseComponent(dbComp: any): AtomicEconomicComponent {
     maintenanceCost: dbComp.maintenanceCost || 50000,
     requiredCapacity: dbComp.requiredCapacity || 75,
     category: dbComp.category || "Economic Model",
-    icon: () => null, // Placeholder - icons should be mapped from string to component in a future update
+    icon: resolveComponentIcon(dbComp.icon),
     color: dbComp.color || "emerald",
     metadata: dbComp.metadata || {
       complexity: "Medium" as const,

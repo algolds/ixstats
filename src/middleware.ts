@@ -50,7 +50,7 @@ function generateCSP(nonce: string): string {
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
     `img-src 'self' data: blob: https: http:`, // Allow external images (flags, etc)
     `font-src 'self' https://fonts.gstatic.com data:`,
-    `connect-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev https://ixwiki.com https://commons.wikimedia.org https://api.unsplash.com https://tile.openstreetmap.org wss: ws:`,
+    `connect-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev https://ixwiki.com https://commons.wikimedia.org https://api.unsplash.com https://*.tile.openstreetmap.org https://demotiles.maplibre.org wss: ws:`,
     `frame-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com`,
     `worker-src 'self' blob:`, // Allow workers from same origin and blob URLs
     `object-src 'none'`,

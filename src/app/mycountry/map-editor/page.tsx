@@ -19,7 +19,7 @@
  * All submissions go through admin approval workflow.
  */
 
-import { useEffect, useState, useCallback, useReducer } from "react";
+import { useEffect, useState, useCallback, useReducer, useMemo } from "react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 import { createUrl } from "~/lib/url-utils";
@@ -31,8 +31,10 @@ import { EditorToolbar } from "~/components/maps/editor/EditorToolbar";
 import { SubdivisionEditor } from "~/components/maps/editor/SubdivisionEditor";
 import { CityPlacement } from "~/components/maps/editor/CityPlacement";
 import { POIEditor } from "~/components/maps/editor/POIEditor";
-import type { Feature } from "geojson";
+import type { Feature, Polygon, MultiPolygon } from "geojson";
 import { toast } from "sonner";
+import type { ProjectionType } from "~/types/maps";
+import { api } from "~/trpc/react";
 
 export const dynamic = "force-dynamic";
 
@@ -94,8 +96,16 @@ const initialEditorState: EditorState = {
 function editorReducer(state: EditorState, action: EditorAction): EditorState {
   switch (action.type) {
     case "SET_MODE":
+      // Prevent unnecessary re-renders if mode hasn't changed
+      if (state.mode === action.payload) {
+        return state;
+      }
       return { ...state, mode: action.payload };
     case "SET_ACTIVE_EDITOR":
+      // Prevent unnecessary re-renders if activeEditor hasn't changed
+      if (state.activeEditor === action.payload) {
+        return state;
+      }
       return { ...state, activeEditor: action.payload };
     case "SELECT_FEATURE":
       return { ...state, selectedFeature: action.payload };
@@ -172,12 +182,85 @@ export default function MapEditorPage() {
   const [state, dispatch] = useReducer(editorReducer, initialEditorState);
   const [showEditorModal, setShowEditorModal] = useState(false);
 
+  // Map display state (editor always uses mercator for proper tile loading)
+  const [projection, setProjection] = useState<ProjectionType>('mercator');
+  const [mapType, setMapType] = useState<'map' | 'climate' | 'terrain'>('map');
+
+  // Fetch country geometry for boundary validation
+  const { data: countryBordersData } = api.geo.getCountryBorders.useQuery(
+    {
+      countryIds: country?.id ? [country.id] : [],
+    },
+    {
+      enabled: !!country?.id,
+      staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    }
+  );
+
+  // Extract country geometry for boundary validation
+  const countryGeometry = useMemo(() => {
+    if (!countryBordersData?.borders || countryBordersData.borders.length === 0) {
+      return null;
+    }
+
+    const countryBorder = countryBordersData.borders[0];
+    if (!countryBorder?.geometry) {
+      return null;
+    }
+
+    // Convert geometry to GeoJSON Feature
+    const geometry = countryBorder.geometry as { type: string; coordinates: any };
+    return {
+      type: "Feature" as const,
+      properties: {},
+      geometry: geometry as Polygon | MultiPolygon,
+    } as Feature<Polygon | MultiPolygon>;
+  }, [countryBordersData]);
+
   // Set page title
   useEffect(() => {
     document.title = country?.name
       ? `${country.name} - Map Editor`
       : "Map Editor - IxStats";
   }, [country?.name]);
+
+  // Load map settings from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedSettings = localStorage.getItem('ixstats-map-settings');
+      if (savedSettings) {
+        try {
+          const parsed = JSON.parse(savedSettings);
+          if (parsed.projection) {
+            setProjection(parsed.projection);
+          }
+          if (parsed.mapType) {
+            setMapType(parsed.mapType);
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+    }
+  }, []);
+
+  // Save map settings to localStorage when they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedSettings = localStorage.getItem('ixstats-map-settings');
+      let settings = {};
+      try {
+        settings = savedSettings ? JSON.parse(savedSettings) : {};
+      } catch (e) {
+        // Ignore parse errors
+      }
+      localStorage.setItem('ixstats-map-settings', JSON.stringify({
+        ...settings,
+        projection,
+        mapType,
+      }));
+    }
+  }, [projection, mapType]);
 
   /**
    * Handle mode change from toolbar
@@ -228,7 +311,6 @@ export default function MapEditorPage() {
     const mapInstance = (window as any).__mapEditorInstance;
     if (mapInstance) {
       // TODO: Implement zoom to feature
-      console.log(`[MapEditor] Zoom to ${type}:${featureId}`);
     }
   }, []);
 
@@ -261,7 +343,6 @@ export default function MapEditorPage() {
    * Handle feature creation from map
    */
   const handleFeatureCreate = useCallback((feature: Feature) => {
-    console.log("[MapEditor] Feature created:", feature);
     dispatch({ type: "SET_CURRENT_FEATURE", payload: feature });
     toast.info("Feature created. Fill in details to save.");
   }, []);
@@ -270,7 +351,6 @@ export default function MapEditorPage() {
    * Handle feature update from map
    */
   const handleFeatureUpdate = useCallback((feature: Feature) => {
-    console.log("[MapEditor] Feature updated:", feature);
     dispatch({ type: "SET_CURRENT_FEATURE", payload: feature });
     toast.info("Feature updated. Save to persist changes.");
   }, []);
@@ -279,11 +359,26 @@ export default function MapEditorPage() {
    * Handle feature delete from map
    */
   const handleFeatureDelete = useCallback((featureId: string) => {
-    console.log("[MapEditor] Feature deleted:", featureId);
     dispatch({ type: "SET_CURRENT_FEATURE", payload: null });
     dispatch({ type: "SET_UNSAVED_CHANGES", payload: false });
     toast.success("Feature deleted");
   }, []);
+
+  /**
+   * Handle map click for coordinate capture (cities and POIs)
+   */
+  const handleMapClick = useCallback((coordinates: { lng: number; lat: number }) => {
+    // Only handle clicks when in city or POI mode
+    if (state.activeEditor === "city" || state.activeEditor === "poi") {
+      // Store coordinates in a way the editors can access
+      (window as any).__mapEditorClickCoords = coordinates;
+
+      // Trigger a custom event that editors can listen to
+      window.dispatchEvent(new CustomEvent('mapeditor:click', {
+        detail: { coordinates }
+      }));
+    }
+  }, [state.activeEditor]);
 
   /**
    * Handle save action
@@ -295,7 +390,6 @@ export default function MapEditorPage() {
     }
 
     // TODO: Call appropriate create/update mutation based on state.activeEditor
-    console.log("[MapEditor] Saving feature:", state.currentFeature);
     toast.success("Feature saved as draft");
 
     dispatch({ type: "SET_UNSAVED_CHANGES", payload: false });
@@ -339,8 +433,31 @@ export default function MapEditorPage() {
    * Handle coordinate click from map
    */
   const handleCoordinateClick = useCallback((lng: number, lat: number) => {
-    console.log(`[MapEditor] Clicked: ${lng.toFixed(6)}, ${lat.toFixed(6)}`);
-    toast.info(`Coordinates: ${lng.toFixed(6)}, ${lat.toFixed(6)}`);
+    // Call the map click handler to dispatch to active editors
+    handleMapClick({ lng, lat });
+
+    // Show toast for user feedback
+    if (state.activeEditor === "city" || state.activeEditor === "poi") {
+      toast.success(`Coordinates captured: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+    } else {
+      toast.info(`Coordinates: ${lng.toFixed(6)}, ${lat.toFixed(6)}`);
+    }
+  }, [handleMapClick, state.activeEditor]);
+
+  /**
+   * Handle projection change
+   */
+  const handleProjectionChange = useCallback((newProjection: ProjectionType) => {
+    setProjection(newProjection);
+    toast.success(`Switched to ${newProjection} projection`);
+  }, []);
+
+  /**
+   * Handle map type change
+   */
+  const handleMapTypeChange = useCallback((newMapType: 'map' | 'climate' | 'terrain') => {
+    setMapType(newMapType);
+    toast.success(`Switched to ${newMapType} mode`);
   }, []);
 
   /**
@@ -432,6 +549,17 @@ export default function MapEditorPage() {
     }
   }, [state.currentFeature, state.hasUnsavedChanges, state.activeEditor, country?.id]);
 
+  // Memoize handlers to prevent infinite loops
+  // IMPORTANT: This must be BEFORE any early returns (Rules of Hooks)
+  const mapEditorHandlers = useMemo(() => ({
+    onFeatureCreate: handleFeatureCreate,
+    onFeatureUpdate: handleFeatureUpdate,
+    onFeatureDelete: handleFeatureDelete,
+    onCoordinateClick: handleCoordinateClick,
+    // DO NOT include onModeChange here - it causes infinite loop
+    // The mode is controlled by the drawingMode prop, not by internal map events
+  }), [handleFeatureCreate, handleFeatureUpdate, handleFeatureDelete, handleCoordinateClick]);
+
   // Authentication guard
   if (!isLoaded || profileLoading) {
     return <LoadingState message="Loading profile..." />;
@@ -490,20 +618,19 @@ export default function MapEditorPage() {
       </div>
 
       {/* Main Editor Layout */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* Left: Map Container (70% width) */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative z-0">
           <MapEditorContainer
             countryId={country.id}
+            // No initialCenter - calculated automatically from vector tiles in WGS84
+            initialZoom={6}
             drawingMode={state.mode}
             layerVisibility={state.layerVisibility}
-            handlers={{
-              onFeatureCreate: handleFeatureCreate,
-              onFeatureUpdate: handleFeatureUpdate,
-              onFeatureDelete: handleFeatureDelete,
-              onCoordinateClick: handleCoordinateClick,
-              onModeChange: (mode) => dispatch({ type: "SET_MODE", payload: mode }),
-            }}
+            handlers={mapEditorHandlers}
+            projection={projection}
+            onProjectionChange={handleProjectionChange}
+            mapType={mapType}
           />
 
           {/* Floating Toolbar */}
@@ -520,67 +647,17 @@ export default function MapEditorPage() {
           />
         </div>
 
-        {/* Right: Editor Sidebar (30% width) */}
-        <div className="w-[30%] border-l border-slate-700/50">
+        {/* Right: Editor Sidebar (30% width) - Elevated above map */}
+        <div className="w-[30%] border-l border-slate-700/50 bg-slate-900 relative z-10 shadow-2xl">
           <EditorSidebar
             countryId={country.id}
-            activeFeatureId={state.selectedFeature?.id}
+            countryGeometry={countryGeometry}
             onFeatureSelect={handleFeatureSelect}
             onNewFeature={handleNewFeature}
             onEditFeature={handleEditFeature}
-            onDeleteFeature={handleDeleteFeature}
           />
         </div>
       </div>
-
-      {/* Editor Modals */}
-      {showEditorModal && state.activeEditor === "subdivision" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="glass-panel p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto m-4">
-            <SubdivisionEditor
-              countryId={country.id}
-              existingFeature={state.currentFeature}
-              onClose={handleCancel}
-              onSave={(data) => {
-                console.log("[MapEditor] Subdivision saved:", data);
-                handleSave();
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {showEditorModal && state.activeEditor === "city" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="glass-panel p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto m-4">
-            <CityPlacement
-              countryId={country.id}
-              existingCity={state.currentFeature}
-              onClose={handleCancel}
-              onSave={(data) => {
-                console.log("[MapEditor] City saved:", data);
-                handleSave();
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {showEditorModal && state.activeEditor === "poi" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="glass-panel p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto m-4">
-            <POIEditor
-              countryId={country.id}
-              existingPOI={state.currentFeature}
-              onClose={handleCancel}
-              onSave={(data) => {
-                console.log("[MapEditor] POI saved:", data);
-                handleSave();
-              }}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -25,7 +25,7 @@ interface SearchResult {
   category?: string;
   flag?: string;
 }
-
+  
 interface RecentSearch {
   id: string;
   name: string;

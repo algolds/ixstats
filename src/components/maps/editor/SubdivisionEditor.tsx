@@ -22,6 +22,8 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+// @ts-ignore - @turf/turf lacks complete TypeScript declarations
+import { booleanWithin, booleanOverlap, booleanIntersects, booleanContains } from "@turf/turf";
 import {
   Save,
   Send,
@@ -204,7 +206,7 @@ export function SubdivisionEditor({
         capital: subdivision.capital ?? "",
         description: "",
       });
-      setGeometry(subdivision.geometry as Feature<Polygon | MultiPolygon>);
+      setGeometry(subdivision.geometry as unknown as Feature<Polygon | MultiPolygon>);
       setMode("edit");
       setIsDraft(subdivision.status === "draft" || subdivision.status === "pending");
     }
@@ -238,7 +240,7 @@ export function SubdivisionEditor({
           if (subdivisionId && existing.id === subdivisionId) continue; // Skip self when editing
           if (
             existing.geometry &&
-            polygonsOverlap(geom, existing.geometry as Feature<Polygon | MultiPolygon>)
+            polygonsOverlap(geom, existing.geometry as unknown as Feature<Polygon | MultiPolygon>)
           ) {
             overlapsExisting = true;
             warnings.push(`May overlap with existing subdivision: ${existing.name}`);
@@ -455,8 +457,8 @@ export function SubdivisionEditor({
 
   if (loadingSubdivision) {
     return (
-      <div className="glass-panel border border-slate-700/50 rounded-lg p-4">
-        <div className="flex items-center gap-3 text-slate-400">
+      <div className="glass-panel border border-slate-200 dark:border-slate-700/50 rounded-lg p-4">
+        <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
           <Loader2 className="w-5 h-5 animate-spin" />
           <span className="text-sm">Loading subdivision...</span>
         </div>
@@ -485,19 +487,22 @@ export function SubdivisionEditor({
       />
 
       {/* Editor Sidebar Form */}
-      <div className="glass-panel border-l border-slate-700/50 w-96 flex-shrink-0 overflow-y-auto">
-        <div className="p-4 space-y-4">
+      <div className="glass-panel border-l border-slate-200 dark:border-slate-700/50 w-full flex-shrink-0 overflow-y-auto bg-white dark:bg-slate-900 backdrop-blur-xl">
+        <div className="p-6 space-y-4">
           {/* Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-slate-700/50">
-            <div className="flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-gold-400" />
-              <h3 className="text-lg font-semibold text-white">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-700/50">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gold-500/20">
+                <MapPin className="w-5 h-5 text-gold-400" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                 {subdivisionId ? "Edit Subdivision" : "New Subdivision"}
               </h3>
             </div>
             <button
               onClick={handleCancel}
-              className="text-slate-400 hover:text-white transition-colors"
+              className="p-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all"
+              aria-label="Close editor"
             >
               <X className="w-5 h-5" />
             </button>
@@ -510,7 +515,7 @@ export function SubdivisionEditor({
           <div className="space-y-4">
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
                 Name <span className="text-red-400">*</span>
               </label>
               <Input
@@ -519,17 +524,17 @@ export function SubdivisionEditor({
                 onChange={(e) => handleFormChange("name", e.target.value)}
                 placeholder="Enter subdivision name"
                 maxLength={200}
-                className="w-full"
+                className="w-full bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 aria-invalid={formData.name.length === 0}
               />
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
                 {formData.name.length}/200 characters
               </p>
             </div>
 
             {/* Type */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
                 Type <span className="text-red-400">*</span>
               </label>
               <select
@@ -537,10 +542,10 @@ export function SubdivisionEditor({
                 onChange={(e) =>
                   handleFormChange("type", e.target.value as FormData["type"])
                 }
-                className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                className="w-full h-10 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white px-3 text-sm outline-none focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20"
               >
                 {SUBDIVISION_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
+                  <option key={type.value} value={type.value} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
                     {type.label}
                   </option>
                 ))}
@@ -549,28 +554,28 @@ export function SubdivisionEditor({
 
             {/* Level */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
                 Administrative Level <span className="text-red-400">*</span>
               </label>
               <select
                 value={formData.level}
                 onChange={(e) => handleFormChange("level", parseInt(e.target.value))}
-                className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                className="w-full h-10 rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white px-3 text-sm outline-none focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20"
               >
                 {LEVELS.map((level) => (
-                  <option key={level.value} value={level.value}>
+                  <option key={level.value} value={level.value} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
                     {level.label}
                   </option>
                 ))}
               </select>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
                 Lower levels represent larger administrative units
               </p>
             </div>
 
             {/* Population */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
                 Population (optional)
               </label>
               <Input
@@ -579,13 +584,13 @@ export function SubdivisionEditor({
                 onChange={(e) => handleFormChange("population", e.target.value)}
                 placeholder="0"
                 min="0"
-                className="w-full"
+                className="w-full bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
 
             {/* Capital City */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
                 Capital City (optional)
               </label>
               <Input
@@ -594,13 +599,13 @@ export function SubdivisionEditor({
                 onChange={(e) => handleFormChange("capital", e.target.value)}
                 placeholder="Enter capital city name"
                 maxLength={200}
-                className="w-full"
+                className="w-full bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">
+              <label className="block text-sm font-medium text-slate-900 dark:text-white mb-2">
                 Description (optional)
               </label>
               <textarea
@@ -609,16 +614,16 @@ export function SubdivisionEditor({
                 placeholder="Add notes or description"
                 maxLength={2000}
                 rows={4}
-                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] resize-none"
+                className="w-full rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 px-3 py-2 text-sm outline-none focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 resize-none"
               />
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
                 {formData.description.length}/2000 characters
               </p>
             </div>
           </div>
 
           {/* Actions */}
-          <div className="pt-4 border-t border-slate-700/50 space-y-2">
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-700/50 space-y-2">
             {/* Save as Draft */}
             <Button
               onClick={handleSaveDraft}
@@ -751,27 +756,58 @@ function calculateRingArea(ring: number[][]): number {
 }
 
 /**
- * Check if polygon is entirely within boundary
- * Simplified implementation - in production, use turf.js booleanWithin
+ * Check if polygon is entirely within boundary using Turf.js
+ * Handles both Polygon and MultiPolygon geometries
+ *
+ * @param polygon - The subdivision polygon to check
+ * @param boundary - The country boundary to check against
+ * @returns true if polygon is entirely within boundary, false otherwise
  */
 function isPolygonWithinBoundary(
   polygon: Feature<Polygon | MultiPolygon>,
   boundary: Feature<Polygon | MultiPolygon>
 ): boolean {
-  // This is a placeholder - implement proper spatial checking with turf.js
-  // For now, return true to avoid blocking the UI
-  return true;
+  try {
+    // Use booleanWithin to check if polygon is completely inside boundary
+    // booleanWithin returns true if the first geometry is completely within the second
+    return booleanWithin(polygon, boundary);
+  } catch (error) {
+    console.error("[SubdivisionEditor] Error checking polygon within boundary:", error);
+    // On error, use booleanContains as fallback (inverse check)
+    try {
+      return booleanContains(boundary, polygon);
+    } catch (fallbackError) {
+      console.error("[SubdivisionEditor] Fallback boundary check also failed:", fallbackError);
+      // Fail closed - don't allow invalid geometry
+      return false;
+    }
+  }
 }
 
 /**
- * Check if two polygons overlap
- * Simplified implementation - in production, use turf.js booleanOverlap
+ * Check if two polygons overlap using Turf.js
+ * Checks for both overlap and intersection to catch all cases
+ *
+ * @param poly1 - First polygon to check
+ * @param poly2 - Second polygon to check
+ * @returns true if polygons overlap or intersect, false otherwise
  */
 function polygonsOverlap(
   poly1: Feature<Polygon | MultiPolygon>,
   poly2: Feature<Polygon | MultiPolygon>
 ): boolean {
-  // This is a placeholder - implement proper spatial checking with turf.js
-  // For now, return false to avoid blocking the UI
-  return false;
+  try {
+    // Check both overlap and intersection
+    // booleanOverlap: geometries share some but not all points
+    // booleanIntersects: geometries have at least one point in common
+    const overlaps = booleanOverlap(poly1, poly2);
+    const intersects = booleanIntersects(poly1, poly2);
+
+    return overlaps || intersects;
+  } catch (error) {
+    console.error("[SubdivisionEditor] Error checking polygon overlap:", error);
+    // On error, fail open to avoid blocking valid geometries
+    // Manual review will catch any issues
+    return false;
+  }
 }

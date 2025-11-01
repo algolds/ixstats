@@ -17,12 +17,15 @@
 
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Icons from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { Feature, Polygon, MultiPolygon } from "geojson";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+// @ts-ignore - @turf/turf lacks complete TypeScript declarations
+import { booleanPointInPolygon } from "@turf/turf";
 import {
   poiTaxonomy,
   getCategoryColor,
@@ -63,6 +66,7 @@ import {
 
 interface POIEditorProps {
   countryId: string;
+  countryGeometry?: Feature<Polygon | MultiPolygon> | null;
   subdivisionId?: string;
   mode?: "create" | "edit";
   poiId?: string;
@@ -121,12 +125,40 @@ function validateCoordinates(lat: number, lng: number): boolean {
   return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
 }
 
+/**
+ * Check if coordinates are within country geometry using Turf.js
+ * Returns true if point is inside the country boundary polygon
+ */
+function isWithinCountryGeometry(
+  lat: number,
+  lng: number,
+  geometry?: Feature<Polygon | MultiPolygon> | null
+): boolean {
+  if (!geometry) {
+    return true; // No geometry to check against - allow placement
+  }
+
+  try {
+    const point = {
+      type: "Point" as const,
+      coordinates: [lng, lat] as [number, number],
+    };
+
+    // Use Turf.js to check if point is within polygon
+    return booleanPointInPolygon(point, geometry);
+  } catch (error) {
+    console.error("[POIEditor] Error checking point in polygon:", error);
+    return true; // On error, allow placement (fail open)
+  }
+}
+
 // ============================================================================
 // Main Component
 // ============================================================================
 
 export function POIEditor({
   countryId,
+  countryGeometry,
   subdivisionId,
   mode = "create",
   poiId,
@@ -153,6 +185,51 @@ export function POIEditor({
   const [showCategoryBrowser, setShowCategoryBrowser] = useState(false);
 
   // ============================================================================
+  // Effect: Listen for map clicks when placing marker
+  // ============================================================================
+
+  useEffect(() => {
+    if (!isPlacingMarker) return;
+
+    const handleMapClickEvent = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { coordinates } = customEvent.detail;
+
+      // Check if coordinates are within country geometry
+      const withinGeometry = countryGeometry
+        ? isWithinCountryGeometry(coordinates.lat, coordinates.lng, countryGeometry)
+        : true;
+
+      if (!withinGeometry) {
+        setValidationErrors((prev) => ({
+          ...prev,
+          coordinates: "ERROR: This location is outside your country's boundaries. POIs must be placed within your territory.",
+        }));
+      } else {
+        setValidationErrors((prev) => ({
+          ...prev,
+          coordinates: undefined,
+        }));
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        coordinates: {
+          lat: coordinates.lat,
+          lng: coordinates.lng,
+        },
+      }));
+      setIsPlacingMarker(false);
+    };
+
+    window.addEventListener("mapeditor:click", handleMapClickEvent);
+
+    return () => {
+      window.removeEventListener("mapeditor:click", handleMapClickEvent);
+    };
+  }, [isPlacingMarker]);
+
+  // ============================================================================
   // tRPC Queries and Mutations
   // ============================================================================
 
@@ -160,17 +237,49 @@ export function POIEditor({
     onSuccess: () => {
       onSuccess?.();
     },
+    onError: (error) => {
+      console.error("[POIEditor] Create error:", error);
+      setValidationErrors((prev) => ({
+        ...prev,
+        name: error.message || "Failed to create POI",
+      }));
+    },
   });
 
   const updatePOI = api.mapEditor.updatePOI.useMutation({
     onSuccess: () => {
       onSuccess?.();
     },
+    onError: (error) => {
+      console.error("[POIEditor] Update error:", error);
+      setValidationErrors((prev) => ({
+        ...prev,
+        name: error.message || "Failed to update POI",
+      }));
+    },
   });
 
   const deletePOI = api.mapEditor.deletePOI.useMutation({
     onSuccess: () => {
       onSuccess?.();
+    },
+    onError: (error) => {
+      console.error("[POIEditor] Delete error:", error);
+      alert(error.message || "Failed to delete POI");
+    },
+  });
+
+  const submitPOIForReview = api.mapEditor.submitPOIForReview.useMutation({
+    onSuccess: () => {
+      console.log("[POIEditor] POI submitted for review successfully");
+      onSuccess?.();
+    },
+    onError: (error) => {
+      console.error("[POIEditor] Submit for review error:", error);
+      setValidationErrors((prev) => ({
+        ...prev,
+        name: error.message || "Failed to submit for review",
+      }));
     },
   });
 
@@ -219,6 +328,21 @@ export function POIEditor({
     );
   }, [mainCategories, searchQuery]);
 
+  const isOutOfBounds = useMemo(() => {
+    if (!formData.coordinates) return false;
+
+    // Check if coordinates are within country geometry
+    if (countryGeometry && !isWithinCountryGeometry(
+      formData.coordinates.lat,
+      formData.coordinates.lng,
+      countryGeometry
+    )) {
+      return true;
+    }
+
+    return false;
+  }, [formData.coordinates, countryGeometry]);
+
   // ============================================================================
   // Validation
   // ============================================================================
@@ -249,6 +373,8 @@ export function POIEditor({
       !validateCoordinates(formData.coordinates.lat, formData.coordinates.lng)
     ) {
       errors.coordinates = "Invalid coordinates";
+    } else if (isOutOfBounds) {
+      errors.coordinates = "POI marker is outside country boundaries";
     }
 
     // Image validation
@@ -263,7 +389,7 @@ export function POIEditor({
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
-  }, [formData]);
+  }, [formData, isOutOfBounds]);
 
   // ============================================================================
   // Event Handlers
@@ -337,8 +463,7 @@ export function POIEditor({
 
   const handlePlaceMarker = useCallback(() => {
     setIsPlacingMarker(true);
-    // TODO: Integrate with map click event to capture coordinates
-    // For now, this would be handled by the parent MapEditorContainer
+    // Map click event listener (in useEffect) will capture coordinates
   }, []);
 
   const handleCoordinateChange = useCallback(
@@ -357,20 +482,25 @@ export function POIEditor({
     []
   );
 
-  const handleSaveDraft = useCallback(() => {
-    if (!validateForm()) return;
+  const handleSaveDraft = useCallback(async () => {
+    // Validate form first
+    if (!validateForm()) {
+      console.warn("[POIEditor] Validation failed, cannot save");
+      return;
+    }
 
+    // Build POI data structure matching the router schema
     const poiData = {
       countryId,
-      subdivisionId,
-      name: formData.name,
-      category: formData.mainCategory as any, // TODO: Update router schema to support new taxonomy
-      icon: formData.subcategory,
+      subdivisionId: subdivisionId || undefined,
+      name: formData.name.trim(),
+      category: formData.mainCategory as any, // Maps to enum: monument, landmark, military, cultural, natural, religious, government
+      icon: formData.subcategory || undefined,
       coordinates: {
         type: "Point" as const,
-        coordinates: [formData.coordinates!.lng, formData.coordinates!.lat],
+        coordinates: [formData.coordinates!.lng, formData.coordinates!.lat] as [number, number],
       },
-      description: formData.description || undefined,
+      description: formData.description.trim() || undefined,
       images: formData.images.length > 0 ? formData.images : undefined,
       metadata: {
         mainCategory: formData.mainCategory,
@@ -378,10 +508,21 @@ export function POIEditor({
       },
     };
 
-    if (mode === "edit" && poiId) {
-      updatePOI.mutate({ id: poiId, ...poiData });
-    } else {
-      createPOI.mutate(poiData);
+    console.log("[POIEditor] Saving POI:", { mode, poiId, poiData });
+
+    try {
+      if (mode === "edit" && poiId) {
+        // Update existing POI
+        await updatePOI.mutateAsync({ id: poiId, ...poiData });
+        console.log("[POIEditor] POI updated successfully");
+      } else {
+        // Create new POI
+        await createPOI.mutateAsync(poiData);
+        console.log("[POIEditor] POI created successfully");
+      }
+    } catch (error) {
+      console.error("[POIEditor] Save failed:", error);
+      // Error handling is done in mutation onError callbacks
     }
   }, [
     validateForm,
@@ -394,11 +535,70 @@ export function POIEditor({
     updatePOI,
   ]);
 
-  const handleSubmitForReview = useCallback(() => {
-    // First save as draft, then submit for review
-    handleSaveDraft();
-    // TODO: Call submitPOIForReview mutation after successful save
-  }, [handleSaveDraft]);
+  const handleSubmitForReview = useCallback(async () => {
+    // Validate form first
+    if (!validateForm()) {
+      console.warn("[POIEditor] Validation failed, cannot submit");
+      return;
+    }
+
+    // Build POI data structure matching the router schema
+    const poiData = {
+      countryId,
+      subdivisionId: subdivisionId || undefined,
+      name: formData.name.trim(),
+      category: formData.mainCategory as any,
+      icon: formData.subcategory || undefined,
+      coordinates: {
+        type: "Point" as const,
+        coordinates: [formData.coordinates!.lng, formData.coordinates!.lat] as [number, number],
+      },
+      description: formData.description.trim() || undefined,
+      images: formData.images.length > 0 ? formData.images : undefined,
+      metadata: {
+        mainCategory: formData.mainCategory,
+        subcategory: formData.subcategory,
+      },
+    };
+
+    console.log("[POIEditor] Submitting POI for review:", { mode, poiId, poiData });
+
+    try {
+      let savedPoiId = poiId;
+
+      if (mode === "edit" && poiId) {
+        // Update existing POI (keeps draft status)
+        await updatePOI.mutateAsync({ id: poiId, ...poiData });
+        console.log("[POIEditor] POI updated");
+      } else {
+        // Create new POI (created with draft status)
+        const result = await createPOI.mutateAsync(poiData);
+        savedPoiId = result.poi.id;
+        console.log("[POIEditor] POI created:", savedPoiId);
+      }
+
+      // Now submit for review (changes status from draft to pending)
+      if (savedPoiId) {
+        await submitPOIForReview.mutateAsync({ id: savedPoiId });
+        console.log("[POIEditor] POI submitted for review");
+      }
+
+      // Success callback will be triggered by submitPOIForReview onSuccess
+    } catch (error) {
+      console.error("[POIEditor] Submit failed:", error);
+      // Error handling is done in mutation onError callbacks
+    }
+  }, [
+    validateForm,
+    formData,
+    countryId,
+    subdivisionId,
+    mode,
+    poiId,
+    createPOI,
+    updatePOI,
+    submitPOIForReview,
+  ]);
 
   const handleDelete = useCallback(() => {
     if (!poiId) return;
@@ -434,10 +634,10 @@ export function POIEditor({
           />
         </div>
         <div>
-          <p className="text-sm font-medium text-text-secondary">
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
             Icon Preview
           </p>
-          <p className="text-xs text-text-tertiary">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {formData.subcategory
               ? poiTaxonomy[formData.mainCategory]?.subcategories[
                   formData.subcategory
@@ -457,7 +657,7 @@ export function POIEditor({
     <AnimatePresence>
       {showCategoryBrowser && (
         <motion.div
-          className="absolute inset-0 z-50 bg-bg-primary/95 backdrop-blur-lg p-6 overflow-y-auto"
+          className="absolute inset-0 z-50 bg-white dark:bg-slate-900 backdrop-blur-lg p-6 overflow-y-auto"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
@@ -465,7 +665,7 @@ export function POIEditor({
         >
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-text-primary">
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
                 Category Browser
               </h3>
               <Button
@@ -479,12 +679,12 @@ export function POIEditor({
 
             <div className="mb-6">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-slate-400" />
                 <Input
                   placeholder="Search categories and subcategories..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
             </div>
@@ -495,7 +695,7 @@ export function POIEditor({
                 return (
                   <div
                     key={category.key}
-                    className="p-4 rounded-xl border bg-bg-secondary/50 backdrop-blur-sm"
+                    className="p-4 rounded-xl border bg-slate-50 dark:bg-slate-800/50 backdrop-blur-sm"
                     style={{ borderColor: `${category.color}40` }}
                   >
                     <h4
@@ -519,27 +719,27 @@ export function POIEditor({
                           <button
                             key={subcat.key}
                             onClick={() => {
-                              handleMainCategoryChange(category.key);
-                              handleFieldChange("subcategory", subcat.key);
+                              handleMainCategoryChange(String(category.key));
+                              handleFieldChange("subcategory", String(subcat.key));
                               setShowCategoryBrowser(false);
                             }}
                             className={cn(
                               "flex items-center gap-3 p-3 rounded-lg transition-all text-left",
-                              "hover:bg-bg-tertiary/50 border",
+                              "hover:bg-slate-200 dark:hover:bg-slate-700/50 border",
                               isSelected
-                                ? "bg-bg-tertiary border-border-primary"
-                                : "bg-bg-secondary/30 border-transparent"
+                                ? "bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600"
+                                : "bg-slate-100 dark:bg-slate-800/30 border-transparent"
                             )}
                           >
                             <Icon
                               className="w-4 h-4 flex-shrink-0"
                               style={{ color: category.color }}
                             />
-                            <span className="text-sm text-text-primary flex-1">
+                            <span className="text-sm text-slate-900 dark:text-white flex-1">
                               {subcat.label}
                             </span>
                             {isSelected && (
-                              <Check className="w-4 h-4 text-success" />
+                              <Check className="w-4 h-4 text-green-400" />
                             )}
                           </button>
                         );
@@ -560,13 +760,13 @@ export function POIEditor({
   // ============================================================================
 
   return (
-    <div className="relative h-full flex flex-col bg-bg-primary">
+    <div className="relative h-full flex flex-col bg-white dark:bg-slate-900 backdrop-blur-xl">
       <CategoryBrowser />
 
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-text-primary">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
             {mode === "edit" ? "Edit" : "Create"} Point of Interest
           </h2>
           {mode === "edit" && (
@@ -584,8 +784,8 @@ export function POIEditor({
 
         {/* Name Field */}
         <div className="space-y-2">
-          <Label htmlFor="poi-name">
-            Name <span className="text-destructive">*</span>
+          <Label htmlFor="poi-name" className="text-slate-900 dark:text-white mb-2">
+            Name <span className="text-red-400">*</span>
           </Label>
           <Input
             id="poi-name"
@@ -594,14 +794,15 @@ export function POIEditor({
             onChange={(e) => handleFieldChange("name", e.target.value)}
             maxLength={200}
             aria-invalid={!!validationErrors.name}
+            className="bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
           {validationErrors.name && (
-            <p className="text-sm text-destructive flex items-center gap-1">
+            <p className="text-sm text-red-400 flex items-center gap-1">
               <AlertTriangle className="w-4 h-4" />
               {validationErrors.name}
             </p>
           )}
-          <p className="text-xs text-text-tertiary">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {formData.name.length}/200 characters
           </p>
         </div>
@@ -609,22 +810,23 @@ export function POIEditor({
         {/* Category Selection */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="main-category">
-              Main Category <span className="text-destructive">*</span>
+            <Label htmlFor="main-category" className="text-slate-900 dark:text-white mb-2">
+              Main Category <span className="text-red-400">*</span>
             </Label>
             <Select
-              value={formData.mainCategory}
+              value={formData.mainCategory ? String(formData.mainCategory) : undefined}
               onValueChange={handleMainCategoryChange}
             >
               <SelectTrigger
                 id="main-category"
                 aria-invalid={!!validationErrors.mainCategory}
+                className="bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
               >
                 <SelectValue placeholder="Select main category" />
               </SelectTrigger>
               <SelectContent>
                 {mainCategories.map((cat) => (
-                  <SelectItem key={cat.key} value={cat.key}>
+                  <SelectItem key={cat.key} value={String(cat.key)}>
                     <div className="flex items-center gap-2">
                       <div
                         className="w-3 h-3 rounded-full"
@@ -637,7 +839,7 @@ export function POIEditor({
               </SelectContent>
             </Select>
             {validationErrors.mainCategory && (
-              <p className="text-sm text-destructive flex items-center gap-1">
+              <p className="text-sm text-red-400 flex items-center gap-1">
                 <AlertTriangle className="w-4 h-4" />
                 {validationErrors.mainCategory}
               </p>
@@ -645,8 +847,8 @@ export function POIEditor({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="subcategory">
-              Subcategory <span className="text-destructive">*</span>
+            <Label htmlFor="subcategory" className="text-slate-900 dark:text-white mb-2">
+              Subcategory <span className="text-red-400">*</span>
             </Label>
             <Select
               value={formData.subcategory}
@@ -656,6 +858,7 @@ export function POIEditor({
               <SelectTrigger
                 id="subcategory"
                 aria-invalid={!!validationErrors.subcategory}
+                className="bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
               >
                 <SelectValue placeholder="Select subcategory" />
               </SelectTrigger>
@@ -674,7 +877,7 @@ export function POIEditor({
               </SelectContent>
             </Select>
             {validationErrors.subcategory && (
-              <p className="text-sm text-destructive flex items-center gap-1">
+              <p className="text-sm text-red-400 flex items-center gap-1">
                 <AlertTriangle className="w-4 h-4" />
                 {validationErrors.subcategory}
               </p>
@@ -697,8 +900,8 @@ export function POIEditor({
 
         {/* Coordinates */}
         <div className="space-y-2">
-          <Label>
-            Coordinates <span className="text-destructive">*</span>
+          <Label className="text-slate-900 dark:text-white mb-2">
+            Coordinates <span className="text-red-400">*</span>
           </Label>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <Button
@@ -728,6 +931,7 @@ export function POIEditor({
               value={formData.coordinates?.lat ?? ""}
               onChange={(e) => handleCoordinateChange("lat", e.target.value)}
               disabled={!formData.coordinates}
+              className="bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
             />
             <Input
               placeholder="Longitude"
@@ -736,20 +940,38 @@ export function POIEditor({
               value={formData.coordinates?.lng ?? ""}
               onChange={(e) => handleCoordinateChange("lng", e.target.value)}
               disabled={!formData.coordinates}
+              className="bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
             />
           </div>
           {validationErrors.coordinates && (
-            <p className="text-sm text-destructive flex items-center gap-1">
+            <p className="text-sm text-red-400 flex items-center gap-1">
               <AlertTriangle className="w-4 h-4" />
               {validationErrors.coordinates}
             </p>
+          )}
+
+          {/* Boundary Warning */}
+          {isOutOfBounds && formData.coordinates && (
+            <div className="mt-3 flex items-start gap-3 rounded-lg bg-red-500/20 border border-red-500/30 p-4 text-sm text-red-400">
+              <AlertTriangle className="mt-0.5 w-5 h-5 shrink-0" />
+              <div className="flex-1">
+                <p className="font-semibold text-red-300">⚠️ Invalid Location - Outside Country Boundaries</p>
+                <p className="mt-1.5 text-xs opacity-90">
+                  The marker is currently placed outside your country's territory.
+                  Please click "Place on Map" and select a location within your borders.
+                </p>
+                <p className="mt-2 text-xs font-medium">
+                  → Save and submit buttons are disabled until the POI is placed within valid boundaries.
+                </p>
+              </div>
+            </div>
           )}
         </div>
 
         {/* Description */}
         <div className="space-y-2">
-          <Label htmlFor="description">
-            Description <span className="text-text-tertiary">(Optional)</span>
+          <Label htmlFor="description" className="text-slate-900 dark:text-white mb-2">
+            Description <span className="text-slate-500 dark:text-slate-400">(Optional)</span>
           </Label>
           <Textarea
             id="description"
@@ -758,16 +980,17 @@ export function POIEditor({
             onChange={(e) => handleFieldChange("description", e.target.value)}
             rows={4}
             maxLength={2000}
+            className="bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
-          <p className="text-xs text-text-tertiary">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {formData.description.length}/2000 characters. Markdown supported.
           </p>
         </div>
 
         {/* Images */}
         <div className="space-y-3">
-          <Label>
-            Images <span className="text-text-tertiary">(Optional, max 5)</span>
+          <Label className="text-slate-900 dark:text-white mb-2">
+            Images <span className="text-slate-500 dark:text-slate-400">(Optional, max 5)</span>
           </Label>
 
           {/* Image URL Input */}
@@ -782,6 +1005,7 @@ export function POIEditor({
                   handleAddImage();
                 }
               }}
+              className="bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
             />
             <Button onClick={handleAddImage} disabled={!imageUrlInput.trim()}>
               <Upload className="w-4 h-4 mr-2" />
@@ -790,7 +1014,7 @@ export function POIEditor({
           </div>
 
           {validationErrors.images && (
-            <p className="text-sm text-destructive flex items-center gap-1">
+            <p className="text-sm text-red-400 flex items-center gap-1">
               <AlertTriangle className="w-4 h-4" />
               {validationErrors.images}
             </p>
@@ -802,7 +1026,7 @@ export function POIEditor({
               {formData.images.map((url, index) => (
                 <div
                   key={index}
-                  className="relative group aspect-square rounded-lg overflow-hidden border border-border-secondary bg-bg-secondary"
+                  className="relative group aspect-square rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
                 >
                   <img
                     src={url}
@@ -811,7 +1035,7 @@ export function POIEditor({
                     onError={(e) => {
                       e.currentTarget.src = "";
                       e.currentTarget.className =
-                        "w-full h-full flex items-center justify-center bg-bg-tertiary";
+                        "w-full h-full flex items-center justify-center bg-slate-700";
                       e.currentTarget.alt = "Failed to load image";
                     }}
                   />
@@ -828,11 +1052,11 @@ export function POIEditor({
 
           {/* Image Upload Placeholder */}
           {formData.images.length === 0 && (
-            <div className="flex items-center justify-center p-8 border-2 border-dashed border-border-secondary rounded-lg bg-bg-secondary/30">
+            <div className="flex items-center justify-center p-8 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/30">
               <div className="text-center">
-                <ImageIcon className="w-12 h-12 mx-auto text-text-tertiary mb-2" />
-                <p className="text-sm text-text-secondary">No images added</p>
-                <p className="text-xs text-text-tertiary">
+                <ImageIcon className="w-12 h-12 mx-auto text-slate-500 dark:text-slate-400 mb-2" />
+                <p className="text-sm text-slate-600 dark:text-slate-300">No images added</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Add image URLs above
                 </p>
               </div>
@@ -842,7 +1066,7 @@ export function POIEditor({
       </div>
 
       {/* Action Footer */}
-      <div className="sticky bottom-0 p-6 bg-bg-primary border-t border-border-secondary backdrop-blur-lg">
+      <div className="sticky bottom-0 p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 backdrop-blur-lg">
         <div className="flex items-center justify-between gap-3">
           <Button variant="ghost" onClick={onCancel}>
             Cancel
@@ -852,20 +1076,24 @@ export function POIEditor({
             <GlassButton
               variant="neutral"
               onClick={handleSaveDraft}
-              disabled={createPOI.isPending || updatePOI.isPending}
+              disabled={createPOI.isPending || updatePOI.isPending || submitPOIForReview.isPending || isOutOfBounds}
+              title={isOutOfBounds ? "Cannot save: POI is outside country boundaries" : undefined}
             >
               <Save className="w-4 h-4 mr-2" />
-              Save Draft
+              {createPOI.isPending || updatePOI.isPending ? "Saving..." : "Save Draft"}
             </GlassButton>
 
             <GlassButton
               variant="primary"
               glow
               onClick={handleSubmitForReview}
-              disabled={createPOI.isPending || updatePOI.isPending}
+              disabled={createPOI.isPending || updatePOI.isPending || submitPOIForReview.isPending || isOutOfBounds}
+              title={isOutOfBounds ? "Cannot submit: POI is outside country boundaries" : undefined}
             >
               <Send className="w-4 h-4 mr-2" />
-              Submit for Review
+              {createPOI.isPending || updatePOI.isPending || submitPOIForReview.isPending
+                ? "Submitting..."
+                : "Submit for Review"}
             </GlassButton>
           </div>
         </div>

@@ -198,7 +198,7 @@ export const npcPersonalitiesRouter = createTRPCRouter({
 
       return {
         tone: tone || "Professional and measured",
-        culturalProfile: JSON.parse(personality.culturalProfile),
+        culturalProfile: personality.culturalProfile ? JSON.parse(personality.culturalProfile) : null,
       };
     }),
 
@@ -225,7 +225,7 @@ export const npcPersonalitiesRouter = createTRPCRouter({
         name: z.string(),
         archetype: archetypeEnum,
         traits: traitSchema,
-        traitDescriptions: z.record(z.string()),
+        traitDescriptions: z.record(z.string(), z.string()),
         culturalProfile: z.object({
           formality: z.number(),
           directness: z.number(),
@@ -233,10 +233,10 @@ export const npcPersonalitiesRouter = createTRPCRouter({
           flexibility: z.number(),
           negotiationStyle: z.string(),
         }),
-        toneMatrix: z.record(z.record(z.string())),
+        toneMatrix: z.record(z.string(), z.record(z.string(), z.string())),
         responsePatterns: z.array(z.string()),
-        scenarioResponses: z.record(z.any()),
-        eventModifiers: z.record(z.any()),
+        scenarioResponses: z.record(z.string(), z.any()),
+        eventModifiers: z.record(z.string(), z.any()),
         historicalBasis: z.string().optional(),
         historicalContext: z.string().optional(),
       })
@@ -280,7 +280,7 @@ export const npcPersonalitiesRouter = createTRPCRouter({
         id: z.string(),
         name: z.string().optional(),
         traits: traitSchema.partial().optional(),
-        traitDescriptions: z.record(z.string()).optional(),
+        traitDescriptions: z.record(z.string(), z.string()).optional(),
         culturalProfile: z
           .object({
             formality: z.number(),
@@ -290,10 +290,10 @@ export const npcPersonalitiesRouter = createTRPCRouter({
             negotiationStyle: z.string(),
           })
           .optional(),
-        toneMatrix: z.record(z.record(z.string())).optional(),
+        toneMatrix: z.record(z.string(), z.record(z.string(), z.string())).optional(),
         responsePatterns: z.array(z.string()).optional(),
-        scenarioResponses: z.record(z.any()).optional(),
-        eventModifiers: z.record(z.any()).optional(),
+        scenarioResponses: z.record(z.string(), z.any()).optional(),
+        eventModifiers: z.record(z.string(), z.any()).optional(),
         historicalBasis: z.string().optional(),
         historicalContext: z.string().optional(),
       })
@@ -301,25 +301,39 @@ export const npcPersonalitiesRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { id, traits, ...otherData } = input;
 
+      const updateData: any = {
+        ...otherData,
+        updatedAt: new Date(),
+      };
+
+      // Merge trait updates if provided
+      if (traits) {
+        Object.assign(updateData, traits);
+      }
+
+      // Stringify JSON fields if provided
+      if (input.traitDescriptions) {
+        updateData.traitDescriptions = JSON.stringify(input.traitDescriptions);
+      }
+      if (input.culturalProfile) {
+        updateData.culturalProfile = JSON.stringify(input.culturalProfile);
+      }
+      if (input.toneMatrix) {
+        updateData.toneMatrix = JSON.stringify(input.toneMatrix);
+      }
+      if (input.responsePatterns) {
+        updateData.responsePatterns = JSON.stringify(input.responsePatterns);
+      }
+      if (input.scenarioResponses) {
+        updateData.scenarioResponses = JSON.stringify(input.scenarioResponses);
+      }
+      if (input.eventModifiers) {
+        updateData.eventModifiers = JSON.stringify(input.eventModifiers);
+      }
+
       const updated = await ctx.db.nPCPersonality.update({
         where: { id },
-        data: {
-          ...otherData,
-          ...(traits && traits),
-          ...(input.traitDescriptions && {
-            traitDescriptions: JSON.stringify(input.traitDescriptions),
-          }),
-          ...(input.culturalProfile && { culturalProfile: JSON.stringify(input.culturalProfile) }),
-          ...(input.toneMatrix && { toneMatrix: JSON.stringify(input.toneMatrix) }),
-          ...(input.responsePatterns && {
-            responsePatterns: JSON.stringify(input.responsePatterns),
-          }),
-          ...(input.scenarioResponses && {
-            scenarioResponses: JSON.stringify(input.scenarioResponses),
-          }),
-          ...(input.eventModifiers && { eventModifiers: JSON.stringify(input.eventModifiers) }),
-          updatedAt: new Date(),
-        },
+        data: updateData,
       });
 
       await logAdminAction(ctx.db, {
@@ -505,12 +519,12 @@ export const npcPersonalitiesRouter = createTRPCRouter({
 function parsePersonalityJSON(personality: any) {
   return {
     ...personality,
-    traitDescriptions: JSON.parse(personality.traitDescriptions),
-    culturalProfile: JSON.parse(personality.culturalProfile),
-    toneMatrix: JSON.parse(personality.toneMatrix),
-    responsePatterns: JSON.parse(personality.responsePatterns),
-    scenarioResponses: JSON.parse(personality.scenarioResponses),
-    eventModifiers: JSON.parse(personality.eventModifiers),
+    traitDescriptions: personality.traitDescriptions ? JSON.parse(personality.traitDescriptions) : {},
+    culturalProfile: personality.culturalProfile ? JSON.parse(personality.culturalProfile) : null,
+    toneMatrix: personality.toneMatrix ? JSON.parse(personality.toneMatrix) : {},
+    responsePatterns: personality.responsePatterns ? JSON.parse(personality.responsePatterns) : [],
+    scenarioResponses: personality.scenarioResponses ? JSON.parse(personality.scenarioResponses) : {},
+    eventModifiers: personality.eventModifiers ? JSON.parse(personality.eventModifiers) : {},
   };
 }
 

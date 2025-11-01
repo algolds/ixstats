@@ -3,7 +3,7 @@
 
 import { db } from "~/server/db";
 import { intelligenceCache, CacheUtils, type CacheType } from "~/lib/intelligence-cache";
-import { performanceMonitor } from "~/lib/performance-monitor";
+import { perfMonitor } from "~/lib/performance-monitor";
 import type { Prisma } from "@prisma/client";
 
 interface QueryOptions {
@@ -42,7 +42,7 @@ export class OptimizedQueryService {
       if (options.cache !== false) {
         const cached = intelligenceCache.get(cacheKey);
         if (cached) {
-          performanceMonitor.recordQuery({
+          perfMonitor.recordQuery({
             queryKey: `getCountryById:${id}`,
             duration: performance.now() - startTime,
             success: true,
@@ -70,7 +70,7 @@ export class OptimizedQueryService {
         intelligenceCache.set(cacheKey, country, options.cacheType || "standard");
       }
 
-      performanceMonitor.recordQuery({
+      perfMonitor.recordQuery({
         queryKey: `getCountryById:${id}`,
         duration: performance.now() - startTime,
         success: true,
@@ -81,7 +81,7 @@ export class OptimizedQueryService {
 
       return country;
     } catch (error) {
-      performanceMonitor.recordQuery({
+      perfMonitor.recordQuery({
         queryKey: `getCountryById:${id}`,
         duration: performance.now() - startTime,
         success: false,
@@ -109,7 +109,7 @@ export class OptimizedQueryService {
       if (options.cache !== false) {
         const cached = intelligenceCache.get(cacheKey);
         if (cached) {
-          performanceMonitor.recordQuery({
+          perfMonitor.recordQuery({
             queryKey: `getIntelligenceFeed:${countryId}`,
             duration: performance.now() - startTime,
             success: true,
@@ -144,7 +144,7 @@ export class OptimizedQueryService {
         intelligenceCache.set(cacheKey, intelligence, options.cacheType || "critical");
       }
 
-      performanceMonitor.recordQuery({
+      perfMonitor.recordQuery({
         queryKey: `getIntelligenceFeed:${countryId}`,
         duration: performance.now() - startTime,
         success: true,
@@ -155,7 +155,7 @@ export class OptimizedQueryService {
 
       return intelligence;
     } catch (error) {
-      performanceMonitor.recordQuery({
+      perfMonitor.recordQuery({
         queryKey: `getIntelligenceFeed:${countryId}`,
         duration: performance.now() - startTime,
         success: false,
@@ -222,7 +222,7 @@ export class OptimizedQueryService {
         }
       }
 
-      performanceMonitor.recordQuery({
+      perfMonitor.recordQuery({
         queryKey: `getBatchedCountryData:${countryIds.length}`,
         duration: performance.now() - startTime,
         success: true,
@@ -232,7 +232,7 @@ export class OptimizedQueryService {
 
       return results;
     } catch (error) {
-      performanceMonitor.recordQuery({
+      perfMonitor.recordQuery({
         queryKey: `getBatchedCountryData:${countryIds.length}`,
         duration: performance.now() - startTime,
         success: false,
@@ -255,7 +255,7 @@ export class OptimizedQueryService {
       if (options.cache !== false) {
         const cached = intelligenceCache.get(cacheKey);
         if (cached) {
-          performanceMonitor.recordQuery({
+          perfMonitor.recordQuery({
             queryKey: `getVitalityIntelligence:${countryId}`,
             duration: performance.now() - startTime,
             success: true,
@@ -291,7 +291,7 @@ export class OptimizedQueryService {
         );
       }
 
-      performanceMonitor.recordQuery({
+      perfMonitor.recordQuery({
         queryKey: `getVitalityIntelligence:${countryId}`,
         duration: performance.now() - startTime,
         success: true,
@@ -302,7 +302,7 @@ export class OptimizedQueryService {
 
       return vitalityIntelligence;
     } catch (error) {
-      performanceMonitor.recordQuery({
+      perfMonitor.recordQuery({
         queryKey: `getVitalityIntelligence:${countryId}`,
         duration: performance.now() - startTime,
         success: false,
@@ -326,7 +326,7 @@ export class OptimizedQueryService {
       if (options.cache !== false) {
         const cached = intelligenceCache.get(cacheKey);
         if (cached) {
-          performanceMonitor.recordQuery({
+          perfMonitor.recordQuery({
             queryKey: `getRegionalComparison:${countryId}`,
             duration: performance.now() - startTime,
             success: true,
@@ -382,7 +382,7 @@ export class OptimizedQueryService {
         intelligenceCache.set(cacheKey, comparison, "standard");
       }
 
-      performanceMonitor.recordQuery({
+      perfMonitor.recordQuery({
         queryKey: `getRegionalComparison:${countryId}`,
         duration: performance.now() - startTime,
         success: true,
@@ -393,7 +393,7 @@ export class OptimizedQueryService {
 
       return comparison;
     } catch (error) {
-      performanceMonitor.recordQuery({
+      perfMonitor.recordQuery({
         queryKey: `getRegionalComparison:${countryId}`,
         duration: performance.now() - startTime,
         success: false,

@@ -2,7 +2,7 @@
 // Master hook combining all CRUD mutations for map editor entities
 
 import { api } from "~/trpc/react";
-import { toast } from "~/hooks/use-toast";
+import { toast } from "sonner";
 import type { RouterInputs } from "~/trpc/react";
 
 /**
@@ -87,55 +87,33 @@ export function useMapEditor(): UseMapEditorResult {
 
   const createSubdivisionMutation = api.mapEditor.createSubdivision.useMutation({
     onSuccess: async (data) => {
-      toast({
-        title: "Subdivision created",
-        description: `${data.subdivision.name} has been created and submitted for review.`,
-      });
-      // Invalidate queries to refetch data
+      toast.success(`Subdivision created: ${data.subdivision.name} has been created and submitted for review.`);
       await utils.mapEditor.getMySubdivisions.invalidate();
     },
     onError: (error) => {
-      toast({
-        title: "Failed to create subdivision",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Failed to create subdivision: ${error.message}`);
     },
     retry: 1,
   });
 
   const updateSubdivisionMutation = api.mapEditor.updateSubdivision.useMutation({
     onSuccess: async (data) => {
-      toast({
-        title: "Subdivision updated",
-        description: `${data.subdivision.name} has been updated successfully.`,
-      });
+      toast.success(`Subdivision updated: ${data.subdivision.name} has been updated successfully.`);
       await utils.mapEditor.getMySubdivisions.invalidate();
     },
     onError: (error) => {
-      toast({
-        title: "Failed to update subdivision",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Failed to update subdivision: ${error.message}`);
     },
     retry: 1,
   });
 
   const deleteSubdivisionMutation = api.mapEditor.deleteSubdivision.useMutation({
     onSuccess: async () => {
-      toast({
-        title: "Subdivision deleted",
-        description: "The subdivision has been deleted successfully.",
-      });
+      toast.success("Subdivision deleted successfully.");
       await utils.mapEditor.getMySubdivisions.invalidate();
     },
     onError: (error) => {
-      toast({
-        title: "Failed to delete subdivision",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Failed to delete subdivision: ${error.message}`);
     },
     retry: 1,
   });
@@ -143,18 +121,11 @@ export function useMapEditor(): UseMapEditorResult {
   const submitSubdivisionForReviewMutation =
     api.mapEditor.submitSubdivisionForReview.useMutation({
       onSuccess: async () => {
-        toast({
-          title: "Submitted for review",
-          description: "Your subdivision has been submitted for admin review.",
-        });
+        toast.success("Submitted for review: Your subdivision has been submitted for admin review.");
         await utils.mapEditor.getMySubdivisions.invalidate();
       },
       onError: (error) => {
-        toast({
-          title: "Failed to submit subdivision",
-          description: error.message,
-          variant: "destructive",
-        });
+        toast.error(`Failed to submit subdivision: ${error.message}`);
       },
       retry: 1,
     });
@@ -165,72 +136,44 @@ export function useMapEditor(): UseMapEditorResult {
 
   const createCityMutation = api.mapEditor.createCity.useMutation({
     onSuccess: async (data) => {
-      toast({
-        title: "City created",
-        description: `${data.city.name} has been created and submitted for review.`,
-      });
+      toast.success(`City created: ${data.city.name} has been created and submitted for review.`);
       await utils.mapEditor.getMyCities.invalidate();
     },
     onError: (error) => {
-      toast({
-        title: "Failed to create city",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Failed to create city: ${error.message}`);
     },
     retry: 1,
   });
 
   const updateCityMutation = api.mapEditor.updateCity.useMutation({
     onSuccess: async (data) => {
-      toast({
-        title: "City updated",
-        description: `${data.city.name} has been updated successfully.`,
-      });
+      toast.success(`City updated: ${data.city.name} has been updated successfully.`);
       await utils.mapEditor.getMyCities.invalidate();
     },
     onError: (error) => {
-      toast({
-        title: "Failed to update city",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Failed to update city: ${error.message}`);
     },
     retry: 1,
   });
 
   const deleteCityMutation = api.mapEditor.deleteCity.useMutation({
     onSuccess: async () => {
-      toast({
-        title: "City deleted",
-        description: "The city has been deleted successfully.",
-      });
+      toast.success("City deleted successfully.");
       await utils.mapEditor.getMyCities.invalidate();
     },
     onError: (error) => {
-      toast({
-        title: "Failed to delete city",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Failed to delete city: ${error.message}`);
     },
     retry: 1,
   });
 
   const submitCityForReviewMutation = api.mapEditor.submitCityForReview.useMutation({
     onSuccess: async () => {
-      toast({
-        title: "Submitted for review",
-        description: "Your city has been submitted for admin review.",
-      });
+      toast.success("Submitted for review: Your city has been submitted for admin review.");
       await utils.mapEditor.getMyCities.invalidate();
     },
     onError: (error) => {
-      toast({
-        title: "Failed to submit city",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Failed to submit city: ${error.message}`);
     },
     retry: 1,
   });
@@ -241,72 +184,44 @@ export function useMapEditor(): UseMapEditorResult {
 
   const createPOIMutation = api.mapEditor.createPOI.useMutation({
     onSuccess: async (data) => {
-      toast({
-        title: "POI created",
-        description: `${data.poi.name} has been created and submitted for review.`,
-      });
+      toast.success(`POI created: ${data.poi.name} has been created and submitted for review.`);
       await utils.mapEditor.getMyPOIs.invalidate();
     },
     onError: (error) => {
-      toast({
-        title: "Failed to create POI",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Failed to create POI: ${error.message}`);
     },
     retry: 1,
   });
 
   const updatePOIMutation = api.mapEditor.updatePOI.useMutation({
     onSuccess: async (data) => {
-      toast({
-        title: "POI updated",
-        description: `${data.poi.name} has been updated successfully.`,
-      });
+      toast.success(`POI updated: ${data.poi.name} has been updated successfully.`);
       await utils.mapEditor.getMyPOIs.invalidate();
     },
     onError: (error) => {
-      toast({
-        title: "Failed to update POI",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Failed to update POI: ${error.message}`);
     },
     retry: 1,
   });
 
   const deletePOIMutation = api.mapEditor.deletePOI.useMutation({
     onSuccess: async () => {
-      toast({
-        title: "POI deleted",
-        description: "The POI has been deleted successfully.",
-      });
+      toast.success("POI deleted successfully.");
       await utils.mapEditor.getMyPOIs.invalidate();
     },
     onError: (error) => {
-      toast({
-        title: "Failed to delete POI",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Failed to delete POI: ${error.message}`);
     },
     retry: 1,
   });
 
   const submitPOIForReviewMutation = api.mapEditor.submitPOIForReview.useMutation({
     onSuccess: async () => {
-      toast({
-        title: "Submitted for review",
-        description: "Your POI has been submitted for admin review.",
-      });
+      toast.success("Submitted for review: Your POI has been submitted for admin review.");
       await utils.mapEditor.getMyPOIs.invalidate();
     },
     onError: (error) => {
-      toast({
-        title: "Failed to submit POI",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error(`Failed to submit POI: ${error.message}`);
     },
     retry: 1,
   });

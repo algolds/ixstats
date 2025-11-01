@@ -847,7 +847,7 @@ function EquipmentCard({ equipment, onEdit, onDelete }: EquipmentCardProps) {
             )}
           </div>
         </div>
-        {!equipment.isActive && <EyeOff className="h-4 w-4 text-red-400" title="Inactive" />}
+        {!equipment.isActive && <EyeOff className="h-4 w-4 text-red-400" aria-label="Inactive" />}
       </div>
 
       {/* Image Preview */}

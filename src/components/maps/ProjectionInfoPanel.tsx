@@ -85,8 +85,24 @@ export default function ProjectionInfoPanel({ isOpen, onClose }: ProjectionInfoP
 
                   <tr className="border-b border-white/5 hover:bg-white/5">
                     <td className="p-2">
+                      <div className="font-medium text-white">Globe (3D)</div>
+                      <div className="text-[10px] text-white/50">Orthographic</div>
+                    </td>
+                    <td className="p-2">Perspective</td>
+                    <td className="p-2">World view, education</td>
+                    <td className="p-2">
+                      <span className="text-green-400">✓ None</span>
+                      <div className="text-[10px] text-white/50">Accurate 3D</div>
+                    </td>
+                    <td className="p-2 text-center">
+                      <span className="text-green-400">All</span>
+                    </td>
+                  </tr>
+
+                  <tr className="border-b border-white/5 hover:bg-white/5">
+                    <td className="p-2">
                       <div className="font-medium text-white">Equal Earth</div>
-                      <div className="text-[10px] text-white/50">Equal-area</div>
+                      <div className="text-[10px] text-amber-400">Coming in v1.2</div>
                     </td>
                     <td className="p-2">Pseudocylindrical</td>
                     <td className="p-2">Data visualization, thematic maps</td>
@@ -101,17 +117,33 @@ export default function ProjectionInfoPanel({ isOpen, onClose }: ProjectionInfoP
 
                   <tr className="border-b border-white/5 hover:bg-white/5">
                     <td className="p-2">
-                      <div className="font-medium text-white">Globe (3D)</div>
-                      <div className="text-[10px] text-white/50">Orthographic</div>
+                      <div className="font-medium text-white">Natural Earth</div>
+                      <div className="text-[10px] text-amber-400">Coming in v1.2</div>
                     </td>
-                    <td className="p-2">Perspective</td>
-                    <td className="p-2">World view, education</td>
+                    <td className="p-2">Pseudocylindrical</td>
+                    <td className="p-2">General reference, aesthetics</td>
                     <td className="p-2">
-                      <span className="text-green-400">✓ None</span>
-                      <div className="text-[10px] text-white/50">Accurate 3D</div>
+                      <span className="text-green-400">✓ Minimal</span>
+                      <div className="text-[10px] text-white/50">Balanced compromise</div>
                     </td>
                     <td className="p-2 text-center">
-                      <span className="text-green-400">All</span>
+                      <span className="text-blue-400">Balance</span>
+                    </td>
+                  </tr>
+
+                  <tr className="border-b border-white/5 hover:bg-white/5">
+                    <td className="p-2">
+                      <div className="font-medium text-white">IxMaps Linear</div>
+                      <div className="text-[10px] text-amber-400">Coming in v1.2</div>
+                    </td>
+                    <td className="p-2">Equirectangular</td>
+                    <td className="p-2">IxEarth visualization</td>
+                    <td className="p-2">
+                      <span className="text-yellow-400">⚠ Medium</span>
+                      <div className="text-[10px] text-white/50">Custom scale</div>
+                    </td>
+                    <td className="p-2 text-center">
+                      <span className="text-purple-400">Custom</span>
                     </td>
                   </tr>
                 </tbody>
@@ -246,6 +278,16 @@ export default function ProjectionInfoPanel({ isOpen, onClose }: ProjectionInfoP
                 </ul>
               </div>
 
+              <div className="rounded-lg border border-purple-500/20 bg-purple-500/10 p-3">
+                <h4 className="mb-1 text-sm font-medium text-purple-300">🌍 Use Globe (3D) for:</h4>
+                <ul className="ml-4 list-disc space-y-1 text-xs text-purple-200/80">
+                  <li>World-scale overview</li>
+                  <li>Understanding spatial relationships</li>
+                  <li>Presentations and demonstrations</li>
+                  <li>True perspective viewing</li>
+                </ul>
+              </div>
+
               <div className="rounded-lg border border-green-500/20 bg-green-500/10 p-3">
                 <h4 className="mb-1 text-sm font-medium text-green-300">🌎 Use Equal Earth for:</h4>
                 <ul className="ml-4 list-disc space-y-1 text-xs text-green-200/80">
@@ -257,15 +299,49 @@ export default function ProjectionInfoPanel({ isOpen, onClose }: ProjectionInfoP
                 </ul>
               </div>
 
-              <div className="rounded-lg border border-purple-500/20 bg-purple-500/10 p-3">
-                <h4 className="mb-1 text-sm font-medium text-purple-300">🌍 Use Globe (3D) for:</h4>
-                <ul className="ml-4 list-disc space-y-1 text-xs text-purple-200/80">
-                  <li>World-scale overview</li>
-                  <li>Understanding spatial relationships</li>
-                  <li>Presentations and demonstrations</li>
-                  <li>True perspective viewing</li>
+              <div className="rounded-lg border border-teal-500/20 bg-teal-500/10 p-3">
+                <h4 className="mb-1 text-sm font-medium text-teal-300">🗺️ Use Natural Earth for:</h4>
+                <ul className="ml-4 list-disc space-y-1 text-xs text-teal-200/80">
+                  <li>General reference maps</li>
+                  <li>Wall maps and print media</li>
+                  <li>Aesthetic world visualizations</li>
+                  <li>Balanced representation without extreme distortion</li>
                 </ul>
               </div>
+
+              <div className="rounded-lg border border-purple-500/20 bg-purple-500/10 p-3">
+                <h4 className="mb-1 text-sm font-medium text-purple-300">🎯 Use IxMaps Linear for:</h4>
+                <ul className="ml-4 list-disc space-y-1 text-xs text-purple-200/80">
+                  <li>Aligning with ixmaps-new coordinate system</li>
+                  <li>Custom IxEarth prime meridian (30°)</li>
+                  <li>Fast linear transformations</li>
+                  <li>Legacy IxMaps compatibility</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Implementation Status */}
+          <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-4">
+            <h3 className="text-foreground mb-2 flex items-center gap-2 font-semibold text-amber-300">
+              <span>🚧</span> Custom Projections Status
+            </h3>
+            <div className="space-y-2 text-xs text-amber-200/90">
+              <p>
+                <strong>Equal Earth</strong>, <strong>Natural Earth</strong>, and <strong>IxMaps Linear</strong> projections are in development for v1.2.
+              </p>
+              <p>
+                <strong>Why they're complex:</strong>
+              </p>
+              <ul className="ml-4 list-disc space-y-1">
+                <li>MapLibre GL JS only natively supports Mercator and Globe projections</li>
+                <li>Custom projections require server-side tile generation in the target projection</li>
+                <li>OR client-side canvas redraw using D3-geo (performance intensive)</li>
+                <li>Vector tile coordinate transformation is computationally expensive</li>
+              </ul>
+              <p className="mt-2">
+                <strong>Current Status:</strong> Infrastructure complete (D3-geo integration, projection definitions, coordinate transformers). Awaiting Martin tile server configuration for custom projection tile generation.
+              </p>
             </div>
           </div>
 

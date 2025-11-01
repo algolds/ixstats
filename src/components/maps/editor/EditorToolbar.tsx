@@ -26,6 +26,7 @@ import {
   X,
   Undo,
   Redo,
+  type LucideIcon,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import {
@@ -51,7 +52,7 @@ type DrawingMode = "polygon" | "point" | "edit" | "delete";
 
 interface ToolButton {
   mode: DrawingMode;
-  icon: React.ElementType;
+  icon: LucideIcon;
   label: string;
   shortcut?: string;
 }
@@ -63,7 +64,11 @@ const DRAWING_TOOLS: ToolButton[] = [
   { mode: "delete", icon: Trash2, label: "Delete Features", shortcut: "D" },
 ];
 
-export function EditorToolbar({
+/**
+ * EditorToolbar Component (Memoized)
+ * Only re-renders when props actually change
+ */
+export const EditorToolbar = React.memo(function EditorToolbar({
   activeMode,
   onModeChange,
   onSave,
@@ -346,4 +351,4 @@ export function EditorToolbar({
       </div>
     </div>
   );
-}
+});

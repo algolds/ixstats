@@ -10,6 +10,7 @@ import GoogleMapControls from '~/components/maps/GoogleMapControls';
 import GoogleHamburgerMenu, { loadMapSettings, getDefaultMapSettings } from '~/components/maps/GoogleHamburgerMenu';
 import MapScale from '~/components/maps/measurement/MapScale';
 import { DistanceMeasurement, type MeasurementResult } from '~/components/maps/measurement';
+import type { ProjectionType } from '~/types/maps';
 
 export default function MapsPage() {
   // Country selection state
@@ -39,6 +40,7 @@ export default function MapsPage() {
   const [showLabels, setShowLabels] = useState(true);
   const [showBorders, setShowBorders] = useState(true);
   const [mapType, setMapType] = useState<'map' | 'climate' | 'terrain'>('map');
+  const [projection, setProjection] = useState<ProjectionType>('globe');
 
   // Map instance ref
   const mapInstanceRef = useRef<any>(null);
@@ -52,6 +54,9 @@ export default function MapsPage() {
       setShowLabels(savedSettings.showLabels);
       setShowBorders(savedSettings.showBorders);
       setMapType(savedSettings.mapType);
+      if (savedSettings.projection) {
+        setProjection(savedSettings.projection);
+      }
       // Don't restore measurement mode - it should always start as null
     }
   }, []);
@@ -67,10 +72,11 @@ export default function MapsPage() {
           showLabels,
           showBorders,
           mapType,
+          projection,
         })
       );
     }
-  }, [layers, showScale, showLabels, showBorders, mapType]);
+  }, [layers, showScale, showLabels, showBorders, mapType, projection]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -183,6 +189,11 @@ export default function MapsPage() {
     setLayers((prev) => ({ ...prev, [layer]: visible }));
   }, []);
 
+  const handleProjectionChange = useCallback((newProjection: ProjectionType) => {
+    setProjection(newProjection);
+    toast.success(`Switched to ${newProjection} projection`);
+  }, []);
+
   return (
     <div className="relative h-screen w-full bg-gray-100">
       {/* Toast Notifications */}
@@ -195,6 +206,8 @@ export default function MapsPage() {
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         mapType={mapType}
+        projection={projection}
+        onProjectionChange={handleProjectionChange}
         onMapReady={handleMapReady}
       />
 
@@ -216,6 +229,8 @@ export default function MapsPage() {
         onShowScaleChange={setShowScale}
         mapType={mapType}
         onMapTypeChange={setMapType}
+        projection={projection}
+        onProjectionChange={handleProjectionChange}
         showLabels={showLabels}
         onShowLabelsChange={setShowLabels}
         showBorders={showBorders}
@@ -237,7 +252,7 @@ export default function MapsPage() {
           position="bottom-left"
           showImperial={true}
           showMetric={true}
-          currentProjection="mercator"
+          currentProjection={projection}
         />
       )}
 

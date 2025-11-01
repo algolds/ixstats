@@ -149,7 +149,7 @@ export function getSubcategoryIcon(
 /**
  * Utility function to get all subcategories for a given main category
  */
-export function getSubcategories(category: POIMainCategoryKey): POISubcategory[] {
+export function getSubcategories(category: POIMainCategoryKey): Array<POISubcategory & { key: string }> {
   const cat = poiTaxonomy[category];
   if (!cat) return [];
 

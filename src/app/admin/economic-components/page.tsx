@@ -416,9 +416,9 @@ export default function EconomicComponentsPage() {
     }
   };
 
-  const handleDelete = (id: string, name: string) => {
+  const handleDelete = (componentType: string, name: string) => {
     if (confirm(`Are you sure you want to deactivate "${name}"?`)) {
-      deleteMutation.mutate({ id });
+      deleteMutation.mutate({ componentType: componentType as any });
     }
   };
 
@@ -649,7 +649,7 @@ export default function EconomicComponentsPage() {
                 key={component.id}
                 component={component}
                 onEdit={() => handleEdit(component)}
-                onDelete={() => handleDelete(component.id, component.name)}
+                onDelete={() => handleDelete((component as any).type || component.id, component.name)}
               />
             ))}
           </div>
@@ -735,7 +735,7 @@ function ComponentCard({ component, onEdit, onDelete }: ComponentCardProps) {
             {component.category}
           </span>
         </div>
-        {!component.isActive && <EyeOff className="h-4 w-4 text-red-400" title="Inactive" />}
+        {!component.isActive && <EyeOff className="h-4 w-4 text-red-400" aria-label="Inactive" />}
       </div>
 
       {/* Description */}

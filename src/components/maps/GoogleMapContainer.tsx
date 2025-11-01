@@ -5,6 +5,9 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { createGoogleMapsStyle } from '~/lib/maps/google-map-style';
 import { MAPLIBRE_CONFIG } from '~/lib/ixearth-constants';
+import { createCustomProjectionLayer } from '~/lib/maps/custom-projection-layer';
+import type { ProjectionType } from '~/types/maps';
+import { registerProjectionProtocol, unregisterProjectionProtocol } from '~/lib/maps/projection-protocol';
 
 interface GoogleMapContainerProps {
   onCountryClick?: (countryId: string, countryName: string, position: { x: number; y: number }) => void;
@@ -13,6 +16,8 @@ interface GoogleMapContainerProps {
   onZoomOut?: () => void;
   mapType?: 'map' | 'climate' | 'terrain';
   onMapReady?: (map: maplibregl.Map) => void;
+  projection?: ProjectionType;
+  onProjectionChange?: (projection: ProjectionType) => void;
 }
 
 function GoogleMapContainer({
@@ -22,6 +27,8 @@ function GoogleMapContainer({
   onZoomOut,
   mapType = 'map',
   onMapReady,
+  projection = 'globe',
+  onProjectionChange,
 }: GoogleMapContainerProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -29,13 +36,15 @@ function GoogleMapContainer({
   const hoveredCountryId = useRef<number | null>(null);
   const projectionTransitioning = useRef<boolean>(false);
   const projectionTimeout = useRef<NodeJS.Timeout | null>(null);
+  const customProjectionLayer = useRef<ReturnType<typeof createCustomProjectionLayer> | null>(null);
+  const currentProjectionRef = useRef<ProjectionType>(projection);
 
   // Initialize map ONCE
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-    const style = createGoogleMapsStyle(basePath, mapType);
+    const style = createGoogleMapsStyle(basePath, mapType, projection);
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
@@ -47,8 +56,15 @@ function GoogleMapContainer({
       // Projection is set in style, not here
     });
 
-    map.current.on('error', (e) => {
-      console.error('[GoogleMapContainer] Map error:', e);
+    map.current.on('error', (e: any) => {
+      // Log detailed error information for debugging
+      console.error('[GoogleMapContainer] Map error details:', JSON.stringify({
+        errorMessage: e?.error?.message || String(e?.error || 'unknown'),
+        errorStatus: e?.error?.status,
+        sourceId: e?.sourceId,
+        tile: e?.tile ? `${e.tile.tileID.canonical.z}/${e.tile.tileID.canonical.x}/${e.tile.tileID.canonical.y}` : null,
+        type: e?.type,
+      }, null, 2));
     });
 
     // Expose zoom functions
@@ -110,6 +126,15 @@ function GoogleMapContainer({
         projectionTimeout.current = null;
       }
 
+      // Remove custom projection layer if exists
+      if (customProjectionLayer.current && map.current) {
+        try {
+          map.current.removeLayer('custom-projection');
+        } catch (e) {
+          // Layer might not exist, ignore
+        }
+      }
+
       // Remove map
       if (map.current) {
         map.current.off('zoom', handleZoom);
@@ -119,39 +144,61 @@ function GoogleMapContainer({
     };
   }, []); // Initialize ONCE only
 
-  // Update map style when mapType changes (preserve projection)
+  // Update map style when mapType or projection changes
   useEffect(() => {
     if (!map.current || !isMapLoaded) return;
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-    const style = createGoogleMapsStyle(basePath, mapType);
+    const style = createGoogleMapsStyle(basePath, mapType, projection);
 
-    // Get current zoom before style change
+    // Get current zoom and center before style change
     const currentZoom = map.current.getZoom();
+    const currentCenter = map.current.getCenter();
 
     map.current.setStyle(style);
 
-    // Restore correct projection after style loads (setStyle resets projection)
+    // Restore position after style loads (setStyle resets view)
     map.current.once('styledata', () => {
-      if (!map.current || projectionTransitioning.current) return;
+      if (!map.current) return;
 
-      // Determine correct projection based on current zoom
-      const targetProjection = currentZoom >= MAPLIBRE_CONFIG.globeToMercatorZoom ? 'mercator' : 'globe';
-
-      // Clear any pending timeout
-      if (projectionTimeout.current) {
-        clearTimeout(projectionTimeout.current);
-      }
-
-      projectionTransitioning.current = true;
-      map.current.setProjection({ type: targetProjection as any });
-      projectionTimeout.current = setTimeout(() => {
-        if (projectionTransitioning.current !== undefined) {
-          projectionTransitioning.current = false;
-        }
-      }, 500);
+      // Restore zoom and center
+      map.current.setZoom(currentZoom);
+      map.current.setCenter(currentCenter);
     });
-  }, [mapType, isMapLoaded]);
+  }, [mapType, projection, isMapLoaded]);
+
+  // Register/unregister custom projection protocol
+  useEffect(() => {
+    const needsCustomProtocol = projection === 'equalEarth' || projection === 'naturalEarth' || projection === 'ixmaps';
+
+    if (needsCustomProtocol) {
+      console.log(`[GoogleMapContainer] Registering custom protocol for ${projection}`);
+      registerProjectionProtocol(projection);
+    }
+
+    // Cleanup: unregister protocol when projection changes or component unmounts
+    return () => {
+      if (needsCustomProtocol) {
+        unregisterProjectionProtocol(projection);
+      }
+    };
+  }, [projection]);
+
+  // Notify parent of projection changes
+  useEffect(() => {
+    if (!map.current || !isMapLoaded) return;
+
+    // Skip if projection hasn't changed
+    if (currentProjectionRef.current === projection) return;
+
+    console.log(`[GoogleMapContainer] Projection changed to: ${projection}`);
+
+    // Update ref to track current projection
+    currentProjectionRef.current = projection;
+
+    // Notify parent of projection change
+    onProjectionChange?.(projection);
+  }, [projection, isMapLoaded, onProjectionChange]);
 
   // Handle country interactions - GLOBAL HANDLERS (work in ALL modes)
   useEffect(() => {

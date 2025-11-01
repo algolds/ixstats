@@ -89,7 +89,7 @@ const archetypeInputSchema = z.object({
     consumptionRate: z.number().min(0).max(100),
     revenueEfficiency: z.number().min(0).max(1),
   }),
-  sectorFocus: z.record(z.number()),
+  sectorFocus: z.record(z.string(), z.number()),
   employmentProfile: z.object({
     unemploymentRate: z.number().min(0).max(100),
     laborParticipation: z.number().min(0).max(100),
@@ -258,7 +258,7 @@ export const economicArchetypesRouter = createTRPCRouter({
           implementationComplexity: input.implementationComplexity,
           historicalContext: input.historicalContext,
           isCustom: true,
-          createdBy: ctx.user?.id,
+          createdBy: ctx.auth?.userId || "system",
         },
       });
 
@@ -275,7 +275,8 @@ export const economicArchetypesRouter = createTRPCRouter({
           targetId: archetype.id,
           targetName: archetype.name,
           adminId: ctx.user?.id || "system",
-          ipAddress,
+          adminName: ctx.user?.id || "system",
+          ipAddress: ipAddress || "",
           changes: JSON.stringify({
             era: archetype.era,
             region: archetype.region,
@@ -346,8 +347,9 @@ export const economicArchetypesRouter = createTRPCRouter({
             targetType: "economic_archetype",
             targetId: updated.id,
             targetName: updated.name,
-            adminId: ctx.user?.id || "system",
-            ipAddress,
+            adminId: ctx.auth?.userId || "system",
+            adminName: ctx.auth?.userId || "system",
+            ipAddress: ipAddress || "",
             changes: JSON.stringify({
               era: updated.era,
               region: updated.region,
@@ -391,8 +393,9 @@ export const economicArchetypesRouter = createTRPCRouter({
             targetType: "economic_archetype",
             targetId: archetype.id,
             targetName: archetype.name,
-            adminId: ctx.user?.id || "system",
-            ipAddress,
+            adminId: ctx.auth?.userId || "system",
+            adminName: ctx.auth?.userId || "system",
+            ipAddress: ipAddress || "",
             changes: JSON.stringify({ deactivated: true }),
           },
         });

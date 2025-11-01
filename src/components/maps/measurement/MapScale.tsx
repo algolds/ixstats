@@ -22,7 +22,7 @@ interface MapScaleProps {
   maxWidth?: number; // Maximum width of scale bar in pixels
   showImperial?: boolean;
   showMetric?: boolean;
-  currentProjection?: "mercator" | "globe" | "equalEarth";
+  currentProjection?: "mercator" | "globe" | "equalEarth" | "naturalEarth" | "ixmaps";
 }
 
 export default function MapScale({
@@ -49,7 +49,12 @@ export default function MapScale({
       const zoom = map.getZoom();
 
       // Use projection-aware scale calculation
-      const { kmPerPixel } = getScaleForProjection(currentProjection, zoom, center.lat);
+      const projectionForScale: "mercator" | "globe" | "equalEarth" =
+        currentProjection === "naturalEarth" || currentProjection === "ixmaps"
+          ? "equalEarth"
+          : currentProjection;
+
+      const { kmPerPixel } = getScaleForProjection(projectionForScale, zoom, center.lat);
 
       // Calculate target distance for max width
       const targetKm = kmPerPixel * maxWidth;

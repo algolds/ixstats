@@ -67,23 +67,13 @@ export const militaryEquipmentRouter = createTRPCRouter({
         }
 
         const [equipment, total] = await Promise.all([
-          ctx.db.militaryCatalogEquipment.findMany({
+          ctx.db.militaryEquipmentCatalog.findMany({
             where,
-            include: {
-              manufacturer: {
-                select: {
-                  id: true,
-                  name: true,
-                  country: true,
-                  specialty: true,
-                },
-              },
-            },
             orderBy: [{ category: "asc" }, { subcategory: "asc" }, { name: "asc" }],
             take: input.limit,
             skip: input.offset,
           }),
-          ctx.db.militaryCatalogEquipment.count({ where }),
+          ctx.db.militaryEquipmentCatalog.count({ where }),
         ]);
 
         // Parse JSON fields
@@ -91,7 +81,6 @@ export const militaryEquipmentRouter = createTRPCRouter({
           ...item,
           specifications: item.specifications ? JSON.parse(item.specifications) : null,
           capabilities: item.capabilities ? JSON.parse(item.capabilities) : null,
-          requirements: item.requirements ? JSON.parse(item.requirements) : null,
         }));
 
         return {
@@ -120,11 +109,8 @@ export const militaryEquipmentRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const equipment = await ctx.db.militaryCatalogEquipment.findUnique({
+        const equipment = await ctx.db.militaryEquipmentCatalog.findUnique({
           where: { id: input.id },
-          include: {
-            manufacturer: true,
-          },
         });
 
         if (!equipment) {
@@ -139,7 +125,6 @@ export const militaryEquipmentRouter = createTRPCRouter({
           ...equipment,
           specifications: equipment.specifications ? JSON.parse(equipment.specifications) : null,
           capabilities: equipment.capabilities ? JSON.parse(equipment.capabilities) : null,
-          requirements: equipment.requirements ? JSON.parse(equipment.requirements) : null,
         };
       } catch (error) {
         if (error instanceof TRPCError) throw error;
@@ -167,28 +152,19 @@ export const militaryEquipmentRouter = createTRPCRouter({
         const where: any = { isActive: input.isActive };
         if (input.era) where.era = input.era;
 
-        const equipment = await ctx.db.militaryCatalogEquipment.findMany({
+        const equipment = await ctx.db.militaryEquipmentCatalog.findMany({
           where,
-          include: {
-            manufacturer: {
-              select: {
-                id: true,
-                name: true,
-                country: true,
-              },
-            },
-          },
           orderBy: [
             { category: "asc" },
             { subcategory: "asc" },
-            { technologyTier: "desc" },
+            { technologyLevel: "desc" },
             { name: "asc" },
           ],
         });
 
         // Parse JSON and group by category and subcategory
         const grouped = equipment.reduce(
-          (acc, item) => {
+          (acc: Record<string, Record<string, unknown[]>>, item) => {
             if (!acc[item.category]) {
               acc[item.category] = {};
             }
@@ -202,7 +178,6 @@ export const militaryEquipmentRouter = createTRPCRouter({
               ...item,
               specifications: item.specifications ? JSON.parse(item.specifications) : null,
               capabilities: item.capabilities ? JSON.parse(item.capabilities) : null,
-              requirements: item.requirements ? JSON.parse(item.requirements) : null,
             });
 
             return acc;
@@ -236,19 +211,8 @@ export const militaryEquipmentRouter = createTRPCRouter({
         const where: any = { isActive: input.isActive };
         if (input.specialty) where.specialty = { contains: input.specialty };
 
-        const manufacturers = await ctx.db.militaryManufacturer.findMany({
+        const manufacturers = await ctx.db.defenseManufacturer.findMany({
           where,
-          include: {
-            equipment: {
-              where: { isActive: true },
-              select: {
-                id: true,
-                name: true,
-                category: true,
-                technologyTier: true,
-              },
-            },
-          },
           orderBy: { name: "asc" },
         });
 
@@ -275,7 +239,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const equipment = await ctx.db.militaryCatalogEquipment.update({
+        const equipment = await ctx.db.militaryEquipmentCatalog.update({
           where: { id: input.equipmentId },
           data: {
             usageCount: { increment: 1 },
@@ -334,15 +298,12 @@ export const militaryEquipmentRouter = createTRPCRouter({
           ];
         }
 
-        const equipment = await ctx.db.militaryCatalogEquipment.findMany({
+        const equipment = await ctx.db.militaryEquipmentCatalog.findMany({
           where,
-          include: {
-            manufacturer: true,
-          },
           orderBy: [
             { category: "asc" },
             { era: "desc" },
-            { technologyTier: "desc" },
+            { technologyLevel: "desc" },
             { name: "asc" },
           ],
         });
@@ -352,7 +313,6 @@ export const militaryEquipmentRouter = createTRPCRouter({
           ...item,
           specifications: item.specifications ? JSON.parse(item.specifications) : null,
           capabilities: item.capabilities ? JSON.parse(item.capabilities) : null,
-          requirements: item.requirements ? JSON.parse(item.requirements) : null,
         }));
 
         return parsedEquipment;
@@ -377,9 +337,9 @@ export const militaryEquipmentRouter = createTRPCRouter({
         subcategory: z.string().optional(),
         era: z.enum(["wwi", "wwii", "cold-war", "modern", "future"]),
         manufacturerId: z.string().cuid(),
-        specifications: z.record(z.any()).optional(),
-        capabilities: z.record(z.any()).optional(),
-        requirements: z.record(z.any()).optional(),
+        specifications: z.record(z.string(), z.any()).optional(),
+        capabilities: z.record(z.string(), z.any()).optional(),
+        requirements: z.record(z.string(), z.any()).optional(),
         procurementCost: z.number().int().min(0),
         maintenanceCost: z.number().int().min(0),
         technologyTier: z.number().int().min(1).max(10),
@@ -389,7 +349,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       try {
         // Verify manufacturer exists
-        const manufacturer = await ctx.db.militaryManufacturer.findUnique({
+        const manufacturer = await ctx.db.defenseManufacturer.findUnique({
           where: { id: input.manufacturerId },
         });
 
@@ -400,24 +360,22 @@ export const militaryEquipmentRouter = createTRPCRouter({
           });
         }
 
-        const equipment = await ctx.db.militaryCatalogEquipment.create({
+        const equipment = await ctx.db.militaryEquipmentCatalog.create({
           data: {
+            key: `${input.category}_${input.name.toLowerCase().replace(/\s+/g, "_")}`,
             name: input.name,
+            manufacturer: manufacturer.name,
             category: input.category,
             subcategory: input.subcategory,
             era: input.era,
-            manufacturerId: input.manufacturerId,
-            specifications: input.specifications ? JSON.stringify(input.specifications) : null,
-            capabilities: input.capabilities ? JSON.stringify(input.capabilities) : null,
-            requirements: input.requirements ? JSON.stringify(input.requirements) : null,
-            procurementCost: input.procurementCost,
+            specifications: input.specifications ? JSON.stringify(input.specifications) : "",
+            capabilities: input.capabilities ? JSON.stringify(input.capabilities) : "",
+            acquisitionCost: input.procurementCost,
             maintenanceCost: input.maintenanceCost,
-            technologyTier: input.technologyTier,
+            technologyLevel: input.technologyTier,
+            crewRequirement: 1,
             isActive: input.isActive,
             usageCount: 0,
-          },
-          include: {
-            manufacturer: true,
           },
         });
 
@@ -447,7 +405,6 @@ export const militaryEquipmentRouter = createTRPCRouter({
             ...equipment,
             specifications: equipment.specifications ? JSON.parse(equipment.specifications) : null,
             capabilities: equipment.capabilities ? JSON.parse(equipment.capabilities) : null,
-            requirements: equipment.requirements ? JSON.parse(equipment.requirements) : null,
           },
         };
       } catch (error) {
@@ -490,9 +447,9 @@ export const militaryEquipmentRouter = createTRPCRouter({
         subcategory: z.string().optional(),
         era: z.enum(["wwi", "wwii", "cold-war", "modern", "future"]).optional(),
         manufacturerId: z.string().cuid().optional(),
-        specifications: z.record(z.any()).optional(),
-        capabilities: z.record(z.any()).optional(),
-        requirements: z.record(z.any()).optional(),
+        specifications: z.record(z.string(), z.any()).optional(),
+        capabilities: z.record(z.string(), z.any()).optional(),
+        requirements: z.record(z.string(), z.any()).optional(),
         procurementCost: z.number().int().min(0).optional(),
         maintenanceCost: z.number().int().min(0).optional(),
         technologyTier: z.number().int().min(1).max(10).optional(),
@@ -502,7 +459,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       try {
         // Verify equipment exists
-        const existing = await ctx.db.militaryCatalogEquipment.findUnique({
+        const existing = await ctx.db.militaryEquipmentCatalog.findUnique({
           where: { id: input.id },
         });
 
@@ -515,7 +472,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
 
         // If changing manufacturer, verify it exists
         if (input.manufacturerId) {
-          const manufacturer = await ctx.db.militaryManufacturer.findUnique({
+          const manufacturer = await ctx.db.defenseManufacturer.findUnique({
             where: { id: input.manufacturerId },
           });
 
@@ -532,24 +489,27 @@ export const militaryEquipmentRouter = createTRPCRouter({
         if (input.category !== undefined) updateData.category = input.category;
         if (input.subcategory !== undefined) updateData.subcategory = input.subcategory;
         if (input.era !== undefined) updateData.era = input.era;
-        if (input.manufacturerId !== undefined) updateData.manufacturerId = input.manufacturerId;
+        if (input.manufacturerId !== undefined) {
+          // Look up manufacturer name
+          const manufacturer = await ctx.db.defenseManufacturer.findUnique({
+            where: { id: input.manufacturerId },
+          });
+          if (manufacturer) {
+            updateData.manufacturer = manufacturer.name;
+          }
+        }
         if (input.specifications !== undefined)
           updateData.specifications = JSON.stringify(input.specifications);
         if (input.capabilities !== undefined)
           updateData.capabilities = JSON.stringify(input.capabilities);
-        if (input.requirements !== undefined)
-          updateData.requirements = JSON.stringify(input.requirements);
-        if (input.procurementCost !== undefined) updateData.procurementCost = input.procurementCost;
+        if (input.procurementCost !== undefined) updateData.acquisitionCost = input.procurementCost;
         if (input.maintenanceCost !== undefined) updateData.maintenanceCost = input.maintenanceCost;
-        if (input.technologyTier !== undefined) updateData.technologyTier = input.technologyTier;
+        if (input.technologyTier !== undefined) updateData.technologyLevel = input.technologyTier;
         if (input.isActive !== undefined) updateData.isActive = input.isActive;
 
-        const equipment = await ctx.db.militaryCatalogEquipment.update({
+        const equipment = await ctx.db.militaryEquipmentCatalog.update({
           where: { id: input.id },
           data: updateData,
-          include: {
-            manufacturer: true,
-          },
         });
 
         // Audit log
@@ -577,7 +537,6 @@ export const militaryEquipmentRouter = createTRPCRouter({
             ...equipment,
             specifications: equipment.specifications ? JSON.parse(equipment.specifications) : null,
             capabilities: equipment.capabilities ? JSON.parse(equipment.capabilities) : null,
-            requirements: equipment.requirements ? JSON.parse(equipment.requirements) : null,
           },
         };
       } catch (error) {
@@ -617,7 +576,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const equipment = await ctx.db.militaryCatalogEquipment.update({
+        const equipment = await ctx.db.militaryEquipmentCatalog.update({
           where: { id: input.id },
           data: {
             isActive: false,
@@ -689,7 +648,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const result = await ctx.db.militaryCatalogEquipment.updateMany({
+        const result = await ctx.db.militaryEquipmentCatalog.updateMany({
           where: {
             id: { in: input.equipmentIds },
           },
@@ -763,14 +722,13 @@ export const militaryEquipmentRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const manufacturer = await ctx.db.militaryManufacturer.create({
+        const manufacturer = await ctx.db.defenseManufacturer.create({
           data: {
+            key: input.name.toLowerCase().replace(/\s+/g, '-'),
             name: input.name,
             country: input.country,
-            specialty: input.specialty,
-            founded: input.founded,
-            description: input.description,
-            isActive: input.isActive,
+            specialty: input.specialty || "",
+            isActive: input.isActive ?? true,
           },
         });
 
@@ -840,7 +798,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       try {
         // Verify manufacturer exists
-        const existing = await ctx.db.militaryManufacturer.findUnique({
+        const existing = await ctx.db.defenseManufacturer.findUnique({
           where: { id: input.id },
         });
 
@@ -859,7 +817,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
         if (input.description !== undefined) updateData.description = input.description;
         if (input.isActive !== undefined) updateData.isActive = input.isActive;
 
-        const manufacturer = await ctx.db.militaryManufacturer.update({
+        const manufacturer = await ctx.db.defenseManufacturer.update({
           where: { id: input.id },
           data: updateData,
         });
@@ -923,22 +881,14 @@ export const militaryEquipmentRouter = createTRPCRouter({
   getEquipmentUsageStats: publicProcedure.query(async ({ ctx }) => {
     try {
       // Top 10 most procured equipment
-      const topEquipment = await ctx.db.militaryCatalogEquipment.findMany({
+      const topEquipment = await ctx.db.militaryEquipmentCatalog.findMany({
         where: { isActive: true },
         orderBy: { usageCount: "desc" },
         take: 10,
-        include: {
-          manufacturer: {
-            select: {
-              name: true,
-              country: true,
-            },
-          },
-        },
       });
 
       // Usage by category
-      const categoryStats = await ctx.db.militaryCatalogEquipment.groupBy({
+      const categoryStats = await ctx.db.militaryEquipmentCatalog.groupBy({
         by: ["category"],
         where: { isActive: true },
         _sum: { usageCount: true },
@@ -946,34 +896,36 @@ export const militaryEquipmentRouter = createTRPCRouter({
       });
 
       // Usage by era
-      const eraStats = await ctx.db.militaryCatalogEquipment.groupBy({
+      const eraStats = await ctx.db.militaryEquipmentCatalog.groupBy({
         by: ["era"],
         where: { isActive: true },
         _sum: { usageCount: true },
         _count: { id: true },
       });
 
-      // Usage by manufacturer
-      const manufacturerStats = await ctx.db.militaryManufacturer.findMany({
+      // Usage by manufacturer (get unique manufacturers from equipment)
+      const equipmentWithManufacturers = await ctx.db.militaryEquipmentCatalog.findMany({
         where: { isActive: true },
-        include: {
-          equipment: {
-            where: { isActive: true },
-            select: {
-              usageCount: true,
-            },
-          },
+        select: {
+          manufacturer: true,
+          usageCount: true,
         },
-        orderBy: { name: "asc" },
       });
 
-      const manufacturerUsage = manufacturerStats
-        .map((mfr) => ({
-          manufacturerId: mfr.id,
-          manufacturerName: mfr.name,
-          country: mfr.country,
-          totalUsage: mfr.equipment.reduce((sum, eq) => sum + eq.usageCount, 0),
-          equipmentCount: mfr.equipment.length,
+      const manufacturerUsageMap = new Map<string, { totalUsage: number; equipmentCount: number }>();
+      equipmentWithManufacturers.forEach((eq) => {
+        const existing = manufacturerUsageMap.get(eq.manufacturer) || { totalUsage: 0, equipmentCount: 0 };
+        manufacturerUsageMap.set(eq.manufacturer, {
+          totalUsage: existing.totalUsage + eq.usageCount,
+          equipmentCount: existing.equipmentCount + 1,
+        });
+      });
+
+      const manufacturerUsage = Array.from(manufacturerUsageMap.entries())
+        .map(([name, stats]) => ({
+          manufacturerName: name,
+          totalUsage: stats.totalUsage,
+          equipmentCount: stats.equipmentCount,
         }))
         .sort((a, b) => b.totalUsage - a.totalUsage);
 
@@ -982,7 +934,6 @@ export const militaryEquipmentRouter = createTRPCRouter({
           ...eq,
           specifications: eq.specifications ? JSON.parse(eq.specifications) : null,
           capabilities: eq.capabilities ? JSON.parse(eq.capabilities) : null,
-          requirements: eq.requirements ? JSON.parse(eq.requirements) : null,
         })),
         byCategory: categoryStats,
         byEra: eraStats,
@@ -1003,30 +954,34 @@ export const militaryEquipmentRouter = createTRPCRouter({
    */
   getManufacturerStats: publicProcedure.query(async ({ ctx }) => {
     try {
-      const manufacturers = await ctx.db.militaryManufacturer.findMany({
+      // Get all manufacturers
+      const manufacturers = await ctx.db.defenseManufacturer.findMany({
         where: { isActive: true },
-        include: {
-          equipment: {
-            where: { isActive: true },
-            select: {
-              id: true,
-              category: true,
-              usageCount: true,
-              technologyTier: true,
-            },
-          },
+      });
+
+      // Get all equipment
+      const allEquipment = await ctx.db.militaryEquipmentCatalog.findMany({
+        where: { isActive: true },
+        select: {
+          manufacturer: true,
+          category: true,
+          usageCount: true,
+          technologyLevel: true,
         },
       });
 
       const stats = manufacturers.map((mfr) => {
-        const totalUsage = mfr.equipment.reduce((sum, eq) => sum + eq.usageCount, 0);
+        // Filter equipment for this manufacturer
+        const mfrEquipment = allEquipment.filter((eq) => eq.manufacturer === mfr.name);
+
+        const totalUsage = mfrEquipment.reduce((sum, eq) => sum + eq.usageCount, 0);
         const avgTechLevel =
-          mfr.equipment.length > 0
-            ? mfr.equipment.reduce((sum, eq) => sum + eq.technologyTier, 0) / mfr.equipment.length
+          mfrEquipment.length > 0
+            ? mfrEquipment.reduce((sum, eq) => sum + eq.technologyLevel, 0) / mfrEquipment.length
             : 0;
 
         // Category distribution
-        const categoryDistribution = mfr.equipment.reduce(
+        const categoryDistribution = mfrEquipment.reduce(
           (acc, eq) => {
             acc[eq.category] = (acc[eq.category] || 0) + 1;
             return acc;
@@ -1039,7 +994,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
           name: mfr.name,
           country: mfr.country,
           specialty: mfr.specialty,
-          equipmentCount: mfr.equipment.length,
+          equipmentCount: mfrEquipment.length,
           totalUsage,
           avgTechLevel: Math.round(avgTechLevel * 10) / 10,
           categoryDistribution,

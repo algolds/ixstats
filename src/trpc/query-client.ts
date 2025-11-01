@@ -15,8 +15,8 @@ const selectiveLogger = {
 
 export const createQueryClient = () =>
   new QueryClient({
-    // Use selective logger in development
-    logger: process.env.NODE_ENV === "development" ? selectiveLogger : undefined,
+    // Note: logger property removed - not supported in current React Query version
+    // logger: process.env.NODE_ENV === "development" ? selectiveLogger : undefined,
     defaultOptions: {
       queries: {
         // With SSR, we usually want to set some default staleTime

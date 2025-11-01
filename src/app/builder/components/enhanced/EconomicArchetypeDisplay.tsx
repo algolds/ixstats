@@ -80,7 +80,7 @@ export function EconomicArchetypeDisplay({
     const archetype = archetypes.find(
       (a) => a.id === archetypeId || (a as any).key === archetypeId
     );
-    setSelectedArchetype(archetype ?? null);
+    setSelectedArchetype(archetype as EconomicArchetype ?? null);
   };
 
   const handleApplyArchetype = () => {
@@ -678,7 +678,7 @@ export function EconomicArchetypeDisplay({
             </Card>
           ) : (
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-              {archetypes.map((archetype) => renderArchetypeCard(archetype, true))}
+              {archetypes.map((archetype) => renderArchetypeCard(archetype as EconomicArchetype, true))}
             </div>
           )}
         </TabsContent>

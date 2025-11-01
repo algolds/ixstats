@@ -36,3 +36,6 @@ export type {
 
 export { useMapEditor } from "./useMapEditor";
 export type { UseMapEditorResult } from "./useMapEditor";
+
+export { useProjectionTransition } from "./useProjectionTransition";
+export type { ProjectionMode } from "./useProjectionTransition";

@@ -45,13 +45,13 @@ export const EconomicSection = React.memo<EconomicSectionProps>(
       sector: sector.sector,
       performance: `${sector.performance.toFixed(1)}%`,
       growth: formatPercent(sector.growth),
-      contribution: `${sector.contribution?.toFixed(1)}%` || "N/A",
+      contribution: sector.contribution ? `${sector.contribution.toFixed(1)}%` : "N/A",
       trend: sector.trend || "stable",
     }));
 
     const volatilityTableData = volatilityMetrics.map((metric, index) => ({
       id: index,
-      metric: metric.metric,
+      metric: metric.metric || metric.label,
       value: formatPercent(metric.value),
       volatility: metric.volatility || "N/A",
       risk: metric.risk || "Low",

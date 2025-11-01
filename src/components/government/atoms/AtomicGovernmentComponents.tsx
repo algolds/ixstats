@@ -167,7 +167,7 @@ export function AtomicGovernmentComponents({
     <div className="space-y-6">
       {/* Fallback Warning Banner */}
       {isUsingFallback && (
-        <Alert variant="warning">
+        <Alert variant="default">
           <Info className="h-4 w-4" />
           <AlertDescription>
             Using local component data. Database connection unavailable or empty.

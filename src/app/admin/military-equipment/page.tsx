@@ -258,11 +258,11 @@ export default function MilitaryEquipmentPage() {
       if (subcategoryFilter !== "all" && item.subcategory !== subcategoryFilter) return false;
 
       // Tech level filter
-      if (item.technologyLevel < techLevelRange[0] || item.technologyLevel > techLevelRange[1])
+      if (item.technologyLevel < techLevelRange[0]! || item.technologyLevel > techLevelRange[1]!)
         return false;
 
       // Cost filter
-      if (item.acquisitionCost < costRange[0] || item.acquisitionCost > costRange[1]) return false;
+      if (item.acquisitionCost < costRange[0]! || item.acquisitionCost > costRange[1]!) return false;
 
       return true;
     });
@@ -422,7 +422,7 @@ export default function MilitaryEquipmentPage() {
     if (selectedIds.size === filteredEquipment.length && filteredEquipment.length > 0) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filteredEquipment.map((e) => e.id)));
+      setSelectedIds(new Set(filteredEquipment.map((e: { id: string }) => e.id)));
     }
   };
 
@@ -636,7 +636,7 @@ export default function MilitaryEquipmentPage() {
           <Card className="glass-card-child p-4">
             <p className="text-muted-foreground text-sm">Active Equipment</p>
             <p className="mt-2 text-3xl font-bold text-green-400">
-              {equipmentData?.filter((e) => e.isActive).length || 0}
+              {equipmentData?.filter((e: { isActive: boolean }) => e.isActive).length || 0}
             </p>
           </Card>
           <Card className="glass-card-child p-4">
@@ -681,7 +681,7 @@ export default function MilitaryEquipmentPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {filteredEquipment.map((equipment) => (
+              {filteredEquipment.map((equipment: { id: string; name: string }) => (
                 <EquipmentCard
                   key={equipment.id}
                   equipment={equipment}
@@ -765,7 +765,7 @@ function EquipmentCard({
         <div className="mb-1 flex items-start justify-between gap-2">
           <h3 className="text-foreground line-clamp-1 flex-1 font-semibold">{equipment.name}</h3>
           {!equipment.isActive && (
-            <EyeOff className="h-4 w-4 shrink-0 text-red-400" title="Inactive" />
+            <EyeOff className="h-4 w-4 shrink-0 text-red-400" aria-label="Inactive" />
           )}
         </div>
         <div className="flex flex-wrap items-center gap-2">

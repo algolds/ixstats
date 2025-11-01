@@ -78,7 +78,7 @@ export default function ModelingPage({ params }: ModelingPageProps) {
                 country={{
                   ...country,
                   economicYears: Array.isArray(country.historical)
-                    ? (country.historical.map((h) => ({
+                    ? (country.historical.map((h: Record<string, any>) => ({
                         year: h.year,
                         gdp: h.gdp,
                         inflation: undefined, // Map if available

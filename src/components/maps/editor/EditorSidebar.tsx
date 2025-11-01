@@ -10,10 +10,15 @@
 
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
-import { Loader2, Search, Plus, Edit2, Trash2, Eye, CheckCircle, XCircle, Clock, FileText } from "lucide-react";
+import { Loader2, Search, Plus, Edit2, Trash2, Eye, CheckCircle, XCircle, Clock, FileText, X } from "lucide-react";
+import type { Feature, Polygon, MultiPolygon } from "geojson";
+import { CityPlacement } from "./CityPlacement";
+import { POIEditor } from "./POIEditor";
+import { SubdivisionEditor } from "./SubdivisionEditor";
 
 interface EditorSidebarProps {
   countryId: string;
+  countryGeometry?: Feature<Polygon | MultiPolygon> | null;
   onFeatureSelect?: (featureId: string, featureType: "subdivision" | "city" | "poi") => void;
   onNewFeature?: (type: "subdivision" | "city" | "poi") => void;
   onEditFeature?: (featureId: string, featureType: "subdivision" | "city" | "poi") => void;
@@ -21,9 +26,15 @@ interface EditorSidebarProps {
 
 type TabType = "subdivisions" | "cities" | "pois" | "submissions";
 type StatusType = "pending" | "approved" | "rejected" | "draft";
+type EditorMode = "list" | "create-city" | "create-poi" | "create-subdivision" | "edit-city" | "edit-poi" | "edit-subdivision";
 
-export function EditorSidebar({
+/**
+ * EditorSidebar Component (Memoized)
+ * Only re-renders when props actually change
+ */
+export const EditorSidebar = React.memo(function EditorSidebar({
   countryId,
+  countryGeometry,
   onFeatureSelect,
   onNewFeature,
   onEditFeature,
@@ -32,52 +43,161 @@ export function EditorSidebar({
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusType | "all">("all");
   const [currentPage, setCurrentPage] = useState(0);
+  const [editorMode, setEditorMode] = useState<EditorMode>("list");
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const itemsPerPage = 10;
+
+  const utils = api.useUtils();
 
   // Reset pagination when tab or filters change
   React.useEffect(() => {
     setCurrentPage(0);
   }, [activeTab, searchQuery, statusFilter]);
 
+  // Handlers for opening/closing forms
+  const handleOpenCityForm = () => {
+    setEditorMode("create-city");
+    setActiveTab("cities");
+  };
+
+  const handleOpenPOIForm = () => {
+    setEditorMode("create-poi");
+    setActiveTab("pois");
+  };
+
+  const handleOpenSubdivisionForm = () => {
+    setEditorMode("create-subdivision");
+    setActiveTab("subdivisions");
+  };
+
+  const handleCloseForm = () => {
+    setEditorMode("list");
+    setEditingItemId(null);
+  };
+
+  const handleEditCity = (cityId: string) => {
+    setEditorMode("edit-city");
+    setEditingItemId(cityId);
+    setActiveTab("cities");
+  };
+
+  const handleEditPOI = (poiId: string) => {
+    setEditorMode("edit-poi");
+    setEditingItemId(poiId);
+    setActiveTab("pois");
+  };
+
+  const handleEditSubdivision = (subdivisionId: string) => {
+    setEditorMode("edit-subdivision");
+    setEditingItemId(subdivisionId);
+    setActiveTab("subdivisions");
+  };
+
+  const handleSaveSuccess = () => {
+    // Invalidate all queries to refresh lists
+    void utils.mapEditor.getMyCities.invalidate();
+    void utils.mapEditor.getMyPOIs.invalidate();
+    void utils.mapEditor.getMySubdivisions.invalidate();
+    handleCloseForm();
+  };
+
+  // If in editor mode, show the form
+  if (editorMode !== "list") {
+    return (
+      <div className="h-full flex flex-col bg-white dark:bg-slate-900/50">
+        {/* Header with back button */}
+        <div className="glass-panel border-b border-slate-200 dark:border-slate-700/50 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+              {editorMode === "create-city" && "New City"}
+              {editorMode === "create-poi" && "New POI"}
+              {editorMode === "create-subdivision" && "New Subdivision"}
+              {editorMode === "edit-city" && "Edit City"}
+              {editorMode === "edit-poi" && "Edit POI"}
+              {editorMode === "edit-subdivision" && "Edit Subdivision"}
+            </h3>
+            <button
+              onClick={handleCloseForm}
+              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700/50 rounded transition-colors"
+            >
+              <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            </button>
+          </div>
+        </div>
+
+        {/* Form Content */}
+        <div className="flex-1 overflow-y-auto">
+          {(editorMode === "create-city" || editorMode === "edit-city") && (
+            <CityPlacement
+              countryId={countryId}
+              countryGeometry={countryGeometry}
+              onCityPlaced={handleSaveSuccess}
+              onCityUpdated={handleSaveSuccess}
+            />
+          )}
+          {(editorMode === "create-poi" || editorMode === "edit-poi") && (
+            <POIEditor
+              countryId={countryId}
+              countryGeometry={countryGeometry}
+              mode={editorMode === "create-poi" ? "create" : "edit"}
+              poiId={editingItemId ?? undefined}
+              onSuccess={handleSaveSuccess}
+              onCancel={handleCloseForm}
+            />
+          )}
+          {(editorMode === "create-subdivision" || editorMode === "edit-subdivision") && (
+            <SubdivisionEditor
+              map={(window as any).__mapEditorInstance || null}
+              countryId={countryId}
+              isActive={true}
+              onClose={handleCloseForm}
+              onSaved={handleSaveSuccess}
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-full flex flex-col bg-slate-900/50">
+    <div className="h-full flex flex-col bg-white dark:bg-slate-900/50">
       {/* Tab Navigation */}
-      <div className="glass-panel border-b border-slate-700/50">
+      <div className="glass-panel border-b border-slate-200 dark:border-slate-700/50">
         <div className="flex gap-1 p-2">
           <TabButton
             label="Subdivisions"
             active={activeTab === "subdivisions"}
-            onClick={() => setActiveTab("subdivisions")}
+            onClick={() => { setActiveTab("subdivisions"); setEditorMode("list"); }}
           />
           <TabButton
             label="Cities"
             active={activeTab === "cities"}
-            onClick={() => setActiveTab("cities")}
+            onClick={() => { setActiveTab("cities"); setEditorMode("list"); }}
           />
           <TabButton
             label="POIs"
             active={activeTab === "pois"}
-            onClick={() => setActiveTab("pois")}
+            onClick={() => { setActiveTab("pois"); setEditorMode("list"); }}
           />
           <TabButton
             label="My Submissions"
             active={activeTab === "submissions"}
-            onClick={() => setActiveTab("submissions")}
+            onClick={() => { setActiveTab("submissions"); setEditorMode("list"); }}
           />
         </div>
       </div>
 
       {/* Search and Filter Bar */}
-      <div className="glass-panel border-b border-slate-700/50 p-3 space-y-2">
+      <div className="glass-panel border-b border-slate-200 dark:border-slate-700/50 p-3 space-y-2">
         {/* Search Input */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-400" />
           <input
             type="text"
             placeholder={`Search ${activeTab}...`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white text-sm placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-gold-500/50"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-lg text-slate-900 dark:text-white text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-gold-500/50"
           />
         </div>
 
@@ -122,8 +242,8 @@ export function EditorSidebar({
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
             onFeatureSelect={onFeatureSelect}
-            onEditFeature={onEditFeature}
-            onNewFeature={onNewFeature}
+            onEditFeature={handleEditSubdivision}
+            onNewFeature={handleOpenSubdivisionForm}
           />
         )}
         {activeTab === "cities" && (
@@ -135,8 +255,8 @@ export function EditorSidebar({
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
             onFeatureSelect={onFeatureSelect}
-            onEditFeature={onEditFeature}
-            onNewFeature={onNewFeature}
+            onEditFeature={handleEditCity}
+            onNewFeature={handleOpenCityForm}
           />
         )}
         {activeTab === "pois" && (
@@ -148,8 +268,8 @@ export function EditorSidebar({
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
             onFeatureSelect={onFeatureSelect}
-            onEditFeature={onEditFeature}
-            onNewFeature={onNewFeature}
+            onEditFeature={handleEditPOI}
+            onNewFeature={handleOpenPOIForm}
           />
         )}
         {activeTab === "submissions" && (
@@ -161,13 +281,15 @@ export function EditorSidebar({
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
             onFeatureSelect={onFeatureSelect}
-            onEditFeature={onEditFeature}
+            onEditCity={handleEditCity}
+            onEditPOI={handleEditPOI}
+            onEditSubdivision={handleEditSubdivision}
           />
         )}
       </div>
     </div>
   );
-}
+});
 
 // ============================================================================
 // Tab Components
@@ -181,8 +303,8 @@ interface TabContentProps {
   itemsPerPage: number;
   onPageChange: (page: number) => void;
   onFeatureSelect?: (featureId: string, featureType: "subdivision" | "city" | "poi") => void;
-  onEditFeature?: (featureId: string, featureType: "subdivision" | "city" | "poi") => void;
-  onNewFeature?: (type: "subdivision" | "city" | "poi") => void;
+  onEditFeature?: (featureId: string) => void;
+  onNewFeature?: () => void;
 }
 
 function SubdivisionsTab({
@@ -204,6 +326,20 @@ function SubdivisionsTab({
     limit: 100, // Fetch more, filter client-side
     offset: 0,
   });
+
+  // DEBUG: Log query state
+  React.useEffect(() => {
+    console.log("[SubdivisionsTab] Query state:", {
+      countryId,
+      statusFilter,
+      isLoading,
+      hasError: !!error,
+      errorMessage: error?.message,
+      hasData: !!data,
+      subdivisionCount: data?.subdivisions?.length ?? 0,
+      subdivisions: data?.subdivisions,
+    });
+  }, [countryId, statusFilter, isLoading, error, data]);
 
   const deleteSubdivision = api.mapEditor.deleteSubdivision.useMutation({
     onSuccess: () => {
@@ -260,8 +396,8 @@ function SubdivisionsTab({
     <div className="p-4 space-y-3">
       {/* New Button */}
       <button
-        onClick={() => onNewFeature?.("subdivision")}
-        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gold-500/20 hover:bg-gold-500/30 text-gold-300 rounded-lg transition-colors font-medium"
+        onClick={onNewFeature}
+        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gold-500/20 hover:bg-gold-500/30 text-gold-700 dark:text-gold-300 rounded-lg transition-colors font-medium"
       >
         <Plus className="w-4 h-4" />
         New Subdivision
@@ -283,7 +419,7 @@ function SubdivisionsTab({
           }}
           rejectionReason={item.rejectionReason ?? undefined}
           onView={() => onFeatureSelect?.(item.id, "subdivision")}
-          onEdit={() => onEditFeature?.(item.id, "subdivision")}
+          onEdit={() => onEditFeature?.(item.id)}
           onDelete={() => {
             if (confirm(`Are you sure you want to delete ${item.name}?`)) {
               deleteSubdivision.mutate({ id: item.id });
@@ -330,6 +466,20 @@ function CitiesTab({
     limit: 100,
     offset: 0,
   });
+
+  // DEBUG: Log query state
+  React.useEffect(() => {
+    console.log("[CitiesTab] Query state:", {
+      countryId,
+      statusFilter,
+      isLoading,
+      hasError: !!error,
+      errorMessage: error?.message,
+      hasData: !!data,
+      cityCount: data?.cities?.length ?? 0,
+      cities: data?.cities,
+    });
+  }, [countryId, statusFilter, isLoading, error, data]);
 
   const deleteCity = api.mapEditor.deleteCity.useMutation({
     onSuccess: () => {
@@ -383,8 +533,8 @@ function CitiesTab({
   return (
     <div className="p-4 space-y-3">
       <button
-        onClick={() => onNewFeature?.("city")}
-        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gold-500/20 hover:bg-gold-500/30 text-gold-300 rounded-lg transition-colors font-medium"
+        onClick={onNewFeature}
+        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gold-500/20 hover:bg-gold-500/30 text-gold-700 dark:text-gold-300 rounded-lg transition-colors font-medium"
       >
         <Plus className="w-4 h-4" />
         New City
@@ -405,7 +555,7 @@ function CitiesTab({
           }}
           rejectionReason={item.rejectionReason ?? undefined}
           onView={() => onFeatureSelect?.(item.id, "city")}
-          onEdit={() => onEditFeature?.(item.id, "city")}
+          onEdit={() => onEditFeature?.(item.id)}
           onDelete={() => {
             if (confirm(`Are you sure you want to delete ${item.name}?`)) {
               deleteCity.mutate({ id: item.id });
@@ -451,6 +601,20 @@ function POIsTab({
     limit: 100,
     offset: 0,
   });
+
+  // DEBUG: Log query state
+  React.useEffect(() => {
+    console.log("[POIsTab] Query state:", {
+      countryId,
+      statusFilter,
+      isLoading,
+      hasError: !!error,
+      errorMessage: error?.message,
+      hasData: !!data,
+      poiCount: data?.pois?.length ?? 0,
+      pois: data?.pois,
+    });
+  }, [countryId, statusFilter, isLoading, error, data]);
 
   const deletePOI = api.mapEditor.deletePOI.useMutation({
     onSuccess: () => {
@@ -504,8 +668,8 @@ function POIsTab({
   return (
     <div className="p-4 space-y-3">
       <button
-        onClick={() => onNewFeature?.("poi")}
-        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gold-500/20 hover:bg-gold-500/30 text-gold-300 rounded-lg transition-colors font-medium"
+        onClick={onNewFeature}
+        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gold-500/20 hover:bg-gold-500/30 text-gold-700 dark:text-gold-300 rounded-lg transition-colors font-medium"
       >
         <Plus className="w-4 h-4" />
         New POI
@@ -524,7 +688,7 @@ function POIsTab({
           }}
           rejectionReason={item.rejectionReason ?? undefined}
           onView={() => onFeatureSelect?.(item.id, "poi")}
-          onEdit={() => onEditFeature?.(item.id, "poi")}
+          onEdit={() => onEditFeature?.(item.id)}
           onDelete={() => {
             if (confirm(`Are you sure you want to delete ${item.name}?`)) {
               deletePOI.mutate({ id: item.id });
@@ -559,8 +723,14 @@ function SubmissionsTab({
   itemsPerPage,
   onPageChange,
   onFeatureSelect,
-  onEditFeature,
-}: Omit<TabContentProps, "onNewFeature">) {
+  onEditCity,
+  onEditPOI,
+  onEditSubdivision,
+}: Omit<TabContentProps, "onNewFeature" | "onEditFeature"> & {
+  onEditCity?: (id: string) => void;
+  onEditPOI?: (id: string) => void;
+  onEditSubdivision?: (id: string) => void;
+}) {
   const utils = api.useUtils();
 
   const subdivisions = api.mapEditor.getMySubdivisions.useQuery({
@@ -729,7 +899,15 @@ function SubmissionsTab({
           metadata={item.metadata}
           rejectionReason={item.rejectionReason}
           onView={() => onFeatureSelect?.(item.id, item.type)}
-          onEdit={() => onEditFeature?.(item.id, item.type)}
+          onEdit={() => {
+            if (item.type === "subdivision") {
+              onEditSubdivision?.(item.id);
+            } else if (item.type === "city") {
+              onEditCity?.(item.id);
+            } else {
+              onEditPOI?.(item.id);
+            }
+          }}
           onDelete={() => {
             if (confirm(`Are you sure you want to delete ${item.name}?`)) {
               if (item.type === "subdivision") {
@@ -792,8 +970,8 @@ function TabButton({
       onClick={onClick}
       className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
         active
-          ? "bg-gold-500/20 text-gold-300"
-          : "text-slate-400 hover:text-white hover:bg-slate-700/30"
+          ? "bg-gold-500/20 text-gold-600 dark:text-gold-300"
+          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/30"
       }`}
     >
       {label}
@@ -815,8 +993,8 @@ function FilterButton({
       onClick={onClick}
       className={`flex-1 px-3 py-1.5 text-xs font-medium rounded transition-colors ${
         active
-          ? "bg-gold-500/20 text-gold-300"
-          : "bg-slate-800/30 text-slate-400 hover:bg-slate-700/30 hover:text-white"
+          ? "bg-gold-500/20 text-gold-600 dark:text-gold-300"
+          : "bg-slate-100 dark:bg-slate-800/30 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700/30 hover:text-slate-900 dark:hover:text-white"
       }`}
     >
       {label}
@@ -852,12 +1030,12 @@ function FeatureCard({
   isSubmitting?: boolean;
 }) {
   return (
-    <div className="glass-panel p-3 space-y-2 hover:bg-slate-800/40 transition-colors">
+    <div className="glass-panel p-3 space-y-2 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <h4 className="text-white font-medium truncate">{name}</h4>
-          <p className="text-xs text-slate-400 capitalize">{type}</p>
+          <h4 className="text-slate-900 dark:text-white font-medium truncate">{name}</h4>
+          <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">{type}</p>
         </div>
         <StatusBadge status={status} />
       </div>
@@ -867,8 +1045,8 @@ function FeatureCard({
         {Object.entries(metadata).map(([key, value]) =>
           value ? (
             <div key={key} className="flex justify-between text-xs">
-              <span className="text-slate-400 capitalize">{key}:</span>
-              <span className="text-slate-300">{value}</span>
+              <span className="text-slate-500 dark:text-slate-400 capitalize">{key}:</span>
+              <span className="text-slate-700 dark:text-slate-300">{value}</span>
             </div>
           ) : null
         )}
@@ -876,7 +1054,7 @@ function FeatureCard({
 
       {/* Rejection Reason */}
       {status === "rejected" && rejectionReason && (
-        <div className="p-2 bg-red-500/10 border border-red-500/20 rounded text-xs text-red-300">
+        <div className="p-2 bg-red-500/10 border border-red-500/20 rounded text-xs text-red-700 dark:text-red-300">
           <strong>Reason:</strong> {rejectionReason}
         </div>
       )}
@@ -885,7 +1063,7 @@ function FeatureCard({
       <div className="flex gap-2 pt-1">
         <button
           onClick={onView}
-          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-700/30 hover:bg-slate-700/50 text-slate-300 text-xs font-medium rounded transition-colors"
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-200 dark:bg-slate-700/30 hover:bg-slate-300 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-300 text-xs font-medium rounded transition-colors"
         >
           <Eye className="w-3.5 h-3.5" />
           View
@@ -893,7 +1071,7 @@ function FeatureCard({
         <button
           onClick={onEdit}
           disabled={status === "approved"}
-          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-700 dark:text-blue-300 text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Edit2 className="w-3.5 h-3.5" />
           Edit
@@ -901,7 +1079,7 @@ function FeatureCard({
         <button
           onClick={onDelete}
           disabled={isDeleting || status === "approved"}
-          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-700 dark:text-red-300 text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isDeleting ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -917,7 +1095,7 @@ function FeatureCard({
         <button
           onClick={onSubmit}
           disabled={isSubmitting}
-          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-300 text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-700 dark:text-green-300 text-xs font-medium rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -977,21 +1155,21 @@ function Pagination({
   onPageChange: (page: number) => void;
 }) {
   return (
-    <div className="flex items-center justify-between px-4 py-3 glass-panel border-t border-slate-700/50">
+    <div className="flex items-center justify-between px-4 py-3 glass-panel border-t border-slate-200 dark:border-slate-700/50">
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 0}
-        className="px-3 py-1.5 text-sm font-medium text-slate-300 hover:text-white bg-slate-700/30 hover:bg-slate-700/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-200 dark:bg-slate-700/30 hover:bg-slate-300 dark:hover:bg-slate-700/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Previous
       </button>
-      <span className="text-sm text-slate-400">
+      <span className="text-sm text-slate-600 dark:text-slate-400">
         Page {currentPage + 1} of {totalPages}
       </span>
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage >= totalPages - 1}
-        className="px-3 py-1.5 text-sm font-medium text-slate-300 hover:text-white bg-slate-700/30 hover:bg-slate-700/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-200 dark:bg-slate-700/30 hover:bg-slate-300 dark:hover:bg-slate-700/50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Next
       </button>
@@ -1026,14 +1204,14 @@ function ErrorState({
 }) {
   return (
     <div className="p-4 flex flex-col items-center justify-center h-full text-center space-y-4">
-      <XCircle className="w-12 h-12 text-red-400" />
+      <XCircle className="w-12 h-12 text-red-400 dark:text-red-400" />
       <div className="space-y-2">
-        <h3 className="text-lg font-semibold text-white">Error Loading Data</h3>
-        <p className="text-sm text-slate-400">{message}</p>
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Error Loading Data</h3>
+        <p className="text-sm text-slate-600 dark:text-slate-400">{message}</p>
       </div>
       <button
         onClick={onRetry}
-        className="px-4 py-2 bg-gold-500/20 hover:bg-gold-500/30 text-gold-300 rounded-lg transition-colors font-medium"
+        className="px-4 py-2 bg-gold-500/20 hover:bg-gold-500/30 text-gold-700 dark:text-gold-300 rounded-lg transition-colors font-medium"
       >
         Retry
       </button>
@@ -1054,15 +1232,15 @@ function EmptyState({
 }) {
   return (
     <div className="p-4 flex flex-col items-center justify-center h-full text-center space-y-4">
-      <FileText className="w-12 h-12 text-slate-500" />
+      <FileText className="w-12 h-12 text-slate-400 dark:text-slate-500" />
       <div className="space-y-2">
-        <h3 className="text-lg font-semibold text-white">{title}</h3>
-        <p className="text-sm text-slate-400">{description}</p>
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h3>
+        <p className="text-sm text-slate-600 dark:text-slate-400">{description}</p>
       </div>
       {actionLabel && onAction && (
         <button
           onClick={onAction}
-          className="px-4 py-2 bg-gold-500/20 hover:bg-gold-500/30 text-gold-300 rounded-lg transition-colors font-medium"
+          className="px-4 py-2 bg-gold-500/20 hover:bg-gold-500/30 text-gold-700 dark:text-gold-300 rounded-lg transition-colors font-medium"
         >
           {actionLabel}
         </button>

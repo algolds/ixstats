@@ -170,10 +170,6 @@ export const mapEditorRouter = createTRPCRouter({
               slug: true,
               flag: true,
               continent: true,
-              minLng: true,
-              minLat: true,
-              maxLng: true,
-              maxLat: true,
             },
             take: perEntityLimit,
             orderBy: { name: "asc" },
@@ -213,7 +209,7 @@ export const mapEditorRouter = createTRPCRouter({
           }),
 
           // POIs (approved only)
-          ctx.db.poi.findMany({
+          ctx.db.pointOfInterest.findMany({
             where: {
               name: { contains: search, mode: "insensitive" },
               status: "approved",
@@ -244,6 +240,41 @@ export const mapEditorRouter = createTRPCRouter({
           code: "INTERNAL_SERVER_ERROR",
           message: "Search failed",
         });
+      }
+    }),
+
+  /**
+   * Get country centroid in WGS84 coordinates from vector tiles
+   * This returns the correct WGS84 coordinates for map navigation
+   */
+  getCountryCentroidWGS84: publicProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        // Query vector tiles table to get WGS84 centroid
+        // Join with Country table to match CUID with slug
+        const result = await ctx.db.$queryRaw<Array<{ lng: number; lat: number }>>`
+          SELECT
+            ST_X(ST_Centroid(p.geometry)) as lng,
+            ST_Y(ST_Centroid(p.geometry)) as lat
+          FROM map_layer_political p
+          JOIN "Country" c ON p.country_id = c.slug
+          WHERE c.id = ${input.countryId}
+          LIMIT 1
+        `;
+
+        if (!result || result.length === 0) {
+          console.warn(`[mapEditor.getCountryCentroidWGS84] No centroid found for country: ${input.countryId}`);
+          return null;
+        }
+
+        return {
+          lng: result[0].lng,
+          lat: result[0].lat,
+        };
+      } catch (error) {
+        console.error("[mapEditor.getCountryCentroidWGS84] Error:", error);
+        return null;
       }
     }),
 
@@ -296,7 +327,7 @@ export const mapEditorRouter = createTRPCRouter({
           });
         }
 
-        // Create subdivision with pending status
+        // Create subdivision with draft status (user can submit for review later)
         const subdivision = await ctx.db.subdivision.create({
           data: {
             countryId: input.countryId,
@@ -307,7 +338,7 @@ export const mapEditorRouter = createTRPCRouter({
             population: input.population,
             capital: input.capital,
             areaSqKm: input.areaSqKm,
-            status: "pending",
+            status: "draft",
             submittedBy: ctx.auth.userId,
           },
         });
@@ -798,7 +829,7 @@ export const mapEditorRouter = createTRPCRouter({
           }
         }
 
-        // Create city with pending status
+        // Create city with draft status (user can submit for review later)
         const city = await ctx.db.city.create({
           data: {
             countryId: input.countryId,
@@ -811,7 +842,7 @@ export const mapEditorRouter = createTRPCRouter({
             isSubdivisionCapital: input.isSubdivisionCapital,
             elevation: input.elevation,
             foundedYear: input.foundedYear,
-            status: "pending",
+            status: "draft",
             submittedBy: ctx.auth.userId,
           },
         });
@@ -1340,7 +1371,7 @@ export const mapEditorRouter = createTRPCRouter({
           }
         }
 
-        // Create POI with pending status
+        // Create POI with draft status (user can submit for review later)
         const poi = await ctx.db.pointOfInterest.create({
           data: {
             countryId: input.countryId,
@@ -1352,7 +1383,7 @@ export const mapEditorRouter = createTRPCRouter({
             description: input.description,
             images: input.images ? (input.images as any) : null,
             metadata: input.metadata ? (input.metadata as any) : null,
-            status: "pending",
+            status: "draft",
             submittedBy: ctx.auth.userId,
           },
         });
@@ -2254,13 +2285,11 @@ export const mapEditorRouter = createTRPCRouter({
           },
           select: {
             clerkUserId: true,
-            displayName: true,
-            username: true,
           },
         });
 
         const userMap = new Map(
-          users.map((u) => [u.clerkUserId, u.displayName || u.username || "Unknown"])
+          users.map((u) => [u.clerkUserId, "Unknown User"])
         );
 
         const enrichedLogs = logs.map((log) => ({

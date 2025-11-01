@@ -57,13 +57,14 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
             if (!isError) return false;
 
             // Suppress known noisy errors
-            if (typeof op.path === "string") {
+            const path = "path" in op ? (op as any).path : undefined;
+            if (typeof path === "string") {
               // Suppress analytics errors
-              if (op.path.startsWith("unifiedIntelligence.getAnalytics")) {
+              if (path.startsWith("unifiedIntelligence.getAnalytics")) {
                 return false;
               }
               // Suppress map editor search queries (expected to have empty results)
-              if (op.path.includes("mapEditor") && op.path.includes("get")) {
+              if (path.includes("mapEditor") && path.includes("get")) {
                 return false;
               }
             }

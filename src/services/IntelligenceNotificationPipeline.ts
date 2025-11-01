@@ -4,7 +4,7 @@
 import { IxTime } from "~/lib/ixtime";
 import { predictiveAnalyticsEngine } from "~/lib/predictive-analytics-engine";
 import { intelligenceCache, CacheUtils } from "~/lib/intelligence-cache";
-import { performanceMonitor } from "~/lib/performance-monitor";
+import { perfMonitor } from "~/lib/performance-monitor";
 
 interface IntelligenceItem {
   id: string;
@@ -199,7 +199,7 @@ export class IntelligenceNotificationPipeline {
         "standard"
       );
 
-      performanceMonitor.recordQuery({
+      perfMonitor.recordQuery({
         queryKey: `processIntelligenceUpdate:${intelligenceItem.id}`,
         duration: performance.now() - startTime,
         success: true,
@@ -209,7 +209,7 @@ export class IntelligenceNotificationPipeline {
     } catch (error) {
       this.processingStats.errors++;
 
-      performanceMonitor.recordQuery({
+      perfMonitor.recordQuery({
         queryKey: `processIntelligenceUpdate:${intelligenceItem.id}`,
         duration: performance.now() - startTime,
         success: false,

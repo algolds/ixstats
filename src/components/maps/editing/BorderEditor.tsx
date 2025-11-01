@@ -1,7 +1,10 @@
 /**
  * BorderEditor Component
- * Advanced polygon editing interface using MapLibre-Geoman
+ * Advanced polygon editing interface using MapboxDraw (already initialized by MapEditorContainer)
  * Provides drawing, editing, and snapping tools for country borders
+ *
+ * NOTE: This component works with the MapboxDraw instance already created by MapEditorContainer.
+ * It does NOT initialize its own drawing tools to avoid conflicts.
  */
 
 "use client";
@@ -9,10 +12,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { Feature, Polygon, MultiPolygon } from "geojson";
-import "@geoman-io/maplibre-geoman-free/dist/maplibre-geoman.css";
-
-// Dynamic import for MapLibre-Geoman
-let geomanInstance: any = null;
+import type MapboxDraw from "@mapbox/mapbox-gl-draw";
 
 interface BorderEditorProps {
   map: MapLibreMap | null;
@@ -30,7 +30,7 @@ interface BorderEditorProps {
 }
 
 /**
- * Border Editor Component with MapLibre-Geoman controls
+ * Border Editor Component - Uses existing MapboxDraw from MapEditorContainer
  */
 export function BorderEditor({
   map,
@@ -41,9 +41,8 @@ export function BorderEditor({
   onEditEnd,
   options = {},
 }: BorderEditorProps) {
-  const [isGeomanLoaded, setIsGeomanLoaded] = useState(false);
-  const [activeLayer, setActiveLayer] = useState<any>(null);
-  const controlsRef = useRef<any>(null);
+  const [activeFeatureId, setActiveFeatureId] = useState<string | null>(null);
+  const drawRef = useRef<MapboxDraw | null>(null);
 
   const {
     snapping = true,
@@ -53,203 +52,117 @@ export function BorderEditor({
   } = options;
 
   /**
-   * Load MapLibre-Geoman dynamically
+   * Get the existing MapboxDraw instance from the map
+   * MapEditorContainer already initializes this
    */
   useEffect(() => {
-    if (typeof window === "undefined" || !map) return;
+    if (!map || !isActive) return;
 
-    const loadGeoman = async () => {
-      try {
-        if (!geomanInstance) {
-          const geoman = await import("@geoman-io/maplibre-geoman-free");
-          geomanInstance = geoman.default || geoman;
+    // Try multiple methods to find MapboxDraw instance
+    let draw: MapboxDraw | null = null;
+
+    // Method 1: Check window global (set by MapEditorContainer)
+    if ((window as any).__mapboxDrawInstance) {
+      draw = (window as any).__mapboxDrawInstance;
+      console.log("[BorderEditor] Found MapboxDraw via window global");
+    }
+
+    // Method 2: Check map._controls array (fallback)
+    if (!draw) {
+      const controls = (map as any)._controls;
+      if (controls) {
+        for (const control of controls) {
+          if (control.options && typeof control.add === 'function' && typeof control.changeMode === 'function') {
+            draw = control;
+            console.log("[BorderEditor] Found MapboxDraw via map controls");
+            break;
+          }
         }
-        setIsGeomanLoaded(true);
+      }
+    }
+
+    if (!draw) {
+      console.warn("[BorderEditor] MapboxDraw not found - subdivision drawing will not work");
+      return;
+    }
+
+    drawRef.current = draw;
+
+    // Load initial feature if provided
+    if (initialFeature) {
+      try {
+        // Add the feature to MapboxDraw
+        const featureIds = draw.add(initialFeature);
+        if (featureIds && featureIds.length > 0) {
+          setActiveFeatureId(featureIds[0]);
+          console.log("[BorderEditor] Loaded initial feature:", featureIds[0]);
+        }
       } catch (error) {
-        console.error("[BorderEditor] Failed to load MapLibre-Geoman:", error);
+        console.error("[BorderEditor] Error loading initial feature:", error);
+      }
+    }
+
+    // Event handlers for MapboxDraw
+    const handleCreate = (e: any) => {
+      onEditStart?.();
+      if (e.features && e.features.length > 0) {
+        const feature = e.features[0] as Feature<Polygon | MultiPolygon>;
+        onGeometryChange?.(feature);
+        setActiveFeatureId(feature.id as string);
       }
     };
 
-    loadGeoman();
-  }, [map]);
-
-  /**
-   * Initialize Geoman controls when map and library are ready
-   */
-  useEffect(() => {
-    if (!map || !isGeomanLoaded || !isActive || !geomanInstance) return;
-
-    try {
-      // Initialize Geoman on the map
-      if (!(map as any).pm) {
-        geomanInstance.addControls(map, {
-          position: "topright",
-          drawControls: true,
-          editControls: true,
-          optionsControls: true,
-          customControls: true,
-          oneBlock: false,
-        });
+    const handleUpdate = (e: any) => {
+      if (e.features && e.features.length > 0) {
+        const feature = e.features[0] as Feature<Polygon | MultiPolygon>;
+        onGeometryChange?.(feature);
       }
+    };
 
-      const pm = (map as any).pm;
-      controlsRef.current = pm;
+    const handleDelete = (e: any) => {
+      onEditEnd?.();
+      setActiveFeatureId(null);
+    };
 
-      // Enable only polygon drawing/editing tools
-      pm.Toolbar.setBlockPosition("top-right");
-      pm.Toolbar.changeActionsOfControl("Polygon", ["finish", "cancel", "removeLastVertex"]);
+    // Register event listeners
+    map.on('draw.create', handleCreate);
+    map.on('draw.update', handleUpdate);
+    map.on('draw.delete', handleDelete);
 
-      // Configure global options
-      pm.setGlobalOptions({
-        snappable: snapping,
-        snapDistance,
-        allowSelfIntersection,
-        continueDrawing,
-        templineStyle: {
-          color: "#3b82f6",
-          weight: 2,
-          opacity: 0.8,
-        },
-        hintlineStyle: {
-          color: "#10b981",
-          weight: 2,
-          opacity: 0.6,
-          dashArray: [5, 5],
-        },
-        pathOptions: {
-          color: "#3b82f6",
-          fillColor: "#3b82f6",
-          fillOpacity: 0.2,
-          weight: 2,
-        },
-      });
+    return () => {
+      // Cleanup event listeners
+      map.off('draw.create', handleCreate);
+      map.off('draw.update', handleUpdate);
+      map.off('draw.delete', handleDelete);
 
-      // Load initial feature if provided
-      if (initialFeature) {
-        const geoJsonLayer = {
-          type: "Feature",
-          geometry: initialFeature.geometry,
-          properties: initialFeature.properties || {},
-        };
-
+      // Remove the feature from draw if it exists
+      if (activeFeatureId && draw) {
         try {
-          map.addSource("editing-feature", {
-            type: "geojson",
-            data: geoJsonLayer as any,
-          });
-
-          map.addLayer({
-            id: "editing-feature-fill",
-            type: "fill",
-            source: "editing-feature",
-            paint: {
-              "fill-color": "#3b82f6",
-              "fill-opacity": 0.2,
-            },
-          });
-
-          map.addLayer({
-            id: "editing-feature-outline",
-            type: "line",
-            source: "editing-feature",
-            paint: {
-              "line-color": "#3b82f6",
-              "line-width": 2,
-            },
-          });
-
-          // Enable editing on the layer
-          pm.enableGlobalEditMode();
-        } catch (error) {
-          console.error("[BorderEditor] Error loading initial feature:", error);
+          draw.delete(activeFeatureId);
+        } catch (e) {
+          // Feature might already be deleted
         }
       }
-
-      // Event handlers
-      const handleDrawStart = () => {
-        onEditStart?.();
-      };
-
-      const handleDrawEnd = (e: any) => {
-        const feature = e.layer.toGeoJSON() as Feature<Polygon | MultiPolygon>;
-        onGeometryChange?.(feature);
-        setActiveLayer(e.layer);
-      };
-
-      const handleEditEnd = (e: any) => {
-        const feature = e.layer.toGeoJSON() as Feature<Polygon | MultiPolygon>;
-        onGeometryChange?.(feature);
-      };
-
-      const handleCut = (e: any) => {
-        const feature = e.layer.toGeoJSON() as Feature<Polygon | MultiPolygon>;
-        onGeometryChange?.(feature);
-      };
-
-      const handleRemove = () => {
-        onEditEnd?.();
-        setActiveLayer(null);
-      };
-
-      // Register event listeners
-      map.on("pm:drawstart", handleDrawStart);
-      map.on("pm:create", handleDrawEnd);
-      map.on("pm:edit", handleEditEnd);
-      map.on("pm:cut", handleCut);
-      map.on("pm:remove", handleRemove);
-
-      return () => {
-        // Cleanup event listeners
-        map.off("pm:drawstart", handleDrawStart);
-        map.off("pm:create", handleDrawEnd);
-        map.off("pm:edit", handleEditEnd);
-        map.off("pm:cut", handleCut);
-        map.off("pm:remove", handleRemove);
-
-        // Remove layers
-        if (map.getLayer("editing-feature-fill")) {
-          map.removeLayer("editing-feature-fill");
-        }
-        if (map.getLayer("editing-feature-outline")) {
-          map.removeLayer("editing-feature-outline");
-        }
-        if (map.getSource("editing-feature")) {
-          map.removeSource("editing-feature");
-        }
-
-        // Disable Geoman
-        if (pm) {
-          pm.disableGlobalEditMode();
-          pm.removeControls();
-        }
-      };
-    } catch (error) {
-      console.error("[BorderEditor] Error initializing Geoman:", error);
-    }
+    };
   }, [
     map,
-    isGeomanLoaded,
     isActive,
     initialFeature,
     onGeometryChange,
     onEditStart,
     onEditEnd,
-    snapping,
-    snapDistance,
-    allowSelfIntersection,
-    continueDrawing,
   ]);
 
   /**
    * Enable/disable drawing mode
    */
   const toggleDrawMode = useCallback((enable: boolean) => {
-    if (!controlsRef.current) return;
+    if (!drawRef.current) return;
 
     if (enable) {
-      controlsRef.current.enableDraw("Polygon");
+      drawRef.current.changeMode('draw_polygon');
     } else {
-      controlsRef.current.disableDraw();
+      drawRef.current.changeMode('simple_select');
     }
   }, []);
 
@@ -257,50 +170,28 @@ export function BorderEditor({
    * Enable/disable edit mode
    */
   const toggleEditMode = useCallback((enable: boolean) => {
-    if (!controlsRef.current) return;
+    if (!drawRef.current || !activeFeatureId) return;
 
     if (enable) {
-      controlsRef.current.enableGlobalEditMode();
+      drawRef.current.changeMode('direct_select', { featureId: activeFeatureId });
     } else {
-      controlsRef.current.disableGlobalEditMode();
+      drawRef.current.changeMode('simple_select');
     }
-  }, []);
-
-  /**
-   * Split a polygon (for territorial division)
-   */
-  const splitPolygon = useCallback(() => {
-    if (!controlsRef.current || !activeLayer) return;
-
-    try {
-      controlsRef.current.enableGlobalCutMode();
-    } catch (error) {
-      console.error("[BorderEditor] Error enabling cut mode:", error);
-    }
-  }, [activeLayer]);
+  }, [activeFeatureId]);
 
   /**
    * Delete the current feature
    */
   const deleteFeature = useCallback(() => {
-    if (!activeLayer || !map) return;
+    if (!drawRef.current || !activeFeatureId || !map) return;
 
     const confirmed = window.confirm("Are you sure you want to delete this territory?");
     if (!confirmed) return;
 
-    if (map.getLayer("editing-feature-fill")) {
-      map.removeLayer("editing-feature-fill");
-    }
-    if (map.getLayer("editing-feature-outline")) {
-      map.removeLayer("editing-feature-outline");
-    }
-    if (map.getSource("editing-feature")) {
-      map.removeSource("editing-feature");
-    }
-
-    setActiveLayer(null);
+    drawRef.current.delete(activeFeatureId);
+    setActiveFeatureId(null);
     onEditEnd?.();
-  }, [activeLayer, map, onEditEnd]);
+  }, [activeFeatureId, map, onEditEnd]);
 
   // Don't render anything - controls are added directly to map
   return null;
@@ -326,9 +217,6 @@ export function useBorderEditorControls(editorRef: React.RefObject<any>) {
     editorRef.current?.toggleEditMode(false);
   }, [editorRef]);
 
-  const splitTerritory = useCallback(() => {
-    editorRef.current?.splitPolygon();
-  }, [editorRef]);
 
   const deleteTerritory = useCallback(() => {
     editorRef.current?.deleteFeature();
@@ -339,7 +227,6 @@ export function useBorderEditorControls(editorRef: React.RefObject<any>) {
     disableDrawing,
     enableEditing,
     disableEditing,
-    splitTerritory,
     deleteTerritory,
   };
 }

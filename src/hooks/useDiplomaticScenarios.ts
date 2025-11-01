@@ -17,7 +17,7 @@
  */
 
 import { useMemo } from "react";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import {
   DiplomaticScenarioGenerator,
   type DiplomaticScenario,
@@ -71,6 +71,8 @@ export interface ParsedDiplomaticScenario {
   actualEconomicCost?: number | null;
   outcomeNotes?: any; // Parsed from JSON
 }
+
+type ScenarioResponse = RouterOutputs["diplomaticScenarios"]["getScenarioById"];
 
 /**
  * useDiplomaticScenarios - Fetch diplomatic scenarios data
@@ -356,7 +358,43 @@ export function useScenarioById(scenarioId: string) {
   // Fallback if database returns null
   const scenario = useMemo(() => {
     if (dbScenario) {
-      return dbScenario as ParsedDiplomaticScenario;
+      const scenario: ScenarioResponse = dbScenario;
+      const country1Name =
+        (scenario as Partial<ParsedDiplomaticScenario>).country1Name ?? "";
+      const country2Name =
+        (scenario as Partial<ParsedDiplomaticScenario>).country2Name ?? "";
+      const updatedAt =
+        (scenario as Partial<ParsedDiplomaticScenario>).updatedAt ?? scenario.createdAt;
+
+      return {
+        id: scenario.id,
+        type: scenario.type,
+        title: scenario.title,
+        narrative: scenario.narrative,
+        country1Id: scenario.country1Id,
+        country2Id: scenario.country2Id,
+        country1Name,
+        country2Name,
+        relationshipState: scenario.relationshipState,
+        relationshipStrength: scenario.relationshipStrength,
+        responseOptions: Array.isArray(scenario.responseOptions)
+          ? scenario.responseOptions
+          : [],
+        tags: Array.isArray(scenario.tags) ? scenario.tags : [],
+        culturalImpact: scenario.culturalImpact,
+        diplomaticRisk: scenario.diplomaticRisk,
+        economicCost: scenario.economicCost,
+        status: scenario.status,
+        expiresAt: scenario.expiresAt,
+        createdAt: scenario.createdAt,
+        updatedAt,
+        resolvedAt: scenario.resolvedAt ?? null,
+        chosenOption: scenario.chosenOption ?? null,
+        actualCulturalImpact: scenario.actualCulturalImpact ?? null,
+        actualDiplomaticImpact: scenario.actualDiplomaticImpact ?? null,
+        actualEconomicCost: scenario.actualEconomicCost ?? null,
+        outcomeNotes: scenario.outcomeNotes ?? null,
+      } satisfies ParsedDiplomaticScenario;
     }
 
     // Check fallback scenarios

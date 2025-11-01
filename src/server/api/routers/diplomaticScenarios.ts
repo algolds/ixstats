@@ -144,7 +144,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
           include: {
             relatedExchanges: {
               take: 5,
-              orderBy: { proposedAt: "desc" },
+              orderBy: { createdAt: "desc" },
             },
           },
         });
@@ -579,22 +579,31 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         });
 
         // Create CulturalExchange record for historical tracking
-        await ctx.db.culturalExchange.create({
-          data: {
-            initiatingCountryId: input.countryId,
-            participatingCountryId:
-              scenario.country1Id === input.countryId ? scenario.country2Id : scenario.country1Id,
-            exchangeType: scenario.type,
-            status: "completed",
-            culturalImpact: selectedChoice.effects?.culturalImpact || 0,
-            economicCost: selectedChoice.effects?.economicImpact || 0,
-            scenarioId: input.scenarioId,
-            scenarioType: scenario.type,
-            proposedAt: scenario.createdAt,
-            approvedAt: new Date(),
-            completedAt: new Date(),
-          },
+        const hostCountryId = input.countryId;
+        const hostCountry = await ctx.db.country.findUnique({
+          where: { id: hostCountryId },
+          select: { id: true, name: true, flag: true }
         });
+
+        if (hostCountry) {
+          await ctx.db.culturalExchange.create({
+            data: {
+              title: scenario.title,
+              type: scenario.type,
+              description: scenario.narrative,
+              hostCountryId: hostCountry.id,
+              hostCountryName: hostCountry.name,
+              hostCountryFlag: hostCountry.flag,
+              status: "completed",
+              startDate: scenario.createdAt,
+              endDate: new Date(),
+              ixTimeContext: Date.now(),
+              culturalImpact: selectedChoice.effects?.culturalImpact || 0,
+              scenarioId: input.scenarioId,
+              scenarioType: scenario.type,
+            },
+          });
+        }
 
         console.log(
           `[DIPLOMATIC_SCENARIOS] Recorded choice ${input.choiceId} for scenario ${input.scenarioId} by country ${input.countryId}`

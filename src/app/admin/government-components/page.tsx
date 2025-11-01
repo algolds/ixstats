@@ -215,7 +215,7 @@ export default function GovernmentComponentsPage() {
       setIsAddDialogOpen(false);
       resetForm();
     },
-    onError: (error) => {
+    onError: (error: { message?: string }) => {
       toast({
         title: "Error",
         description: error.message || "Failed to create component",
@@ -234,7 +234,7 @@ export default function GovernmentComponentsPage() {
       refetch();
       setEditingComponent(null);
     },
-    onError: (error) => {
+    onError: (error: { message?: string }) => {
       toast({
         title: "Error",
         description: error.message || "Failed to update component",
@@ -283,7 +283,7 @@ export default function GovernmentComponentsPage() {
   const filteredComponents = useMemo(() => {
     if (!components) return [];
 
-    return components.filter((component) => {
+    return components.components.filter((component: { name: string; description: string; type: string; metadata?: { complexity?: string } }) => {
       const matchesSearch =
         component.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         component.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -356,9 +356,9 @@ export default function GovernmentComponentsPage() {
     }
   };
 
-  const handleDelete = (id: string, name: string) => {
+  const handleDelete = (componentType: string, name: string) => {
     if (confirm(`Are you sure you want to deactivate "${name}"?`)) {
-      deleteMutation.mutate({ id });
+      deleteMutation.mutate({ componentType: componentType as any });
     }
   };
 
@@ -525,21 +525,25 @@ export default function GovernmentComponentsPage() {
           <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
             <Card className="glass-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Total Components</p>
-              <p className="text-foreground mt-2 text-3xl font-bold">{stats.totalComponents}</p>
+              <p className="text-foreground mt-2 text-3xl font-bold">{stats.summary.total}</p>
             </Card>
             <Card className="glass-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Active Components</p>
               <p className="mt-2 text-3xl font-bold text-[--intel-gold]">
-                {stats.activeComponents}
+                {stats.summary.active}
               </p>
             </Card>
             <Card className="glass-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Total Usage</p>
-              <p className="mt-2 text-3xl font-bold text-blue-400">{stats.totalUsage}</p>
+              <p className="mt-2 text-3xl font-bold text-blue-400">
+                {stats.summary.totalUsage ?? 0}
+              </p>
             </Card>
             <Card className="glass-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Total Synergies</p>
-              <p className="mt-2 text-3xl font-bold text-green-400">{stats.totalSynergies || 0}</p>
+              <p className="mt-2 text-3xl font-bold text-green-400">
+                {stats.synergyStats.totalSynergies ?? 0}
+              </p>
             </Card>
           </div>
         )}
@@ -561,7 +565,7 @@ export default function GovernmentComponentsPage() {
                 key={component.id}
                 component={component}
                 onEdit={() => handleEdit(component)}
-                onDelete={() => handleDelete(component.id, component.name)}
+                onDelete={() => handleDelete(component.type, component.name)}
               />
             ))}
           </div>
@@ -590,7 +594,7 @@ export default function GovernmentComponentsPage() {
         {isSynergyMatrixOpen && (
           <SynergyMatrixModal
             isOpen={isSynergyMatrixOpen}
-            components={components || []}
+            components={components?.components || []}
             onClose={() => setIsSynergyMatrixOpen(false)}
             onCreateSynergy={(data) => createSynergyMutation.mutate(data)}
           />
@@ -623,7 +627,7 @@ function ComponentCard({ component, onEdit, onDelete }: ComponentCardProps) {
             {component.category}
           </span>
         </div>
-        {!component.isActive && <EyeOff className="h-4 w-4 text-red-400" title="Inactive" />}
+        {!component.isActive && <EyeOff className="h-4 w-4 text-red-400" aria-label="Inactive" />}
       </div>
 
       {/* Description */}

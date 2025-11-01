@@ -63,8 +63,8 @@ export function TerritoryManager({ map, isAdmin, currentUserId }: TerritoryManag
   // Fetch countries for selection
   const { data: countriesData } = api.geo.getCountryBorders.useQuery({});
 
-  // Fetch selected country details
-  const { data: selectedCountryData } = api.countries.getCountryById.useQuery(
+  // Fetch selected country details with all required fields
+  const { data: selectedCountryData } = api.countries.getByIdBasic.useQuery(
     { id: selectedCountryId },
     { enabled: !!selectedCountryId }
   );
@@ -99,7 +99,7 @@ export function TerritoryManager({ map, isAdmin, currentUserId }: TerritoryManag
 
     const feature: Feature<Polygon | MultiPolygon> = {
       type: "Feature",
-      geometry: selectedCountryData.geometry as Polygon | MultiPolygon,
+      geometry: selectedCountryData.geometry as unknown as Polygon | MultiPolygon,
       properties: {
         id: selectedCountryData.id,
         name: selectedCountryData.name,
@@ -274,7 +274,7 @@ export function TerritoryManager({ map, isAdmin, currentUserId }: TerritoryManag
                         <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-2">
                           <p className="text-xs font-medium text-red-400">Errors:</p>
                           <ul className="mt-1 list-inside list-disc text-xs text-red-300">
-                            {editorState.validation.errors.map((error, idx) => (
+                            {editorState.validation.errors.map((error: string, idx: number) => (
                               <li key={idx}>{error}</li>
                             ))}
                           </ul>
@@ -286,7 +286,7 @@ export function TerritoryManager({ map, isAdmin, currentUserId }: TerritoryManag
                         <div className="rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-2">
                           <p className="text-xs font-medium text-yellow-400">Warnings:</p>
                           <ul className="mt-1 list-inside list-disc text-xs text-yellow-300">
-                            {editorState.validation.warnings.map((warning, idx) => (
+                            {editorState.validation.warnings.map((warning: string, idx: number) => (
                               <li key={idx}>{warning}</li>
                             ))}
                           </ul>
@@ -404,7 +404,7 @@ export function TerritoryManager({ map, isAdmin, currentUserId }: TerritoryManag
                         Territory Overlaps Detected
                       </p>
                       <ul className="mt-1 list-inside list-disc text-xs text-red-300">
-                        {editorState.overlapDetection.overlappingCountries.map((country) => (
+                        {editorState.overlapDetection.overlappingCountries.map((country: { countryId: string; countryName: string; overlapAreaKm2: number }) => (
                           <li key={country.countryId}>
                             {country.countryName} (~{formatNumber(country.overlapAreaKm2)} km²)
                           </li>
@@ -547,10 +547,10 @@ export function TerritoryManager({ map, isAdmin, currentUserId }: TerritoryManag
                           </p>
                         </div>
                         <Badge
-                          variant={entry.areaDeltaSqMi >= 0 ? "default" : "destructive"}
+                          variant={(entry.areaDeltaSqMi ?? 0) >= 0 ? "default" : "destructive"}
                           className="text-xs"
                         >
-                          {entry.areaDeltaSqMi >= 0 ? "+" : ""}
+                          {(entry.areaDeltaSqMi ?? 0) >= 0 ? "+" : ""}
                           {entry.percentChange?.toFixed(1)}%
                         </Badge>
                       </div>
@@ -560,24 +560,24 @@ export function TerritoryManager({ map, isAdmin, currentUserId }: TerritoryManag
                         <div>
                           <span className="text-white/70">Old:</span>
                           <p className="font-medium text-white">
-                            {formatNumber(entry.oldAreaSqMi)} mi²
+                            {formatNumber(entry.oldAreaSqMi ?? 0)} mi²
                           </p>
                         </div>
                         <div>
                           <span className="text-white/70">New:</span>
                           <p className="font-medium text-white">
-                            {formatNumber(entry.newAreaSqMi)} mi²
+                            {formatNumber(entry.newAreaSqMi ?? 0)} mi²
                           </p>
                         </div>
                         <div>
                           <span className="text-white/70">Change:</span>
                           <p
                             className={`font-medium ${
-                              entry.areaDeltaSqMi >= 0 ? "text-green-400" : "text-red-400"
+                              (entry.areaDeltaSqMi ?? 0) >= 0 ? "text-green-400" : "text-red-400"
                             }`}
                           >
-                            {entry.areaDeltaSqMi >= 0 ? "+" : ""}
-                            {formatNumber(entry.areaDeltaSqMi)} mi²
+                            {(entry.areaDeltaSqMi ?? 0) >= 0 ? "+" : ""}
+                            {formatNumber(entry.areaDeltaSqMi ?? 0)} mi²
                           </p>
                         </div>
                       </div>

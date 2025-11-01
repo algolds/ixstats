@@ -16,7 +16,7 @@
  */
 
 import { useMemo } from "react";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import {
   MILITARY_AIRCRAFT,
   MILITARY_SHIPS,
@@ -64,12 +64,53 @@ export interface MilitaryEquipmentItem {
   capabilities: Record<string, any> | null;
   requirements: Record<string, any> | null;
   procurementCost: number;
+  acquisitionCost?: number;
   maintenanceCost: number;
   technologyTier: number;
+  technologyLevel?: number;
   usageCount: number;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+type CatalogEquipmentRecord = RouterOutputs["militaryEquipment"]["getCatalogEquipment"]["equipment"][number];
+
+function transformDatabaseEquipment(item: CatalogEquipmentRecord): MilitaryEquipmentItem {
+  const manufacturerName = (item as { manufacturer?: string }).manufacturer ?? "Unknown";
+  const manufacturerId =
+    (item as { manufacturerId?: string | null }).manufacturerId ?? manufacturerName;
+
+  return {
+    id: item.id,
+    name: item.name,
+    category: item.category,
+    subcategory: item.subcategory ?? null,
+    era: item.era,
+    manufacturerId,
+    manufacturer: manufacturerName
+      ? {
+          id: manufacturerId,
+          name: manufacturerName,
+          country: "",
+          specialty: null,
+        }
+      : undefined,
+    specifications: item.specifications ?? null,
+    capabilities: item.capabilities ?? null,
+    requirements: (item as { requirements?: Record<string, any> | null }).requirements ?? null,
+    procurementCost:
+      (item as { procurementCost?: number | null }).procurementCost ?? item.acquisitionCost ?? 0,
+    acquisitionCost: (item as { acquisitionCost?: number | null }).acquisitionCost ?? undefined,
+    maintenanceCost: item.maintenanceCost ?? 0,
+    technologyTier:
+      (item as { technologyTier?: number | null }).technologyTier ?? item.technologyLevel ?? 0,
+    technologyLevel: item.technologyLevel ?? undefined,
+    usageCount: item.usageCount ?? 0,
+    isActive: item.isActive,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+  };
 }
 
 /**
@@ -169,7 +210,7 @@ export function useMilitaryEquipmentCatalog(filters?: EquipmentFilters) {
     if (dbEquipment && dbEquipment.length > 0) {
       // Database equipment already has JSON fields parsed by the router
       return {
-        equipment: dbEquipment as MilitaryEquipmentItem[],
+        equipment: dbEquipment.map(transformDatabaseEquipment),
         total: dbTotal,
         hasMore: dbHasMore,
         isUsingFallback: false,

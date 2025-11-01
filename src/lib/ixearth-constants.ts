@@ -303,6 +303,11 @@ export function formatCurrency(amount: number): string {
 // =============================================================================
 
 export type IxEarthLayer = (typeof MAPLIBRE_CONFIG.availableLayers)[number];
+
+/**
+ * @deprecated Use ProjectionType from ~/types/maps instead
+ * Legacy type for backward compatibility
+ */
 export type IxEarthProjection = (typeof MAPLIBRE_CONFIG.availableProjections)[number];
 
 // =============================================================================

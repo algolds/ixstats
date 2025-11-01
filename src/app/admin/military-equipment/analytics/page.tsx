@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
 import {
@@ -15,7 +15,7 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import {
   Loader2,
   Shield,
@@ -25,6 +25,11 @@ import {
   TrendingDown,
   AlertTriangle,
 } from "lucide-react";
+
+type UsageStats = RouterOutputs["militaryEquipment"]["getEquipmentUsageStats"];
+type ManufacturerStats = RouterOutputs["militaryEquipment"]["getManufacturerStats"];
+type CatalogEquipment = RouterOutputs["militaryEquipment"]["getAllCatalogEquipment"];
+type CatalogEquipmentItem = CatalogEquipment extends Array<infer Item> ? Item : never;
 
 /**
  * Military Equipment Analytics Dashboard
@@ -92,7 +97,17 @@ export default function MilitaryEquipmentAnalyticsPage() {
   const activeEquipment = allEquipment.filter((eq) => eq.isActive).length;
   const totalManufacturers = manufacturerStats.totalManufacturers;
   const avgTechLevel =
-    allEquipment.reduce((sum, eq) => sum + eq.technologyTier, 0) / totalEquipment;
+    totalEquipment > 0
+      ? allEquipment.reduce((sum, eq) => sum + (eq.technologyLevel ?? 0), 0) / totalEquipment
+      : 0;
+
+  const manufacturerLookup = useMemo(
+    () =>
+      new Map(
+        manufacturerStats.manufacturers.map((m) => [m.name, m] as const)
+      ),
+    [manufacturerStats.manufacturers]
+  );
 
   // Prepare chart data
   const topEquipmentChartData = usageStats.topEquipment.map((eq) => ({
@@ -100,7 +115,7 @@ export default function MilitaryEquipmentAnalyticsPage() {
     fullName: eq.name,
     count: eq.usageCount,
     category: eq.category,
-    manufacturer: eq.manufacturer.name,
+    manufacturer: eq.manufacturer ?? "Unknown",
   }));
 
   const categoryChartData = usageStats.byCategory.map((cat) => ({
@@ -115,16 +130,21 @@ export default function MilitaryEquipmentAnalyticsPage() {
     usage: era._sum.usageCount || 0,
   }));
 
-  const manufacturerChartData = usageStats.byManufacturer.slice(0, 10).map((mfr) => ({
-    name:
+  const manufacturerChartData = usageStats.byManufacturer.slice(0, 10).map((mfr) => {
+    const details = manufacturerLookup.get(mfr.manufacturerName);
+    const displayName =
       mfr.manufacturerName.length > 25
         ? mfr.manufacturerName.substring(0, 25) + "..."
-        : mfr.manufacturerName,
-    fullName: mfr.manufacturerName,
-    count: mfr.equipmentCount,
-    usage: mfr.totalUsage,
-    country: mfr.country,
-  }));
+        : mfr.manufacturerName;
+
+    return {
+      name: displayName,
+      fullName: mfr.manufacturerName,
+      count: mfr.equipmentCount,
+      usage: mfr.totalUsage,
+      country: details?.country ?? "Unknown",
+    };
+  });
 
   // Technology level progression by era
   const eraOrder = ["wwi", "wwii", "cold-war", "modern", "future"];
@@ -133,7 +153,8 @@ export default function MilitaryEquipmentAnalyticsPage() {
       const eraEquipment = allEquipment.filter((eq) => eq.era === era);
       const avgTech =
         eraEquipment.length > 0
-          ? eraEquipment.reduce((sum, eq) => sum + eq.technologyTier, 0) / eraEquipment.length
+          ? eraEquipment.reduce((sum, eq) => sum + (eq.technologyLevel ?? 0), 0) /
+            eraEquipment.length
           : 0;
       return {
         era: era.toUpperCase().replace("-", " "),
@@ -265,12 +286,12 @@ export default function MilitaryEquipmentAnalyticsPage() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }: { name: string; percent?: number }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {categoryChartData.map((entry, index) => (
+                  {categoryChartData.map((entry: unknown, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -294,12 +315,12 @@ export default function MilitaryEquipmentAnalyticsPage() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }: { name: string; percent?: number }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {eraChartData.map((entry, index) => (
+                  {eraChartData.map((entry: unknown, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -384,35 +405,45 @@ export default function MilitaryEquipmentAnalyticsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {deprecationCandidates.map((equipment, index) => (
-                    <tr key={equipment.id} className={index % 2 === 0 ? "bg-red-50/50" : ""}>
-                      <td className="px-4 py-3 text-sm font-medium">{equipment.name}</td>
-                      <td className="px-4 py-3 text-sm">
-                        {equipment.category.charAt(0).toUpperCase() + equipment.category.slice(1)}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        {equipment.era.toUpperCase().replace("-", " ")}
-                      </td>
-                      <td className="px-4 py-3 text-sm">{equipment.manufacturerId || "N/A"}</td>
-                      <td className="px-4 py-3 text-center font-mono text-sm">
-                        {equipment.technologyTier}
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono text-sm font-bold text-orange-600">
-                        {equipment.usageCount}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        <span
-                          className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                            equipment.isActive
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {equipment.isActive ? "Active" : "Inactive"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {deprecationCandidates.map((equipment, index) => {
+                    const manufacturerName =
+                      (equipment as CatalogEquipmentItem).manufacturer ?? "N/A";
+                    const techLevel =
+                      (equipment as CatalogEquipmentItem).technologyLevel ??
+                      (equipment as CatalogEquipmentItem & { technologyTier?: number })
+                        .technologyTier ??
+                      null;
+
+                    return (
+                      <tr key={equipment.id} className={index % 2 === 0 ? "bg-red-50/50" : ""}>
+                        <td className="px-4 py-3 text-sm font-medium">{equipment.name}</td>
+                        <td className="px-4 py-3 text-sm">
+                          {equipment.category.charAt(0).toUpperCase() + equipment.category.slice(1)}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          {equipment.era.toUpperCase().replace("-", " ")}
+                        </td>
+                        <td className="px-4 py-3 text-sm">{manufacturerName}</td>
+                        <td className="px-4 py-3 text-center font-mono text-sm">
+                          {techLevel ?? "N/A"}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono text-sm font-bold text-orange-600">
+                          {equipment.usageCount}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <span
+                            className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+                              equipment.isActive
+                                ? "bg-green-100 text-green-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {equipment.isActive ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

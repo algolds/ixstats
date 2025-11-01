@@ -5,6 +5,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 import type { Feature, MultiPolygon, Polygon } from "geojson";
+// @ts-ignore - @turf/turf lacks declaration files
 import {
   area as turfArea,
   length as turfLength,
@@ -123,7 +124,7 @@ export const geoRouter = createTRPCRouter({
                 polygonLines.type === "FeatureCollection" ? polygonLines.features : [polygonLines];
 
               const totalBoundaryKm = lineFeatures.reduce(
-                (sum, line) => sum + turfLength(line, { units: "kilometers" }),
+                (sum: number, line: Feature) => sum + turfLength(line, { units: "kilometers" }),
                 0
               );
 
@@ -783,11 +784,11 @@ export const geoRouter = createTRPCRouter({
         const userIds = Array.from(uniqueUserIds);
         const users = await ctx.db.user.findMany({
           where: { clerkUserId: { in: userIds } },
-          select: { clerkUserId: true, displayName: true, username: true },
+          select: { clerkUserId: true },
         });
 
         const userMap = new Map(
-          users.map((u) => [u.clerkUserId, u.displayName || u.username || "Unknown"])
+          users.map((u) => [u.clerkUserId, "Unknown User"])
         );
 
         const enrichedHistory = history.map((h) => ({

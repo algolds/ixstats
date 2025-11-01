@@ -73,13 +73,66 @@ export const archetypesRouter = createTRPCRouter({
     try {
       const archetypes = await ctx.db.archetype.findMany({
         where: { isActive: true, isSelectable: true },
-        include: { category: true },
-        orderBy: [{ category: { priority: "asc" } }, { priority: "asc" }],
+        include: { category: { select: { id: true, name: true, priority: true } } },
+        orderBy: [{ priority: "asc" }],
       });
       return archetypes;
     } catch (error) {
       console.error("Error fetching selectable archetypes:", error);
       return enhancedArchetypes.filter((arch) => arch.isSelectable);
+    }
+  }),
+
+  // Admin: Get all archetypes (for management)
+  getAllArchetypes: protectedProcedure
+    .input(
+      z.object({
+        era: z.string().optional(),
+        isActive: z.boolean().optional(),
+      }).optional()
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const archetypes = await ctx.db.archetype.findMany({
+          where: {
+            ...(input?.isActive !== undefined && { isActive: input.isActive }),
+          },
+          include: { category: { select: { id: true, name: true, priority: true } } },
+          orderBy: [{ priority: "asc" }],
+        });
+        return archetypes;
+      } catch (error) {
+        console.error("Error fetching all archetypes:", error);
+        return [];
+      }
+    }),
+
+  // Admin: Get archetype usage statistics
+  getArchetypeUsageStats: protectedProcedure.query(async ({ ctx }) => {
+    try {
+      const totalArchetypes = await ctx.db.archetype.count();
+      const activeArchetypes = await ctx.db.archetype.count({
+        where: { isActive: true },
+      });
+      const selectableArchetypes = await ctx.db.archetype.count({
+        where: { isActive: true, isSelectable: true },
+      });
+      const userSelections = await ctx.db.userArchetypeSelection.count();
+
+      return {
+        totalArchetypes,
+        activeArchetypes,
+        selectableArchetypes,
+        userSelections,
+      };
+    } catch (error) {
+      console.error("Error fetching archetype usage stats:", error);
+      return {
+        totalArchetypes: 0,
+        activeArchetypes: 0,
+        selectableArchetypes: 0,
+        userSelections: 0,
+      };
     }
   }),
 
@@ -370,6 +423,26 @@ export const archetypesRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to update archetype",
+        });
+      }
+    }),
+
+  // Admin: Delete/deactivate archetype
+  deleteArchetype: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Soft delete by setting isActive to false
+        const archetype = await ctx.db.archetype.update({
+          where: { id: input.id },
+          data: { isActive: false },
+        });
+        return archetype;
+      } catch (error) {
+        console.error("Error deleting archetype:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete archetype",
         });
       }
     }),

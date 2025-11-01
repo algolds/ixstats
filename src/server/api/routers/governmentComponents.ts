@@ -147,7 +147,7 @@ function getComponentsByCategory(): Record<string, ParsedComponent[]> {
   // Group components by category
   fallbackComponents.forEach((component) => {
     for (const [categoryName, componentTypes] of Object.entries(COMPONENT_CATEGORIES)) {
-      if (componentTypes.includes(component.type)) {
+      if ((componentTypes as ComponentType[]).includes(component.type)) {
         grouped[categoryName].push(component);
         break;
       }
@@ -456,4 +456,43 @@ export const governmentComponentsRouter = createTRPCRouter({
       });
     }
   }),
+
+  /**
+   * Create component (not supported - components are defined in ATOMIC_COMPONENTS)
+   */
+  createComponent: adminProcedure
+    .input(z.object({ componentType: componentTypeSchema }).catchall(z.any()))
+    .mutation(async () => {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message:
+          "Creating government components is not supported. Components are defined in the ATOMIC_COMPONENTS library.",
+      });
+    }),
+
+  /**
+   * Update component (not supported - components are defined in ATOMIC_COMPONENTS)
+   */
+  updateComponent: adminProcedure
+    .input(z.object({ componentType: componentTypeSchema }).catchall(z.any()))
+    .mutation(async () => {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message:
+          "Updating government components is not supported. Components are defined in the ATOMIC_COMPONENTS library.",
+      });
+    }),
+
+  /**
+   * Delete component (not supported - components are defined in ATOMIC_COMPONENTS)
+   */
+  deleteComponent: adminProcedure
+    .input(z.object({ componentType: componentTypeSchema }))
+    .mutation(async () => {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message:
+          "Deleting government components is not supported. Components are defined in the ATOMIC_COMPONENTS library.",
+      });
+    }),
 });

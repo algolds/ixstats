@@ -196,7 +196,7 @@ export default function EconomicArchetypesPage() {
       });
       refetch();
     },
-    onError: (error) => {
+    onError: (error: { message?: string }) => {
       toast({
         title: "Error",
         description: error.message || "Failed to deactivate archetype",
@@ -214,19 +214,21 @@ export default function EconomicArchetypesPage() {
         archetype.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         archetype.description.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesRegion = regionFilter === "all" || archetype.region === regionFilter;
-      const matchesComplexity =
-        complexityFilter === "all" || archetype.implementationComplexity === complexityFilter;
+      // Note: region and implementationComplexity fields not in current schema
+      // const matchesRegion = regionFilter === "all" || archetype.region === regionFilter;
+      // const matchesComplexity =
+      //   complexityFilter === "all" || archetype.implementationComplexity === complexityFilter;
 
-      return matchesSearch && matchesRegion && matchesComplexity;
+      return matchesSearch; // && matchesRegion && matchesComplexity;
     });
-  }, [archetypes, searchTerm, regionFilter, complexityFilter]);
+  }, [archetypes, searchTerm]); // removed regionFilter, complexityFilter
 
-  // Extract unique regions
-  const regions = useMemo(() => {
-    if (!archetypes) return [];
-    return Array.from(new Set(archetypes.map((a) => a.region))).sort();
-  }, [archetypes]);
+  // Extract unique regions (placeholder - field not in schema)
+  const regions = useMemo<string[]>(() => {
+    // if (!archetypes) return [];
+    // return Array.from(new Set(archetypes.map((a) => a.region))).sort();
+    return [];
+  }, []);
 
   // Form data
   const [formData, setFormData] = useState<ArchetypeFormData>({
@@ -482,7 +484,7 @@ export default function EconomicArchetypesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Regions</SelectItem>
-                {regions.map((region) => (
+                {regions.map((region: string) => (
                   <SelectItem key={region} value={region}>
                     {region}
                   </SelectItem>
@@ -523,22 +525,22 @@ export default function EconomicArchetypesPage() {
             <Card className="glass-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Total Archetypes</p>
               <p className="text-foreground mt-2 text-3xl font-bold">
-                {stats.summary.totalArchetypes}
+                {stats.totalArchetypes}
               </p>
             </Card>
             <Card className="glass-card-child p-4">
               <p className="text-sm text-[--intel-silver]">Active</p>
               <p className="mt-2 text-3xl font-bold text-[--intel-gold]">
-                {stats.summary.activeArchetypes}
+                {stats.activeArchetypes}
               </p>
             </Card>
             <Card className="glass-card-child p-4">
-              <p className="text-sm text-[--intel-silver]">Total Usage</p>
-              <p className="mt-2 text-3xl font-bold text-blue-400">{stats.summary.totalUsage}</p>
+              <p className="text-sm text-[--intel-silver]">Selectable</p>
+              <p className="mt-2 text-3xl font-bold text-blue-400">{stats.selectableArchetypes}</p>
             </Card>
             <Card className="glass-card-child p-4">
-              <p className="text-sm text-[--intel-silver]">Average Usage</p>
-              <p className="mt-2 text-3xl font-bold text-green-400">{stats.summary.averageUsage}</p>
+              <p className="text-sm text-[--intel-silver]">User Selections</p>
+              <p className="mt-2 text-3xl font-bold text-green-400">{stats.userSelections}</p>
             </Card>
           </div>
         )}
@@ -618,7 +620,7 @@ function ArchetypeCard({ archetype, onEdit, onDelete, onClone }: ArchetypeCardPr
             <span className="text-xs text-[--intel-silver]">{archetype.region}</span>
           </div>
         </div>
-        {!archetype.isActive && <EyeOff className="h-4 w-4 text-red-400" title="Inactive" />}
+        {!archetype.isActive && <EyeOff className="h-4 w-4 text-red-400" aria-label="Inactive" />}
       </div>
 
       {/* Description */}

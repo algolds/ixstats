@@ -232,8 +232,8 @@ const countriesRouter = createTRPCRouter({
       const where = input?.search
         ? {
             OR: [
-              { name: { contains: input.search, mode: "insensitive" } },
-              { slug: { contains: input.search, mode: "insensitive" } },
+              { name: { contains: input.search, mode: "insensitive" as const } },
+              { slug: { contains: input.search, mode: "insensitive" as const } },
             ],
           }
         : undefined;
@@ -619,7 +619,7 @@ const countriesRouter = createTRPCRouter({
       // CRITICAL FIX: Preserve all database fields, only override calculated population/GDP fields
       // Do NOT spread result.newStats as it wipes out economic indicators!
 
-      const response: CountryWithEconomicData = {
+      const response = {
         ...country, // All database fields including economic indicators
         flagUrl: country.flag ?? undefined,
 
@@ -711,12 +711,12 @@ const countriesRouter = createTRPCRouter({
       };
 
       // Include owner's clerkUserId for ThinkPages profile integration
-      const ownerClerkUserId = country.users?.[0]?.clerkUserId ?? null;
+      const ownerClerkUserId = (country as any).users?.[0]?.clerkUserId ?? null;
 
       return {
         ...response,
         ownerClerkUserId,
-      };
+      } as any;
     }),
 
   // Lightweight endpoint for basic country data (optimized for map info windows)
@@ -740,7 +740,10 @@ const countriesRouter = createTRPCRouter({
           continent: true,
           currentPopulation: true,
           currentGdpPerCapita: true,
+          currentTotalGdp: true,
           landArea: true,
+          populationDensity: true,
+          geometry: true,
         },
       });
 
@@ -759,7 +762,10 @@ const countriesRouter = createTRPCRouter({
         continent: country.continent,
         currentPopulation: country.currentPopulation,
         currentGdpPerCapita: country.currentGdpPerCapita,
+        currentTotalGdp: country.currentTotalGdp,
         landArea: country.landArea,
+        populationDensity: country.populationDensity,
+        geometry: country.geometry,
       };
     }),
 
@@ -1106,6 +1112,23 @@ const countriesRouter = createTRPCRouter({
         };
       }
 
+      // Parse centroid for map navigation (if available)
+      let centerLng: number | undefined = undefined;
+      let centerLat: number | undefined = undefined;
+
+      if (countryFromDb.centroid) {
+        try {
+          const centroidData = countryFromDb.centroid as any;
+          // Centroid is stored as GeoJSON Point: { type: "Point", coordinates: [lng, lat] }
+          if (centroidData.type === "Point" && Array.isArray(centroidData.coordinates) && centroidData.coordinates.length === 2) {
+            centerLng = centroidData.coordinates[0];
+            centerLat = centroidData.coordinates[1];
+          }
+        } catch (error) {
+          console.error(`[countries.getByIdAtTime] Failed to parse centroid for country ${input.id}:`, error);
+        }
+      }
+
       return {
         id: countryFromDb.id,
         name: countryFromDb.name,
@@ -1135,6 +1158,9 @@ const countriesRouter = createTRPCRouter({
           ixTimeTimestamp: dm.ixTimeTimestamp.getTime(),
         })),
         nationalIdentity: countryFromDb.nationalIdentity,
+        // Map navigation coordinates (extracted from centroid)
+        centerLng,
+        centerLat,
       };
     }),
 

@@ -249,9 +249,24 @@ export function useMySubmissions(
     citiesQuery.isRefetching ||
     poisQuery.isRefetching;
 
-  // Combine errors
-  const error =
+  // Combine errors and wrap to ensure name property exists
+  const combinedError =
     subdivisionsQuery.error ?? citiesQuery.error ?? poisQuery.error ?? null;
+
+  const error = useMemo<Error | null>(() => {
+    if (!combinedError) return null;
+
+    if (combinedError instanceof Error) {
+      if (combinedError.name) return combinedError;
+      const enriched = new Error(combinedError.message);
+      enriched.name = "TRPCError";
+      return Object.assign(enriched, combinedError);
+    }
+
+    const fallback = new Error((combinedError as { message?: string }).message ?? "Unknown error");
+    fallback.name = "TRPCError";
+    return Object.assign(fallback, combinedError);
+  }, [combinedError]);
 
   // Refetch all queries
   const refetch = () => {

@@ -17,7 +17,6 @@ postgres:
         - public.map_layer_lakes
         - public.map_layer_icecaps
         - public.map_layer_altitudes
-    functions: false
 
 # Server settings
 listen_addresses: "0.0.0.0:3800"

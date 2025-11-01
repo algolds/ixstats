@@ -12,12 +12,13 @@ import maplibregl from "maplibre-gl";
 import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import type { Feature, FeatureCollection, Polygon, MultiPolygon, Point, GeoJsonProperties } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
-import "@geoman-io/maplibre-geoman-free/dist/maplibre-geoman.css";
+import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import { MAPLIBRE_CONFIG, IXEARTH_SCALE_SYSTEM } from "~/lib/ixearth-constants";
 import { api } from "~/trpc/react";
-
-// Dynamic import for MapLibre-Geoman
-let geomanInstance: any = null;
+import MapboxDraw from "@mapbox/mapbox-gl-draw";
+import type { DrawCustomMode } from "@mapbox/mapbox-gl-draw";
+import { createGoogleMapsStyle } from "~/lib/maps/google-map-style";
+import type { ProjectionType } from "~/types/maps";
 
 /**
  * Drawing mode types
@@ -42,7 +43,7 @@ export interface MapEditorHandlers {
   onFeatureUpdate?: (feature: Feature) => void;
   onFeatureDelete?: (featureId: string) => void;
   onCoordinateClick?: (lng: number, lat: number) => void;
-  onModeChange?: (mode: DrawingMode) => void;
+  // onModeChange removed - caused infinite loop, mode is controlled via drawingMode prop
 }
 
 /**
@@ -64,17 +65,20 @@ export interface MapEditorContainerProps {
   /** Layer visibility settings */
   layerVisibility?: Partial<LayerVisibility>;
 
-  /** Country boundary GeoJSON (optional, will be loaded via API if not provided) */
-  countryBoundary?: Feature<Polygon | MultiPolygon> | null;
-
   /** Event handlers */
   handlers?: MapEditorHandlers;
 
   /** Loading state from parent */
   isLoading?: boolean;
 
-  /** Whether to fetch country boundary automatically via API */
-  fetchCountryBoundary?: boolean;
+  /** Current projection type */
+  projection?: ProjectionType;
+
+  /** Callback when projection changes */
+  onProjectionChange?: (projection: ProjectionType) => void;
+
+  /** Map type (map/climate/terrain) */
+  mapType?: 'map' | 'climate' | 'terrain';
 }
 
 /**
@@ -104,38 +108,36 @@ export function MapEditorContainer({
   initialZoom = 6,
   drawingMode = null,
   layerVisibility: visibilityOverrides = {},
-  countryBoundary = null,
   handlers = {},
   isLoading = false,
-  fetchCountryBoundary = true,
+  projection = 'mercator',
+  onProjectionChange,
+  mapType = 'map',
 }: MapEditorContainerProps) {
   // Refs
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
-  const geomanControls = useRef<any>(null);
+  const drawControls = useRef<MapboxDraw | null>(null);
+  const projectionTransitioning = useRef<boolean>(false);
+  const projectionTimeout = useRef<NodeJS.Timeout | null>(null);
+  const currentProjectionRef = useRef<ProjectionType>(projection);
+  const hasZoomedToBoundary = useRef<boolean>(false);
 
   // State
   const [isMapLoaded, setIsMapLoaded] = useState(false);
-  const [isGeomanLoaded, setIsGeomanLoaded] = useState(false);
+  const [isStyleLoaded, setIsStyleLoaded] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
   const [activeFeature, setActiveFeature] = useState<any>(null);
-  const [loadedBoundary, setLoadedBoundary] = useState<Feature<Polygon | MultiPolygon> | null>(
-    countryBoundary
-  );
 
-  // Fetch country boundary via tRPC if not provided and fetchCountryBoundary is true
+  // Fetch WGS84 centroid for navigation
   const {
-    data: boundaryData,
-    isLoading: isBoundaryLoading,
-    error: boundaryError,
-  } = api.geo.getCountryBorders.useQuery(
+    data: centroidData,
+    isLoading: isCentroidLoading,
+  } = api.mapEditor.getCountryCentroidWGS84.useQuery(
+    { countryId },
     {
-      countryIds: [countryId],
-      simplify: false,
-    },
-    {
-      enabled: fetchCountryBoundary && !countryBoundary && !!countryId,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      enabled: !!countryId,
+      staleTime: 10 * 60 * 1000, // 10 minutes (rarely changes)
     }
   );
 
@@ -189,102 +191,93 @@ export function MapEditorContainer({
   };
 
   /**
-   * Process boundary data from API
-   */
-  useEffect(() => {
-    if (boundaryData && boundaryData.features && boundaryData.features.length > 0) {
-      const countryFeature = boundaryData.features[0];
-      if (countryFeature && countryFeature.geometry) {
-        setLoadedBoundary(countryFeature as Feature<Polygon | MultiPolygon>);
-      }
-    }
-  }, [boundaryData]);
-
-  /**
-   * Handle boundary loading errors
-   */
-  useEffect(() => {
-    if (boundaryError) {
-      console.error("[MapEditorContainer] Error loading country boundary:", boundaryError);
-      setMapError("Failed to load country boundary");
-    }
-  }, [boundaryError]);
-
-  /**
-   * Load MapLibre-Geoman dynamically
-   */
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const loadGeoman = async () => {
-      try {
-        if (!geomanInstance) {
-          const geoman = await import("@geoman-io/maplibre-geoman-free");
-          geomanInstance = geoman.default || geoman;
-        }
-        setIsGeomanLoaded(true);
-      } catch (error) {
-        console.error("[MapEditorContainer] Failed to load MapLibre-Geoman:", error);
-        setMapError("Failed to load drawing tools");
-      }
-    };
-
-    loadGeoman();
-  }, []);
-
-  /**
-   * Initialize MapLibre GL JS map
+   * Initialize MapLibre GL JS map (ONCE ONLY)
    */
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
     try {
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+      const style = createGoogleMapsStyle(basePath, mapType, projection);
 
-      // Create map instance
+      // Create map instance with unified style system (matches GoogleMapContainer)
+      // Start at default position - flyTo will navigate to country after style loads
       map.current = new maplibregl.Map({
         container: mapContainer.current,
-        style: {
-          version: 8,
-          sources: {
-            "raster-tiles": {
-              type: "raster",
-              tiles: [
-                "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
-              ],
-              tileSize: 256,
-              attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            },
-          },
-          layers: [
-            {
-              id: "osm-tiles",
-              type: "raster",
-              source: "raster-tiles",
-              minzoom: 0,
-              maxzoom: 19,
-            },
-          ],
-        },
-        center: initialCenter,
-        zoom: initialZoom,
-        minZoom: 2,
+        style: style,
+        center: MAPLIBRE_CONFIG.defaultCenter, // [0, 0] - SAME AS GoogleMapContainer
+        zoom: MAPLIBRE_CONFIG.defaultZoom, // 2.2 - SAME AS GoogleMapContainer
+        minZoom: MAPLIBRE_CONFIG.minZoom,
         maxZoom: MAPLIBRE_CONFIG.maxZoom,
+        // Projection is set in style, not here
       });
 
       // Error handling
-      map.current.on("error", (e) => {
-        console.error("[MapEditorContainer] Map error:", e);
-        setMapError("Map rendering error occurred");
+      map.current.on("error", (e: any) => {
+        // Log detailed error information for debugging
+        console.error('[MapEditorContainer] Map error details:', JSON.stringify({
+          errorMessage: e?.error?.message || String(e?.error || 'unknown'),
+          errorStatus: e?.error?.status,
+          sourceId: e?.sourceId,
+          tile: e?.tile ? `${e.tile.tileID.canonical.z}/${e.tile.tileID.canonical.x}/${e.tile.tileID.canonical.y}` : null,
+          type: e?.type,
+        }, null, 2));
       });
 
-      // Map loaded
+      // Map and style loaded - use styledata to ensure style is fully ready
       map.current.on("load", () => {
         setIsMapLoaded(true);
         setMapError(null);
+
+        // Check if style is already loaded
+        if (map.current?.isStyleLoaded()) {
+          setIsStyleLoaded(true);
+        }
       });
+
+      // Style loaded event - fired when style is fully loaded and ready
+      map.current.on("styledata", () => {
+        if (map.current?.isStyleLoaded()) {
+          setIsStyleLoaded(true);
+        }
+      });
+
+      // Dynamic projection switching based on zoom level (Google Maps-like)
+      const handleZoom = () => {
+        if (!map.current || projectionTransitioning.current) return;
+
+        const currentZoom = map.current.getZoom();
+        const currentProjection = map.current.getProjection();
+
+        // Guard against undefined projection
+        if (!currentProjection || !currentProjection.type) return;
+
+        // Clear any pending timeout
+        if (projectionTimeout.current) {
+          clearTimeout(projectionTimeout.current);
+        }
+
+        // Transition from globe to mercator around zoom 3.5 (smooth, no flicker)
+        if (currentZoom >= MAPLIBRE_CONFIG.globeToMercatorZoom && currentProjection.type === 'globe') {
+          projectionTransitioning.current = true;
+          map.current.setProjection({ type: 'mercator' });
+          projectionTimeout.current = setTimeout(() => {
+            if (projectionTransitioning.current !== undefined) {
+              projectionTransitioning.current = false;
+            }
+          }, 500);
+        } else if (currentZoom < MAPLIBRE_CONFIG.globeToMercatorZoom && currentProjection.type === 'mercator') {
+          projectionTransitioning.current = true;
+          map.current.setProjection({ type: 'globe' });
+          projectionTimeout.current = setTimeout(() => {
+            if (projectionTransitioning.current !== undefined) {
+              projectionTransitioning.current = false;
+            }
+          }, 500);
+        }
+      };
+
+      map.current.on('zoom', handleZoom);
 
       // Add navigation controls
       map.current.addControl(new maplibregl.NavigationControl(), "top-right");
@@ -299,11 +292,16 @@ export function MapEditorContainer({
       );
 
       // Click handler for coordinate capture
+      // Allow clicks in null (view) mode and "point" mode (city/POI placement)
+      // Don't capture clicks in "polygon" mode (let MapboxDraw handle subdivision drawing)
       map.current.on("click", (e) => {
-        if (drawingMode === null && handlers.onCoordinateClick) {
+        if ((drawingMode === null || drawingMode === "point") && handlers.onCoordinateClick) {
           handlers.onCoordinateClick(e.lngLat.lng, e.lngLat.lat);
         }
       });
+
+      // Expose map instance for external control
+      (window as any).__mapEditorInstance = map.current;
 
     } catch (error) {
       console.error("[MapEditorContainer] Map initialization error:", error);
@@ -312,256 +310,469 @@ export function MapEditorContainer({
 
     // Cleanup
     return () => {
+      // Clear projection timeout
+      if (projectionTimeout.current) {
+        clearTimeout(projectionTimeout.current);
+        projectionTimeout.current = null;
+      }
+
+      // Remove map instance from window
+      delete (window as any).__mapEditorInstance;
+
+      // Remove map
       if (map.current) {
         map.current.remove();
         map.current = null;
       }
     };
-  }, [initialCenter, initialZoom, drawingMode, handlers]);
+  }, []); // Initialize ONCE only
 
   /**
-   * Load country boundary as base layer
+   * Update map style when mapType or projection changes
    */
   useEffect(() => {
-    if (!map.current || !isMapLoaded || !loadedBoundary) return;
+    if (!map.current || !isMapLoaded) return;
+
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+    const style = createGoogleMapsStyle(basePath, mapType, projection);
+
+    // Get current zoom and center before style change
+    const currentZoom = map.current.getZoom();
+    const currentCenter = map.current.getCenter();
+
+    map.current.setStyle(style);
+
+    // Restore position after style loads (setStyle resets view)
+    map.current.once('styledata', () => {
+      if (!map.current) return;
+
+      // Only restore zoom/center if we've already navigated to the country
+      // This prevents overriding the initial flyTo navigation
+      if (hasZoomedToBoundary.current) {
+        map.current.setZoom(currentZoom);
+        map.current.setCenter(currentCenter);
+      }
+
+      // Mark style as loaded
+      setIsStyleLoaded(true);
+    });
+  }, [mapType, projection, isMapLoaded]);
+
+  /**
+   * Notify parent of projection changes
+   */
+  useEffect(() => {
+    if (!map.current || !isMapLoaded) return;
+
+    // Skip if projection hasn't changed
+    if (currentProjectionRef.current === projection) return;
+
+    console.log(`[MapEditorContainer] Projection changed to: ${projection}`);
+
+    // Update ref to track current projection
+    currentProjectionRef.current = projection;
+
+    // Notify parent of projection change
+    onProjectionChange?.(projection);
+  }, [projection, isMapLoaded, onProjectionChange]);
+
+  /**
+   * Initialize MapboxDraw controls
+   */
+  useEffect(() => {
+    if (!map.current || !isMapLoaded || !isStyleLoaded) return;
 
     const mapInstance = map.current;
 
-    try {
-      // Remove existing boundary layers
-      if (mapInstance.getLayer("country-boundary-fill")) {
-        mapInstance.removeLayer("country-boundary-fill");
-      }
-      if (mapInstance.getLayer("country-boundary-outline")) {
-        mapInstance.removeLayer("country-boundary-outline");
-      }
-      if (mapInstance.getSource("country-boundary")) {
-        mapInstance.removeSource("country-boundary");
-      }
-
-      // Add country boundary source
-      mapInstance.addSource("country-boundary", {
-        type: "geojson",
-        data: loadedBoundary as any,
-      });
-
-      // Add fill layer
-      mapInstance.addLayer({
-        id: "country-boundary-fill",
-        type: "fill",
-        source: "country-boundary",
-        paint: {
-          "fill-color": "#3b82f6",
-          "fill-opacity": layerVisibility.boundaries ? 0.1 : 0,
-        },
-      });
-
-      // Add outline layer
-      mapInstance.addLayer({
-        id: "country-boundary-outline",
-        type: "line",
-        source: "country-boundary",
-        paint: {
-          "line-color": "#3b82f6",
-          "line-width": 2,
-          "line-opacity": layerVisibility.boundaries ? 1 : 0,
-        },
-      });
-
-      // Fit bounds to country boundary
-      const geometry = loadedBoundary.geometry;
-      let coordinates: number[][];
-
-      if (geometry.type === "Polygon") {
-        coordinates = geometry.coordinates[0] as number[][];
-      } else if (geometry.type === "MultiPolygon") {
-        // Use the first polygon of the MultiPolygon
-        coordinates = geometry.coordinates[0][0] as number[][];
-      } else {
-        console.warn("[MapEditorContainer] Unsupported geometry type:", geometry.type);
-        return;
-      }
-
-      if (coordinates && coordinates.length > 0) {
-        const bounds = coordinates.reduce(
-          (bounds, coord) => {
-            return bounds.extend(coord as [number, number]);
-          },
-          new maplibregl.LngLatBounds(coordinates[0] as [number, number], coordinates[0] as [number, number])
-        );
-
-        mapInstance.fitBounds(bounds, {
-          padding: 50,
-          maxZoom: 10,
-        });
-      }
-
-    } catch (error) {
-      console.error("[MapEditorContainer] Error loading country boundary:", error);
-      setMapError("Failed to display country boundary");
+    // Double-check style is loaded
+    if (!mapInstance.isStyleLoaded()) {
+      console.warn("[MapEditorContainer] Style not loaded, skipping draw controls setup");
+      // Clear any old broken reference
+      drawControls.current = null;
+      return;
     }
-  }, [map.current, isMapLoaded, loadedBoundary, layerVisibility.boundaries]);
-
-  /**
-   * Initialize MapLibre-Geoman controls
-   */
-  useEffect(() => {
-    if (!map.current || !isMapLoaded || !isGeomanLoaded || !geomanInstance) return;
-
-    const mapInstance = map.current;
 
     try {
-      // Initialize Geoman controls
-      if (!(mapInstance as any).pm) {
-        geomanInstance.addControls(mapInstance, {
-          position: "topleft",
-          drawControls: true,
-          editControls: true,
-          optionsControls: true,
-          customControls: true,
-          oneBlock: false,
-        });
-      }
-
-      const pm = (mapInstance as any).pm;
-      geomanControls.current = pm;
-
-      // Configure toolbar
-      pm.Toolbar.setBlockPosition("top-left");
-
-      // Configure global drawing options
-      pm.setGlobalOptions({
-        snappable: true,
-        snapDistance: 20,
-        allowSelfIntersection: false,
-        continueDrawing: false,
-        templineStyle: {
-          color: "#10b981",
-          weight: 2,
-          opacity: 0.8,
+      // Initialize MapboxDraw
+      const draw = new MapboxDraw({
+        displayControlsDefault: false,
+        controls: {
+          polygon: true,
+          point: true,
+          trash: true,
         },
-        hintlineStyle: {
-          color: "#10b981",
-          weight: 2,
-          opacity: 0.6,
-          dashArray: [5, 5],
-        },
-        pathOptions: {
-          color: "#10b981",
-          fillColor: "#10b981",
-          fillOpacity: 0.3,
-          weight: 2,
-        },
+        styles: [
+          // Polygon fill
+          {
+            id: "gl-draw-polygon-fill",
+            type: "fill",
+            filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
+            paint: {
+              "fill-color": "#10b981",
+              "fill-opacity": 0.3,
+            },
+          },
+          // Polygon outline
+          {
+            id: "gl-draw-polygon-stroke",
+            type: "line",
+            filter: ["all", ["==", "$type", "Polygon"], ["!=", "mode", "static"]],
+            layout: {
+              "line-cap": "round",
+              "line-join": "round",
+            },
+            paint: {
+              "line-color": "#10b981",
+              "line-width": 2,
+            },
+          },
+          // Point (marker)
+          {
+            id: "gl-draw-point",
+            type: "circle",
+            filter: ["all", ["==", "$type", "Point"], ["!=", "mode", "static"]],
+            paint: {
+              "circle-radius": 6,
+              "circle-color": "#10b981",
+              "circle-stroke-width": 2,
+              "circle-stroke-color": "#ffffff",
+            },
+          },
+          // Vertex points
+          {
+            id: "gl-draw-polygon-and-line-vertex",
+            type: "circle",
+            filter: ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"]],
+            paint: {
+              "circle-radius": 5,
+              "circle-color": "#ffffff",
+              "circle-stroke-width": 2,
+              "circle-stroke-color": "#10b981",
+            },
+          },
+        ],
       });
+
+      mapInstance.addControl(draw as any, "top-left");
+      drawControls.current = draw;
+
+      // Expose draw instance globally for BorderEditor to access
+      (window as any).__mapboxDrawInstance = draw;
+      console.log("[MapEditorContainer] MapboxDraw instance exposed globally");
 
       // Event handlers
-      const handleDrawStart = () => {
-        console.log("[MapEditorContainer] Draw started");
-      };
-
       const handleCreate = (e: any) => {
-        const feature = e.layer.toGeoJSON() as Feature;
-        console.log("[MapEditorContainer] Feature created:", feature);
+        const feature = e.features[0] as Feature;
 
         if (handlers.onFeatureCreate) {
           handlers.onFeatureCreate(feature);
         }
 
-        setActiveFeature(e.layer);
+        setActiveFeature(feature);
       };
 
-      const handleEdit = (e: any) => {
-        const feature = e.layer.toGeoJSON() as Feature;
-        console.log("[MapEditorContainer] Feature edited:", feature);
+      const handleUpdate = (e: any) => {
+        const feature = e.features[0] as Feature;
 
         if (handlers.onFeatureUpdate) {
           handlers.onFeatureUpdate(feature);
         }
+
+        setActiveFeature(feature);
       };
 
-      const handleRemove = (e: any) => {
-        console.log("[MapEditorContainer] Feature removed");
+      const handleDelete = (e: any) => {
+        const feature = e.features[0] as Feature;
 
-        if (handlers.onFeatureDelete && e.layer.feature?.id) {
-          handlers.onFeatureDelete(e.layer.feature.id);
+        if (handlers.onFeatureDelete && feature.id) {
+          handlers.onFeatureDelete(String(feature.id));
         }
 
         setActiveFeature(null);
       };
 
       // Register event listeners
-      mapInstance.on("pm:drawstart", handleDrawStart);
-      mapInstance.on("pm:create", handleCreate);
-      mapInstance.on("pm:edit", handleEdit);
-      mapInstance.on("pm:remove", handleRemove);
+      mapInstance.on("draw.create", handleCreate);
+      mapInstance.on("draw.update", handleUpdate);
+      mapInstance.on("draw.delete", handleDelete);
 
       return () => {
-        // Cleanup event listeners
-        mapInstance.off("pm:drawstart", handleDrawStart);
-        mapInstance.off("pm:create", handleCreate);
-        mapInstance.off("pm:edit", handleEdit);
-        mapInstance.off("pm:remove", handleRemove);
+        // Cleanup global reference
+        if ((window as any).__mapboxDrawInstance === draw) {
+          delete (window as any).__mapboxDrawInstance;
+        }
 
-        // Disable Geoman
-        if (pm) {
-          pm.disableGlobalEditMode();
-          pm.disableDraw();
-          pm.removeControls();
+        // Cleanup event listeners (check if map still exists)
+        if (map.current) {
+          map.current.off("draw.create", handleCreate);
+          map.current.off("draw.update", handleUpdate);
+          map.current.off("draw.delete", handleDelete);
+
+          // Remove draw control
+          if (draw) {
+            try {
+              map.current.removeControl(draw as any);
+            } catch (e) {
+              // Control might have been removed already
+              console.warn("[MapEditorContainer] Failed to remove draw control:", e);
+            }
+          }
         }
       };
     } catch (error) {
-      console.error("[MapEditorContainer] Error initializing Geoman:", error);
+      console.error("[MapEditorContainer] Error initializing MapboxDraw:", error);
       setMapError("Failed to initialize drawing tools");
+      // Clear broken reference
+      drawControls.current = null;
     }
-  }, [map.current, isMapLoaded, isGeomanLoaded, handlers]);
+  }, [isMapLoaded, isStyleLoaded, handlers]);
 
   /**
    * Handle drawing mode changes
    */
   useEffect(() => {
-    if (!geomanControls.current) return;
+    // Add defensive check - drawControls might not be initialized yet
+    if (!drawControls.current) {
+      if (drawingMode !== null) {
+        console.warn("[MapEditorContainer] Drawing mode requested but draw controls not initialized yet");
+      }
+      return;
+    }
 
-    const pm = geomanControls.current;
+    const draw = drawControls.current;
+
+    // Additional safety check
+    if (!draw || typeof draw.changeMode !== 'function') {
+      console.warn("[MapEditorContainer] Draw controls exist but changeMode not available");
+      return;
+    }
+
+    // Validate that draw is in a good state
+    try {
+      // Test if draw has access to the map
+      if (!draw.getAll) {
+        console.warn("[MapEditorContainer] Draw instance is invalid, clearing reference");
+        drawControls.current = null;
+        return;
+      }
+    } catch (e) {
+      console.warn("[MapEditorContainer] Draw instance validation failed, clearing reference");
+      drawControls.current = null;
+      return;
+    }
 
     try {
-      // Disable all modes first
-      pm.disableDraw();
-      pm.disableGlobalEditMode();
-
-      // Enable requested mode
+      // Change mode based on drawingMode prop
       switch (drawingMode) {
         case "polygon":
-          pm.enableDraw("Polygon");
+          draw.changeMode("draw_polygon");
           break;
         case "point":
-          pm.enableDraw("Marker");
+          draw.changeMode("draw_point");
           break;
         case "edit":
-          pm.enableGlobalEditMode();
+          draw.changeMode("direct_select");
           break;
         case "delete":
-          // Delete mode is handled via clicking on features
+          // Delete mode - user can select and press delete or use trash button
+          draw.changeMode("simple_select");
           break;
         case null:
-          // No active mode
+          // No active mode - simple select
+          draw.changeMode("simple_select");
           break;
       }
 
-      if (handlers.onModeChange) {
-        handlers.onModeChange(drawingMode);
-      }
+      // DO NOT call handlers.onModeChange here!
+      // This creates an infinite loop because:
+      // 1. Parent changes drawingMode prop
+      // 2. This effect runs and would call onModeChange
+      // 3. onModeChange dispatches SET_MODE in parent
+      // 4. Parent re-renders with "new" state (even if same value)
+      // 5. Back to step 1 = infinite loop
+      //
+      // The parent controls the mode via the drawingMode prop.
+      // We only need to sync the MapboxDraw control to match the prop.
     } catch (error) {
       console.error("[MapEditorContainer] Error changing drawing mode:", error);
+      // Clear the broken reference so it will be reinitialized
+      drawControls.current = null;
+      // Don't set an error state here, as the draw controls will be reinitialized
+      // when the map/style are ready
     }
-  }, [drawingMode, handlers]);
+  }, [drawingMode, isMapLoaded, isStyleLoaded]); // Add dependencies to ensure map is ready
+
+  /**
+   * Load country boundary highlighting (user's country)
+   * This adds a bright gold outline by filtering the existing political vector tile layer
+   */
+  useEffect(() => {
+    console.log("[MapEditorContainer] Boundary effect triggered - map:", !!map.current, "loaded:", isMapLoaded, "style:", isStyleLoaded, "country:", countryId);
+
+    if (!map.current || !isMapLoaded || !isStyleLoaded) return;
+
+    const mapInstance = map.current;
+
+    // Double-check style is loaded
+    if (!mapInstance.isStyleLoaded()) {
+      console.warn("[MapEditorContainer] Style check failed, aborting");
+      return;
+    }
+
+    console.log("[MapEditorContainer] Starting boundary highlighting for country:", countryId);
+
+    try {
+      // Remove existing editor country layers (if any)
+      if (mapInstance.getLayer("editor-country-fill")) {
+        mapInstance.removeLayer("editor-country-fill");
+      }
+      if (mapInstance.getLayer("editor-country-outline")) {
+        mapInstance.removeLayer("editor-country-outline");
+      }
+
+      // No need to add a source - we reuse the existing 'political' vector tile source
+      // This ensures coordinates are always in the correct projection (WGS84)
+
+      // Add semi-transparent gold fill (filters political layer by country_id)
+      mapInstance.addLayer({
+        id: "editor-country-fill",
+        type: "fill",
+        source: "political",
+        "source-layer": "map_layer_political", // Vector tile layer name
+        filter: ["==", ["get", "country_id"], countryId], // Only show this country
+        paint: {
+          "fill-color": "#d4af37", // Gold
+          "fill-opacity": 0.15, // Subtle highlight
+        },
+      });
+
+      // Add bright gold outline (3px for visibility)
+      mapInstance.addLayer({
+        id: "editor-country-outline",
+        type: "line",
+        source: "political",
+        "source-layer": "map_layer_political",
+        filter: ["==", ["get", "country_id"], countryId],
+        paint: {
+          "line-color": "#d4af37", // Gold
+          "line-width": 3,
+          "line-opacity": 1,
+        },
+      });
+
+      console.log("[MapEditorContainer] Country boundary highlighting added");
+
+      // Navigate to country using WGS84 centroid from database
+      if (!hasZoomedToBoundary.current && centroidData?.lng && centroidData?.lat) {
+        console.log(`[MapEditorContainer] Navigating to WGS84 centroid: [${centroidData.lng}, ${centroidData.lat}]`);
+
+        mapInstance.flyTo({
+          center: [centroidData.lng, centroidData.lat],
+          zoom: 6,
+          duration: 2000,
+          essential: true,
+        });
+
+        hasZoomedToBoundary.current = true;
+        console.log("[MapEditorContainer] Navigation complete");
+      }
+    } catch (error) {
+      console.error("[MapEditorContainer] Error loading country boundary:", error);
+    }
+  }, [isMapLoaded, isStyleLoaded, centroidData, countryId]);
+
+  /**
+   * Grey out non-owned countries
+   * This modifies the political layer to show other countries in grey
+   */
+  useEffect(() => {
+    if (!map.current || !isMapLoaded || !isStyleLoaded) return;
+
+    const mapInstance = map.current;
+
+    // Double-check style is loaded
+    if (!mapInstance.isStyleLoaded()) {
+      return;
+    }
+
+    try {
+      // Update country fills to grey out non-owned countries
+      if (mapInstance.getLayer("countries")) {
+        mapInstance.setPaintProperty("countries", "fill-color", [
+          "case",
+          ["==", ["get", "country_id"], countryId], // If this is the user's country
+          ["get", "fill"], // Use original color
+          "#666666", // Otherwise use grey
+        ]);
+
+        // Reduce opacity for non-owned countries
+        mapInstance.setPaintProperty("countries", "fill-opacity", [
+          "case",
+          ["==", ["get", "country_id"], countryId],
+          [
+            "case",
+            ["boolean", ["feature-state", "hover"], false],
+            0.5,
+            0.3,
+          ],
+          0.15, // Non-owned countries are very faint
+        ]);
+      }
+
+      // Update country borders to grey out non-owned countries
+      if (mapInstance.getLayer("country-borders")) {
+        mapInstance.setPaintProperty("country-borders", "line-color", [
+          "case",
+          ["==", ["get", "country_id"], countryId],
+          ["get", "stroke"], // Use original border color
+          "#888888", // Otherwise use light grey
+        ]);
+
+        // Thin borders for non-owned countries
+        mapInstance.setPaintProperty("country-borders", "line-width", [
+          "case",
+          ["==", ["get", "country_id"], countryId],
+          2, // Normal width for owned country
+          0.5, // Very thin for others
+        ]);
+      }
+
+      // Grey out country labels for non-owned countries
+      if (mapInstance.getLayer("country-labels")) {
+        mapInstance.setPaintProperty("country-labels", "text-color", [
+          "case",
+          ["==", ["get", "country_id"], countryId],
+          "#ffffff", // White for owned country
+          "#999999", // Grey for others
+        ]);
+
+        // Reduce label opacity for non-owned countries
+        mapInstance.setPaintProperty("country-labels", "text-opacity", [
+          "case",
+          ["==", ["get", "country_id"], countryId],
+          1.0,
+          0.4, // Faint labels for others
+        ]);
+      }
+
+      console.log("[MapEditorContainer] Non-owned countries greyed out");
+    } catch (error) {
+      console.error("[MapEditorContainer] Error greying out countries:", error);
+    }
+  }, [isMapLoaded, isStyleLoaded, countryId]);
 
   /**
    * Load subdivisions layer
    */
   useEffect(() => {
-    if (!map.current || !isMapLoaded || !subdivisionsData?.subdivisions) return;
+    if (!map.current || !isMapLoaded || !isStyleLoaded || !subdivisionsData?.subdivisions) return;
 
     const mapInstance = map.current;
+
+    // Double-check style is loaded
+    if (!mapInstance.isStyleLoaded()) {
+      return;
+    }
 
     try {
       // Remove existing subdivision layers
@@ -628,20 +839,24 @@ export function MapEditorContainer({
           },
         });
 
-        console.log(`[MapEditorContainer] Loaded ${subdivisionFeatures.length} subdivisions`);
       }
     } catch (error) {
       console.error("[MapEditorContainer] Error loading subdivisions:", error);
     }
-  }, [map.current, isMapLoaded, subdivisionsData, layerVisibility.subdivisions]);
+  }, [isMapLoaded, isStyleLoaded, subdivisionsData, layerVisibility.subdivisions]);
 
   /**
    * Load cities layer
    */
   useEffect(() => {
-    if (!map.current || !isMapLoaded || !citiesData?.cities) return;
+    if (!map.current || !isMapLoaded || !isStyleLoaded || !citiesData?.cities) return;
 
     const mapInstance = map.current;
+
+    // Double-check style is loaded
+    if (!mapInstance.isStyleLoaded()) {
+      return;
+    }
 
     try {
       // Remove existing city layers
@@ -734,20 +949,24 @@ export function MapEditorContainer({
           },
         });
 
-        console.log(`[MapEditorContainer] Loaded ${cityFeatures.length} cities`);
       }
     } catch (error) {
       console.error("[MapEditorContainer] Error loading cities:", error);
     }
-  }, [map.current, isMapLoaded, citiesData, layerVisibility.cities]);
+  }, [isMapLoaded, isStyleLoaded, citiesData, layerVisibility.cities]);
 
   /**
    * Load POIs layer
    */
   useEffect(() => {
-    if (!map.current || !isMapLoaded || !poisData?.pois) return;
+    if (!map.current || !isMapLoaded || !isStyleLoaded || !poisData?.pois) return;
 
     const mapInstance = map.current;
+
+    // Double-check style is loaded
+    if (!mapInstance.isStyleLoaded()) {
+      return;
+    }
 
     try {
       // Remove existing POI layers
@@ -841,33 +1060,37 @@ export function MapEditorContainer({
           },
         });
 
-        console.log(`[MapEditorContainer] Loaded ${poiFeatures.length} POIs`);
       }
     } catch (error) {
       console.error("[MapEditorContainer] Error loading POIs:", error);
     }
-  }, [map.current, isMapLoaded, poisData, layerVisibility.pois]);
+  }, [isMapLoaded, isStyleLoaded, poisData, layerVisibility.pois]);
 
   /**
    * Update layer visibility
    */
   useEffect(() => {
-    if (!map.current || !isMapLoaded) return;
+    if (!map.current || !isMapLoaded || !isStyleLoaded) return;
 
     const mapInstance = map.current;
 
+    // Double-check style is loaded
+    if (!mapInstance.isStyleLoaded()) {
+      return;
+    }
+
     try {
-      // Update country boundary visibility
-      if (mapInstance.getLayer("country-boundary-fill")) {
+      // Update editor country boundary visibility (gold highlight)
+      if (mapInstance.getLayer("editor-country-fill")) {
         mapInstance.setPaintProperty(
-          "country-boundary-fill",
+          "editor-country-fill",
           "fill-opacity",
-          layerVisibility.boundaries ? 0.1 : 0
+          layerVisibility.boundaries ? 0.15 : 0
         );
       }
-      if (mapInstance.getLayer("country-boundary-outline")) {
+      if (mapInstance.getLayer("editor-country-outline")) {
         mapInstance.setPaintProperty(
-          "country-boundary-outline",
+          "editor-country-outline",
           "line-opacity",
           layerVisibility.boundaries ? 1 : 0
         );
@@ -923,26 +1146,15 @@ export function MapEditorContainer({
     } catch (error) {
       console.error("[MapEditorContainer] Error updating layer visibility:", error);
     }
-  }, [layerVisibility, isMapLoaded]);
+  }, [layerVisibility, isMapLoaded, isStyleLoaded]);
 
-  /**
-   * Expose map instance for external control
-   */
-  useEffect(() => {
-    if (map.current && isMapLoaded) {
-      (window as any).__mapEditorInstance = map.current;
-    }
 
-    return () => {
-      delete (window as any).__mapEditorInstance;
-    };
-  }, [isMapLoaded]);
+  // Determine loading states
+  // Initial loading: blocks everything until map is ready
+  const isInitialLoading = isLoading || !isMapLoaded || !isStyleLoaded;
 
-  // Determine overall loading state
-  const isAnyLoading =
-    isLoading ||
-    !isMapLoaded ||
-    isBoundaryLoading ||
+  // Data loading: doesn't block navigation, just shows loading indicator
+  const isDataLoading =
     isSubdivisionsLoading ||
     isCitiesLoading ||
     isPOIsLoading;
@@ -952,19 +1164,26 @@ export function MapEditorContainer({
       {/* Map container */}
       <div ref={mapContainer} className="h-full w-full" />
 
-      {/* Loading overlay */}
-      {isAnyLoading && (
+      {/* Initial loading overlay (blocks entire map) */}
+      {isInitialLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm z-10">
           <div className="glass-panel p-8 text-center">
             <div className="w-12 h-12 border-4 border-gold-500/30 border-t-gold-500 rounded-full animate-spin mx-auto mb-4" />
             <p className="text-white font-medium">Loading map editor...</p>
             <div className="text-slate-400 text-sm mt-2 space-y-1">
               {!isMapLoaded && <div>Initializing map...</div>}
-              {isBoundaryLoading && <div>Loading country boundary...</div>}
-              {isSubdivisionsLoading && <div>Loading subdivisions...</div>}
-              {isCitiesLoading && <div>Loading cities...</div>}
-              {isPOIsLoading && <div>Loading points of interest...</div>}
+              {isMapLoaded && !isStyleLoaded && <div>Loading map style...</div>}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Data loading indicator (non-blocking, corner indicator) */}
+      {!isInitialLoading && isDataLoading && (
+        <div className="absolute top-4 right-4 z-20">
+          <div className="glass-panel px-4 py-2 flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-gold-500/30 border-t-gold-500 rounded-full animate-spin" />
+            <span className="text-white text-sm">Loading data...</span>
           </div>
         </div>
       )}
@@ -979,7 +1198,7 @@ export function MapEditorContainer({
       )}
 
       {/* Info display (bottom-left) */}
-      {isMapLoaded && !isAnyLoading && (
+      {isMapLoaded && !isInitialLoading && (
         <div className="absolute bottom-4 left-4 z-10">
           <div className="glass-panel px-4 py-2 text-xs">
             <div className="text-white font-medium mb-1">Country: {countryId}</div>

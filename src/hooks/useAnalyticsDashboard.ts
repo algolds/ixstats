@@ -61,9 +61,9 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
   const { data: historicalData, isLoading: historicalLoading } =
     api.countries.getHistoricalData.useQuery({ countryId }, { enabled: !!countryId });
 
-  const { data: policyEffectiveness } = api.unifiedIntelligence.getPolicyEffectiveness.useQuery(
+  const { data: policyEffectiveness, error: policyError } = api.unifiedIntelligence.getPolicyEffectiveness.useQuery(
     { countryId, category: "all" },
-    { enabled: !!countryId, retry: false, onError: () => setAnalyticsError(true) }
+    { enabled: !!countryId, retry: false }
   );
 
   const { data: diplomaticInfluence } = api.diplomatic.getRelationships.useQuery(
@@ -71,7 +71,7 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
     { enabled: !!countryId }
   );
 
-  const { data: predictiveModels } = api.unifiedIntelligence.getPredictiveModels.useQuery(
+  const { data: predictiveModels, error: predictiveError } = api.unifiedIntelligence.getPredictiveModels.useQuery(
     {
       countryId,
       timeframe:
@@ -84,13 +84,18 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
               : "1_year",
       scenarios: selectedScenarios,
     },
-    { enabled: !!countryId, retry: false, onError: () => setAnalyticsError(true) }
+    { enabled: !!countryId, retry: false }
   );
 
-  const { data: analytics } = api.unifiedIntelligence.getAdvancedAnalytics.useQuery(
+  const { data: analytics, error: analyticsQueryError } = api.unifiedIntelligence.getAdvancedAnalytics.useQuery(
     { countryId },
-    { enabled: !!countryId, retry: false, onError: () => setAnalyticsError(true) }
+    { enabled: !!countryId, retry: false }
   );
+
+  // Set error state based on query errors
+  if ((policyError || predictiveError || analyticsQueryError) && !analyticsError) {
+    setAnalyticsError(true);
+  }
 
   // Fetch real economic data
   const { data: economicProfile } = api.economics.getEconomicProfile.useQuery(
@@ -188,26 +193,60 @@ export function useAnalyticsDashboard({ countryId }: UseAnalyticsDashboardProps)
     [normalizedHistoricalData]
   );
 
-  const sectorPerformanceData = useMemo(
-    () => generateSectorPerformanceData(economicProfile, laborMarket, normalizedHistoricalData),
-    [economicProfile, laborMarket, normalizedHistoricalData]
-  );
+  const sectorPerformanceData = useMemo(() => {
+    // Convert null to undefined for type compatibility
+    const profile = economicProfile ? {
+      sectorBreakdown: economicProfile.sectorBreakdown ?? undefined,
+      exportsGDPPercent: economicProfile.exportsGDPPercent ?? undefined,
+      importsGDPPercent: economicProfile.importsGDPPercent ?? undefined,
+    } : null;
 
-  const economicHealthIndicators = useMemo(
-    () =>
-      calculateEconomicHealthIndicators(
-        normalizedHistoricalData,
-        economicProfile,
-        laborMarket,
-        country
-      ),
-    [normalizedHistoricalData, economicProfile, laborMarket, country]
-  );
+    const labor = laborMarket ? {
+      employmentBySector: laborMarket.employmentBySector ?? undefined,
+      wageBySector: laborMarket.wageBySector ?? undefined,
+    } : null;
 
-  const policyDistributionData = useMemo(
-    () => generatePolicyDistributionData(governmentBudget, fiscalSystem),
-    [governmentBudget, fiscalSystem]
-  );
+    return generateSectorPerformanceData(profile, labor, normalizedHistoricalData);
+  }, [economicProfile, laborMarket, normalizedHistoricalData]);
+
+  const economicHealthIndicators = useMemo(() => {
+    // Convert null to undefined for type compatibility
+    const profile = economicProfile ? {
+      gdpGrowthVolatility: economicProfile.gdpGrowthVolatility ?? undefined,
+      innovationIndex: economicProfile.innovationIndex ?? undefined,
+      competitivenessRank: economicProfile.competitivenessRank ?? undefined,
+      exportsGDPPercent: economicProfile.exportsGDPPercent ?? undefined,
+    } : null;
+
+    const laborData = laborMarket
+      ? {
+          youthUnemploymentRate: laborMarket.youthUnemploymentRate ?? undefined,
+          femaleParticipationRate: laborMarket.femaleParticipationRate ?? undefined,
+        }
+      : null;
+
+    return calculateEconomicHealthIndicators(
+      normalizedHistoricalData,
+      profile,
+      laborData,
+      country
+    );
+  }, [normalizedHistoricalData, economicProfile, laborMarket, country]);
+
+  const policyDistributionData = useMemo(() => {
+    // Convert null to undefined for type compatibility
+    const budget = governmentBudget ? {
+      spendingCategories: governmentBudget.spendingCategories ?? undefined,
+      socialSpendingPercent: governmentBudget.socialSpendingPercent ?? undefined,
+      publicInvestmentRate: governmentBudget.publicInvestmentRate ?? undefined,
+    } : null;
+
+    const fiscal = fiscalSystem ? {
+      spendingByCategory: fiscalSystem.spendingByCategory ?? undefined,
+    } : null;
+
+    return generatePolicyDistributionData(budget, fiscal);
+  }, [governmentBudget, fiscalSystem]);
 
   const projectionData = useMemo(() => {
     const baseValue =

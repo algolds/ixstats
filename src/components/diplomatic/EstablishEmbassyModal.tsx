@@ -19,7 +19,47 @@ import {
   RiCloseLine,
   RiLoader4Line,
 } from "react-icons/ri";
-import { CountrySelector } from "./CountrySelector";
+import { UnifiedCountryFlag } from "~/components/UnifiedCountryFlag";
+
+// Simple country selector for this modal
+function SimpleCountrySelector({
+  onSelect,
+  excludeCountryId,
+  selectedCountryId,
+}: {
+  onSelect: (countryId: string, countryName: string) => void;
+  excludeCountryId: string;
+  selectedCountryId: string;
+}) {
+  const { data: countriesData } = api.countries.getAll.useQuery({
+    limit: 200,
+    offset: 0,
+  });
+
+  const countries = (countriesData?.countries ?? [])
+    .filter((c: any) => c.id !== excludeCountryId)
+    .sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+  return (
+    <select
+      value={selectedCountryId}
+      onChange={(e) => {
+        const country = countries.find((c: any) => c.id === e.target.value);
+        if (country) {
+          onSelect(country.id, country.name);
+        }
+      }}
+      className="text-foreground w-full rounded-lg border border-white/20 bg-white/10 py-3 px-4 focus:border-[--intel-gold]/50 focus:outline-none"
+    >
+      <option value="">Select a country...</option>
+      {countries.map((country: any) => (
+        <option key={country.id} value={country.id}>
+          {country.name}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 interface EstablishEmbassyModalProps {
   open: boolean;
@@ -164,10 +204,10 @@ export function EstablishEmbassyModal({
                 <p className="mb-4 text-sm text-[--intel-silver]">
                   Choose the country where you want to establish your embassy.
                 </p>
-                <CountrySelector
+                <SimpleCountrySelector
                   onSelect={handleCountrySelect}
                   excludeCountryId={guestCountryId}
-                  placeholder="Search for a country..."
+                  selectedCountryId={hostCountryId}
                 />
                 {hostCountryId && (
                   <div className="mt-4 rounded-lg border border-[--intel-gold]/30 bg-[--intel-gold]/10 p-3">
@@ -263,8 +303,8 @@ export function EstablishEmbassyModal({
                         <span>${costData.baseCost.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Distance modifier:</span>
-                        <span>×{costData.distanceMultiplier.toFixed(2)}</span>
+                        <span>Economic tier modifier:</span>
+                        <span>×{costData.economicTierMultiplier.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Relationship modifier:</span>

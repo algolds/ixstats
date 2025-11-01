@@ -3,7 +3,7 @@
 import { memo } from 'react';
 import { X } from 'lucide-react';
 import { api } from '~/trpc/react';
-import { formatNumber, formatCurrency } from '~/lib/ixearth-constants';
+import { formatNumber } from '~/lib/ixearth-constants';
 
 interface GoogleInfoWindowProps {
   countryId: string;
@@ -61,9 +61,9 @@ function GoogleInfoWindow({
                 <h2 className="text-xl font-semibold text-gray-900 mb-2 pr-8">
                   {country.name}
                 </h2>
-                {country.flag && (
+                {country.flagUrl && (
                   <img
-                    src={country.flag}
+                    src={country.flagUrl}
                     alt={`${country.name} flag`}
                     className="h-12 w-auto rounded shadow"
                   />
@@ -75,7 +75,7 @@ function GoogleInfoWindow({
                 <div className="flex justify-between py-1 border-b border-gray-100">
                   <span className="text-gray-600">Population</span>
                   <span className="text-gray-900 font-medium">
-                    {formatNumber(country.population)}
+                    {formatNumber(country.currentPopulation)}
                   </span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-gray-100">
@@ -87,7 +87,7 @@ function GoogleInfoWindow({
                 <div className="flex justify-between py-1 border-b border-gray-100">
                   <span className="text-gray-600">GDP per Capita</span>
                   <span className="text-gray-900 font-medium">
-                    ${formatNumber(Math.round(country.gdpPerCapita))}
+                    {country.currentGdpPerCapita != null ? `$${formatNumber(Math.round(country.currentGdpPerCapita))}` : 'N/A'}
                   </span>
                 </div>
                 {country.continent && (

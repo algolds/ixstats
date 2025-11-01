@@ -57,18 +57,21 @@ interface Manufacturer {
   name: string;
   country: string;
   specialty: string | null;
-  founded: number | null;
-  description: string | null;
+  founded?: number | null;
+  description?: string | null;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
-  equipment: {
+  equipment?: {
     id: string;
     name: string;
     category: string;
-    technologyTier: number;
+    technologyTier?: number;
+    technologyLevel?: number;
   }[];
 }
+
+type ManufacturerWithCount = Manufacturer & { equipmentCount: number };
 
 const SPECIALTIES = [
   "aircraft",
@@ -133,6 +136,17 @@ export default function ManufacturersPage() {
     }
   );
 
+  const normalizedManufacturers = useMemo<Manufacturer[]>(() => {
+    if (!manufacturers) return [];
+    return manufacturers.map((m) => ({
+      ...m,
+      specialty: m.specialty ?? "",
+      founded: (m as Manufacturer).founded ?? null,
+      description: (m as Manufacturer).description ?? null,
+      equipment: (m as Manufacturer).equipment ?? [],
+    })) as Manufacturer[];
+  }, [manufacturers]);
+
   // Mutations
   const createMutation = api.militaryEquipment.createManufacturer.useMutation({
     onSuccess: () => {
@@ -176,16 +190,16 @@ export default function ManufacturersPage() {
 
   // Get unique countries for filter
   const countries = useMemo(() => {
-    if (!manufacturers) return [];
-    const uniqueCountries = new Set(manufacturers.map((m) => m.country));
+    if (normalizedManufacturers.length === 0) return [];
+    const uniqueCountries = new Set(normalizedManufacturers.map((m) => m.country));
     return Array.from(uniqueCountries).sort();
-  }, [manufacturers]);
+  }, [normalizedManufacturers]);
 
   // Filtered and sorted manufacturers
-  const filteredManufacturers = useMemo(() => {
-    if (!manufacturers) return [];
+  const filteredManufacturers = useMemo<ManufacturerWithCount[]>(() => {
+    if (normalizedManufacturers.length === 0) return [];
 
-    let filtered = manufacturers.filter((manufacturer) => {
+    let filtered = normalizedManufacturers.filter((manufacturer) => {
       // Country filter
       if (countryFilter !== "all" && manufacturer.country !== countryFilter) return false;
 
@@ -203,9 +217,9 @@ export default function ManufacturersPage() {
     });
 
     // Add equipment count for sorting
-    const withCounts = filtered.map((m) => ({
+    const withCounts: ManufacturerWithCount[] = filtered.map((m) => ({
       ...m,
-      equipmentCount: m.equipment?.length || 0,
+      equipmentCount: m.equipment?.length ?? 0,
     }));
 
     // Sort
@@ -231,7 +245,7 @@ export default function ManufacturersPage() {
     });
 
     return withCounts;
-  }, [manufacturers, countryFilter, searchQuery, sortField, sortDirection]);
+  }, [normalizedManufacturers, countryFilter, searchQuery, sortField, sortDirection]);
 
   // Handlers
   const resetForm = () => {
@@ -423,7 +437,7 @@ export default function ManufacturersPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Countries</SelectItem>
-                {countries.map((country) => (
+                {countries.map((country: string) => (
                   <SelectItem key={country} value={country}>
                     {country}
                   </SelectItem>
@@ -526,8 +540,8 @@ export default function ManufacturersPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredManufacturers.map((manufacturer) => {
-                    const specialties = parseSpecialties(manufacturer.specialty);
-                    const equipmentCount = manufacturer.equipment?.length || 0;
+                    const specialties = parseSpecialties(manufacturer.specialty ?? null);
+                    const equipmentCount = manufacturer.equipmentCount ?? 0;
 
                     return (
                       <TableRow key={manufacturer.id}>
@@ -614,12 +628,14 @@ export default function ManufacturersPage() {
         {/* Stats */}
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
           <div className="glass-card-child border-border/50 rounded-lg border p-4">
-            <div className="text-foreground text-2xl font-bold">{manufacturers?.length || 0}</div>
+            <div className="text-foreground text-2xl font-bold">
+              {normalizedManufacturers.length}
+            </div>
             <div className="text-muted-foreground text-sm">Total Manufacturers</div>
           </div>
           <div className="glass-card-child border-border/50 rounded-lg border p-4">
             <div className="text-foreground text-2xl font-bold">
-              {manufacturers?.filter((m) => m.isActive).length || 0}
+              {normalizedManufacturers.filter((m) => m.isActive).length}
             </div>
             <div className="text-muted-foreground text-sm">Active</div>
           </div>
@@ -629,7 +645,10 @@ export default function ManufacturersPage() {
           </div>
           <div className="glass-card-child border-border/50 rounded-lg border p-4">
             <div className="text-foreground text-2xl font-bold">
-              {manufacturers?.reduce((sum, m) => sum + (m.equipment?.length || 0), 0) || 0}
+              {normalizedManufacturers.reduce(
+                (sum, m) => sum + (m.equipment?.length ?? 0),
+                0
+              )}
             </div>
             <div className="text-muted-foreground text-sm">Total Equipment</div>
           </div>

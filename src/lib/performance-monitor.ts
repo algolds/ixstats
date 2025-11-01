@@ -10,6 +10,18 @@ interface PerformanceMetric {
   metadata?: Record<string, unknown>;
 }
 
+interface QueryMetrics {
+  queryKey: string;
+  duration: number;
+  timestamp: number;
+  success: boolean;
+  error?: string;
+  cacheHit: boolean;
+  dataSize?: number;
+  userId?: string;
+  countryId?: string;
+}
+
 class PerformanceMonitor {
   private metrics: PerformanceMetric[] = [];
   private maxMetrics = 100; // Keep last 100 metrics
@@ -63,6 +75,36 @@ class PerformanceMonitor {
   }
 
   /**
+   * Record a query performance metric
+   */
+  recordQuery(metrics: Omit<QueryMetrics, "timestamp">): void {
+    const queryMetric: QueryMetrics = {
+      ...metrics,
+      timestamp: Date.now(),
+    };
+
+    // Store as a PerformanceMetric for compatibility with existing tracking
+    this.recordMetric({
+      name: `query:${queryMetric.queryKey}`,
+      duration: queryMetric.duration,
+      timestamp: queryMetric.timestamp,
+      metadata: {
+        success: queryMetric.success,
+        error: queryMetric.error,
+        cacheHit: queryMetric.cacheHit,
+        dataSize: queryMetric.dataSize,
+        userId: queryMetric.userId,
+        countryId: queryMetric.countryId,
+      },
+    });
+
+    // Log query errors in development
+    if (process.env.NODE_ENV === "development" && !queryMetric.success) {
+      console.warn(`[Query Error] ${queryMetric.queryKey}: ${queryMetric.error}`);
+    }
+  }
+
+  /**
    * Get statistics for a specific metric name
    */
   getStats(name?: string): {
@@ -100,6 +142,105 @@ class PerformanceMonitor {
     return Array.from(new Set(this.metrics.map((m) => m.name)));
   }
 
+  getPerformanceStats(): {
+    queries: {
+      totalQueries: number;
+      averageDuration: number;
+      errorRate: number;
+      cacheHitRate: number;
+      slowQueries: Array<{
+        name: string;
+        duration: number;
+        timestamp: number;
+        metadata?: Record<string, unknown> | undefined;
+      }>;
+    };
+    metrics: {
+      totalRecorded: number;
+      slowestMetric: PerformanceMetric | null;
+    };
+  } {
+    const queryPrefixes = ["query:", "trpc:"];
+    const queryMetrics = this.metrics.filter((metric) =>
+      queryPrefixes.some((prefix) => metric.name.startsWith(prefix))
+    );
+
+    const totalQueries = queryMetrics.length;
+    const totalDuration = queryMetrics.reduce((sum, metric) => sum + metric.duration, 0);
+    const averageDuration = totalQueries > 0 ? totalDuration / totalQueries : 0;
+
+    const errorCount = queryMetrics.filter((metric) => metric.metadata?.success === false).length;
+    const errorRate = totalQueries > 0 ? errorCount / totalQueries : 0;
+
+    const cacheHits = queryMetrics.filter((metric) => metric.metadata?.cacheHit === true).length;
+    const cacheHitRate = totalQueries > 0 ? (cacheHits / totalQueries) * 100 : 100;
+
+    const slowQueries = queryMetrics
+      .filter((metric) => metric.duration >= 2000)
+      .sort((a, b) => b.duration - a.duration)
+      .map((metric) => {
+        const cleanName = queryPrefixes.reduce(
+          (name, prefix) => (name.startsWith(prefix) ? name.slice(prefix.length) : name),
+          metric.name
+        );
+
+        return {
+          name: cleanName,
+          duration: metric.duration,
+          timestamp: metric.timestamp,
+          metadata: metric.metadata,
+        };
+      });
+
+    const slowestMetric = this.metrics.length
+      ? [...this.metrics].sort((a, b) => b.duration - a.duration)[0]!
+      : null;
+
+    return {
+      queries: {
+        totalQueries,
+        averageDuration,
+        errorRate,
+        cacheHitRate,
+        slowQueries,
+      },
+      metrics: {
+        totalRecorded: this.metrics.length,
+        slowestMetric,
+      },
+    };
+  }
+
+  getOptimizationSuggestions(): string[] {
+    const suggestions: string[] = [];
+    const stats = this.getPerformanceStats();
+
+    if (stats.queries.averageDuration > 2000) {
+      suggestions.push("Investigate and optimize slow queries exceeding 2s average duration");
+    } else if (stats.queries.averageDuration > 1000) {
+      suggestions.push("Consider batching or caching to reduce average query latency");
+    }
+
+    if (stats.queries.errorRate > 0.02) {
+      suggestions.push("High query error rate detected - review recent failures and retry logic");
+    }
+
+    if (stats.queries.cacheHitRate < 60) {
+      suggestions.push("Improve cache hit rate by revisiting cache keys and TTL configuration");
+    }
+
+    const notableSlowQueries = stats.queries.slowQueries.slice(0, 3);
+    notableSlowQueries.forEach((query) => {
+      suggestions.push(`Review slow query: ${query.name} (${query.duration}ms)`);
+    });
+
+    if (stats.metrics.totalRecorded >= this.maxMetrics) {
+      suggestions.push("Performance log buffer is full - export or increase capacity");
+    }
+
+    return suggestions;
+  }
+
   /**
    * Clear all metrics
    */
@@ -118,6 +259,9 @@ class PerformanceMonitor {
 
 // Singleton instance
 export const perfMonitor = new PerformanceMonitor();
+
+// Export alias for compatibility
+export { perfMonitor as performanceMonitor };
 
 /**
  * Helper: Monitor a tile request

@@ -106,12 +106,15 @@ export function useCities(params: UseCitiesParams = {}): UseCitiesResult {
     }
   );
 
+  // Wrap error to ensure it has a name property
+  const wrappedError = query.error ? new Error(query.error.message || 'Unknown error') : null;
+
   return {
     cities: query.data?.cities ?? [],
     total: query.data?.total ?? 0,
     hasMore: query.data?.hasMore ?? false,
     loading: query.isLoading,
-    error: query.error,
+    error: wrappedError,
     refetch: () => {
       void query.refetch();
     },
@@ -154,11 +157,14 @@ export function useCountryCities(params: {
     }
   );
 
+  // Wrap error to ensure it has a name property
+  const wrappedError = query.error ? new Error(query.error.message || 'Unknown error') : null;
+
   return {
     cities: query.data?.cities ?? [],
     count: query.data?.count ?? 0,
     loading: query.isLoading,
-    error: query.error,
+    error: wrappedError,
     refetch: () => {
       void query.refetch();
     },

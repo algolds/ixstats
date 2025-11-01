@@ -113,12 +113,15 @@ export function usePOIs(params: UsePOIsParams = {}): UsePOIsResult {
     }
   );
 
+  // Wrap error to ensure it has a name property
+  const wrappedError = query.error ? new Error(query.error.message || 'Unknown error') : null;
+
   return {
     pois: query.data?.pois ?? [],
     total: query.data?.total ?? 0,
     hasMore: query.data?.hasMore ?? false,
     loading: query.isLoading,
-    error: query.error,
+    error: wrappedError,
     refetch: () => {
       void query.refetch();
     },
@@ -161,11 +164,14 @@ export function useCountryPOIs(params: {
     }
   );
 
+  // Wrap error to ensure it has a name property
+  const wrappedError = query.error ? new Error(query.error.message || 'Unknown error') : null;
+
   return {
     pois: query.data?.pois ?? [],
     count: query.data?.count ?? 0,
     loading: query.isLoading,
-    error: query.error,
+    error: wrappedError,
     refetch: () => {
       void query.refetch();
     },

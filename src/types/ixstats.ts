@@ -641,7 +641,6 @@ export interface TierChangeProjection {
 // Update ImportAnalysis and CountryWithEconomicData to use these types
 export interface CountryWithEconomicData {
   minLng: any;
-  minLng: any;
   minLat: any;
   maxLng: any;
   maxLat: any;

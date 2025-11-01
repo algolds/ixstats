@@ -17,8 +17,8 @@ import {
   AlertCircle,
   FileJson,
   MapPin,
-  Globe2,
 } from 'lucide-react';
+import type { ProjectionType } from '~/types/maps';
 
 interface GoogleHamburgerMenuProps {
   isOpen: boolean;
@@ -42,6 +42,8 @@ interface GoogleHamburgerMenuProps {
   // Map settings
   mapType: 'map' | 'climate' | 'terrain';
   onMapTypeChange: (type: 'map' | 'climate' | 'terrain') => void;
+  projection: ProjectionType;
+  onProjectionChange: (type: ProjectionType) => void;
 
   // View options
   showLabels: boolean;
@@ -63,6 +65,8 @@ function GoogleHamburgerMenu({
   onShowScaleChange,
   mapType,
   onMapTypeChange,
+  projection,
+  onProjectionChange,
   showLabels,
   onShowLabelsChange,
   showBorders,
@@ -101,11 +105,12 @@ function GoogleHamburgerMenu({
           showLabels,
           showBorders,
           mapType,
+          projection,
           measurementMode,
         })
       );
     }
-  }, [layers, showScale, showLabels, showBorders, mapType, measurementMode]);
+  }, [layers, showScale, showLabels, showBorders, mapType, projection, measurementMode]);
 
   if (!isOpen) return null;
 
@@ -200,15 +205,6 @@ function GoogleHamburgerMenu({
                   ]}
                   onChange={(value) => onMapTypeChange(value as 'map' | 'climate' | 'terrain')}
                 />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-2">Projection</label>
-                <select className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow">
-                  <option>Mercator</option>
-                  <option disabled>Globe (Coming soon)</option>
-                  <option disabled>Equal Earth (Coming soon)</option>
-                </select>
               </div>
 
               <div>
@@ -482,6 +478,7 @@ export function loadMapSettings() {
       showLabels: boolean;
       showBorders: boolean;
       mapType: 'map' | 'climate' | 'terrain';
+      projection: ProjectionType;
       measurementMode: 'distance' | 'area' | null;
     };
   } catch {
@@ -504,6 +501,7 @@ export function getDefaultMapSettings() {
     showLabels: true,
     showBorders: true,
     mapType: 'map' as const,
+    projection: 'globe' as ProjectionType,
     measurementMode: null as null,
   };
 }

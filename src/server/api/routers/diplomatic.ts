@@ -2196,7 +2196,14 @@ export const diplomaticRouter = createTRPCRouter({
         // Intelligence Data
         // Fetch templates from database and generate reports based on embassy level
         if (!input.dataType || input.dataType === "intelligence") {
-          const intelligenceReports = [];
+          const intelligenceReports: Array<{
+            reportType: string;
+            classification: string;
+            summary: string;
+            keyFindings: string[];
+            confidence: number;
+            lastUpdated: string;
+          }> = [];
 
           // Calculate deterministic lastUpdated date based on embassy age
           // Reports are "updated" every 7 days, with the most recent being within the last week

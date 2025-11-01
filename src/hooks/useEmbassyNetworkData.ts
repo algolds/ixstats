@@ -67,6 +67,7 @@ interface EmbassyWithSynergies {
 interface UseEmbassyNetworkDataReturn {
   embassiesWithSynergies: EmbassyWithSynergies[];
   isLoading: boolean;
+  refetch: () => Promise<any>;
 }
 
 /**
@@ -161,7 +162,7 @@ export function useEmbassyNetworkData(
   isOwner: boolean
 ): UseEmbassyNetworkDataReturn {
   // Fetch embassies
-  const { data: embassies, isLoading } = api.diplomatic.getEmbassies.useQuery({
+  const { data: embassies, isLoading, refetch } = api.diplomatic.getEmbassies.useQuery({
     countryId,
   });
 
@@ -193,5 +194,6 @@ export function useEmbassyNetworkData(
   return {
     embassiesWithSynergies,
     isLoading,
+    refetch,
   };
 }

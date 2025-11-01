@@ -1,5 +1,6 @@
 import type { StyleSpecification } from 'maplibre-gl';
 import { MAPLIBRE_CONFIG } from '~/lib/ixearth-constants';
+import type { ProjectionType } from '~/types/maps';
 
 /**
  * Generate GeoJSON for latitude/longitude grid lines (graticule)
@@ -51,17 +52,52 @@ function generateGraticule() {
   };
 }
 
+/**
+ * Generate source configuration for a given layer and projection
+ * Custom projections use GeoJSON with D3 transformation
+ * Standard projections use vector tiles
+ */
+function getLayerSource(
+  layer: string,
+  projection: ProjectionType,
+  origin: string,
+  basePath: string
+): any {
+  const customProjection = ['equalEarth', 'naturalEarth', 'ixmaps'].includes(projection);
+  const cleanBasePath = basePath.replace(/\/$/, '');
+
+  if (customProjection) {
+    // Use GeoJSON source with server-side D3 transformation
+    return {
+      type: 'geojson',
+      data: `${origin}${cleanBasePath}/api/geojson/${projection}/${layer}`,
+    };
+  } else {
+    // Use vector tiles for mercator/globe
+    return {
+      type: 'vector',
+      tiles: [`${origin}${cleanBasePath}/api/tiles/${layer}/{z}/{x}/{y}`],
+      minzoom: layer === 'rivers' ? 3 : MAPLIBRE_CONFIG.tileMinZoom,
+      maxzoom: MAPLIBRE_CONFIG.tileMaxZoom,
+    };
+  }
+}
+
 export const createGoogleMapsStyle = (
   basePath: string = '',
-  mapType: 'map' | 'climate' | 'terrain' = 'map'
+  mapType: 'map' | 'climate' | 'terrain' = 'map',
+  projection: ProjectionType = 'globe'
 ): StyleSpecification => {
   // Ensure base path doesn't have trailing slash and construct full URLs
   const cleanBasePath = basePath.replace(/\/$/, '');
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
 
+  // Determine if we're using GeoJSON (custom projections) or vector tiles (mercator/globe)
+  const useGeoJSON = ['equalEarth', 'naturalEarth', 'ixmaps'].includes(projection);
+
   return {
   version: 8,
-  projection: { type: 'globe' },
+  projection: { type: projection === 'globe' ? 'globe' : 'mercator' },
   sky: {
     'sky-color': '#e8f4f8',  // Very light blue-white to blend with ice caps
     'horizon-color': '#ffffff',  // White horizon
@@ -81,42 +117,12 @@ export const createGoogleMapsStyle = (
       type: 'geojson',
       data: generateGraticule() as any,
     },
-    political: {
-      type: 'vector',
-      tiles: [`${origin}${cleanBasePath}/api/tiles/political/{z}/{x}/{y}`],
-      minzoom: MAPLIBRE_CONFIG.tileMinZoom,
-      maxzoom: MAPLIBRE_CONFIG.tileMaxZoom,
-    },
-    altitudes: {
-      type: 'vector',
-      tiles: [`${origin}${cleanBasePath}/api/tiles/altitudes/{z}/{x}/{y}`],
-      minzoom: MAPLIBRE_CONFIG.tileMinZoom,
-      maxzoom: MAPLIBRE_CONFIG.tileMaxZoom,
-    },
-    lakes: {
-      type: 'vector',
-      tiles: [`${origin}${cleanBasePath}/api/tiles/lakes/{z}/{x}/{y}`],
-      minzoom: MAPLIBRE_CONFIG.tileMinZoom,
-      maxzoom: MAPLIBRE_CONFIG.tileMaxZoom,
-    },
-    rivers: {
-      type: 'vector',
-      tiles: [`${origin}${cleanBasePath}/api/tiles/rivers/{z}/{x}/{y}`],
-      minzoom: 3, // Rivers only visible from zoom 3+ (layer-specific override)
-      maxzoom: MAPLIBRE_CONFIG.tileMaxZoom,
-    },
-    climate: {
-      type: 'vector',
-      tiles: [`${origin}${cleanBasePath}/api/tiles/climate/{z}/{x}/{y}`],
-      minzoom: MAPLIBRE_CONFIG.tileMinZoom,
-      maxzoom: MAPLIBRE_CONFIG.tileMaxZoom,
-    },
-    icecaps: {
-      type: 'vector',
-      tiles: [`${origin}${cleanBasePath}/api/tiles/icecaps/{z}/{x}/{y}`],
-      minzoom: MAPLIBRE_CONFIG.tileMinZoom,
-      maxzoom: MAPLIBRE_CONFIG.tileMaxZoom,
-    },
+    political: getLayerSource('political', projection, origin, cleanBasePath),
+    altitudes: getLayerSource('altitudes', projection, origin, cleanBasePath),
+    lakes: getLayerSource('lakes', projection, origin, cleanBasePath),
+    rivers: getLayerSource('rivers', projection, origin, cleanBasePath),
+    climate: getLayerSource('climate', projection, origin, cleanBasePath),
+    icecaps: getLayerSource('icecaps', projection, origin, cleanBasePath),
   },
   layers: [
     // Ocean/water background (Google Maps blue)
@@ -161,7 +167,7 @@ export const createGoogleMapsStyle = (
       id: 'terrain',
       type: 'fill',
       source: 'altitudes',
-      'source-layer': 'map_layer_altitudes',
+      ...(useGeoJSON ? {} : { 'source-layer': 'map_layer_altitudes' }),
       paint: {
         'fill-color': ['get', 'fill'],
         'fill-opacity': 1, // Always show terrain colors
@@ -172,7 +178,7 @@ export const createGoogleMapsStyle = (
       id: 'icecaps-fill',
       type: 'fill',
       source: 'icecaps',
-      'source-layer': 'map_layer_icecaps',
+      ...(useGeoJSON ? {} : { 'source-layer': 'map_layer_icecaps' }),
       paint: {
         'fill-color': ['get', 'fill'], // Use color from data
         'fill-opacity': 0.9,
@@ -184,7 +190,7 @@ export const createGoogleMapsStyle = (
       id: 'climate',
       type: 'fill',
       source: 'climate',
-      'source-layer': 'map_layer_climate',
+      ...(useGeoJSON ? {} : { 'source-layer': 'map_layer_climate' }),
       paint: {
         'fill-color': ['get', 'fill'],
         'fill-opacity': mapType === 'climate' ? 0.7 : 0, // 70% opacity when climate mode for visibility
@@ -195,7 +201,7 @@ export const createGoogleMapsStyle = (
       id: 'countries',
       type: 'fill',
       source: 'political',
-      'source-layer': 'map_layer_political',
+      ...(useGeoJSON ? {} : { 'source-layer': 'map_layer_political' }),
       paint: {
         'fill-color': ['get', 'fill'], // Use color from GeoJSON data
         'fill-opacity': [
@@ -211,7 +217,7 @@ export const createGoogleMapsStyle = (
       id: 'country-borders',
       type: 'line',
       source: 'political',
-      'source-layer': 'map_layer_political',
+      ...(useGeoJSON ? {} : { 'source-layer': 'map_layer_political' }),
       paint: {
         'line-color': [
           'case',
@@ -238,7 +244,7 @@ export const createGoogleMapsStyle = (
       id: 'lakes-fill',
       type: 'fill',
       source: 'lakes',
-      'source-layer': 'map_layer_lakes',
+      ...(useGeoJSON ? {} : { 'source-layer': 'map_layer_lakes' }),
       paint: {
         'fill-color': '#a5d8f3',
         'fill-opacity': 0.8,
@@ -249,7 +255,7 @@ export const createGoogleMapsStyle = (
       id: 'rivers-line',
       type: 'line',
       source: 'rivers',
-      'source-layer': 'map_layer_rivers',
+      ...(useGeoJSON ? {} : { 'source-layer': 'map_layer_rivers' }),
       minzoom: 3,
       paint: {
         'line-color': '#6db3d8',  // River blue
@@ -277,7 +283,7 @@ export const createGoogleMapsStyle = (
       id: 'country-labels',
       type: 'symbol',
       source: 'political',
-      'source-layer': 'map_layer_political',
+      ...(useGeoJSON ? {} : { 'source-layer': 'map_layer_political' }),
       layout: {
         'text-field': ['get', 'name'],
         'text-size': [

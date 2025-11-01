@@ -16,7 +16,7 @@
 
 "use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {
   Crown,
   Building2,
@@ -46,6 +46,9 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { cn } from "~/lib/utils";
+import type { Feature, Polygon, MultiPolygon } from "geojson";
+// @ts-ignore - @turf/turf lacks declaration files
+import { booleanPointInPolygon } from "@turf/turf";
 
 // ============================================================================
 // Types & Interfaces
@@ -86,6 +89,7 @@ interface CityPlacementProps {
     minLng: number;
     maxLng: number;
   };
+  countryGeometry?: Feature<Polygon | MultiPolygon> | null;
   onCityPlaced?: (city: CityMarker) => void;
   onCityUpdated?: (city: CityMarker) => void;
   onCityDeleted?: (cityId: string) => void;
@@ -193,7 +197,7 @@ function validateFormData(
 }
 
 /**
- * Check if coordinates are within country bounds
+ * Check if coordinates are within country bounds (bounding box check)
  */
 function isWithinBounds(
   lat: number,
@@ -214,6 +218,36 @@ function isWithinBounds(
   );
 }
 
+/**
+ * Check if coordinates are within country geometry (precise point-in-polygon check)
+ * Uses Turf.js booleanPointInPolygon for accurate validation
+ */
+function isWithinCountryGeometry(
+  lat: number,
+  lng: number,
+  geometry?: Feature<Polygon | MultiPolygon> | null
+): boolean {
+  if (!geometry) return true; // No geometry provided, skip validation
+
+  try {
+    // Create GeoJSON point from coordinates
+    const point: Feature<{ type: "Point"; coordinates: [number, number] }> = {
+      type: "Feature",
+      properties: {},
+      geometry: {
+        type: "Point",
+        coordinates: [lng, lat], // GeoJSON uses [lng, lat] order
+      },
+    };
+
+    // Use Turf.js to check if point is within polygon
+    return booleanPointInPolygon(point, geometry);
+  } catch (error) {
+    console.error("Error checking point in polygon:", error);
+    return true; // On error, allow placement (fail open)
+  }
+}
+
 // ============================================================================
 // Main Component
 // ============================================================================
@@ -221,6 +255,7 @@ function isWithinBounds(
 export function CityPlacement({
   countryId,
   countryBounds,
+  countryGeometry,
   onCityPlaced,
   onCityUpdated,
   onCityDeleted,
@@ -271,6 +306,7 @@ export function CityPlacement({
 
   const createCity = api.mapEditor.createCity.useMutation({
     onSuccess: (data) => {
+      console.log("[CityPlacement] Create city SUCCESS:", data);
       setSuccessMessage("City saved as draft!");
       if (onCityPlaced && marker) {
         onCityPlaced({
@@ -285,6 +321,7 @@ export function CityPlacement({
       }, 2000);
     },
     onError: (error) => {
+      console.error("[CityPlacement] Create city ERROR:", error);
       setErrors([{ field: "general", message: error.message }]);
     },
   });
@@ -330,6 +367,67 @@ export function CityPlacement({
   });
 
   // ============================================================================
+  // Map Click Event Listener
+  // ============================================================================
+
+  useEffect(() => {
+    if (mode !== "place" && mode !== "move") return;
+
+    const handleMapClickEvent = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const { coordinates } = customEvent.detail;
+
+      // Validate coordinates are within country geometry
+      const withinBounds = countryBounds
+        ? isWithinBounds(coordinates.lat, coordinates.lng, countryBounds)
+        : true;
+      const withinGeometry = countryGeometry
+        ? isWithinCountryGeometry(coordinates.lat, coordinates.lng, countryGeometry)
+        : true;
+
+      // Check boundaries and show immediate error if outside
+      if (!withinBounds || !withinGeometry) {
+        setErrors([
+          {
+            field: "coordinates",
+            message: "ERROR: This location is outside your country's boundaries. Cities must be placed within your territory.",
+          },
+        ]);
+        // Still allow placement (marker will be shown as invalid)
+        // but save will be prevented by isOutOfBounds check
+      } else {
+        // Clear coordinate errors if within bounds
+        setErrors((prev) => prev.filter((e) => e.field !== "coordinates"));
+      }
+
+      // Auto-detect subdivision (simplified - would need actual point-in-polygon check)
+      let detectedSubdivisionId: string | null = null;
+      if (subdivisions?.subdivisions) {
+        // TODO: Implement actual point-in-polygon check with subdivision geometries
+        // For now, just set to null
+        detectedSubdivisionId = null;
+      }
+
+      setMarker({
+        lat: coordinates.lat,
+        lng: coordinates.lng,
+        subdivisionId: detectedSubdivisionId,
+        formData,
+      });
+
+      if (mode === "place") {
+        setMode("edit");
+      }
+    };
+
+    window.addEventListener("mapeditor:click", handleMapClickEvent);
+
+    return () => {
+      window.removeEventListener("mapeditor:click", handleMapClickEvent);
+    };
+  }, [mode, subdivisions?.subdivisions, formData, countryBounds, countryGeometry]);
+
+  // ============================================================================
   // Computed Values
   // ============================================================================
 
@@ -341,9 +439,20 @@ export function CityPlacement({
   }, [existingCities?.cities, marker?.id]);
 
   const isOutOfBounds = useMemo(() => {
-    if (!marker || !countryBounds) return false;
-    return !isWithinBounds(marker.lat, marker.lng, countryBounds);
-  }, [marker, countryBounds]);
+    if (!marker) return false;
+
+    // First check bounding box (fast, approximate check)
+    if (countryBounds && !isWithinBounds(marker.lat, marker.lng, countryBounds)) {
+      return true;
+    }
+
+    // Then check precise geometry (slower, accurate check)
+    if (countryGeometry && !isWithinCountryGeometry(marker.lat, marker.lng, countryGeometry)) {
+      return true;
+    }
+
+    return false;
+  }, [marker, countryBounds, countryGeometry]);
 
   const nearestCity = useMemo(() => {
     if (!marker || !existingCities?.cities || existingCities.cities.length === 0) {
@@ -426,15 +535,22 @@ export function CityPlacement({
   );
 
   const handleSaveDraft = useCallback(() => {
-    if (!marker) return;
+    console.log("[CityPlacement] handleSaveDraft called");
+
+    if (!marker) {
+      console.log("[CityPlacement] No marker, aborting save");
+      return;
+    }
 
     const validationErrors = validateFormData(formData, hasNationalCapital);
     if (validationErrors.length > 0) {
+      console.log("[CityPlacement] Validation errors:", validationErrors);
       setErrors(validationErrors);
       return;
     }
 
     if (isOutOfBounds) {
+      console.log("[CityPlacement] City is out of bounds");
       setErrors([
         {
           field: "coordinates",
@@ -446,7 +562,7 @@ export function CityPlacement({
 
     const cityInput = {
       countryId,
-      subdivisionId: marker.subdivisionId,
+      subdivisionId: marker.subdivisionId ?? undefined,
       name: formData.name,
       type: formData.type,
       coordinates: {
@@ -460,9 +576,13 @@ export function CityPlacement({
       foundedYear: formData.foundedYear ? Number(formData.foundedYear) : undefined,
     };
 
+    console.log("[CityPlacement] Prepared city input:", cityInput);
+
     if (marker.id) {
+      console.log("[CityPlacement] Updating existing city:", marker.id);
       updateCity.mutate({ id: marker.id, ...cityInput });
     } else {
+      console.log("[CityPlacement] Creating new city");
       createCity.mutate(cityInput);
     }
   }, [
@@ -533,15 +653,15 @@ export function CityPlacement({
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="glass-panel border-b border-slate-700/50 px-6 py-4">
+      <div className="glass-panel bg-white dark:bg-slate-900 backdrop-blur-xl border-b border-slate-200 dark:border-slate-700/50 px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="glass-interactive rounded-lg p-2">
               <MapPin className="size-5 text-blue-400" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-white">City Placement</h3>
-              <p className="text-sm text-slate-400">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">City Placement</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
                 {mode === "place"
                   ? "Click on the map to place a city marker"
                   : mode === "move"
@@ -562,7 +682,7 @@ export function CityPlacement({
           {/* Mode Buttons */}
           {marker && (
             <div className="glass-hierarchy-child rounded-lg p-4">
-              <Label className="mb-3 text-slate-300">Placement Mode</Label>
+              <Label className="mb-3 text-slate-900 dark:text-white">Placement Mode</Label>
               <div className="flex gap-2">
                 <Button
                   variant={mode === "place" ? "default" : "outline"}
@@ -599,17 +719,17 @@ export function CityPlacement({
             <div className="glass-hierarchy-child rounded-lg p-4">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <Label className="mb-2 text-slate-300">Coordinates</Label>
+                  <Label className="mb-2 text-slate-900 dark:text-white">Coordinates</Label>
                   <div className="space-y-1 text-sm">
                     <div className="flex items-center gap-2">
-                      <span className="text-slate-400">Latitude:</span>
-                      <span className="font-mono text-white">
+                      <span className="text-slate-500 dark:text-slate-400">Latitude:</span>
+                      <span className="font-mono text-slate-900 dark:text-white">
                         {marker.lat.toFixed(6)}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-slate-400">Longitude:</span>
-                      <span className="font-mono text-white">
+                      <span className="text-slate-500 dark:text-slate-400">Longitude:</span>
+                      <span className="font-mono text-slate-900 dark:text-white">
                         {marker.lng.toFixed(6)}
                       </span>
                     </div>
@@ -630,9 +750,18 @@ export function CityPlacement({
 
               {/* Bounds Warning */}
               {isOutOfBounds && (
-                <div className="mt-3 flex items-start gap-2 rounded-md bg-red-500/10 p-3 text-sm text-red-400">
-                  <AlertCircle className="mt-0.5 size-4 shrink-0" />
-                  <span>Marker is outside country boundaries</span>
+                <div className="mt-3 flex items-start gap-3 rounded-lg bg-red-500/20 border border-red-500/30 p-4 text-sm text-red-400">
+                  <AlertCircle className="mt-0.5 size-5 shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-semibold text-red-300">⚠️ Invalid Location - Outside Country Boundaries</p>
+                    <p className="mt-1.5 text-xs opacity-90">
+                      The marker is currently placed outside your country's territory.
+                      Please click on the map within your borders to place the city in a valid location.
+                    </p>
+                    <p className="mt-2 text-xs font-medium">
+                      → Save and submit buttons are disabled until the city is placed within valid boundaries.
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -655,7 +784,7 @@ export function CityPlacement({
               <div className="space-y-4">
                 {/* Name */}
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-slate-300">
+                  <Label htmlFor="name" className="text-slate-900 dark:text-white">
                     City Name <span className="text-red-400">*</span>
                   </Label>
                   <Input
@@ -665,7 +794,10 @@ export function CityPlacement({
                     placeholder="Enter city name"
                     maxLength={200}
                     aria-invalid={hasError("name")}
-                    className={cn(hasError("name") && "border-red-500")}
+                    className={cn(
+                      "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500",
+                      hasError("name") && "border-red-500"
+                    )}
                   />
                   {hasError("name") && (
                     <p className="text-sm text-red-400">{getErrorMessage("name")}</p>
@@ -674,14 +806,14 @@ export function CityPlacement({
 
                 {/* Type */}
                 <div className="space-y-2">
-                  <Label htmlFor="type" className="text-slate-300">
+                  <Label htmlFor="type" className="text-slate-900 dark:text-white">
                     City Type
                   </Label>
                   <Select
                     value={formData.type}
                     onValueChange={(value: CityType) => handleFormChange("type", value)}
                   >
-                    <SelectTrigger id="type">
+                    <SelectTrigger id="type" className="bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -715,7 +847,7 @@ export function CityPlacement({
 
                 {/* Population */}
                 <div className="space-y-2">
-                  <Label htmlFor="population" className="text-slate-300">
+                  <Label htmlFor="population" className="text-slate-900 dark:text-white">
                     Population (optional)
                   </Label>
                   <Input
@@ -726,7 +858,10 @@ export function CityPlacement({
                     onChange={(e) => handleFormChange("population", e.target.value)}
                     placeholder="e.g., 150000"
                     aria-invalid={hasError("population")}
-                    className={cn(hasError("population") && "border-red-500")}
+                    className={cn(
+                      "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500",
+                      hasError("population") && "border-red-500"
+                    )}
                   />
                   {hasError("population") && (
                     <p className="text-sm text-red-400">
@@ -737,7 +872,7 @@ export function CityPlacement({
 
                 {/* Elevation */}
                 <div className="space-y-2">
-                  <Label htmlFor="elevation" className="text-slate-300">
+                  <Label htmlFor="elevation" className="text-slate-900 dark:text-white">
                     Elevation (meters, optional)
                   </Label>
                   <Input
@@ -747,7 +882,10 @@ export function CityPlacement({
                     onChange={(e) => handleFormChange("elevation", e.target.value)}
                     placeholder="e.g., 250"
                     aria-invalid={hasError("elevation")}
-                    className={cn(hasError("elevation") && "border-red-500")}
+                    className={cn(
+                      "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500",
+                      hasError("elevation") && "border-red-500"
+                    )}
                   />
                   {hasError("elevation") && (
                     <p className="text-sm text-red-400">
@@ -758,7 +896,7 @@ export function CityPlacement({
 
                 {/* Founded Year */}
                 <div className="space-y-2">
-                  <Label htmlFor="foundedYear" className="text-slate-300">
+                  <Label htmlFor="foundedYear" className="text-slate-900 dark:text-white">
                     Founded Year (optional)
                   </Label>
                   <Input
@@ -770,7 +908,10 @@ export function CityPlacement({
                     onChange={(e) => handleFormChange("foundedYear", e.target.value)}
                     placeholder="e.g., 1850"
                     aria-invalid={hasError("foundedYear")}
-                    className={cn(hasError("foundedYear") && "border-red-500")}
+                    className={cn(
+                      "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500",
+                      hasError("foundedYear") && "border-red-500"
+                    )}
                   />
                   {hasError("foundedYear") && (
                     <p className="text-sm text-red-400">
@@ -791,11 +932,11 @@ export function CityPlacement({
                     aria-invalid={hasError("isNationalCapital")}
                   />
                   <div className="flex-1">
-                    <Label htmlFor="isNationalCapital" className="text-slate-300">
+                    <Label htmlFor="isNationalCapital" className="text-slate-900 dark:text-white">
                       National Capital
                     </Label>
                     {hasNationalCapital && !formData.isNationalCapital && (
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                         This country already has a national capital
                       </p>
                     )}
@@ -816,14 +957,14 @@ export function CityPlacement({
                       handleFormChange("isSubdivisionCapital", !!checked)
                     }
                   />
-                  <Label htmlFor="isSubdivisionCapital" className="text-slate-300">
+                  <Label htmlFor="isSubdivisionCapital" className="text-slate-900 dark:text-white">
                     Subdivision Capital
                   </Label>
                 </div>
 
                 {/* Description */}
                 <div className="space-y-2">
-                  <Label htmlFor="description" className="text-slate-300">
+                  <Label htmlFor="description" className="text-slate-900 dark:text-white">
                     Description (optional)
                   </Label>
                   <Textarea
@@ -832,6 +973,7 @@ export function CityPlacement({
                     onChange={(e) => handleFormChange("description", e.target.value)}
                     placeholder="Brief description of the city..."
                     rows={3}
+                    className="bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
               </div>
@@ -858,13 +1000,14 @@ export function CityPlacement({
 
       {/* Footer Actions */}
       {marker && (
-        <div className="glass-panel border-t border-slate-700/50 p-4">
+        <div className="glass-panel bg-white dark:bg-slate-900 backdrop-blur-xl border-t border-slate-200 dark:border-slate-700/50 p-4">
           <div className="flex gap-3">
             <Button
               variant="outline"
               onClick={handleSaveDraft}
-              disabled={createCity.isPending || updateCity.isPending}
+              disabled={createCity.isPending || updateCity.isPending || isOutOfBounds}
               className="flex-1"
+              title={isOutOfBounds ? "Cannot save: city is outside country boundaries" : undefined}
             >
               <Save className="mr-2 size-4" />
               {marker.id ? "Update Draft" : "Save as Draft"}
@@ -873,8 +1016,9 @@ export function CityPlacement({
             {marker.id && marker.status === "draft" && (
               <Button
                 onClick={handleSubmitForReview}
-                disabled={submitForReview.isPending}
+                disabled={submitForReview.isPending || isOutOfBounds}
                 className="flex-1"
+                title={isOutOfBounds ? "Cannot submit: city is outside country boundaries" : undefined}
               >
                 <Send className="mr-2 size-4" />
                 Submit for Review

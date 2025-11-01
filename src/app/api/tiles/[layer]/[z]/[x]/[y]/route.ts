@@ -53,10 +53,10 @@ export async function GET(
   context: { params: Promise<{ layer: string; z: string; x: string; y: string }> }
 ) {
   const startTime = Date.now();
+  const params = await context.params;
+  const { layer, z, x, y } = params;
 
   try {
-    const params = await context.params;
-    const { layer, z, x, y } = params;
 
     // Validate layer name
     if (!VALID_LAYERS.includes(layer as LayerName)) {

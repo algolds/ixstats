@@ -231,7 +231,7 @@ export function LayerControls({
     showAllLayers();
     onSubdivisionLevelChange?.([1, 2, 3, 4, 5]);
     onCityTypeChange?.(["capital", "city", "town", "village"]);
-    onPoiCategoryChange?.(mainCategories.map((c) => c.key));
+    onPoiCategoryChange?.(mainCategories.map((c) => c.key as string));
     if (onOpacityChange) {
       onOpacityChange("boundaries", 100);
       onOpacityChange("subdivisions", 100);
@@ -260,7 +260,7 @@ export function LayerControls({
   }, [onCityTypeChange]);
 
   const selectAllPOICategories = useCallback(() => {
-    onPoiCategoryChange?.(mainCategories.map((c) => c.key));
+    onPoiCategoryChange?.(mainCategories.map((c) => c.key as string));
   }, [onPoiCategoryChange, mainCategories]);
 
   const clearAllPOICategories = useCallback(() => {
@@ -522,8 +522,8 @@ export function LayerControls({
               <div className="space-y-2">
                 {mainCategories.map((category) => {
                   const subcategories = getSubcategories(category.key);
-                  const isExpanded = expandedPOICategories.has(category.key);
-                  const isChecked = poiCategories.includes(category.key);
+                  const isExpanded = expandedPOICategories.has(category.key as string);
+                  const isChecked = poiCategories.includes(category.key as string);
 
                   return (
                     <div key={category.key} className="rounded-md border border-gray-200">
@@ -531,11 +531,11 @@ export function LayerControls({
                         <Checkbox
                           label={category.label}
                           checked={isChecked}
-                          onToggle={() => handlePOICategoryToggle(category.key)}
+                          onToggle={() => handlePOICategoryToggle(category.key as string)}
                           colorIndicator={category.color}
                         />
                         <button
-                          onClick={() => togglePOICategory(category.key)}
+                          onClick={() => togglePOICategory(category.key as string)}
                           className="ml-auto p-1 hover:bg-gray-100 rounded transition-colors"
                           aria-label={isExpanded ? "Collapse subcategories" : "Expand subcategories"}
                           aria-expanded={isExpanded}

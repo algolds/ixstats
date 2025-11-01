@@ -14,10 +14,10 @@
 
 import { useEffect, useRef, useCallback, useState } from "react";
 import type { Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
+import { Popup } from "maplibre-gl";
 import {
   calculatePolylineDistance,
   calculatePolygonArea,
-  calculateDistanceFromLngLat,
   formatDistance,
   formatArea,
   coordsToLineString,
@@ -41,11 +41,61 @@ export interface MeasurementResult {
   points: Array<[number, number]>;
 }
 
+// Helper function to calculate center point of measurement
+function calculateMeasurementCenter(
+  points: Array<[number, number]>,
+  isPolygon: boolean
+): { lng: number; lat: number } | null {
+  if (points.length === 0) return null;
+
+  if (points.length === 1) {
+    return { lng: points[0][0], lat: points[0][1] };
+  }
+
+  if (isPolygon && points.length >= 3) {
+    // Calculate centroid for polygon (average of all vertices)
+    const sum = points.reduce(
+      (acc, [lng, lat]) => ({ lng: acc.lng + lng, lat: acc.lat + lat }),
+      { lng: 0, lat: 0 }
+    );
+    return {
+      lng: sum.lng / points.length,
+      lat: sum.lat / points.length,
+    };
+  } else {
+    // For line, calculate midpoint
+    // Use middle point if odd, or average of middle two if even
+    if (points.length === 2) {
+      return {
+        lng: (points[0][0] + points[1][0]) / 2,
+        lat: (points[0][1] + points[1][1]) / 2,
+      };
+    } else {
+      // For multi-point line, use middle point
+      const midIndex = Math.floor(points.length / 2);
+      if (points.length % 2 === 0) {
+        // Even number of points - average of two middle points
+        return {
+          lng: (points[midIndex - 1][0] + points[midIndex][0]) / 2,
+          lat: (points[midIndex - 1][1] + points[midIndex][1]) / 2,
+        };
+      } else {
+        // Odd number - use middle point
+        return {
+          lng: points[midIndex][0],
+          lat: points[midIndex][1],
+        };
+      }
+    }
+  }
+}
+
 export default function DistanceMeasurement({ map, active, onComplete }: DistanceMeasurementProps) {
   const [points, setPoints] = useState<Array<[number, number]>>([]);
   const [isPolygon, setIsPolygon] = useState(false);
   const pointsRef = useRef<Array<[number, number]>>([]);
   const isPolygonRef = useRef(false);
+  const popupRef = useRef<Popup | null>(null);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -56,9 +106,15 @@ export default function DistanceMeasurement({ map, active, onComplete }: Distanc
     isPolygonRef.current = isPolygon;
   }, [isPolygon]);
 
-  // Clear measurement layers
+  // Clear measurement layers and popup
   const clearLayers = useCallback(() => {
     if (!map) return;
+
+    // Remove popup
+    if (popupRef.current) {
+      popupRef.current.remove();
+      popupRef.current = null;
+    }
 
     try {
       // Remove layers
@@ -180,70 +236,12 @@ export default function DistanceMeasurement({ map, active, onComplete }: Distanc
           });
         }
 
-        // Add segment distance labels
-        const labelFeatures: GeoJSON.Feature<GeoJSON.Point>[] = [];
-        for (let i = 1; i < currentPoints.length; i++) {
-          const [lng1, lat1] = currentPoints[i - 1];
-          const [lng2, lat2] = currentPoints[i];
-
-          // Calculate segment distance
-          const segmentKm = calculateDistanceFromLngLat(
-            { lng: lng1, lat: lat1 },
-            { lng: lng2, lat: lat2 }
-          );
-
-          // Calculate midpoint
-          const midLng = (lng1 + lng2) / 2;
-          const midLat = (lat1 + lat2) / 2;
-
-          labelFeatures.push({
-            type: "Feature",
-            properties: {
-              text: formatDistance(segmentKm, true),
-            },
-            geometry: {
-              type: "Point",
-              coordinates: [midLng, midLat],
-            },
-          });
-        }
-
-        // Skip segment distance labels - they require glyphs configuration
-        // TODO: Add proper glyphs configuration if segment labels are needed
-        // The measurement widget shows total distance/area which is sufficient
-        if (labelFeatures.length > 0) {
-          // Commenting out text labels to avoid glyphs errors
-          // map.addSource('measurement-labels', {
-          //   type: 'geojson',
-          //   data: {
-          //     type: 'FeatureCollection',
-          //     features: labelFeatures,
-          //   },
-          // });
-          // map.addLayer({
-          //   id: 'measurement-labels',
-          //   type: 'symbol',
-          //   source: 'measurement-labels',
-          //   layout: {
-          //     'text-field': ['get', 'text'],
-          //     'text-size': 12,
-          //     'text-font': ['Open Sans Regular'],
-          //     'text-offset': [0, -1],
-          //     'text-anchor': 'bottom',
-          //   },
-          //   paint: {
-          //     'text-color': '#FF4500',
-          //     'text-halo-color': '#FFFFFF',
-          //     'text-halo-width': 2,
-          //   },
-          // });
-        }
       }
     },
     [map, clearLayers]
   );
 
-  // Handle map clicks
+  // Handle map clicks and mouse movement
   useEffect(() => {
     if (!map || !active) return;
 
@@ -349,49 +347,117 @@ export default function DistanceMeasurement({ map, active, onComplete }: Distanc
     }
   }, [active, clearLayers]);
 
-  // Calculate current measurements
-  const currentDistance =
-    points.length >= 2 ? calculatePolylineDistance(points.map(([lng, lat]) => ({ lng, lat }))) : 0;
+  // Update or create popup tooltip centered on measurement
+  useEffect(() => {
+    if (!map || !active || points.length === 0) {
+      if (popupRef.current) {
+        popupRef.current.remove();
+        popupRef.current = null;
+      }
+      return;
+    }
 
-  const currentArea =
-    isPolygon && points.length >= 3
-      ? calculatePolygonArea(points.map(([lng, lat]) => ({ lng, lat })))
-      : 0;
+    // Calculate center point of measurement
+    const center = calculateMeasurementCenter(points, isPolygon);
+    if (!center) {
+      if (popupRef.current) {
+        popupRef.current.remove();
+        popupRef.current = null;
+      }
+      return;
+    }
 
-  if (!active || points.length === 0) return null;
+    // Calculate current measurements
+    const currentDistance =
+      points.length >= 2 ? calculatePolylineDistance(points.map(([lng, lat]) => ({ lng, lat }))) : 0;
 
-  return (
-    <div className="glass-hierarchy-interactive pointer-events-auto absolute top-20 left-4 z-[10000] min-w-[250px] rounded-lg border border-orange-500/50 px-4 py-3 shadow-lg shadow-orange-500/30 backdrop-blur-xl">
-      <div className="mb-2 flex items-center gap-2">
-        <div className="h-2 w-2 animate-pulse rounded-full bg-orange-500"></div>
-        <div className="text-xs font-bold tracking-wide text-orange-400 uppercase">
-          {isPolygon ? "Area Measurement" : "Distance Measurement"}
-        </div>
-      </div>
+    const currentArea =
+      isPolygon && points.length >= 3
+        ? calculatePolygonArea(points.map(([lng, lat]) => ({ lng, lat })))
+        : 0;
 
-      <div className="space-y-1">
-        {points.length >= 2 && (
-          <div className="text-foreground text-sm font-medium">
-            {isPolygon ? "Perimeter" : "Distance"}: {formatDistance(currentDistance, true)}
+    // Create minimal Leaflet-style tooltip
+    const content = document.createElement('div');
+    content.className = 'measurement-tooltip-content';
+    
+    // Build minimal measurement display - only show when we have a measurement
+    let measurementHtml = '';
+    if (points.length >= 2) {
+      const distanceText = formatDistance(currentDistance, true);
+      
+      if (isPolygon && currentArea > 0) {
+        // For polygons, show both perimeter and area in compact format
+        const areaText = formatArea(currentArea, true);
+        measurementHtml = `
+          <div style="white-space: nowrap; font-size: 12px; line-height: 1.4;">
+            <div style="font-weight: 600; color: #111827;">${distanceText}</div>
+            <div style="font-weight: 500; color: #4b5563; font-size: 11px;">${areaText}</div>
           </div>
-        )}
-
-        {isPolygon && currentArea > 0 && (
-          <div className="text-foreground text-sm font-medium">
-            Area: {formatArea(currentArea, true)}
+        `;
+      } else {
+        // For distance, show single line
+        measurementHtml = `
+          <div style="white-space: nowrap; font-size: 12px; font-weight: 600; color: #111827;">
+            ${distanceText}
           </div>
-        )}
-
-        <div className="mt-2 border-t border-orange-500/30 pt-2 text-xs text-[--intel-silver]">
-          {points.length === 0 && "Click to start measuring"}
-          {points.length === 1 && "Click to add points"}
-          {points.length >= 2 && points.length < 3 && "Double-click to finish"}
-          {points.length >= 3 && !isPolygon && "Double-click to close polygon & measure area"}
-          {isPolygon && "Polygon complete"}
-        </div>
-
-        <div className="text-xs text-[--intel-silver]">Press Esc to cancel</div>
+        `;
+      }
+    }
+    
+    // Only show tooltip if we have a measurement to display
+    if (!measurementHtml) {
+      if (popupRef.current) {
+        popupRef.current.remove();
+        popupRef.current = null;
+      }
+      return;
+    }
+    
+    content.innerHTML = `
+      <div style="background: white; border-radius: 4px; padding: 4px 8px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); border: 1px solid rgba(0, 0, 0, 0.1); white-space: nowrap;">
+        ${measurementHtml}
       </div>
-    </div>
-  );
+      <style>
+        .measurement-tooltip-popup .maplibregl-popup-content {
+          padding: 0;
+          margin: 0;
+          background: transparent;
+          box-shadow: none;
+        }
+        .measurement-tooltip-popup .maplibregl-popup-tip {
+          display: none;
+        }
+      </style>
+    `;
+
+    // Create or update popup
+    if (!popupRef.current) {
+      popupRef.current = new Popup({
+        closeButton: false,
+        closeOnClick: false,
+        closeOnMove: false,
+        anchor: 'center',
+        offset: [0, 0],
+        className: 'measurement-tooltip-popup',
+        maxWidth: 'none',
+      });
+      popupRef.current.setDOMContent(content);
+      popupRef.current.addTo(map);
+    } else {
+      popupRef.current.setDOMContent(content);
+    }
+
+    // Position at center of measurement
+    popupRef.current.setLngLat(center);
+
+    return () => {
+      if (popupRef.current) {
+        popupRef.current.remove();
+        popupRef.current = null;
+      }
+    };
+  }, [map, active, points, isPolygon]);
+
+  // Component doesn't render anything - tooltip is managed via MapLibre Popup
+  return null;
 }
