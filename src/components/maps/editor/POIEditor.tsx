@@ -180,7 +180,8 @@ export function POIEditor({
 
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [imageUrlInput, setImageUrlInput] = useState("");
-  const [isPlacingMarker, setIsPlacingMarker] = useState(false);
+  // Auto-activate marker placement for new POIs
+  const [isPlacingMarker, setIsPlacingMarker] = useState(mode === "create");
   const [searchQuery, setSearchQuery] = useState("");
   const [showCategoryBrowser, setShowCategoryBrowser] = useState(false);
 
@@ -233,8 +234,14 @@ export function POIEditor({
   // tRPC Queries and Mutations
   // ============================================================================
 
+  const utils = api.useUtils();
+
   const createPOI = api.mapEditor.createPOI.useMutation({
     onSuccess: () => {
+      // Invalidate queries to refresh the POI lists
+      void utils.mapEditor.getCountryPOIs.invalidate();
+      void utils.mapEditor.getMyPOIs.invalidate();
+
       onSuccess?.();
     },
     onError: (error) => {
@@ -248,6 +255,10 @@ export function POIEditor({
 
   const updatePOI = api.mapEditor.updatePOI.useMutation({
     onSuccess: () => {
+      // Invalidate queries to refresh the POI lists
+      void utils.mapEditor.getCountryPOIs.invalidate();
+      void utils.mapEditor.getMyPOIs.invalidate();
+
       onSuccess?.();
     },
     onError: (error) => {
@@ -781,6 +792,25 @@ export function POIEditor({
             </Button>
           )}
         </div>
+
+        {/* Prominent Click Instructions (when placing marker) */}
+        {isPlacingMarker && !formData.coordinates && (
+          <div className="glass-panel bg-blue-500/20 border border-blue-400/30 p-5 rounded-lg">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-full bg-blue-500/30 animate-pulse">
+                <MapPin className="w-8 h-8 text-blue-300 animate-bounce" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xl font-bold text-white mb-2">
+                  📍 Click the map to place your POI
+                </p>
+                <p className="text-sm text-blue-200">
+                  Click anywhere on the map to set the location for this point of interest. Ensure it's within your country's borders.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Name Field */}
         <div className="space-y-2">

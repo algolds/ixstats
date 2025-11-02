@@ -265,9 +265,8 @@ export function CityPlacement({
   // State Management
   // ============================================================================
 
-  const [mode, setMode] = useState<"place" | "move" | "edit">(
-    initialCity ? "edit" : "place"
-  );
+  // Always start in "place" mode for new cities to immediately capture clicks
+  const [mode, setMode] = useState<"place" | "move" | "edit">("place");
   const [marker, setMarker] = useState<CityMarker | null>(initialCity ?? null);
   const [formData, setFormData] = useState<CityFormData>(
     initialCity?.formData ?? {
@@ -304,10 +303,17 @@ export function CityPlacement({
   // Mutations
   // ============================================================================
 
+  const utils = api.useUtils();
+
   const createCity = api.mapEditor.createCity.useMutation({
     onSuccess: (data) => {
       console.log("[CityPlacement] Create city SUCCESS:", data);
       setSuccessMessage("City saved as draft!");
+
+      // Invalidate queries to refresh the city lists
+      void utils.mapEditor.getCountryCities.invalidate();
+      void utils.mapEditor.getMyCities.invalidate();
+
       if (onCityPlaced && marker) {
         onCityPlaced({
           ...marker,
@@ -320,15 +326,36 @@ export function CityPlacement({
         handleReset();
       }, 2000);
     },
-    onError: (error) => {
-      console.error("[CityPlacement] Create city ERROR:", error);
-      setErrors([{ field: "general", message: error.message }]);
+    onError: (error: any) => {
+      console.error("[CityPlacement] Create city ERROR - Raw error:", error);
+      console.error("[CityPlacement] Error stringified:", JSON.stringify(error, null, 2));
+
+      // Extract error message from tRPC error structure
+      let errorMessage = "Failed to create city";
+
+      if (error?.shape?.message) {
+        errorMessage = error.shape.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      // Add hint if it's an internal server error
+      if (error?.data?.code === "INTERNAL_SERVER_ERROR") {
+        errorMessage += ". Check the server console logs for details.";
+      }
+
+      setErrors([{ field: "general", message: errorMessage }]);
     },
   });
 
   const updateCity = api.mapEditor.updateCity.useMutation({
     onSuccess: (data) => {
       setSuccessMessage("City updated successfully!");
+
+      // Invalidate queries to refresh the city lists
+      void utils.mapEditor.getCountryCities.invalidate();
+      void utils.mapEditor.getMyCities.invalidate();
+
       if (onCityUpdated && marker) {
         onCityUpdated({
           ...marker,
@@ -365,6 +392,17 @@ export function CityPlacement({
       setErrors([{ field: "general", message: error.message }]);
     },
   });
+
+  // ============================================================================
+  // Auto-Mode Selection on Mount
+  // ============================================================================
+
+  useEffect(() => {
+    if (initialCity) {
+      // Editing existing city - switch to edit mode
+      setMode("edit");
+    }
+  }, [initialCity]);
 
   // ============================================================================
   // Map Click Event Listener
@@ -560,29 +598,36 @@ export function CityPlacement({
       return;
     }
 
+    // Convert and validate numeric fields
+    const population = formData.population?.trim() ? Number(formData.population) : undefined;
+    const elevation = formData.elevation?.trim() ? Number(formData.elevation) : undefined;
+    const foundedYear = formData.foundedYear?.trim() ? Number(formData.foundedYear) : undefined;
+
     const cityInput = {
       countryId,
       subdivisionId: marker.subdivisionId ?? undefined,
-      name: formData.name,
+      name: formData.name.trim(),
       type: formData.type,
       coordinates: {
         type: "Point" as const,
         coordinates: [marker.lng, marker.lat] as [number, number],
       },
-      population: formData.population ? Number(formData.population) : undefined,
+      population: population !== undefined && !isNaN(population) ? population : undefined,
       isNationalCapital: formData.isNationalCapital,
       isSubdivisionCapital: formData.isSubdivisionCapital,
-      elevation: formData.elevation ? Number(formData.elevation) : undefined,
-      foundedYear: formData.foundedYear ? Number(formData.foundedYear) : undefined,
+      elevation: elevation !== undefined && !isNaN(elevation) ? elevation : undefined,
+      foundedYear: foundedYear !== undefined && !isNaN(foundedYear) ? foundedYear : undefined,
     };
 
-    console.log("[CityPlacement] Prepared city input:", cityInput);
+    console.log("[CityPlacement] Prepared city input:", JSON.stringify(cityInput, null, 2));
+    console.log("[CityPlacement] Marker data:", JSON.stringify(marker, null, 2));
+    console.log("[CityPlacement] Form data:", JSON.stringify(formData, null, 2));
 
     if (marker.id) {
       console.log("[CityPlacement] Updating existing city:", marker.id);
       updateCity.mutate({ id: marker.id, ...cityInput });
     } else {
-      console.log("[CityPlacement] Creating new city");
+      console.log("[CityPlacement] Creating new city with input:", cityInput);
       createCity.mutate(cityInput);
     }
   }, [
@@ -679,6 +724,25 @@ export function CityPlacement({
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
         <div className="space-y-6">
+          {/* Prominent Click Instructions (for place/move mode when no marker) */}
+          {(mode === "place" || mode === "move") && !marker && (
+            <div className="glass-panel bg-blue-500/20 border border-blue-400/30 p-5 rounded-lg">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-full bg-blue-500/30 animate-pulse">
+                  <MapPin className="w-8 h-8 text-blue-300" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xl font-bold text-white mb-2">
+                    📍 Click the map to place your city
+                  </p>
+                  <p className="text-sm text-blue-200">
+                    Click anywhere on the map to set the city location. Make sure it's within your country's borders.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Mode Buttons */}
           {marker && (
             <div className="glass-hierarchy-child rounded-lg p-4">

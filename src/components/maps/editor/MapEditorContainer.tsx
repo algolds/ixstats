@@ -141,14 +141,15 @@ export function MapEditorContainer({
     }
   );
 
-  // Fetch user's subdivisions for the country
+  // Fetch user's subdivisions for the country (including draft/pending for visibility)
   const {
     data: subdivisionsData,
     isLoading: isSubdivisionsLoading,
-  } = api.mapEditor.getCountrySubdivisions.useQuery(
+  } = api.mapEditor.getMySubdivisions.useQuery(
     {
       countryId,
-      includeGeometry: true,
+      limit: 100,
+      offset: 0,
     },
     {
       enabled: !!countryId,
@@ -156,13 +157,15 @@ export function MapEditorContainer({
     }
   );
 
-  // Fetch user's cities for the country
+  // Fetch user's cities for the country (including draft/pending for visibility)
   const {
     data: citiesData,
     isLoading: isCitiesLoading,
-  } = api.mapEditor.getCountryCities.useQuery(
+  } = api.mapEditor.getMyCities.useQuery(
     {
       countryId,
+      limit: 100,
+      offset: 0,
     },
     {
       enabled: !!countryId,
@@ -170,13 +173,26 @@ export function MapEditorContainer({
     }
   );
 
-  // Fetch user's POIs for the country
+  // Fetch ALL national capitals globally (for display on map)
+  const {
+    data: nationalCapitalsData,
+    isLoading: isNationalCapitalsLoading,
+  } = api.mapEditor.getAllNationalCapitals.useQuery(
+    {},
+    {
+      staleTime: 10 * 60 * 1000, // 10 minutes (changes rarely)
+    }
+  );
+
+  // Fetch user's POIs for the country (including draft/pending for visibility)
   const {
     data: poisData,
     isLoading: isPOIsLoading,
-  } = api.mapEditor.getCountryPOIs.useQuery(
+  } = api.mapEditor.getMyPOIs.useQuery(
     {
       countryId,
+      limit: 100,
+      offset: 0,
     },
     {
       enabled: !!countryId,
@@ -239,45 +255,13 @@ export function MapEditorContainer({
       map.current.on("styledata", () => {
         if (map.current?.isStyleLoaded()) {
           setIsStyleLoaded(true);
+
+          // Lock projection to mercator for editing (no auto-switching)
+          // Editor requires consistent projection for accurate drawing
+          // Must be done after style loads
+          map.current.setProjection({ type: 'mercator' });
         }
       });
-
-      // Dynamic projection switching based on zoom level (Google Maps-like)
-      const handleZoom = () => {
-        if (!map.current || projectionTransitioning.current) return;
-
-        const currentZoom = map.current.getZoom();
-        const currentProjection = map.current.getProjection();
-
-        // Guard against undefined projection
-        if (!currentProjection || !currentProjection.type) return;
-
-        // Clear any pending timeout
-        if (projectionTimeout.current) {
-          clearTimeout(projectionTimeout.current);
-        }
-
-        // Transition from globe to mercator around zoom 3.5 (smooth, no flicker)
-        if (currentZoom >= MAPLIBRE_CONFIG.globeToMercatorZoom && currentProjection.type === 'globe') {
-          projectionTransitioning.current = true;
-          map.current.setProjection({ type: 'mercator' });
-          projectionTimeout.current = setTimeout(() => {
-            if (projectionTransitioning.current !== undefined) {
-              projectionTransitioning.current = false;
-            }
-          }, 500);
-        } else if (currentZoom < MAPLIBRE_CONFIG.globeToMercatorZoom && currentProjection.type === 'mercator') {
-          projectionTransitioning.current = true;
-          map.current.setProjection({ type: 'globe' });
-          projectionTimeout.current = setTimeout(() => {
-            if (projectionTransitioning.current !== undefined) {
-              projectionTransitioning.current = false;
-            }
-          }, 500);
-        }
-      };
-
-      map.current.on('zoom', handleZoom);
 
       // Add navigation controls
       map.current.addControl(new maplibregl.NavigationControl(), "top-right");
@@ -290,15 +274,6 @@ export function MapEditorContainer({
         }),
         "bottom-right"
       );
-
-      // Click handler for coordinate capture
-      // Allow clicks in null (view) mode and "point" mode (city/POI placement)
-      // Don't capture clicks in "polygon" mode (let MapboxDraw handle subdivision drawing)
-      map.current.on("click", (e) => {
-        if ((drawingMode === null || drawingMode === "point") && handlers.onCoordinateClick) {
-          handlers.onCoordinateClick(e.lngLat.lng, e.lngLat.lat);
-        }
-      });
 
       // Expose map instance for external control
       (window as any).__mapEditorInstance = map.current;
@@ -326,6 +301,37 @@ export function MapEditorContainer({
       }
     };
   }, []); // Initialize ONCE only
+
+  /**
+   * Map Click Handler for Coordinate Capture
+   * Separate useEffect to avoid stale closures - updates when drawingMode or handlers change
+   */
+  useEffect(() => {
+    if (!map.current || !isMapLoaded) return;
+
+    // Click handler for coordinate capture
+    // Allow clicks in null (view) mode and "point" mode (city/POI placement)
+    // Don't capture clicks in "polygon" mode (let MapboxDraw handle subdivision drawing)
+    const handleMapClick = (e: any) => {
+      console.log("[MapEditorContainer] Map clicked:", {
+        drawingMode,
+        hasHandler: !!handlers.onCoordinateClick,
+        coords: { lng: e.lngLat.lng, lat: e.lngLat.lat }
+      });
+
+      if ((drawingMode === null || drawingMode === "point") && handlers.onCoordinateClick) {
+        handlers.onCoordinateClick(e.lngLat.lng, e.lngLat.lat);
+      }
+    };
+
+    map.current.on("click", handleMapClick);
+
+    return () => {
+      if (map.current) {
+        map.current.off("click", handleMapClick);
+      }
+    };
+  }, [drawingMode, handlers, isMapLoaded]);
 
   /**
    * Update map style when mapType or projection changes
@@ -571,7 +577,9 @@ export function MapEditorContainer({
           draw.changeMode("draw_point");
           break;
         case "edit":
-          draw.changeMode("direct_select");
+          // Edit mode - use simple_select to let user click features to edit
+          // direct_select requires a featureId, which we don't have yet
+          draw.changeMode("simple_select");
           break;
         case "delete":
           // Delete mode - user can select and press delete or use trash button
@@ -601,6 +609,28 @@ export function MapEditorContainer({
       // when the map/style are ready
     }
   }, [drawingMode, isMapLoaded, isStyleLoaded]); // Add dependencies to ensure map is ready
+
+  /**
+   * Cursor Changes Based on Drawing Mode
+   * Provides visual feedback for active tool
+   */
+  useEffect(() => {
+    if (!map.current) return;
+
+    const canvas = map.current.getCanvas();
+    if (!canvas) return;
+
+    // Set cursor based on active drawing mode
+    if (drawingMode === "polygon" || drawingMode === "point") {
+      canvas.style.cursor = "crosshair";
+    } else if (drawingMode === "edit") {
+      canvas.style.cursor = "pointer";
+    } else if (drawingMode === "delete") {
+      canvas.style.cursor = "not-allowed";
+    } else {
+      canvas.style.cursor = "";
+    }
+  }, [drawingMode]);
 
   /**
    * Load country boundary highlighting (user's country)
@@ -846,7 +876,7 @@ export function MapEditorContainer({
   }, [isMapLoaded, isStyleLoaded, subdivisionsData, layerVisibility.subdivisions]);
 
   /**
-   * Load cities layer
+   * Load cities layer (user's country cities)
    */
   useEffect(() => {
     if (!map.current || !isMapLoaded || !isStyleLoaded || !citiesData?.cities) return;
@@ -954,6 +984,100 @@ export function MapEditorContainer({
       console.error("[MapEditorContainer] Error loading cities:", error);
     }
   }, [isMapLoaded, isStyleLoaded, citiesData, layerVisibility.cities]);
+
+  /**
+   * Load national capitals layer (ALL countries globally)
+   * This ensures national capitals are visible on the main map regardless of which country is being edited
+   */
+  useEffect(() => {
+    if (!map.current || !isMapLoaded || !isStyleLoaded || !nationalCapitalsData?.capitals) return;
+
+    const mapInstance = map.current;
+
+    // Double-check style is loaded
+    if (!mapInstance.isStyleLoaded()) {
+      return;
+    }
+
+    try {
+      // Remove existing national capitals layers
+      if (mapInstance.getLayer("national-capitals-points")) {
+        mapInstance.removeLayer("national-capitals-points");
+      }
+      if (mapInstance.getLayer("national-capitals-labels")) {
+        mapInstance.removeLayer("national-capitals-labels");
+      }
+      if (mapInstance.getSource("national-capitals")) {
+        mapInstance.removeSource("national-capitals");
+      }
+
+      // Create FeatureCollection from national capitals
+      const capitalFeatures: Feature[] = nationalCapitalsData.capitals
+        .filter((capital) => capital.coordinates && capital.status === 'approved') // Only show approved capitals
+        .map((capital) => ({
+          type: "Feature",
+          id: capital.id,
+          properties: {
+            id: capital.id,
+            name: capital.name,
+            countryName: capital.country?.name || '',
+            population: capital.population,
+          },
+          geometry: capital.coordinates as any,
+        }));
+
+      if (capitalFeatures.length > 0) {
+        const featureCollection: FeatureCollection = {
+          type: "FeatureCollection",
+          features: capitalFeatures,
+        };
+
+        // Add national capitals source
+        mapInstance.addSource("national-capitals", {
+          type: "geojson",
+          data: featureCollection,
+        });
+
+        // Add circle layer for national capitals (larger and gold)
+        mapInstance.addLayer({
+          id: "national-capitals-points",
+          type: "circle",
+          source: "national-capitals",
+          paint: {
+            "circle-radius": 10, // Larger than regular cities
+            "circle-color": "#fbbf24", // Bright gold for capitals
+            "circle-stroke-color": "#ffffff",
+            "circle-stroke-width": 3,
+            "circle-opacity": 1,
+          },
+        });
+
+        // Add labels layer for national capitals
+        mapInstance.addLayer({
+          id: "national-capitals-labels",
+          type: "symbol",
+          source: "national-capitals",
+          layout: {
+            "text-field": ["get", "name"],
+            "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+            "text-offset": [0, 1.5],
+            "text-anchor": "top",
+            "text-size": 14, // Larger labels
+          },
+          paint: {
+            "text-color": "#fbbf24", // Gold text
+            "text-halo-color": "#000000",
+            "text-halo-width": 2,
+            "text-opacity": 1,
+          },
+        });
+
+        console.log("[MapEditorContainer] National capitals layer loaded:", capitalFeatures.length, "capitals");
+      }
+    } catch (error) {
+      console.error("[MapEditorContainer] Error loading national capitals:", error);
+    }
+  }, [isMapLoaded, isStyleLoaded, nationalCapitalsData]);
 
   /**
    * Load POIs layer
@@ -1174,6 +1298,20 @@ export function MapEditorContainer({
               {!isMapLoaded && <div>Initializing map...</div>}
               {isMapLoaded && !isStyleLoaded && <div>Loading map style...</div>}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Drawing Mode Instructions (Centered Top) */}
+      {drawingMode && (
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-30">
+          <div className="glass-panel px-6 py-3 bg-blue-500/20 border border-blue-400/30">
+            <p className="text-white font-semibold text-center">
+              {drawingMode === "polygon" && "✏️ Click map to draw polygon • Double-click to finish"}
+              {drawingMode === "point" && "📍 Click map to place point"}
+              {drawingMode === "edit" && "✏️ Click features to edit"}
+              {drawingMode === "delete" && "🗑️ Click features to delete"}
+            </p>
           </div>
         </div>
       )}

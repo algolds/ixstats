@@ -50,6 +50,13 @@ interface GoogleHamburgerMenuProps {
   onShowLabelsChange: (show: boolean) => void;
   showBorders: boolean;
   onShowBordersChange: (show: boolean) => void;
+
+  // Export & Share
+  mapInstance: any | null;
+  onExportPNG: () => void;
+  onExportSVG: () => void;
+  onShareLink: () => void;
+  onEmbedCode: () => void;
 }
 
 const SETTINGS_KEY = 'ixstats-map-settings';
@@ -71,6 +78,11 @@ function GoogleHamburgerMenu({
   onShowLabelsChange,
   showBorders,
   onShowBordersChange,
+  mapInstance,
+  onExportPNG,
+  onExportSVG,
+  onShareLink,
+  onEmbedCode,
 }: GoogleHamburgerMenuProps) {
   // Handle ESC key
   useEffect(() => {
@@ -228,13 +240,6 @@ function GoogleHamburgerMenu({
               disabled
               hint="Coming soon"
             />
-            <Toggle
-              label="Dark Mode"
-              checked={false}
-              onChange={() => {}}
-              disabled
-              hint="Coming soon"
-            />
           </MenuSection>
 
           {/* 5. Export & Share Section */}
@@ -242,26 +247,22 @@ function GoogleHamburgerMenu({
             <MenuButton
               icon={Download}
               label="Export to PNG"
-              onClick={() => alert('PNG export coming soon')}
+              onClick={onExportPNG}
             />
             <MenuButton
               icon={FileJson}
-              label="Export to GeoJSON"
-              onClick={() => alert('GeoJSON export coming soon')}
+              label="Export to SVG"
+              onClick={onExportSVG}
             />
             <MenuButton
               icon={Share2}
               label="Share Link"
-              onClick={() => {
-                const url = window.location.href;
-                navigator.clipboard.writeText(url);
-                alert('Link copied to clipboard!');
-              }}
+              onClick={onShareLink}
             />
             <MenuButton
               icon={Code}
               label="Embed Code"
-              onClick={() => alert('Embed code coming soon')}
+              onClick={onEmbedCode}
             />
           </MenuSection>
 
@@ -270,17 +271,7 @@ function GoogleHamburgerMenu({
             <MenuButton
               icon={Keyboard}
               label="Keyboard Shortcuts"
-              onClick={() => alert('Keyboard shortcuts:\n\nESC - Close menu\nM - Toggle measurement\nL - Toggle layers\nS - Toggle scale bar')}
-            />
-            <MenuButton
-              icon={HelpCircle}
-              label="Tutorial"
-              onClick={() => alert('Interactive tutorial coming soon')}
-            />
-            <MenuButton
-              icon={Info}
-              label="About IxMaps"
-              onClick={() => alert('IxMaps v1.0\nInteractive mapping platform for IxWiki')}
+              onClick={() => alert('Keyboard shortcuts:\n\nESC - Close menu\nM - Toggle menu\nD - Distance measurement\nA - Area measurement')}
             />
             <MenuButton
               icon={AlertCircle}

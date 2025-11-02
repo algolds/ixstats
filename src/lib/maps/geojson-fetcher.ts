@@ -58,14 +58,17 @@ export async function fetchLayerGeoJSON(
         name: string | null;
         fill: string | null;
         country_id: string | null;
+        area_km2: number;
         geojson: any;
       }>
     >(`
       SELECT
         ogc_fid,
-        COALESCE(id, name) as name,
+        id as name,
         fill,
         country_id,
+        -- Calculate area in square kilometers using spherical geometry
+        ST_Area(geography(ST_Transform(geometry, 4326))) / 1000000 as area_km2,
         ST_AsGeoJSON(ST_Transform(geometry, 4326))::json as geojson
       FROM ${tableName}
       WHERE geometry IS NOT NULL
@@ -80,6 +83,7 @@ export async function fetchLayerGeoJSON(
         name: row.name,
         fill: row.fill,
         country_id: row.country_id,
+        area_km2: row.area_km2,
       },
       geometry: row.geojson,
     }));

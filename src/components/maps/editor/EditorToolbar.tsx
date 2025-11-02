@@ -39,7 +39,6 @@ import { cn } from "~/lib/utils";
 interface EditorToolbarProps {
   activeMode?: "polygon" | "point" | "edit" | "delete" | null;
   onModeChange?: (mode: "polygon" | "point" | "edit" | "delete" | null) => void;
-  onSave?: () => void;
   onCancel?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
@@ -71,7 +70,6 @@ const DRAWING_TOOLS: ToolButton[] = [
 export const EditorToolbar = React.memo(function EditorToolbar({
   activeMode,
   onModeChange,
-  onSave,
   onCancel,
   onUndo,
   onRedo,
@@ -105,12 +103,7 @@ export const EditorToolbar = React.memo(function EditorToolbar({
         return;
       }
 
-      // Ctrl+S to save
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault();
-        onSave?.();
-        return;
-      }
+      // Ctrl+S is handled by individual editors now
 
       // Ctrl+Z to undo
       if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
@@ -130,9 +123,9 @@ export const EditorToolbar = React.memo(function EditorToolbar({
       }
 
       // Tool shortcuts (P, M, E, D)
-      if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key) {
         const tool = DRAWING_TOOLS.find(
-          (t) => t.shortcut?.toLowerCase() === e.key.toLowerCase()
+          (t) => t.shortcut && t.shortcut.toLowerCase() === e.key.toLowerCase()
         );
         if (tool) {
           e.preventDefault();
@@ -143,7 +136,7 @@ export const EditorToolbar = React.memo(function EditorToolbar({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeMode, canUndo, canRedo, onModeChange, onSave, onCancel, onUndo, onRedo]);
+  }, [activeMode, canUndo, canRedo, onModeChange, onCancel, onUndo, onRedo]);
 
   const handleToolClick = (mode: DrawingMode) => {
     // Toggle off if already active, otherwise activate
@@ -278,46 +271,13 @@ export const EditorToolbar = React.memo(function EditorToolbar({
                     aria-label="Cancel"
                   >
                     <X className="size-4" />
-                    {!isMobile && <span className="ml-1">Cancel</span>}
+                    {!isMobile && <span className="ml-1">Close</span>}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
-                  <p className="font-medium">Cancel Changes</p>
+                  <p className="font-medium">Close Editor</p>
                   <p className="text-xs text-slate-400">
                     <kbd className="rounded bg-slate-700 px-1.5 py-0.5 font-mono text-xs">Esc</kbd>
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-
-            {onSave && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size={isMobile ? "icon" : "sm"}
-                    onClick={onSave}
-                    className={cn(
-                      "relative transition-all duration-200",
-                      "text-green-300 hover:bg-green-500/20 hover:text-green-200",
-                      "border border-transparent hover:border-green-400/30",
-                      hasUnsavedChanges && "animate-pulse"
-                    )}
-                    aria-label="Save"
-                  >
-                    <Save className="size-4" />
-                    {!isMobile && <span className="ml-1">Save</span>}
-                    {hasUnsavedChanges && (
-                      <span className="absolute -right-1 -top-1 size-2 rounded-full bg-green-400 ring-2 ring-slate-900" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p className="font-medium">
-                    Save Changes{hasUnsavedChanges ? " (Unsaved)" : ""}
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    <kbd className="rounded bg-slate-700 px-1.5 py-0.5 font-mono text-xs">Ctrl+S</kbd>
                   </p>
                 </TooltipContent>
               </Tooltip>

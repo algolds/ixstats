@@ -19,12 +19,14 @@
  * Access: Admin role (level >= 90) required
  */
 
-import { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useUser } from "~/context/auth-context";
 import { useRouter } from "next/navigation";
 import { createUrl } from "~/lib/url-utils";
 import { LoadingState } from "~/components/shared/feedback/LoadingState";
 import { api } from "~/trpc/react";
+import { useUserCountry } from "~/hooks/useUserCountry";
+import { isSystemOwner } from "~/lib/system-owner-constants";
 import { ReviewQueue } from "~/components/maps/admin/ReviewQueue";
 import { ReviewPanel } from "~/components/maps/admin/ReviewPanel";
 import { BulkActions } from "~/components/maps/admin/BulkActions";
@@ -73,6 +75,14 @@ interface SelectedItems {
   pois: Set<string>;
 }
 
+// Map tab types to singular entity types for API calls
+const tabToEntityType: Record<TabType, "subdivision" | "city" | "poi" | "all"> = {
+  subdivisions: "subdivision",
+  cities: "city",
+  pois: "poi",
+  all: "all",
+};
+
 /**
  * Map Editor Admin Review Page
  *
@@ -80,10 +90,11 @@ interface SelectedItems {
  */
 export default function MapEditorAdminPage() {
   const { user, isLoaded } = useUser();
+  const { userProfile, profileLoading } = useUserCountry();
   const router = useRouter();
 
-  // Tab and filter state
-  const [activeTab, setActiveTab] = useState<TabType>("subdivisions");
+  // Tab and filter state (default to "all" so admins see everything pending)
+  const [activeTab, setActiveTab] = useState<TabType>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<SortField>("createdAt");
@@ -98,6 +109,7 @@ export default function MapEditorAdminPage() {
   const [reviewingItem, setReviewingItem] = useState<{
     type: "subdivision" | "city" | "poi";
     id: string;
+    data: any;
   } | null>(null);
 
   // Pagination
@@ -109,23 +121,58 @@ export default function MapEditorAdminPage() {
     document.title = "Map Editor Admin Review - IxStats";
   }, []);
 
-  // Fetch pending reviews based on active tab
+  // Check admin access - system owner OR database role level <= 90
+  const isAdmin = useMemo(() => {
+    // System owner check (hardcoded Clerk user ID)
+    if (user?.id && isSystemOwner(user.id)) {
+      console.log("[MapEditorAdmin] System owner detected:", user.id);
+      return true;
+    }
+
+    // Database role check
+    console.log("[MapEditorAdmin] User profile:", userProfile);
+    console.log("[MapEditorAdmin] Role:", userProfile?.role);
+    console.log("[MapEditorAdmin] Role level:", userProfile?.role?.level);
+
+    if (!userProfile?.role) {
+      console.warn("[MapEditorAdmin] No role found in userProfile");
+      return false;
+    }
+    // Lower role levels = higher permissions (0 = system owner, 10 = admin, etc.)
+    const hasAccess = userProfile.role.level <= 90;
+    console.log("[MapEditorAdmin] Has access:", hasAccess);
+    return hasAccess;
+  }, [user, userProfile]);
+
+  // Determine if we should show content or loading/error states
+  const shouldShowContent = isLoaded && !profileLoading && user && isAdmin;
+
+  // Fetch pending reviews based on active tab (only when authorized)
   const {
     data: reviewData,
     isLoading: reviewsLoading,
     refetch: refetchReviews,
   } = api.mapEditor.getPendingReviews.useQuery(
     {
-      entityType: activeTab === "all" ? "all" : activeTab.slice(0, -1) as any,
+      entityType: tabToEntityType[activeTab],
       limit,
       offset,
     },
     {
+      enabled: shouldShowContent,
       refetchOnWindowFocus: false,
     }
   );
 
-  // Fetch audit logs
+  // Debug: Log review data
+  React.useEffect(() => {
+    console.log("[MapEditorAdmin] Review data:", reviewData);
+    console.log("[MapEditorAdmin] Cities:", reviewData?.cities);
+    console.log("[MapEditorAdmin] POIs:", reviewData?.pois);
+    console.log("[MapEditorAdmin] Subdivisions:", reviewData?.subdivisions);
+  }, [reviewData]);
+
+  // Fetch audit logs (only when authorized)
   const {
     data: auditData,
     isLoading: auditLoading,
@@ -135,63 +182,25 @@ export default function MapEditorAdminPage() {
       offset: 0,
     },
     {
+      enabled: shouldShowContent,
       refetchOnWindowFocus: false,
     }
   );
 
-  // Check admin access
-  const isAdmin = useMemo(() => {
-    if (!user) return false;
-    const roleLevel = user.publicMetadata?.roleLevel as number | undefined;
-    return roleLevel !== undefined && roleLevel <= 90;
-  }, [user]);
-
-  // Authentication guard
-  if (!isLoaded) {
-    return <LoadingState message="Loading..." />;
-  }
-
-  if (!user) {
-    router.push(createUrl("/sign-in"));
-    return <LoadingState message="Redirecting to sign in..." />;
-  }
-
-  // Admin access guard
-  if (!isAdmin) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-slate-900">
-        <div className="glass-panel p-8 text-center max-w-md">
-          <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-4">Access Denied</h1>
-          <p className="text-slate-400 mb-6">
-            You need administrator privileges to access the Map Editor review
-            interface.
-          </p>
-          <Button
-            onClick={() => router.push(createUrl("/admin"))}
-            variant="outline"
-          >
-            Return to Admin Dashboard
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Filter and sort data based on current tab
+  // Filter and sort data based on current tab (MUST be before early returns to satisfy Rules of Hooks)
   const filteredData = useMemo(() => {
     if (!reviewData) return { items: [], total: 0 };
 
     let items: any[] = [];
 
     if (activeTab === "subdivisions" || activeTab === "all") {
-      items = [...items, ...reviewData.subdivisions.map((s: any) => ({ ...s, entityType: "subdivision" }))];
+      items = [...items, ...(reviewData.subdivisions ?? []).map((s: any) => ({ ...s, entityType: "subdivision" }))];
     }
     if (activeTab === "cities" || activeTab === "all") {
-      items = [...items, ...reviewData.cities.map((c: any) => ({ ...c, entityType: "city" }))];
+      items = [...items, ...(reviewData.cities ?? []).map((c: any) => ({ ...c, entityType: "city" }))];
     }
     if (activeTab === "pois" || activeTab === "all") {
-      items = [...items, ...reviewData.pois.map((p: any) => ({ ...p, entityType: "poi" }))];
+      items = [...items, ...(reviewData.pois ?? []).map((p: any) => ({ ...p, entityType: "poi" }))];
     }
 
     // Apply status filter
@@ -246,6 +255,38 @@ export default function MapEditorAdminPage() {
     return { items, total: items.length };
   }, [reviewData, activeTab, statusFilter, searchQuery, sortField, sortOrder]);
 
+  // Authentication guard (after all hooks)
+  if (!isLoaded || profileLoading) {
+    return <LoadingState message="Loading..." />;
+  }
+
+  if (!user) {
+    router.push(createUrl("/sign-in"));
+    return <LoadingState message="Redirecting to sign in..." />;
+  }
+
+  // Admin access guard (after all hooks)
+  if (!isAdmin) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="glass-panel p-8 text-center max-w-md">
+          <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Access Denied</h1>
+          <p className="text-slate-600 dark:text-slate-400 mb-6">
+            You need administrator privileges to access the Map Editor review
+            interface.
+          </p>
+          <Button
+            onClick={() => router.push(createUrl("/admin"))}
+            variant="outline"
+          >
+            Return to Admin Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // Toggle item selection
   const toggleSelection = (type: keyof SelectedItems, id: string) => {
     setSelectedItems((prev) => {
@@ -262,10 +303,16 @@ export default function MapEditorAdminPage() {
   // Select all items in current view
   const selectAll = () => {
     setSelectedItems((prev) => {
-      const newState = { ...prev };
+      const newState = {
+        subdivisions: new Set(prev.subdivisions),
+        cities: new Set(prev.cities),
+        pois: new Set(prev.pois),
+      };
       filteredData.items.forEach((item) => {
         const type = item.entityType + "s" as keyof SelectedItems;
-        newState[type].add(item.id);
+        if (newState[type]) {
+          newState[type].add(item.id);
+        }
       });
       return newState;
     });
@@ -356,16 +403,16 @@ export default function MapEditorAdminPage() {
   ];
 
   return (
-    <div className="h-screen flex flex-col bg-slate-900">
+    <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-900">
       {/* Header */}
-      <div className="glass-panel border-b border-slate-700/50 px-6 py-4">
+      <div className="glass-panel border-b border-slate-200 dark:border-slate-700/50 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-              <MapPin className="h-6 w-6 text-indigo-400" />
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+              <MapPin className="h-6 w-6 text-indigo-500 dark:text-indigo-400" />
               Map Editor Review
             </h1>
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
               Review and approve user-submitted geographic features
             </p>
           </div>
@@ -385,7 +432,7 @@ export default function MapEditorAdminPage() {
         {/* Left: Review Queue */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Tabs */}
-          <div className="glass-panel border-b border-slate-700/50 px-6 py-3">
+          <div className="glass-panel border-b border-slate-200 dark:border-slate-700/50 px-6 py-3">
             <div className="flex gap-2">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
@@ -399,8 +446,8 @@ export default function MapEditorAdminPage() {
                     }}
                     className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 ${
                       activeTab === tab.id
-                        ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
-                        : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+                        ? "bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-500/30"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800/50"
                     }`}
                   >
                     <Icon className="h-4 w-4" />
@@ -415,16 +462,16 @@ export default function MapEditorAdminPage() {
           </div>
 
           {/* Filters and Search */}
-          <div className="glass-panel border-b border-slate-700/50 px-6 py-3">
+          <div className="glass-panel border-b border-slate-200 dark:border-slate-700/50 px-6 py-3">
             <div className="flex items-center gap-3">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 dark:text-slate-400" />
                 <Input
                   type="text"
                   placeholder="Search by name or country..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-slate-800/50 border-slate-700 text-white"
+                  className="pl-10 bg-white dark:bg-slate-800/50 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                 />
               </div>
 
@@ -432,7 +479,7 @@ export default function MapEditorAdminPage() {
                 value={statusFilter}
                 onValueChange={(value: StatusFilter) => setStatusFilter(value)}
               >
-                <SelectTrigger className="w-40 bg-slate-800/50 border-slate-700 text-white">
+                <SelectTrigger className="w-40 bg-white dark:bg-slate-800/50 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -444,7 +491,7 @@ export default function MapEditorAdminPage() {
               </Select>
 
               {totalSelected > 0 && (
-                <div className="text-sm text-slate-400">
+                <div className="text-sm text-slate-600 dark:text-slate-400">
                   {totalSelected} selected
                 </div>
               )}
@@ -453,7 +500,7 @@ export default function MapEditorAdminPage() {
 
           {/* Bulk Actions */}
           {totalSelected > 0 && (
-            <div className="glass-panel border-b border-slate-700/50 px-6 py-3">
+            <div className="glass-panel border-b border-slate-200 dark:border-slate-700/50 px-6 py-3">
               <BulkActions
                 selectedItems={selectedItems}
                 onClearSelection={clearAll}
@@ -467,13 +514,13 @@ export default function MapEditorAdminPage() {
             {reviewsLoading ? (
               <LoadingState message="Loading submissions..." />
             ) : filteredData.items.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-slate-400">
+              <div className="flex flex-col items-center justify-center h-full text-slate-600 dark:text-slate-400">
                 <Filter className="h-16 w-16 mb-4 opacity-50" />
                 <p className="text-lg font-medium">No submissions found</p>
                 <p className="text-sm">Try adjusting your filters</p>
               </div>
             ) : (
-              <div className="glass-panel rounded-lg border border-slate-700/50 overflow-hidden">
+              <div className="glass-panel rounded-lg border border-slate-200 dark:border-slate-700/50 overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -521,7 +568,7 @@ export default function MapEditorAdminPage() {
                   <TableBody>
                     {filteredData.items.map((item) => {
                       const entityType = item.entityType + "s" as keyof SelectedItems;
-                      const isSelected = selectedItems[entityType].has(item.id);
+                      const isSelected = selectedItems[entityType]?.has(item.id) ?? false;
 
                       return (
                         <TableRow key={item.id}>
@@ -533,19 +580,19 @@ export default function MapEditorAdminPage() {
                               className="rounded"
                             />
                           </TableCell>
-                          <TableCell className="font-medium text-white">
+                          <TableCell className="font-medium text-slate-900 dark:text-white">
                             {item.name}
                           </TableCell>
-                          <TableCell className="text-slate-400">
+                          <TableCell className="text-slate-600 dark:text-slate-400">
                             {item.type || item.category}
                           </TableCell>
-                          <TableCell className="text-slate-400">
+                          <TableCell className="text-slate-600 dark:text-slate-400">
                             {item.country?.name || "Unknown"}
                           </TableCell>
                           <TableCell>
                             <StatusBadge status={item.status} />
                           </TableCell>
-                          <TableCell className="text-slate-400 text-sm">
+                          <TableCell className="text-slate-600 dark:text-slate-400 text-sm">
                             {new Date(item.createdAt).toLocaleDateString()}
                           </TableCell>
                           <TableCell className="text-right">
@@ -556,6 +603,7 @@ export default function MapEditorAdminPage() {
                                 setReviewingItem({
                                   type: item.entityType,
                                   id: item.id,
+                                  data: item,
                                 })
                               }
                               className="gap-2"
@@ -579,6 +627,7 @@ export default function MapEditorAdminPage() {
           <ReviewPanel
             entityType={reviewingItem.type}
             entityId={reviewingItem.id}
+            entityData={reviewingItem.data}
             onClose={() => setReviewingItem(null)}
             onRefetch={refetchReviews}
           />
@@ -586,26 +635,26 @@ export default function MapEditorAdminPage() {
       </div>
 
       {/* Bottom: Audit Log Viewer */}
-      <div className="glass-panel border-t border-slate-700/50 px-6 py-4 max-h-64 overflow-auto">
-        <h3 className="text-sm font-semibold text-white mb-3">Recent Audit Log</h3>
+      <div className="glass-panel border-t border-slate-200 dark:border-slate-700/50 px-6 py-4 max-h-64 overflow-auto">
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Recent Audit Log</h3>
         {auditLoading ? (
-          <div className="text-slate-400 text-sm">Loading audit log...</div>
+          <div className="text-slate-600 dark:text-slate-400 text-sm">Loading audit log...</div>
         ) : (
           <div className="space-y-2">
             {auditData?.logs.slice(0, 10).map((log) => (
               <div
                 key={log.id}
-                className="flex items-center gap-3 text-xs text-slate-400 py-1"
+                className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400 py-1"
               >
-                <span className="text-slate-500 font-mono">
+                <span className="text-slate-500 dark:text-slate-500 font-mono">
                   {new Date(log.createdAt).toLocaleString()}
                 </span>
                 <Badge variant="outline" className="text-xs">
                   {log.action}
                 </Badge>
                 <span>{log.entityType}</span>
-                <span className="text-slate-500">by</span>
-                <span className="text-white">{log.userName}</span>
+                <span className="text-slate-500 dark:text-slate-500">by</span>
+                <span className="text-slate-900 dark:text-white">{log.userName}</span>
               </div>
             ))}
           </div>

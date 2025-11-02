@@ -1,9 +1,10 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { api } from '~/trpc/react';
 import { formatNumber } from '~/lib/ixearth-constants';
+import { unifiedFlagService } from '~/lib/unified-flag-service';
 
 interface GoogleInfoWindowProps {
   countryId: string;
@@ -22,6 +23,21 @@ function GoogleInfoWindow({
     { id: countryId },
     { staleTime: 300000 } // Cache for 5 minutes - info window data rarely changes
   );
+
+  const [fallbackFlagUrl, setFallbackFlagUrl] = useState<string | null>(null);
+
+  // Fetch fallback flag if database flag is missing
+  useEffect(() => {
+    if (country && !country.flagUrl && country.name) {
+      unifiedFlagService.getFlagUrl(country.name).then((flagUrl) => {
+        if (flagUrl) {
+          setFallbackFlagUrl(flagUrl);
+        }
+      }).catch((error) => {
+        console.error('Failed to fetch fallback flag:', error);
+      });
+    }
+  }, [country]);
 
   return (
     <div
@@ -57,17 +73,33 @@ function GoogleInfoWindow({
           {country && (
             <>
               {/* Country Name & Flag */}
-              <div className="p-4">
-                <h2 className="text-xl font-semibold text-gray-900 mb-2 pr-8">
-                  {country.name}
-                </h2>
-                {country.flagUrl && (
+              <div className="p-4 flex items-start gap-3">
+                {/* Flag */}
+                {(country.flagUrl || fallbackFlagUrl) ? (
                   <img
-                    src={country.flagUrl}
+                    src={country.flagUrl || fallbackFlagUrl || ''}
                     alt={`${country.name} flag`}
-                    className="h-12 w-auto rounded shadow"
+                    className="h-16 w-24 object-cover rounded shadow-md border border-gray-200 flex-shrink-0"
+                    onError={(e) => {
+                      // Hide broken images
+                      e.currentTarget.style.display = 'none';
+                    }}
                   />
+                ) : (
+                  <div className="h-16 w-24 bg-gray-100 rounded flex items-center justify-center flex-shrink-0 border border-gray-200">
+                    <span className="text-gray-400 text-xs">No flag</span>
+                  </div>
                 )}
+
+                {/* Country Name */}
+                <div className="flex-1 min-w-0 pr-6">
+                  <h2 className="text-xl font-semibold text-gray-900 leading-tight">
+                    {country.name}
+                  </h2>
+                  {country.continent && (
+                    <p className="text-sm text-gray-500 mt-1">{country.continent}</p>
+                  )}
+                </div>
               </div>
 
               {/* Stats Grid */}
@@ -75,7 +107,7 @@ function GoogleInfoWindow({
                 <div className="flex justify-between py-1 border-b border-gray-100">
                   <span className="text-gray-600">Population</span>
                   <span className="text-gray-900 font-medium">
-                    {formatNumber(country.currentPopulation)}
+                    {formatNumber(Math.round(country.currentPopulation))}
                   </span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-gray-100">
@@ -90,10 +122,12 @@ function GoogleInfoWindow({
                     {country.currentGdpPerCapita != null ? `$${formatNumber(Math.round(country.currentGdpPerCapita))}` : 'N/A'}
                   </span>
                 </div>
-                {country.continent && (
+                {country.populationDensity && (
                   <div className="flex justify-between py-1">
-                    <span className="text-gray-600">Continent</span>
-                    <span className="text-gray-900 font-medium">{country.continent}</span>
+                    <span className="text-gray-600">Pop. Density</span>
+                    <span className="text-gray-900 font-medium">
+                      {formatNumber(Math.round(country.populationDensity))} /sq mi
+                    </span>
                   </div>
                 )}
               </div>

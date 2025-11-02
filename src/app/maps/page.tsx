@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { X } from 'lucide-react';
 import { toast, Toaster } from 'sonner';
 import GoogleMapContainer from '~/components/maps/GoogleMapContainer';
@@ -13,6 +14,9 @@ import { DistanceMeasurement, type MeasurementResult } from '~/components/maps/m
 import type { ProjectionType } from '~/types/maps';
 
 export default function MapsPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+
   // Country selection state
   const [selectedCountry, setSelectedCountry] = useState<{
     id: string;
@@ -44,6 +48,7 @@ export default function MapsPage() {
 
   // Map instance ref
   const mapInstanceRef = useRef<any>(null);
+  const urlUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load settings from localStorage on mount
   useEffect(() => {
@@ -148,6 +153,40 @@ export default function MapsPage() {
     mapInstanceRef.current = map;
     // Also expose globally for search bar
     (window as any).__mainMapInstance = map;
+
+    // Parse URL hash for coordinates (like traditional map bookmarking: #@lat,lng,zoom)
+    const hash = window.location.hash;
+    const match = hash.match(/#@([-\d.]+),([-\d.]+),([\d.]+)z?/);
+
+    if (match) {
+      const lat = parseFloat(match[1]);
+      const lng = parseFloat(match[2]);
+      const zoom = parseFloat(match[3]);
+
+      if (!isNaN(lat) && !isNaN(lng) && !isNaN(zoom)) {
+        map.setCenter({ lat, lng });
+        map.setZoom(zoom);
+      }
+    }
+
+    // Update URL hash when map moves (debounced)
+    const updateURL = () => {
+      if (urlUpdateTimeoutRef.current) {
+        clearTimeout(urlUpdateTimeoutRef.current);
+      }
+
+      urlUpdateTimeoutRef.current = setTimeout(() => {
+        const center = map.getCenter();
+        const zoom = map.getZoom();
+        const newHash = `#@${center.lat.toFixed(7)},${center.lng.toFixed(7)},${zoom.toFixed(2)}z`;
+
+        // Update URL hash without reload
+        window.history.replaceState({}, '', newHash);
+      }, 1000); // Update URL 1 second after map stops moving
+    };
+
+    map.on('moveend', updateURL);
+    map.on('zoomend', updateURL);
   }, []);
 
   const handleMeasurementComplete = useCallback((result: MeasurementResult) => {
@@ -194,6 +233,139 @@ export default function MapsPage() {
     toast.success(`Switched to ${newProjection} projection`);
   }, []);
 
+  // Export to PNG
+  const handleExportPNG = useCallback(() => {
+    if (!mapInstanceRef.current) {
+      toast.error('Map not ready');
+      return;
+    }
+
+    try {
+      const map = mapInstanceRef.current;
+
+      // Wait for map to finish rendering
+      map.once('idle', () => {
+        try {
+          const canvas = map.getCanvas();
+          canvas.toBlob((blob: Blob | null) => {
+            if (!blob) {
+              toast.error('Failed to generate image');
+              return;
+            }
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `ixmaps-${Date.now()}.png`;
+            link.click();
+            URL.revokeObjectURL(url);
+            toast.success('Map exported as PNG');
+          });
+        } catch (error) {
+          toast.error('Export failed');
+          console.error('PNG export error:', error);
+        }
+      });
+
+      // Trigger render if map is already idle
+      if (!map.isMoving()) {
+        map.triggerRepaint();
+      }
+    } catch (error) {
+      toast.error('Export failed');
+      console.error('PNG export error:', error);
+    }
+  }, []);
+
+  // Export to SVG (simplified - exports current view as data URL)
+  const handleExportSVG = useCallback(() => {
+    if (!mapInstanceRef.current) {
+      toast.error('Map not ready');
+      return;
+    }
+
+    try {
+      const map = mapInstanceRef.current;
+
+      // Wait for map to finish rendering
+      map.once('idle', () => {
+        try {
+          const canvas = map.getCanvas();
+          const dataUrl = canvas.toDataURL('image/png');
+
+          // Create SVG with embedded image
+          const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="${canvas.width}" height="${canvas.height}" viewBox="0 0 ${canvas.width} ${canvas.height}">
+  <image xlink:href="${dataUrl}" width="${canvas.width}" height="${canvas.height}"/>
+</svg>`;
+
+          const blob = new Blob([svg], { type: 'image/svg+xml' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `ixmaps-${Date.now()}.svg`;
+          link.click();
+          URL.revokeObjectURL(url);
+          toast.success('Map exported as SVG');
+        } catch (error) {
+          toast.error('Export failed');
+          console.error('SVG export error:', error);
+        }
+      });
+
+      // Trigger render if map is already idle
+      if (!map.isMoving()) {
+        map.triggerRepaint();
+      }
+    } catch (error) {
+      toast.error('Export failed');
+      console.error('SVG export error:', error);
+    }
+  }, []);
+
+  // Share link with coordinates
+  const handleShareLink = useCallback(() => {
+    if (!mapInstanceRef.current) {
+      toast.error('Map not ready');
+      return;
+    }
+
+    try {
+      const center = mapInstanceRef.current.getCenter();
+      const zoom = mapInstanceRef.current.getZoom();
+
+      // Hash-based URL (works without routing issues)
+      const url = `${window.location.origin}${window.location.pathname}#@${center.lat.toFixed(7)},${center.lng.toFixed(7)},${zoom.toFixed(2)}z`;
+
+      navigator.clipboard.writeText(url);
+      toast.success('Link copied to clipboard!');
+    } catch (error) {
+      toast.error('Failed to copy link');
+      console.error('Share link error:', error);
+    }
+  }, []);
+
+  // Generate embed code
+  const handleEmbedCode = useCallback(() => {
+    if (!mapInstanceRef.current) {
+      toast.error('Map not ready');
+      return;
+    }
+
+    try {
+      const center = mapInstanceRef.current.getCenter();
+      const zoom = mapInstanceRef.current.getZoom();
+
+      const embedCode = `<iframe src="${window.location.origin}${window.location.pathname}#@${center.lat.toFixed(7)},${center.lng.toFixed(7)},${zoom.toFixed(2)}z" width="800" height="600" frameborder="0" style="border:0" allowfullscreen></iframe>`;
+
+      navigator.clipboard.writeText(embedCode);
+      toast.success('Embed code copied to clipboard!');
+    } catch (error) {
+      toast.error('Failed to copy embed code');
+      console.error('Embed code error:', error);
+    }
+  }, []);
+
   return (
     <div className="relative h-screen w-full bg-gray-100">
       {/* Toast Notifications */}
@@ -209,6 +381,8 @@ export default function MapsPage() {
         projection={projection}
         onProjectionChange={handleProjectionChange}
         onMapReady={handleMapReady}
+        showLabels={showLabels}
+        showBorders={showBorders}
       />
 
       {/* Search Bar */}
@@ -235,6 +409,11 @@ export default function MapsPage() {
         onShowLabelsChange={setShowLabels}
         showBorders={showBorders}
         onShowBordersChange={setShowBorders}
+        mapInstance={mapInstanceRef.current}
+        onExportPNG={handleExportPNG}
+        onExportSVG={handleExportSVG}
+        onShareLink={handleShareLink}
+        onEmbedCode={handleEmbedCode}
       />
 
       {/* Map Controls */}

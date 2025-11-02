@@ -54,6 +54,7 @@ import { LoadingState } from "~/components/shared/feedback/LoadingState";
 interface ReviewPanelProps {
   entityType: "subdivision" | "city" | "poi";
   entityId: string;
+  entityData?: any; // Optional: Pass entity data directly to avoid re-fetching
   onClose: () => void;
   onRefetch: () => void;
 }
@@ -86,6 +87,7 @@ interface GeometryStats {
 export function ReviewPanel({
   entityType,
   entityId,
+  entityData,
   onClose,
   onRefetch,
 }: ReviewPanelProps) {
@@ -100,23 +102,23 @@ export function ReviewPanel({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<MapLibreMap | null>(null);
 
-  // Fetch detailed data based on entity type
+  // Fetch detailed data based on entity type (only if entityData not provided)
   const { data: subdivisionData, isLoading: subdivisionLoading } =
     api.mapEditor.getMySubdivisions.useQuery(
       { limit: 1, offset: 0 },
-      { enabled: entityType === "subdivision" }
+      { enabled: entityType === "subdivision" && !entityData }
     );
 
   const { data: cityData, isLoading: cityLoading } =
     api.mapEditor.getMyCities.useQuery(
       { limit: 1, offset: 0 },
-      { enabled: entityType === "city" }
+      { enabled: entityType === "city" && !entityData }
     );
 
   const { data: poiData, isLoading: poiLoading } =
     api.mapEditor.getMyPOIs.useQuery(
       { limit: 1, offset: 0 },
-      { enabled: entityType === "poi" }
+      { enabled: entityType === "poi" && !entityData }
     );
 
   // Mutations
@@ -139,7 +141,11 @@ export function ReviewPanel({
   let data: any = null;
   let isLoading = false;
 
-  if (entityType === "subdivision") {
+  // Use provided entityData first, otherwise fetch from API
+  if (entityData) {
+    data = entityData;
+    isLoading = false;
+  } else if (entityType === "subdivision") {
     data = subdivisionData?.subdivisions.find((s) => s.id === entityId);
     isLoading = subdivisionLoading;
   } else if (entityType === "city") {
@@ -305,6 +311,19 @@ export function ReviewPanel({
     if (!map.current || !data || mapLoading) return;
 
     const mapInstance = map.current;
+
+    // Wait for style to be fully loaded before manipulating layers
+    if (!mapInstance.isStyleLoaded()) {
+      const checkStyleLoaded = () => {
+        if (mapInstance.isStyleLoaded()) {
+          mapInstance.off("styledata", checkStyleLoaded);
+          // Trigger re-render by toggling mapLoading
+          setMapLoading(false);
+        }
+      };
+      mapInstance.on("styledata", checkStyleLoaded);
+      return;
+    }
 
     try {
       // Clear existing layers

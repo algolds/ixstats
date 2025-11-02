@@ -10,11 +10,8 @@
 
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
-import { Loader2, Search, Plus, Edit2, Trash2, Eye, CheckCircle, XCircle, Clock, FileText, X } from "lucide-react";
+import { Loader2, Search, Plus, Edit2, Trash2, Eye, CheckCircle, XCircle, Clock, FileText } from "lucide-react";
 import type { Feature, Polygon, MultiPolygon } from "geojson";
-import { CityPlacement } from "./CityPlacement";
-import { POIEditor } from "./POIEditor";
-import { SubdivisionEditor } from "./SubdivisionEditor";
 
 interface EditorSidebarProps {
   countryId: string;
@@ -26,7 +23,6 @@ interface EditorSidebarProps {
 
 type TabType = "subdivisions" | "cities" | "pois" | "submissions";
 type StatusType = "pending" | "approved" | "rejected" | "draft";
-type EditorMode = "list" | "create-city" | "create-poi" | "create-subdivision" | "edit-city" | "edit-poi" | "edit-subdivision";
 
 /**
  * EditorSidebar Component (Memoized)
@@ -43,8 +39,6 @@ export const EditorSidebar = React.memo(function EditorSidebar({
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusType | "all">("all");
   const [currentPage, setCurrentPage] = useState(0);
-  const [editorMode, setEditorMode] = useState<EditorMode>("list");
-  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const itemsPerPage = 10;
 
   const utils = api.useUtils();
@@ -54,111 +48,6 @@ export const EditorSidebar = React.memo(function EditorSidebar({
     setCurrentPage(0);
   }, [activeTab, searchQuery, statusFilter]);
 
-  // Handlers for opening/closing forms
-  const handleOpenCityForm = () => {
-    setEditorMode("create-city");
-    setActiveTab("cities");
-  };
-
-  const handleOpenPOIForm = () => {
-    setEditorMode("create-poi");
-    setActiveTab("pois");
-  };
-
-  const handleOpenSubdivisionForm = () => {
-    setEditorMode("create-subdivision");
-    setActiveTab("subdivisions");
-  };
-
-  const handleCloseForm = () => {
-    setEditorMode("list");
-    setEditingItemId(null);
-  };
-
-  const handleEditCity = (cityId: string) => {
-    setEditorMode("edit-city");
-    setEditingItemId(cityId);
-    setActiveTab("cities");
-  };
-
-  const handleEditPOI = (poiId: string) => {
-    setEditorMode("edit-poi");
-    setEditingItemId(poiId);
-    setActiveTab("pois");
-  };
-
-  const handleEditSubdivision = (subdivisionId: string) => {
-    setEditorMode("edit-subdivision");
-    setEditingItemId(subdivisionId);
-    setActiveTab("subdivisions");
-  };
-
-  const handleSaveSuccess = () => {
-    // Invalidate all queries to refresh lists
-    void utils.mapEditor.getMyCities.invalidate();
-    void utils.mapEditor.getMyPOIs.invalidate();
-    void utils.mapEditor.getMySubdivisions.invalidate();
-    handleCloseForm();
-  };
-
-  // If in editor mode, show the form
-  if (editorMode !== "list") {
-    return (
-      <div className="h-full flex flex-col bg-white dark:bg-slate-900/50">
-        {/* Header with back button */}
-        <div className="glass-panel border-b border-slate-200 dark:border-slate-700/50 px-4 py-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-              {editorMode === "create-city" && "New City"}
-              {editorMode === "create-poi" && "New POI"}
-              {editorMode === "create-subdivision" && "New Subdivision"}
-              {editorMode === "edit-city" && "Edit City"}
-              {editorMode === "edit-poi" && "Edit POI"}
-              {editorMode === "edit-subdivision" && "Edit Subdivision"}
-            </h3>
-            <button
-              onClick={handleCloseForm}
-              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700/50 rounded transition-colors"
-            >
-              <X className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-            </button>
-          </div>
-        </div>
-
-        {/* Form Content */}
-        <div className="flex-1 overflow-y-auto">
-          {(editorMode === "create-city" || editorMode === "edit-city") && (
-            <CityPlacement
-              countryId={countryId}
-              countryGeometry={countryGeometry}
-              onCityPlaced={handleSaveSuccess}
-              onCityUpdated={handleSaveSuccess}
-            />
-          )}
-          {(editorMode === "create-poi" || editorMode === "edit-poi") && (
-            <POIEditor
-              countryId={countryId}
-              countryGeometry={countryGeometry}
-              mode={editorMode === "create-poi" ? "create" : "edit"}
-              poiId={editingItemId ?? undefined}
-              onSuccess={handleSaveSuccess}
-              onCancel={handleCloseForm}
-            />
-          )}
-          {(editorMode === "create-subdivision" || editorMode === "edit-subdivision") && (
-            <SubdivisionEditor
-              map={(window as any).__mapEditorInstance || null}
-              countryId={countryId}
-              isActive={true}
-              onClose={handleCloseForm}
-              onSaved={handleSaveSuccess}
-            />
-          )}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="h-full flex flex-col bg-white dark:bg-slate-900/50">
       {/* Tab Navigation */}
@@ -167,22 +56,22 @@ export const EditorSidebar = React.memo(function EditorSidebar({
           <TabButton
             label="Subdivisions"
             active={activeTab === "subdivisions"}
-            onClick={() => { setActiveTab("subdivisions"); setEditorMode("list"); }}
+            onClick={() => setActiveTab("subdivisions")}
           />
           <TabButton
             label="Cities"
             active={activeTab === "cities"}
-            onClick={() => { setActiveTab("cities"); setEditorMode("list"); }}
+            onClick={() => setActiveTab("cities")}
           />
           <TabButton
             label="POIs"
             active={activeTab === "pois"}
-            onClick={() => { setActiveTab("pois"); setEditorMode("list"); }}
+            onClick={() => setActiveTab("pois")}
           />
           <TabButton
             label="My Submissions"
             active={activeTab === "submissions"}
-            onClick={() => { setActiveTab("submissions"); setEditorMode("list"); }}
+            onClick={() => setActiveTab("submissions")}
           />
         </div>
       </div>
@@ -242,8 +131,8 @@ export const EditorSidebar = React.memo(function EditorSidebar({
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
             onFeatureSelect={onFeatureSelect}
-            onEditFeature={handleEditSubdivision}
-            onNewFeature={handleOpenSubdivisionForm}
+            onEditFeature={(id) => onEditFeature?.(id, "subdivision")}
+            onNewFeature={() => onNewFeature?.("subdivision")}
           />
         )}
         {activeTab === "cities" && (
@@ -255,8 +144,8 @@ export const EditorSidebar = React.memo(function EditorSidebar({
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
             onFeatureSelect={onFeatureSelect}
-            onEditFeature={handleEditCity}
-            onNewFeature={handleOpenCityForm}
+            onEditFeature={(id) => onEditFeature?.(id, "city")}
+            onNewFeature={() => onNewFeature?.("city")}
           />
         )}
         {activeTab === "pois" && (
@@ -268,8 +157,8 @@ export const EditorSidebar = React.memo(function EditorSidebar({
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
             onFeatureSelect={onFeatureSelect}
-            onEditFeature={handleEditPOI}
-            onNewFeature={handleOpenPOIForm}
+            onEditFeature={(id) => onEditFeature?.(id, "poi")}
+            onNewFeature={() => onNewFeature?.("poi")}
           />
         )}
         {activeTab === "submissions" && (
@@ -281,9 +170,9 @@ export const EditorSidebar = React.memo(function EditorSidebar({
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
             onFeatureSelect={onFeatureSelect}
-            onEditCity={handleEditCity}
-            onEditPOI={handleEditPOI}
-            onEditSubdivision={handleEditSubdivision}
+            onEditCity={(id) => onEditFeature?.(id, "city")}
+            onEditPOI={(id) => onEditFeature?.(id, "poi")}
+            onEditSubdivision={(id) => onEditFeature?.(id, "subdivision")}
           />
         )}
       </div>

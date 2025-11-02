@@ -158,9 +158,10 @@ export function SubdivisionEditor({
     }
   );
 
-  // Mutations
+  // Mutations (with query invalidation for View button to work)
   const createMutation = api.mapEditor.createSubdivision.useMutation({
     onSuccess: (data) => {
+      // Invalidate all subdivision queries to ensure View button can find the new subdivision
       void utils.mapEditor.getMySubdivisions.invalidate();
       void utils.mapEditor.getCountrySubdivisions.invalidate();
       onSaved?.(data.subdivision.id);
@@ -169,6 +170,7 @@ export function SubdivisionEditor({
 
   const updateMutation = api.mapEditor.updateSubdivision.useMutation({
     onSuccess: (data) => {
+      // Invalidate all subdivision queries to ensure View button shows updated data
       void utils.mapEditor.getMySubdivisions.invalidate();
       void utils.mapEditor.getCountrySubdivisions.invalidate();
       onSaved?.(data.subdivision.id);
@@ -211,6 +213,43 @@ export function SubdivisionEditor({
       setIsDraft(subdivision.status === "draft" || subdivision.status === "pending");
     }
   }, [existingSubdivision, subdivisionId]);
+
+  // ---------------------------------------------------------------------------
+  // Auto-Activate Drawing Mode
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (!map || !isActive) return;
+
+    const draw = (window as any).__mapboxDrawInstance;
+    if (!draw) {
+      console.warn("[SubdivisionEditor] MapboxDraw not found");
+      return;
+    }
+
+    console.log("[SubdivisionEditor] Activating drawing mode");
+
+    // If creating new subdivision, activate polygon drawing
+    if (!subdivisionId && !geometry) {
+      draw.changeMode('draw_polygon');
+      console.log("[SubdivisionEditor] Activated draw_polygon mode for new subdivision");
+    }
+    // If editing existing with geometry, load it and activate edit mode
+    else if (subdivisionId && geometry) {
+      const ids = draw.add(geometry);
+      if (ids && ids.length > 0) {
+        draw.changeMode('direct_select', { featureId: ids[0] });
+        console.log("[SubdivisionEditor] Loaded existing geometry and activated edit mode");
+      }
+    }
+
+    return () => {
+      // Clean up when editor closes
+      console.log("[SubdivisionEditor] Cleaning up drawing mode");
+      draw.deleteAll();
+      draw.changeMode('simple_select');
+    };
+  }, [map, isActive, subdivisionId, geometry]);
 
   // ---------------------------------------------------------------------------
   // Geometry Validation
@@ -507,6 +546,25 @@ export function SubdivisionEditor({
               <X className="w-5 h-5" />
             </button>
           </div>
+
+          {/* Drawing Instructions */}
+          {!geometry && !subdivisionId && (
+            <div className="glass-panel bg-blue-500/20 border border-blue-400/30 p-4 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-blue-500/30">
+                  <Edit3 className="w-6 h-6 text-blue-300" />
+                </div>
+                <div>
+                  <p className="text-lg font-semibold text-white">Draw your subdivision on the map</p>
+                  <p className="text-sm text-blue-200 mt-1">
+                    • Click map points to draw polygon borders<br />
+                    • Double-click to finish drawing<br />
+                    • Subdivision must be within country bounds
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Validation Indicator */}
           {renderValidationIndicator}

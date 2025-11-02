@@ -95,7 +95,9 @@ export const createGoogleMapsStyle = (
   // Determine if we're using GeoJSON (custom projections) or vector tiles (mercator/globe)
   const useGeoJSON = ['equalEarth', 'naturalEarth', 'ixmaps'].includes(projection);
 
-  return {
+  console.log('[google-map-style] Creating style:', { projection, useGeoJSON, basePath: cleanBasePath });
+
+  const style = {
   version: 8,
   projection: { type: projection === 'globe' ? 'globe' : 'mercator' },
   sky: {
@@ -118,9 +120,22 @@ export const createGoogleMapsStyle = (
       data: generateGraticule() as any,
     },
     political: getLayerSource('political', projection, origin, cleanBasePath),
+    // Dedicated labels source for vector tiles (mercator/globe)
+    // Uses point geometries at centroids for clean, deduplicated labels
+    ...(useGeoJSON ? {} : {
+      'political-labels': {
+        type: 'geojson',
+        data: `${origin}${cleanBasePath}/api/geojson/labels/political`,
+      }
+    }),
     altitudes: getLayerSource('altitudes', projection, origin, cleanBasePath),
     lakes: getLayerSource('lakes', projection, origin, cleanBasePath),
     rivers: getLayerSource('rivers', projection, origin, cleanBasePath),
+    // Rivers polygons source - ALWAYS add for proper polygon rendering
+    'rivers-polygons': {
+      type: 'geojson',
+      data: `${origin}${cleanBasePath}/api/geojson/rivers-polygons`,
+    },
     climate: getLayerSource('climate', projection, origin, cleanBasePath),
     icecaps: getLayerSource('icecaps', projection, origin, cleanBasePath),
   },
@@ -250,31 +265,21 @@ export const createGoogleMapsStyle = (
         'fill-opacity': 0.8,
       },
     },
-    // Rivers (visible from zoom 3+, dynamic styling)
+    // Rivers - ACTUAL POLYGON FILLS from buffered geometry
     {
-      id: 'rivers-line',
-      type: 'line',
-      source: 'rivers',
-      ...(useGeoJSON ? {} : { 'source-layer': 'map_layer_rivers' }),
-      minzoom: 3,
+      id: 'rivers-polygons',
+      type: 'fill',
+      source: 'rivers-polygons',
+      minzoom: 3, // Show from zoom 3 onward
       paint: {
-        'line-color': '#6db3d8',  // River blue
-        'line-width': [
+        'fill-color': '#6db3d8',
+        'fill-opacity': [
           'interpolate',
           ['linear'],
           ['zoom'],
-          3, 0.8,   // Start thin at zoom 3
-          6, 1.5,   // Good visibility at zoom 6
-          10, 2.5,  // Medium at zoom 10
-          14, 4     // Thick at high zoom
-        ],
-        'line-opacity': [
-          'interpolate',
-          ['linear'],
-          ['zoom'],
-          3, 0.6,   // Slightly transparent when first visible
-          6, 0.8,   // More opaque at zoom 6
-          10, 1     // Fully opaque at zoom 10
+          3, 0.6,   // Visible from zoom 3
+          5, 0.75,  // More opaque at zoom 5
+          8, 0.85,  // Nearly opaque at zoom 8+
         ],
       },
     },
@@ -282,45 +287,65 @@ export const createGoogleMapsStyle = (
     {
       id: 'country-labels',
       type: 'symbol',
-      source: 'political',
-      ...(useGeoJSON ? {} : { 'source-layer': 'map_layer_political' }),
+      // Use dedicated labels source for vector tiles (GeoJSON), political source for custom projections
+      source: useGeoJSON ? 'political' : 'political-labels',
+      minzoom: 1,  // Don't render labels at zoom 0 (too far out)
       layout: {
-        'text-field': ['get', 'name'],
+        'text-field': [
+          'coalesce',
+          ['get', 'name'],
+          ['get', 'id'],
+          ''
+        ],  // Get name, fallback to id, then empty string
+        // Simple zoom-based text sizing (area-based sizing removed due to MapLibre limitations)
         'text-size': [
           'interpolate',
           ['linear'],
           ['zoom'],
-          0, 8,   // Small at far zoom
-          2, 10,  // Readable at default view
-          4, 12,  // Slightly larger
-          8, 18,  // Medium zoom
-          14, 24  // Large at close zoom
+          1, 10,
+          2, 12,
+          4, 14,
+          6, 16,
+          8, 20,
+          10, 24,
+          14, 30
         ],
-        'text-font': ['Open Sans Regular', 'Arial Regular'],
+        'text-font': ['Noto Sans Regular'],
         'text-anchor': 'center',
+        'text-justify': 'center',
+        'symbol-placement': 'point',  // Place one label per feature (at centroid)
+        'text-allow-overlap': false,  // Prevent overlapping labels
+        'text-ignore-placement': false,
+        'text-optional': false,
+        'symbol-avoid-edges': true,   // Avoid labels at tile edges (critical for vector tiles)
+        'text-padding': 10,           // Larger padding for better collision detection
+        'text-max-width': 10,         // Wrap text after 10 ems
+        'text-rotate': 0,
+        'text-rotation-alignment': 'viewport',
+        'text-pitch-alignment': 'viewport',
+        'text-radial-offset': 0,
+        'text-variable-anchor': ['center'], // Allow MapLibre to find best position and deduplicate
+        'symbol-z-order': 'auto',    // Automatic z-ordering for better label placement
       },
       paint: {
-        'text-color': '#5d5d5d',
+        'text-color': '#2c2c2c',  // Darker gray for better contrast
         'text-halo-color': '#ffffff',
-        'text-halo-width': [
-          'interpolate',
-          ['linear'],
-          ['zoom'],
-          0, 0.8,  // Very thin halo at far zoom
-          2, 1,    // Thinner halo at default
-          4, 1.5,  // Standard halo
-          8, 2     // Thicker halo at close zoom
-        ],
+        'text-halo-width': 2,
+        'text-halo-blur': 1,
+        // Simple fade-in visibility (area-based removed to prevent errors)
         'text-opacity': [
           'interpolate',
           ['linear'],
           ['zoom'],
-          0, 0.7,  // Slightly transparent at far zoom
-          2, 1     // Fully opaque at default and above
+          1, 0.6,
+          2, 0.9,
+          3, 1
         ],
       },
     },
   ],
   glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
-};
+  };
+
+  return style;
 };

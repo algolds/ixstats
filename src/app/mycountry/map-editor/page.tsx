@@ -64,6 +64,8 @@ interface EditorState {
   currentFeature: Feature | null;
   history: Feature[];
   historyIndex: number;
+  editingFeatureId: string | null; // NEW: Track what feature we're editing
+  editingFeatureData: any | null;  // NEW: Store loaded feature data for editing
 }
 
 type EditorAction =
@@ -75,7 +77,9 @@ type EditorAction =
   | { type: "SET_CURRENT_FEATURE"; payload: Feature | null }
   | { type: "UNDO" }
   | { type: "REDO" }
-  | { type: "RESET" };
+  | { type: "RESET" }
+  | { type: "OPEN_EDITOR"; payload: { type: EditorType; featureId?: string; data?: any } }
+  | { type: "CLOSE_EDITOR" };
 
 const initialEditorState: EditorState = {
   mode: null,
@@ -91,6 +95,8 @@ const initialEditorState: EditorState = {
   currentFeature: null,
   history: [],
   historyIndex: -1,
+  editingFeatureId: null,
+  editingFeatureData: null,
 };
 
 function editorReducer(state: EditorState, action: EditorAction): EditorState {
@@ -155,6 +161,25 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
       return state;
     case "RESET":
       return initialEditorState;
+    case "OPEN_EDITOR":
+      // Set appropriate drawing mode based on editor type
+      const mode = action.payload.type === "subdivision" ? "polygon" : "point";
+      return {
+        ...state,
+        activeEditor: action.payload.type,
+        editingFeatureId: action.payload.featureId ?? null,
+        editingFeatureData: action.payload.data ?? null,
+        mode: mode,
+      };
+    case "CLOSE_EDITOR":
+      return {
+        ...state,
+        activeEditor: null,
+        editingFeatureId: null,
+        editingFeatureData: null,
+        mode: null,
+        hasUnsavedChanges: false,
+      };
     default:
       return state;
   }
@@ -265,79 +290,145 @@ export default function MapEditorPage() {
   /**
    * Handle mode change from toolbar
    */
+  const [showTypeChooser, setShowTypeChooser] = useState(false);
+
   const handleModeChange = useCallback((mode: DrawingMode) => {
     dispatch({ type: "SET_MODE", payload: mode });
 
     // Activate appropriate editor
     if (mode === "polygon") {
-      dispatch({ type: "SET_ACTIVE_EDITOR", payload: "subdivision" });
-      setShowEditorModal(true);
+      dispatch({ type: "OPEN_EDITOR", payload: { type: "subdivision" } });
     } else if (mode === "point") {
-      // Will prompt user to choose city or POI
-      dispatch({ type: "SET_ACTIVE_EDITOR", payload: "city" });
-      setShowEditorModal(true);
+      // Show chooser modal: City or POI?
+      setShowTypeChooser(true);
     } else if (mode === null) {
-      dispatch({ type: "SET_ACTIVE_EDITOR", payload: null });
-      setShowEditorModal(false);
+      dispatch({ type: "CLOSE_EDITOR" });
     }
   }, []);
+
+  // Fetch data for zoom-to-feature functionality (MUST be before handleFeatureSelect)
+  // These queries need to fetch ALL statuses (including draft/pending) so the View button can find them
+  const { data: subdivisionsData } = api.mapEditor.getMySubdivisions.useQuery(
+    { countryId: country?.id ?? "", limit: 100, offset: 0 },
+    { enabled: !!country?.id }
+  );
+  const { data: citiesData } = api.mapEditor.getMyCities.useQuery(
+    { countryId: country?.id ?? "", limit: 100, offset: 0 },
+    { enabled: !!country?.id }
+  );
+  const { data: poisData } = api.mapEditor.getMyPOIs.useQuery(
+    { countryId: country?.id ?? "", limit: 100, offset: 0 },
+    { enabled: !!country?.id }
+  );
 
   /**
    * Handle new feature request from sidebar
    */
   const handleNewFeature = useCallback((type: "subdivision" | "city" | "poi") => {
-    dispatch({ type: "SET_ACTIVE_EDITOR", payload: type });
-
-    // Set appropriate drawing mode
-    if (type === "subdivision") {
-      dispatch({ type: "SET_MODE", payload: "polygon" });
-    } else {
-      dispatch({ type: "SET_MODE", payload: "point" });
-    }
-
-    setShowEditorModal(true);
+    dispatch({ type: "OPEN_EDITOR", payload: { type } });
   }, []);
 
   /**
    * Handle feature selection from sidebar
    */
   const handleFeatureSelect = useCallback((featureId: string, type: EditorType) => {
+    console.log("[handleFeatureSelect] Called with:", { featureId, type });
+
     dispatch({
       type: "SELECT_FEATURE",
       payload: { id: featureId, type },
     });
 
-    // Zoom to feature on map (via window.__mapEditorInstance)
+    // Zoom to feature on map
     const mapInstance = (window as any).__mapEditorInstance;
-    if (mapInstance) {
-      // TODO: Implement zoom to feature
+    if (!mapInstance) {
+      console.warn("[handleFeatureSelect] No map instance found");
+      toast.error("Map not ready");
+      return;
     }
-  }, []);
+
+    // Get appropriate data query
+    const queryData =
+      type === "subdivision" ? subdivisionsData :
+      type === "city" ? citiesData :
+      type === "poi" ? poisData :
+      null;
+
+    console.log("[handleFeatureSelect] Query data:", queryData);
+
+    if (!queryData) {
+      console.warn("[handleFeatureSelect] No query data available");
+      toast.error("Data not loaded yet");
+      return;
+    }
+
+    // Find the feature
+    const features =
+      type === "subdivision" ? queryData.subdivisions :
+      type === "city" ? queryData.cities :
+      type === "poi" ? queryData.pois :
+      [];
+
+    console.log("[handleFeatureSelect] Searching in features:", features.length);
+
+    const feature = features.find((f: any) => f.id === featureId);
+    if (!feature) {
+      console.warn(`[handleFeatureSelect] Feature not found - ID: ${featureId}, Type: ${type}`);
+      console.warn("[handleFeatureSelect] Available IDs:", features.map((f: any) => f.id));
+      toast.error(`${type} not found. Try refreshing the page.`);
+      return;
+    }
+
+    console.log("[handleFeatureSelect] Found feature:", feature);
+
+    // Calculate bounds and zoom
+    if (type === "subdivision" && feature.geometry) {
+      // For subdivisions, use the geometry bounds
+      const coords = feature.geometry.type === "Polygon"
+        ? feature.geometry.coordinates[0]
+        : feature.geometry.coordinates[0][0];
+
+      const lngs = coords.map((c: number[]) => c[0]);
+      const lats = coords.map((c: number[]) => c[1]);
+      const bounds: [number, number, number, number] = [
+        Math.min(...lngs),
+        Math.min(...lats),
+        Math.max(...lngs),
+        Math.max(...lats),
+      ];
+
+      console.log("[handleFeatureSelect] Fitting bounds:", bounds);
+      mapInstance.fitBounds(bounds, { padding: 80, maxZoom: 9, duration: 1500 });
+      toast.success(`Viewing ${feature.name}`);
+    } else if ((type === "city" || type === "poi") && feature.coordinates) {
+      // For points, fly to coordinates with reasonable zoom level
+      const [lng, lat] = feature.coordinates.coordinates;
+      console.log("[handleFeatureSelect] Flying to:", { lng, lat });
+      // Use zoom 10 instead of 14 - shows more context and markers are visible at this zoom
+      mapInstance.flyTo({ center: [lng, lat], zoom: 10, duration: 1500 });
+      toast.success(`Viewing ${feature.name}`);
+    } else {
+      console.warn("[handleFeatureSelect] No coordinates or geometry found");
+      toast.error("Location data not available");
+    }
+  }, [subdivisionsData, citiesData, poisData]);
 
   /**
    * Handle feature edit from sidebar
    */
-  const handleEditFeature = useCallback((featureId: string, type: string) => {
+  const handleEditFeature = useCallback((featureId: string, type: EditorType, featureData?: any) => {
+    // Open editor with feature data for editing
     dispatch({
-      type: "SELECT_FEATURE",
-      payload: { id: featureId, type: type as EditorType },
+      type: "OPEN_EDITOR",
+      payload: {
+        type,
+        featureId,
+        data: featureData,
+      },
     });
-    dispatch({ type: "SET_ACTIVE_EDITOR", payload: type as EditorType });
-    dispatch({ type: "SET_MODE", payload: "edit" });
-    setShowEditorModal(true);
   }, []);
 
-  /**
-   * Handle feature delete from sidebar
-   */
-  const handleDeleteFeature = useCallback((featureId: string, type: string) => {
-    // Confirm deletion
-    if (window.confirm(`Are you sure you want to delete this ${type}?`)) {
-      // TODO: Call delete mutation
-      toast.success(`${type} deleted successfully`);
-      dispatch({ type: "SELECT_FEATURE", payload: null });
-    }
-  }, []);
+  // Delete mutations are handled by EditorSidebar directly, no need for page-level handler
 
   /**
    * Handle feature creation from map
@@ -380,23 +471,8 @@ export default function MapEditorPage() {
     }
   }, [state.activeEditor]);
 
-  /**
-   * Handle save action
-   */
-  const handleSave = useCallback(() => {
-    if (!state.currentFeature) {
-      toast.error("No feature to save");
-      return;
-    }
-
-    // TODO: Call appropriate create/update mutation based on state.activeEditor
-    toast.success("Feature saved as draft");
-
-    dispatch({ type: "SET_UNSAVED_CHANGES", payload: false });
-    setShowEditorModal(false);
-    dispatch({ type: "SET_MODE", payload: null });
-    dispatch({ type: "RESET" });
-  }, [state.currentFeature, state.activeEditor]);
+  // Save is handled by individual editors (CityPlacement, POIEditor, SubdivisionEditor)
+  // Each editor has its own save mutation logic
 
   /**
    * Handle cancel action
@@ -474,13 +550,7 @@ export default function MapEditorPage() {
         }
       }
 
-      // Ctrl/Cmd+S - Save
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault();
-        if (state.hasUnsavedChanges) {
-          handleSave();
-        }
-      }
+      // Ctrl/Cmd+S - Save (handled by individual editors)
 
       // Ctrl/Cmd+Z - Undo
       if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
@@ -533,7 +603,6 @@ export default function MapEditorPage() {
     state.mode,
     state.hasUnsavedChanges,
     handleCancel,
-    handleSave,
     handleUndo,
     handleRedo,
     handleModeChange,
@@ -637,8 +706,7 @@ export default function MapEditorPage() {
           <EditorToolbar
             activeMode={state.mode}
             onModeChange={handleModeChange}
-            onSave={handleSave}
-            onCancel={handleCancel}
+            onCancel={() => dispatch({ type: "CLOSE_EDITOR" })}
             onUndo={handleUndo}
             onRedo={handleRedo}
             canUndo={state.historyIndex > 0}
@@ -658,6 +726,110 @@ export default function MapEditorPage() {
           />
         </div>
       </div>
+
+      {/* Full-Screen Editor Overlays */}
+      {state.activeEditor === "subdivision" && (
+        <div className="fixed inset-0 z-[100] flex pointer-events-none">
+          <div className="flex-1 pointer-events-none" /> {/* Transparent left shows map */}
+          <div className="w-[500px] bg-slate-900 shadow-2xl overflow-y-auto pointer-events-auto border-l border-slate-700">
+            <SubdivisionEditor
+              map={(window as any).__mapEditorInstance || null}
+              countryId={country.id}
+              countryGeometry={countryGeometry}
+              subdivisionId={state.editingFeatureId ?? undefined}
+              isActive={true}
+              onClose={() => dispatch({ type: "CLOSE_EDITOR" })}
+              onSaved={() => {
+                dispatch({ type: "CLOSE_EDITOR" });
+                toast.success("Subdivision saved!");
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {state.activeEditor === "city" && (
+        <div className="fixed inset-0 z-[100] flex pointer-events-none">
+          <div className="flex-1 pointer-events-none" /> {/* Transparent left shows map */}
+          <div className="w-[600px] bg-slate-900 shadow-2xl overflow-y-auto pointer-events-auto border-l border-slate-700">
+            <CityPlacement
+              countryId={country.id}
+              countryGeometry={countryGeometry}
+              onCityPlaced={() => {
+                dispatch({ type: "CLOSE_EDITOR" });
+                toast.success("City created!");
+              }}
+              onCityUpdated={() => {
+                dispatch({ type: "CLOSE_EDITOR" });
+                toast.success("City updated!");
+              }}
+              initialCity={state.editingFeatureData}
+            />
+          </div>
+        </div>
+      )}
+
+      {state.activeEditor === "poi" && (
+        <div className="fixed inset-0 z-[100] flex pointer-events-none">
+          <div className="flex-1 pointer-events-none" /> {/* Transparent left shows map */}
+          <div className="w-[600px] bg-slate-900 shadow-2xl overflow-y-auto pointer-events-auto border-l border-slate-700">
+            <POIEditor
+              countryId={country.id}
+              countryGeometry={countryGeometry}
+              mode={state.editingFeatureId ? "edit" : "create"}
+              poiId={state.editingFeatureId ?? undefined}
+              onSuccess={() => {
+                dispatch({ type: "CLOSE_EDITOR" });
+                toast.success(state.editingFeatureId ? "POI updated!" : "POI created!");
+              }}
+              onCancel={() => dispatch({ type: "CLOSE_EDITOR" })}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Type Chooser Modal for Point Tool */}
+      {showTypeChooser && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="glass-panel p-8 max-w-md">
+            <h3 className="text-2xl font-bold text-white mb-4">What do you want to place?</h3>
+            <p className="text-slate-400 mb-6">Choose the type of point feature to add to the map</p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => {
+                  dispatch({ type: "OPEN_EDITOR", payload: { type: "city" } });
+                  setShowTypeChooser(false);
+                }}
+                className="flex-1 glass-interactive p-6 rounded-lg hover:bg-blue-500/20 transition-all group"
+              >
+                <div className="text-4xl mb-2">🏙️</div>
+                <div className="text-lg font-semibold text-white">City</div>
+                <div className="text-sm text-slate-400 mt-1">Settlement or town</div>
+              </button>
+              <button
+                onClick={() => {
+                  dispatch({ type: "OPEN_EDITOR", payload: { type: "poi" } });
+                  setShowTypeChooser(false);
+                }}
+                className="flex-1 glass-interactive p-6 rounded-lg hover:bg-purple-500/20 transition-all group"
+              >
+                <div className="text-4xl mb-2">📍</div>
+                <div className="text-lg font-semibold text-white">POI</div>
+                <div className="text-sm text-slate-400 mt-1">Point of interest</div>
+              </button>
+            </div>
+            <button
+              onClick={() => {
+                setShowTypeChooser(false);
+                dispatch({ type: "SET_MODE", payload: null });
+              }}
+              className="mt-4 w-full px-4 py-2 text-slate-400 hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
