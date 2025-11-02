@@ -9,21 +9,37 @@ REDIS_PASSWORD="${REDIS_PASSWORD:-}"
 
 case "$1" in
   start)
-    echo "Starting Redis container for tile caching..."
+    # Check if container already exists
+    if docker ps -a -f "name=$REDIS_CONTAINER" --format "{{.Names}}" | grep -q "^${REDIS_CONTAINER}$"; then
+      # Container exists, check if it's running
+      if docker ps -f "name=$REDIS_CONTAINER" --format "{{.Names}}" | grep -q "^${REDIS_CONTAINER}$"; then
+        echo "Redis container is already running on port $REDIS_PORT"
+        exit 0
+      else
+        # Container exists but not running, start it
+        echo "Starting existing Redis container..."
+        docker start "$REDIS_CONTAINER" > /dev/null
+        echo "✓ Redis started on port $REDIS_PORT"
+        exit 0
+      fi
+    fi
+
+    # Container doesn't exist, create and start it
+    echo "Creating Redis container for tile caching..."
     if [ -n "$REDIS_PASSWORD" ]; then
       docker run -d \
         --name "$REDIS_CONTAINER" \
         -p "$REDIS_PORT:6379" \
         -v ixstats-redis-data:/data \
         redis:7-alpine \
-        redis-server --requirepass "$REDIS_PASSWORD" --maxmemory 2gb --maxmemory-policy allkeys-lru
+        redis-server --requirepass "$REDIS_PASSWORD" --maxmemory 2gb --maxmemory-policy allkeys-lru > /dev/null
     else
       docker run -d \
         --name "$REDIS_CONTAINER" \
         -p "$REDIS_PORT:6379" \
         -v ixstats-redis-data:/data \
         redis:7-alpine \
-        redis-server --maxmemory 2gb --maxmemory-policy allkeys-lru
+        redis-server --maxmemory 2gb --maxmemory-policy allkeys-lru > /dev/null
     fi
     echo "✓ Redis started on port $REDIS_PORT"
     echo "  - Max Memory: 2GB"

@@ -468,6 +468,21 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
     }
   }
 
+  // Use centralized system owner constants - check BEFORE database role check
+  const isSystemOwnerUser = isSystemOwner(ctx.auth.userId);
+
+  // System owners bypass all role checks
+  if (isSystemOwnerUser) {
+    console.log(`[ADMIN_MIDDLEWARE] System owner detected: ${ctx.auth.userId} - bypassing role checks`);
+    return next({
+      ctx: {
+        ...ctx,
+        user,
+      },
+    });
+  }
+
+  // For non-system-owners, require database user record
   if (!user) {
     console.error(`[ADMIN_MIDDLEWARE] User ${ctx.auth.userId} not found in database`);
     throw new Error("UNAUTHORIZED: User not found");
@@ -484,14 +499,10 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
     );
   }
 
-  // Use centralized system owner constants
-  const isSystemOwnerUser = isSystemOwner(ctx.auth.userId);
-
   // Check for admin roles (level 0-20 are considered admin levels)
   const adminRoles = ["owner", "admin", "staff"];
   const roleLevel = (user as any).role?.level ?? 999;
-  const isAdmin =
-    isSystemOwnerUser || adminRoles.includes((user as any).role?.name) || roleLevel <= 20;
+  const isAdmin = adminRoles.includes((user as any).role?.name) || roleLevel <= 20;
 
   if (!isAdmin) {
     console.warn(

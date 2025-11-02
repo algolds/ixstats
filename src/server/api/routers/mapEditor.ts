@@ -9,7 +9,18 @@ import {
   protectedProcedure,
   adminProcedure,
   standardMutationProcedure,
+  rateLimitedPublicProcedure,
+  readOnlyPublicProcedure,
 } from "~/server/api/trpc";
+import { mapCacheService, MapCacheKeys } from "~/lib/map-cache-service";
+import { tileCacheInvalidation } from "~/lib/tile-cache-invalidation";
+import {
+  validatePolygonGeometry,
+  validatePointGeometry,
+  checkBoundaryIntersection,
+  checkPointInCountry,
+  generateDataQualityReport,
+} from "~/lib/postgis-validation";
 
 // ============================================================================
 // Zod Schemas for Input Validation
@@ -129,6 +140,34 @@ const BulkApproveInput = z.object({
 });
 
 // ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Create audit log entry (non-blocking)
+ * If the map_edit_logs table doesn't exist, this will fail silently
+ */
+async function createAuditLog(
+  db: any,
+  data: {
+    entityType: "subdivision" | "city" | "poi";
+    entityId: string;
+    action: "create" | "update" | "delete" | "submit" | "approve" | "reject";
+    userId: string;
+    changes?: any;
+    reason?: string | null;
+    metadata?: any;
+  }
+) {
+  try {
+    await db.mapEditLog.create({ data });
+  } catch (error) {
+    // Audit logging failure should not fail the mutation
+    console.warn("[mapEditor] Audit log creation failed (non-critical):", error);
+  }
+}
+
+// ============================================================================
 // Map Editor Router
 // ============================================================================
 
@@ -140,9 +179,9 @@ export const mapEditorRouter = createTRPCRouter({
   /**
    * Unified search across all map entities (countries, subdivisions, cities, POIs)
    * Replaces 4 separate queries with 1 batched query for better performance
-   * Public endpoint with rate limiting
+   * Public endpoint with rate limiting (30 req/min)
    */
-  unifiedSearch: publicProcedure
+  unifiedSearch: rateLimitedPublicProcedure
     .input(
       z.object({
         search: z.string().min(1),
@@ -154,9 +193,21 @@ export const mapEditorRouter = createTRPCRouter({
       const perEntityLimit = Math.ceil(limit / 4);
 
       try {
+        // Sanitize search query for PostgreSQL full-text search
+        // Replace special characters and create tsquery-compatible format
+        const sanitizedSearch = search
+          .replace(/[^\w\s]/g, " ")
+          .trim()
+          .split(/\s+/)
+          .filter((word) => word.length > 0)
+          .join(" & ");
+
+        // Fallback to basic search if sanitization fails
+        const useFullTextSearch = sanitizedSearch.length > 0;
+
         // Run all queries in parallel for maximum performance
         const [countries, subdivisions, cities, pois] = await Promise.all([
-          // Countries
+          // Countries - use basic search (no full-text index needed for small table)
           ctx.db.country.findMany({
             where: {
               OR: [
@@ -175,64 +226,242 @@ export const mapEditorRouter = createTRPCRouter({
             orderBy: { name: "asc" },
           }),
 
-          // Subdivisions (approved only)
-          ctx.db.subdivision.findMany({
-            where: {
-              name: { contains: search, mode: "insensitive" },
-              status: "approved",
-            },
-            select: {
-              id: true,
-              name: true,
-              type: true,
-              country: { select: { id: true, name: true } },
-            },
-            take: perEntityLimit,
-            orderBy: { name: "asc" },
-          }),
+          // Subdivisions - use full-text search for better performance
+          useFullTextSearch
+            ? ctx.db.$queryRawUnsafe<
+                Array<{
+                  id: string;
+                  name: string;
+                  type: string;
+                  country_id: string;
+                  country_name: string;
+                  rank: number;
+                }>
+              >(
+                `
+                SELECT
+                  s.id,
+                  s.name,
+                  s.type,
+                  s.country_id,
+                  c.name as country_name,
+                  ts_rank(to_tsvector('english', s.name), to_tsquery('english', $1)) as rank
+                FROM subdivisions s
+                JOIN countries c ON s.country_id = c.id
+                WHERE
+                  s.status = 'approved' AND
+                  to_tsvector('english', s.name) @@ to_tsquery('english', $1)
+                ORDER BY rank DESC, s.name ASC
+                LIMIT $2
+              `,
+                sanitizedSearch,
+                perEntityLimit
+              )
+            : ctx.db.subdivision
+                .findMany({
+                  where: {
+                    name: { contains: search, mode: "insensitive" },
+                    status: "approved",
+                  },
+                  select: {
+                    id: true,
+                    name: true,
+                    type: true,
+                    countryId: true,
+                    country: { select: { id: true, name: true } },
+                  },
+                  take: perEntityLimit,
+                  orderBy: { name: "asc" },
+                })
+                .then((results) =>
+                  results.map((r) => ({
+                    id: r.id,
+                    name: r.name,
+                    type: r.type,
+                    country_id: r.countryId,
+                    country_name: r.country.name,
+                    rank: 0,
+                  }))
+                ),
 
-          // Cities (approved only)
-          ctx.db.city.findMany({
-            where: {
-              name: { contains: search, mode: "insensitive" },
-              status: "approved",
-            },
-            select: {
-              id: true,
-              name: true,
-              coordinates: true,
-              country: { select: { id: true, name: true } },
-              subdivision: { select: { id: true, name: true } },
-            },
-            take: perEntityLimit,
-            orderBy: { name: "asc" },
-          }),
+          // Cities - use full-text search for better performance
+          useFullTextSearch
+            ? ctx.db.$queryRawUnsafe<
+                Array<{
+                  id: string;
+                  name: string;
+                  coordinates: any;
+                  country_id: string;
+                  country_name: string;
+                  subdivision_id: string | null;
+                  subdivision_name: string | null;
+                  rank: number;
+                }>
+              >(
+                `
+                SELECT
+                  ci.id,
+                  ci.name,
+                  ci.coordinates,
+                  ci.country_id,
+                  c.name as country_name,
+                  ci.subdivision_id,
+                  s.name as subdivision_name,
+                  ts_rank(to_tsvector('english', ci.name), to_tsquery('english', $1)) as rank
+                FROM cities ci
+                JOIN countries c ON ci.country_id = c.id
+                LEFT JOIN subdivisions s ON ci.subdivision_id = s.id
+                WHERE
+                  ci.status = 'approved' AND
+                  to_tsvector('english', ci.name) @@ to_tsquery('english', $1)
+                ORDER BY rank DESC, ci.name ASC
+                LIMIT $2
+              `,
+                sanitizedSearch,
+                perEntityLimit
+              )
+            : ctx.db.city
+                .findMany({
+                  where: {
+                    name: { contains: search, mode: "insensitive" },
+                    status: "approved",
+                  },
+                  select: {
+                    id: true,
+                    name: true,
+                    coordinates: true,
+                    countryId: true,
+                    subdivisionId: true,
+                    country: { select: { id: true, name: true } },
+                    subdivision: { select: { id: true, name: true } },
+                  },
+                  take: perEntityLimit,
+                  orderBy: { name: "asc" },
+                })
+                .then((results) =>
+                  results.map((r) => ({
+                    id: r.id,
+                    name: r.name,
+                    coordinates: r.coordinates,
+                    country_id: r.countryId,
+                    country_name: r.country.name,
+                    subdivision_id: r.subdivisionId,
+                    subdivision_name: r.subdivision?.name ?? null,
+                    rank: 0,
+                  }))
+                ),
 
-          // POIs (approved only)
-          ctx.db.pointOfInterest.findMany({
-            where: {
-              name: { contains: search, mode: "insensitive" },
-              status: "approved",
-            },
-            select: {
-              id: true,
-              name: true,
-              category: true,
-              coordinates: true,
-              country: { select: { id: true, name: true } },
-              subdivision: { select: { id: true, name: true } },
-            },
-            take: perEntityLimit,
-            orderBy: { name: "asc" },
-          }),
+          // POIs - use full-text search for name + description
+          useFullTextSearch
+            ? ctx.db.$queryRawUnsafe<
+                Array<{
+                  id: string;
+                  name: string;
+                  category: string;
+                  coordinates: any;
+                  country_id: string;
+                  country_name: string;
+                  subdivision_id: string | null;
+                  subdivision_name: string | null;
+                  rank: number;
+                }>
+              >(
+                `
+                SELECT
+                  p.id,
+                  p.name,
+                  p.category,
+                  p.coordinates,
+                  p.country_id,
+                  c.name as country_name,
+                  p.subdivision_id,
+                  s.name as subdivision_name,
+                  ts_rank(to_tsvector('english', p.name || ' ' || COALESCE(p.description, '')), to_tsquery('english', $1)) as rank
+                FROM points_of_interest p
+                JOIN countries c ON p.country_id = c.id
+                LEFT JOIN subdivisions s ON p.subdivision_id = s.id
+                WHERE
+                  p.status = 'approved' AND
+                  to_tsvector('english', p.name || ' ' || COALESCE(p.description, '')) @@ to_tsquery('english', $1)
+                ORDER BY rank DESC, p.name ASC
+                LIMIT $2
+              `,
+                sanitizedSearch,
+                perEntityLimit
+              )
+            : ctx.db.pointOfInterest
+                .findMany({
+                  where: {
+                    name: { contains: search, mode: "insensitive" },
+                    status: "approved",
+                  },
+                  select: {
+                    id: true,
+                    name: true,
+                    category: true,
+                    coordinates: true,
+                    countryId: true,
+                    subdivisionId: true,
+                    country: { select: { id: true, name: true } },
+                    subdivision: { select: { id: true, name: true } },
+                  },
+                  take: perEntityLimit,
+                  orderBy: { name: "asc" },
+                })
+                .then((results) =>
+                  results.map((r) => ({
+                    id: r.id,
+                    name: r.name,
+                    category: r.category,
+                    coordinates: r.coordinates,
+                    country_id: r.countryId,
+                    country_name: r.country.name,
+                    subdivision_id: r.subdivisionId,
+                    subdivision_name: r.subdivision?.name ?? null,
+                    rank: 0,
+                  }))
+                ),
         ]);
+
+        // Transform raw SQL results to match expected format
+        const transformedSubdivisions = subdivisions.map((s) => ({
+          id: s.id,
+          name: s.name,
+          type: s.type,
+          country: { id: s.country_id, name: s.country_name },
+        }));
+
+        const transformedCities = cities.map((c) => ({
+          id: c.id,
+          name: c.name,
+          coordinates: c.coordinates,
+          country: { id: c.country_id, name: c.country_name },
+          subdivision: c.subdivision_id
+            ? { id: c.subdivision_id, name: c.subdivision_name! }
+            : null,
+        }));
+
+        const transformedPOIs = pois.map((p) => ({
+          id: p.id,
+          name: p.name,
+          category: p.category,
+          coordinates: p.coordinates,
+          country: { id: p.country_id, name: p.country_name },
+          subdivision: p.subdivision_id
+            ? { id: p.subdivision_id, name: p.subdivision_name! }
+            : null,
+        }));
 
         return {
           countries,
-          subdivisions,
-          cities,
-          pois,
-          totalResults: countries.length + subdivisions.length + cities.length + pois.length,
+          subdivisions: transformedSubdivisions,
+          cities: transformedCities,
+          pois: transformedPOIs,
+          totalResults:
+            countries.length +
+            transformedSubdivisions.length +
+            transformedCities.length +
+            transformedPOIs.length,
         };
       } catch (error) {
         console.error("[mapEditor.unifiedSearch] Error:", error);
@@ -246,8 +475,9 @@ export const mapEditorRouter = createTRPCRouter({
   /**
    * Get country centroid in WGS84 coordinates from vector tiles
    * This returns the correct WGS84 coordinates for map navigation
+   * Rate limited: 120 req/min (read-only operation)
    */
-  getCountryCentroidWGS84: publicProcedure
+  getCountryCentroidWGS84: readOnlyPublicProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
@@ -325,6 +555,44 @@ export const mapEditorRouter = createTRPCRouter({
             code: "BAD_REQUEST",
             message: "Invalid GeoJSON geometry structure",
           });
+        }
+
+        // PostGIS topology validation
+        const topologyValidation = await validatePolygonGeometry(input.geometry);
+        if (!topologyValidation.isValid) {
+          // Try auto-fix if possible
+          if (topologyValidation.canAutoFix && topologyValidation.fixedGeometry) {
+            console.log(
+              `[createSubdivision] Auto-fixing invalid geometry for ${input.name}:`,
+              topologyValidation.errors
+            );
+            input.geometry = topologyValidation.fixedGeometry;
+          } else {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Invalid topology: ${topologyValidation.errors.join(", ")}`,
+            });
+          }
+        }
+
+        // Check boundary intersection (ensure subdivision is within country)
+        const boundaryCheck = await checkBoundaryIntersection(
+          input.geometry,
+          input.countryId
+        );
+
+        if (!boundaryCheck.intersects) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Subdivision does not intersect with country boundaries",
+          });
+        }
+
+        if (!boundaryCheck.isFullyContained) {
+          console.warn(
+            `[createSubdivision] Subdivision ${input.name} not fully contained in country (${boundaryCheck.percentageInCountry?.toFixed(1)}% overlap)`
+          );
+          // Allow it but log warning (some countries may have complex boundaries)
         }
 
         // Create subdivision with draft status (user can submit for review later)
@@ -555,8 +823,9 @@ export const mapEditorRouter = createTRPCRouter({
   /**
    * Get all approved subdivisions for a country
    * Public: Anyone can view approved subdivisions
+   * Rate limited: 120 req/min (read-only operation)
    */
-  getCountrySubdivisions: publicProcedure
+  getCountrySubdivisions: readOnlyPublicProcedure
     .input(
       z.object({
         countryId: z.string().optional(),
@@ -568,6 +837,28 @@ export const mapEditorRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
+        // Only cache approved subdivisions without search filters
+        const shouldCache =
+          (input.status ?? "approved") === "approved" &&
+          !input.search &&
+          input.countryId;
+
+        // Check cache first
+        if (shouldCache) {
+          const cacheKey = MapCacheKeys.subdivision(
+            input.countryId!,
+            input.includeGeometry
+          );
+          const cached = mapCacheService.get<{
+            subdivisions: any[];
+            count: number;
+          }>(cacheKey);
+
+          if (cached) {
+            return cached;
+          }
+        }
+
         const where: any = {
           status: input.status ?? "approved",
         };
@@ -607,10 +898,21 @@ export const mapEditorRouter = createTRPCRouter({
           take: input.limit,
         });
 
-        return {
+        const result = {
           subdivisions,
           count: subdivisions.length,
         };
+
+        // Cache the result
+        if (shouldCache) {
+          const cacheKey = MapCacheKeys.subdivision(
+            input.countryId!,
+            input.includeGeometry
+          );
+          mapCacheService.set(cacheKey, result, 5 * 60 * 1000); // 5 minutes
+        }
+
+        return result;
       } catch (error) {
         console.error("[mapEditor.getCountrySubdivisions] Error:", error);
         throw new TRPCError({
@@ -829,6 +1131,31 @@ export const mapEditorRouter = createTRPCRouter({
           }
         }
 
+        // PostGIS point validation
+        const pointValidation = await validatePointGeometry(input.coordinates);
+        if (!pointValidation.isValid) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Invalid coordinates: ${pointValidation.errors.join(", ")}`,
+          });
+        }
+
+        // Check if point is within country boundaries
+        const boundaryCheck = await checkPointInCountry(
+          input.coordinates,
+          input.countryId
+        );
+
+        if (!boundaryCheck.isInCountry) {
+          const distanceInfo = boundaryCheck.distanceKm
+            ? ` (${boundaryCheck.distanceKm.toFixed(1)} km from border)`
+            : "";
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `City coordinates are outside country boundaries${distanceInfo}`,
+          });
+        }
+
         // Create city with draft status (user can submit for review later)
         const city = await ctx.db.city.create({
           data: {
@@ -847,21 +1174,19 @@ export const mapEditorRouter = createTRPCRouter({
           },
         });
 
-        // Create audit log entry
-        await ctx.db.mapEditLog.create({
-          data: {
-            entityType: "city",
-            entityId: city.id,
-            action: "create",
-            userId: ctx.auth.userId,
-            changes: {
-              name: input.name,
-              type: input.type,
-            },
-            metadata: {
-              countryId: input.countryId,
-              countryName: country.name,
-            },
+        // Create audit log entry (non-blocking)
+        await createAuditLog(ctx.db, {
+          entityType: "city",
+          entityId: city.id,
+          action: "create",
+          userId: ctx.auth.userId,
+          changes: {
+            name: input.name,
+            type: input.type,
+          },
+          metadata: {
+            countryId: input.countryId,
+            countryName: country.name,
           },
         });
 
@@ -1070,8 +1395,9 @@ export const mapEditorRouter = createTRPCRouter({
   /**
    * Get all approved cities for a country
    * Public: Anyone can view approved cities
+   * Rate limited: 120 req/min (read-only operation)
    */
-  getCountryCities: publicProcedure
+  getCountryCities: readOnlyPublicProcedure
     .input(
       z.object({
         countryId: z.string().optional(),
@@ -1151,6 +1477,109 @@ export const mapEditorRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to fetch cities",
+        });
+      }
+    }),
+
+  /**
+   * Get ALL approved cities globally (for main map display)
+   * Public: Anyone can view approved cities
+   * Rate limited: 120 req/min (read-only operation)
+   */
+  getAllCities: readOnlyPublicProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(1000).default(500),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const cities = await ctx.db.city.findMany({
+          where: {
+            status: "approved",
+          },
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            coordinates: true,
+            population: true,
+            isNationalCapital: true,
+            isSubdivisionCapital: true,
+            country: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+          orderBy: {
+            population: "desc",
+          },
+          take: input.limit,
+        });
+
+        return {
+          cities,
+          count: cities.length,
+        };
+      } catch (error) {
+        console.error("[mapEditor.getAllCities] Error:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch cities",
+        });
+      }
+    }),
+
+  /**
+   * Get ALL national capitals globally (for main map display)
+   * Public: Anyone can view approved national capitals
+   * Rate limited: 120 req/min (read-only operation)
+   */
+  getAllNationalCapitals: readOnlyPublicProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(500).default(200), // Higher limit for global display
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const capitals = await ctx.db.city.findMany({
+          where: {
+            isNationalCapital: true,
+            status: "approved", // Only show approved capitals
+          },
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            coordinates: true,
+            population: true,
+            status: true,
+            country: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
+          },
+          orderBy: {
+            population: "desc",
+          },
+          take: input.limit,
+        });
+
+        return {
+          capitals,
+          count: capitals.length,
+        };
+      } catch (error) {
+        console.error("[mapEditor.getAllNationalCapitals] Error:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch national capitals",
         });
       }
     }),
@@ -1606,8 +2035,9 @@ export const mapEditorRouter = createTRPCRouter({
   /**
    * Get all approved POIs for a country
    * Public: Anyone can view approved POIs
+   * Rate limited: 120 req/min (read-only operation)
    */
-  getCountryPOIs: publicProcedure
+  getCountryPOIs: readOnlyPublicProcedure
     .input(
       z.object({
         countryId: z.string().optional(),
@@ -1873,6 +2303,9 @@ export const mapEditorRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
+      console.log("[getPendingReviews] CALLED with input:", input);
+      console.log("[getPendingReviews] User:", ctx.auth.userId);
+
       try {
         const results: any = {
           subdivisions: [],
@@ -1922,6 +2355,9 @@ export const mapEditorRouter = createTRPCRouter({
           const where: any = { status: "pending" };
           if (input.countryId) where.countryId = input.countryId;
 
+          console.log("[getPendingReviews] Fetching cities with where:", where);
+          console.log("[getPendingReviews] Entity type:", input.entityType);
+
           const [cities, cityCount] = await Promise.all([
             ctx.db.city.findMany({
               where,
@@ -1945,6 +2381,9 @@ export const mapEditorRouter = createTRPCRouter({
             }),
             ctx.db.city.count({ where }),
           ]);
+
+          console.log("[getPendingReviews] Found cities:", cities.length, cities);
+          console.log("[getPendingReviews] City count:", cityCount);
 
           results.cities = cities;
           if (input.entityType === "city") {
@@ -1992,6 +2431,14 @@ export const mapEditorRouter = createTRPCRouter({
           results.total =
             results.subdivisions.length + results.cities.length + results.pois.length;
         }
+
+        console.log("[getPendingReviews] RETURNING results:", {
+          subdivisions: results.subdivisions.length,
+          cities: results.cities.length,
+          pois: results.pois.length,
+          total: results.total,
+          citiesData: results.cities,
+        });
 
         return results;
       } catch (error) {
@@ -2219,6 +2666,23 @@ export const mapEditorRouter = createTRPCRouter({
         )
       );
 
+      // Invalidate vector tile caches (async, don't wait)
+      if (result.count > 0) {
+        if (entityType === "subdivision") {
+          tileCacheInvalidation.invalidateSubdivisions().catch((err) => {
+            console.error("[bulkApprove] Failed to invalidate subdivision tiles:", err);
+          });
+        } else if (entityType === "city") {
+          tileCacheInvalidation.invalidateCities().catch((err) => {
+            console.error("[bulkApprove] Failed to invalidate city tiles:", err);
+          });
+        } else if (entityType === "poi") {
+          tileCacheInvalidation.invalidatePOIs().catch((err) => {
+            console.error("[bulkApprove] Failed to invalidate POI tiles:", err);
+          });
+        }
+      }
+
       return {
         success: true,
         approvedCount: result.count,
@@ -2310,11 +2774,513 @@ export const mapEditorRouter = createTRPCRouter({
         });
       }
     }),
+
+  // ============================================================================
+  // BATCH OPERATIONS (Performance Optimization)
+  // ============================================================================
+
+  /**
+   * Batch create subdivisions
+   * Creates multiple subdivisions in a single transaction
+   * More efficient than creating individually
+   */
+  batchCreateSubdivisions: standardMutationProcedure
+    .input(
+      z.object({
+        subdivisions: z.array(CreateSubdivisionInput).min(1).max(50),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Validate all geometries first
+        for (const sub of input.subdivisions) {
+          if (!validateGeoJSONPolygon(sub.geometry)) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Invalid GeoJSON geometry for subdivision: ${sub.name}`,
+            });
+          }
+        }
+
+        // Verify all countries exist and user has permissions
+        const countryIds = Array.from(new Set(input.subdivisions.map((s) => s.countryId)));
+        const countries = await ctx.db.country.findMany({
+          where: { id: { in: countryIds } },
+          select: { id: true },
+        });
+
+        if (countries.length !== countryIds.length) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "One or more countries not found",
+          });
+        }
+
+        // Check user permissions
+        const userCountry = await ctx.db.user.findUnique({
+          where: { clerkUserId: ctx.auth.userId },
+          select: { countryId: true, role: { select: { level: true } } },
+        });
+
+        const isAdmin = (userCountry?.role?.level ?? 999) <= 20;
+
+        // Verify user owns all countries or is admin
+        if (!isAdmin) {
+          const unauthorized = input.subdivisions.some(
+            (s) => s.countryId !== userCountry?.countryId
+          );
+          if (unauthorized) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "You can only create subdivisions in your own country",
+            });
+          }
+        }
+
+        // Batch create in a transaction
+        const results = await ctx.db.$transaction(
+          input.subdivisions.map((sub) =>
+            ctx.db.subdivision.create({
+              data: {
+                countryId: sub.countryId,
+                name: sub.name,
+                type: sub.type,
+                geometry: sub.geometry as any,
+                level: sub.level,
+                population: sub.population,
+                capital: sub.capital,
+                areaSqKm: sub.areaSqKm,
+                status: "draft",
+                submittedBy: ctx.auth.userId,
+              },
+            })
+          )
+        );
+
+        // Batch create audit logs
+        await ctx.db.mapEditLog.createMany({
+          data: results.map((sub) => ({
+            entityType: "subdivision",
+            entityId: sub.id,
+            action: "create",
+            userId: ctx.auth.userId,
+          })),
+        });
+
+        return {
+          success: true,
+          count: results.length,
+          ids: results.map((r) => r.id),
+        };
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        console.error("[mapEditor.batchCreateSubdivisions] Error:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to batch create subdivisions",
+        });
+      }
+    }),
+
+  /**
+   * Batch create cities
+   * Creates multiple cities in a single transaction
+   */
+  batchCreateCities: standardMutationProcedure
+    .input(
+      z.object({
+        cities: z.array(CreateCityInput).min(1).max(100),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Validate all coordinates
+        for (const city of input.cities) {
+          if (!validateGeoJSONPoint(city.coordinates)) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Invalid GeoJSON coordinates for city: ${city.name}`,
+            });
+          }
+        }
+
+        // Verify countries exist
+        const countryIds = Array.from(new Set(input.cities.map((c) => c.countryId)));
+        const countries = await ctx.db.country.findMany({
+          where: { id: { in: countryIds } },
+          select: { id: true },
+        });
+
+        if (countries.length !== countryIds.length) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "One or more countries not found",
+          });
+        }
+
+        // Check permissions
+        const userCountry = await ctx.db.user.findUnique({
+          where: { clerkUserId: ctx.auth.userId },
+          select: { countryId: true, role: { select: { level: true } } },
+        });
+
+        const isAdmin = (userCountry?.role?.level ?? 999) <= 20;
+
+        if (!isAdmin) {
+          const unauthorized = input.cities.some(
+            (c) => c.countryId !== userCountry?.countryId
+          );
+          if (unauthorized) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "You can only create cities in your own country",
+            });
+          }
+        }
+
+        // Batch create in transaction
+        const results = await ctx.db.$transaction(
+          input.cities.map((city) =>
+            ctx.db.city.create({
+              data: {
+                countryId: city.countryId,
+                subdivisionId: city.subdivisionId,
+                name: city.name,
+                type: city.type,
+                coordinates: city.coordinates as any,
+                population: city.population,
+                isNationalCapital: city.isNationalCapital ?? false,
+                isSubdivisionCapital: city.isSubdivisionCapital ?? false,
+                elevation: city.elevation,
+                foundedYear: city.foundedYear,
+                status: "draft",
+                submittedBy: ctx.auth.userId,
+              },
+            })
+          )
+        );
+
+        // Batch audit logs
+        await ctx.db.mapEditLog.createMany({
+          data: results.map((city) => ({
+            entityType: "city",
+            entityId: city.id,
+            action: "create",
+            userId: ctx.auth.userId,
+          })),
+        });
+
+        return {
+          success: true,
+          count: results.length,
+          ids: results.map((r) => r.id),
+        };
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        console.error("[mapEditor.batchCreateCities] Error:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to batch create cities",
+        });
+      }
+    }),
+
+  /**
+   * Batch create POIs
+   * Creates multiple POIs in a single transaction
+   */
+  batchCreatePOIs: standardMutationProcedure
+    .input(
+      z.object({
+        pois: z.array(CreatePOIInput).min(1).max(100),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Validate coordinates
+        for (const poi of input.pois) {
+          if (!validateGeoJSONPoint(poi.coordinates)) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Invalid GeoJSON coordinates for POI: ${poi.name}`,
+            });
+          }
+        }
+
+        // Verify countries
+        const countryIds = Array.from(new Set(input.pois.map((p) => p.countryId)));
+        const countries = await ctx.db.country.findMany({
+          where: { id: { in: countryIds } },
+          select: { id: true },
+        });
+
+        if (countries.length !== countryIds.length) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "One or more countries not found",
+          });
+        }
+
+        // Check permissions
+        const userCountry = await ctx.db.user.findUnique({
+          where: { clerkUserId: ctx.auth.userId },
+          select: { countryId: true, role: { select: { level: true } } },
+        });
+
+        const isAdmin = (userCountry?.role?.level ?? 999) <= 20;
+
+        if (!isAdmin) {
+          const unauthorized = input.pois.some(
+            (p) => p.countryId !== userCountry?.countryId
+          );
+          if (unauthorized) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "You can only create POIs in your own country",
+            });
+          }
+        }
+
+        // Batch create in transaction
+        const results = await ctx.db.$transaction(
+          input.pois.map((poi) =>
+            ctx.db.pointOfInterest.create({
+              data: {
+                countryId: poi.countryId,
+                subdivisionId: poi.subdivisionId,
+                name: poi.name,
+                category: poi.category,
+                icon: poi.icon,
+                coordinates: poi.coordinates as any,
+                description: poi.description,
+                images: poi.images,
+                metadata: poi.metadata,
+                status: "draft",
+                submittedBy: ctx.auth.userId,
+              },
+            })
+          )
+        );
+
+        // Batch audit logs
+        await ctx.db.mapEditLog.createMany({
+          data: results.map((poi) => ({
+            entityType: "poi",
+            entityId: poi.id,
+            action: "create",
+            userId: ctx.auth.userId,
+          })),
+        });
+
+        return {
+          success: true,
+          count: results.length,
+          ids: results.map((r) => r.id),
+        };
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        console.error("[mapEditor.batchCreatePOIs] Error:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to batch create POIs",
+        });
+      }
+    }),
+
+  // ============================================================================
+  // DATA QUALITY & VALIDATION (Admin)
+  // ============================================================================
+
+  /**
+   * Get data quality report for a country
+   * Admin-only: Comprehensive validation and quality metrics
+   */
+  getDataQualityReport: adminProcedure
+    .input(z.object({ countryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const report = await generateDataQualityReport(input.countryId);
+        return report;
+      } catch (error) {
+        console.error("[mapEditor.getDataQualityReport] Error:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to generate data quality report",
+        });
+      }
+    }),
+
+  /**
+   * Auto-fix invalid geometries
+   * Admin-only: Attempts to fix topology issues using ST_MakeValid
+   */
+  autoFixGeometries: adminProcedure
+    .input(
+      z.object({
+        entityType: z.enum(["subdivision", "city", "poi"]),
+        entityIds: z.array(z.string()).min(1).max(100),
+        dryRun: z.boolean().default(true), // Safety: default to dry run
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const { entityType, entityIds, dryRun } = input;
+
+        if (entityType !== "subdivision") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Only subdivisions can be auto-fixed (polygons)",
+          });
+        }
+
+        const fixResults: Array<{
+          id: string;
+          name: string;
+          wasValid: boolean;
+          isFixed: boolean;
+          errors: string[];
+        }> = [];
+
+        // Process each subdivision
+        for (const id of entityIds) {
+          const subdivision = await ctx.db.subdivision.findUnique({
+            where: { id },
+            select: { id: true, name: true, geometry: true },
+          });
+
+          if (!subdivision) {
+            fixResults.push({
+              id,
+              name: "NOT_FOUND",
+              wasValid: false,
+              isFixed: false,
+              errors: ["Subdivision not found"],
+            });
+            continue;
+          }
+
+          // Validate geometry
+          const validation = await validatePolygonGeometry(subdivision.geometry);
+
+          if (validation.isValid) {
+            fixResults.push({
+              id: subdivision.id,
+              name: subdivision.name,
+              wasValid: true,
+              isFixed: false,
+              errors: [],
+            });
+            continue;
+          }
+
+          // Try to fix
+          if (!validation.canAutoFix || !validation.fixedGeometry) {
+            fixResults.push({
+              id: subdivision.id,
+              name: subdivision.name,
+              wasValid: false,
+              isFixed: false,
+              errors: validation.errors,
+            });
+            continue;
+          }
+
+          // Apply fix if not dry run
+          if (!dryRun) {
+            await ctx.db.subdivision.update({
+              where: { id: subdivision.id },
+              data: {
+                geometry: validation.fixedGeometry as any,
+                updatedAt: new Date(),
+              },
+            });
+
+            // Create audit log
+            await ctx.db.mapEditLog.create({
+              data: {
+                entityType: "subdivision",
+                entityId: subdivision.id,
+                action: "modify",
+                userId: ctx.auth.userId,
+                changes: {
+                  old: { geometry: "INVALID" },
+                  new: { geometry: "AUTO_FIXED" },
+                },
+                reason: `Auto-fixed geometry: ${validation.errors.join(", ")}`,
+              },
+            });
+
+            // Invalidate tile cache
+            tileCacheInvalidation.invalidateSubdivisions().catch(console.error);
+          }
+
+          fixResults.push({
+            id: subdivision.id,
+            name: subdivision.name,
+            wasValid: false,
+            isFixed: true,
+            errors: validation.errors,
+          });
+        }
+
+        const summary = {
+          total: fixResults.length,
+          alreadyValid: fixResults.filter((r) => r.wasValid).length,
+          fixed: fixResults.filter((r) => r.isFixed).length,
+          unfixable: fixResults.filter((r) => !r.wasValid && !r.isFixed).length,
+          dryRun,
+        };
+
+        return {
+          summary,
+          results: fixResults,
+        };
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        console.error("[mapEditor.autoFixGeometries] Error:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to auto-fix geometries",
+        });
+      }
+    }),
 });
 
 // ============================================================================
 // Helper Functions
 // ============================================================================
+
+/**
+ * Validate GeoJSON Point structure
+ */
+function validateGeoJSONPoint(geometry: any): boolean {
+  if (!geometry.type || !geometry.coordinates) {
+    return false;
+  }
+
+  if (geometry.type === "Point") {
+    return (
+      Array.isArray(geometry.coordinates) &&
+      geometry.coordinates.length === 2 &&
+      typeof geometry.coordinates[0] === "number" &&
+      typeof geometry.coordinates[1] === "number" &&
+      geometry.coordinates[0] >= -180 &&
+      geometry.coordinates[0] <= 180 &&
+      geometry.coordinates[1] >= -90 &&
+      geometry.coordinates[1] <= 90
+    );
+  }
+
+  return false;
+}
 
 /**
  * Validate GeoJSON Polygon structure

@@ -11,12 +11,17 @@ postgres:
       id_columns: [ogc_fid]
       source_id_format: "{table}"
       tables:
+        # Base map layers (always shown)
         - public.map_layer_political
         - public.map_layer_climate
         - public.map_layer_rivers
         - public.map_layer_lakes
         - public.map_layer_icecaps
         - public.map_layer_altitudes
+        # User-created content layers (approved only, via PostGIS geom_postgis column)
+        - public.subdivisions
+        - public.cities
+        - public.points_of_interest
 
 # Server settings
 listen_addresses: "0.0.0.0:3800"
