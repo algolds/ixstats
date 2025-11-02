@@ -276,7 +276,7 @@ function SubdivisionsTab({
         title="No Subdivisions Found"
         description={searchQuery ? "Try adjusting your search or filters" : "Get started by creating your first subdivision"}
         actionLabel="New Subdivision"
-        onAction={() => onNewFeature?.("subdivision")}
+        onAction={onNewFeature}
       />
     );
   }
@@ -414,7 +414,7 @@ function CitiesTab({
         title="No Cities Found"
         description={searchQuery ? "Try adjusting your search or filters" : "Get started by creating your first city"}
         actionLabel="New City"
-        onAction={() => onNewFeature?.("city")}
+        onAction={onNewFeature}
       />
     );
   }
@@ -549,7 +549,7 @@ function POIsTab({
         title="No POIs Found"
         description={searchQuery ? "Try adjusting your search or filters" : "Get started by creating your first point of interest"}
         actionLabel="New POI"
-        onAction={() => onNewFeature?.("poi")}
+        onAction={onNewFeature}
       />
     );
   }

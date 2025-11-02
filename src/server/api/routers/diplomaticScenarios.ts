@@ -1014,7 +1014,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         // Audit log
         await ctx.db.auditLog.create({
           data: {
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId,
             action: "diplomatic_scenario.create",
             details: JSON.stringify({
               scenarioId: scenario.id,
@@ -1028,7 +1028,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         });
 
         console.log(
-          `[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth.userId} created scenario: ${scenario.title} (${scenario.id})`
+          `[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth!.userId} created scenario: ${scenario.title} (${scenario.id})`
         );
 
         return {
@@ -1046,7 +1046,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         await ctx.db.auditLog
           .create({
             data: {
-              userId: ctx.auth.userId,
+              userId: ctx.auth!.userId,
               action: "diplomatic_scenario.create",
               details: JSON.stringify({ input }),
               success: false,
@@ -1124,7 +1124,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         // Audit log
         await ctx.db.auditLog.create({
           data: {
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId,
             action: "diplomatic_scenario.update",
             details: JSON.stringify({
               scenarioId: scenario.id,
@@ -1137,7 +1137,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         });
 
         console.log(
-          `[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth.userId} updated scenario: ${scenario.title} (${scenario.id})`
+          `[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth!.userId} updated scenario: ${scenario.title} (${scenario.id})`
         );
 
         return {
@@ -1155,7 +1155,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         await ctx.db.auditLog
           .create({
             data: {
-              userId: ctx.auth.userId,
+              userId: ctx.auth!.userId,
               action: "diplomatic_scenario.update",
               details: JSON.stringify({ input }),
               success: false,
@@ -1200,7 +1200,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         // Audit log
         await ctx.db.auditLog.create({
           data: {
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId,
             action: "diplomatic_scenario.delete",
             details: JSON.stringify({
               scenarioId: scenario.id,
@@ -1212,7 +1212,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         });
 
         console.log(
-          `[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth.userId} deleted scenario: ${scenario.title} (${scenario.id})`
+          `[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth!.userId} deleted scenario: ${scenario.title} (${scenario.id})`
         );
 
         return {
@@ -1226,7 +1226,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         await ctx.db.auditLog
           .create({
             data: {
-              userId: ctx.auth.userId,
+              userId: ctx.auth!.userId,
               action: "diplomatic_scenario.delete",
               details: JSON.stringify({ input }),
               success: false,
@@ -1292,7 +1292,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         // Audit log
         await ctx.db.auditLog.create({
           data: {
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId,
             action: "diplomatic_scenario.create_choice",
             details: JSON.stringify({
               scenarioId: input.scenarioId,
@@ -1305,7 +1305,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         });
 
         console.log(
-          `[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth.userId} added choice ${input.choice.id} to scenario ${input.scenarioId}`
+          `[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth!.userId} added choice ${input.choice.id} to scenario ${input.scenarioId}`
         );
 
         return {
@@ -1321,7 +1321,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         await ctx.db.auditLog
           .create({
             data: {
-              userId: ctx.auth.userId,
+              userId: ctx.auth!.userId,
               action: "diplomatic_scenario.create_choice",
               details: JSON.stringify({ input }),
               success: false,
@@ -1399,7 +1399,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         // Audit log
         await ctx.db.auditLog.create({
           data: {
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId,
             action: "diplomatic_scenario.update_choice",
             details: JSON.stringify({
               scenarioId: input.scenarioId,
@@ -1412,7 +1412,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         });
 
         console.log(
-          `[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth.userId} updated choice ${input.choiceId} in scenario ${input.scenarioId}`
+          `[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth!.userId} updated choice ${input.choiceId} in scenario ${input.scenarioId}`
         );
 
         return {
@@ -1428,7 +1428,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         await ctx.db.auditLog
           .create({
             data: {
-              userId: ctx.auth.userId,
+              userId: ctx.auth!.userId,
               action: "diplomatic_scenario.update_choice",
               details: JSON.stringify({ input }),
               success: false,
@@ -1492,7 +1492,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         // Audit log
         await ctx.db.auditLog.create({
           data: {
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId,
             action: "diplomatic_scenario.delete_choice",
             details: JSON.stringify({
               scenarioId: input.scenarioId,
@@ -1504,7 +1504,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         });
 
         console.log(
-          `[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth.userId} deleted choice ${input.choiceId} from scenario ${input.scenarioId}`
+          `[DIPLOMATIC_SCENARIOS] Admin ${ctx.auth!.userId} deleted choice ${input.choiceId} from scenario ${input.scenarioId}`
         );
 
         return {
@@ -1520,7 +1520,7 @@ export const diplomaticScenariosRouter = createTRPCRouter({
         await ctx.db.auditLog
           .create({
             data: {
-              userId: ctx.auth.userId,
+              userId: ctx.auth!.userId,
               action: "diplomatic_scenario.delete_choice",
               details: JSON.stringify({ input }),
               success: false,

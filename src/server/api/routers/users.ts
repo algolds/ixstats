@@ -29,6 +29,7 @@ export const usersRouter = createTRPCRouter({
           userId: null,
           countryId: null,
           country: null,
+          role: null,
           hasCompletedSetup: false,
         };
       }
@@ -117,6 +118,7 @@ export const usersRouter = createTRPCRouter({
         userId: clerkUserId,
         countryId: countryRecord?.id ?? null,
         country: countryRecord,
+        role: userRecord?.role ?? null,
         hasCompletedSetup: Boolean(countryRecord),
       };
     } catch (error) {
@@ -125,6 +127,7 @@ export const usersRouter = createTRPCRouter({
         userId: null,
         countryId: null,
         country: null,
+        role: null,
         hasCompletedSetup: false,
       };
     }

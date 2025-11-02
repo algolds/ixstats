@@ -146,9 +146,13 @@ function GoogleMapContainer({
       zoom: MAPLIBRE_CONFIG.defaultZoom,
       minZoom: MAPLIBRE_CONFIG.minZoom,
       maxZoom: MAPLIBRE_CONFIG.maxZoom,
-      preserveDrawingBuffer: true, // Required for PNG/SVG export
       // Projection is set in style, not here
-    });
+    } as any);
+
+    // Set preserveDrawingBuffer after initialization (WebGL context option for PNG/SVG export)
+    if (map.current) {
+      (map.current as any).preserveDrawingBuffer = true;
+    }
 
     map.current.on('error', (e: any) => {
       // Log detailed error information for debugging

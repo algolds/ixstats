@@ -224,11 +224,11 @@ export default function MapEditorPage() {
 
   // Extract country geometry for boundary validation
   const countryGeometry = useMemo(() => {
-    if (!countryBordersData?.borders || countryBordersData.borders.length === 0) {
+    if (!countryBordersData?.countries || countryBordersData.countries.length === 0) {
       return null;
     }
 
-    const countryBorder = countryBordersData.borders[0];
+    const countryBorder = countryBordersData.countries[0];
     if (!countryBorder?.geometry) {
       return null;
     }
@@ -364,9 +364,9 @@ export default function MapEditorPage() {
 
     // Find the feature
     const features =
-      type === "subdivision" ? queryData.subdivisions :
-      type === "city" ? queryData.cities :
-      type === "poi" ? queryData.pois :
+      type === "subdivision" ? (queryData as any).subdivisions :
+      type === "city" ? (queryData as any).cities :
+      type === "poi" ? (queryData as any).pois :
       [];
 
     console.log("[handleFeatureSelect] Searching in features:", features.length);
@@ -735,7 +735,7 @@ export default function MapEditorPage() {
             <SubdivisionEditor
               map={(window as any).__mapEditorInstance || null}
               countryId={country.id}
-              countryGeometry={countryGeometry}
+              countryGeometry={countryGeometry ?? undefined}
               subdivisionId={state.editingFeatureId ?? undefined}
               isActive={true}
               onClose={() => dispatch({ type: "CLOSE_EDITOR" })}

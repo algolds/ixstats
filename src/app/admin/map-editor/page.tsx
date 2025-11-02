@@ -145,7 +145,7 @@ export default function MapEditorAdminPage() {
   }, [user, userProfile]);
 
   // Determine if we should show content or loading/error states
-  const shouldShowContent = isLoaded && !profileLoading && user && isAdmin;
+  const shouldShowContent = isLoaded && !profileLoading && !!user && isAdmin;
 
   // Fetch pending reviews based on active tab (only when authorized)
   const {

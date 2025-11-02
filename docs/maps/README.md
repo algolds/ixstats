@@ -1,4 +1,4 @@
-# IxStats Maps System Documentation
+# IxMaps System Documentation
 
 **Version**: 1.3.0
 **Last Updated**: November 2, 2025
@@ -21,7 +21,7 @@
 
 ## Overview
 
-The IxStats Maps System is an enterprise-grade interactive mapping platform that enables users to create, edit, and display custom geographic data for fictional countries. Built with **Next.js 15**, **PostgreSQL + PostGIS**, **MapLibre GL JS**, and **Martin tile server**, it delivers exceptional performance with comprehensive data validation.
+The IxMaps System is an enterprise-grade interactive mapping platform that enables users to create, edit, and display custom geographic data for fictional countries. Built with **Next.js 15**, **PostgreSQL + PostGIS**, **MapLibre GL JS**, and **Martin tile server**, it delivers exceptional performance with comprehensive data validation.
 
 ### What It Does
 

@@ -364,12 +364,12 @@ export async function generateDataQualityReport(
     // Find invalid subdivisions
     const allSubdivisions = await db.subdivision.findMany({
       where: { countryId },
-      select: { id: true, name: true, geometry: true, geom_postgis: true },
+      select: { id: true, name: true, geometry: true },
     });
 
     const invalidSubdivisions: Array<{ id: string; name: string; errors: string[] }> = [];
     for (const sub of allSubdivisions) {
-      if (sub.geom_postgis) {
+      if (sub.geometry) {
         // Check validity using PostGIS
         const validationCheck = await db.$queryRaw<Array<{ is_valid: boolean; reason: string | null }>>`
           SELECT

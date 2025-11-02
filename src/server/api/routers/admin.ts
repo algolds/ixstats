@@ -1152,7 +1152,7 @@ export const adminRouter = createTRPCRouter({
         // God-mode operations require system owner privileges
         // This check ensures only the system owner can directly manipulate country data
         // Regular admins must use standard update flows to prevent data corruption
-        if (!isSystemOwner(ctx.auth.userId)) {
+        if (!ctx.auth?.userId || !isSystemOwner(ctx.auth.userId)) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message:
@@ -1330,7 +1330,7 @@ export const adminRouter = createTRPCRouter({
         // God-mode bulk operations require system owner privileges
         // This prevents mass data corruption by restricting bulk updates to the system owner
         // Regular admins must update countries individually through standard procedures
-        if (!isSystemOwner(ctx.auth.userId)) {
+        if (!ctx.auth?.userId || !isSystemOwner(ctx.auth.userId)) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message:

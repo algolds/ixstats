@@ -382,7 +382,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
         // Audit log
         await ctx.db.auditLog.create({
           data: {
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId,
             action: "military_equipment.create",
             details: JSON.stringify({
               equipmentId: equipment.id,
@@ -396,7 +396,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
         });
 
         console.log(
-          `[MILITARY_EQUIPMENT] Admin ${ctx.auth.userId} created equipment: ${equipment.name} (${equipment.id})`
+          `[MILITARY_EQUIPMENT] Admin ${ctx.auth!.userId} created equipment: ${equipment.name} (${equipment.id})`
         );
 
         return {
@@ -414,7 +414,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
         await ctx.db.auditLog
           .create({
             data: {
-              userId: ctx.auth.userId,
+              userId: ctx.auth!.userId,
               action: "military_equipment.create",
               details: JSON.stringify({ input }),
               success: false,
@@ -515,7 +515,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
         // Audit log
         await ctx.db.auditLog.create({
           data: {
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId,
             action: "military_equipment.update",
             details: JSON.stringify({
               equipmentId: equipment.id,
@@ -528,7 +528,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
         });
 
         console.log(
-          `[MILITARY_EQUIPMENT] Admin ${ctx.auth.userId} updated equipment: ${equipment.name} (${equipment.id})`
+          `[MILITARY_EQUIPMENT] Admin ${ctx.auth!.userId} updated equipment: ${equipment.name} (${equipment.id})`
         );
 
         return {
@@ -546,7 +546,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
         await ctx.db.auditLog
           .create({
             data: {
-              userId: ctx.auth.userId,
+              userId: ctx.auth!.userId,
               action: "military_equipment.update",
               details: JSON.stringify({ input }),
               success: false,
@@ -592,7 +592,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
         // Audit log
         await ctx.db.auditLog.create({
           data: {
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId,
             action: "military_equipment.delete",
             details: JSON.stringify({
               equipmentId: equipment.id,
@@ -604,7 +604,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
         });
 
         console.log(
-          `[MILITARY_EQUIPMENT] Admin ${ctx.auth.userId} deleted equipment: ${equipment.name} (${equipment.id})`
+          `[MILITARY_EQUIPMENT] Admin ${ctx.auth!.userId} deleted equipment: ${equipment.name} (${equipment.id})`
         );
 
         return {
@@ -618,7 +618,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
         await ctx.db.auditLog
           .create({
             data: {
-              userId: ctx.auth.userId,
+              userId: ctx.auth!.userId,
               action: "military_equipment.delete",
               details: JSON.stringify({ input }),
               success: false,
@@ -661,7 +661,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
         // Audit log
         await ctx.db.auditLog.create({
           data: {
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId,
             action: "military_equipment.bulk_toggle",
             details: JSON.stringify({
               count: result.count,
@@ -674,7 +674,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
         });
 
         console.log(
-          `[MILITARY_EQUIPMENT] Admin ${ctx.auth.userId} bulk toggled ${result.count} equipment items to ${input.isActive ? "active" : "inactive"}`
+          `[MILITARY_EQUIPMENT] Admin ${ctx.auth!.userId} bulk toggled ${result.count} equipment items to ${input.isActive ? "active" : "inactive"}`
         );
 
         return {
@@ -688,7 +688,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
         await ctx.db.auditLog
           .create({
             data: {
-              userId: ctx.auth.userId,
+              userId: ctx.auth!.userId,
               action: "military_equipment.bulk_toggle",
               details: JSON.stringify({ input }),
               success: false,
@@ -735,7 +735,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
         // Audit log
         await ctx.db.auditLog.create({
           data: {
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId,
             action: "military_manufacturer.create",
             details: JSON.stringify({
               manufacturerId: manufacturer.id,
@@ -748,7 +748,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
         });
 
         console.log(
-          `[MILITARY_EQUIPMENT] Admin ${ctx.auth.userId} created manufacturer: ${manufacturer.name} (${manufacturer.id})`
+          `[MILITARY_EQUIPMENT] Admin ${ctx.auth!.userId} created manufacturer: ${manufacturer.name} (${manufacturer.id})`
         );
 
         return {
@@ -762,7 +762,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
         await ctx.db.auditLog
           .create({
             data: {
-              userId: ctx.auth.userId,
+              userId: ctx.auth!.userId,
               action: "military_manufacturer.create",
               details: JSON.stringify({ input }),
               success: false,
@@ -825,7 +825,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
         // Audit log
         await ctx.db.auditLog.create({
           data: {
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId,
             action: "military_manufacturer.update",
             details: JSON.stringify({
               manufacturerId: manufacturer.id,
@@ -838,7 +838,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
         });
 
         console.log(
-          `[MILITARY_EQUIPMENT] Admin ${ctx.auth.userId} updated manufacturer: ${manufacturer.name} (${manufacturer.id})`
+          `[MILITARY_EQUIPMENT] Admin ${ctx.auth!.userId} updated manufacturer: ${manufacturer.name} (${manufacturer.id})`
         );
 
         return {
@@ -852,7 +852,7 @@ export const militaryEquipmentRouter = createTRPCRouter({
         await ctx.db.auditLog
           .create({
             data: {
-              userId: ctx.auth.userId,
+              userId: ctx.auth!.userId,
               action: "military_manufacturer.update",
               details: JSON.stringify({ input }),
               success: false,

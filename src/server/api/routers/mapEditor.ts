@@ -535,7 +535,7 @@ export const mapEditorRouter = createTRPCRouter({
 
         // Check if user owns this country
         const userCountry = await ctx.db.user.findUnique({
-          where: { clerkUserId: ctx.auth.userId },
+          where: { clerkUserId: ctx.auth!.userId },
           select: { countryId: true, role: { select: { level: true } } },
         });
 
@@ -607,7 +607,7 @@ export const mapEditorRouter = createTRPCRouter({
             capital: input.capital,
             areaSqKm: input.areaSqKm,
             status: "draft",
-            submittedBy: ctx.auth.userId,
+            submittedBy: ctx.auth!.userId,
           },
         });
 
@@ -617,7 +617,7 @@ export const mapEditorRouter = createTRPCRouter({
             entityType: "subdivision",
             entityId: subdivision.id,
             action: "create",
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId!,
             changes: {
               name: input.name,
               type: input.type,
@@ -676,11 +676,11 @@ export const mapEditorRouter = createTRPCRouter({
 
         // Check permissions
         const userCountry = await ctx.db.user.findUnique({
-          where: { clerkUserId: ctx.auth.userId },
+          where: { clerkUserId: ctx.auth!.userId },
           select: { countryId: true, role: { select: { level: true } } },
         });
 
-        const isOwner = existing.submittedBy === ctx.auth.userId;
+        const isOwner = existing.submittedBy === ctx.auth!.userId;
         const isAdmin = (userCountry?.role?.level ?? 999) <= 20;
         const isDraft = existing.status === "pending" || existing.status === "draft";
 
@@ -720,7 +720,7 @@ export const mapEditorRouter = createTRPCRouter({
             entityType: "subdivision",
             entityId: input.id,
             action: "update",
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId!,
             changes: {
               old: { name: existing.name },
               new: input,
@@ -772,11 +772,11 @@ export const mapEditorRouter = createTRPCRouter({
 
         // Check permissions
         const userCountry = await ctx.db.user.findUnique({
-          where: { clerkUserId: ctx.auth.userId },
+          where: { clerkUserId: ctx.auth!.userId },
           select: { role: { select: { level: true } } },
         });
 
-        const isOwner = existing.submittedBy === ctx.auth.userId;
+        const isOwner = existing.submittedBy === ctx.auth!.userId;
         const isAdmin = (userCountry?.role?.level ?? 999) <= 20;
         const isDraft = existing.status === "pending" || existing.status === "draft";
 
@@ -798,7 +798,7 @@ export const mapEditorRouter = createTRPCRouter({
             entityType: "subdivision",
             entityId: input.id,
             action: "delete",
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId!,
             changes: {
               name: existing.name,
             },
@@ -938,7 +938,7 @@ export const mapEditorRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       try {
         const where: any = {
-          submittedBy: ctx.auth.userId,
+          submittedBy: ctx.auth!.userId,
         };
 
         if (input.countryId) {
@@ -1021,7 +1021,7 @@ export const mapEditorRouter = createTRPCRouter({
         }
 
         // Check ownership
-        if (existing.submittedBy !== ctx.auth.userId) {
+        if (existing.submittedBy !== ctx.auth!.userId) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "You can only submit your own subdivisions for review",
@@ -1051,7 +1051,7 @@ export const mapEditorRouter = createTRPCRouter({
             entityType: "subdivision",
             entityId: input.id,
             action: "modify",
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId!,
             changes: {
               old: { status: existing.status },
               new: { status: "pending" },
@@ -1102,7 +1102,7 @@ export const mapEditorRouter = createTRPCRouter({
 
         // Check if user owns this country
         const userCountry = await ctx.db.user.findUnique({
-          where: { clerkUserId: ctx.auth.userId },
+          where: { clerkUserId: ctx.auth!.userId },
           select: { countryId: true, role: { select: { level: true } } },
         });
 
@@ -1170,7 +1170,7 @@ export const mapEditorRouter = createTRPCRouter({
             elevation: input.elevation,
             foundedYear: input.foundedYear,
             status: "draft",
-            submittedBy: ctx.auth.userId,
+            submittedBy: ctx.auth!.userId,
           },
         });
 
@@ -1179,7 +1179,7 @@ export const mapEditorRouter = createTRPCRouter({
           entityType: "city",
           entityId: city.id,
           action: "create",
-          userId: ctx.auth.userId,
+          userId: ctx.auth!.userId!,
           changes: {
             name: input.name,
             type: input.type,
@@ -1235,11 +1235,11 @@ export const mapEditorRouter = createTRPCRouter({
 
         // Check permissions
         const userCountry = await ctx.db.user.findUnique({
-          where: { clerkUserId: ctx.auth.userId },
+          where: { clerkUserId: ctx.auth!.userId },
           select: { countryId: true, role: { select: { level: true } } },
         });
 
-        const isOwner = existing.submittedBy === ctx.auth.userId;
+        const isOwner = existing.submittedBy === ctx.auth!.userId;
         const isAdmin = (userCountry?.role?.level ?? 999) <= 20;
         const isDraft = existing.status === "pending" || existing.status === "draft";
 
@@ -1292,7 +1292,7 @@ export const mapEditorRouter = createTRPCRouter({
             entityType: "city",
             entityId: input.id,
             action: "update",
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId!,
             changes: {
               old: { name: existing.name },
               new: input,
@@ -1344,11 +1344,11 @@ export const mapEditorRouter = createTRPCRouter({
 
         // Check permissions
         const userCountry = await ctx.db.user.findUnique({
-          where: { clerkUserId: ctx.auth.userId },
+          where: { clerkUserId: ctx.auth!.userId },
           select: { role: { select: { level: true } } },
         });
 
-        const isOwner = existing.submittedBy === ctx.auth.userId;
+        const isOwner = existing.submittedBy === ctx.auth!.userId;
         const isAdmin = (userCountry?.role?.level ?? 999) <= 20;
         const isDraft = existing.status === "pending" || existing.status === "draft";
 
@@ -1370,7 +1370,7 @@ export const mapEditorRouter = createTRPCRouter({
             entityType: "city",
             entityId: input.id,
             action: "delete",
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId!,
             changes: {
               name: existing.name,
             },
@@ -1600,7 +1600,7 @@ export const mapEditorRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       try {
         const where: any = {
-          submittedBy: ctx.auth.userId,
+          submittedBy: ctx.auth!.userId,
         };
 
         if (input.countryId) {
@@ -1690,7 +1690,7 @@ export const mapEditorRouter = createTRPCRouter({
         }
 
         // Check ownership
-        if (existing.submittedBy !== ctx.auth.userId) {
+        if (existing.submittedBy !== ctx.auth!.userId) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "You can only submit your own cities for review",
@@ -1720,7 +1720,7 @@ export const mapEditorRouter = createTRPCRouter({
             entityType: "city",
             entityId: input.id,
             action: "modify",
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId!,
             changes: {
               old: { status: existing.status },
               new: { status: "pending" },
@@ -1771,7 +1771,7 @@ export const mapEditorRouter = createTRPCRouter({
 
         // Check if user owns this country
         const userCountry = await ctx.db.user.findUnique({
-          where: { clerkUserId: ctx.auth.userId },
+          where: { clerkUserId: ctx.auth!.userId },
           select: { countryId: true, role: { select: { level: true } } },
         });
 
@@ -1813,7 +1813,7 @@ export const mapEditorRouter = createTRPCRouter({
             images: input.images ? (input.images as any) : null,
             metadata: input.metadata ? (input.metadata as any) : null,
             status: "draft",
-            submittedBy: ctx.auth.userId,
+            submittedBy: ctx.auth!.userId,
           },
         });
 
@@ -1823,7 +1823,7 @@ export const mapEditorRouter = createTRPCRouter({
             entityType: "poi",
             entityId: poi.id,
             action: "create",
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId!,
             changes: {
               name: input.name,
               category: input.category,
@@ -1880,11 +1880,11 @@ export const mapEditorRouter = createTRPCRouter({
 
         // Check permissions
         const userCountry = await ctx.db.user.findUnique({
-          where: { clerkUserId: ctx.auth.userId },
+          where: { clerkUserId: ctx.auth!.userId },
           select: { countryId: true, role: { select: { level: true } } },
         });
 
-        const isOwner = existing.submittedBy === ctx.auth.userId;
+        const isOwner = existing.submittedBy === ctx.auth!.userId;
         const isAdmin = (userCountry?.role?.level ?? 999) <= 20;
         const isDraft = existing.status === "pending" || existing.status === "draft";
 
@@ -1932,7 +1932,7 @@ export const mapEditorRouter = createTRPCRouter({
             entityType: "poi",
             entityId: input.id,
             action: "update",
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId!,
             changes: {
               old: { name: existing.name },
               new: input,
@@ -1984,11 +1984,11 @@ export const mapEditorRouter = createTRPCRouter({
 
         // Check permissions
         const userCountry = await ctx.db.user.findUnique({
-          where: { clerkUserId: ctx.auth.userId },
+          where: { clerkUserId: ctx.auth!.userId },
           select: { role: { select: { level: true } } },
         });
 
-        const isOwner = existing.submittedBy === ctx.auth.userId;
+        const isOwner = existing.submittedBy === ctx.auth!.userId;
         const isAdmin = (userCountry?.role?.level ?? 999) <= 20;
         const isDraft = existing.status === "pending" || existing.status === "draft";
 
@@ -2010,7 +2010,7 @@ export const mapEditorRouter = createTRPCRouter({
             entityType: "poi",
             entityId: input.id,
             action: "delete",
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId!,
             changes: {
               name: existing.name,
             },
@@ -2142,7 +2142,7 @@ export const mapEditorRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       try {
         const where: any = {
-          submittedBy: ctx.auth.userId,
+          submittedBy: ctx.auth!.userId,
         };
 
         if (input.countryId) {
@@ -2231,7 +2231,7 @@ export const mapEditorRouter = createTRPCRouter({
         }
 
         // Check ownership
-        if (existing.submittedBy !== ctx.auth.userId) {
+        if (existing.submittedBy !== ctx.auth!.userId) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: "You can only submit your own POIs for review",
@@ -2261,7 +2261,7 @@ export const mapEditorRouter = createTRPCRouter({
             entityType: "poi",
             entityId: input.id,
             action: "modify",
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId!,
             changes: {
               old: { status: existing.status },
               new: { status: "pending" },
@@ -2304,7 +2304,7 @@ export const mapEditorRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       console.log("[getPendingReviews] CALLED with input:", input);
-      console.log("[getPendingReviews] User:", ctx.auth.userId);
+      console.log("[getPendingReviews] User:", ctx.auth!.userId);
 
       try {
         const results: any = {
@@ -2495,7 +2495,7 @@ export const mapEditorRouter = createTRPCRouter({
           where: { id: entityId },
           data: {
             status: "approved",
-            reviewedBy: ctx.auth.userId,
+            reviewedBy: ctx.auth!.userId,
             reviewedAt: new Date(),
           },
         });
@@ -2506,7 +2506,7 @@ export const mapEditorRouter = createTRPCRouter({
             entityType,
             entityId,
             action: "approve",
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId!,
             reason,
             changes: {
               old: { status: "pending" },
@@ -2576,7 +2576,7 @@ export const mapEditorRouter = createTRPCRouter({
           where: { id: entityId },
           data: {
             status: "rejected",
-            reviewedBy: ctx.auth.userId,
+            reviewedBy: ctx.auth!.userId,
             reviewedAt: new Date(),
             rejectionReason: reason,
           },
@@ -2588,7 +2588,7 @@ export const mapEditorRouter = createTRPCRouter({
             entityType,
             entityId,
             action: "reject",
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId!,
             reason,
             changes: {
               old: { status: "pending" },
@@ -2639,7 +2639,7 @@ export const mapEditorRouter = createTRPCRouter({
         },
         data: {
           status: "approved",
-          reviewedBy: ctx.auth.userId,
+          reviewedBy: ctx.auth!.userId,
           reviewedAt: new Date(),
         },
       });
@@ -2652,7 +2652,7 @@ export const mapEditorRouter = createTRPCRouter({
               entityType,
               entityId,
               action: "approve",
-              userId: ctx.auth.userId,
+              userId: ctx.auth!.userId!,
               changes: {
                 old: { status: "pending" },
                 new: { status: "approved" },
@@ -2818,7 +2818,7 @@ export const mapEditorRouter = createTRPCRouter({
 
         // Check user permissions
         const userCountry = await ctx.db.user.findUnique({
-          where: { clerkUserId: ctx.auth.userId },
+          where: { clerkUserId: ctx.auth!.userId },
           select: { countryId: true, role: { select: { level: true } } },
         });
 
@@ -2851,7 +2851,7 @@ export const mapEditorRouter = createTRPCRouter({
                 capital: sub.capital,
                 areaSqKm: sub.areaSqKm,
                 status: "draft",
-                submittedBy: ctx.auth.userId,
+                submittedBy: ctx.auth!.userId,
               },
             })
           )
@@ -2863,7 +2863,7 @@ export const mapEditorRouter = createTRPCRouter({
             entityType: "subdivision",
             entityId: sub.id,
             action: "create",
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId!,
           })),
         });
 
@@ -2922,7 +2922,7 @@ export const mapEditorRouter = createTRPCRouter({
 
         // Check permissions
         const userCountry = await ctx.db.user.findUnique({
-          where: { clerkUserId: ctx.auth.userId },
+          where: { clerkUserId: ctx.auth!.userId },
           select: { countryId: true, role: { select: { level: true } } },
         });
 
@@ -2956,7 +2956,7 @@ export const mapEditorRouter = createTRPCRouter({
                 elevation: city.elevation,
                 foundedYear: city.foundedYear,
                 status: "draft",
-                submittedBy: ctx.auth.userId,
+                submittedBy: ctx.auth!.userId,
               },
             })
           )
@@ -2968,7 +2968,7 @@ export const mapEditorRouter = createTRPCRouter({
             entityType: "city",
             entityId: city.id,
             action: "create",
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId!,
           })),
         });
 
@@ -3027,7 +3027,7 @@ export const mapEditorRouter = createTRPCRouter({
 
         // Check permissions
         const userCountry = await ctx.db.user.findUnique({
-          where: { clerkUserId: ctx.auth.userId },
+          where: { clerkUserId: ctx.auth!.userId },
           select: { countryId: true, role: { select: { level: true } } },
         });
 
@@ -3060,7 +3060,7 @@ export const mapEditorRouter = createTRPCRouter({
                 images: poi.images,
                 metadata: poi.metadata,
                 status: "draft",
-                submittedBy: ctx.auth.userId,
+                submittedBy: ctx.auth!.userId,
               },
             })
           )
@@ -3072,7 +3072,7 @@ export const mapEditorRouter = createTRPCRouter({
             entityType: "poi",
             entityId: poi.id,
             action: "create",
-            userId: ctx.auth.userId,
+            userId: ctx.auth!.userId!,
           })),
         });
 
@@ -3207,7 +3207,7 @@ export const mapEditorRouter = createTRPCRouter({
                 entityType: "subdivision",
                 entityId: subdivision.id,
                 action: "modify",
-                userId: ctx.auth.userId,
+                userId: ctx.auth!.userId!,
                 changes: {
                   old: { geometry: "INVALID" },
                   new: { geometry: "AUTO_FIXED" },

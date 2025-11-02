@@ -98,7 +98,7 @@ export const createGoogleMapsStyle = (
   console.log('[google-map-style] Creating style:', { projection, useGeoJSON, basePath: cleanBasePath });
 
   const style = {
-  version: 8,
+  version: 8 as const,
   projection: { type: projection === 'globe' ? 'globe' : 'mercator' },
   sky: {
     'sky-color': '#e8f4f8',  // Very light blue-white to blend with ice caps
@@ -112,7 +112,7 @@ export const createGoogleMapsStyle = (
       3, 0.6,
       6, 0.2,
       8, 0   // Minimal atmosphere at close zoom
-    ],
+    ] as any,
   },
   sources: {
     graticule: {
@@ -347,5 +347,5 @@ export const createGoogleMapsStyle = (
   glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
   };
 
-  return style;
+  return style as StyleSpecification;
 };
