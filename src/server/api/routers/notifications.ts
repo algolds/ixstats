@@ -591,6 +591,105 @@ export const notificationsRouter = createTRPCRouter({
 
       return { count };
     }),
+
+  // Get user notification preferences
+  getPreferences: publicProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const preferences = await ctx.db.userPreferences.findUnique({
+        where: { userId: input.userId },
+      });
+
+      // Return default preferences if none exist
+      if (!preferences) {
+        return {
+          id: "default",
+          userId: input.userId,
+          emailNotifications: true,
+          pushNotifications: true,
+          economicAlerts: true,
+          crisisAlerts: true,
+          diplomaticAlerts: false,
+          systemAlerts: true,
+          notificationLevel: "medium",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+      }
+
+      return preferences;
+    }),
+
+  // Create or update user notification preferences
+  upsertPreferences: lightMutationProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        emailNotifications: z.boolean().optional(),
+        pushNotifications: z.boolean().optional(),
+        economicAlerts: z.boolean().optional(),
+        crisisAlerts: z.boolean().optional(),
+        diplomaticAlerts: z.boolean().optional(),
+        systemAlerts: z.boolean().optional(),
+        notificationLevel: z.enum(["low", "medium", "high", "all"]).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { userId, ...data } = input;
+
+      // Ensure at least one field is being updated
+      if (Object.keys(data).length === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "At least one preference field must be provided",
+        });
+      }
+
+      const preferences = await ctx.db.userPreferences.upsert({
+        where: { userId },
+        update: data,
+        create: {
+          userId,
+          emailNotifications: data.emailNotifications ?? true,
+          pushNotifications: data.pushNotifications ?? true,
+          economicAlerts: data.economicAlerts ?? true,
+          crisisAlerts: data.crisisAlerts ?? true,
+          diplomaticAlerts: data.diplomaticAlerts ?? false,
+          systemAlerts: data.systemAlerts ?? true,
+          notificationLevel: data.notificationLevel ?? "medium",
+        },
+      });
+
+      return preferences;
+    }),
+
+  // Delete user notification preferences (reset to defaults)
+  deletePreferences: lightMutationProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check if preferences exist
+      const existing = await ctx.db.userPreferences.findUnique({
+        where: { userId: input.userId },
+      });
+
+      if (!existing) {
+        return { success: true, message: "No preferences to delete" };
+      }
+
+      await ctx.db.userPreferences.delete({
+        where: { userId: input.userId },
+      });
+
+      return { success: true, message: "Preferences reset to defaults" };
+    }),
 });
 
 // Helper function to emit notification events (to be called when creating notifications)

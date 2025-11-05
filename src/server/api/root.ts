@@ -50,6 +50,7 @@ import { npcPersonalitiesRouter } from "./routers/npcPersonalities";
 import { geoRouter } from "./routers/geo";
 import { mapEditorRouter } from "./routers/mapEditor";
 import { mapMonitoringRouter } from "./routers/mapMonitoring";
+import { crisisEventsRouter } from "./routers/crisis-events";
 
 /**
  * This is the primary router for your server.
@@ -106,6 +107,7 @@ export const appRouter = createTRPCRouter({
   geo: geoRouter, // Geographic router for country border management with PostGIS integration
   mapEditor: mapEditorRouter, // Map Editor for CRUD operations on subdivisions, cities, and POIs
   mapMonitoring: mapMonitoringRouter, // Map system monitoring and statistics (Admin only)
+  crisisEvents: crisisEventsRouter, // Crisis events management (natural disasters, economic crises, diplomatic incidents, etc.)
   system: adminRouter, // Alias for global stats
 });
 

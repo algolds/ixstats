@@ -61,7 +61,7 @@ async function main() {
   let equipmentSkipped = 0;
 
   // ============================================================================
-  // SEED MANUFACTURERS
+  // SEED MANUFACTURERS (into DefenseManufacturer table)
   // ============================================================================
   console.log("🏭 Seeding defense manufacturers...\n");
 
@@ -69,9 +69,9 @@ async function main() {
 
   for (const [key, manufacturer] of manufacturerEntries) {
     try {
-      // Check if manufacturer exists
-      const existing = await prisma.militaryEquipmentCatalog.findFirst({
-        where: { key: `MANUFACTURER_${key}` },
+      // Check if manufacturer exists in DefenseManufacturer table
+      const existing = await prisma.defenseManufacturer.findFirst({
+        where: { key },
       });
 
       if (existing) {
@@ -80,28 +80,15 @@ async function main() {
         continue;
       }
 
-      // Create manufacturer as special equipment entry
-      await prisma.militaryEquipmentCatalog.create({
+      // Create manufacturer in proper DefenseManufacturer table
+      await prisma.defenseManufacturer.create({
         data: {
-          key: `MANUFACTURER_${key}`,
+          key,
           name: manufacturer.name,
-          manufacturer: key,
-          category: "manufacturer",
-          subcategory: manufacturer.country,
-          era: "MODERN",
-          specifications: safeStringify({
-            country: manufacturer.country,
-            specialty: manufacturer.specialty,
-            established: "Various",
-          }),
-          capabilities: safeStringify({
-            specialization: manufacturer.specialty,
-            countryOfOrigin: manufacturer.country,
-          }),
-          acquisitionCost: 0,
-          maintenanceCost: 0,
-          technologyLevel: 75,
-          crewRequirement: 0,
+          country: manufacturer.country,
+          specialty: Array.isArray(manufacturer.specialty)
+            ? manufacturer.specialty.join(", ")
+            : manufacturer.specialty,
           isActive: true,
         },
       });
@@ -504,7 +491,7 @@ async function main() {
           key,
           name: ship.name,
           manufacturer: ship.manufacturer,
-          category: "ship",
+          category: "naval",
           subcategory,
           era: ship.era,
           specifications: safeStringify({
@@ -635,7 +622,7 @@ async function main() {
           key,
           name: weapon.name,
           manufacturer: weapon.manufacturer,
-          category: "weapon",
+          category: "missile",
           subcategory,
           era: weapon.era,
           specifications: safeStringify({

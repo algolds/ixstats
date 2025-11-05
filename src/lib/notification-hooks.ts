@@ -1110,6 +1110,132 @@ export async function onActivityRingGoal(params: {
   }
 }
 
+/**
+ * Security Event Hook
+ * Triggers notifications when security events occur (automatically or manually)
+ */
+export async function onSecurityEvent(params: {
+  countryId: string;
+  userId?: string;
+  eventType:
+    | "terrorism"
+    | "insurgency"
+    | "organized_crime"
+    | "cyber_attack"
+    | "espionage"
+    | "civil_unrest"
+    | "border_incident"
+    | "natural_disaster";
+  severity: "low" | "moderate" | "high" | "critical" | "existential";
+  threatName: string;
+  description: string;
+  casualties?: number;
+  economicImpact?: number;
+  triggeredBy?: string[]; // Trigger names that caused this event
+  actorArchetype?: string;
+}) {
+  const {
+    countryId,
+    userId,
+    eventType,
+    severity,
+    threatName,
+    description,
+    casualties,
+    economicImpact,
+    triggeredBy,
+    actorArchetype,
+  } = params;
+
+  // Determine priority based on severity
+  const priorityMap = {
+    low: "low" as const,
+    moderate: "medium" as const,
+    high: "high" as const,
+    critical: "critical" as const,
+    existential: "critical" as const,
+  };
+
+  // Severity emojis
+  const severityEmojis = {
+    low: "⚠️",
+    moderate: "🔶",
+    high: "🔴",
+    critical: "🚨",
+    existential: "💀",
+  };
+
+  // Event type icons
+  const eventIcons = {
+    terrorism: "💣",
+    insurgency: "⚔️",
+    organized_crime: "🔫",
+    cyber_attack: "💻",
+    espionage: "🕵️",
+    civil_unrest: "🪧",
+    border_incident: "🚧",
+    natural_disaster: "🌪️",
+  };
+
+  const icon = eventIcons[eventType];
+  const severityIcon = severityEmojis[severity];
+
+  // Build message
+  let message = description;
+  if (casualties && casualties > 0) {
+    message += `. Estimated casualties: ${casualties.toLocaleString()}`;
+  }
+  if (economicImpact && economicImpact < 0) {
+    message += `. Economic impact: $${Math.abs(economicImpact).toLocaleString()}`;
+  }
+
+  // Create notification
+  await notificationAPI.create({
+    title: `${icon} ${severityIcon} Security Event: ${threatName}`,
+    message,
+    userId: userId || null,
+    countryId,
+    category: "security",
+    type: severity === "existential" || severity === "critical" ? "error" : "warning",
+    priority: priorityMap[severity],
+    severity:
+      severity === "existential" || severity === "critical"
+        ? "urgent"
+        : severity === "high"
+          ? "important"
+          : "informational",
+    href: "/mycountry/defense?tab=threats",
+    actionable: true,
+    deliveryMethod:
+      severity === "existential" || severity === "critical"
+        ? "modal"
+        : severity === "high"
+          ? "dynamic-island"
+          : "toast",
+    metadata: {
+      eventType,
+      severity,
+      threatName,
+      casualties,
+      economicImpact,
+      triggeredBy,
+      actorArchetype,
+    },
+  });
+
+  // For critical/existential events, also send to notification API trigger
+  if (severity === "critical" || severity === "existential") {
+    await notificationAPI.trigger({
+      crisis: {
+        type: eventType,
+        severity: severity as "low" | "medium" | "high" | "critical",
+        countryId,
+        description: description || `${threatName} - ${eventType}`,
+      },
+    });
+  }
+}
+
 // Export all hooks
 export const notificationHooks = {
   onEconomicDataChange,
@@ -1134,6 +1260,7 @@ export const notificationHooks = {
   onVitalityScoreChange,
   onTierTransition,
   onActivityRingGoal,
+  onSecurityEvent,
 };
 
 export default notificationHooks;

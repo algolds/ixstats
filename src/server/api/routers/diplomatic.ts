@@ -350,6 +350,111 @@ export const diplomaticRouter = createTRPCRouter({
       });
     }),
 
+  // Create a new diplomatic relationship
+  createRelationship: protectedProcedure
+    .input(
+      z.object({
+        country1: z.string(),
+        country2: z.string(),
+        relationship: z.string().default("neutral"),
+        strength: z.number().min(0).max(100).default(50),
+        status: z.string().default("active"),
+        treaties: z.array(z.string()).optional(),
+        diplomaticChannels: z.array(z.string()).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user?.countryId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be associated with a country to create diplomatic relationships.",
+        });
+      }
+
+      // Verify user owns one of the countries
+      if (input.country1 !== ctx.user.countryId && input.country2 !== ctx.user.countryId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only create relationships for your own country.",
+        });
+      }
+
+      // Check if relationship already exists
+      const existing = await ctx.db.diplomaticRelation.findFirst({
+        where: {
+          OR: [
+            { country1: input.country1, country2: input.country2 },
+            { country1: input.country2, country2: input.country1 },
+          ],
+        },
+      });
+
+      if (existing) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "A diplomatic relationship already exists between these countries.",
+        });
+      }
+
+      const relation = await ctx.db.diplomaticRelation.create({
+        data: {
+          country1: input.country1,
+          country2: input.country2,
+          relationship: input.relationship,
+          strength: input.strength,
+          status: input.status,
+          treaties: input.treaties ? JSON.stringify(input.treaties) : null,
+          diplomaticChannels: input.diplomaticChannels
+            ? JSON.stringify(input.diplomaticChannels)
+            : null,
+          lastContact: new Date(),
+        },
+      });
+
+      return relation;
+    }),
+
+  // Delete/terminate a diplomatic relationship
+  deleteRelationship: protectedProcedure
+    .input(
+      z.object({
+        relationId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user?.countryId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be associated with a country to delete diplomatic relationships.",
+        });
+      }
+
+      // Verify user owns one of the countries in this relation
+      const relation = await ctx.db.diplomaticRelation.findUnique({
+        where: { id: input.relationId },
+      });
+
+      if (!relation) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Diplomatic relationship not found.",
+        });
+      }
+
+      if (relation.country1 !== ctx.user.countryId && relation.country2 !== ctx.user.countryId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to delete this relationship.",
+        });
+      }
+
+      await ctx.db.diplomaticRelation.delete({
+        where: { id: input.relationId },
+      });
+
+      return { success: true, id: input.relationId };
+    }),
+
   // Embassy Network Operations
   getEmbassies: publicProcedure
     .input(

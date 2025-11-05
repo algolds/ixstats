@@ -1,15 +1,18 @@
-# IxStats v1.2.0
+# IxStats v1.4.0
 
 IxStats is a modern nation simulation and worldbuilding platform. The codebase combines a rich React front end with a tRPC API layer, Prisma schema, and a custom server runtime that enables real-time updates for executive intelligence, diplomacy, economics, and collaborative storytelling features.
 
 ## Platform Overview
 - Next.js 15.4.1 App Router with client and server components under `src/app`
-- React 19 + TypeScript 5.8 with an extensive shared component library in `src/components`
-- tRPC 11.4 API layer (`src/server/api/routers`) with 37 routers and 580+ typed procedures (290+ queries / 290+ mutations)
-- Prisma 6.12 schema (`prisma/schema.prisma`) covering 131 models with PostgreSQL database
+- React 19 + TypeScript 5.8 with an extensive shared component library in `src/components` (485 components)
+- tRPC 11.4 API layer (`src/server/api/routers`) with **52 routers** and **580+ typed procedures** (290 queries / 290 mutations)
+- Prisma 6.12 schema (`prisma/schema.prisma`) covering **131 models** with PostgreSQL database
 - Custom Node server (`server.mjs`) that loads environment tiers and enables production WebSocket feeds for live intelligence updates
+- **Vector Tile System**: Martin tile server + Redis caching + pre-generation delivering **100-1000x performance improvement**
 - Documentation-first approach with Markdown guides in `docs/` and an in-app help center at `/help`
 - **✅ 100% Dynamic Content Management**: All game content now database-driven (14,677 lines migrated from hardcoded TypeScript)
+- **✅ NPC AI System**: 8 personality traits, 6 archetypes, behavioral prediction for diplomatic interactions
+- **✅ Crisis Events System**: Dynamic natural disasters, economic crises, diplomatic incidents with player responses
 
 ## Feature Pillars
 - **MyCountry Command Suite** – Unified dashboard at `src/app/mycountry` with executive briefing, compliance, defense, economic, and analytics modules powered by hooks such as `useMyCountryCompliance`
@@ -18,7 +21,10 @@ IxStats is a modern nation simulation and worldbuilding platform. The codebase c
 - **Economic Simulation & Builder Tools** – Country builder flows (`src/app/builder`, `src/components/builders`) with tier-based economic calculations and historical data services in `src/server/api/routers/economics.ts`
 - **Social & Collaboration Systems** – ThinkPages and ThinkShare social experiences (`src/app/thinkpages`, `src/components/thinkshare`) with activity feeds, comments, and shared research hubs
 - **Achievements & Leaderboards** – Global achievement tracking and ranking interfaces (`src/app/achievements`, `src/app/leaderboards`) driven by routers such as `achievements.ts`
-- **Content Management System** – 12 admin interfaces (`/admin/*`) for dynamic content management including diplomatic scenarios, NPC personalities, military equipment, economic archetypes, and more
+- **Content Management System** – **17 admin interfaces** (`/admin/*`) for dynamic content management including diplomatic scenarios, NPC personalities, military equipment, economic archetypes, map editor, and performance monitoring
+- **Vector Tile Maps** – High-performance interactive maps with PostGIS integration, 100-1000x faster tile loading, sub-10ms response times
+- **NPC Personality System** – Data-driven AI personalities with 8 traits, 6 archetypes, behavioral prediction, and personality drift over time
+- **Crisis Management** – Dynamic crisis events (natural disasters, economic crises, diplomatic incidents) with player response options and realistic outcomes
 - **Integrated Help & Knowledge Base** – Rich help center under `src/app/help` plus curated Markdown documentation within the repository
 
 ## Technology Snapshot
@@ -84,7 +90,7 @@ More details on required and optional variables are tracked in `docs/operations/
 │  ├─ components/              # Shared and domain component libraries
 │  ├─ hooks/                   # Cross-domain React hooks
 │  ├─ server/
-│  │  ├─ api/routers/          # tRPC routers (35 total)
+│  │  ├─ api/routers/          # tRPC routers (52 total)
 │  │  └─ db/                   # Prisma client helpers
 │  ├─ lib/                     # Utilities (rate limiter, websocket server, formatting)
 │  └─ services/                # Domain services and adapters

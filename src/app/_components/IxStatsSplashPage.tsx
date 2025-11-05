@@ -400,7 +400,7 @@ export function IxStatsSplashPage() {
               {isValidGlobalStats(globalStats) ? globalStats.totalCountries : 0} Nations Active
             </span>
             <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 px-2 py-0.5 text-xs text-white">
-              v1.1 Preview
+              v1.4 Preview
             </Badge>
           </motion.div>
 
@@ -438,12 +438,11 @@ export function IxStatsSplashPage() {
           </div>
 
           <p className="text-muted-foreground mx-auto mb-4 max-w-4xl text-2xl font-light md:text-3xl">
-            The Complete Nation Management Platform
+            Build Your Nation. Tell Its Story. Shape a Living World.
           </p>
 
           <p className="text-muted-foreground/80 mx-auto mb-10 max-w-3xl text-lg">
-            Create your nation. Tell your story through multiple characters. Build your government
-            piece by piece. Participate in a living, breathing world.
+            The most comprehensive nation simulation platform. Design your government with total freedom. Roleplay through immersive systems that respond to your choices. Experience a persistent world where economies grow, diplomacy evolves, and every decision shapes history.
           </p>
 
           {/* Live Global Stats - Dynamic Island Colors */}
@@ -535,9 +534,7 @@ export function IxStatsSplashPage() {
               </div>
 
               <p className="text-muted-foreground mb-8 max-w-3xl text-lg">
-                Everything you need to build, manage, and grow your nation. Track your economy,
-                monitor your nation&apos;s health, and make informed decisions with comprehensive
-                dashboards and tools.
+                Your nation, your rules, your data—all in one command center. Real-time intelligence feeds track threats and opportunities. Dynamic economic projections show where you're headed. Crisis alerts demand immediate decisions. This isn't a dashboard—it's your nation's nerve center.
               </p>
 
               <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -624,10 +621,7 @@ export function IxStatsSplashPage() {
               </div>
 
               <p className="text-muted-foreground mb-8 max-w-3xl text-lg">
-                Tell your nation&apos;s story through the voices of your people. Create government
-                officials debating policy, journalists breaking stories, citizens reacting to
-                events. Build a rich, living society with up to 25 characters that make your
-                worldbuilding come alive.
+                Your nation isn't a spreadsheet—it's a society. Create 25 unique voices: the prime minister defending controversial reforms, opposition leaders demanding change, journalists breaking scandals, citizens protesting in the streets. Each character shapes your story. This is worldbuilding that breathes.
               </p>
 
               <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -674,7 +668,7 @@ export function IxStatsSplashPage() {
                       rel="noopener noreferrer"
                       className="text-indigo-400 underline hover:text-indigo-300"
                     >
-                      part of the IxWiki universe
+                      part of the Ixnay universe, meaning it's not just gameplay mechanics, but part of the lore and story of the world.
                     </a>
                     . Your posts contribute to a shared, persistent world with deep lore and
                     interconnected stories.
@@ -703,13 +697,10 @@ export function IxStatsSplashPage() {
         >
           <div className="mb-12 text-center">
             <h2 className="text-foreground mb-3 text-4xl font-bold">
-              Build Your Government, Your Way
+              106 Building Blocks. Zero Presets. Infinite Possibilities.
             </h2>
             <p className="text-muted-foreground mx-auto max-w-3xl">
-              No preset government types. Choose from 106+ individual components across government
-              structure, economic policy, and administrative systems. Mix and match to create
-              exactly the nation you imagine - components interact naturally to create realistic
-              outcomes.
+              Forget simple presets that hinder your creativity. Mix 24 government structures, 40+ economic policies, and 42 tax systems however you want to create your own unique government. Create a technocratic federation with democratic oversight. Build a centralized state with free markets. Your nation, your rules. Components synergize naturally for growth, or create conflicts that create story tension.
             </p>
           </div>
 

@@ -104,6 +104,61 @@ export const scheduledChangesRouter = createTRPCRouter({
     }),
 
   /**
+   * Update a pending scheduled change
+   */
+  updateScheduledChange: protectedProcedure
+    .input(
+      z.object({
+        changeId: z.string(),
+        scheduledFor: z.date().optional(),
+        newValue: z.string().optional(),
+        warnings: z.array(z.string()).optional(),
+        metadata: z.record(z.string(), z.unknown()).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const change = await ctx.db.scheduledChange.findUnique({
+        where: { id: input.changeId },
+        include: { user: true },
+      });
+
+      if (!change) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Scheduled change not found",
+        });
+      }
+
+      const userId = ctx.user?.id;
+      if (!userId || change.user.id !== userId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You don't have permission to update this change",
+        });
+      }
+
+      if (change.status !== "pending") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Only pending changes can be updated",
+        });
+      }
+
+      const updateData: any = {};
+      if (input.scheduledFor) updateData.scheduledFor = input.scheduledFor;
+      if (input.newValue) updateData.newValue = input.newValue;
+      if (input.warnings) updateData.warnings = JSON.stringify(input.warnings);
+      if (input.metadata) updateData.metadata = JSON.stringify(input.metadata);
+
+      const updated = await ctx.db.scheduledChange.update({
+        where: { id: input.changeId },
+        data: updateData,
+      });
+
+      return updated;
+    }),
+
+  /**
    * Cancel a pending scheduled change
    */
   cancelScheduledChange: protectedProcedure

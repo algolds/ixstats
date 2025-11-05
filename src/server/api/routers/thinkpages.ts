@@ -783,6 +783,135 @@ export const thinkpagesRouter = createTRPCRouter({
     return post;
   }),
 
+  // Update post content (edit post)
+  updatePost: protectedProcedure
+    .input(
+      z.object({
+        postId: z.string(),
+        content: z
+          .string()
+          .min(1)
+          .max(280)
+          .refine(
+            (content) => {
+              const validation = validateNoXSS(content);
+              return validation.valid;
+            },
+            {
+              message:
+                "Content contains potentially unsafe HTML. Please avoid using script tags, javascript: URLs, or event handlers.",
+            }
+          ),
+        hashtags: z.array(z.string()).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      const clerkUserId = ctx.auth?.userId;
+
+      if (!clerkUserId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to update posts",
+        });
+      }
+
+      // Verify post exists and user owns it
+      const post = await db.thinkpagesPost.findUnique({
+        where: { id: input.postId },
+        include: { account: true },
+      });
+
+      if (!post) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Post not found",
+        });
+      }
+
+      if (post.account.clerkUserId !== clerkUserId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to update this post",
+        });
+      }
+
+      // Update the post
+      const updatedPost = await db.thinkpagesPost.update({
+        where: { id: input.postId },
+        data: {
+          content: input.content,
+          hashtags: input.hashtags ? JSON.stringify(input.hashtags) : post.hashtags,
+          updatedAt: new Date(),
+        },
+        include: {
+          account: true,
+          parentPost: {
+            include: { account: true },
+          },
+          repostOf: {
+            include: { account: true },
+          },
+        },
+      });
+
+      return updatedPost;
+    }),
+
+  // Delete post (soft delete)
+  deletePost: protectedProcedure
+    .input(
+      z.object({
+        postId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+      const clerkUserId = ctx.auth?.userId;
+
+      if (!clerkUserId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to delete posts",
+        });
+      }
+
+      // Verify post exists and user owns it
+      const post = await db.thinkpagesPost.findUnique({
+        where: { id: input.postId },
+        include: { account: true },
+      });
+
+      if (!post) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Post not found",
+        });
+      }
+
+      if (post.account.clerkUserId !== clerkUserId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to delete this post",
+        });
+      }
+
+      // Hard delete the post
+      const deletedPost = await db.thinkpagesPost.delete({
+        where: { id: input.postId },
+      });
+
+      // Decrement account post count
+      await db.thinkpagesAccount.update({
+        where: { id: post.accountId },
+        data: {
+          postCount: { decrement: 1 },
+        },
+      });
+
+      return { success: true, postId: deletedPost.id };
+    }),
+
   // Add reaction to post
   addReaction: protectedProcedure.input(AddReactionSchema).mutation(async ({ ctx, input }) => {
     const { db } = ctx;
@@ -3312,91 +3441,6 @@ export const thinkpagesRouter = createTRPCRouter({
       }
     }),
 
-  // Update a post
-  updatePost: protectedProcedure
-    .input(
-      z.object({
-        postId: z.string(),
-        content: z.string().min(1).max(1000),
-        accountId: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { db } = ctx;
-
-      // Verify ownership
-      const post = await db.thinkpagesPost.findUnique({
-        where: { id: input.postId },
-        select: { accountId: true },
-      });
-
-      if (!post) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Post not found",
-        });
-      }
-
-      if (post.accountId !== input.accountId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only edit your own posts",
-        });
-      }
-
-      const updatedPost = await db.thinkpagesPost.update({
-        where: { id: input.postId },
-        data: {
-          content: input.content,
-          updatedAt: new Date(),
-        },
-        include: {
-          // account: true, // Relation doesn't exist
-          reactions: true,
-        },
-      });
-
-      return updatedPost;
-    }),
-
-  // Delete a post
-  deletePost: protectedProcedure
-    .input(
-      z.object({
-        postId: z.string(),
-        accountId: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const { db } = ctx;
-
-      // Verify ownership
-      const post = await db.thinkpagesPost.findUnique({
-        where: { id: input.postId },
-        select: { accountId: true },
-      });
-
-      if (!post) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Post not found",
-        });
-      }
-
-      if (post.accountId !== input.accountId) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You can only delete your own posts",
-        });
-      }
-
-      await db.thinkpagesPost.delete({
-        where: { id: input.postId },
-      });
-
-      return { success: true };
-    }),
-
   // Pin/unpin a post
   pinPost: protectedProcedure
     .input(
@@ -3438,6 +3482,59 @@ export const thinkpagesRouter = createTRPCRouter({
     }),
 
   // Bookmark/unbookmark a post
+  // Get user's bookmarked posts
+  getBookmarks: protectedProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        limit: z.number().min(1).max(100).default(50),
+        cursor: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      const bookmarks = await db.postBookmark.findMany({
+        where: { userId: input.userId },
+        orderBy: { createdAt: "desc" },
+        take: input.limit + 1,
+        cursor: input.cursor ? { id: input.cursor } : undefined,
+      });
+
+      let nextCursor: string | undefined = undefined;
+      if (bookmarks.length > input.limit) {
+        const nextItem = bookmarks.pop();
+        nextCursor = nextItem!.id;
+      }
+
+      return {
+        bookmarks,
+        nextCursor,
+      };
+    }),
+
+  // Check if a post is bookmarked by user
+  isBookmarked: publicProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        postId: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const bookmark = await ctx.db.postBookmark.findUnique({
+        where: {
+          userId_postId: {
+            postId: input.postId,
+            userId: input.userId,
+          },
+        },
+      });
+
+      return { bookmarked: !!bookmark };
+    }),
+
+  // Bookmark or unbookmark a post
   bookmarkPost: protectedProcedure
     .input(
       z.object({
@@ -3477,7 +3574,57 @@ export const thinkpagesRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  // Flag a post
+  // Get all flagged posts (admin only)
+  getFlaggedPosts: protectedProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(50),
+        cursor: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      const flags = await db.postFlag.findMany({
+        orderBy: { createdAt: "desc" },
+        take: input.limit + 1,
+        cursor: input.cursor ? { id: input.cursor } : undefined,
+      });
+
+      let nextCursor: string | undefined = undefined;
+      if (flags.length > input.limit) {
+        const nextItem = flags.pop();
+        nextCursor = nextItem!.id;
+      }
+
+      return {
+        flags,
+        nextCursor,
+      };
+    }),
+
+  // Check if a post is flagged by user
+  isFlagged: publicProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        postId: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const flag = await ctx.db.postFlag.findUnique({
+        where: {
+          userId_postId: {
+            postId: input.postId,
+            userId: input.userId,
+          },
+        },
+      });
+
+      return { flagged: !!flag };
+    }),
+
+  // Flag a post for moderation
   flagPost: protectedProcedure
     .input(
       z.object({
@@ -3511,6 +3658,27 @@ export const thinkpagesRouter = createTRPCRouter({
           postId: input.postId,
           userId: input.userId,
           reason: input.reason,
+        },
+      });
+
+      return { success: true };
+    }),
+
+  // Remove a flag (unflag post)
+  unflagPost: protectedProcedure
+    .input(
+      z.object({
+        postId: z.string(),
+        userId: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { db } = ctx;
+
+      await db.postFlag.deleteMany({
+        where: {
+          postId: input.postId,
+          userId: input.userId,
         },
       });
 

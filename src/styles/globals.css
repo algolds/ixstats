@@ -278,8 +278,8 @@
    z-40   → tooltips, hover previews
    z-50   → post options menu
    z-100  → reaction popups (PRIORITY: must be above all content)
-   z-9998 → dialog overlays
-   z-9999 → dialog content, dropdowns
+   z-13040 → dialog overlays
+   z-13050 → dialog content, dropdowns
 */
 
 /* Ensure ALL dropdown and popover components ALWAYS appear on top */
@@ -289,13 +289,13 @@
 [data-radix-tooltip-content],
 [data-radix-dialog-content],
 [data-radix-alert-dialog-content] {
-  z-index: 9999 !important;
+  z-index: 13050 !important;
   position: fixed !important;
 }
 
 /* Radix Portal elements (where most dropdowns render) */
 [data-radix-portal] {
-  z-index: 9999 !important;
+  z-index: 13050 !important;
 }
 
 /* Specific Tailwind/Radix components by attribute selectors */
@@ -303,7 +303,7 @@
 [data-state="open"][role="listbox"],
 [data-state="open"][role="combobox"],
 [data-side="top"], [data-side="bottom"], [data-side="left"], [data-side="right"] {
-  z-index: 9999 !important;
+  z-index: 13050 !important;
 }
 
 /* Additional comprehensive dropdown selectors */
@@ -314,12 +314,12 @@
 [role="listbox"],
 [role="combobox"],
 [data-radix-popper-content-wrapper] {
-  z-index: 9999 !important;
+  z-index: 13050 !important;
 }
 
 /* Ensure dialog overlays are properly layered */
 [data-radix-dialog-overlay] {
-  z-index: 9998 !important;
+  z-index: 13040 !important;
 }
 
 /* Glass hierarchy base z-indices (much lower than dropdowns) */

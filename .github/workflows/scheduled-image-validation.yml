@@ -1,0 +1,181 @@
+name: Scheduled Image Validation
+
+on:
+  schedule:
+    # Run every Sunday at 2 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      notify_discord:
+        description: 'Send Discord notification'
+        required: false
+        default: 'true'
+
+jobs:
+  trigger-validation:
+    name: Trigger Image Validation Cron
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger validation cron endpoint
+        id: validate
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/validate-images")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "http_code=$HTTP_CODE" >> $GITHUB_OUTPUT
+          echo "response<<EOF" >> $GITHUB_OUTPUT
+          echo "$BODY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "❌ Validation cron failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+
+      - name: Parse validation results
+        id: parse
+        run: |
+          RESPONSE='${{ steps.validate.outputs.response }}'
+
+          # Extract metrics using jq if available, otherwise use grep
+          if command -v jq &> /dev/null; then
+            TOTAL=$(echo "$RESPONSE" | jq -r '.result.total // 0')
+            VALID=$(echo "$RESPONSE" | jq -r '.result.validated // 0')
+            BROKEN=$(echo "$RESPONSE" | jq -r '.result.broken // 0')
+            FIXED=$(echo "$RESPONSE" | jq -r '.result.fixed // 0')
+            FAILED=$(echo "$RESPONSE" | jq -r '.result.failed // 0')
+          else
+            TOTAL=$(echo "$RESPONSE" | grep -oP '"total":\s*\K\d+' || echo "0")
+            VALID=$(echo "$RESPONSE" | grep -oP '"validated":\s*\K\d+' || echo "0")
+            BROKEN=$(echo "$RESPONSE" | grep -oP '"broken":\s*\K\d+' || echo "0")
+            FIXED=$(echo "$RESPONSE" | grep -oP '"fixed":\s*\K\d+' || echo "0")
+            FAILED=$(echo "$RESPONSE" | grep -oP '"failed":\s*\K\d+' || echo "0")
+          fi
+
+          echo "total=$TOTAL" >> $GITHUB_OUTPUT
+          echo "valid=$VALID" >> $GITHUB_OUTPUT
+          echo "broken=$BROKEN" >> $GITHUB_OUTPUT
+          echo "fixed=$FIXED" >> $GITHUB_OUTPUT
+          echo "failed=$FAILED" >> $GITHUB_OUTPUT
+
+      - name: Send Discord notification
+        if: github.event.inputs.notify_discord == 'true' || github.event_name == 'schedule'
+        run: |
+          TOTAL=${{ steps.parse.outputs.total }}
+          VALID=${{ steps.parse.outputs.valid }}
+          BROKEN=${{ steps.parse.outputs.broken }}
+          FIXED=${{ steps.parse.outputs.fixed }}
+          FAILED=${{ steps.parse.outputs.failed }}
+
+          # Calculate percentage
+          if [ "$TOTAL" -gt 0 ]; then
+            VALID_PCT=$(( ($VALID * 100) / $TOTAL ))
+            BROKEN_PCT=$(( ($BROKEN * 100) / $TOTAL ))
+          else
+            VALID_PCT=0
+            BROKEN_PCT=0
+          fi
+
+          # Determine color based on broken percentage
+          if [ "$BROKEN_PCT" -gt 10 ]; then
+            COLOR=16711680  # Red
+            STATUS="⚠️ Action Required"
+          elif [ "$BROKEN_PCT" -gt 5 ]; then
+            COLOR=16776960  # Yellow
+            STATUS="⚠️ Warning"
+          else
+            COLOR=65280  # Green
+            STATUS="✅ Healthy"
+          fi
+
+          # Build Discord webhook payload
+          PAYLOAD=$(cat <<EOF
+          {
+            "embeds": [{
+              "title": "🖼️ Weekly Equipment Image Validation",
+              "description": "$STATUS",
+              "color": $COLOR,
+              "fields": [
+                {
+                  "name": "📊 Total Equipment",
+                  "value": "$TOTAL",
+                  "inline": true
+                },
+                {
+                  "name": "✅ Valid",
+                  "value": "$VALID ($VALID_PCT%)",
+                  "inline": true
+                },
+                {
+                  "name": "❌ Broken",
+                  "value": "$BROKEN ($BROKEN_PCT%)",
+                  "inline": true
+                },
+                {
+                  "name": "🔧 Auto-fixed",
+                  "value": "$FIXED",
+                  "inline": true
+                },
+                {
+                  "name": "⚠️ Failed to Fix",
+                  "value": "$FAILED",
+                  "inline": true
+                },
+                {
+                  "name": "📅 Timestamp",
+                  "value": "$(date -u +"%Y-%m-%d %H:%M:%S UTC")",
+                  "inline": false
+                }
+              ],
+              "footer": {
+                "text": "Automated Weekly Validation"
+              }
+            }]
+          }
+          EOF
+          )
+
+          curl -H "Content-Type: application/json" \
+            -d "$PAYLOAD" \
+            "${{ secrets.DISCORD_WEBHOOK_URL }}"
+
+      - name: Generate workflow summary
+        if: always()
+        run: |
+          echo "## 🖼️ Weekly Image Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total Equipment**: ${{ steps.parse.outputs.total }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Valid Images**: ${{ steps.parse.outputs.valid }} ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- **Broken URLs**: ${{ steps.parse.outputs.broken }} ❌" >> $GITHUB_STEP_SUMMARY
+          echo "- **Auto-fixed**: ${{ steps.parse.outputs.fixed }} 🔧" >> $GITHUB_STEP_SUMMARY
+          echo "- **Failed to Fix**: ${{ steps.parse.outputs.failed }} ⚠️" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Status" >> $GITHUB_STEP_SUMMARY
+
+          BROKEN=${{ steps.parse.outputs.broken }}
+          TOTAL=${{ steps.parse.outputs.total }}
+
+          if [ "$TOTAL" -gt 0 ]; then
+            BROKEN_PCT=$(( ($BROKEN * 100) / $TOTAL ))
+
+            if [ "$BROKEN_PCT" -le 5 ]; then
+              echo "✅ **Healthy**: Less than 5% broken images" >> $GITHUB_STEP_SUMMARY
+            elif [ "$BROKEN_PCT" -le 10 ]; then
+              echo "⚠️  **Warning**: $BROKEN_PCT% broken images (threshold: 5%)" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ **Action Required**: $BROKEN_PCT% broken images (threshold: 10%)" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+
+      - name: Check for failures
+        if: steps.parse.outputs.failed > 10
+        run: |
+          echo "⚠️  More than 10 images failed auto-resolution"
+          echo "Manual intervention may be required"
+          exit 1

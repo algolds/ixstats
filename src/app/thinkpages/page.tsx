@@ -78,20 +78,20 @@ const WORKSPACE_LINKS = [
   {
     key: "feed",
     label: "ThinkPages",
-    description: "The global forum",
+    description: "Public declarations and diplomatic announcements",
     icon: MessageSquare,
   },
   {
     key: "thinktanks",
     label: "ThinkTanks",
-    description: "Collaborative groups to strategize and plan",
+    description: "Intelligence networks and diplomatic working groups",
     icon: Users,
   },
   {
     key: "messages",
     label: "ThinkShare",
     description:
-      "Private channels for confidential diplomatic communications and strategic coordination.",
+      "Secure diplomatic channels and encrypted government communications",
     icon: Send,
   },
 ] as const;

@@ -56,21 +56,29 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-// Equipment categories
+// Equipment categories (must match tRPC router and seed script)
 const CATEGORIES = {
   all: "All Equipment",
   aircraft: "Aircraft",
-  ship: "Ships",
+  naval: "Naval Vessels",
   vehicle: "Vehicles",
-  weapon: "Weapons",
+  missile: "Missiles & Weapons",
   support: "Support Equipment",
 };
 
 const SUBCATEGORIES = {
-  aircraft: ["fighter", "bomber", "transport", "helicopter", "uav", "trainer"],
-  ship: ["carrier", "destroyer", "frigate", "submarine", "corvette", "amphibious"],
-  vehicle: ["tank", "ifv", "apc", "artillery", "mlrs", "engineering"],
-  weapon: ["missile", "radar", "sam", "anti-tank", "small-arms", "naval-gun"],
+  aircraft: [
+    "fighter_gen5",
+    "fighter_gen4_5",
+    "fighter",
+    "bomber",
+    "attack",
+    "transport",
+    "helicopter",
+  ],
+  naval: ["carrier", "destroyer", "frigate", "submarine", "amphibious"],
+  vehicle: ["tank", "ifv", "apc", "artillery", "mlrs"],
+  missile: ["air_defense", "missile", "naval_weapon", "torpedo"],
   support: ["logistics", "medical", "command", "reconnaissance", "electronic-warfare"],
 };
 
@@ -84,9 +92,9 @@ const ERAS = [
 
 const CATEGORY_ICONS: Record<string, any> = {
   aircraft: Plane,
-  ship: Ship,
+  naval: Ship,
   vehicle: Car,
-  weapon: Rocket,
+  missile: Rocket,
   support: Wrench,
 };
 

@@ -1,0 +1,168 @@
+name: Military Equipment Image Validation
+
+on:
+  pull_request:
+    paths:
+      - 'prisma/seeds/military-equipment-catalog.ts'
+      - 'src/lib/military-equipment*.ts'
+      - 'scripts/validate-military-equipment-images.ts'
+  schedule:
+    # Run daily at 3 AM UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      fail_on_broken:
+        description: 'Fail workflow if broken images found'
+        required: false
+        default: 'true'
+
+jobs:
+  validate-images:
+    name: Validate Equipment Images
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup database
+        run: |
+          npm run db:generate
+          npm run db:push
+
+      - name: Run image validation
+        id: validate
+        run: |
+          npx tsx scripts/validate-military-equipment-images.ts | tee validation-output.txt
+          echo "validation_exit_code=$?" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - name: Parse validation results
+        id: parse
+        run: |
+          # Extract key metrics from validation output
+          TOTAL=$(grep -oP 'Total Equipment:\s+\K\d+' validation-output.txt || echo "0")
+          VALID=$(grep -oP 'Valid URLs:\s+\K\d+' validation-output.txt || echo "0")
+          BROKEN=$(grep -oP 'Broken URLs:\s+\K\d+' validation-output.txt || echo "0")
+          MISSING=$(grep -oP 'Missing Images:\s+\K\d+' validation-output.txt || echo "0")
+
+          echo "total=$TOTAL" >> $GITHUB_OUTPUT
+          echo "valid=$VALID" >> $GITHUB_OUTPUT
+          echo "broken=$BROKEN" >> $GITHUB_OUTPUT
+          echo "missing=$MISSING" >> $GITHUB_OUTPUT
+
+          # Calculate percentages
+          if [ "$TOTAL" -gt 0 ]; then
+            BROKEN_PCT=$(( ($BROKEN * 100) / $TOTAL ))
+            echo "broken_pct=$BROKEN_PCT" >> $GITHUB_OUTPUT
+          else
+            echo "broken_pct=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload validation report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: image-validation-report
+          path: |
+            validation-output.txt
+            validation-report.json
+          retention-days: 30
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const total = '${{ steps.parse.outputs.total }}';
+            const valid = '${{ steps.parse.outputs.valid }}';
+            const broken = '${{ steps.parse.outputs.broken }}';
+            const missing = '${{ steps.parse.outputs.missing }}';
+            const brokenPct = '${{ steps.parse.outputs.broken_pct }}';
+
+            let emoji = '✅';
+            let status = 'PASSED';
+            if (brokenPct > 10) {
+              emoji = '❌';
+              status = 'FAILED';
+            } else if (brokenPct > 5) {
+              emoji = '⚠️';
+              status = 'WARNING';
+            }
+
+            const comment = `## ${emoji} Military Equipment Image Validation ${status}
+
+            ### Summary
+            - **Total Equipment**: ${total}
+            - **Valid Images**: ${valid} ✅
+            - **Broken URLs**: ${broken} ❌
+            - **Missing Images**: ${missing} ⚠️
+
+            ### Quality Score
+            ${brokenPct > 10 ? '❌' : brokenPct > 5 ? '⚠️' : '✅'} **Broken Image Rate**: ${brokenPct}%
+
+            ${brokenPct > 10 ? '**Action Required**: More than 10% of images are broken. Please fix before merging.' : ''}
+            ${brokenPct > 5 && brokenPct <= 10 ? '**Warning**: More than 5% of images are broken. Consider fixing.' : ''}
+            ${brokenPct <= 5 ? '**Good**: Less than 5% of images are broken.' : ''}
+
+            <details>
+            <summary>📊 View Detailed Report</summary>
+
+            Download the full validation report from the workflow artifacts.
+
+            </details>
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Quality gate check
+        if: github.event_name == 'pull_request' || github.event.inputs.fail_on_broken == 'true'
+        run: |
+          BROKEN_PCT=${{ steps.parse.outputs.broken_pct }}
+          if [ "$BROKEN_PCT" -gt 10 ]; then
+            echo "❌ Quality gate failed: $BROKEN_PCT% of images are broken (limit: 10%)"
+            exit 1
+          elif [ "$BROKEN_PCT" -gt 5 ]; then
+            echo "⚠️  Warning: $BROKEN_PCT% of images are broken (warning threshold: 5%)"
+            exit 0
+          else
+            echo "✅ Quality gate passed: $BROKEN_PCT% of images are broken"
+            exit 0
+          fi
+
+      - name: Generate summary
+        if: always()
+        run: |
+          echo "## 🖼️ Military Equipment Image Validation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Results" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total Equipment**: ${{ steps.parse.outputs.total }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Valid Images**: ${{ steps.parse.outputs.valid }} ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- **Broken URLs**: ${{ steps.parse.outputs.broken }} ❌" >> $GITHUB_STEP_SUMMARY
+          echo "- **Missing Images**: ${{ steps.parse.outputs.missing }} ⚠️" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Quality Score" >> $GITHUB_STEP_SUMMARY
+          echo "**Broken Rate**: ${{ steps.parse.outputs.broken_pct }}%" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.parse.outputs.broken_pct }}" -le 5 ]; then
+            echo "✅ **Status**: PASS" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.parse.outputs.broken_pct }}" -le 10 ]; then
+            echo "⚠️  **Status**: WARNING" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Status**: FAIL" >> $GITHUB_STEP_SUMMARY
+          fi

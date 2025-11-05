@@ -9,6 +9,7 @@ import { createCustomProjectionLayer } from '~/lib/maps/custom-projection-layer'
 import type { ProjectionType } from '~/types/maps';
 import { registerProjectionProtocol, unregisterProjectionProtocol } from '~/lib/maps/projection-protocol';
 import { api } from '~/trpc/react';
+import { useTheme } from '~/context/theme-context';
 
 interface GoogleMapContainerProps {
   onCountryClick?: (countryId: string, countryName: string, position: { x: number; y: number }) => void;
@@ -35,6 +36,7 @@ function GoogleMapContainer({
   showLabels = true,
   showBorders = true,
 }: GoogleMapContainerProps) {
+  const { effectiveTheme } = useTheme();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
@@ -137,7 +139,7 @@ function GoogleMapContainer({
     if (!mapContainer.current || map.current) return;
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-    const style = createGoogleMapsStyle(basePath, mapType, projection);
+    const style = createGoogleMapsStyle(basePath, mapType, projection, effectiveTheme);
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
@@ -287,14 +289,14 @@ function GoogleMapContainer({
       }
       map.current = null;
     };
-  }, []); // Initialize ONCE only
+  }, [effectiveTheme]); // Reinitialize when theme changes (for initial load)
 
-  // Update map style when mapType or projection changes
+  // Update map style when mapType, projection, or theme changes
   useEffect(() => {
     if (!map.current || !isMapLoaded) return;
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-    const style = createGoogleMapsStyle(basePath, mapType, projection);
+    const style = createGoogleMapsStyle(basePath, mapType, projection, effectiveTheme);
 
     // Get current zoom and center before style change
     const currentZoom = map.current.getZoom();
@@ -314,7 +316,7 @@ function GoogleMapContainer({
       setIconsLoaded(false);
       void loadMapIcons(map.current);
     });
-  }, [mapType, projection, isMapLoaded, loadMapIcons]);
+  }, [mapType, projection, effectiveTheme, isMapLoaded, loadMapIcons]);
 
   // Register/unregister custom projection protocol
   useEffect(() => {
@@ -529,8 +531,8 @@ function GoogleMapContainer({
             'text-optional': true, // Don't fail if font is missing
           },
           paint: {
-            'text-color': '#2c2c2c',
-            'text-halo-color': '#FFFFFF',
+            'text-color': effectiveTheme === 'dark' ? '#e2e8f0' : '#2c2c2c',
+            'text-halo-color': effectiveTheme === 'dark' ? '#0f172a' : '#FFFFFF',
             'text-halo-width': 2,
           },
           minzoom: 2,
@@ -557,7 +559,7 @@ function GoogleMapContainer({
       clearTimeout(retryTimeout);
       mapInstance.off('styledata', addCapitalsLayer);
     };
-  }, [isMapLoaded, iconsLoaded, capitalsData]);
+  }, [isMapLoaded, iconsLoaded, capitalsData, effectiveTheme]);
 
   // Add cities layer (non-capitals)
   useEffect(() => {
@@ -652,8 +654,8 @@ function GoogleMapContainer({
             'text-optional': true,
           },
           paint: {
-            'text-color': '#2c2c2c',
-            'text-halo-color': '#FFFFFF',
+            'text-color': effectiveTheme === 'dark' ? '#e2e8f0' : '#2c2c2c',
+            'text-halo-color': effectiveTheme === 'dark' ? '#0f172a' : '#FFFFFF',
             'text-halo-width': 1.5,
           },
           minzoom: 5,
@@ -674,7 +676,7 @@ function GoogleMapContainer({
     return () => {
       mapInstance.off('styledata', addCitiesLayer);
     };
-  }, [isMapLoaded, iconsLoaded, citiesData]);
+  }, [isMapLoaded, iconsLoaded, citiesData, effectiveTheme]);
 
   // Control label visibility
   useEffect(() => {

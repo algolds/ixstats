@@ -2,18 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Status & Context (October 29, 2025)
+## Project Status & Context (November 2025)
 
-### 🎯 **Current Maturity: 100% Complete (Grade A+ - v1.2.0 Release)** ✅
+### 🎯 **Current Maturity: 100% Complete (Grade A+ - v1.4.0 Release)** ✅
 IxStats is a production-ready economic simulation platform with comprehensive V1 compliance audit completed, all critical systems operational, extensive documentation coverage (106 atomic components documented), organized codebase structure, and **100% hardcoded data migration complete** (14,677 lines migrated to database).
 
 #### ✅ **Production-Ready Systems (100%)**
-- **Core Infrastructure**: Next.js 15, Prisma ORM (131 models), 37 tRPC routers (580+ endpoints), IxTime synchronization
-- **Content Management System**: 12 admin interfaces, 80+ reference data endpoints, 750+ seeded records, 100% dynamic
+- **Core Infrastructure**: Next.js 15, Prisma ORM (131 models), **52 tRPC routers** (580+ endpoints), IxTime synchronization
+- **Content Management System**: **17 admin interfaces**, 80+ reference data endpoints, 750+ seeded records, 100% dynamic
+- **Vector Tile Maps**: Martin tile server + Redis caching + pre-generation delivering **100-1000x performance** (sub-10ms response times)
+- **NPC AI System**: 8 personality traits, 6 archetypes, behavioral prediction, personality drift algorithm
+- **Crisis Management**: Dynamic crisis events (natural disasters, economic crises, diplomatic incidents) with player responses
 - **Security & Authentication**: Clerk integration, 13 security fixes, 8-layer middleware, audit logging, Redis rate limiting
-- **Design System**: Glass physics framework with 100+ UI components
-- **Economic Engine**: Tier-based modeling, real-time calculations, historical tracking
-- **Database**: 131 models, 10+ migrations applied, PostgreSQL database
+- **Design System**: Glass physics framework with 100+ UI components, 485 total components
+- **Economic Engine**: Tier-based modeling, real-time calculations, historical tracking, comprehensive formulas documented
+- **Database**: 131 models, 10+ migrations applied, PostgreSQL with PostGIS integration
 - **External Integrations**: IxWiki API, Discord webhooks, flag services, monitoring systems
 
 #### ✅ **Feature Complete (90-95%)**
@@ -77,10 +80,14 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 - ✅ **Rate Limiting**: Redis-based with in-memory fallback implemented
 
 **Production-Ready Systems:**
-- Core platform infrastructure with Next.js 15, Prisma ORM (131 models), and 36 tRPC routers (304 endpoints)
+- Core platform infrastructure with Next.js 15, Prisma ORM (131 models), and **52 tRPC routers** (580+ endpoints)
 - Authentication system with 8-layer middleware and database audit logging
-- Economic calculation engine with tier-based modeling and historical tracking
-- Glass physics design system with 100+ components
+- Economic calculation engine with tier-based modeling and historical tracking (**all formulas documented** with examples)
+- Vector tile map system with **100-1000x performance improvement** (Martin + Redis + pre-generation)
+- NPC AI personality system with 8 traits, 6 archetypes, behavioral prediction
+- Crisis events system with dynamic scenarios and player response options
+- Glass physics design system with 100+ components (485 total components)
+- **17 admin interfaces** for complete content management (up from 12)
 - External API integrations (IxWiki, Discord webhooks, flag services) fully operational
 - Production optimizations (compression, caching, security headers, monitoring)
 
@@ -123,10 +130,16 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 - **Solid Data Foundation**: Comprehensive Prisma schema with economic modeling
 - **Performance Optimized**: React best practices with memoization and error boundaries
 
-### Key Documentation Resources (v1.2.0)
+### Key Documentation Resources (v1.4.0)
 - **[docs/README.md](./docs/README.md)** - Documentation hub and navigation guide
 - **[docs/DOCUMENTATION_INDEX.md](./docs/DOCUMENTATION_INDEX.md)** - Complete documentation index
-- **[docs/reference/api.md](./docs/reference/api.md)** - Complete tRPC API catalog (580+ endpoints across 37 routers)
+- **[docs/reference/api-complete.md](./docs/reference/api-complete.md)** - Complete tRPC API catalog (**580+ endpoints across 52 routers**)
+- **[docs/reference/edge-cases.md](./docs/reference/edge-cases.md)** - **NEW:** Comprehensive edge case handling and error scenarios
+- **[docs/systems/calculations.md](./docs/systems/calculations.md)** - **NEW:** All economic formulas with step-by-step examples
+- **[docs/systems/npc-ai.md](./docs/systems/npc-ai.md)** - **NEW:** Complete NPC personality system documentation
+- **[docs/systems/map-system.md](./docs/systems/map-system.md)** - **NEW:** Vector tile system architecture and performance
+- **[docs/systems/crisis-events.md](./docs/systems/crisis-events.md)** - **NEW:** Crisis management system guide
+- **[docs/systems/admin-cms.md](./docs/systems/admin-cms.md)** - **NEW:** All 17 admin interfaces documented
 - **[docs/reference/database.md](./docs/reference/database.md)** - Prisma schema and data models (131 models)
 - **[docs/systems/](./docs/systems/)** - System-specific guides (MyCountry, Intelligence, Diplomacy, Economy, etc.)
 - **[docs/SYNERGY_REFERENCE.md](./docs/SYNERGY_REFERENCE.md)** - Government component synergy system

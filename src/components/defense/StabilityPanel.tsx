@@ -47,17 +47,6 @@ export function StabilityPanel({ countryId }: StabilityPanelProps) {
   const { data: stabilityData, refetch: refetchStability } =
     api.security.getInternalStability.useQuery({ countryId }, { enabled: !!countryId });
 
-  // Generate stability event mutation
-  const generateEvent = api.security.generateStabilityEvent.useMutation({
-    onSuccess: () => {
-      toast.success("Security event generated");
-      refetchStability();
-    },
-    onError: (error) => {
-      toast.error(`Failed to generate event: ${error.message}`);
-    },
-  });
-
   // Resolve event mutation
   const resolveEvent = api.security.resolveSecurityEvent.useMutation({
     onSuccess: () => {
@@ -301,28 +290,49 @@ export function StabilityPanel({ countryId }: StabilityPanelProps) {
                       <div className="space-y-2">
                         <h4 className="flex items-center gap-2 font-semibold">
                           <AlertTriangle className="h-4 w-4" />
-                          Security Event Generation
+                          Automatic Security Event System
                         </h4>
                         <p className="text-muted-foreground">
-                          Events are generated based on your country's actual metrics. High riot
-                          risk = more riots. High crime + organized crime = crime waves. High ethnic
-                          tension = communal violence. High polarization + protests = civil unrest.
-                          The system uses weighted probabilities, not random chance.
+                          <strong>Events are generated automatically</strong> based on your country's
+                          actual metrics using advanced Markov chains and NPC threat actor personalities.
+                          The system continuously monitors stability conditions and triggers events when
+                          thresholds are crossed or conditions align.
                         </p>
-                        <div className="mt-2 space-y-1 pl-4 text-xs">
+                        <div className="mt-2 space-y-2 pl-4 text-xs">
+                          <p className="font-medium">Automatic Triggers:</p>
                           <p>
-                            • <strong>Critical Events:</strong> 30-80 casualties, major economic
-                            impact
+                            • <strong>Threshold Triggers:</strong> Critical instability (score
+                            &lt;30), severe crime (&gt;800), high riot risk (&gt;70%), ethnic tensions
+                            (&gt;75%), weak borders, cyber vulnerability
                           </p>
                           <p>
-                            • <strong>High Severity:</strong> 5-40 casualties, significant
+                            • <strong>Cascade Triggers:</strong> Multiple crisis conditions converging
+                            (Perfect Storm, Security Vacuum, Failed State scenarios)
+                          </p>
+                          <p>
+                            • <strong>Cooldown System:</strong> Prevents event spam with 2-day minimum
+                            cooldown between events, 7-day category cooldown, max 5 events per 30 days
+                          </p>
+                          <p className="font-medium mt-2">Event Severity:</p>
+                          <p>
+                            • <strong>Critical/Existential:</strong> 50-500 casualties, massive
+                            economic impact, immediate response required
+                          </p>
+                          <p>
+                            • <strong>High Severity:</strong> 10-100 casualties, significant
                             disruption
                           </p>
                           <p>
-                            • <strong>Moderate:</strong> 0-15 casualties, localized impact
+                            • <strong>Moderate:</strong> 2-20 casualties, localized impact
                           </p>
                           <p>
-                            • <strong>Low Severity:</strong> Minimal casualties, routine incidents
+                            • <strong>Low:</strong> Minimal casualties, routine incidents
+                          </p>
+                          <p className="font-medium mt-2">NPC Threat Actors:</p>
+                          <p>
+                            Each event features unique threat actors with personalities: Jihadist
+                            Cells, Separatist Movements, Organized Crime, Cyber Attackers, Foreign
+                            Agents, Lone Wolves. Their behavior adapts to your country's conditions.
                           </p>
                         </div>
                       </div>
@@ -374,10 +384,10 @@ export function StabilityPanel({ countryId }: StabilityPanelProps) {
             </div>
             <div className="flex items-center gap-2">
               {metrics && getTrendIcon(metrics.stabilityTrend)}
-              <Button size="sm" onClick={() => generateEvent.mutate({ countryId })}>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Generate Event
-              </Button>
+              <Badge variant="outline" className="text-xs">
+                <Activity className="mr-1 h-3 w-3" />
+                Auto-Generated Events
+              </Badge>
             </div>
           </div>
         </CardHeader>
