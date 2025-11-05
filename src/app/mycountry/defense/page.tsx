@@ -514,7 +514,7 @@ export default function MyCountryDefenseDashboard() {
                       <div className="text-muted-foreground py-8 text-center text-sm">
                         No military branches configured
                         <div className="mt-4">
-                          <Button size="sm" onClick={() => setActiveTab("military")}>
+                          <Button size="sm" onClick={() => setActiveTab("forces")}>
                             <Plus className="mr-2 h-4 w-4" />
                             Add Military Branch
                           </Button>
