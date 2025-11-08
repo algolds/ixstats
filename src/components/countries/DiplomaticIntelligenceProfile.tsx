@@ -34,7 +34,7 @@ import { INTELLIGENCE_GLYPHS, IntelligenceGlyph } from "~/components/ui/Intellig
 
 import type { EnhancedCountryProfileData, SocialActionType } from "~/types/social-profile";
 import { EmbassyNetworkVisualization } from "~/components/diplomatic/EmbassyNetworkVisualization";
-import { SecureDiplomaticChannels } from "~/components/diplomatic/SecureDiplomaticChannels";
+import { SecureCommunications } from "~/app/mycountry/intelligence/_components/SecureCommunications";
 import { CulturalExchangeProgram } from "~/components/diplomatic/CulturalExchangeProgram";
 import { AchievementConstellation } from "~/components/achievements/AchievementConstellation";
 import { AchievementUnlockModal } from "~/components/achievements/AchievementUnlockModal";
@@ -1318,29 +1318,10 @@ const DiplomaticIntelligenceProfileComponent: React.FC<DiplomaticIntelligencePro
                             transition={{ duration: 0.2 }}
                           >
                             {viewerClearanceLevel !== "PUBLIC" ? (
-                              <SecureDiplomaticChannels
-                                currentCountryId={country.id}
-                                currentCountryName={country.name}
-                                channels={[
-                                  {
-                                    id: "bilateral-001",
-                                    name: `${country.name} Embassy Channel`,
-                                    type: "BILATERAL" as const,
-                                    classification: "RESTRICTED" as const,
-                                    encrypted: true,
-                                    participants: [
-                                      {
-                                        countryId: country.id,
-                                        countryName: country.name,
-                                        flagUrl: country.flagUrl,
-                                        role: "MEMBER" as const,
-                                      },
-                                    ],
-                                    lastActivity: new Date().toISOString(),
-                                    unreadCount: 0,
-                                  },
-                                ]}
-                                messages={[]}
+                              <SecureCommunications
+                                countryId={country.id}
+                                countryName={country.name}
+                                clearanceLevel={viewerClearanceLevel as any}
                               />
                             ) : (
                               <div className="py-12 text-center">

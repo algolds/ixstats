@@ -605,6 +605,11 @@ export const diplomaticRouter = createTRPCRouter({
     }),
 
   // Diplomatic Channels
+  /**
+   * @deprecated Use api.thinkpages.getConversations with conversationType="diplomatic" filter instead
+   * This endpoint will be removed in v2.0.0 (January 2026)
+   * Migration guide: /docs/guides/DIPLOMATIC_MESSAGING_MIGRATION.md
+   */
   getChannels: publicProcedure
     .input(
       z.object({
@@ -616,6 +621,9 @@ export const diplomaticRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
+      console.warn(
+        "⚠️  DEPRECATED: api.diplomatic.getChannels is deprecated. Use api.thinkpages.getConversations instead."
+      );
       try {
         const channels = await ctx.db.diplomaticChannel.findMany({
           where: {
@@ -668,6 +676,11 @@ export const diplomaticRouter = createTRPCRouter({
       }
     }),
 
+  /**
+   * @deprecated Use api.thinkpages.getConversationMessages instead
+   * This endpoint will be removed in v2.0.0 (January 2026)
+   * Migration guide: /docs/guides/DIPLOMATIC_MESSAGING_MIGRATION.md
+   */
   getChannelMessages: publicProcedure
     .input(
       z.object({
@@ -681,6 +694,9 @@ export const diplomaticRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
+      console.warn(
+        "⚠️  DEPRECATED: api.diplomatic.getChannelMessages is deprecated. Use api.thinkpages.getConversationMessages instead."
+      );
       try {
         const messages = await ctx.db.diplomaticMessage.findMany({
           where: {
@@ -722,6 +738,11 @@ export const diplomaticRouter = createTRPCRouter({
       }
     }),
 
+  /**
+   * @deprecated Use api.thinkpages.sendMessage with diplomatic metadata instead
+   * This endpoint will be removed in v2.0.0 (January 2026)
+   * Migration guide: /docs/guides/DIPLOMATIC_MESSAGING_MIGRATION.md
+   */
   sendMessage: protectedProcedure
     .input(
       z.object({
@@ -738,6 +759,10 @@ export const diplomaticRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      console.warn(
+        "⚠️  DEPRECATED: api.diplomatic.sendMessage is deprecated. Use api.thinkpages.sendMessage instead."
+      );
+
       if (!ctx.user?.countryId) {
         throw new Error("You must be associated with a country to send diplomatic messages.");
       }

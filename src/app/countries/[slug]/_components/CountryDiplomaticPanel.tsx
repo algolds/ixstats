@@ -4,7 +4,7 @@
 import React, { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { EnhancedEmbassyNetwork } from "~/components/diplomatic/EnhancedEmbassyNetwork";
-import { SecureDiplomaticChannels } from "~/components/diplomatic/SecureDiplomaticChannels";
+import { SecureCommunications } from "~/app/mycountry/intelligence/_components/SecureCommunications";
 import { CulturalExchangeProgram } from "~/components/diplomatic/CulturalExchangeProgram";
 import { InlineDiplomaticActions } from "~/components/diplomatic/InlineDiplomaticActions";
 import { Building, Globe, Heart, Activity } from "lucide-react";
@@ -104,10 +104,10 @@ export function CountryDiplomaticPanel({
 
       {/* Secure Diplomatic Channels */}
       {activeDiplomacyTab === "secure-channels" && (
-        <SecureDiplomaticChannels
-          currentCountryId={country.id}
-          currentCountryName={country.name}
-          viewerClearanceLevel={isOwnCountry ? "CONFIDENTIAL" : "PUBLIC"}
+        <SecureCommunications
+          countryId={country.id}
+          countryName={country.name}
+          clearanceLevel={isOwnCountry ? "CONFIDENTIAL" : "PUBLIC"}
         />
       )}
 

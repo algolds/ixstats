@@ -1,0 +1,99 @@
+{
+  "timestamp": "2025-11-07T22:45:20.319Z",
+  "totalTests": 18,
+  "passed": 18,
+  "failed": 0,
+  "coverage": 100,
+  "results": [
+    {
+      "name": "Create diplomatic conversation with classification",
+      "passed": true,
+      "duration": 301.26957100000004
+    },
+    {
+      "name": "Send message with classification and priority",
+      "passed": true,
+      "duration": 21.047002999999904
+    },
+    {
+      "name": "Send encrypted message with encryptedContent",
+      "passed": true,
+      "duration": 24.15055600000005
+    },
+    {
+      "name": "Filter conversations by conversationType=diplomatic",
+      "passed": true,
+      "duration": 23.004942999999912
+    },
+    {
+      "name": "Filter messages by classification level",
+      "passed": true,
+      "duration": 29.01941099999999
+    },
+    {
+      "name": "Store all priority levels (LOW to CRITICAL)",
+      "passed": true,
+      "duration": 61.15006100000005
+    },
+    {
+      "name": "Foreign key constraints enforced",
+      "passed": true,
+      "duration": 138.6719290000001
+    },
+    {
+      "name": "Required fields validated (conversationId, userId, content)",
+      "passed": true,
+      "duration": 9.547267000000147
+    },
+    {
+      "name": "Indexes exist for diplomatic fields",
+      "passed": true,
+      "duration": 10.798817999999983
+    },
+    {
+      "name": "Cascade delete: deleting conversation deletes messages",
+      "passed": true,
+      "duration": 14.296994999999924
+    },
+    {
+      "name": "No orphaned messages without conversations",
+      "passed": true,
+      "duration": 9.790428999999904
+    },
+    {
+      "name": "Only valid classification values accepted",
+      "passed": true,
+      "duration": 54.850089000000025
+    },
+    {
+      "name": "Encrypted conversations require encryptedContent in messages",
+      "passed": true,
+      "duration": 17.773095000000012
+    },
+    {
+      "name": "Conversation list query < 100ms",
+      "passed": true,
+      "duration": 4.141978999999992
+    },
+    {
+      "name": "Message fetch query < 50ms",
+      "passed": true,
+      "duration": 19.636764000000085
+    },
+    {
+      "name": "Classification filter query < 50ms",
+      "passed": true,
+      "duration": 5.582004999999981
+    },
+    {
+      "name": "Personal conversations work without diplomatic fields",
+      "passed": true,
+      "duration": 22.789307000000008
+    },
+    {
+      "name": "Old DiplomaticChannel table still exists",
+      "passed": true,
+      "duration": 5.365207999999939
+    }
+  ]
+}

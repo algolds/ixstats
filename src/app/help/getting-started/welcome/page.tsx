@@ -10,6 +10,31 @@ export default function WelcomeArticle() {
       description="Understand what the platform offers and how the major modules fit together."
       icon={Sparkles}
     >
+      <Section title="What's New in v1.4">
+        <ul className="list-disc space-y-2 pl-6">
+          <li>
+            <strong>Crisis Events System:</strong> Handle natural disasters, economic crises,
+            diplomatic incidents with strategic responses.
+          </li>
+          <li>
+            <strong>NPC AI Personalities:</strong> NPCs with 8 traits, 6 archetypes, dynamic
+            behavioral prediction.
+          </li>
+          <li>
+            <strong>Vector Tile Maps:</strong> 100-1000x performance improvement with Martin +
+            Redis caching.
+          </li>
+          <li>
+            <strong>Admin CMS:</strong> 17 interfaces for 100% dynamic content management (500+
+            equipment, 100+ scenarios).
+          </li>
+          <li>
+            <strong>Rate Limiting:</strong> Redis-based security protecting against abuse with
+            tiered limits.
+          </li>
+        </ul>
+      </Section>
+
       <Section title="Three Things You Can Do Today">
         <ul className="list-disc space-y-2 pl-6">
           <li>
@@ -35,12 +60,16 @@ export default function WelcomeArticle() {
               analytics.
             </li>
             <li>
-              <strong>Builder:</strong> `/builder` – configure your nation's identity, government,
-              and economy.
+              <strong>Builder:</strong> `/builder` – configure your nation with 106 atomic
+              components (24 gov + 40+ econ + 42 tax).
             </li>
             <li>
-              <strong>Documentation:</strong> `docs/overview/platform.md` &
-              `docs/overview/feature-map.md` for a full system map.
+              <strong>Global Dashboard:</strong> `/dashboard` – leaderboards, global stats, live
+              economic data.
+            </li>
+            <li>
+              <strong>Documentation:</strong> `docs/README.md` – complete documentation index (52
+              routers, 580+ procedures).
             </li>
           </ul>
         </InfoBox>

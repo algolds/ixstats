@@ -17,12 +17,25 @@ export default function NavigationArticle() {
             dashboards, ThinkPages, and help.
           </li>
           <li>
+            <strong>MyCountry Dropdown:</strong> Hover over MyCountry in the navigation to access 4
+            key sections: National Overview, Executive Command, Intelligence & Diplomacy, and Defense
+            & Security.
+          </li>
+          <li>
             <strong>Command Center:</strong> Signed-in home (`/`) surfaces quick links, alerts, and
             dynamic cards.
           </li>
           <li>
-            <strong>Help:</strong> `/help` is always available and mirrors the repository
-            documentation.
+            <strong>Admin Section:</strong> `/admin` provides 17 interfaces for content management
+            (requires ADMIN role).
+          </li>
+          <li>
+            <strong>Map Editor:</strong> `/admin/map-editor` for creating subdivisions, cities, POIs
+            (requires MAP_EDITOR role).
+          </li>
+          <li>
+            <strong>Help:</strong> `/help` is always available with 47 articles covering all platform
+            features.
           </li>
         </ul>
       </Section>
@@ -31,8 +44,12 @@ export default function NavigationArticle() {
         <InfoBox title="Within MyCountry">
           <ul className="list-disc space-y-1 pl-6">
             <li>
-              Use the left tab rail to jump between Executive, Intelligence, Defense, Economy,
-              Labor, Demographics, and Analytics.
+              Use the navigation dropdown to access National Overview, Executive Command, Intelligence
+              & Diplomacy, or Defense & Security sections.
+            </li>
+            <li>
+              Each section has dedicated tabs: Executive has 5 tabs (Overview, Meetings, Policies,
+              Plans, Decisions), Intelligence has 6 tabs, and Defense has specialized views.
             </li>
             <li>Compliance alerts open the modal anywhere in the suite.</li>
             <li>

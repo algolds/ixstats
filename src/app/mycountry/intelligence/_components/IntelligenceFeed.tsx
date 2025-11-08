@@ -192,7 +192,7 @@ const trendConfig = {
   up: { color: "text-green-600", icon: TrendingUp },
   down: { color: "text-red-600", icon: TrendingDown },
   stable: { color: "text-gray-600", icon: Minus },
-  volatile: { color: "text-purple-600", icon: Activity },
+  volatile: { color: "text-blue-600", icon: Activity },
 } as const;
 
 // ===== UTILITY FUNCTIONS =====
@@ -709,7 +709,7 @@ const TrendCard = React.memo(
                     <ul className="space-y-1 text-sm">
                       {trend.implications.map((implication, i) => (
                         <li key={i} className="flex items-start gap-2">
-                          <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-purple-500" />
+                          <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-cyan-500" />
                           <span>{implication}</span>
                         </li>
                       ))}

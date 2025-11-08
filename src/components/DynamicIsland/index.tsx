@@ -48,6 +48,7 @@ function CommandPaletteContent({
     timeDisplayMode,
     searchResults,
     countriesData,
+    crisisEvents,
     setMode,
     setIsExpanded,
     setExpandedMode,
@@ -115,6 +116,7 @@ function CommandPaletteContent({
           setTimeDisplayMode={setTimeDisplayMode}
           onSwitchMode={switchMode}
           scrollY={scrollY}
+          crisisEvents={crisisEvents}
         />
       </DynamicIsland>
 
@@ -130,6 +132,7 @@ function CommandPaletteContent({
           debouncedSearchQuery={debouncedSearchQuery}
           searchResults={searchResults}
           countriesData={countriesData}
+          crisisEvents={crisisEvents}
         />
       )}
     </>

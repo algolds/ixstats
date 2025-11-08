@@ -83,10 +83,6 @@ const RootLayout = ({ children }: Readonly<{ children: React.ReactNode }>) => {
       <body className="min-h-screen transition-colors duration-200">
         <ClerkProvider
           publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-          signInUrl={signInPath}
-          signUpUrl={signUpPath}
-          afterSignInUrl={dashboardPath}
-          afterSignUpUrl={dashboardPath}
         >
           <AuthProvider>
             <AppContent />

@@ -149,6 +149,47 @@ IxStats is a production-ready economic simulation platform with comprehensive V1
 - **[docs/VECTOR_TILES_COMPLETE_GUIDE.md](./docs/VECTOR_TILES_COMPLETE_GUIDE.md)** - Map editor and vector tiles guide
 - **[docs/API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md)** - Comprehensive API documentation
 
+### MyCountry Architecture (v1.4.2 - November 2025)
+
+**Clear Separation of Concerns Achieved:**
+
+The MyCountry system now follows a strict separation principle:
+
+| Page | Purpose | Content Type | Implementation |
+|------|---------|--------------|----------------|
+| **Overview** | Monitor | Real-time snapshot | Current vitals only |
+| **Executive** | Command | Decision-making | Action queues |
+| **Diplomacy** | Interact | Social gameplay | 100% player interactions |
+| **Intelligence** | Analyze | Data visualization | 100% analytics |
+| **Defense** | Secure | Military ops | Force management |
+
+**Key Components:**
+- **Diplomacy Page** (`/mycountry/diplomacy`):
+  - Network tab: Embassy establishment/management
+  - Missions tab: Mission planning/execution
+  - Communications tab: Direct messaging
+  - Events tab: Scenario responses with impact preview (v1.4.4)
+  - NPC Intel tab: Personality viewer (planned)
+
+- **Intelligence Page** (`/mycountry/intelligence`):
+  - Dashboard tab: Executive insights
+  - Economic tab: GDP/sector analytics
+  - Diplomatic tab: Relationship trends/network visualization (v1.4.3)
+  - Policy tab: Effectiveness analysis/simulation (v1.4.5)
+  - Forecasting tab: Predictive models
+  - Settings tab: Alert configuration
+
+**Architecture Files:**
+- `/mycountry-architecture.md` - Complete architecture specification
+- `/docs/systems/mycountry.md` - System documentation
+- `/src/app/mycountry/diplomacy/` - Diplomacy page implementation
+- `/src/app/mycountry/intelligence/` - Intelligence page implementation
+
+**Phase 2 Implementation Complete (v1.4.3-1.4.4):**
+- ✅ DiplomaticAnalytics component (5 interactive chart tabs)
+- ✅ DiplomaticEventsHub component (event management system)
+- ✅ Clean separation enforced (removed DiplomaticIntelligenceHub from Diplomacy)
+
 ### Development Focus Areas (v1.1.3 Status)
 - ✅ **Authentication System**: COMPLETE - 13 security fixes, 8-layer middleware, audit logging
 - ✅ **Data Connectivity**: COMPLETE - 62.9% live data wiring (304 endpoints), all critical paths operational
@@ -229,3 +270,5 @@ See `REFACTORING_SUMMARY_OCT_2025.md` for complete implementation details.
 - ✅ **Documentation Organization**: Clean root structure, archived completed docs, comprehensive reference guides
 
 The IxStats platform has achieved **v1.2.0 production release (100% complete, Grade A+)** with hardcoded data migration fully completed. The platform now features a complete content management system with 12 admin interfaces, dynamic diplomatic scenarios, NPC personality systems, and comprehensive documentation. All 14,677 lines of hardcoded TypeScript data have been successfully migrated to the database, enabling dynamic content updates without code deployments.
+
+PLEASE NEVER RUN TYPECHECK OR TYPESCRIPT CHECKS GLOBALLY. THIS PROJECT IS MASSIVE AND IT WILL CRASH THE SERVER. IF YOU NEED TO CHECK, PLEASE ONLY EVER DO ISOLATED CHECKS ON THE FILES IN QUESITON. NEVER GLOBALLY.

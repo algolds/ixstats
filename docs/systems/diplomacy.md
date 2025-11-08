@@ -1,8 +1,10 @@
 # Diplomacy System
 
-**Last updated:** October 2025
+**Last updated:** November 2025
 
 The diplomacy domain handles relationships, embassy networks, missions, cultural exchanges, and strategic intelligence.
+
+> **⚠️ IMPORTANT:** As of v1.4.0, all diplomatic messaging now uses the **unified ThinkShare system**. See [UNIFIED_MESSAGING_SYSTEM.md](./UNIFIED_MESSAGING_SYSTEM.md) for complete details on the consolidated messaging architecture.
 
 ## Application Surfaces
 - `src/app/mycountry/intelligence/_components/DiplomaticOperationsHub.tsx` – summarises embassy reach, missions, influence, and alerts

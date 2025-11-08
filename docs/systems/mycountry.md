@@ -1,41 +1,203 @@
 # MyCountry Command Suite
 
-**Last updated:** October 2025
+**Last updated:** November 2025 (v1.4.2)
+**Architecture:** Clear separation of concerns with dedicated pages for each system
 
-The MyCountry experience gives nation owners a unified command environment. It lives primarily under `src/app/mycountry` with shared UI components in `src/components/mycountry`.
+The MyCountry experience gives nation owners a unified command environment. After v1.4.2 reorganization, each page serves a single, clear purpose.
 
-## Key Screens & Layout
-- `src/app/mycountry/page.tsx` – Entry point that renders `EnhancedMyCountryContent`
-- `EnhancedMyCountryContent.tsx` & `MyCountryTabSystem.tsx` – Tab shell for executive, intelligence, economy, labor, government, demographics, analytics, and compliance views
-- `MyCountryComplianceModal.tsx` – Compliance briefing surface that calls the `useMyCountryCompliance` hook
-- `src/app/mycountry/intelligence/_components` – Executive dashboards, diplomatic operations hub, live feeds
-- `src/app/mycountry/defense` – Strategic defense initiative widgets and readiness summaries
+## Architecture Overview
 
-## Data Sources
-- **Country core** – `api.countries.getByIdWithEconomicData`, `api.countries.getActivityRingsData`
-- **Intelligence** – `api.diplomaticIntelligence.getIntelligenceBriefing`, `api.intelligence.getExecutiveDashboard`
-- **Compliance** – `api.mycountry.getComplianceSummary`, `api.notifications.getCountryAlerts`
-- **Economics** – `api.economics.getCountryIndicators`, `api.economics.getProjections`
+MyCountry follows a **clear separation of concerns** principle:
+- **Monitoring** (Overview) - Real-time snapshot
+- **Decision-Making** (Executive) - Command & control
+- **Social Interaction** (Diplomacy) - Player-to-player relations
+- **Data Analysis** (Intelligence) - Analytics & insights
+- **Security Operations** (Defense) - Military readiness
 
-All queries originate from the generated `api` client (`src/trpc/react.tsx`). When adding new sections, expose data via an existing router or extend a domain router.
+## Key Pages & Their Purposes
+
+### 1. National Overview (`/mycountry`)
+**Purpose:** Real-time dashboard with current state snapshot
+
+**Components:**
+- `src/app/mycountry/page.tsx` – Entry point
+- `EnhancedMyCountryContent.tsx` – Main dashboard
+- `MyCountryTabSystem.tsx` – Tab navigation
+- `CountryHeader.tsx` – Header with vitality metrics
+
+**Data Sources:**
+- `api.countries.getByIdWithEconomicData` – Current economic data
+- `api.countries.getActivityRingsData` – Vitality rings
+- `api.government.getComponents` – Atomic government status
+- `api.security.getDefenseOverview` – Defense metrics
+
+**UI Elements:**
+- Current economic vitals (GDP, population, growth)
+- Real-time atomic government component status
+- Quick metrics dashboard
+- Country header with flag
+- Navigation cards (auto-collapse on scroll)
+- NO analytics or historical data
+
+### 2. Executive Command (`/mycountry/executive`)
+**Purpose:** Executive decision-making and leadership functions
+
+**Components:**
+- `src/app/mycountry/executive/page.tsx`
+- `EnhancedExecutiveContent.tsx`
+- Executive panels (Decisions, Meetings, Policies, Plans)
+
+**Features:**
+- Executive decisions queue
+- Policy approval/rejection
+- Meeting scheduling
+- Strategic planning
+- Crisis response
+
+### 3. Diplomacy (`/mycountry/diplomacy`) ⭐ v1.4.1
+**Purpose:** Social interaction hub - all player-to-player relations
+
+**Components:**
+- `src/app/mycountry/diplomacy/page.tsx`
+- `EnhancedDiplomacyContent.tsx`
+- `DiplomacyTabSystem.tsx`
+
+**Tabs:**
+1. **Network** - DiplomaticOperationsHub
+   - Establish & manage embassies
+   - View embassy cards
+   - Upgrade embassies
+   - Allocate budgets
+2. **Missions** - Mission management
+   - Start new missions
+   - Track active missions
+   - Filter by status
+3. **Communications** - SecureCommunications
+   - Direct messaging with countries
+   - Communication history
+4. **Events** - DiplomaticEventsHub ⭐ v1.4.4
+   - Active event cards with countdown timers
+   - Response system (Accept/Reject/Negotiate)
+   - Impact preview visualization
+   - Event history log
+5. **NPC Intel** - (Placeholder for personality viewer)
+
+**Data Sources:**
+- `api.diplomatic.getEmbassies`
+- `api.diplomatic.getRelationships`
+- `api.diplomatic.getActiveMissions`
+- `api.diplomaticScenarios.getAllScenarios` ⭐ NEW
+- `api.diplomaticScenarios.recordPlayerChoice` ⭐ NEW
+
+**Key Feature:** 100% social interaction, ZERO analytics
+
+### 4. Intelligence Analytics (`/mycountry/intelligence`) ⭐ v1.4.2-1.4.3
+**Purpose:** Comprehensive data analysis and strategic insights
+
+**Components:**
+- `src/app/mycountry/intelligence/page.tsx`
+- `EnhancedIntelligenceContent.tsx`
+- `IntelligenceTabSystem.tsx`
+
+**Tabs:**
+1. **Dashboard** - IntelligenceOverview
+   - Key insights and executive summary
+2. **Economic** - AnalyticsDashboard
+   - GDP charts and projections
+   - Sector performance
+   - Economic forecasts
+3. **Diplomatic** - DiplomaticAnalytics ⭐ v1.4.3
+   - Relationship strength trends (LineChart)
+   - Network power growth (AreaChart)
+   - Embassy network visualization
+   - Influence distribution (PieChart)
+   - Diplomatic events timeline
+4. **Policy** - PolicyAnalytics ⭐ v1.4.5 (PENDING)
+   - Policy effectiveness metrics
+   - Atomic component synergy
+   - Scenario planning tools
+5. **Forecasting** - (Placeholder)
+   - Predictive models
+6. **Settings** - AlertThresholdSettings
+   - Notification configuration
+
+**Data Sources:**
+- `api.analytics.*` - Analytics queries
+- `api.diplomatic.getRelationships` - For diplomatic analytics
+- `api.diplomatic.getRecentChanges` - Timeline data
+- `api.diplomatic.getEmbassies` - Network visualization
+- `api.government.getComponents` - Policy analysis
+
+**Key Feature:** 100% analytics and data visualization, ZERO social interaction
+
+### 5. Defense Readiness (`/mycountry/defense`)
+**Purpose:** Military and security operations
+
+**Components:**
+- `src/app/mycountry/defense/page.tsx`
+- Defense system components
+
+**Features:**
+- Military readiness dashboard
+- Defense budget allocation
+- Equipment management
+- Threat assessment
+
+## v1.4.x Architecture Changes
+
+### What Changed in v1.4.2 (November 2025)
+
+**BEFORE v1.4.2:**
+- Intelligence page contained diplomatic operations (mixing analytics with actions)
+- Diplomacy embedded analytics charts (DiplomaticIntelligenceHub)
+- Confusing overlap between pages
+
+**AFTER v1.4.2:**
+- **Intelligence** = 100% analytics and data visualization
+- **Diplomacy** = 100% social interaction and relationship management
+- Perfect separation of concerns achieved
+
+**Files Modified:**
+- Removed `DiplomaticIntelligenceHub` from `DiplomaticOperationsHub.tsx`
+- Created `DiplomaticAnalytics.tsx` component (570 lines)
+- Created `DiplomaticEventsHub.tsx` component (680 lines)
+
+### Benefits
+
+1. **Clear Mental Model**: Users know exactly where to go
+   - Analyze data? → Intelligence
+   - Take action? → Diplomacy
+2. **No Redundancy**: Eliminated duplicate analytics
+3. **Better Performance**: Lighter pages without embedded charts
+4. **Easier Maintenance**: Single responsibility per page
 
 ## Hooks & Utilities
-- `useMyCountryCompliance.ts` – Fetches compliance checks, outstanding actions, and threshold breaches
+
+- `useMyCountryCompliance.ts` – Fetches compliance checks, outstanding actions
 - `useUnifiedFlags.ts` – Media and identity assets for display
-- `src/app/mycountry/utils` – Data transformers for executive summaries, trend lines, and builder interoperability
+- `src/app/mycountry/utils` – Data transformers for executive summaries
 
 ## Actions & Mutations
-- Quick actions orchestrated through `src/components/mycountry/QuickActionIntegration.tsx` use routers such as `quickactions.ts`, `policies.ts`, and `notifications.ts`
-- Compliance tasks and acknowledgements leverage `api.notifications.acknowledge` and related mutation endpoints
+
+- Quick actions orchestrated through `src/components/mycountry/QuickActionIntegration.tsx`
+- Compliance tasks leverage `api.notifications.acknowledge`
 
 ## UI Guidelines
-- Follow the glass hierarchy (parent shell, section cards, interactive controls) defined in `src/components/ui`
-- Keep metrics grouped: vitality rings, economic indicators, labor stats, diplomatic status, defense readiness
-- Each tab should link to its detailed help article (`docs/systems/*.md` and `/help`) for discoverability
 
-## Future Enhancements
-- Expand realtime updates (Socket.IO) into more widgets once the development WebSocket toggle is enabled
-- Add test coverage for compliance hooks and tab orchestration
-- Synchronize builder changes with MyCountry analytics to ensure new indicators appear automatically
+- Follow glass hierarchy (parent shell, section cards, interactive controls)
+- Keep metrics grouped: vitality rings, economic indicators, diplomatic status
+- Each tab links to help articles (`/help/mycountry/*`)
+- Use auto-collapse for navigation cards on scroll
 
-Use this guide when contributing new analytics, tabs, or compliance tooling to MyCountry.
+## Future Enhancements (v1.5+)
+
+- Government page (`/mycountry/government`) - Atomic component builder
+- Economy page (`/mycountry/economy`) - Economic policy tools
+- Infrastructure page - Development projects
+- Society page - Social policy management
+
+---
+
+**Architecture Version:** v1.4.2
+**Last Major Update:** November 2025
+**Status:** Production-ready with clear separation of concerns

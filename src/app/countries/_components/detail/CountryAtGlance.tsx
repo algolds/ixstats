@@ -39,6 +39,7 @@ import {
   getGrowthIcon,
   getGrowthColor,
 } from "~/lib/chart-utils";
+import { safeFormatCurrency } from "~/lib/format-utils";
 // Removed GlassCard import as we're using standard Card components
 import { GdpDetailsModal } from "~/components/modals/GdpDetailsModal";
 import { GdpPerCapitaDetailsModal } from "~/components/modals/GdpPerCapitaDetailsModal";
@@ -96,16 +97,30 @@ interface CountryAtGlanceData {
   } | null;
 }
 
+interface GovernmentStructure {
+  governmentName?: string | null;
+  governmentType?: string | null;
+  headOfState?: string | null;
+  headOfGovernment?: string | null;
+  legislatureName?: string | null;
+  executiveName?: string | null;
+  judicialName?: string | null;
+  totalBudget?: number | null;
+  budgetCurrency?: string | null;
+}
+
 interface CountryAtGlanceProps {
   country: CountryAtGlanceData;
   currentIxTime: number;
   isLoading?: boolean;
+  governmentStructure?: GovernmentStructure | null;
 }
 
 export function CountryAtGlance({
   country,
   currentIxTime,
   isLoading = false,
+  governmentStructure,
 }: CountryAtGlanceProps) {
   const [isGdpModalOpen, setIsGdpModalOpen] = useState(false);
   const [isGdpPerCapitaModalOpen, setIsGdpPerCapitaModalOpen] = useState(false);
@@ -471,6 +486,142 @@ export function CountryAtGlance({
               </div>
             </>
           )}
+
+          {/* Government Structure Data */}
+          <Separator />
+          <div className="space-y-4">
+            <h4 className="text-muted-foreground flex items-center text-sm font-semibold">
+              <Building className="mr-2 h-4 w-4" />
+              Government Structure
+            </h4>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {(governmentStructure?.governmentName || country.nationalIdentity?.officialName) && (
+                <div className="flex items-start space-x-3">
+                  <Building className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground text-sm">Government Name</p>
+                    <p className="text-sm font-medium">
+                      {governmentStructure?.governmentName || country.nationalIdentity?.officialName}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {(governmentStructure?.governmentType || country.governmentType || country.nationalIdentity?.governmentType) && (
+                <div className="flex items-start space-x-3">
+                  <Crown className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground text-sm">Government Type</p>
+                    <p className="text-sm font-medium">
+                      {governmentStructure?.governmentType || country.governmentType || country.nationalIdentity?.governmentType}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {(governmentStructure?.headOfState || (country as any)?.leader) && (
+                <div className="flex items-start space-x-3">
+                  <Users className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground text-sm">Head of State</p>
+                    <p className="text-sm font-medium">
+                      {governmentStructure?.headOfState || (country as any)?.leader}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {governmentStructure?.headOfGovernment && (
+                <div className="flex items-start space-x-3">
+                  <Users className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground text-sm">Head of Government</p>
+                    <p className="text-sm font-medium">{governmentStructure.headOfGovernment}</p>
+                  </div>
+                </div>
+              )}
+              {country.nationalIdentity?.capitalCity && (
+                <div className="flex items-start space-x-3">
+                  <MapPin className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground text-sm">Capital</p>
+                    <p className="text-sm font-medium">{country.nationalIdentity.capitalCity}</p>
+                  </div>
+                </div>
+              )}
+              {(country as any)?.religion && (
+                <div className="flex items-start space-x-3">
+                  <Crown className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground text-sm">Religion</p>
+                    <p className="text-sm font-medium">{(country as any).religion}</p>
+                  </div>
+                </div>
+              )}
+              {country.nationalIdentity?.currency && (
+                <div className="flex items-start space-x-3">
+                  <DollarSign className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground text-sm">Currency</p>
+                    <p className="text-sm font-medium">
+                      {country.nationalIdentity.currency}
+                      {country.nationalIdentity.currencySymbol && ` (${country.nationalIdentity.currencySymbol})`}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {governmentStructure?.legislatureName && (
+                <div className="flex items-start space-x-3">
+                  <Building className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground text-sm">Legislature</p>
+                    <p className="text-sm font-medium">{governmentStructure.legislatureName}</p>
+                  </div>
+                </div>
+              )}
+              {governmentStructure?.executiveName && (
+                <div className="flex items-start space-x-3">
+                  <Building className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground text-sm">Executive</p>
+                    <p className="text-sm font-medium">{governmentStructure.executiveName}</p>
+                  </div>
+                </div>
+              )}
+              {governmentStructure?.judicialName && (
+                <div className="flex items-start space-x-3">
+                  <Building className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground text-sm">Judiciary</p>
+                    <p className="text-sm font-medium">{governmentStructure.judicialName}</p>
+                  </div>
+                </div>
+              )}
+              {typeof governmentStructure?.totalBudget === "number" && (
+                <div className="flex items-start space-x-3">
+                  <TrendingUp className="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground text-sm">Total Budget</p>
+                    <p className="text-sm font-medium">
+                      {safeFormatCurrency(
+                        governmentStructure.totalBudget,
+                        governmentStructure.budgetCurrency || "USD",
+                        false,
+                        "USD"
+                      )}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+            {country.nationalIdentity?.motto && (
+              <div className="mt-6 border-t pt-6">
+                <p className="text-muted-foreground mb-2 text-xs tracking-wide uppercase">
+                  National Motto
+                </p>
+                <p className="text-muted-foreground border-l-4 border-primary/30 pl-4 text-base italic">
+                  &quot;{country.nationalIdentity.motto}&quot;
+                </p>
+              </div>
+            )}
+          </div>
 
           <Separator />
 

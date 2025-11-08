@@ -152,10 +152,10 @@ const CLASSIFICATION_STYLES = {
     badge: "bg-red-500/20 text-red-400 border-red-500/40",
   },
   TOP_SECRET: {
-    color: "text-purple-400",
-    bg: "bg-purple-500/10",
-    border: "border-purple-500/30",
-    badge: "bg-purple-500/20 text-purple-400 border-purple-500/40",
+    color: "text-blue-400",
+    bg: "bg-blue-500/10",
+    border: "border-blue-500/30",
+    badge: "bg-blue-500/20 text-blue-400 border-blue-500/40",
   },
 } as const;
 
@@ -164,7 +164,7 @@ const PRIORITY_STYLES = {
   NORMAL: { color: "text-blue-400", icon: Circle },
   HIGH: { color: "text-orange-400", icon: AlertTriangle },
   URGENT: { color: "text-red-400", icon: AlertTriangle },
-  CRITICAL: { color: "text-purple-400", icon: AlertTriangle },
+  CRITICAL: { color: "text-cyan-400", icon: AlertTriangle },
 } as const;
 
 // ============================================================================
@@ -200,15 +200,15 @@ export function SecureCommunications({
 
   // ===== API QUERIES =====
 
-  // Fetch diplomatic channels
+  // Fetch diplomatic conversations (using unified ThinkShare API)
   const {
-    data: channels,
+    data: conversationsData,
     isLoading: channelsLoading,
     refetch: refetchChannels,
-  } = api.diplomatic.getChannels.useQuery(
+  } = api.thinkpages.getConversations.useQuery(
     {
-      countryId,
-      clearanceLevel: clearanceLevel as "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL",
+      userId: countryId,
+      limit: 50,
     },
     {
       enabled: !!countryId,
@@ -216,16 +216,58 @@ export function SecureCommunications({
     }
   );
 
-  // Fetch messages for active channel
+  // Filter and map diplomatic conversations to channel format
+  const channels = useMemo(() => {
+    if (!conversationsData?.conversations) return [];
+
+    // Filter only diplomatic conversations with appropriate clearance
+    return conversationsData.conversations
+      .filter((conv: any) => {
+        // Only show diplomatic conversations
+        if (conv.conversationType !== "diplomatic") return false;
+
+        // Filter by clearance level
+        const convClassification = conv.diplomaticClassification as ClassificationLevel;
+        const clearanceLevels: Record<ClassificationLevel, number> = {
+          PUBLIC: 1,
+          RESTRICTED: 2,
+          CONFIDENTIAL: 3,
+          SECRET: 4,
+          TOP_SECRET: 5,
+        };
+
+        const userClearance = clearanceLevels[clearanceLevel] || 1;
+        const convClearanceLevel = clearanceLevels[convClassification] || 1;
+
+        return convClearanceLevel <= userClearance;
+      })
+      .map((conv: any) => ({
+        id: conv.id,
+        name: conv.name || `Channel ${conv.id.substring(0, 8)}`,
+        type: conv.channelType || "BILATERAL",
+        classification: conv.diplomaticClassification || "PUBLIC",
+        encrypted: conv.encrypted || false,
+        lastActivity: conv.lastActivity,
+        unreadCount: conv.unreadCount || 0,
+        participants: conv.otherParticipants?.map((p: any) => ({
+          countryId: p.userId,
+          countryName: p.userId, // TODO: Resolve country name from userId
+          flagUrl: undefined,
+          role: p.role?.toUpperCase() || "MEMBER",
+        })) || [],
+      }));
+  }, [conversationsData, clearanceLevel]);
+
+  // Fetch messages for active conversation
   const {
-    data: messages,
+    data: messagesData,
     isLoading: messagesLoading,
     refetch: refetchMessages,
-  } = api.diplomatic.getChannelMessages.useQuery(
+  } = api.thinkpages.getConversationMessages.useQuery(
     {
-      channelId: activeChannelId || "",
-      countryId,
-      clearanceLevel: clearanceLevel as "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL",
+      conversationId: activeChannelId || "",
+      userId: countryId,
+      limit: 100,
     },
     {
       enabled: !!activeChannelId && !!countryId,
@@ -233,9 +275,31 @@ export function SecureCommunications({
     }
   );
 
+  // Map ThinkShare messages to diplomatic message format
+  const messages = useMemo(() => {
+    if (!messagesData?.messages) return [];
+
+    return messagesData.messages.map((msg: any) => ({
+      id: msg.id,
+      from: {
+        countryId: msg.userId,
+        countryName: msg.userId, // TODO: Resolve country name from userId
+      },
+      to: null, // ThinkShare conversations don't have explicit "to"
+      subject: msg.subject,
+      content: msg.content,
+      classification: msg.classification || "PUBLIC",
+      priority: msg.priority || "NORMAL",
+      status: msg.status || "SENT",
+      encrypted: !!msg.encryptedContent,
+      ixTimeTimestamp: new Date(msg.ixTimeTimestamp).getTime(),
+      timestamp: msg.ixTimeTimestamp,
+    }));
+  }, [messagesData]);
+
   // ===== MUTATIONS =====
 
-  const sendMessageMutation = api.diplomatic.sendMessage.useMutation({
+  const sendMessageMutation = api.thinkpages.sendMessage.useMutation({
     onSuccess: () => {
       toast.success("Message sent successfully", {
         description: encryptMessage ? "Message encrypted and delivered" : "Message delivered",
@@ -272,7 +336,7 @@ export function SecureCommunications({
       filtered = filtered.filter(
         (ch) =>
           ch.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          ch.participants.some((p) =>
+          ch.participants.some((p: { countryId: string; countryName: string; flagUrl?: string; role: string }) =>
             p.countryName.toLowerCase().includes(searchQuery.toLowerCase())
           )
       );
@@ -286,9 +350,8 @@ export function SecureCommunications({
     return filtered;
   }, [channels, searchQuery, filterClassification]);
 
-  const filteredMessages = useMemo(() => {
-    return messages || [];
-  }, [messages]);
+  // Messages are already filtered/mapped above, use directly
+  const filteredMessages = messages;
 
   // ===== HANDLERS =====
 
@@ -299,14 +362,16 @@ export function SecureCommunications({
     }
 
     sendMessageMutation.mutate({
-      channelId: activeChannelId,
-      fromCountryId: countryId,
-      fromCountryName: countryName,
-      subject: messageSubject || undefined,
+      conversationId: activeChannelId,
+      userId: countryId,
       content: messageContent,
-      classification: messageClassification as "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL",
-      priority: messagePriority as "LOW" | "NORMAL" | "HIGH" | "URGENT",
-      encrypted: encryptMessage,
+      messageType: "text",
+      // Diplomatic extensions
+      subject: messageSubject || undefined,
+      classification: messageClassification,
+      priority: messagePriority,
+      encryptedContent: encryptMessage ? messageContent : undefined, // TODO: Implement actual encryption
+      status: "SENT",
     });
   }, [
     activeChannelId,

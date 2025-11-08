@@ -7,6 +7,7 @@
  * @module analytics-data-transformers
  */
 
+import { IxTime } from "~/lib/ixtime";
 import { DEFAULT_CHART_COLORS } from "~/lib/chart-colors";
 
 // ===== TYPES =====
@@ -411,10 +412,9 @@ export function calculateProjectionData(
 
   return Array.from({ length: periods }, (_, i) => {
     const month = i + 1;
-    const dateLabel = new Date(Date.now() + month * 30 * 24 * 60 * 60 * 1000).toLocaleDateString(
-      "en-US",
-      { month: "short", year: "2-digit" }
-    );
+    const dateLabel = new Date(
+      IxTime.getCurrentIxTime() + month * 30 * 24 * 60 * 60 * 1000
+    ).toLocaleDateString("en-US", { month: "short", year: "2-digit" });
 
     const data: ProjectionDataPoint = { date: dateLabel, month };
 

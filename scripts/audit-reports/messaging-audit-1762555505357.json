@@ -1,0 +1,100 @@
+{
+  "timestamp": "2025-11-07T22:45:05.345Z",
+  "totalTests": 18,
+  "passed": 17,
+  "failed": 1,
+  "coverage": 94.44444444444444,
+  "results": [
+    {
+      "name": "Create diplomatic conversation with classification",
+      "passed": true,
+      "duration": 1233.590894
+    },
+    {
+      "name": "Send message with classification and priority",
+      "passed": true,
+      "duration": 85.40179900000021
+    },
+    {
+      "name": "Send encrypted message with encryptedContent",
+      "passed": true,
+      "duration": 33.87382800000023
+    },
+    {
+      "name": "Filter conversations by conversationType=diplomatic",
+      "passed": true,
+      "duration": 38.258248000000094
+    },
+    {
+      "name": "Filter messages by classification level",
+      "passed": true,
+      "duration": 63.520722000000205
+    },
+    {
+      "name": "Store all priority levels (LOW to CRITICAL)",
+      "passed": true,
+      "duration": 151.56514000000016
+    },
+    {
+      "name": "Foreign key constraints enforced",
+      "passed": true,
+      "duration": 299.8715599999996
+    },
+    {
+      "name": "Required fields validated (conversationId, userId, content)",
+      "passed": true,
+      "duration": 27.129374999999527
+    },
+    {
+      "name": "Indexes exist for diplomatic fields",
+      "passed": true,
+      "duration": 27.98884799999996
+    },
+    {
+      "name": "Cascade delete: deleting conversation deletes messages",
+      "passed": true,
+      "duration": 66.97271300000011
+    },
+    {
+      "name": "No orphaned messages without conversations",
+      "passed": false,
+      "duration": 6.064684999999372,
+      "error": "\nInvalid `db.thinkshareMessage.findMany()` invocation in\n/ixwiki/public/projects/ixstats/scripts/audit-unified-messaging.ts:348:57\n\n  345 \n  346 // Test 5: No orphaned records\n  347 await runTest(\"No orphaned messages without conversations\", async () => {\n→ 348   const orphanedMessages = await db.thinkshareMessage.findMany({\n          where: {\n        +   conversation: {\n        +     is: ThinkshareConversationWhereInput,\n        +     isNot: ThinkshareConversationWhereInput\n        +   }\n          }\n        })\n\nArgument `conversation` must not be null."
+    },
+    {
+      "name": "Only valid classification values accepted",
+      "passed": true,
+      "duration": 85.16741000000002
+    },
+    {
+      "name": "Encrypted conversations require encryptedContent in messages",
+      "passed": true,
+      "duration": 18.921784999999545
+    },
+    {
+      "name": "Conversation list query < 100ms",
+      "passed": true,
+      "duration": 8.689445999999407
+    },
+    {
+      "name": "Message fetch query < 50ms",
+      "passed": true,
+      "duration": 20.8905079999995
+    },
+    {
+      "name": "Classification filter query < 50ms",
+      "passed": true,
+      "duration": 17.24349600000005
+    },
+    {
+      "name": "Personal conversations work without diplomatic fields",
+      "passed": true,
+      "duration": 33.030071000000135
+    },
+    {
+      "name": "Old DiplomaticChannel table still exists",
+      "passed": true,
+      "duration": 8.70620400000007
+    }
+  ]
+}

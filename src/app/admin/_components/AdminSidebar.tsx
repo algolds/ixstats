@@ -24,6 +24,7 @@ import {
   Activity,
 } from "lucide-react";
 import { Users as UsersIcon } from "lucide-react";
+import { withBasePath } from "@/lib/base-path";
 
 interface AdminSidebarProps {
   selectedSection: string;
@@ -178,67 +179,53 @@ export function AdminSidebar({ selectedSection, onSectionChange }: AdminSidebarP
             </h3>
             <div className="space-y-1">
               <a
-                href="/admin/map-editor"
+                href={withBasePath("/admin/map-editor")}
                 className="hover:bg-muted/30 text-muted-foreground hover:text-foreground flex w-full items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-200"
               >
                 <MapPin className="h-5 w-5" />
                 <span className="text-sm font-medium">Map Editor Review</span>
               </a>
               <a
-                href="/admin/maps-monitoring"
+                href={withBasePath("/admin/maps-monitoring")}
                 className="hover:bg-muted/30 text-muted-foreground hover:text-foreground flex w-full items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-200"
               >
                 <Activity className="h-5 w-5" />
                 <span className="text-sm font-medium">Maps Monitoring</span>
               </a>
               <a
-                href="/admin/diplomatic-options"
+                href={withBasePath("/admin/diplomatic-options")}
                 className="hover:bg-muted/30 text-muted-foreground hover:text-foreground flex w-full items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-200"
               >
                 <Flag className="h-5 w-5" />
                 <span className="text-sm font-medium">Diplomatic Options</span>
               </a>
               <a
-                href="/admin/diplomatic-scenarios"
+                href={withBasePath("/admin/diplomatic-scenarios")}
                 className="hover:bg-muted/30 text-muted-foreground hover:text-foreground flex w-full items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-200"
               >
                 <Drama className="h-5 w-5" />
                 <span className="text-sm font-medium">Diplomatic Scenarios</span>
               </a>
               <a
-                href="/admin/diplomatic-scenarios/analytics"
+                href={withBasePath("/admin/diplomatic-scenarios/analytics")}
                 className="hover:bg-muted/30 text-muted-foreground hover:text-foreground flex w-full items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-200"
               >
                 <TrendingUp className="h-5 w-5" />
                 <span className="text-sm font-medium">Scenario Analytics</span>
               </a>
               <a
-                href="/admin/military-equipment"
+                href={withBasePath("/admin/military-equipment")}
                 className="hover:bg-muted/30 text-muted-foreground hover:text-foreground flex w-full items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-200"
               >
                 <Rocket className="h-5 w-5" />
                 <span className="text-sm font-medium">Military Equipment</span>
               </a>
               <a
-                href="/admin/military-equipment/manufacturers"
-                className="hover:bg-muted/30 text-muted-foreground hover:text-foreground flex w-full items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-200"
-              >
-                <Factory className="h-5 w-5" />
-                <span className="text-sm font-medium">Manufacturers</span>
-              </a>
-              <a
-                href="/admin/military-equipment/analytics"
-                className="hover:bg-muted/30 text-muted-foreground hover:text-foreground flex w-full items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-200"
-              >
-                <TrendingUp className="h-5 w-5" />
-                <span className="text-sm font-medium">Equipment Analytics</span>
-              </a>
-              <a
-                href="/admin/npc-personalities"
+                href={withBasePath("/admin/npc-personalities")}
                 className="hover:bg-muted/30 text-muted-foreground hover:text-foreground flex w-full items-center gap-3 rounded-lg px-4 py-2.5 transition-all duration-200"
               >
                 <UserCog className="h-5 w-5" />
-                <span className="text-sm font-medium">NPC Personalities 🎉</span>
+                <span className="text-sm font-medium">NPC Personalities</span>
               </a>
             </div>
           </div>

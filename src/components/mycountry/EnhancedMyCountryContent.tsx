@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronDown, ChevronUp, Settings, Crown, Zap } from "lucide-react";
+import { ChevronDown, ChevronUp, Settings, Zap } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -9,100 +9,37 @@ import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { CountryHeader, CountryMetricsGrid, VitalityRings, useCountryData } from "./primitives";
 import { MyCountryTabSystem } from "./MyCountryTabSystem";
-import { CrisisStatusBanner } from "~/app/countries/_components/CrisisStatusBanner";
 import { useFlag } from "~/hooks/useFlag";
 import { AtomicComponentSelector } from "~/components/government/atoms/AtomicGovernmentComponents";
 import { TaxBuilder } from "~/components/tax-system/TaxBuilder";
 import { GovernmentBuilder } from "~/components/government/GovernmentBuilder";
 import { api } from "~/trpc/react";
-import { useUser } from "~/context/auth-context";
-import { ComponentType } from "@prisma/client";
-import type { AtomicGovernmentComponent } from "~/components/government/atoms/AtomicGovernmentComponents";
+import { MyCountryCompactHeader } from "./MyCountryCompactHeader";
 
 interface EnhancedMyCountryContentProps {
   variant?: "unified" | "standard" | "premium";
   title?: string;
 }
 
-// Smart normalization helper
-function smartNormalizeGrowthRate(value: number | null | undefined, fallback = 3.0): number {
-  if (!value || !isFinite(value)) return fallback;
-
-  let normalizedValue = value;
-  while (Math.abs(normalizedValue) > 50) {
-    normalizedValue = normalizedValue / 100;
-  }
-
-  if (Math.abs(normalizedValue) > 20) {
-    return normalizedValue > 0 ? 20 : -20;
-  }
-
-  return normalizedValue;
-}
-
 export function EnhancedMyCountryContent({
   variant = "unified",
   title,
 }: EnhancedMyCountryContentProps) {
-  const { user } = useUser();
   const { country, activityRingsData, isLoading } = useCountryData();
   const [vitalityCollapsed, setVitalityCollapsed] = useState(false);
-  const [activeGovernmentTab, setActiveGovernmentTab] = useState<"components" | "budget" | "taxes">(
-    "components"
-  );
-  const [selectedComponents, setSelectedComponents] = useState<ComponentType[]>([]);
   const { flagUrl } = useFlag(country?.name || "");
 
   // Fetch existing government components
-  const { data: existingComponents, refetch: refetchComponents } =
-    api.government.getComponents.useQuery(
-      { countryId: country?.id || "" },
-      { enabled: !!country?.id }
-    );
+  const { data: existingComponents } = api.government.getComponents.useQuery(
+    { countryId: country?.id || "" },
+    { enabled: !!country?.id }
+  );
 
   // Fetch Defense overview metrics
   const { data: defenseOverview } = api.security.getDefenseOverview.useQuery(
     { countryId: country?.id || "" },
     { enabled: !!country?.id }
   );
-
-  // Create government component mutation
-  const createComponentMutation = api.government.addComponent.useMutation({
-    onSuccess: () => {
-      void refetchComponents();
-    },
-  });
-
-  // Update components when data changes
-  useEffect(() => {
-    if (existingComponents) {
-      setSelectedComponents(existingComponents.map((c) => c.componentType));
-    }
-  }, [existingComponents]);
-
-  // Handle component changes
-  const handleComponentChange = async (components: ComponentType[]) => {
-    setSelectedComponents(components);
-
-    if (country?.id && user?.id) {
-      // Find new components to add
-      const newComponents = components.filter(
-        (c) => !existingComponents?.some((existing) => existing.componentType === c)
-      );
-
-      // Create new components
-      for (const componentType of newComponents) {
-        try {
-          await createComponentMutation.mutateAsync({
-            countryId: country.id,
-            componentType: componentType as any,
-          });
-        } catch (error) {
-          console.error("Failed to create component:", error);
-        }
-      }
-    }
-  };
 
   useEffect(() => {
     if (title) {
@@ -234,41 +171,20 @@ export function EnhancedMyCountryContent({
   };
 
   return (
-    <div className="container mx-auto space-y-6 px-4 py-8">
-      {/* Unified Header */}
-      <div id="overview">
-        <CountryHeader countryName={country.name} countryId={country.id} variant={variant} />
-      </div>
+    <div className="space-y-0">
+      {/* Compact Header with Inline Nav */}
+      <MyCountryCompactHeader
+        country={{
+          name: country.name,
+          id: country.id,
+        }}
+        flagUrl={flagUrl}
+        currentPage="overview"
+      />
 
-      {/* Crisis Status Banner */}
-      <CrisisStatusBanner countryId={country.id} />
-
-      {/* Atomic Government Integration Alert */}
-      {existingComponents && existingComponents.length > 0 && (
-        <Alert className="border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50">
-          <Settings className="h-4 w-4" />
-          <AlertDescription>
-            <div className="flex items-center justify-between">
-              <div>
-                <strong>Atomic Government System Active:</strong> {existingComponents.length}{" "}
-                components deployed with{" "}
-                {(
-                  existingComponents.reduce((sum, c) => sum + c.effectivenessScore, 0) /
-                  existingComponents.length
-                ).toFixed(0)}
-                % average effectiveness.
-              </div>
-              <Badge variant="secondary" className="ml-2">
-                <Zap className="mr-1 h-3 w-3" />
-                Enhanced Analytics
-              </Badge>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Main Layout */}
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-4">
+      <div className="container mx-auto space-y-6 px-4 py-8">
+        {/* Main Layout */}
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-4">
         {/* Left Sidebar - National Vitality Index */}
         {variant === "unified" && (
           <div className="xl:col-span-1" id="vitality">
@@ -315,25 +231,13 @@ export function EnhancedMyCountryContent({
                       )}
                     </Button>
                   </div>
-                  {!vitalityCollapsed && (
-                    <>
-                      <Badge variant="outline" className="w-fit text-xs">
-                        {existingComponents && existingComponents.length > 0
-                          ? "ATOMIC ENHANCED"
-                          : "LIVE DATA"}
-                      </Badge>
-                    </>
-                  )}
                 </CardHeader>
 
                 <CardContent className={vitalityCollapsed ? "px-4 py-2" : ""}>
                   {!vitalityCollapsed && (
-                    <>
-                      <CountryMetricsGrid metrics={metrics.slice(0, 4)} variant="compact" />
-                      <div className="mt-6">
-                        <VitalityRings data={vitalityData} variant="sidebar" />
-                      </div>
-                    </>
+                    <div className="mt-6">
+                      <VitalityRings data={vitalityData} variant="sidebar" />
+                    </div>
                   )}
                 </CardContent>
               </div>
@@ -342,7 +246,31 @@ export function EnhancedMyCountryContent({
         )}
 
         {/* Main Content Area */}
-        <div className={variant === "unified" ? "xl:col-span-3" : "col-span-full"}>
+        <div className={variant === "unified" ? "xl:col-span-3 space-y-6" : "col-span-full space-y-6"}>
+          {/* Atomic Government Integration Alert */}
+          {existingComponents && existingComponents.length > 0 && (
+            <Alert className="border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+              <Settings className="h-4 w-4" />
+              <AlertDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <strong>Atomic Government System Active:</strong> {existingComponents.length}{" "}
+                    components deployed with{" "}
+                    {(
+                      existingComponents.reduce((sum, c) => sum + c.effectivenessScore, 0) /
+                      existingComponents.length
+                    ).toFixed(0)}
+                    % average effectiveness.
+                  </div>
+                  <Badge variant="secondary" className="ml-2">
+                    <Zap className="mr-1 h-3 w-3" />
+                    Enhanced Analytics
+                  </Badge>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Metrics Grid for non-unified variants */}
           {variant !== "unified" && (
             <CountryMetricsGrid
@@ -360,6 +288,7 @@ export function EnhancedMyCountryContent({
           <div id="tabs">
             <MyCountryTabSystem variant={variant} />
           </div>
+        </div>
         </div>
       </div>
     </div>

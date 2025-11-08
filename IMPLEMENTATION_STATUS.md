@@ -123,6 +123,69 @@ Between October 26-29, 2025, IxStats completed a comprehensive migration of **14
 
 See `MIGRATION_STATUS_SUMMARY.md` for complete project documentation.
 
+## MyCountry Architecture Reorganization (v1.4.2 - November 2025)
+
+### Overview
+Between November 1-7, 2025, IxStats completed a comprehensive reorganization of the MyCountry system to enforce **clear separation of concerns** between analytics (Intelligence) and social interaction (Diplomacy).
+
+### Implementation Phases
+
+#### v1.4.1: Foundation (Complete ✅)
+- Created dedicated `/mycountry/diplomacy` page
+- Moved diplomatic operations from Intelligence to Diplomacy
+- Separated navigation menu items
+
+#### v1.4.2: Clean Separation (Complete ✅)
+- **Removed**: `DiplomaticIntelligenceHub` from Diplomacy page
+- **Result**: Diplomacy = 100% social interaction, Intelligence = 100% analytics
+- **Impact**: Eliminated confusing overlap between pages
+
+#### v1.4.3: Diplomatic Analytics (Complete ✅)
+- **Created**: `DiplomaticAnalytics.tsx` component (570 lines)
+- **Features**:
+  - Relationship strength trends (LineChart)
+  - Network power growth (AreaChart)
+  - Embassy network visualization
+  - Influence distribution (PieChart)
+  - Diplomatic events timeline
+- **Location**: Intelligence page → Diplomatic tab
+
+#### v1.4.4: Diplomatic Events System (Complete ✅)
+- **Created**: `DiplomaticEventsHub.tsx` component (680 lines)
+- **Features**:
+  - Active events feed with scenario cards
+  - Interactive response system (Accept/Reject/Negotiate)
+  - Impact preview visualization (±relationship/economic/cultural)
+  - Event history log with smart filtering
+  - Real-time countdown timers (critical/warning/normal)
+  - 12 event type configurations
+- **Location**: Diplomacy page → Events tab
+
+### Architecture Benefits
+1. **Clear Mental Model**: Users know where to go for each task
+2. **No Redundancy**: Eliminated duplicate analytics components
+3. **Better Performance**: Lighter pages, optimized data loading
+4. **Single Responsibility**: Each page has one clear purpose
+5. **Future-Proof**: Framework supports easy addition of new systems
+
+### Files Modified
+- `/src/app/mycountry/intelligence/_components/DiplomaticOperationsHub.tsx` - Removed analytics
+- `/src/app/mycountry/intelligence/_components/DiplomaticAnalytics.tsx` - NEW
+- `/src/app/mycountry/diplomacy/_components/DiplomaticEventsHub.tsx` - NEW
+- `/src/components/mycountry/IntelligenceTabSystem.tsx` - Integrated DiplomaticAnalytics
+- `/src/components/mycountry/DiplomacyTabSystem.tsx` - Integrated DiplomaticEventsHub
+- `/src/components/mycountry/primitives/CountryHeader.tsx` - Removed tier badges
+- `/src/components/mycountry/MyCountryNavCards.tsx` - Added auto-collapse on scroll
+
+### Documentation Updated
+- `/mycountry-architecture.md` - Complete architecture specification
+- `/docs/systems/mycountry.md` - System documentation
+- `/CLAUDE.md` - Development guidance
+- `/IMPLEMENTATION_STATUS.md` - This section
+
+### Status: Production Ready ✅
+All v1.4.2-1.4.4 features deployed and operational.
+
 ## Testing & Tooling
 - Jest environment configured in `package.json`
 - Targeted router tests (e.g., `diplomaticIntelligence.test.ts`)

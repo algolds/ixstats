@@ -21,7 +21,7 @@ export default function StrategicIntelligenceArticle() {
       <Section title="Where to Access">
         <InfoBox title="Locations">
           <ul className="list-disc space-y-1 pl-6">
-            <li>MyCountry intelligence tab – "Strategic" section under executive briefings.</li>
+            <li>Intelligence & Diplomacy page – Access via MyCountry dropdown, then select the Intelligence Feed tab for strategic briefings.</li>
             <li>ThinkPages collections curated for leadership briefings.</li>
             <li>
               Exports via scripts (see `scripts/audit` for inspiration) when generating off-platform

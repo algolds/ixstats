@@ -2687,6 +2687,13 @@ export const thinkpagesRouter = createTRPCRouter({
     .input(
       z.object({
         participantIds: z.array(z.string().min(1)), // Now expects userIds (clerkUserIds)
+        // Diplomatic conversation extensions
+        conversationType: z.enum(["personal", "diplomatic", "official"]).optional(),
+        diplomaticClassification: z.enum(["PUBLIC", "RESTRICTED", "CONFIDENTIAL", "SECRET", "TOP_SECRET"]).optional(),
+        priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "CRITICAL"]).optional(),
+        encrypted: z.boolean().optional(),
+        channelType: z.enum(["BILATERAL", "MULTILATERAL", "EMERGENCY"]).optional(),
+        name: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -2760,6 +2767,7 @@ export const thinkpagesRouter = createTRPCRouter({
       const conversation = await db.thinkshareConversation.create({
         data: {
           type: "direct",
+          name: input.name,
           participants: {
             createMany: {
               data: uniqueParticipantIds.map((userId) => ({
@@ -2768,6 +2776,12 @@ export const thinkpagesRouter = createTRPCRouter({
               })),
             },
           },
+          // Diplomatic extensions
+          conversationType: input.conversationType,
+          diplomaticClassification: input.diplomaticClassification,
+          priority: input.priority,
+          encrypted: input.encrypted || false,
+          channelType: input.channelType,
         },
         include: {
           participants: {
@@ -3150,6 +3164,13 @@ export const thinkpagesRouter = createTRPCRouter({
             })
           )
           .optional(),
+        // Diplomatic messaging extensions
+        classification: z.enum(["PUBLIC", "RESTRICTED", "CONFIDENTIAL", "SECRET", "TOP_SECRET"]).optional(),
+        priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "CRITICAL"]).optional(),
+        subject: z.string().optional(),
+        signature: z.string().optional(),
+        encryptedContent: z.string().optional(),
+        status: z.enum(["SENT", "DELIVERED", "READ", "ARCHIVED"]).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -3191,6 +3212,13 @@ export const thinkpagesRouter = createTRPCRouter({
           mentions: input.mentions ? JSON.stringify(input.mentions) : null,
           attachments: input.attachments ? JSON.stringify(input.attachments) : null,
           ixTimeTimestamp: new Date(),
+          // Diplomatic extensions
+          classification: input.classification,
+          priority: input.priority,
+          subject: input.subject,
+          signature: input.signature,
+          encryptedContent: input.encryptedContent,
+          status: input.status || "SENT",
         },
         include: {
           conversation: true,

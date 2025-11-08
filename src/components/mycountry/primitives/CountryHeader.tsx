@@ -23,59 +23,31 @@ export function CountryHeader({
   populationTier,
   variant = "unified",
 }: CountryHeaderProps) {
-  const variantConfig = {
-    unified: {
-      badge: "UNIFIED",
-      colors: "from-amber-500 to-yellow-500",
-      subtitle: "Integrated Dashboard & Command Center",
-    },
-    standard: {
-      badge: "STANDARD",
-      colors: "from-blue-500 to-indigo-500",
-      subtitle: "Standard Dashboard & Analytics",
-    },
-    premium: {
-      badge: "PREMIUM",
-      colors: "from-purple-500 to-blue-500",
-      subtitle: "Executive Command Center & Intelligence Suite",
-    },
-  };
-
-  const config = variantConfig[variant];
-
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div className="flex items-center gap-4">
-        <div className={`rounded-full bg-gradient-to-r p-2 ${config.colors}`}>
+        <div className="rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 p-2">
           <Crown className="h-8 w-8 text-white" />
         </div>
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold">MyCountry: {countryName}</h1>
-            <Badge className={`bg-gradient-to-r ${config.colors} text-white`}>
-              <Sparkles className="mr-1 h-3 w-3" />
-              {config.badge}
-            </Badge>
-          </div>
-          <p className="text-muted-foreground">{config.subtitle}</p>
+          <h1 className="text-3xl font-bold">{countryName}</h1>
+          <p className="text-muted-foreground">National Overview & Vitality Dashboard</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Link href={createUrl(`/countries/${countrySlug || countryId}`)}>
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Public View
           </Button>
         </Link>
         <Link href={createUrl("/mycountry/editor")}>
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="flex items-center gap-2">
             <Edit className="h-4 w-4" />
             Edit Data
           </Button>
         </Link>
-        {economicTier && <Badge variant="outline">{economicTier}</Badge>}
-        {populationTier && <Badge variant="outline">Tier {populationTier}</Badge>}
       </div>
     </div>
   );

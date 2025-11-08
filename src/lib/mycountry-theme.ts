@@ -9,6 +9,7 @@ export type TabTheme =
   | "labor"
   | "government"
   | "demographics"
+  | "diplomacy"
   | "intelligence"
   | "detailed"
   | "modeling";
@@ -48,6 +49,12 @@ export const MyCountryTabIcons = {
     secondary: "PieChart", // Demographics breakdown
     tertiary: "Map", // Geographic distribution
     accent: "Calendar", // Time/age factors
+  },
+  diplomacy: {
+    primary: "Globe", // International relations
+    secondary: "Building2", // Embassies
+    tertiary: "Send", // Communications
+    accent: "Heart", // Relationships
   },
   intelligence: {
     primary: "Shield", // Security
@@ -113,13 +120,21 @@ export const TabColors = {
     glow: "rgba(8, 145, 178, 0.3)",
     icon: "#0E7490", // Cyan-700
   },
+  diplomacy: {
+    primary: "#0891B2", // Cyan-600 (diplomatic blue-green)
+    secondary: "#06B6D4", // Cyan-500
+    accent: "#22D3EE", // Cyan-400
+    background: "rgba(8, 145, 178, 0.08)",
+    glow: "rgba(8, 145, 178, 0.3)",
+    icon: "#0E7490", // Cyan-700
+  },
   intelligence: {
-    primary: "#1F2937", // Gray-800
-    secondary: "#374151", // Gray-700
-    accent: "#6B7280", // Gray-500
-    background: "rgba(31, 41, 55, 0.08)",
-    glow: "rgba(31, 41, 55, 0.3)",
-    icon: "#111827", // Gray-900
+    primary: "#2563EB", // Blue-600
+    secondary: "#3B82F6", // Blue-500
+    accent: "#06B6D4", // Cyan-500
+    background: "rgba(37, 99, 235, 0.08)",
+    glow: "rgba(37, 99, 235, 0.3)",
+    icon: "#1E40AF", // Blue-700
   },
   detailed: {
     primary: "#BE185D", // Pink-700
@@ -221,6 +236,7 @@ export const getTabAnimationDelay = (theme: TabTheme, index: number = 0) => {
     labor: 200,
     government: 300,
     demographics: 400,
+    diplomacy: 450,
     intelligence: 500,
     detailed: 600,
     modeling: 700,
@@ -252,14 +268,12 @@ export const getTabTailwindClasses = (theme: TabTheme) => {
     "#0891B2": "cyan-600",
     "#06B6D4": "cyan-500",
     "#22D3EE": "cyan-400",
-    "#1F2937": "gray-800",
-    "#374151": "gray-700",
-    "#6B7280": "gray-500",
+    "#2563EB": "blue-600",
+    "#3B82F6": "blue-500",
     "#BE185D": "pink-700",
     "#EC4899": "pink-500",
     "#F472B6": "pink-400",
     "#1E40AF": "blue-700",
-    "#3B82F6": "blue-500",
     "#60A5FA": "blue-400",
   };
 

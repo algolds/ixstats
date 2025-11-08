@@ -165,14 +165,18 @@ export function DiplomaticHealthRing({
   const strokeDasharray = circumference;
   const strokeDashoffset = circumference * (1 - score / 100);
 
+  // Add padding for animated glow effects
+  const glowPadding = 30;
+  const totalSize = config.diameter + glowPadding * 2;
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <motion.div
           className={`relative cursor-pointer ${interactive ? "hover:scale-105" : ""} ${className}`}
           style={{
-            width: config.diameter,
-            height: config.diameter,
+            width: totalSize,
+            height: totalSize,
           }}
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -185,9 +189,57 @@ export function DiplomaticHealthRing({
           whileHover={interactive ? { scale: 1.05 } : {}}
           whileTap={interactive ? { scale: 0.95 } : {}}
         >
+          {/* Animated Glow Background */}
+          <motion.div
+            className="pointer-events-none absolute rounded-full"
+            style={{
+              left: glowPadding / 2,
+              top: glowPadding / 2,
+              width: config.diameter + glowPadding,
+              height: config.diameter + glowPadding,
+              background: `radial-gradient(circle, ${color}20 0%, ${color}10 40%, transparent 70%)`,
+            }}
+            animate={{
+              scale: [0.9, 1.1, 0.9],
+              opacity: [0.3, 0.6, 0.3],
+            }}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+
+          {/* Pulse Effect for Low Scores */}
+          {score < 40 && (
+            <motion.div
+              className="pointer-events-none absolute rounded-full"
+              style={{
+                left: glowPadding / 2,
+                top: glowPadding / 2,
+                width: config.diameter + glowPadding,
+                height: config.diameter + glowPadding,
+                background: `radial-gradient(circle, ${color}25 0%, ${color}15 40%, transparent 70%)`,
+              }}
+              animate={{
+                scale: [1, 1.2, 1],
+                opacity: [0.4, 0.8, 0.4],
+              }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+          )}
+
           {/* Background Ring */}
           <svg
-            className="absolute inset-0 -rotate-90 transform"
+            className="absolute -rotate-90 transform overflow-visible"
+            style={{
+              left: glowPadding,
+              top: glowPadding,
+            }}
             width={config.diameter}
             height={config.diameter}
           >
@@ -202,16 +254,20 @@ export function DiplomaticHealthRing({
             />
           </svg>
 
-          {/* Progress Ring */}
+          {/* Progress Ring with Glow */}
           <svg
-            className="absolute inset-0 -rotate-90 transform"
+            className="absolute -rotate-90 transform overflow-visible"
+            style={{
+              left: glowPadding,
+              top: glowPadding,
+            }}
             width={config.diameter}
             height={config.diameter}
           >
             <defs>
-              <filter id="glow-diplomatic" x="-100%" y="-100%" width="300%" height="300%">
-                <feGaussianBlur stdDeviation="6" result="coloredBlur" />
-                <feGaussianBlur stdDeviation="12" result="coloredBlur2" />
+              <filter id="glow-diplomatic" filterUnits="userSpaceOnUse">
+                <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+                <feGaussianBlur stdDeviation="8" result="coloredBlur2" />
                 <feMerge>
                   <feMergeNode in="coloredBlur2" />
                   <feMergeNode in="coloredBlur" />
@@ -241,7 +297,7 @@ export function DiplomaticHealthRing({
                 ease: "easeInOut",
               }}
               style={{
-                filter: "url(#glow-diplomatic)",
+                filter: `url(#glow-diplomatic) drop-shadow(0 0 20px ${color}40)`,
               }}
               className="glass-hierarchy-interactive"
             />
@@ -249,7 +305,7 @@ export function DiplomaticHealthRing({
 
           {/* Center Content */}
           <div
-            className="absolute inset-0 flex flex-col items-center justify-center text-center"
+            className="absolute flex flex-col items-center justify-center text-center"
             style={{
               width: config.centerSize,
               height: config.centerSize,
@@ -268,48 +324,10 @@ export function DiplomaticHealthRing({
               {score}
             </motion.div>
           </div>
-
-          {/* Animated Glow Background */}
-          <motion.div
-            className="pointer-events-none absolute inset-0 rounded-full"
-            style={{
-              background: `radial-gradient(circle, ${color}15 0%, transparent 60%)`,
-              filter: "blur(8px)",
-            }}
-            animate={{
-              scale: [0.8, 1.2, 0.8],
-              opacity: [0.3, 0.6, 0.3],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-
-          {/* Pulse Effect for Low Scores */}
-          {score < 40 && (
-            <motion.div
-              className="pointer-events-none absolute inset-0 rounded-full"
-              style={{
-                background: `radial-gradient(circle, ${color}15 0%, transparent 60%)`,
-                filter: "blur(4px)",
-              }}
-              animate={{
-                scale: [1, 1.3, 1],
-                opacity: [0.4, 0.8, 0.4],
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-          )}
         </motion.div>
       </TooltipTrigger>
 
-      <TooltipContent className="glass-hierarchy-child max-w-xs p-4">
+      <TooltipContent className="glass-hierarchy-child max-w-xs p-4 bg-background/95 backdrop-blur-xl border-2">
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Globe size={16} style={{ color }} />

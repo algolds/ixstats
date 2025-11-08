@@ -6,21 +6,34 @@ import { ArticleLayout, Section, InfoBox } from "../../_components/ArticleLayout
 export default function AtomicComponentCatalogArticle() {
   return (
     <ArticleLayout
-      title="Atomic Component Catalog"
-      description="Reference guide for every government component, including stats and synergy notes."
+      title="Component Catalog (106 Components)"
+      description="Complete reference for 24 government + 40+ economic + 42 tax components with synergy detection and admin management."
       icon={ListTree}
     >
       <Section title="How Components Are Defined">
         <ul className="list-disc space-y-2 pl-6">
           <li>
-            Component metadata resides in
-            `src/components/government/atoms/AtomicGovernmentComponents.tsx`.
+            <strong>100% Dynamic Content:</strong> All 106 components stored in database, managed via
+            Admin CMS at `/admin/government-components`, `/admin/economic-components`,
+            `/admin/tax-components`.
           </li>
           <li>
-            Each entry includes effectiveness, costs, synergies, conflicts, prerequisites, and
-            theming.
+            Each entry includes effectiveness, costs, synergies, conflicts, prerequisites, tier
+            requirements, and theming.
           </li>
-          <li>Prisma enums mirror the component IDs, ensuring database consistency.</li>
+          <li>
+            <strong>24 Government:</strong> Power distribution, decision processes, legitimacy
+            sources, institutions, control mechanisms.
+          </li>
+          <li>
+            <strong>40+ Economic:</strong> Trade policy, labor market, investment, innovation,
+            infrastructure, environment.
+          </li>
+          <li>
+            <strong>42 Tax:</strong> Income, corporate, VAT, property, capital gains, specialized
+            taxes with rate configurations.
+          </li>
+          <li>Prisma enums mirror component IDs for type safety and database consistency.</li>
         </ul>
       </Section>
 
@@ -42,14 +55,17 @@ export default function AtomicComponentCatalogArticle() {
       <Section title="Maintaining the Library">
         <ul className="list-disc space-y-2 pl-6">
           <li>
-            When adding new components, update TypeScript definitions, Prisma enums, and help docs
-            simultaneously.
+            Use Admin CMS interfaces to create, edit, or delete components without code deployments.
           </li>
           <li>
-            Provide example policy hooks or ThinkPages prompts to contextualise gameplay effects.
+            Bulk import/export via CSV for mass updates; validation checks prevent duplicate or
+            invalid entries.
           </li>
           <li>
-            Run through compliance and achievements to ensure new components integrate correctly.
+            All changes logged to audit trail with user, timestamp, and before/after values.
+          </li>
+          <li>
+            See `/help/admin/reference-data` for complete CRUD workflow and bulk operations guide.
           </li>
         </ul>
       </Section>

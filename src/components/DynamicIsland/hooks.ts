@@ -141,6 +141,9 @@ export function useDynamicIslandState() {
   // Get user profile for contextual search
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
 
+  // Get crisis events
+  const { data: crisisEvents } = api.unifiedIntelligence.getCrisisEvents.useQuery();
+
   // Enhanced keyboard shortcuts with debouncing to prevent duplicates
   const [isProcessingShortcut, setIsProcessingShortcut] = useState(false);
   const shortcutTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
@@ -540,6 +543,7 @@ export function useDynamicIslandState() {
     timeDisplayMode,
     searchResults,
     countriesData,
+    crisisEvents,
 
     // Actions
     setMode,

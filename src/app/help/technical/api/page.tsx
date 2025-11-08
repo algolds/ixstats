@@ -10,9 +10,10 @@ export default function ApiArticle() {
     >
       <Section title="Structure">
         <ul className="list-disc space-y-2 pl-6">
-          <li>Routers live in `src/server/api/routers` (35 total, 546 procedures).</li>
-          <li>`src/server/api/trpc.ts` defines context, middleware, and shared helpers.</li>
+          <li>Routers live in `src/server/api/routers` (52 total, 580+ procedures).</li>
+          <li>`src/server/api/trpc.ts` defines context, middleware, rate limiting, and shared helpers.</li>
           <li>Client hooks generated via `src/trpc/react.tsx` for use in React components.</li>
+          <li>Rate limiting middleware with tiered limits (10-120 req/min) for security.</li>
         </ul>
       </Section>
 
@@ -24,7 +25,7 @@ export default function ApiArticle() {
             <li>
               Consume using <code>api.&lt;router&gt;.&lt;procedure&gt;</code> hooks.
             </li>
-            <li>Document changes in `docs/reference/api.md` and relevant help articles.</li>
+            <li>Document changes in `docs/reference/api-complete.md` and relevant help articles.</li>
           </ol>
         </InfoBox>
       </Section>

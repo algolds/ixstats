@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   Search,
   Filter,
+  Image,
 } from "lucide-react";
 import {
   Dialog,
@@ -67,6 +68,7 @@ interface Asset {
   maintenanceCost: number;
   modernizationLevel: number;
   capability: string | null;
+  imageUrl?: string | null;
 }
 
 interface AssetManagerProps {
@@ -95,6 +97,7 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
   const [showDialog, setShowDialog] = useState(false);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [filterType, setFilterType] = useState<string>("all");
+  const [viewingImage, setViewingImage] = useState<{ url: string; name: string } | null>(null);
 
   const createAsset = api.security.createMilitaryAsset.useMutation({
     onSuccess: () => {
@@ -208,9 +211,58 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
                       key={asset.id}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="bg-card hover:bg-accent/50 rounded-lg border p-3 transition-colors"
+                      className={`relative overflow-hidden rounded-lg border transition-all hover:shadow-lg ${asset.imageUrl ? "cursor-pointer hover:border-orange-400" : ""}`}
+                      onClick={(e) => {
+                        // Only trigger if clicking the card itself, not buttons
+                        const target = e.target as HTMLElement;
+                        if (
+                          !target.closest("button") &&
+                          asset.imageUrl
+                        ) {
+                          console.log("Opening image modal for:", asset.name, asset.imageUrl);
+                          setViewingImage({ url: asset.imageUrl, name: asset.name });
+                        }
+                      }}
                     >
-                      <div className="flex items-start justify-between">
+                      {/* Background image with red/orange overlay */}
+                      {asset.imageUrl && (
+                        <div
+                          className="absolute inset-0 bg-cover bg-center opacity-10 transition-opacity hover:opacity-15"
+                          style={{
+                            backgroundImage: `linear-gradient(to right, rgba(239, 68, 68, 0.05), rgba(249, 115, 22, 0.05)), url(${asset.imageUrl})`,
+                          }}
+                        />
+                      )}
+
+                      <div className="bg-card/90 relative flex items-start justify-between p-3 backdrop-blur-sm">
+                        {/* Equipment image thumbnail */}
+                        {asset.imageUrl ? (
+                          <div className="group/img relative mr-4 h-28 w-28 flex-shrink-0 overflow-hidden rounded-lg border-2 border-orange-400 shadow-md transition-all hover:border-orange-500 hover:shadow-lg dark:border-orange-700">
+                            <img
+                              src={asset.imageUrl}
+                              alt={asset.name}
+                              className="h-full w-full object-cover transition-transform group-hover/img:scale-110"
+                              onError={(e) => {
+                                // Hide broken images gracefully
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all group-hover/img:bg-black/60">
+                              <div className="flex flex-col items-center gap-1 opacity-0 transition-opacity group-hover/img:opacity-100">
+                                <Image className="h-6 w-6 text-white" />
+                                <span className="text-xs font-medium text-white">View Full Size</span>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="bg-muted mr-4 flex h-28 w-28 flex-shrink-0 items-center justify-center rounded-lg border-2 border-dashed">
+                            <div className="flex flex-col items-center gap-1 text-center">
+                              <Image className="text-muted-foreground h-8 w-8" />
+                              <span className="text-muted-foreground text-xs">No image</span>
+                            </div>
+                          </div>
+                        )}
+
                         <div className="flex-1">
                           <div className="mb-1 flex items-center gap-2">
                             <h5 className="text-sm font-medium">{asset.name}</h5>
@@ -224,6 +276,12 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
                             >
                               {STATUS_CONFIG[asset.status as keyof typeof STATUS_CONFIG]?.label}
                             </Badge>
+                            {asset.imageUrl && (
+                              <Badge variant="secondary" className="text-xs">
+                                <Image className="mr-1 h-3 w-3" />
+                                Click to view
+                              </Badge>
+                            )}
                           </div>
 
                           <div className="mt-2 grid grid-cols-3 gap-3 text-xs">
@@ -277,10 +335,24 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
                         </div>
 
                         <div className="ml-2 flex items-center gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => handleEdit(asset)}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(asset);
+                            }}
+                          >
                             <Edit className="h-3 w-3" />
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleDelete(asset.id)}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(asset.id);
+                            }}
+                          >
                             <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
@@ -296,6 +368,28 @@ export function AssetManager({ branchId, branchType, assets, onRefetch }: AssetM
         <div className="text-muted-foreground rounded-lg border border-dashed py-6 text-center text-sm">
           No assets yet. Add your first asset to get started.
         </div>
+      )}
+
+      {/* Image Viewing Modal */}
+      {viewingImage && (
+        <Dialog open={true} onOpenChange={() => setViewingImage(null)}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>{viewingImage.name}</DialogTitle>
+              <DialogDescription>
+                Equipment Image - Click outside to close
+              </DialogDescription>
+            </DialogHeader>
+            <div className="relative w-full overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-900">
+              <img
+                src={viewingImage.url}
+                alt={viewingImage.name}
+                className="h-auto w-full object-contain"
+                style={{ maxHeight: "70vh" }}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       <AssetDialog
@@ -348,11 +442,15 @@ function AssetDialog({
     modernizationLevel: asset?.modernizationLevel ?? 50,
     acquisitionCost: asset?.acquisitionCost ?? 0,
     maintenanceCost: asset?.maintenanceCost ?? 0,
+    imageUrl: asset?.imageUrl || "",
   });
 
   React.useEffect(() => {
     if (asset) {
-      setFormData(asset);
+      setFormData({
+        ...asset,
+        imageUrl: asset.imageUrl || "",
+      });
     }
   }, [asset, open]);
 
@@ -381,9 +479,10 @@ function AssetDialog({
       maintenanceCost: equipment.maintenanceCost ?? 0,
       modernizationLevel:
         MILITARY_ERAS[equipment.era as keyof typeof MILITARY_ERAS]?.techLevel ?? 50,
+      imageUrl: equipment.imageUrl || "",
     });
     setActiveTab("manual");
-    toast.success("Equipment template loaded");
+    toast.success("Equipment template loaded" + (equipment.imageUrl ? " with image" : ""));
   };
 
   // Filter equipment database - now includes all 150+ items from expanded database
@@ -734,6 +833,74 @@ function AssetDialog({
                   }
                 />
               </div>
+            </div>
+
+            {/* Equipment Image */}
+            <div className="space-y-2">
+              <Label>Equipment Image</Label>
+              {formData.imageUrl ? (
+                <div className="relative overflow-hidden rounded-lg border-2 border-orange-200 dark:border-orange-900">
+                  <img
+                    src={formData.imageUrl}
+                    alt="Equipment preview"
+                    className="h-48 w-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 flex gap-2 bg-gradient-to-t from-black/80 to-transparent p-3">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        const url = window.prompt("Enter image URL:", formData.imageUrl || "");
+                        if (url !== null) {
+                          setFormData({ ...formData, imageUrl: url });
+                        }
+                      }}
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      Change Image
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setFormData({ ...formData, imageUrl: "" })}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-32 w-full border-2 border-dashed"
+                  onClick={() => {
+                    const url = window.prompt(
+                      "Enter image URL from Wikimedia Commons:",
+                      "https://upload.wikimedia.org/wikipedia/commons/"
+                    );
+                    if (url) {
+                      setFormData({ ...formData, imageUrl: url });
+                    }
+                  }}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <Image className="h-8 w-8 text-muted-foreground" />
+                    <span className="text-sm font-medium">Add Equipment Image</span>
+                    <span className="text-xs text-muted-foreground">
+                      Click to enter image URL
+                    </span>
+                  </div>
+                </Button>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Template equipment includes images automatically. Custom assets can add images from Wikimedia Commons.
+              </p>
             </div>
           </TabsContent>
         </Tabs>

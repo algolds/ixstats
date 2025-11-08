@@ -25,6 +25,7 @@ import {
   Brain,
   Building2,
   Plane,
+  Map,
 } from "lucide-react";
 
 interface HelpSection {
@@ -32,7 +33,7 @@ interface HelpSection {
   title: string;
   description: string;
   icon: React.ElementType;
-  category: "getting-started" | "features" | "systems" | "technical";
+  category: "getting-started" | "features" | "systems" | "technical" | "admin";
   articles: HelpArticle[];
 }
 
@@ -178,6 +179,20 @@ const helpSections: HelpSection[] = [
         tags: ["defense", "units", "military"],
       },
       {
+        id: "equipment",
+        title: "Military Equipment Catalog",
+        description: "500+ equipment items with specifications",
+        path: "/help/defense/equipment",
+        tags: ["defense", "equipment", "catalog"],
+      },
+      {
+        id: "crisis-events",
+        title: "Crisis Events Management",
+        description: "Handle natural disasters, economic crises, and diplomatic incidents",
+        path: "/help/defense/crisis-events",
+        tags: ["defense", "crisis", "events", "disasters"],
+      },
+      {
         id: "stability",
         title: "Political Stability",
         description: "Managing internal security and stability",
@@ -250,6 +265,20 @@ const helpSections: HelpSection[] = [
         description: "Conducting diplomatic missions",
         path: "/help/diplomacy/missions",
         tags: ["diplomacy", "missions"],
+      },
+      {
+        id: "npc-personalities",
+        title: "NPC Personality & AI",
+        description: "8 traits, 6 archetypes, behavioral prediction",
+        path: "/help/diplomacy/npc-personalities",
+        tags: ["diplomacy", "npc", "ai", "personality"],
+      },
+      {
+        id: "scenarios",
+        title: "Dynamic Diplomatic Scenarios",
+        description: "100+ scenarios with trade, culture, security",
+        path: "/help/diplomacy/scenarios",
+        tags: ["diplomacy", "scenarios", "dynamic"],
       },
       {
         id: "cultural",
@@ -337,16 +366,23 @@ const helpSections: HelpSection[] = [
       {
         id: "api",
         title: "API Documentation",
-        description: "tRPC API reference and usage",
+        description: "52 routers, 580+ procedures reference",
         path: "/help/technical/api",
         tags: ["technical", "api", "trpc"],
       },
       {
         id: "database",
         title: "Database Schema",
-        description: "Understanding the data model",
+        description: "131 Prisma models and data structure",
         path: "/help/technical/database",
         tags: ["technical", "database", "schema"],
+      },
+      {
+        id: "rate-limiting",
+        title: "Rate Limiting System",
+        description: "Redis-based rate limiting and security",
+        path: "/help/technical/rate-limiting",
+        tags: ["technical", "rate-limiting", "security"],
       },
       {
         id: "glass-physics",
@@ -354,6 +390,52 @@ const helpSections: HelpSection[] = [
         description: "UI framework and design principles",
         path: "/help/technical/design-system",
         tags: ["technical", "design", "ui"],
+      },
+    ],
+  },
+  {
+    id: "maps-geography",
+    title: "Maps & Geography",
+    description: "Vector tiles and map editing",
+    icon: Map,
+    category: "technical",
+    articles: [
+      {
+        id: "vector-tiles",
+        title: "Vector Tile System",
+        description: "100-1000x performance with Martin + Redis",
+        path: "/help/maps/vector-tiles",
+        tags: ["maps", "performance", "tiles"],
+      },
+      {
+        id: "map-editor",
+        title: "Interactive Map Editor",
+        description: "Create subdivisions, cities, and POIs",
+        path: "/help/maps/editor",
+        tags: ["maps", "editor", "gis"],
+      },
+    ],
+  },
+  {
+    id: "admin-tools",
+    title: "Admin Tools",
+    description: "Content management and system administration",
+    icon: Settings,
+    category: "admin",
+    articles: [
+      {
+        id: "cms-overview",
+        title: "Admin CMS Overview",
+        description: "17 interfaces for 100% dynamic content",
+        path: "/help/admin/cms-overview",
+        tags: ["admin", "cms", "management"],
+      },
+      {
+        id: "reference-data",
+        title: "Reference Data Management",
+        description: "Manage components, equipment, scenarios",
+        path: "/help/admin/reference-data",
+        tags: ["admin", "data", "catalog"],
       },
     ],
   },
@@ -373,6 +455,7 @@ export default function HelpPage() {
     { id: "features", label: "Features", icon: Zap },
     { id: "systems", label: "Systems", icon: Cpu },
     { id: "technical", label: "Technical", icon: Code },
+    { id: "admin", label: "Admin", icon: Settings },
   ];
 
   const filteredSections = useMemo(() => {

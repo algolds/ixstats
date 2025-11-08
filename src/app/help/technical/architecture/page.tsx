@@ -13,15 +13,22 @@ export default function TechnicalArchitectureArticle() {
       <Section title="Key Layers">
         <ul className="list-disc space-y-2 pl-6">
           <li>
-            <strong>Frontend:</strong> Next.js App Router + React 19 (`src/app`, `src/components`).
+            <strong>Frontend:</strong> Next.js 15 App Router + React 19 (`src/app`, `src/components`,
+            485 total components).
           </li>
           <li>
-            <strong>API:</strong> tRPC routers in `src/server/api/routers` with shared
-            context/middleware.
+            <strong>API:</strong> 52 tRPC routers (580+ procedures) in `src/server/api/routers` with
+            rate limiting middleware.
           </li>
           <li>
-            <strong>Data:</strong> Prisma schema (`prisma/schema.prisma`) with SQLite/PostgreSQL
-            support.
+            <strong>Data:</strong> Prisma schema (131 models) with SQLite (dev) / PostgreSQL + PostGIS
+            (production).
+          </li>
+          <li>
+            <strong>Caching:</strong> Redis for rate limiting, vector tile cache, session management.
+          </li>
+          <li>
+            <strong>Maps:</strong> Martin tile server + PostGIS for high-performance vector tiles.
           </li>
           <li>
             <strong>Realtime:</strong> Custom WebSocket server in `src/lib/websocket-server.ts`

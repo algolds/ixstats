@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import {
   ChevronDown,
   ChevronUp,
-  Shield,
+  Brain,
   Activity,
   AlertTriangle,
   Users,
   Globe,
+  Shield,
 } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -16,11 +17,11 @@ import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { CountryHeader, CountryMetricsGrid, VitalityRings, useCountryData } from "./primitives";
 import { IntelligenceTabSystem } from "./IntelligenceTabSystem";
-import { CrisisStatusBanner } from "~/app/countries/_components/CrisisStatusBanner";
 import { useFlag } from "~/hooks/useFlag";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { useUnifiedIntelligence } from "~/hooks/useUnifiedIntelligence";
+import { MyCountryNavCards } from "./MyCountryNavCards";
 
 interface EnhancedIntelligenceContentProps {
   variant?: "unified" | "standard" | "premium";
@@ -34,6 +35,7 @@ export function EnhancedIntelligenceContent({
   const { user } = useUser();
   const { country, activityRingsData, isLoading } = useCountryData();
   const [vitalityCollapsed, setVitalityCollapsed] = useState(false);
+  const [navCardsCollapsed, setNavCardsCollapsed] = useState(false);
   const { flagUrl } = useFlag(country?.name || "");
 
   // Unified intelligence hook for metrics
@@ -60,6 +62,33 @@ export function EnhancedIntelligenceContent({
       document.title = title;
     }
   }, [title]);
+
+  // Auto-collapse navigation cards on scroll
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+
+          if (currentScrollY > 100 && currentScrollY > lastScrollY) {
+            setNavCardsCollapsed(true);
+          } else if (currentScrollY < 80 || currentScrollY < lastScrollY) {
+            setNavCardsCollapsed(false);
+          }
+
+          lastScrollY = currentScrollY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   if (isLoading || !country) {
     return null; // Loading handled by AuthenticationGuard
@@ -92,9 +121,9 @@ export function EnhancedIntelligenceContent({
       subtext: "Overall intelligence operations",
       colorClass:
         intelligenceMetrics && intelligenceMetrics.overallHealth >= 80
-          ? "bg-purple-50 dark:bg-purple-950/50 text-purple-600"
+          ? "bg-blue-50 dark:bg-blue-950/50 text-blue-600"
           : intelligenceMetrics && intelligenceMetrics.overallHealth >= 60
-            ? "bg-blue-50 dark:bg-blue-950/50 text-blue-600"
+            ? "bg-cyan-50 dark:bg-cyan-950/50 text-cyan-600"
             : "bg-yellow-50 dark:bg-yellow-950/50 text-yellow-600",
       tooltip: {
         title: "Intelligence Operations Health",
@@ -126,7 +155,7 @@ export function EnhancedIntelligenceContent({
       label: "Active Policies",
       value: `${intelligenceMetrics?.pendingDecisions || 0}`,
       subtext: "Pending decisions",
-      colorClass: "bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600",
+      colorClass: "bg-cyan-50 dark:bg-cyan-950/50 text-cyan-600",
       tooltip: {
         title: "Policy Status",
         details: [
@@ -185,39 +214,37 @@ export function EnhancedIntelligenceContent({
 
   return (
     <div className="container mx-auto space-y-6 px-4 py-8">
-      {/* Intelligence Header */}
+      {/* Intelligence Header with MyCountry Branding */}
       <div id="overview">
-        <div className="flex items-center justify-between">
+        <div className="mb-2 flex items-center gap-2">
+          <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/50">
+            MyCountry®
+          </Badge>
+          <span className="text-muted-foreground text-sm">→</span>
+          <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
+            <Brain className="mr-1 h-3 w-3" />
+            Intelligence & Diplomacy
+          </Badge>
+        </div>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-4">
-            <div className="rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 p-2">
-              <Shield className="h-8 w-8 text-white" />
+            <div className="rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 p-2">
+              <Brain className="h-8 w-8 text-white" />
             </div>
             <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold">Intelligence: {country.name}</h1>
-                <Badge className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white">
-                  <Activity className="mr-1 h-3 w-3" />
-                  {variant.toUpperCase()}
-                </Badge>
-              </div>
-              <p className="text-muted-foreground">
-                {variant === "unified"
-                  ? "Unified Intelligence Dashboard & Operations Center"
-                  : variant === "premium"
-                    ? "Executive Intelligence Suite & Command Center"
-                    : "Intelligence Dashboard & Analytics"}
-              </p>
+              <h1 className="text-3xl font-bold">{country.name}</h1>
+              <p className="text-muted-foreground">Intelligence Dashboard & Diplomatic Operations</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Crisis Status Banner */}
-      <CrisisStatusBanner countryId={country.id} />
+      {/* Quick Navigation Cards */}
+      <MyCountryNavCards currentPage="intelligence" collapsed={navCardsCollapsed} />
 
       {/* Atomic Government Integration Alert */}
       {existingComponents && existingComponents.length > 0 && (
-        <Alert className="border-purple-200 bg-gradient-to-r from-purple-50 to-indigo-50">
+        <Alert className="border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50">
           <Shield className="h-4 w-4" />
           <AlertDescription>
             <div className="flex items-center justify-between">
@@ -262,7 +289,7 @@ export function EnhancedIntelligenceContent({
         {/* Left Sidebar - Intelligence Vitality Index */}
         {variant === "unified" && (
           <div className="xl:col-span-1" id="vitality">
-            <Card className="glass-hierarchy-parent sticky top-6 overflow-hidden border-purple-200 dark:border-purple-700/40 dark:shadow-purple-900/10">
+            <Card className="glass-hierarchy-parent sticky top-6 overflow-hidden border-blue-200 dark:border-blue-700/40 dark:shadow-blue-900/10">
               {/* Flag Background with Subtle Depth */}
               <div className="absolute inset-0">
                 {flagUrl ? (
@@ -278,11 +305,11 @@ export function EnhancedIntelligenceContent({
                           e.currentTarget.style.display = "none";
                         }}
                       />
-                      <div className="absolute inset-0 z-[2] bg-gradient-to-r from-purple-50/85 via-indigo-50/85 to-violet-50/85 transition-opacity duration-300 group-hover:opacity-90 dark:from-purple-900/15 dark:via-indigo-900/10 dark:to-violet-800/8 dark:backdrop-blur-[2px]" />
+                      <div className="absolute inset-0 z-[2] bg-gradient-to-r from-blue-50/85 via-cyan-50/85 to-blue-50/85 transition-opacity duration-300 group-hover:opacity-90 dark:from-blue-900/15 dark:via-cyan-900/10 dark:to-blue-800/8 dark:backdrop-blur-[2px]" />
                     </div>
                   </>
                 ) : (
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/12 dark:to-indigo-800/8 dark:backdrop-blur-[1px]" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/12 dark:to-cyan-800/8 dark:backdrop-blur-[1px]" />
                 )}
               </div>
 

@@ -198,6 +198,15 @@ export default function DiplomaticScenariosPage() {
     }
   );
 
+  // Fetch all countries for the dropdown selector
+  const { data: countries } = api.countries.getAll.useQuery(
+    { limit: 500 }, // Get all countries
+    {
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    }
+  );
+
   // Mutations
   const createMutation = api.diplomaticScenarios.createScenario.useMutation({
     onSuccess: () => {
@@ -908,6 +917,7 @@ export default function DiplomaticScenariosPage() {
             choiceFormData={choiceFormData}
             setChoiceFormData={setChoiceFormData}
             editingChoiceIndex={editingChoiceIndex}
+            countries={countries}
             onAddChoice={handleAddChoice}
             onEditChoice={handleEditChoice}
             onSaveChoice={handleSaveChoice}
@@ -1000,11 +1010,28 @@ function ScenarioCard({
 
       {/* Scenario Info */}
       <div className="mb-3 space-y-2 text-xs">
-        <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">Countries:</span>
-          <span className="text-foreground line-clamp-1 text-right font-medium">
-            {scenario.country1Name} - {scenario.country2Name}
-          </span>
+        <div>
+          <span className="text-muted-foreground block mb-1">Countries:</span>
+          <div className="flex items-center gap-2 text-foreground font-medium">
+            {scenario.country1?.flagUrl && (
+              <img
+                src={scenario.country1.flagUrl}
+                alt={scenario.country1.name}
+                className="h-3 w-5 object-cover"
+              />
+            )}
+            <span className="truncate">{scenario.country1?.name || scenario.country1Id}</span>
+          </div>
+          <div className="flex items-center gap-2 text-foreground font-medium mt-1">
+            {scenario.country2?.flagUrl && (
+              <img
+                src={scenario.country2.flagUrl}
+                alt={scenario.country2.name}
+                className="h-3 w-5 object-cover"
+              />
+            )}
+            <span className="truncate">{scenario.country2?.name || scenario.country2Id}</span>
+          </div>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground">Relationship:</span>
@@ -1037,6 +1064,35 @@ function ScenarioCard({
           <span className="text-foreground font-medium">{Math.round(scenario.diplomaticRisk)}</span>
         </div>
       </div>
+
+      {/* Country Context */}
+      {(scenario.country1 || scenario.country2) && (
+        <div className="mb-3 rounded-lg border border-red-500/20 bg-red-500/5 p-2">
+          <p className="text-muted-foreground mb-1 text-xs font-medium">Country Context</p>
+          <div className="space-y-1 text-xs">
+            {scenario.country1 && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground truncate">
+                  {scenario.country1.name}
+                </span>
+                <span className="text-foreground ml-2 shrink-0">
+                  {scenario.country1.economicTier || "N/A"} • {scenario.country1.continent || "N/A"}
+                </span>
+              </div>
+            )}
+            {scenario.country2 && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground truncate">
+                  {scenario.country2.name}
+                </span>
+                <span className="text-foreground ml-2 shrink-0">
+                  {scenario.country2.economicTier || "N/A"} • {scenario.country2.continent || "N/A"}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex items-center gap-2 border-t border-white/10 pt-3">
@@ -1073,6 +1129,7 @@ interface ScenarioEditorDialogProps {
   choiceFormData: ChoiceFormData;
   setChoiceFormData: (data: ChoiceFormData) => void;
   editingChoiceIndex: number | null;
+  countries?: { countries: any[] };
   onAddChoice: () => void;
   onEditChoice: (index: number) => void;
   onSaveChoice: () => void;
@@ -1094,6 +1151,7 @@ function ScenarioEditorDialog({
   choiceFormData,
   setChoiceFormData,
   editingChoiceIndex,
+  countries,
   onAddChoice,
   onEditChoice,
   onSaveChoice,
@@ -1141,7 +1199,7 @@ function ScenarioEditorDialog({
           {/* Tab Content */}
           <div className="mt-4 flex-1 overflow-y-auto">
             <TabsContent value="general">
-              <GeneralTab formData={formData} setFormData={setFormData} />
+              <GeneralTab formData={formData} setFormData={setFormData} countries={countries} />
             </TabsContent>
             <TabsContent value="narrative">
               <NarrativeTab formData={formData} setFormData={setFormData} />
@@ -1193,10 +1251,42 @@ function ScenarioEditorDialog({
 function GeneralTab({
   formData,
   setFormData,
+  countries,
 }: {
   formData: ScenarioFormData;
   setFormData: (data: ScenarioFormData) => void;
+  countries?: { countries: any[] };
 }) {
+  const [country1Search, setCountry1Search] = useState("");
+  const [country2Search, setCountry2Search] = useState("");
+
+  const filteredCountries1 = useMemo(() => {
+    if (!countries?.countries) return [];
+    if (!country1Search) return countries.countries;
+    const search = country1Search.toLowerCase();
+    return countries.countries.filter(
+      (c) =>
+        c.name?.toLowerCase().includes(search) ||
+        c.shortName?.toLowerCase().includes(search) ||
+        c.continent?.toLowerCase().includes(search)
+    );
+  }, [countries, country1Search]);
+
+  const filteredCountries2 = useMemo(() => {
+    if (!countries?.countries) return [];
+    if (!country2Search) return countries.countries;
+    const search = country2Search.toLowerCase();
+    return countries.countries.filter(
+      (c) =>
+        c.name?.toLowerCase().includes(search) ||
+        c.shortName?.toLowerCase().includes(search) ||
+        c.continent?.toLowerCase().includes(search)
+    );
+  }, [countries, country2Search]);
+
+  const selectedCountry1 = countries?.countries?.find((c) => c.id === formData.country1Id);
+  const selectedCountry2 = countries?.countries?.find((c) => c.id === formData.country2Id);
+
   return (
     <div className="space-y-4">
       <div>
@@ -1230,20 +1320,134 @@ function GeneralTab({
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-foreground mb-2 block text-sm font-medium">Country 1 ID *</label>
-          <Input
+          <label className="text-foreground mb-2 block text-sm font-medium">Country 1 *</label>
+          <Select
             value={formData.country1Id}
-            onChange={(e) => setFormData({ ...formData, country1Id: e.target.value })}
-            placeholder="Country ID (CUID)"
-          />
+            onValueChange={(value) => setFormData({ ...formData, country1Id: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select country...">
+                {selectedCountry1 && (
+                  <div className="flex items-center gap-2">
+                    {selectedCountry1.flagUrl && (
+                      <img
+                        src={selectedCountry1.flagUrl}
+                        alt={selectedCountry1.name}
+                        className="h-4 w-6 object-cover"
+                      />
+                    )}
+                    <span className="truncate">{selectedCountry1.name}</span>
+                  </div>
+                )}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <div className="border-b border-white/10 p-2">
+                <Input
+                  placeholder="Search countries..."
+                  value={country1Search}
+                  onChange={(e) => setCountry1Search(e.target.value)}
+                  className="h-8 text-sm"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+              <div className="max-h-[300px] overflow-y-auto">
+                {filteredCountries1.length === 0 ? (
+                  <div className="py-6 text-center text-sm text-muted-foreground">
+                    No countries found
+                  </div>
+                ) : (
+                  filteredCountries1.map((country) => (
+                    <SelectItem key={country.id} value={country.id}>
+                      <div className="flex items-center gap-2">
+                        {country.flagUrl && (
+                          <img
+                            src={country.flagUrl}
+                            alt={country.name}
+                            className="h-4 w-6 object-cover"
+                          />
+                        )}
+                        <span className="flex-1 truncate">{country.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {country.economicTier || "N/A"}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
+              </div>
+            </SelectContent>
+          </Select>
+          {selectedCountry1 && (
+            <p className="text-muted-foreground mt-1 text-xs">
+              {selectedCountry1.continent} • {selectedCountry1.economicTier || "No tier"}
+            </p>
+          )}
         </div>
         <div>
-          <label className="text-foreground mb-2 block text-sm font-medium">Country 2 ID *</label>
-          <Input
+          <label className="text-foreground mb-2 block text-sm font-medium">Country 2 *</label>
+          <Select
             value={formData.country2Id}
-            onChange={(e) => setFormData({ ...formData, country2Id: e.target.value })}
-            placeholder="Country ID (CUID)"
-          />
+            onValueChange={(value) => setFormData({ ...formData, country2Id: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select country...">
+                {selectedCountry2 && (
+                  <div className="flex items-center gap-2">
+                    {selectedCountry2.flagUrl && (
+                      <img
+                        src={selectedCountry2.flagUrl}
+                        alt={selectedCountry2.name}
+                        className="h-4 w-6 object-cover"
+                      />
+                    )}
+                    <span className="truncate">{selectedCountry2.name}</span>
+                  </div>
+                )}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <div className="border-b border-white/10 p-2">
+                <Input
+                  placeholder="Search countries..."
+                  value={country2Search}
+                  onChange={(e) => setCountry2Search(e.target.value)}
+                  className="h-8 text-sm"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+              <div className="max-h-[300px] overflow-y-auto">
+                {filteredCountries2.length === 0 ? (
+                  <div className="py-6 text-center text-sm text-muted-foreground">
+                    No countries found
+                  </div>
+                ) : (
+                  filteredCountries2.map((country) => (
+                    <SelectItem key={country.id} value={country.id}>
+                      <div className="flex items-center gap-2">
+                        {country.flagUrl && (
+                          <img
+                            src={country.flagUrl}
+                            alt={country.name}
+                            className="h-4 w-6 object-cover"
+                          />
+                        )}
+                        <span className="flex-1 truncate">{country.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {country.economicTier || "N/A"}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
+              </div>
+            </SelectContent>
+          </Select>
+          {selectedCountry2 && (
+            <p className="text-muted-foreground mt-1 text-xs">
+              {selectedCountry2.continent} • {selectedCountry2.economicTier || "No tier"}
+            </p>
+          )}
         </div>
       </div>
 

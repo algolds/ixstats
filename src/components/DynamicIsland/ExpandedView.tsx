@@ -2,6 +2,7 @@ import React from "react";
 import { SearchView } from "./SearchView";
 import { NotificationsView } from "./NotificationsView";
 import { SettingsView } from "./SettingsView";
+import { CrisisView } from "./CrisisView";
 import type { ExpandedViewProps } from "./types";
 
 export function ExpandedView({
@@ -14,6 +15,7 @@ export function ExpandedView({
   debouncedSearchQuery,
   searchResults,
   countriesData,
+  crisisEvents,
 }: ExpandedViewProps) {
   // Don't render if mode is compact or cycling
   if (mode === "compact" || mode === "cycling") {
@@ -54,6 +56,7 @@ export function ExpandedView({
           )}
           {mode === "notifications" && <NotificationsView onClose={onClose} />}
           {mode === "settings" && <SettingsView onClose={onClose} />}
+          {mode === "crisis" && <CrisisView crises={crisisEvents || []} onClose={onClose} />}
         </div>
       </div>
     </div>

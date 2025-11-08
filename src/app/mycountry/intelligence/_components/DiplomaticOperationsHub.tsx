@@ -35,7 +35,6 @@ import {
 import { Textarea } from "~/components/ui/textarea";
 import { Building2, Globe, Target, Heart, FileText, Plus, Filter, Calendar } from "lucide-react";
 import { LoadingState } from "~/components/shared";
-import { DiplomaticIntelligenceHub } from "~/components/diplomatic/DiplomaticIntelligenceHub";
 import {
   EmbassyCard,
   MissionCard,
@@ -60,16 +59,13 @@ export function DiplomaticOperationsHub({ countryId, countryName }: DiplomaticOp
 
   return (
     <div className="space-y-6">
-      {/* Intelligence Hub Overview */}
-      <DiplomaticIntelligenceHub countryId={countryId} countryName={countryName} />
-
       {/* Header */}
-      <Card className="glass-surface glass-refraction border-purple-200 dark:border-purple-800/40">
+      <Card className="glass-surface glass-refraction border-blue-200 dark:border-blue-800/40">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Globe className="h-6 w-6 text-purple-600" />
+                <Globe className="h-6 w-6 text-blue-600" />
                 Diplomatic Operations Management
               </CardTitle>
               <CardDescription>Manage embassies, missions, and cultural exchanges</CardDescription>

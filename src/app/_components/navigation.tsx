@@ -7,7 +7,9 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Activity,
   BarChart3,
+  Brain,
   ChevronDown,
+  Command,
   Compass,
   Crown,
   Database,
@@ -150,6 +152,12 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
             description: "Core KPIs and operational status at a glance.",
           },
           {
+            name: "Executive Command",
+            href: "/mycountry/executive",
+            icon: Command,
+            description: "Meetings, policies, plans, and executive decisions.",
+          },
+          {
             name: "Policy Studio",
             href: "/mycountry/editor",
             icon: Settings,
@@ -158,13 +166,19 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
         ],
       },
       {
-        title: "Security & Intelligence",
+        title: "Diplomatic & Security Operations",
         items: [
           {
-            name: "Intelligence Center",
+            name: "Diplomacy",
+            href: "/mycountry/diplomacy",
+            icon: Globe,
+            description: "Embassy network, missions, and diplomatic relations.",
+          },
+          {
+            name: "Intelligence",
             href: "/mycountry/intelligence",
-            icon: Shield,
-            description: "Context-aware briefs and data synthesis.",
+            icon: Brain,
+            description: "Data analysis, trends, projections, and strategic forecasting.",
           },
           {
             name: "Defense Readiness",
@@ -516,6 +530,39 @@ export function Navigation() {
       requiresAuth: true,
       requiresCountry: true,
       description: "Your national dashboard and executive command center",
+      isDropdown: true,
+      dropdownItems: [
+        {
+          name: "National Overview",
+          href: "/mycountry",
+          icon: Crown,
+          description: " National dashboard and vitality metrics",
+        },
+        {
+          name: "Executive",
+          href: "/mycountry/executive",
+          icon: Command,
+          description: "Meetings, policies, plans, and executive decisions",
+        },
+        {
+          name: "Diplomacy",
+          href: "/mycountry/diplomacy",
+          icon: Globe,
+          description: "Embassy network, missions, and diplomatic relations",
+        },
+        {
+          name: "Intelligence",
+          href: "/mycountry/intelligence",
+          icon: Brain,
+          description: "Data analysis, trends, projections, and data forecasting",
+        },
+        {
+          name: "Defense & Security",
+          href: "/mycountry/defense",
+          icon: Shield,
+          description: "Military readiness, force composition, and stability",
+        },
+      ],
     },
     {
       name: "Maps",
@@ -523,14 +570,6 @@ export function Navigation() {
       icon: Compass,
       requiresAuth: false,
       description: "Interactive world map and geographic exploration",
-    },
-    {
-      name: "Intelligence",
-      href: "/mycountry/intelligence",
-      icon: Shield,
-      requiresAuth: true,
-      requiresCountry: true,
-      description: "Intelligence operations and analytics",
     },
     {
       name: "ThinkPages",
@@ -666,11 +705,6 @@ export function Navigation() {
       if (item.adminOnly && !isAdmin) return false;
       if (item.premiumOnly && !isPremium) return false;
 
-      if (item.name === "Intelligence") {
-        const showIntelligence = navigationSettings?.showIntelligenceTab ?? false;
-        if (!showIntelligence) return false;
-      }
-
       // Check admin navigation settings
       if (navigationSettings) {
         if (item.name === "Wiki" && !navigationSettings.showWikiTab) return false;
@@ -702,7 +736,6 @@ export function Navigation() {
 
   // For better visual balance, try to keep sides equal or left-heavy by 1
   const leftCount = Math.ceil(totalItems / 2);
-  const rightCount = totalItems - leftCount;
 
   // Create balanced arrays ensuring both sides have similar visual weight
   const leftNavItems = visibleNavItems.slice(0, leftCount);

@@ -32,6 +32,9 @@ import type { CompactViewProps } from "./types";
 import { HealthRing } from "../ui/health-ring";
 import { getNationUrl } from "~/lib/slug-utils";
 import { devLog, debugLog } from "~/lib/console-utils";
+import { CrisisIndicator } from "./CrisisIndicator";
+import { MyCountryCompactView } from "./MyCountryCompactView";
+import { usePathname } from "next/navigation";
 
 // Helper functions
 const getGreeting = (ixTime: number): string => {
@@ -61,8 +64,10 @@ function CompactViewComponent({
   timeDisplayMode,
   setTimeDisplayMode,
   onSwitchMode,
+  crisisEvents,
 }: CompactViewProps) {
   const { user, isLoaded } = useUser();
+  const pathname = usePathname();
 
   // Get user role information
   const { user: roleUser, permissions } = usePermissions();
@@ -71,6 +76,15 @@ function CompactViewComponent({
     undefined,
     { enabled: !!user?.id }
   );
+
+  // MyCountry page detection
+  const isMyCountryPage = pathname?.startsWith('/mycountry') || false;
+  const myCountrySection =
+    pathname?.includes('/executive') ? 'executive' :
+    pathname?.includes('/diplomacy') ? 'diplomacy' :
+    pathname?.includes('/intelligence') ? 'intelligence' :
+    pathname?.includes('/defense') ? 'defense' :
+    pathname === '/mycountry' ? 'overview' : null;
 
   // Fetch activity rings data for user's country - use the working endpoint!
   const { data: activityRingsData, isLoading: ringsLoading } =
@@ -94,6 +108,17 @@ function CompactViewComponent({
   const [mounted, setMounted] = useState(false);
   const [isFlashing, setIsFlashing] = useState(false);
   const previousNotificationCountRef = useRef(0);
+
+  // MyCountry DI preference - use regular DI on MyCountry pages if true
+  const [useRegularDI, setUseRegularDI] = useState(false);
+
+  // Load preference from localStorage on mount
+  useEffect(() => {
+    const preference = localStorage.getItem("dynamicIsland_useRegularOnMyCountry");
+    if (preference === "true") {
+      setUseRegularDI(true);
+    }
+  }, []);
 
   // Current time state
   const [currentTime, setCurrentTime] = useState({
@@ -241,6 +266,30 @@ function CompactViewComponent({
   const sizeScale = 1;
 
   if (!mounted) return null;
+
+  // Callback to toggle between MyCountry and regular DI
+  const toggleDIMode = () => {
+    const newValue = !useRegularDI;
+    setUseRegularDI(newValue);
+    localStorage.setItem("dynamicIsland_useRegularOnMyCountry", newValue.toString());
+  };
+
+  // Render MyCountry variant if on MyCountry page (after all hooks are called) and preference allows
+  if (isMyCountryPage && myCountrySection && userProfile?.countryId && !useRegularDI) {
+    return (
+      <MyCountryCompactView
+        section={myCountrySection as "overview" | "executive" | "diplomacy" | "intelligence" | "defense"}
+        isSticky={isSticky || false}
+        isCollapsed={isCollapsed}
+        setIsCollapsed={setIsCollapsed}
+        setIsUserInteracting={setIsUserInteracting}
+        timeDisplayMode={timeDisplayMode}
+        setTimeDisplayMode={setTimeDisplayMode}
+        onSwitchMode={onSwitchMode}
+        onToggleDIMode={toggleDIMode}
+      />
+    );
+  }
 
   return (
     <TooltipProvider>
@@ -531,7 +580,7 @@ function CompactViewComponent({
                                 size="sm"
                                 variant="outline"
                                 onClick={() =>
-                                  (window.location.href = createAbsoluteUrl("/sign-in"))
+                                  (window.location.href = process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || createAbsoluteUrl("/sign-in"))
                                 }
                                 className="text-muted-foreground hover:text-foreground border-border hover:border-accent hover:bg-accent/10"
                               >
@@ -595,6 +644,42 @@ function CompactViewComponent({
                 </TooltipTrigger>
                 <TooltipContent side="bottom">Alerts</TooltipContent>
               </Tooltip>
+
+              {crisisEvents && crisisEvents.length > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className={`flex items-center justify-center ${isSticky ? "h-7 w-7" : "h-8 w-8"}`}>
+                      <CrisisIndicator
+                        crises={crisisEvents}
+                        variant="compact"
+                        onClick={() => onSwitchMode("crisis")}
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Crisis Monitor</TooltipContent>
+                </Tooltip>
+              )}
+
+              {/* Switch to MyCountry Mode (if on MyCountry page with regular DI) */}
+              {isMyCountryPage && userProfile?.countryId && useRegularDI && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={toggleDIMode}
+                      className={`text-amber-600 hover:text-amber-700 hover:bg-amber-500/10 flex items-center justify-center rounded-lg transition-all ${
+                        isSticky ? "h-7 w-7 p-0" : "h-8 w-8 p-0"
+                      }`}
+                    >
+                      <Crown
+                        className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-4 w-4"}`}
+                      />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">Use MyCountry® Dynamic Island</TooltipContent>
+                </Tooltip>
+              )}
 
               <Tooltip>
                 <TooltipTrigger asChild>

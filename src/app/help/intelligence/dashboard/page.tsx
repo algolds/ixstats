@@ -11,6 +11,7 @@ export default function IntelligenceDashboardArticle() {
       icon={LayoutDashboard}
     >
       <Section title="Dashboard Sections">
+        <p className="mb-4">Access via <strong>MyCountry → Intelligence & Diplomacy</strong> in the navigation dropdown.</p>
         <ul className="list-disc space-y-2 pl-6">
           <li>
             Vitality metrics (economy, population, diplomacy, security, social) powered by

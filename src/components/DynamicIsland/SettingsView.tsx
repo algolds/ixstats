@@ -220,7 +220,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
             </div>
             <Button
               size="lg"
-              onClick={() => (window.location.href = createAbsoluteUrl("/sign-in"))}
+              onClick={() => (window.location.href = process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL || createAbsoluteUrl("/sign-in"))}
               className="w-full"
             >
               Sign In

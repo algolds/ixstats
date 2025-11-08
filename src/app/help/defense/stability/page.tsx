@@ -25,8 +25,8 @@ export default function PoliticalStabilityArticle() {
       <Section title="What to Watch">
         <InfoBox title="Dashboards">
           <ul className="list-disc space-y-1 pl-6">
-            <li>MyCountry Executive overview – highlights top stability risks.</li>
-            <li>Defense tab – ties stability to crisis scenarios.</li>
+            <li>Executive Command page – highlights top stability risks in the executive overview.</li>
+            <li>Defense & Security page – ties stability to crisis scenarios.</li>
             <li>ThinkPages – track narratives and mitigation plans.</li>
           </ul>
         </InfoBox>

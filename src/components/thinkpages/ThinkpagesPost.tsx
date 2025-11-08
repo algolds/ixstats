@@ -211,7 +211,6 @@ const ThinkpagesPostComponent = ({
     try {
       await updatePostMutation.mutateAsync({
         postId: post.id,
-        accountId: currentUserAccountId,
         content: editText,
       });
       toast.success("Post updated");
@@ -231,7 +230,6 @@ const ThinkpagesPostComponent = ({
     try {
       await deletePostMutation.mutateAsync({
         postId: post.id,
-        accountId: currentUserAccountId,
       });
       toast.success("Post deleted");
       setShowDeleteConfirm(false);

@@ -114,6 +114,8 @@ export const MILITARY_AIRCRAFT = {
     acquisitionCost: 80000000,
     maintenanceCost: 4000000,
     variants: ["F-35A (Air Force)", "F-35B (STOVL)", "F-35C (Navy)"],
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   F22_RAPTOR: {
     name: "F-22 Raptor",
@@ -127,6 +129,8 @@ export const MILITARY_AIRCRAFT = {
     ceiling: 19812,
     acquisitionCost: 150000000,
     maintenanceCost: 8000000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   RAFALE: {
     name: "Dassault Rafale",
@@ -140,6 +144,8 @@ export const MILITARY_AIRCRAFT = {
     ceiling: 15240,
     acquisitionCost: 90000000,
     maintenanceCost: 5000000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/2/2c/Dassault_Rafale_-_RIAT_2015_%2819191059398%29.jpg",
   },
   EUROFIGHTER: {
     name: "Eurofighter Typhoon",
@@ -153,6 +159,8 @@ export const MILITARY_AIRCRAFT = {
     ceiling: 19812,
     acquisitionCost: 120000000,
     maintenanceCost: 6000000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/1/1c/Eurofighter_Typhoon_-_ILA_2018_07.jpg",
   },
   F16_VIPER: {
     name: "F-16 Fighting Falcon",
@@ -166,6 +174,8 @@ export const MILITARY_AIRCRAFT = {
     ceiling: 15240,
     acquisitionCost: 30000000,
     maintenanceCost: 2000000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/c/c9/F-16_June_2008.jpg",
   },
 
   // Attack Aircraft
@@ -181,6 +191,8 @@ export const MILITARY_AIRCRAFT = {
     ceiling: 13716,
     acquisitionCost: 18000000,
     maintenanceCost: 1200000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/5/53/A-10_Thunderbolt_II_In-flight-2_%28cropped%29.jpg",
   },
 
   // Bombers
@@ -196,6 +208,8 @@ export const MILITARY_AIRCRAFT = {
     ceiling: 15240,
     acquisitionCost: 2100000000,
     maintenanceCost: 60000000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/3/33/US_Air_Force_B-2_Spirit.jpg",
   },
   B52_STRATOFORTRESS: {
     name: "B-52 Stratofortress",
@@ -209,6 +223,8 @@ export const MILITARY_AIRCRAFT = {
     ceiling: 15166,
     acquisitionCost: 84000000,
     maintenanceCost: 5000000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/f/ff/B-52H_static_display_arms_06.jpg",
   },
 
   // Transport
@@ -224,6 +240,8 @@ export const MILITARY_AIRCRAFT = {
     ceiling: 13716,
     acquisitionCost: 340000000,
     maintenanceCost: 15000000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/6/67/C-17_test.jpg",
   },
   C130_HERCULES: {
     name: "C-130 Hercules",
@@ -237,6 +255,8 @@ export const MILITARY_AIRCRAFT = {
     ceiling: 10060,
     acquisitionCost: 67000000,
     maintenanceCost: 3500000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/e/ec/C-130J_Super_Hercules.JPG",
   },
 
   // Helicopters
@@ -252,6 +272,8 @@ export const MILITARY_AIRCRAFT = {
     ceiling: 6400,
     acquisitionCost: 35000000,
     maintenanceCost: 2500000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/2/27/AH-64D_Apache_Longbow.jpg",
   },
   UH60_BLACKHAWK: {
     name: "UH-60 Black Hawk",
@@ -265,6 +287,8 @@ export const MILITARY_AIRCRAFT = {
     ceiling: 5790,
     acquisitionCost: 21000000,
     maintenanceCost: 1500000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
 } as const;
 
@@ -283,6 +307,8 @@ export const MILITARY_SHIPS = {
     range: "Unlimited (nuclear)",
     acquisitionCost: 8500000000,
     maintenanceCost: 500000000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/6/65/USS_Nimitz_in_Victoria_Canada_036.jpg",
   },
   FORD_CLASS: {
     name: "Gerald R. Ford-class Carrier",
@@ -296,6 +322,8 @@ export const MILITARY_SHIPS = {
     range: "Unlimited (nuclear)",
     acquisitionCost: 13000000000,
     maintenanceCost: 600000000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/9/90/USS_Gerald_R._Ford_%28CVN-78%29_underway_on_8_April_2017.JPG",
   },
 
   // Destroyers
@@ -310,6 +338,8 @@ export const MILITARY_SHIPS = {
     range: 8300, // km
     acquisitionCost: 1850000000,
     maintenanceCost: 85000000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/e/ea/USS_Arleigh_Burke_%28DDG-51%29_underway_in_the_Atlantic_Ocean_on_24_October_2023_%28231024-N-EI510-1001%29.JPG",
   },
   ZUMWALT: {
     name: "Zumwalt-class Destroyer",
@@ -322,6 +352,8 @@ export const MILITARY_SHIPS = {
     range: 9000,
     acquisitionCost: 4400000000,
     maintenanceCost: 200000000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/d/d5/USS_Zumwalt_is_underway_for_the_first_time_conducting_at-sea_tests_and_trials_in_the_Atlantic_Ocean_Dec._7%2C_2015.jpg",
   },
 
   // Submarines
@@ -336,6 +368,8 @@ export const MILITARY_SHIPS = {
     depth: 490, // meters
     acquisitionCost: 3300000000,
     maintenanceCost: 150000000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/5/5a/US_Navy_071212-N-9689V-001_Pre-Commissioning_Unit_%28PCU%29_New_Hampshire_%28SSN_778%29_returns_to_the_General_Dynamics_Electric_Boat_shipyard.jpg",
   },
   OHIO_CLASS: {
     name: "Ohio-class Submarine",
@@ -348,6 +382,8 @@ export const MILITARY_SHIPS = {
     depth: 365,
     acquisitionCost: 2000000000,
     maintenanceCost: 100000000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/9/97/Ohio_class_submarine.jpg",
   },
 
   // Frigates
@@ -362,6 +398,8 @@ export const MILITARY_SHIPS = {
     range: 11000,
     acquisitionCost: 1200000000,
     maintenanceCost: 60000000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
 } as const;
 
@@ -379,6 +417,8 @@ export const MILITARY_VEHICLES = {
     armament: "120mm smoothbore cannon",
     acquisitionCost: 8900000,
     maintenanceCost: 500000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/8/8f/M1A2_Abrams_Tank_in_Camp_Bondsteel.jpg",
   },
   LEOPARD_2: {
     name: "Leopard 2",
@@ -391,6 +431,8 @@ export const MILITARY_VEHICLES = {
     armament: "120mm smoothbore cannon",
     acquisitionCost: 7500000,
     maintenanceCost: 450000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/6/6f/Leopard_2_A5_der_Bundeswehr.jpg",
   },
   CHALLENGER_2: {
     name: "Challenger 2",
@@ -403,6 +445,8 @@ export const MILITARY_VEHICLES = {
     armament: "120mm rifled cannon",
     acquisitionCost: 6500000,
     maintenanceCost: 400000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/f/ff/Challenger_2_Main_Battle_Tank_patrolling_outside_Basra%2C_Iraq_MOD_45148325.jpg",
   },
 
   // Infantry Fighting Vehicles
@@ -418,6 +462,8 @@ export const MILITARY_VEHICLES = {
     armament: "25mm autocannon",
     acquisitionCost: 4200000,
     maintenanceCost: 250000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/2/29/M2_Bradley.jpg",
   },
 
   // Armored Personnel Carriers
@@ -432,6 +478,8 @@ export const MILITARY_VEHICLES = {
     range: 531,
     acquisitionCost: 4900000,
     maintenanceCost: 300000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/8/84/M1126_ICV_Stryker.jpg",
   },
 
   // Artillery
@@ -447,6 +495,8 @@ export const MILITARY_VEHICLES = {
     firingRange: 30000, // meters
     acquisitionCost: 2700000,
     maintenanceCost: 180000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/c/ce/Paladin-fort-benning-7.jpg",
   },
   HIMARS: {
     name: "HIMARS",
@@ -460,6 +510,8 @@ export const MILITARY_VEHICLES = {
     firingRange: 80000,
     acquisitionCost: 5100000,
     maintenanceCost: 350000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/0/0f/M142_High_Mobility_Artillery_Rocket_System_%28HIMARS%29.jpg",
   },
 } as const;
 
@@ -475,6 +527,8 @@ export const WEAPON_SYSTEMS = {
     altitude: 24400, // meters
     acquisitionCost: 1100000000, // per battery
     maintenanceCost: 50000000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/f/f1/Patriot_missile_launch_b.jpg",
   },
   THAAD: {
     name: "THAAD",
@@ -485,6 +539,8 @@ export const WEAPON_SYSTEMS = {
     altitude: 150000,
     acquisitionCost: 3000000000,
     maintenanceCost: 120000000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/9/91/THAAD_missile_in_launch_position.jpg",
   },
   IRON_DOME: {
     name: "Iron Dome",
@@ -495,6 +551,8 @@ export const WEAPON_SYSTEMS = {
     altitude: 10000,
     acquisitionCost: 50000000,
     maintenanceCost: 3000000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/a/ab/Flickr_-_Israel_Defense_Forces_-_Iron_Dome_Intercepts_Rockets_from_the_Gaza_Strip.jpg",
   },
 
   // Naval Weapons
@@ -505,6 +563,8 @@ export const WEAPON_SYSTEMS = {
     era: "MODERN",
     acquisitionCost: 500000000,
     maintenanceCost: 25000000,
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/5/59/Aegis_cruiser_USS_Bunker_Hill_%28CG-52%29.JPG",
   },
 
   // Cruise Missiles
@@ -516,6 +576,8 @@ export const WEAPON_SYSTEMS = {
     range: 2500000, // meters
     speed: 880, // km/h
     acquisitionCost: 1900000, // per missile
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/b/b3/Tomahawk_Block_IV_cruise_missile.jpg",
   },
 } as const;
 

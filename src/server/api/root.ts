@@ -51,6 +51,7 @@ import { geoRouter } from "./routers/geo";
 import { mapEditorRouter } from "./routers/mapEditor";
 import { mapMonitoringRouter } from "./routers/mapMonitoring";
 import { crisisEventsRouter } from "./routers/crisis-events";
+import { historicalRouter } from "./routers/historical";
 
 /**
  * This is the primary router for your server.
@@ -108,6 +109,7 @@ export const appRouter = createTRPCRouter({
   mapEditor: mapEditorRouter, // Map Editor for CRUD operations on subdivisions, cities, and POIs
   mapMonitoring: mapMonitoringRouter, // Map system monitoring and statistics (Admin only)
   crisisEvents: crisisEventsRouter, // Crisis events management (natural disasters, economic crises, diplomatic incidents, etc.)
+  historical: historicalRouter, // Historical time-series data and analytics (12 endpoints)
   system: adminRouter, // Alias for global stats
 });
 

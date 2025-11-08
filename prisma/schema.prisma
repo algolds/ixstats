@@ -128,6 +128,10 @@ model Country {
   governmentComponents        GovernmentComponent[]     @relation("CountryComponents")
   governmentStructure         GovernmentStructure?
   historicalData              HistoricalDataPoint[]
+  vitalityHistory             VitalityHistory[]         @relation("CountryVitalityHistory")
+  componentHistory            ComponentEffectivenessHistory[] @relation("CountryComponentHistory")
+  relationshipHistory1        DiplomaticRelationshipHistory[] @relation("Country1RelationshipHistory")
+  relationshipHistory2        DiplomaticRelationshipHistory[] @relation("Country2RelationshipHistory")
   incomeDistribution          IncomeDistribution?
   stabilityMetrics            InternalStabilityMetrics? @relation("CountryStabilityMetrics")
   laborMarket                 LaborMarket?
@@ -304,6 +308,52 @@ model HistoricalDataPoint {
 
   @@index([countryId])
   @@index([ixTimeTimestamp])
+}
+
+model VitalityHistory {
+  id                      String   @id @default(cuid())
+  countryId               String
+  economicVitality        Float
+  populationWellbeing     Float
+  diplomaticStanding      Float
+  governmentalEfficiency  Float
+  overallHealth           Float
+  timestamp               DateTime @default(now())
+  country                 Country  @relation("CountryVitalityHistory", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId, timestamp])
+  @@index([timestamp])
+}
+
+model ComponentEffectivenessHistory {
+  id                 String   @id @default(cuid())
+  countryId          String
+  componentId        String
+  componentType      String
+  effectivenessScore Float
+  timestamp          DateTime @default(now())
+  country            Country  @relation("CountryComponentHistory", fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId, componentType, timestamp])
+  @@index([componentId])
+  @@index([timestamp])
+}
+
+model DiplomaticRelationshipHistory {
+  id               String   @id @default(cuid())
+  country1Id       String
+  country2Id       String
+  strength         Float
+  relationship     String
+  treaties         String?
+  tradeVolume      Float    @default(0)
+  culturalExchange String   @default("Medium")
+  timestamp        DateTime @default(now())
+  country1         Country  @relation("Country1RelationshipHistory", fields: [country1Id], references: [id], onDelete: Cascade)
+  country2         Country  @relation("Country2RelationshipHistory", fields: [country2Id], references: [id], onDelete: Cascade)
+
+  @@index([country1Id, country2Id, timestamp])
+  @@index([timestamp])
 }
 
 model DmInputs {
@@ -1220,20 +1270,28 @@ model CollaborativeDoc {
 }
 
 model ThinkshareConversation {
-  id           String                    @id @default(cuid())
-  type         String                    @default("direct")
-  name         String?
-  avatar       String?
-  isActive     Boolean                   @default(true)
-  lastActivity DateTime                  @default(now())
-  createdAt    DateTime                  @default(now())
-  updatedAt    DateTime                  @updatedAt
-  participants ConversationParticipant[]
-  messages     ThinkshareMessage[]
+  id                       String                    @id @default(cuid())
+  type                     String                    @default("direct")
+  name                     String?
+  avatar                   String?
+  isActive                 Boolean                   @default(true)
+  lastActivity             DateTime                  @default(now())
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  participants             ConversationParticipant[]
+  messages                 ThinkshareMessage[]
+  // Diplomatic messaging extensions
+  conversationType         String?                   // personal, diplomatic, official
+  diplomaticClassification String?                   // PUBLIC, RESTRICTED, CONFIDENTIAL, SECRET, TOP_SECRET
+  priority                 String?                   // LOW, NORMAL, HIGH, URGENT, CRITICAL
+  encrypted                Boolean                   @default(false)
+  channelType              String?                   // BILATERAL, MULTILATERAL, EMERGENCY (for diplomatic channels)
 
   @@index([type])
   @@index([lastActivity])
   @@index([isActive])
+  @@index([conversationType])
+  @@index([diplomaticClassification])
 }
 
 model ConversationParticipant {
@@ -1254,28 +1312,38 @@ model ConversationParticipant {
 }
 
 model ThinkshareMessage {
-  id              String                 @id @default(cuid())
-  conversationId  String
-  userId          String
-  content         String
-  messageType     String                 @default("text")
-  replyToId       String?
-  editedAt        DateTime?
-  deletedAt       DateTime?
-  reactions       String?
-  mentions        String?
-  attachments     String?
-  isSystem        Boolean                @default(false)
-  ixTimeTimestamp DateTime               @default(now())
-  readReceipts    MessageReadReceipt[]
-  conversation    ThinkshareConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  replyTo         ThinkshareMessage?     @relation("ThinkshareReplies", fields: [replyToId], references: [id])
-  replies         ThinkshareMessage[]    @relation("ThinkshareReplies")
+  id               String                 @id @default(cuid())
+  conversationId   String
+  userId           String
+  content          String
+  messageType      String                 @default("text")
+  replyToId        String?
+  editedAt         DateTime?
+  deletedAt        DateTime?
+  reactions        String?
+  mentions         String?
+  attachments      String?
+  isSystem         Boolean                @default(false)
+  ixTimeTimestamp  DateTime               @default(now())
+  readReceipts     MessageReadReceipt[]
+  conversation     ThinkshareConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  replyTo          ThinkshareMessage?     @relation("ThinkshareReplies", fields: [replyToId], references: [id])
+  replies          ThinkshareMessage[]    @relation("ThinkshareReplies")
+  // Diplomatic messaging extensions
+  classification   String?                // PUBLIC, RESTRICTED, CONFIDENTIAL, SECRET, TOP_SECRET
+  priority         String?                // LOW, NORMAL, HIGH, URGENT, CRITICAL
+  subject          String?                // Message subject for formal diplomatic communications
+  signature        String?                // Digital signature for message verification
+  encryptedContent String?                // Encrypted payload storage
+  status           String?                // SENT, DELIVERED, READ, ARCHIVED
 
   @@index([conversationId])
   @@index([userId])
   @@index([ixTimeTimestamp])
   @@index([messageType])
+  @@index([classification])
+  @@index([priority])
+  @@index([status])
 }
 
 model MessageReadReceipt {

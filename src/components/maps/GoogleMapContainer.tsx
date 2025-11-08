@@ -139,7 +139,7 @@ function GoogleMapContainer({
     if (!mapContainer.current || map.current) return;
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-    const style = createGoogleMapsStyle(basePath, mapType, projection, effectiveTheme);
+    const style = createGoogleMapsStyle(basePath, mapType, projection);
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
@@ -296,7 +296,7 @@ function GoogleMapContainer({
     if (!map.current || !isMapLoaded) return;
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
-    const style = createGoogleMapsStyle(basePath, mapType, projection, effectiveTheme);
+    const style = createGoogleMapsStyle(basePath, mapType, projection);
 
     // Get current zoom and center before style change
     const currentZoom = map.current.getZoom();

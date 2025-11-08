@@ -1,5 +1,7 @@
 # IxStats Documentation Hub
 
+> **🆕 NEW (November 2025):** The messaging system has been unified! All messaging—personal, diplomatic, and official—now uses **ThinkShare** as the single backbone. See [systems/UNIFIED_MESSAGING_SYSTEM.md](./systems/UNIFIED_MESSAGING_SYSTEM.md) for complete details.
+
 This repository refresh introduces a streamlined documentation set that mirrors the current codebase. The guides are grouped by purpose so engineers, storytellers, and operators can quickly land in the right place.
 
 - **Overview** – product positioning, feature map, quick facts

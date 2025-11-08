@@ -22,7 +22,7 @@ export const FIGHTERS_GENERATION_5 = {
     acquisitionCost: 80000000,
     maintenanceCost: 4000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/F-35A_flight_%28cropped%29.jpg/1280px-F-35A_flight_%28cropped%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/5/5e/F-35A_Lightning_II_%28cropped%29.jpg",
   },
   F35B_STOVL: {
     name: "F-35B Lightning II (STOVL)",
@@ -37,7 +37,7 @@ export const FIGHTERS_GENERATION_5 = {
     acquisitionCost: 115000000,
     maintenanceCost: 5000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/F-35B_test_flight.jpg/1280px-F-35B_test_flight.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/5/5e/F-35A_Lightning_II_%28cropped%29.jpg",
   },
   F22_RAPTOR: {
     name: "F-22 Raptor",
@@ -52,7 +52,7 @@ export const FIGHTERS_GENERATION_5 = {
     acquisitionCost: 150000000,
     maintenanceCost: 8000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Two_F-22_Raptor_in_flying.jpg/1280px-Two_F-22_Raptor_in_flying.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   SU57_FELON: {
     name: "Sukhoi Su-57",
@@ -67,7 +67,7 @@ export const FIGHTERS_GENERATION_5 = {
     acquisitionCost: 70000000,
     maintenanceCost: 3500000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Sukhoi_Su-57_in_2011_%282%29.jpg/1280px-Sukhoi_Su-57_in_2011_%282%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/1/15/Sukhoi_T-50_prototype_in_2011.jpg",
   },
   J20_MIGHTY_DRAGON: {
     name: "Chengdu J-20",
@@ -82,7 +82,7 @@ export const FIGHTERS_GENERATION_5 = {
     acquisitionCost: 110000000,
     maintenanceCost: 5500000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/J-20_at_Airshow_China_2016.jpg/1280px-J-20_at_Airshow_China_2016.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/d/d8/J-20_at_Airshow_China_2016.jpg",
   },
 } as const;
 
@@ -100,7 +100,7 @@ export const FIGHTERS_GENERATION_4_5 = {
     acquisitionCost: 90000000,
     maintenanceCost: 5000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Rafale_-_RIAT_2009_%283751416421%29.jpg/1280px-Rafale_-_RIAT_2009_%283751416421%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2c/Dassault_Rafale_-_RIAT_2015_%2819191059398%29.jpg",
   },
   EUROFIGHTER_TYPHOON: {
     name: "Eurofighter Typhoon",
@@ -115,7 +115,7 @@ export const FIGHTERS_GENERATION_4_5 = {
     acquisitionCost: 120000000,
     maintenanceCost: 6000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/Eurofighter_Typhoon_7L-WF_Austria.jpg/1280px-Eurofighter_Typhoon_7L-WF_Austria.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/1/1c/Eurofighter_Typhoon_-_ILA_2018_07.jpg",
   },
   F15EX_EAGLE_II: {
     name: "F-15EX Eagle II",
@@ -130,7 +130,7 @@ export const FIGHTERS_GENERATION_4_5 = {
     acquisitionCost: 87000000,
     maintenanceCost: 4500000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/F-15%2C_71st_Fighter_Squadron%2C_in_flight.JPG/1280px-F-15%2C_71st_Fighter_Squadron%2C_in_flight.JPG",
+      "https://upload.wikimedia.org/wikipedia/commons/e/e6/F-15%2C_71st_Fighter_Squadron%2C_in_flight.JPG",
   },
   F16V_VIPER: {
     name: "F-16V Viper",
@@ -145,7 +145,7 @@ export const FIGHTERS_GENERATION_4_5 = {
     acquisitionCost: 64000000,
     maintenanceCost: 3200000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/F-16_June_2008.jpg/1280px-F-16_June_2008.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/c/c9/F-16_June_2008.jpg",
   },
   F18E_SUPER_HORNET: {
     name: "F/A-18E Super Hornet",
@@ -160,7 +160,7 @@ export const FIGHTERS_GENERATION_4_5 = {
     acquisitionCost: 70000000,
     maintenanceCost: 3800000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/FA-18F_after_launch_from_USS_Abraham_Lincoln_%28CVN-72%29.jpg/1280px-FA-18F_after_launch_from_USS_Abraham_Lincoln_%28CVN-72%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/e/ea/FA-18F_after_launch_from_USS_Abraham_Lincoln_%28CVN-72%29_%28cropped%29.jpg",
   },
   GRIPEN_E: {
     name: "Saab JAS 39 Gripen E",
@@ -175,7 +175,7 @@ export const FIGHTERS_GENERATION_4_5 = {
     acquisitionCost: 85000000,
     maintenanceCost: 4200000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Saab_JAS_39C_Gripen%2C_Czech_Air_Force_%28cropped%29.jpg/1280px-Saab_JAS_39C_Gripen%2C_Czech_Air_Force_%28cropped%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/d/d6/Saab_JAS_39C_Gripen%2C_Czech_Air_Force.JPG",
   },
   SU35_FLANKER_E: {
     name: "Sukhoi Su-35 Flanker-E",
@@ -190,7 +190,7 @@ export const FIGHTERS_GENERATION_4_5 = {
     acquisitionCost: 85000000,
     maintenanceCost: 4300000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Sukhoi_Su-35S_in_flight_%282%29.jpg/1280px-Sukhoi_Su-35S_in_flight_%282%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   MIG35_FULCRUM_F: {
     name: "MiG-35 Fulcrum-F",
@@ -205,7 +205,7 @@ export const FIGHTERS_GENERATION_4_5 = {
     acquisitionCost: 50000000,
     maintenanceCost: 2500000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Mig-35_on_the_MAKS-2007_airshow.jpg/1280px-Mig-35_on_the_MAKS-2007_airshow.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   KF21_BORAMAE: {
     name: "KAI KF-21 Boramae",
@@ -220,7 +220,7 @@ export const FIGHTERS_GENERATION_4_5 = {
     acquisitionCost: 65000000,
     maintenanceCost: 3300000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/KF-21_Boramae_prototype_1_at_its_rollout_ceremony.jpg/1280px-KF-21_Boramae_prototype_1_at_its_rollout_ceremony.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   TEJAS_MK2: {
     name: "HAL Tejas Mk2",
@@ -235,7 +235,7 @@ export const FIGHTERS_GENERATION_4_5 = {
     acquisitionCost: 42000000,
     maintenanceCost: 2100000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Tejas_at_Aero_India_2013.jpg/1280px-Tejas_at_Aero_India_2013.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
 } as const;
 
@@ -256,7 +256,7 @@ export const ATTACK_AIRCRAFT = {
     acquisitionCost: 18000000,
     maintenanceCost: 1200000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/A-10_Thunderbolt_II_In-flight-2.jpg/1280px-A-10_Thunderbolt_II_In-flight-2.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/5/53/A-10_Thunderbolt_II_In-flight-2_%28cropped%29.jpg",
   },
   SU25_FROGFOOT: {
     name: "Sukhoi Su-25 Frogfoot",
@@ -271,7 +271,7 @@ export const ATTACK_AIRCRAFT = {
     acquisitionCost: 11000000,
     maintenanceCost: 850000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Russian_Air_Force_Sukhoi_Su-25.jpg/1280px-Russian_Air_Force_Sukhoi_Su-25.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   AV8B_HARRIER: {
     name: "AV-8B Harrier II",
@@ -286,7 +286,7 @@ export const ATTACK_AIRCRAFT = {
     acquisitionCost: 24000000,
     maintenanceCost: 1500000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/AV-8B_Harrier_II_closeup.JPEG/1280px-AV-8B_Harrier_II_closeup.JPEG",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   AMX_INTERNATIONAL: {
     name: "AMX International",
@@ -301,7 +301,7 @@ export const ATTACK_AIRCRAFT = {
     acquisitionCost: 15000000,
     maintenanceCost: 900000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/AMX_A-1M_FAB.jpg/1280px-AMX_A-1M_FAB.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
 } as const;
 
@@ -320,7 +320,7 @@ export const BOMBERS = {
     acquisitionCost: 2100000000,
     maintenanceCost: 60000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/B-2_Spirit_original.jpg/1280px-B-2_Spirit_original.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/3/33/US_Air_Force_B-2_Spirit.jpg",
   },
   B52_STRATOFORTRESS: {
     name: "B-52 Stratofortress",
@@ -335,7 +335,7 @@ export const BOMBERS = {
     acquisitionCost: 84000000,
     maintenanceCost: 5000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/B-52_Stratofortress_assigned_to_the_307th_Bomb_Wing.jpg/1280px-B-52_Stratofortress_assigned_to_the_307th_Bomb_Wing.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/f/ff/B-52H_static_display_arms_06.jpg",
   },
   B1B_LANCER: {
     name: "B-1B Lancer",
@@ -350,7 +350,7 @@ export const BOMBERS = {
     acquisitionCost: 283000000,
     maintenanceCost: 12000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/B-1B_Lancer_%28Bone%29.jpg/1280px-B-1B_Lancer_%28Bone%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   B21_RAIDER: {
     name: "B-21 Raider",
@@ -365,7 +365,7 @@ export const BOMBERS = {
     acquisitionCost: 750000000,
     maintenanceCost: 35000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/B-21_Raider_overhead.jpg/1280px-B-21_Raider_overhead.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/3/33/US_Air_Force_B-2_Spirit.jpg",
   },
   TU160_BLACKJACK: {
     name: "Tupolev Tu-160",
@@ -380,7 +380,7 @@ export const BOMBERS = {
     acquisitionCost: 250000000,
     maintenanceCost: 15000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Tupolev_Tu-160_Beltyukov.jpg/1280px-Tupolev_Tu-160_Beltyukov.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   TU95_BEAR: {
     name: "Tupolev Tu-95",
@@ -395,7 +395,7 @@ export const BOMBERS = {
     acquisitionCost: 120000000,
     maintenanceCost: 6000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Tupolev_Tu-95MS.jpg/1280px-Tupolev_Tu-95MS.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   H6_BOMBER: {
     name: "Xian H-6",
@@ -410,7 +410,7 @@ export const BOMBERS = {
     acquisitionCost: 80000000,
     maintenanceCost: 4000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Xian_H-6K.jpg/1280px-Xian_H-6K.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
 } as const;
 
@@ -429,7 +429,7 @@ export const TRANSPORT_AIRCRAFT = {
     acquisitionCost: 340000000,
     maintenanceCost: 15000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/C-17_Globemaster_III.jpg/1280px-C-17_Globemaster_III.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/6/67/C-17_test.jpg",
   },
   C130J_HERCULES: {
     name: "C-130J Super Hercules",
@@ -444,7 +444,7 @@ export const TRANSPORT_AIRCRAFT = {
     acquisitionCost: 75000000,
     maintenanceCost: 3800000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/C-130J_Super_Hercules.jpg/1280px-C-130J_Super_Hercules.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/e/ec/C-130J_Super_Hercules.JPG",
   },
   C5M_GALAXY: {
     name: "C-5M Super Galaxy",
@@ -459,7 +459,7 @@ export const TRANSPORT_AIRCRAFT = {
     acquisitionCost: 224000000,
     maintenanceCost: 10000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/C-5_Galaxy.jpg/1280px-C-5_Galaxy.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   A400M_ATLAS: {
     name: "Airbus A400M Atlas",
@@ -474,7 +474,7 @@ export const TRANSPORT_AIRCRAFT = {
     acquisitionCost: 170000000,
     maintenanceCost: 8000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Airbus_A400M.jpg/1280px-Airbus_A400M.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   IL76_CANDID: {
     name: "Ilyushin Il-76",
@@ -489,7 +489,7 @@ export const TRANSPORT_AIRCRAFT = {
     acquisitionCost: 50000000,
     maintenanceCost: 2500000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Il-76MD_Rossiya.jpg/1280px-Il-76MD_Rossiya.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   Y20_KUNPENG: {
     name: "Xian Y-20",
@@ -504,7 +504,7 @@ export const TRANSPORT_AIRCRAFT = {
     acquisitionCost: 150000000,
     maintenanceCost: 7000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Xian_Y-20.jpg/1280px-Xian_Y-20.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   KC135_STRATOTANKER: {
     name: "KC-135 Stratotanker",
@@ -519,7 +519,7 @@ export const TRANSPORT_AIRCRAFT = {
     acquisitionCost: 39000000,
     maintenanceCost: 2000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/KC-135_Stratotanker.jpg/1280px-KC-135_Stratotanker.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   KC46_PEGASUS: {
     name: "KC-46 Pegasus",
@@ -534,7 +534,7 @@ export const TRANSPORT_AIRCRAFT = {
     acquisitionCost: 148000000,
     maintenanceCost: 7000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/KC-46_Pegasus.jpg/1280px-KC-46_Pegasus.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   A330_MRTT: {
     name: "Airbus A330 MRTT",
@@ -549,7 +549,7 @@ export const TRANSPORT_AIRCRAFT = {
     acquisitionCost: 250000000,
     maintenanceCost: 12000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/A330_MRTT_F-WWKC.jpg/1280px-A330_MRTT_F-WWKC.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
 } as const;
 
@@ -568,7 +568,7 @@ export const HELICOPTERS = {
     acquisitionCost: 35000000,
     maintenanceCost: 2500000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/AH-64E_Apache.jpg/1280px-AH-64E_Apache.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/27/AH-64D_Apache_Longbow.jpg",
   },
   UH60M_BLACKHAWK: {
     name: "UH-60M Black Hawk",
@@ -583,7 +583,7 @@ export const HELICOPTERS = {
     acquisitionCost: 21000000,
     maintenanceCost: 1500000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/UH-60_Blackhawk.jpg/1280px-UH-60_Blackhawk.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   CH47F_CHINOOK: {
     name: "CH-47F Chinook",
@@ -598,7 +598,7 @@ export const HELICOPTERS = {
     acquisitionCost: 38000000,
     maintenanceCost: 2800000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/CH-47_Chinook.jpg/1280px-CH-47_Chinook.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   MH60R_SEAHAWK: {
     name: "MH-60R Seahawk",
@@ -613,7 +613,7 @@ export const HELICOPTERS = {
     acquisitionCost: 42000000,
     maintenanceCost: 3000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/MH-60R_Seahawk.jpg/1280px-MH-60R_Seahawk.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   AH1Z_VIPER: {
     name: "AH-1Z Viper",
@@ -628,7 +628,7 @@ export const HELICOPTERS = {
     acquisitionCost: 31000000,
     maintenanceCost: 2200000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/AH-1Z_Viper.jpg/1280px-AH-1Z_Viper.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   MI24_HIND: {
     name: "Mil Mi-24 Hind",
@@ -643,7 +643,7 @@ export const HELICOPTERS = {
     acquisitionCost: 12000000,
     maintenanceCost: 900000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/Mil_Mi-24_Hind.jpg/1280px-Mil_Mi-24_Hind.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   MI28_HAVOC: {
     name: "Mil Mi-28 Havoc",
@@ -658,7 +658,7 @@ export const HELICOPTERS = {
     acquisitionCost: 18000000,
     maintenanceCost: 1400000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Mil_Mi-28.jpg/1280px-Mil_Mi-28.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   KA52_ALLIGATOR: {
     name: "Kamov Ka-52 Alligator",
@@ -673,7 +673,7 @@ export const HELICOPTERS = {
     acquisitionCost: 16000000,
     maintenanceCost: 1200000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Kamov_Ka-52.jpg/1280px-Kamov_Ka-52.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   NH90: {
     name: "NH Industries NH90",
@@ -688,7 +688,7 @@ export const HELICOPTERS = {
     acquisitionCost: 50000000,
     maintenanceCost: 3500000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/NH90_helicopter.jpg/1280px-NH90_helicopter.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   TIGER_HAD: {
     name: "Eurocopter Tiger HAD",
@@ -703,7 +703,7 @@ export const HELICOPTERS = {
     acquisitionCost: 40000000,
     maintenanceCost: 2800000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Tiger_helicopter.jpg/1280px-Tiger_helicopter.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   AW101_MERLIN: {
     name: "AgustaWestland AW101",
@@ -718,7 +718,7 @@ export const HELICOPTERS = {
     acquisitionCost: 42000000,
     maintenanceCost: 3000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/AW101_Merlin.jpg/1280px-AW101_Merlin.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   Z10_THUNDERBOLT: {
     name: "CAIC Z-10",
@@ -733,7 +733,7 @@ export const HELICOPTERS = {
     acquisitionCost: 15000000,
     maintenanceCost: 1100000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/CAIC_Z-10.jpg/1280px-CAIC_Z-10.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   T129_ATAK: {
     name: "TAI T129 ATAK",
@@ -748,7 +748,7 @@ export const HELICOPTERS = {
     acquisitionCost: 25000000,
     maintenanceCost: 1800000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/T129_ATAK.jpg/1280px-T129_ATAK.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   DHRUV_ALH: {
     name: "HAL Dhruv",
@@ -763,7 +763,7 @@ export const HELICOPTERS = {
     acquisitionCost: 8000000,
     maintenanceCost: 600000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/81/HAL_Dhruv.jpg/1280px-HAL_Dhruv.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   APACHE_LONGBOW: {
     name: "AH-64D Apache Longbow",
@@ -778,7 +778,7 @@ export const HELICOPTERS = {
     acquisitionCost: 20000000,
     maintenanceCost: 1800000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/AH-64D_Apache.jpg/1280px-AH-64D_Apache.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/27/AH-64D_Apache_Longbow.jpg",
   },
 } as const;
 
@@ -798,7 +798,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 8500000000,
     maintenanceCost: 500000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/USS_Nimitz_%28CVN-68%29.jpg/1280px-USS_Nimitz_%28CVN-68%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/6/65/USS_Nimitz_in_Victoria_Canada_036.jpg",
   },
   FORD_CLASS: {
     name: "Gerald R. Ford-class Carrier",
@@ -813,7 +813,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 13000000000,
     maintenanceCost: 600000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/USS_Gerald_R._Ford_%28CVN-78%29_underway.jpg/1280px-USS_Gerald_R._Ford_%28CVN-78%29_underway.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/9/90/USS_Gerald_R._Ford_%28CVN-78%29_underway_on_8_April_2017.JPG",
   },
   QUEEN_ELIZABETH: {
     name: "Queen Elizabeth-class Carrier",
@@ -828,7 +828,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 3500000000,
     maintenanceCost: 180000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/HMS_Queen_Elizabeth_%28R08%29.jpg/1280px-HMS_Queen_Elizabeth_%28R08%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   CHARLES_DE_GAULLE: {
     name: "Charles de Gaulle",
@@ -843,7 +843,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 3300000000,
     maintenanceCost: 170000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Charles_de_Gaulle_%28R_91%29.jpg/1280px-Charles_de_Gaulle_%28R_91%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   LIAONING: {
     name: "Liaoning",
@@ -858,7 +858,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 2500000000,
     maintenanceCost: 130000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Liaoning_%28CV-16%29.jpg/1280px-Liaoning_%28CV-16%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
 
   // Destroyers
@@ -874,7 +874,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 1850000000,
     maintenanceCost: 85000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/USS_Arleigh_Burke_%28DDG-51%29.jpg/1280px-USS_Arleigh_Burke_%28DDG-51%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/e/ea/USS_Arleigh_Burke_%28DDG-51%29_underway_in_the_Atlantic_Ocean_on_24_October_2023_%28231024-N-EI510-1001%29.JPG",
   },
   ZUMWALT: {
     name: "Zumwalt-class Destroyer",
@@ -888,7 +888,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 4400000000,
     maintenanceCost: 200000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/USS_Zumwalt_%28DDG-1000%29.jpg/1280px-USS_Zumwalt_%28DDG-1000%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/d/d5/USS_Zumwalt_is_underway_for_the_first_time_conducting_at-sea_tests_and_trials_in_the_Atlantic_Ocean_Dec._7%2C_2015.jpg",
   },
   TYPE_45_DARING: {
     name: "Type 45 Daring-class",
@@ -902,7 +902,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 1100000000,
     maintenanceCost: 55000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/HMS_Daring_%28D32%29.jpg/1280px-HMS_Daring_%28D32%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   TYPE_055: {
     name: "Type 055 Destroyer",
@@ -916,7 +916,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 900000000,
     maintenanceCost: 45000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Type_055_destroyer.jpg/1280px-Type_055_destroyer.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   SEJONG_THE_GREAT: {
     name: "Sejong the Great-class",
@@ -930,7 +930,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 1200000000,
     maintenanceCost: 60000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/ROKS_Sejong_the_Great_%28DDG-991%29.jpg/1280px-ROKS_Sejong_the_Great_%28DDG-991%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   ATAGO_CLASS: {
     name: "Atago-class Destroyer",
@@ -944,7 +944,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 1500000000,
     maintenanceCost: 75000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/JS_Atago_%28DDG-177%29.jpg/1280px-JS_Atago_%28DDG-177%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
 
   // Frigates
@@ -960,7 +960,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 1200000000,
     maintenanceCost: 60000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Constellation-class_frigate.jpg/1280px-Constellation-class_frigate.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   FREMM_FRIGATE: {
     name: "FREMM Frigate",
@@ -974,7 +974,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 700000000,
     maintenanceCost: 35000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/FREMM_Aquitaine.jpg/1280px-FREMM_Aquitaine.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   TYPE_26_FRIGATE: {
     name: "Type 26 Frigate",
@@ -988,7 +988,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 1100000000,
     maintenanceCost: 55000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/HMS_Glasgow_%28Type_26%29.jpg/1280px-HMS_Glasgow_%28Type_26%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
 
   // Submarines
@@ -1004,7 +1004,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 3300000000,
     maintenanceCost: 150000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/USS_Virginia_%28SSN-774%29.jpg/1280px-USS_Virginia_%28SSN-774%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/5/5a/US_Navy_071212-N-9689V-001_Pre-Commissioning_Unit_%28PCU%29_New_Hampshire_%28SSN_778%29_returns_to_the_General_Dynamics_Electric_Boat_shipyard.jpg",
   },
   OHIO_CLASS_SSBN: {
     name: "Ohio-class SSBN",
@@ -1018,7 +1018,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 2000000000,
     maintenanceCost: 100000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Ohio_class_submarine.jpg/1280px-Ohio_class_submarine.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/9/97/Ohio_class_submarine.jpg",
   },
   ASTUTE_CLASS: {
     name: "Astute-class Submarine",
@@ -1032,7 +1032,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 2000000000,
     maintenanceCost: 95000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/HMS_Astute.jpg/1280px-HMS_Astute.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   TYPE_093_SHANG: {
     name: "Type 093 Shang-class",
@@ -1046,7 +1046,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 1500000000,
     maintenanceCost: 75000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Type_093_submarine.jpg/1280px-Type_093_submarine.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   YASEN_CLASS: {
     name: "Yasen-class Submarine",
@@ -1060,7 +1060,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 1600000000,
     maintenanceCost: 80000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Yasen_class_submarine.jpg/1280px-Yasen_class_submarine.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   SCORPENE_CLASS: {
     name: "Scorpène-class Submarine",
@@ -1074,7 +1074,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 500000000,
     maintenanceCost: 25000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Scorpene_class_submarine.jpg/1280px-Scorpene_class_submarine.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
 
   // Amphibious Warfare
@@ -1091,7 +1091,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 1200000000,
     maintenanceCost: 60000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/USS_Wasp_%28LHD-1%29.jpg/1280px-USS_Wasp_%28LHD-1%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   AMERICA_CLASS: {
     name: "America-class LHA",
@@ -1106,7 +1106,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 3400000000,
     maintenanceCost: 170000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/USS_America_%28LHA-6%29.jpg/1280px-USS_America_%28LHA-6%29.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   MISTRAL_CLASS: {
     name: "Mistral-class LHD",
@@ -1121,7 +1121,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 550000000,
     maintenanceCost: 28000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Mistral_class_LHD.jpg/1280px-Mistral_class_LHD.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   TYPE_075_LHD: {
     name: "Type 075 LHD",
@@ -1136,7 +1136,7 @@ export const NAVAL_SHIPS = {
     acquisitionCost: 850000000,
     maintenanceCost: 43000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Type_075_LHD.jpg/1280px-Type_075_LHD.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
 } as const;
 
@@ -1155,7 +1155,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 8900000,
     maintenanceCost: 500000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/M1A2_Abrams_tank.jpg/1280px-M1A2_Abrams_tank.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/8/8f/M1A2_Abrams_Tank_in_Camp_Bondsteel.jpg",
   },
   LEOPARD_2A7: {
     name: "Leopard 2A7+",
@@ -1169,7 +1169,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 7500000,
     maintenanceCost: 450000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Leopard_2A7%2B.jpg/1280px-Leopard_2A7%2B.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/6/6f/Leopard_2_A5_der_Bundeswehr.jpg",
   },
   CHALLENGER_3: {
     name: "Challenger 3",
@@ -1183,7 +1183,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 8000000,
     maintenanceCost: 480000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Challenger_3_prototype.jpg/1280px-Challenger_3_prototype.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/f/ff/Challenger_2_Main_Battle_Tank_patrolling_outside_Basra%2C_Iraq_MOD_45148325.jpg",
   },
   T90M_PRORYV: {
     name: "T-90M Proryv",
@@ -1197,7 +1197,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 4500000,
     maintenanceCost: 270000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/T-90M_tank.jpg/1280px-T-90M_tank.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   T14_ARMATA: {
     name: "T-14 Armata",
@@ -1211,7 +1211,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 8000000,
     maintenanceCost: 480000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/T-14_Armata.jpg/1280px-T-14_Armata.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   TYPE_99A: {
     name: "Type 99A",
@@ -1225,7 +1225,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 5200000,
     maintenanceCost: 310000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Type_99A_tank.jpg/1280px-Type_99A_tank.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   TYPE_10_HITOMARU: {
     name: "Type 10",
@@ -1239,7 +1239,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 9000000,
     maintenanceCost: 540000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Type_10_tank.jpg/1280px-Type_10_tank.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   K2_BLACK_PANTHER: {
     name: "K2 Black Panther",
@@ -1253,7 +1253,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 8600000,
     maintenanceCost: 515000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/K2_Black_Panther.jpg/1280px-K2_Black_Panther.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   LECLERC: {
     name: "Leclerc",
@@ -1267,7 +1267,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 6800000,
     maintenanceCost: 408000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Leclerc_tank.jpg/1280px-Leclerc_tank.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   MERKAVA_MK4: {
     name: "Merkava Mk 4",
@@ -1281,7 +1281,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 6000000,
     maintenanceCost: 360000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Merkava_Mk_4.jpg/1280px-Merkava_Mk_4.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
 
   // Infantry Fighting Vehicles
@@ -1298,7 +1298,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 4200000,
     maintenanceCost: 250000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/M2_Bradley_IFV.jpg/1280px-M2_Bradley_IFV.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/29/M2_Bradley.jpg",
   },
   PUMA_IFV: {
     name: "Puma IFV",
@@ -1313,7 +1313,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 7200000,
     maintenanceCost: 432000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Puma_IFV.jpg/1280px-Puma_IFV.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   BMP3: {
     name: "BMP-3",
@@ -1328,7 +1328,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 2500000,
     maintenanceCost: 150000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/BMP-3_IFV.jpg/1280px-BMP-3_IFV.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   ZBD04A: {
     name: "ZBD-04A",
@@ -1343,7 +1343,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 2800000,
     maintenanceCost: 168000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/ZBD-04A_IFV.jpg/1280px-ZBD-04A_IFV.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   CV90: {
     name: "CV90",
@@ -1358,7 +1358,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 5800000,
     maintenanceCost: 348000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/CV90_IFV.jpg/1280px-CV90_IFV.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
 
   // Armored Personnel Carriers
@@ -1374,7 +1374,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 4900000,
     maintenanceCost: 300000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Stryker_APC.jpg/1280px-Stryker_APC.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/8/84/M1126_ICV_Stryker.jpg",
   },
   BOXER_APC: {
     name: "Boxer APC",
@@ -1388,7 +1388,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 6500000,
     maintenanceCost: 390000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Boxer_APC.jpg/1280px-Boxer_APC.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   BTR90: {
     name: "BTR-90",
@@ -1402,7 +1402,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 1800000,
     maintenanceCost: 108000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/BTR-90_APC.jpg/1280px-BTR-90_APC.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   TYPE_08: {
     name: "Type 08",
@@ -1416,7 +1416,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 2200000,
     maintenanceCost: 132000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Type_08_APC.jpg/1280px-Type_08_APC.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   PIRANHA_V: {
     name: "Piranha V",
@@ -1430,7 +1430,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 5500000,
     maintenanceCost: 330000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Piranha_V_APC.jpg/1280px-Piranha_V_APC.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
 
   // Artillery
@@ -1447,7 +1447,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 2700000,
     maintenanceCost: 180000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/M109A7_Paladin.jpg/1280px-M109A7_Paladin.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/c/ce/Paladin-fort-benning-7.jpg",
   },
   PZH_2000: {
     name: "PzH 2000",
@@ -1462,7 +1462,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 6700000,
     maintenanceCost: 402000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/PzH_2000.jpg/1280px-PzH_2000.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   S2S19_MSTA: {
     name: "2S19 Msta-S",
@@ -1477,7 +1477,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 3200000,
     maintenanceCost: 192000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/2S19_Msta.jpg/1280px-2S19_Msta.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   PLZ05: {
     name: "PLZ-05",
@@ -1492,7 +1492,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 3800000,
     maintenanceCost: 228000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/PLZ-05_howitzer.jpg/1280px-PLZ-05_howitzer.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   CAESAR_SPH: {
     name: "CAESAR 155mm",
@@ -1507,7 +1507,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 4200000,
     maintenanceCost: 252000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/CAESAR_SPH.jpg/1280px-CAESAR_SPH.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   M142_HIMARS: {
     name: "M142 HIMARS",
@@ -1522,7 +1522,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 5100000,
     maintenanceCost: 350000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/M142_HIMARS.jpg/1280px-M142_HIMARS.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/0/0f/M142_High_Mobility_Artillery_Rocket_System_%28HIMARS%29.jpg",
   },
   M270_MLRS: {
     name: "M270 MLRS",
@@ -1537,7 +1537,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 3800000,
     maintenanceCost: 228000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/M270_MLRS.jpg/1280px-M270_MLRS.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   BM30_SMERCH: {
     name: "BM-30 Smerch",
@@ -1552,7 +1552,7 @@ export const GROUND_VEHICLES = {
     acquisitionCost: 4500000,
     maintenanceCost: 270000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/BM-30_Smerch.jpg/1280px-BM-30_Smerch.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
 } as const;
 
@@ -1569,7 +1569,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     acquisitionCost: 1100000000,
     maintenanceCost: 50000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Patriot_missile_system.jpg/1280px-Patriot_missile_system.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/f/f1/Patriot_missile_launch_b.jpg",
   },
   THAAD_SYSTEM: {
     name: "THAAD",
@@ -1581,7 +1581,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     acquisitionCost: 3000000000,
     maintenanceCost: 120000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/THAAD_missile_system.jpg/1280px-THAAD_missile_system.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/9/91/THAAD_missile_in_launch_position.jpg",
   },
   IRON_DOME_BATTERY: {
     name: "Iron Dome",
@@ -1593,7 +1593,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     acquisitionCost: 50000000,
     maintenanceCost: 3000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Iron_Dome_battery.jpg/1280px-Iron_Dome_battery.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/a/ab/Flickr_-_Israel_Defense_Forces_-_Iron_Dome_Intercepts_Rockets_from_the_Gaza_Strip.jpg",
   },
   S400_TRIUMF: {
     name: "S-400 Triumf",
@@ -1605,7 +1605,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     acquisitionCost: 500000000,
     maintenanceCost: 25000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/S-400_Triumf.jpg/1280px-S-400_Triumf.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   S500_PROMETHEUS: {
     name: "S-500 Prometheus",
@@ -1617,7 +1617,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     acquisitionCost: 2500000000,
     maintenanceCost: 125000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/S-500_system.jpg/1280px-S-500_system.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   HQ9_SYSTEM: {
     name: "HQ-9",
@@ -1629,7 +1629,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     acquisitionCost: 300000000,
     maintenanceCost: 15000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/HQ-9_air_defense.jpg/1280px-HQ-9_air_defense.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   DAVID_SLING: {
     name: "David's Sling",
@@ -1641,7 +1641,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     acquisitionCost: 1000000000,
     maintenanceCost: 50000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/David_Sling_system.jpg/1280px-David_Sling_system.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   ARROW_3: {
     name: "Arrow 3",
@@ -1653,7 +1653,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     acquisitionCost: 2200000000,
     maintenanceCost: 110000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Arrow_3_missile.jpg/1280px-Arrow_3_missile.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   NASAMS: {
     name: "NASAMS",
@@ -1665,7 +1665,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     acquisitionCost: 180000000,
     maintenanceCost: 9000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/NASAMS_launcher.jpg/1280px-NASAMS_launcher.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   SAMP_T: {
     name: "SAMP/T Mamba",
@@ -1677,7 +1677,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     acquisitionCost: 1200000000,
     maintenanceCost: 60000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/SAMP-T_system.jpg/1280px-SAMP-T_system.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
 
   // Missiles & Precision Weapons
@@ -1690,7 +1690,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     speed: 880,
     acquisitionCost: 1900000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Tomahawk_missile.jpg/1280px-Tomahawk_missile.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/b/b3/Tomahawk_Block_IV_cruise_missile.jpg",
   },
   JASSM_ER: {
     name: "AGM-158 JASSM-ER",
@@ -1701,7 +1701,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     speed: 1040,
     acquisitionCost: 1400000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/AGM-158_JASSM.jpg/1280px-AGM-158_JASSM.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   KALIBR_CRUISE: {
     name: "3M-54 Kalibr",
@@ -1712,7 +1712,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     speed: 800,
     acquisitionCost: 1200000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Kalibr_missile.jpg/1280px-Kalibr_missile.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   SCALP_EG: {
     name: "SCALP EG / Storm Shadow",
@@ -1723,7 +1723,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     speed: 1040,
     acquisitionCost: 1000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Storm_Shadow_missile.jpg/1280px-Storm_Shadow_missile.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   AGM114_HELLFIRE: {
     name: "AGM-114 Hellfire",
@@ -1734,7 +1734,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     speed: 1400,
     acquisitionCost: 150000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/AGM-114_Hellfire.jpg/1280px-AGM-114_Hellfire.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   JAVELIN_ATGM: {
     name: "FGM-148 Javelin",
@@ -1745,7 +1745,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     speed: 670,
     acquisitionCost: 175000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/FGM-148_Javelin.jpg/1280px-FGM-148_Javelin.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   SPIKE_LR: {
     name: "Spike-LR",
@@ -1756,7 +1756,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     speed: 550,
     acquisitionCost: 210000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Spike_missile.jpg/1280px-Spike_missile.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   NLAW: {
     name: "NLAW",
@@ -1767,7 +1767,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     speed: 190,
     acquisitionCost: 40000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/NLAW_missile.jpg/1280px-NLAW_missile.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
 
   // Naval Combat Systems
@@ -1779,7 +1779,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     acquisitionCost: 500000000,
     maintenanceCost: 25000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Aegis_radar_system.jpg/1280px-Aegis_radar_system.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/5/59/Aegis_cruiser_USS_Bunker_Hill_%28CG-52%29.JPG",
   },
   PHALANX_CIWS: {
     name: "Phalanx CIWS",
@@ -1789,7 +1789,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     acquisitionCost: 5800000,
     maintenanceCost: 290000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Phalanx_CIWS.jpg/1280px-Phalanx_CIWS.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   GOALKEEPER_CIWS: {
     name: "Goalkeeper CIWS",
@@ -1799,7 +1799,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     acquisitionCost: 11000000,
     maintenanceCost: 550000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Goalkeeper_CIWS.jpg/1280px-Goalkeeper_CIWS.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   MK41_VLS: {
     name: "Mk 41 VLS",
@@ -1809,7 +1809,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     acquisitionCost: 120000000,
     maintenanceCost: 6000000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Mk_41_VLS.jpg/1280px-Mk_41_VLS.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
   MK48_TORPEDO: {
     name: "Mark 48 Torpedo",
@@ -1820,7 +1820,7 @@ export const WEAPON_SYSTEMS_EXTENDED = {
     speed: 102,
     acquisitionCost: 3800000,
     imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Mark_48_torpedo.jpg/1280px-Mark_48_torpedo.jpg",
+      "https://upload.wikimedia.org/wikipedia/commons/2/2e/F-22_Raptor_-_100702-F-4815G-217.jpg",
   },
 } as const;
 

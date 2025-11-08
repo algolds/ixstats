@@ -3,6 +3,8 @@
  * Calculates trends and patterns from historical economic and government data
  */
 
+import { IxTime } from "~/lib/ixtime";
+
 export interface TrendPoint {
   timestamp: Date;
   value: number;
@@ -113,7 +115,7 @@ export function generateHistoricalDataPoints(
   baseGrowthRate: number = 0.02
 ): TrendPoint[] {
   const points: TrendPoint[] = [];
-  const now = new Date();
+  const now = new Date(IxTime.getCurrentIxTime());
 
   // Start from 12 months ago
   let value = currentValue;

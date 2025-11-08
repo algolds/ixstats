@@ -29,7 +29,7 @@ export interface SearchResult {
 }
 
 // View modes
-export type ViewMode = "compact" | "search" | "notifications" | "settings" | "cycling";
+export type ViewMode = "compact" | "search" | "notifications" | "settings" | "crisis" | "mycountry" | "cycling";
 export type SearchFilter = "all" | "countries" | "commands" | "features";
 export type TimeDisplayMode = "time" | "date" | "both";
 
@@ -54,6 +54,7 @@ export interface CompactViewProps {
   setTimeDisplayMode: (mode: TimeDisplayMode) => void;
   onSwitchMode: (mode: ViewMode) => void;
   scrollY?: number;
+  crisisEvents?: any[];
 }
 
 export interface CountriesData {
@@ -95,4 +96,5 @@ export interface ExpandedViewProps {
   debouncedSearchQuery: string;
   searchResults: SearchResult[];
   countriesData?: CountriesData;
+  crisisEvents?: any[];
 }

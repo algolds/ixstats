@@ -12,31 +12,26 @@ import {
   Users,
   Target,
   Activity,
-  TrendingUp,
-  TrendingDown,
-  ChevronRight,
   Plus,
-  ArrowLeft,
   Plane,
   Ship,
   Radio,
   MapPin,
   Globe2,
-  Lock,
-  Unlock,
   AlertCircle,
   CheckCircle,
-  XCircle,
-  Command,
   Sword,
   HelpCircle,
   Info,
+  Crown,
+  Brain,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
+import { ColoredProgress } from "~/components/ui/colored-progress";
 import { Separator } from "~/components/ui/separator";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import {
@@ -52,10 +47,12 @@ import { cn } from "~/lib/utils";
 import { MilitaryCustomizer } from "~/components/defense/MilitaryCustomizer";
 import { StabilityPanel } from "~/components/defense/StabilityPanel";
 import { CommandPanel } from "~/components/defense/CommandPanel";
+import { MyCountryNavCards } from "~/components/mycountry/MyCountryNavCards";
 
 export default function MyCountryDefenseDashboard() {
   const { user, userProfile, country } = useUserCountry();
   const [activeTab, setActiveTab] = useState("overview");
+  const [navCardsCollapsed, setNavCardsCollapsed] = useState(false);
 
   // Get security assessment
   const { data: securityData, isLoading: securityLoading } =
@@ -70,17 +67,32 @@ export default function MyCountryDefenseDashboard() {
     { enabled: !!userProfile?.countryId }
   );
 
-  // Get security threats
-  const { data: threats } = api.security.getSecurityThreats.useQuery(
-    { countryId: userProfile?.countryId ?? "", activeOnly: true },
-    { enabled: !!userProfile?.countryId }
-  );
+  // Auto-collapse navigation cards on scroll
+  React.useEffect(() => {
+    let lastScrollY = window.scrollY;
+    let ticking = false;
 
-  // Get border security
-  const { data: borderSecurity } = api.security.getBorderSecurity.useQuery(
-    { countryId: userProfile?.countryId ?? "" },
-    { enabled: !!userProfile?.countryId }
-  );
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+
+          if (currentScrollY > 100 && currentScrollY > lastScrollY) {
+            setNavCardsCollapsed(true);
+          } else if (currentScrollY < 80 || currentScrollY < lastScrollY) {
+            setNavCardsCollapsed(false);
+          }
+
+          lastScrollY = currentScrollY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   if (!user || !userProfile || !country) {
     return (
@@ -116,48 +128,38 @@ export default function MyCountryDefenseDashboard() {
     }
   };
 
-  const getThreatSeverityColor = (severity: string) => {
-    switch (severity) {
-      case "existential":
-        return "bg-red-600";
-      case "critical":
-        return "bg-orange-600";
-      case "high":
-        return "bg-yellow-600";
-      case "moderate":
-        return "bg-blue-600";
-      case "low":
-        return "bg-gray-600";
-      default:
-        return "bg-gray-400";
-    }
-  };
-
   return (
     <div className="container mx-auto space-y-6 px-4 py-6">
-      {/* Header */}
+      {/* Header with MyCountry Branding */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between"
       >
-        <div className="flex items-center gap-4">
-          <Link href={createUrl("/dashboard")}>
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Button>
-          </Link>
-          <Separator orientation="vertical" className="h-6" />
-          <div>
-            <h1 className="flex items-center gap-3 text-3xl font-bold">
-              <Shield className="h-8 w-8 text-red-600" />
-              MyCountry Defense
-            </h1>
-            <p className="text-muted-foreground">{country.name} • National Defense Command</p>
+        <div className="mb-2 flex items-center gap-2">
+          <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/50">
+            MyCountry®
+          </Badge>
+          <span className="text-muted-foreground text-sm">→</span>
+          <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white">
+            <Shield className="mr-1 h-3 w-3" />
+            Defense & Security
+          </Badge>
+        </div>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="rounded-full bg-gradient-to-r from-red-500 to-orange-500 p-2">
+              <Shield className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">{country.name}</h1>
+              <p className="text-muted-foreground">Defense Command & Security Operations</p>
+            </div>
           </div>
         </div>
       </motion.div>
+
+      {/* Quick Navigation Cards */}
+      <MyCountryNavCards currentPage="defense" collapsed={navCardsCollapsed} />
 
       {/* Security Status Overview */}
       <motion.div
@@ -167,7 +169,7 @@ export default function MyCountryDefenseDashboard() {
       >
         <Card
           className={cn(
-            "glass-hierarchy-parent border-2",
+            "glass-hierarchy-parent border-2 transition-all duration-500",
             securityData ? getSecurityLevelColor(securityData.securityLevel) : ""
           )}
         >
@@ -270,17 +272,27 @@ export default function MyCountryDefenseDashboard() {
                   <span className="text-muted-foreground text-sm">/100</span>
                 </span>
               </div>
-              <Progress value={securityData?.overallSecurityScore ?? 0} className="h-3" />
+              <ColoredProgress
+                theme="defense"
+                value={securityData?.overallSecurityScore ?? 0}
+                className="h-3"
+                showPulse={true}
+              />
             </div>
 
             {/* Component Scores Grid */}
             <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-              <div className="space-y-2">
+              <motion.div
+                className="space-y-2"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
                 <div className="text-muted-foreground flex items-center gap-2 text-sm">
                   <Target className="h-4 w-4" />
                   Military Strength
                 </div>
-                <Progress value={securityData?.militaryStrength ?? 0} className="h-2" />
+                <ColoredProgress theme="defense" value={securityData?.militaryStrength ?? 0} className="h-2" />
                 <div className="text-right text-xs">
                   <NumberFlowDisplay
                     value={securityData?.militaryStrength ?? 0}
@@ -288,14 +300,20 @@ export default function MyCountryDefenseDashboard() {
                   />
                   %
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="space-y-2">
+              <motion.div
+                className="space-y-2"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
                 <div className="text-muted-foreground flex items-center gap-2 text-sm">
                   <Users className="h-4 w-4" />
                   Internal Stability
                 </div>
-                <Progress
+                <ColoredProgress
+                  theme="defense"
                   value={
                     typeof securityData?.internalStability === "number"
                       ? securityData.internalStability
@@ -314,14 +332,20 @@ export default function MyCountryDefenseDashboard() {
                   />
                   %
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="space-y-2">
+              <motion.div
+                className="space-y-2"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
                 <div className="text-muted-foreground flex items-center gap-2 text-sm">
                   <MapPin className="h-4 w-4" />
                   Border Security
                 </div>
-                <Progress
+                <ColoredProgress
+                  theme="defense"
                   value={
                     typeof securityData?.borderSecurity === "number"
                       ? securityData.borderSecurity
@@ -340,25 +364,35 @@ export default function MyCountryDefenseDashboard() {
                   />
                   %
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="space-y-2">
+              <motion.div
+                className="space-y-2"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
                 <div className="text-muted-foreground flex items-center gap-2 text-sm">
                   <Radio className="h-4 w-4" />
                   Cybersecurity
                 </div>
-                <Progress value={securityData?.cybersecurity ?? 0} className="h-2" />
+                <ColoredProgress theme="defense" value={securityData?.cybersecurity ?? 0} className="h-2" />
                 <div className="text-right text-xs">
                   <NumberFlowDisplay value={securityData?.cybersecurity ?? 0} decimalPlaces={0} />%
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="space-y-2">
+              <motion.div
+                className="space-y-2"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
                 <div className="text-muted-foreground flex items-center gap-2 text-sm">
                   <AlertTriangle className="h-4 w-4" />
                   Counter-Terrorism
                 </div>
-                <Progress value={securityData?.counterTerrorism ?? 0} className="h-2" />
+                <ColoredProgress theme="defense" value={securityData?.counterTerrorism ?? 0} className="h-2" />
                 <div className="text-right text-xs">
                   <NumberFlowDisplay
                     value={securityData?.counterTerrorism ?? 0}
@@ -366,34 +400,62 @@ export default function MyCountryDefenseDashboard() {
                   />
                   %
                 </div>
-              </div>
+              </motion.div>
             </div>
 
             {/* Threat Summary */}
-            <div className="flex items-center justify-around border-t pt-4">
-              <div className="text-center">
+            <div className="grid grid-cols-2 gap-4 border-t pt-4 md:grid-cols-4">
+              <motion.div
+                className="bg-muted/30 rounded-lg p-4 text-center"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.6 }}
+              >
                 <div className="text-muted-foreground text-2xl font-bold">
                   <NumberFlowDisplay value={securityData?.activeThreatCount ?? 0} />
                 </div>
                 <div className="text-muted-foreground text-xs">Active Threats</div>
-              </div>
-              <Separator orientation="vertical" className="h-12" />
-              <div className="text-center">
-                <div className="text-2xl font-bold text-red-600">
+              </motion.div>
+
+              <motion.div
+                className={cn(
+                  "rounded-lg p-4 text-center",
+                  (securityData?.highSeverityThreats ?? 0) > 0
+                    ? "bg-red-50 dark:bg-red-950/30 animate-pulse"
+                    : "bg-muted/30"
+                )}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.7 }}
+              >
+                <div className={cn(
+                  "text-2xl font-bold",
+                  (securityData?.highSeverityThreats ?? 0) > 0 ? "text-red-600" : "text-muted-foreground"
+                )}>
                   <NumberFlowDisplay value={securityData?.highSeverityThreats ?? 0} />
                 </div>
                 <div className="text-muted-foreground text-xs">High Severity</div>
-              </div>
-              <Separator orientation="vertical" className="h-12" />
-              <div className="text-center">
+              </motion.div>
+
+              <motion.div
+                className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 text-center"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.8 }}
+              >
                 <div className="text-2xl font-bold text-blue-600">
                   <NumberFlowDisplay value={militaryBranches?.length ?? 0} />
                 </div>
                 <div className="text-muted-foreground text-xs">Military Branches</div>
-              </div>
-              <Separator orientation="vertical" className="h-12" />
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
+              </motion.div>
+
+              <motion.div
+                className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-4 text-center"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.9 }}
+              >
+                <div className="text-2xl font-bold text-emerald-600">
                   <NumberFlowDisplay
                     value={securityData?.militaryReadiness ?? 0}
                     decimalPlaces={0}
@@ -401,7 +463,7 @@ export default function MyCountryDefenseDashboard() {
                   %
                 </div>
                 <div className="text-muted-foreground text-xs">Readiness Level</div>
-              </div>
+              </motion.div>
             </div>
           </CardContent>
         </Card>
@@ -414,7 +476,7 @@ export default function MyCountryDefenseDashboard() {
         transition={{ delay: 0.2 }}
       >
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <Activity className="h-4 w-4" />
               Overview
@@ -423,28 +485,28 @@ export default function MyCountryDefenseDashboard() {
               <Sword className="h-4 w-4" />
               Forces
             </TabsTrigger>
-            <TabsTrigger value="borders" className="flex items-center gap-2">
-              <Globe2 className="h-4 w-4" />
-              Borders
-            </TabsTrigger>
             <TabsTrigger value="stability" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Stability
+            </TabsTrigger>
+            <TabsTrigger value="borders" className="flex items-center gap-2">
+              <Globe2 className="h-4 w-4" />
+              Borders
             </TabsTrigger>
             <TabsTrigger value="threats" className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4" />
               Threats
             </TabsTrigger>
-            <TabsTrigger value="command" className="flex items-center gap-2">
-              <Command className="h-4 w-4" />
-              Command
-            </TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
+          {/* Overview Tab - Merged with Command */}
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {/* Recent Security Events */}
+            {/* Security Events Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
               <Card className="glass-hierarchy-child">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -454,77 +516,19 @@ export default function MyCountryDefenseDashboard() {
                   <CardDescription>Latest incidents and developments</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {securityData?.internalStability?.stabilityScore && (
-                    <div className="space-y-3">
-                      {[...Array(3)].map((_, i) => (
-                        <div key={i} className="bg-muted/50 flex items-start gap-3 rounded-lg p-3">
-                          <AlertCircle className="mt-1 h-4 w-4 text-yellow-600" />
-                          <div className="flex-1">
-                            <div className="text-sm font-medium">Security Event #{i + 1}</div>
-                            <div className="text-muted-foreground mt-1 text-xs">
-                              Monitoring ongoing situation
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {!securityData?.internalStability && (
-                    <div className="text-muted-foreground py-8 text-center text-sm">
-                      No recent security events
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Military Readiness Summary */}
-              <Card className="glass-hierarchy-child">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="h-5 w-5 text-blue-600" />
-                    Military Readiness
-                  </CardTitle>
-                  <CardDescription>Armed forces status and capabilities</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {militaryBranches?.slice(0, 3).map((branch) => (
-                      <div key={branch.id} className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            {branch.branchType === "navy" && (
-                              <Ship className="h-4 w-4 text-blue-600" />
-                            )}
-                            {branch.branchType === "air_force" && (
-                              <Plane className="h-4 w-4 text-sky-600" />
-                            )}
-                            {branch.branchType === "army" && (
-                              <Users className="h-4 w-4 text-green-600" />
-                            )}
-                            <span className="text-sm font-medium">{branch.name}</span>
-                          </div>
-                          <span className="text-muted-foreground text-sm">
-                            <NumberFlowDisplay value={branch.readinessLevel} decimalPlaces={0} />%
-                          </span>
-                        </div>
-                        <Progress value={branch.readinessLevel} className="h-2" />
-                      </div>
-                    ))}
-                    {(!militaryBranches || militaryBranches.length === 0) && (
-                      <div className="text-muted-foreground py-8 text-center text-sm">
-                        No military branches configured
-                        <div className="mt-4">
-                          <Button size="sm" onClick={() => setActiveTab("forces")}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Military Branch
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+                  <div className="text-center py-12">
+                    <CheckCircle className="text-emerald-500 dark:text-emerald-400 mx-auto mb-4 h-12 w-12" />
+                    <h3 className="font-semibold text-lg mb-2">All Clear</h3>
+                    <p className="text-muted-foreground text-sm">
+                      No recent security events detected. Your nation is secure.
+                    </p>
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            </motion.div>
+
+            {/* Command Panel - Budget & Readiness */}
+            {userProfile?.countryId && <CommandPanel countryId={userProfile.countryId} />}
           </TabsContent>
 
           {/* Forces Tab - Military Customizer */}
@@ -619,139 +623,26 @@ export default function MyCountryDefenseDashboard() {
           <TabsContent value="threats" className="space-y-6">
             <Card className="glass-hierarchy-child">
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-red-600" />
-                    Active Security Threats
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                          <HelpCircle className="text-muted-foreground hover:text-primary h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl">
-                        <DialogHeader>
-                          <DialogTitle className="flex items-center gap-2">
-                            <Info className="h-5 w-5 text-red-600" />
-                            Security Threats Guide
-                          </DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 text-sm">
-                          <div>
-                            <h4 className="mb-2 font-semibold">Threat Management</h4>
-                            <p className="text-muted-foreground">
-                              Track and assess security threats to your nation. Threats can be
-                              external (foreign military, terrorism) or internal (insurgency,
-                              organized crime, civil unrest).
-                            </p>
-                          </div>
-                          <div>
-                            <h4 className="mb-2 font-semibold">Severity Levels</h4>
-                            <ul className="text-muted-foreground list-inside list-disc space-y-1">
-                              <li>
-                                <strong>Existential:</strong> Threatens national survival (invasion,
-                                nuclear attack)
-                              </li>
-                              <li>
-                                <strong>Critical:</strong> Major threat requiring immediate military
-                                response
-                              </li>
-                              <li>
-                                <strong>High:</strong> Significant threat that could cause major
-                                disruption
-                              </li>
-                              <li>
-                                <strong>Moderate:</strong> Manageable threat requiring monitoring
-                                and response
-                              </li>
-                              <li>
-                                <strong>Low:</strong> Minor threat with limited potential impact
-                              </li>
-                            </ul>
-                          </div>
-                          <div>
-                            <h4 className="mb-2 font-semibold">Threat Types</h4>
-                            <ul className="text-muted-foreground list-inside list-disc space-y-1">
-                              <li>
-                                <strong>Military:</strong> Foreign military forces or aggression
-                              </li>
-                              <li>
-                                <strong>Terrorism:</strong> Non-state actors using violence for
-                                political goals
-                              </li>
-                              <li>
-                                <strong>Insurgency:</strong> Armed rebellion against the government
-                              </li>
-                              <li>
-                                <strong>Cyber:</strong> Digital attacks on infrastructure and
-                                networks
-                              </li>
-                              <li>
-                                <strong>Organized Crime:</strong> Criminal networks undermining
-                                security
-                              </li>
-                            </ul>
-                          </div>
-                          <div>
-                            <h4 className="mb-2 font-semibold">Likelihood Assessment</h4>
-                            <p className="text-muted-foreground">
-                              Percentage chance the threat will materialize based on intelligence,
-                              historical patterns, and current conditions. Higher likelihood threats
-                              require more resources for prevention and response.
-                            </p>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </span>
-                  <Button size="sm">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Threat
-                  </Button>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                  Threat Management
                 </CardTitle>
-                <CardDescription>Track and manage security threats to your nation</CardDescription>
+                <CardDescription>
+                  Track and assess security threats to your nation
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                {threats && threats.length > 0 ? (
-                  <div className="space-y-3">
-                    {threats.map((threat) => (
-                      <div key={threat.id} className="bg-card rounded-lg border p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="mb-2 flex items-center gap-2">
-                              <Badge className={getThreatSeverityColor(threat.severity)}>
-                                {threat.severity.toUpperCase()}
-                              </Badge>
-                              <span className="font-medium">{threat.threatName}</span>
-                            </div>
-                            <p className="text-muted-foreground text-sm">{threat.description}</p>
-                            <div className="text-muted-foreground mt-3 flex items-center gap-4 text-xs">
-                              <span>Type: {threat.threatType.replace("_", " ")}</span>
-                              <span>•</span>
-                              <span>Likelihood: {threat.likelihood}%</span>
-                              <span>•</span>
-                              <span>Status: {threat.status}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-muted-foreground py-12 text-center">
-                    <AlertTriangle className="text-muted-foreground/50 mx-auto mb-4 h-16 w-16" />
-                    <h3 className="mb-2 text-lg font-semibold">No Active Threats</h3>
-                    <p className="mb-4 text-sm">Create and track security threats to your nation</p>
-                  </div>
-                )}
+                <div className="text-muted-foreground py-12 text-center">
+                  <AlertTriangle className="text-muted-foreground/50 mx-auto mb-4 h-16 w-16" />
+                  <h3 className="mb-2 text-lg font-semibold">Threat System Coming Soon</h3>
+                  <p className="text-sm">
+                    Track and respond to external and internal security threats
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Command Tab - Budget & Readiness Management */}
-          <TabsContent value="command" className="space-y-6">
-            {userProfile?.countryId && <CommandPanel countryId={userProfile.countryId} />}
-          </TabsContent>
         </Tabs>
       </motion.div>
     </div>

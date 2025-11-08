@@ -26,6 +26,7 @@ import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { IxTime } from "~/lib/ixtime";
 import {
   LineChart,
   Line,
@@ -368,7 +369,7 @@ export function DiplomaticIntelligenceHub({
 
   // Network power trend (mock data - would come from historical tracking)
   const networkPowerTrend = useMemo(() => {
-    const now = Date.now();
+    const now = IxTime.getCurrentIxTime();
     return Array.from({ length: 12 }, (_, i) => ({
       date: new Date(now - (11 - i) * 7 * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", {
         month: "short",
