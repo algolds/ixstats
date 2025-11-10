@@ -3,8 +3,19 @@
 
 import { db } from "~/server/db";
 import { intelligenceCache, CacheUtils, type CacheType } from "~/lib/intelligence-cache";
-import { perfMonitor } from "~/lib/performance-monitor";
 import type { Prisma } from "@prisma/client";
+
+// Performance monitoring stub - actual monitoring removed to avoid circular dependencies
+// Monitoring should be done at the API/caller level instead
+const perfMonitor = {
+  recordQuery: (metrics: any) => {
+    // No-op: Performance monitoring moved to caller level to avoid circular deps
+    // Can log in development if needed
+    if (process.env.NODE_ENV === "development" && metrics.duration > 2000) {
+      console.warn(`[Slow Query] ${metrics.queryKey}: ${metrics.duration}ms`);
+    }
+  },
+};
 
 interface QueryOptions {
   cache?: boolean;

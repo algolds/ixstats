@@ -84,108 +84,175 @@ export const activitiesRouter = createTRPCRouter({
         where.userId = input.userId;
       }
 
-      // Get activities with pagination
-      const activities = await ctx.db.activityFeed.findMany({
+      // Get ActivityFeed entries
+      const activityFeedEntries = await ctx.db.activityFeed.findMany({
         where,
         orderBy: { createdAt: "desc" },
-        take: input.limit + 1,
-        cursor: input.cursor ? { id: input.cursor } : undefined,
-        skip: input.cursor ? 1 : 0,
+        take: input.limit,
       });
 
-      let nextCursor: string | undefined = undefined;
-      if (activities.length > input.limit) {
-        const nextItem = activities.pop();
-        nextCursor = nextItem!.id;
+      // Get ThinkPages posts (only if not filtering by specific type that excludes social)
+      const includeThinkPages = input.filter === "all" || input.filter === "social";
+      const thinkpagesPosts = includeThinkPages
+        ? await ctx.db.thinkpagesPost.findMany({
+            where: {
+              visibility: "public",
+            },
+            orderBy: { createdAt: "desc" },
+            take: input.limit,
+            include: {
+              account: {
+                select: {
+                  username: true,
+                  accountType: true,
+                  verified: true,
+                  country: {
+                    select: {
+                      id: true,
+                      name: true,
+                      flag: true,
+                    },
+                  },
+                },
+              },
+            },
+          })
+        : [];
+
+      // Combine activities and ThinkPages posts
+      const combinedActivities: any[] = [];
+
+      // Transform ActivityFeed entries
+      for (const activity of activityFeedEntries) {
+        // Parse metadata if it exists
+        let metadata: any = {};
+        try {
+          if (activity.metadata) {
+            metadata = JSON.parse(activity.metadata);
+          }
+        } catch (e) {
+          console.warn("Failed to parse activity metadata:", e);
+        }
+
+        // Parse related countries if they exist
+        let relatedCountries: string[] = [];
+        try {
+          if (activity.relatedCountries) {
+            relatedCountries = JSON.parse(activity.relatedCountries);
+          }
+        } catch (e) {
+          console.warn("Failed to parse related countries:", e);
+        }
+
+        // Get user/country details if available
+        let user: any = null;
+        let country: any = null;
+
+        if (activity.userId) {
+          const dbUser = await ctx.db.user.findUnique({
+            where: { clerkUserId: activity.userId },
+            include: { country: true },
+          });
+          if (dbUser) {
+            user = {
+              id: dbUser.clerkUserId,
+              name: "User",
+              countryName: dbUser.country?.name,
+              countryId: dbUser.countryId,
+            };
+          }
+        }
+
+        if (activity.countryId) {
+          country = await ctx.db.country.findUnique({
+            where: { id: activity.countryId },
+            select: { id: true, name: true, leader: true },
+          });
+        }
+
+        combinedActivities.push({
+          id: activity.id,
+          type: activity.type,
+          category: activity.category,
+          source: "activity",
+          user:
+            user ||
+            (country
+              ? {
+                  id: `country-${country.id}`,
+                  name: country.leader || `Leader of ${country.name}`,
+                  countryName: country.name,
+                  countryId: country.id,
+                }
+              : {
+                  id: "system",
+                  name: "IxStats System",
+                }),
+          content: {
+            title: activity.title,
+            description: activity.description,
+            metadata,
+          },
+          engagement: {
+            likes: activity.likes,
+            comments: activity.comments,
+            shares: activity.shares,
+            views: activity.views,
+          },
+          timestamp: activity.createdAt,
+          priority: activity.priority.toLowerCase(),
+          visibility: activity.visibility,
+          relatedCountries,
+        });
       }
 
-      // Transform activities for frontend
-      const transformedActivities = await Promise.all(
-        activities.map(async (activity) => {
-          // Parse metadata if it exists
-          let metadata: any = {};
-          try {
-            if (activity.metadata) {
-              metadata = JSON.parse(activity.metadata);
-            }
-          } catch (e) {
-            console.warn("Failed to parse activity metadata:", e);
-          }
-
-          // Parse related countries if they exist
-          let relatedCountries: string[] = [];
-          try {
-            if (activity.relatedCountries) {
-              relatedCountries = JSON.parse(activity.relatedCountries);
-            }
-          } catch (e) {
-            console.warn("Failed to parse related countries:", e);
-          }
-
-          // Get user/country details if available
-          let user: any = null;
-          let country: any = null;
-
-          if (activity.userId) {
-            const dbUser = await ctx.db.user.findUnique({
-              where: { clerkUserId: activity.userId },
-              include: { country: true },
-            });
-            if (dbUser) {
-              user = {
-                id: dbUser.clerkUserId,
-                name: "User", // Would need to get from Clerk
-                countryName: dbUser.country?.name,
-                countryId: dbUser.countryId,
-              };
-            }
-          }
-
-          if (activity.countryId) {
-            country = await ctx.db.country.findUnique({
-              where: { id: activity.countryId },
-              select: { id: true, name: true, leader: true },
-            });
-          }
-
-          return {
-            id: activity.id,
-            type: activity.type,
-            category: activity.category,
-            user:
-              user ||
-              (country
-                ? {
-                    id: `country-${country.id}`,
-                    name: country.leader || `Leader of ${country.name}`,
-                    countryName: country.name,
-                    countryId: country.id,
-                  }
-                : {
-                    id: "system",
-                    name: "IxStats System",
-                  }),
-            content: {
-              title: activity.title,
-              description: activity.description,
-              metadata,
+      // Transform ThinkPages posts
+      for (const post of thinkpagesPosts) {
+        combinedActivities.push({
+          id: `thinkpages-${post.id}`,
+          type: "social",
+          category: "social",
+          source: "thinkpages",
+          user: {
+            id: post.accountId,
+            name: `@${post.account.username}`,
+            countryName: post.account.country?.name,
+            countryId: post.account.country?.id,
+          },
+          content: {
+            title: `@${post.account.username} posted on ThinkPages`,
+            description: post.content,
+            metadata: {
+              accountType: post.account.accountType,
+              verified: post.account.verified,
+              trending: post.trending,
+              postType: "thinkpages",
             },
-            engagement: {
-              likes: activity.likes,
-              comments: activity.comments,
-              shares: activity.shares,
-              views: activity.views,
-            },
-            timestamp: activity.createdAt,
-            priority: activity.priority.toLowerCase(),
-            visibility: activity.visibility,
-            relatedCountries,
-          };
-        })
-      );
+          },
+          engagement: {
+            likes: post.likeCount,
+            comments: post.replyCount,
+            shares: post.repostCount,
+            views: post.viewCount,
+          },
+          timestamp: post.createdAt,
+          priority: post.trending ? "high" : "medium",
+          visibility: post.visibility,
+          relatedCountries: post.account.country?.id ? [post.account.country.id] : [],
+        });
+      }
+
+      // Sort combined activities by timestamp (most recent first)
+      combinedActivities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+      // Apply pagination limit to combined results
+      const paginatedActivities = combinedActivities.slice(0, input.limit);
+      const nextCursor = combinedActivities.length > input.limit
+        ? combinedActivities[input.limit]?.id
+        : undefined;
 
       return {
-        activities: transformedActivities,
+        activities: paginatedActivities,
         nextCursor,
       };
     } catch (error) {

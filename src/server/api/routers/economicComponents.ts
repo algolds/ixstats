@@ -327,10 +327,18 @@ export const economicComponentsRouter = createTRPCRouter({
       } catch (error) {
         if (error instanceof TRPCError) throw error;
 
-        console.error("[economicComponents] Error fetching component by type:", error);
+        console.error(
+          `[economicComponents] Error fetching component by type ${input.componentType}:`,
+          {
+            error: error instanceof Error ? error.message : String(error),
+            userId: ctx.auth?.userId || "anonymous",
+            componentType: input.componentType,
+            stack: error instanceof Error ? error.stack : undefined,
+          }
+        );
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to fetch component",
+          message: `Failed to fetch component ${input.componentType}. Please try again or contact support if the issue persists.`,
         });
       }
     }),
@@ -343,7 +351,27 @@ export const economicComponentsRouter = createTRPCRouter({
     .input(incrementUsageSchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        // Try to increment in database
+        // Check if record exists first
+        const existing = await ctx.db.economicComponentData.findUnique({
+          where: { componentType: input.componentType },
+        });
+
+        if (!existing) {
+          console.warn(
+            `[economicComponents] Component ${input.componentType} not found in database for usage tracking. ` +
+            `User: ${ctx.auth?.userId || "anonymous"}, Action: incrementUsage`
+          );
+
+          // Non-critical operation - return success with fallback
+          return {
+            success: true,
+            componentType: input.componentType,
+            newUsageCount: 0,
+            message: "Component not found in database - using fallback data",
+          };
+        }
+
+        // Record exists - perform update
         const updated = await ctx.db.economicComponentData.update({
           where: { componentType: input.componentType },
           data: {
@@ -359,13 +387,22 @@ export const economicComponentsRouter = createTRPCRouter({
           newUsageCount: updated.usageCount,
         };
       } catch (error) {
-        console.error("[economicComponents] Error incrementing usage:", error);
+        console.error(
+          `[economicComponents] Error incrementing usage for ${input.componentType}:`,
+          {
+            error: error instanceof Error ? error.message : String(error),
+            userId: ctx.auth?.userId || "anonymous",
+            componentType: input.componentType,
+            stack: error instanceof Error ? error.stack : undefined,
+          }
+        );
 
         // Non-critical operation - return success even on failure
         return {
           success: true,
           componentType: input.componentType,
           newUsageCount: 0,
+          message: "Failed to track usage - non-critical error",
         };
       }
     }),
@@ -420,10 +457,15 @@ export const economicComponentsRouter = createTRPCRouter({
         isUsingFallback: false,
       };
     } catch (error) {
-      console.error("[economicComponents] Error fetching components by category:", error);
+      console.error("[economicComponents] Error fetching components by category:", {
+        error: error instanceof Error ? error.message : String(error),
+        userId: ctx.auth?.userId || "anonymous",
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to fetch components by category",
+        message:
+          "Failed to fetch components by category. Please try again or contact support if the issue persists.",
       });
     }
   }),
@@ -492,10 +534,15 @@ export const economicComponentsRouter = createTRPCRouter({
     } catch (error) {
       if (error instanceof TRPCError) throw error;
 
-      console.error("[economicComponents] Error fetching synergies:", error);
+      console.error(`[economicComponents] Error fetching synergies for ${input.componentType}:`, {
+        error: error instanceof Error ? error.message : String(error),
+        userId: ctx.auth?.userId || "anonymous",
+        componentType: input.componentType,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to fetch synergies",
+        message: `Failed to fetch synergies for ${input.componentType}. Please try again or contact support if the issue persists.`,
       });
     }
   }),
@@ -540,10 +587,15 @@ export const economicComponentsRouter = createTRPCRouter({
         isUsingFallback: false,
       };
     } catch (error) {
-      console.error("[economicComponents] Error fetching templates:", error);
+      console.error("[economicComponents] Error fetching templates:", {
+        error: error instanceof Error ? error.message : String(error),
+        userId: ctx.auth?.userId || "anonymous",
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to fetch economic templates",
+        message:
+          "Failed to fetch economic templates. Please try again or contact support if the issue persists.",
       });
     }
   }),
@@ -584,10 +636,18 @@ export const economicComponentsRouter = createTRPCRouter({
         totalTemplates: ECONOMIC_TEMPLATES.length,
       };
     } catch (error) {
-      console.error("[economicComponents] Error fetching stats:", error);
+      console.error("[economicComponents] Error fetching stats:", {
+        error: error instanceof Error ? error.message : String(error),
+        userId: ctx.auth?.userId || "anonymous",
+        adminUser: ctx.user
+          ? `${(ctx.user as any).role?.name || "NO_ROLE"} (level ${(ctx.user as any).role?.level ?? "N/A"})`
+          : "NO_USER",
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to fetch component usage statistics",
+        message:
+          "Failed to fetch component usage statistics. Please try again or contact support if the issue persists.",
       });
     }
   }),
@@ -689,10 +749,19 @@ export const economicComponentsRouter = createTRPCRouter({
           message: "Component created successfully",
         };
       } catch (error) {
-        console.error("[economicComponents] Error creating component:", error);
+        console.error(`[economicComponents] Error creating component ${input.name}:`, {
+          error: error instanceof Error ? error.message : String(error),
+          userId: ctx.auth?.userId || "anonymous",
+          adminUser: ctx.user
+            ? `${(ctx.user as any).role?.name || "NO_ROLE"} (level ${(ctx.user as any).role?.level ?? "N/A"})`
+            : "NO_USER",
+          componentType: input.type,
+          componentName: input.name,
+          stack: error instanceof Error ? error.stack : undefined,
+        });
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create component",
+          message: `Failed to create component "${input.name}". Please try again or contact support if the issue persists.`,
         });
       }
     }),
@@ -815,10 +884,19 @@ export const economicComponentsRouter = createTRPCRouter({
           message: "Component updated successfully",
         };
       } catch (error) {
-        console.error("[economicComponents] Error updating component:", error);
+        console.error(`[economicComponents] Error updating component ${input.componentType}:`, {
+          error: error instanceof Error ? error.message : String(error),
+          userId: ctx.auth?.userId || "anonymous",
+          adminUser: ctx.user
+            ? `${(ctx.user as any).role?.name || "NO_ROLE"} (level ${(ctx.user as any).role?.level ?? "N/A"})`
+            : "NO_USER",
+          componentType: input.componentType,
+          updateFields: Object.keys(input).join(", "),
+          stack: error instanceof Error ? error.stack : undefined,
+        });
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to update component",
+          message: `Failed to update component ${input.componentType}. Please try again or contact support if the issue persists.`,
         });
       }
     }),
@@ -861,10 +939,18 @@ export const economicComponentsRouter = createTRPCRouter({
           message: "Component deactivated successfully",
         };
       } catch (error) {
-        console.error("[economicComponents] Error deleting component:", error);
+        console.error(`[economicComponents] Error deleting component ${input.componentType}:`, {
+          error: error instanceof Error ? error.message : String(error),
+          userId: ctx.auth?.userId || "anonymous",
+          adminUser: ctx.user
+            ? `${(ctx.user as any).role?.name || "NO_ROLE"} (level ${(ctx.user as any).role?.level ?? "N/A"})`
+            : "NO_USER",
+          componentType: input.componentType,
+          stack: error instanceof Error ? error.stack : undefined,
+        });
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to delete component",
+          message: `Failed to delete component ${input.componentType}. Please try again or contact support if the issue persists.`,
         });
       }
     }),
@@ -917,10 +1003,23 @@ export const economicComponentsRouter = createTRPCRouter({
           message: "Synergy created successfully",
         };
       } catch (error) {
-        console.error("[economicComponents] Error creating synergy:", error);
+        console.error(
+          `[economicComponents] Error creating synergy between ${input.component1} and ${input.component2}:`,
+          {
+            error: error instanceof Error ? error.message : String(error),
+            userId: ctx.auth?.userId || "anonymous",
+            adminUser: ctx.user
+              ? `${(ctx.user as any).role?.name || "NO_ROLE"} (level ${(ctx.user as any).role?.level ?? "N/A"})`
+              : "NO_USER",
+            component1: input.component1,
+            component2: input.component2,
+            synergyType: input.synergyType,
+            stack: error instanceof Error ? error.stack : undefined,
+          }
+        );
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create synergy",
+          message: `Failed to create synergy between ${input.component1} and ${input.component2}. Please try again or contact support if the issue persists.`,
         });
       }
     }),
@@ -976,10 +1075,20 @@ export const economicComponentsRouter = createTRPCRouter({
           message: "Template created successfully",
         };
       } catch (error) {
-        console.error("[economicComponents] Error creating template:", error);
+        console.error(`[economicComponents] Error creating template ${input.name}:`, {
+          error: error instanceof Error ? error.message : String(error),
+          userId: ctx.auth?.userId || "anonymous",
+          adminUser: ctx.user
+            ? `${(ctx.user as any).role?.name || "NO_ROLE"} (level ${(ctx.user as any).role?.level ?? "N/A"})`
+            : "NO_USER",
+          templateKey: input.key,
+          templateName: input.name,
+          componentCount: input.components.length,
+          stack: error instanceof Error ? error.stack : undefined,
+        });
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create template",
+          message: `Failed to create template "${input.name}". Please try again or contact support if the issue persists.`,
         });
       }
     }),

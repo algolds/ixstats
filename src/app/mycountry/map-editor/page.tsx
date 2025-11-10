@@ -668,7 +668,8 @@ export default function MapEditorPage() {
   // Main editor interface
   return (
     <div className="h-screen flex flex-col bg-slate-900">
-      {/* Page Header */}
+      {/* Page Header - Using MyCountry navigation system */}
+      {/* Note: Could integrate MyCountryCompactHeader here in future for consistent nav */}
       <div className="glass-panel border-b border-slate-700/50 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>

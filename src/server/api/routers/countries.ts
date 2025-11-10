@@ -4247,21 +4247,44 @@ const countriesRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Get user ID from context
-      const userId = ctx.user?.id;
+      // Get Clerk user ID from context
+      const userId = ctx.auth.userId;
       if (!userId) {
         throw new Error("User not authenticated");
       }
 
       // Check if user already has a country (via User.countryId relation)
       const userWithCountry = await ctx.db.user.findUnique({
-        where: { id: userId },
-        include: { country: true },
+        where: { clerkUserId: userId },
+        include: { country: true, role: true },
       });
 
       if (userWithCountry?.country) {
         // Return the existing country instead of throwing an error
+        console.log(`[createCountry] User ${userId} already has country: ${userWithCountry.country.name}`);
         return userWithCountry.country;
+      }
+
+      // Check if user has a role assigned (handle legacy users)
+      if (userWithCountry && !userWithCountry.roleId) {
+        console.warn(`[createCountry] User ${userId} has no assigned role, auto-assigning 'user' role`);
+
+        // Find default 'user' role
+        const defaultRole = await ctx.db.role.findFirst({
+          where: { name: 'user' }
+        });
+
+        if (defaultRole) {
+          // Auto-assign default role to legacy user
+          await ctx.db.user.update({
+            where: { clerkUserId: userId },
+            data: { roleId: defaultRole.id }
+          });
+
+          console.log(`[createCountry] Auto-assigned role '${defaultRole.name}' to user ${userId}`);
+        } else {
+          throw new Error("FORBIDDEN: Your account has no assigned role. This usually means your account was created before the role system was implemented. Please contact support to have your account configured.");
+        }
       }
 
       // Get foundation country data if provided
@@ -4315,7 +4338,8 @@ const countriesRouter = createTRPCRouter({
         .replace(/^-+|-+$/g, "");
 
       // Use transaction to create country and related records atomically
-      const result = await ctx.db.$transaction(async (tx) => {
+      try {
+        const result = await ctx.db.$transaction(async (tx) => {
         // Create the country with ALL fields from builder
         const country = await tx.country.create({
           data: {
@@ -5214,10 +5238,20 @@ const countriesRouter = createTRPCRouter({
         });
 
         return country;
-      });
+        });
 
-      console.log(`✅ Country created successfully: ${result.name} (ID: ${result.id})`);
-      return result;
+        console.log(`✅ Country created successfully: ${result.name} (ID: ${result.id})`);
+        return result;
+      } catch (error) {
+        if (error instanceof Error) {
+          if (error.message.includes('Unique constraint')) {
+            throw new Error(`A country with the name "${input.name}" already exists`);
+          }
+          console.error('[createCountry] Transaction failed:', error);
+          throw new Error(`Failed to create country: ${error.message}`);
+        }
+        throw error;
+      }
     }),
 
   // Get global analytics for dashboard

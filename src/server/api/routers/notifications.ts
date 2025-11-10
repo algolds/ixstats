@@ -548,8 +548,9 @@ export const notificationsRouter = createTRPCRouter({
     }),
 
   // Get unread count (for badge display)
-  // RATE LIMITED: Read-only (120 req/min) - frequently called for UI updates
-  getUnreadCount: readOnlyProcedure
+  // Changed from readOnlyProcedure to publicProcedure to prevent auth errors
+  // This endpoint is called before auth completes and should gracefully handle unauthenticated users
+  getUnreadCount: publicProcedure
     .input(
       z
         .object({
@@ -561,6 +562,7 @@ export const notificationsRouter = createTRPCRouter({
       const { db } = ctx;
       const userId = input?.userId || ctx.auth?.userId;
 
+      // Gracefully return 0 for unauthenticated users
       if (!userId) {
         return { count: 0 };
       }

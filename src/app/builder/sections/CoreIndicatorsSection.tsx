@@ -4,10 +4,10 @@ import React, { useMemo } from "react";
 import { BarChart3, TrendingUp, Users, DollarSign, Activity, Zap } from "lucide-react";
 import {
   EnhancedNumberInput,
-  EnhancedSlider,
   EnhancedDial,
   EnhancedBarChart,
   MetricCard,
+  SliderWithDirectInput,
 } from "../primitives/enhanced";
 import { GlassBarChart } from "~/components/charts/RechartsIntegration";
 import { Badge } from "~/components/ui/badge";
@@ -406,7 +406,7 @@ export function CoreIndicatorsSection({
             </div>
           </div>
 
-          <EnhancedSlider
+          <SliderWithDirectInput
             label="Inflation Rate"
             description="Annual percentage increase in general price levels"
             value={sanitizedCoreIndicators.inflationRate}
@@ -436,6 +436,8 @@ export function CoreIndicatorsSection({
             referenceValue={referenceCountry?.inflationRate}
             referenceLabel={referenceCountry?.name}
             showComparison={!!referenceCountry}
+            defaultMode="input"
+            allowModeToggle={true}
           />
         </div>
       </div>

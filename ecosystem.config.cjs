@@ -2,8 +2,8 @@ module.exports = {
   apps: [
     {
       name: 'ixstats',
-      script: 'node_modules/next/dist/bin/next',
-      args: 'start -p 3550',
+      script: '.next/standalone/server.js',
+      args: '',
       cwd: '/ixwiki/public/projects/ixstats',
       instances: 1,
       exec_mode: 'fork',

@@ -70,6 +70,8 @@ export interface UseBuilderStateReturn {
   isLoadingCountry: boolean;
   /** Country ID for edit mode */
   countryId?: string;
+  /** Builder mode: 'create' for new countries, 'edit' for existing */
+  mode: "create" | "edit";
   /** Update economic inputs with type safety */
   updateEconomicInputs: (inputs: EconomicInputs) => void;
   /** Update selected government components */
@@ -768,6 +770,7 @@ export function useBuilderState(
     isAutoSaving,
     isLoadingCountry,
     countryId,
+    mode,
     updateEconomicInputs,
     updateGovernmentComponents,
     updateGovernmentStructure,

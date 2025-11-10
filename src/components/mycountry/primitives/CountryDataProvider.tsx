@@ -118,8 +118,9 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
     { enabled: !!userProfile?.countryId }
   );
 
-  const { data: systemStatus, isLoading: systemStatusLoading } =
-    api.admin.getSystemStatus.useQuery();
+  // Get public system information (IxTime)
+  const { data: ixTimeData, isLoading: ixTimeLoading } =
+    api.system.getCurrentIxTime.useQuery();
 
   const { data: activityRingsData } = api.countries.getActivityRingsData.useQuery(
     { countryId: country?.id || "" },
@@ -127,11 +128,18 @@ export function CountryDataProvider({ children, userId }: CountryDataProviderPro
   );
 
   const currentIxTime =
-    typeof systemStatus?.ixTime?.currentIxTime === "number" ? systemStatus.ixTime.currentIxTime : 0;
+    typeof ixTimeData?.currentIxTimeNumber === "number" ? ixTimeData.currentIxTimeNumber : 0;
 
   const economyData = generateEconomicDataForCountry(country);
 
-  const isLoading = profileLoading || countryLoading || systemStatusLoading;
+  // Construct system status from available data
+  const systemStatus = {
+    ixTime: currentIxTime,
+    serverStatus: "operational",
+    lastUpdate: new Date().toISOString(),
+  };
+
+  const isLoading = profileLoading || countryLoading || ixTimeLoading;
 
   // Show loading state while data is being fetched
   if (isLoading) {

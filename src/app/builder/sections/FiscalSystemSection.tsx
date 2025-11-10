@@ -18,13 +18,13 @@ import { AtomicEconomicEffectivenessPanel } from "~/components/economics/AtomicE
 import { api } from "~/trpc/react";
 import type { ComponentType } from "~/types/government";
 import {
-  EnhancedSlider,
   EnhancedDial,
   EnhancedNumberInput,
   EnhancedToggle,
   EnhancedBarChart,
   EnhancedPieChart,
   MetricCard,
+  SliderWithDirectInput,
 } from "../primitives/enhanced";
 import type { EconomicInputs, FiscalSystemData } from "../lib/economy-data-service";
 import type { SectionContentProps } from "../types/builder";
@@ -395,7 +395,7 @@ export function FiscalSystemSection({
           </div>
 
           {/* Fiscal Overview Controls */}
-          <EnhancedSlider
+          <SliderWithDirectInput
             label="Tax Revenue (% of GDP)"
             description="Government revenue from all taxes as percentage of GDP"
             value={
@@ -418,9 +418,11 @@ export function FiscalSystemSection({
             referenceValue={referenceCountry?.taxRevenuePercent}
             referenceLabel={referenceCountry?.name}
             showComparison={!!referenceCountry}
+            defaultMode="input"
+            allowModeToggle={true}
           />
 
-          <EnhancedSlider
+          <SliderWithDirectInput
             label="Government Spending (% of GDP)"
             description="Total government expenditure as percentage of GDP"
             value={
@@ -443,9 +445,11 @@ export function FiscalSystemSection({
             referenceValue={referenceCountry?.governmentSpending}
             referenceLabel={referenceCountry?.name}
             showComparison={!!referenceCountry}
+            defaultMode="input"
+            allowModeToggle={true}
           />
 
-          <EnhancedSlider
+          <SliderWithDirectInput
             label="Public Debt (% of GDP)"
             description="Total government debt as percentage of GDP"
             value={
@@ -465,6 +469,8 @@ export function FiscalSystemSection({
             tickCount={5}
             showValue={true}
             showRange={true}
+            defaultMode="input"
+            allowModeToggle={true}
           />
 
           {/* Live Revenue Breakdown */}
@@ -520,7 +526,7 @@ export function FiscalSystemSection({
 
           {/* Tax Rate Controls */}
           {Object.entries(fiscalSystem.taxRates || {}).map(([key, value]) => (
-            <EnhancedSlider
+            <SliderWithDirectInput
               key={key}
               label={key
                 .replace(/([A-Z])/g, " $1")
@@ -537,6 +543,8 @@ export function FiscalSystemSection({
               icon={Building}
               showTicks={true}
               tickCount={5}
+              defaultMode="input"
+              allowModeToggle={true}
             />
           ))}
         </>
@@ -546,7 +554,7 @@ export function FiscalSystemSection({
       {selectedView === "spending" && (
         <>
           {spendingCategories.map((category, index) => (
-            <EnhancedSlider
+            <SliderWithDirectInput
               key={category.name}
               label={category.name}
               value={category.value}
@@ -581,6 +589,8 @@ export function FiscalSystemSection({
               icon={category.icon}
               showTicks={true}
               tickCount={5}
+              defaultMode="input"
+              allowModeToggle={true}
             />
           ))}
         </>
@@ -609,7 +619,7 @@ export function FiscalSystemSection({
             />
           </div>
 
-          <EnhancedSlider
+          <SliderWithDirectInput
             label="Internal Debt (% of GDP)"
             value={Number(fiscalSystem.internalDebtGDPPercent) || 0}
             onChange={(value) => handleFiscalChange("internalDebtGDPPercent", Number(value))}
@@ -621,9 +631,11 @@ export function FiscalSystemSection({
             icon={CreditCard}
             showTicks={true}
             tickCount={6}
+            defaultMode="input"
+            allowModeToggle={true}
           />
 
-          <EnhancedSlider
+          <SliderWithDirectInput
             label="External Debt (% of GDP)"
             value={Number(fiscalSystem.externalDebtGDPPercent) || 0}
             onChange={(value) => handleFiscalChange("externalDebtGDPPercent", Number(value))}
@@ -635,6 +647,8 @@ export function FiscalSystemSection({
             icon={TrendingDown}
             showTicks={true}
             tickCount={6}
+            defaultMode="input"
+            allowModeToggle={true}
           />
 
           <EnhancedNumberInput

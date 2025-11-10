@@ -31,12 +31,12 @@ import { useBuilderContext } from "../components/enhanced/context/BuilderStateCo
 
 // Enhanced Components
 import {
-  EnhancedSlider,
   EnhancedNumberInput,
   EnhancedToggle,
   EnhancedBarChart,
   EnhancedPieChart,
   MetricCard,
+  SliderWithDirectInput,
 } from "../primitives/enhanced";
 
 // Help System
@@ -369,7 +369,7 @@ export function EconomySection({
       </div>
 
       {/* Essential Economic Controls */}
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="GDP Growth Rate"
         description="Annual real GDP growth percentage"
         value={Number(gdpGrowthRate) || 0}
@@ -387,9 +387,11 @@ export function EconomySection({
         referenceValue={referenceCountry?.growthRate}
         referenceLabel={referenceCountry?.name}
         showComparison={true}
+        defaultMode="input"
+        allowModeToggle={true}
       />
 
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Inflation Rate"
         description="Annual consumer price inflation"
         value={Number(inflationRate) || 0}
@@ -407,6 +409,8 @@ export function EconomySection({
         referenceValue={referenceCountry?.inflationRate}
         referenceLabel={referenceCountry?.name}
         showComparison={true}
+        defaultMode="input"
+        allowModeToggle={true}
       />
 
       {/* Economic Health Visualization */}
@@ -453,7 +457,7 @@ export function EconomySection({
         helpTitle="Gini Coefficient"
       />
 
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Public Debt Ratio"
         description="Government debt as percentage of GDP"
         value={Number(publicDebtGDP) || 60}
@@ -470,6 +474,8 @@ export function EconomySection({
         showRange={true}
         helpContent={EconomicsHelpContent.fiscalSystem.content}
         helpTitle="Public Debt Ratio"
+        defaultMode="input"
+        allowModeToggle={true}
       />
 
       {/* Economic Structure Visualization */}

@@ -14,12 +14,14 @@ interface StepIndicatorProps {
   currentStep: BuilderStep;
   completedSteps: BuilderStep[];
   onStepClick: (step: BuilderStep) => void;
+  mode?: "create" | "edit";
 }
 
 export const StepIndicator = React.memo(function StepIndicator({
   currentStep,
   completedSteps,
   onStepClick,
+  mode = "create",
 }: StepIndicatorProps) {
   const [isMinimized, setIsMinimized] = useState(false);
 
@@ -96,7 +98,11 @@ export const StepIndicator = React.memo(function StepIndicator({
           {steps.map(([step, config], index) => {
             const isCompleted = completedSteps.includes(step);
             const isCurrent = currentStep === step;
-            const isAccessible = index <= currentIndex || completedSteps.includes(step);
+            // In edit mode, can navigate to any step except foundation
+            const isAccessible =
+              mode === "edit"
+                ? step !== "foundation"
+                : index <= currentIndex || completedSteps.includes(step);
             const Icon = config.icon;
 
             return (

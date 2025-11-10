@@ -24,15 +24,21 @@ interface BuilderFooterProps {
  * - Step counter
  */
 export function BuilderFooter({ onCreateCountry, isCreating = false }: BuilderFooterProps) {
-  const { builderState, setBuilderState } = useBuilderContext();
+  const { builderState, setBuilderState, mode } = useBuilderContext();
   const { handleContinue, handlePreviousStep, progressPercentage } = useBuilderActions({
     builderState,
     setBuilderState,
+    mode,
   });
 
   const currentStepIndex = stepOrder.indexOf(builderState.step);
   const isPreviewStep = builderState.step === "preview";
   const isFoundationStep = builderState.step === "foundation";
+  const isCoreStep = builderState.step === "core";
+  const isEditMode = mode === "edit";
+
+  // In edit mode, disable back button on core step (can't go to foundation)
+  const isBackDisabled = isFoundationStep || (isEditMode && isCoreStep);
 
   return (
     <div className="flex items-center justify-between pt-6">
@@ -40,7 +46,7 @@ export function BuilderFooter({ onCreateCountry, isCreating = false }: BuilderFo
         variant="outline"
         onClick={handlePreviousStep}
         className="min-w-[120px]"
-        disabled={isFoundationStep}
+        disabled={isBackDisabled}
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back
@@ -58,7 +64,14 @@ export function BuilderFooter({ onCreateCountry, isCreating = false }: BuilderFo
           onClick={onCreateCountry}
           disabled={isCreating}
           size="lg"
-          className="min-w-[200px] bg-gradient-to-r from-green-600 to-green-700 shadow-lg hover:from-green-700 hover:to-green-800"
+          className={cn(
+            "min-w-[200px] bg-gradient-to-r shadow-lg transition-all",
+            isCreating
+              ? "from-gray-400 to-gray-500 cursor-not-allowed opacity-90"
+              : "from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 hover:shadow-xl"
+          )}
+          aria-busy={isCreating}
+          aria-label={isCreating ? "Creating your nation, please wait" : "Create your nation"}
         >
           {isCreating ? (
             <>

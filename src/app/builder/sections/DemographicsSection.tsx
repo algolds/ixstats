@@ -13,10 +13,10 @@ import {
   MapPin,
 } from "lucide-react";
 import {
-  EnhancedSlider,
   EnhancedNumberInput,
   EnhancedToggle,
   MetricCard,
+  SliderWithDirectInput,
 } from "../primitives/enhanced";
 import type { EconomicInputs, DemographicData } from "../lib/economy-data-service";
 import type { SectionContentProps } from "../types/builder";
@@ -197,7 +197,7 @@ export function DemographicsSection({
         icon={Heart}
       />
 
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Literacy Rate"
         value={Number(demographics.literacyRate) || 0}
         onChange={(value) => handleDemographicChange("literacyRate", Number(value))}
@@ -209,9 +209,11 @@ export function DemographicsSection({
         icon={GraduationCap}
         showTicks={true}
         tickCount={7}
+        defaultMode="input"
+        allowModeToggle={true}
       />
 
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Urbanization Rate"
         value={Number(demographics.urbanRuralSplit.urban) || 0}
         onChange={(value) => {
@@ -228,6 +230,8 @@ export function DemographicsSection({
         icon={Building2}
         showTicks={true}
         tickCount={6}
+        defaultMode="input"
+        allowModeToggle={true}
       />
 
       {/* Basic visualization */}
@@ -302,7 +306,7 @@ export function DemographicsSection({
 
           {/* Age Group Controls - Use intuitive sliders instead of confusing dials */}
           {demographics.ageDistribution.map((group, index) => (
-            <EnhancedSlider
+            <SliderWithDirectInput
               key={group.group}
               label={`${group.group} Population`}
               value={Number(group.percent) || 0}
@@ -315,6 +319,8 @@ export function DemographicsSection({
               icon={Users}
               showTicks={true}
               tickCount={5}
+              defaultMode="input"
+              allowModeToggle={true}
             />
           ))}
         </>
@@ -330,7 +336,7 @@ export function DemographicsSection({
                 {region.name}
               </h5>
               <FormGrid columns={2}>
-                <EnhancedSlider
+                <SliderWithDirectInput
                   label="Population"
                   value={Number(region.population) || 0}
                   onChange={(value) => handleRegionChange(index, "population", Number(value))}
@@ -340,8 +346,10 @@ export function DemographicsSection({
                   unit=" people"
                   sectionId="demographics"
                   icon={MapPin}
+                  defaultMode="input"
+                  allowModeToggle={true}
                 />
-                <EnhancedSlider
+                <SliderWithDirectInput
                   label="Urban %"
                   value={Number(region.urbanPercent) || 0}
                   onChange={(value) => handleRegionChange(index, "urbanPercent", Number(value))}
@@ -351,6 +359,8 @@ export function DemographicsSection({
                   unit="%"
                   sectionId="demographics"
                   icon={Building2}
+                  defaultMode="input"
+                  allowModeToggle={true}
                 />
               </FormGrid>
             </div>
@@ -382,7 +392,7 @@ export function DemographicsSection({
 
           {/* Education Level Controls */}
           {demographics.educationLevels.map((level, index) => (
-            <EnhancedSlider
+            <SliderWithDirectInput
               key={level.level}
               label={level.level}
               value={Number(level.percent) || 0}
@@ -395,6 +405,8 @@ export function DemographicsSection({
               icon={GraduationCap}
               showTicks={true}
               tickCount={5}
+              defaultMode="input"
+              allowModeToggle={true}
             />
           ))}
 

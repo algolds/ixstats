@@ -19,6 +19,7 @@ import { safeGetItemSync, safeRemoveItemSync } from "~/lib/localStorageMutex";
 import { unifiedBuilderService } from "../../services/UnifiedBuilderIntegrationService";
 import type { ComponentType as GovComponentType } from "~/components/government/atoms/AtomicGovernmentComponents";
 import { ComponentType as PrismaComponentType } from "@prisma/client";
+import { toast } from "sonner";
 
 // Import modular architecture
 import { BuilderStateProvider, useBuilderContext } from "./context/BuilderStateContext";
@@ -29,6 +30,7 @@ import { SectionLoadingFallback } from "../LoadingFallback";
 import { GlobalBuilderLoading, BuilderStepLoading } from "../GlobalBuilderLoading";
 import { BUILDER_GOLD, BUILDER_GOLD_HOVER } from "./builderConfig";
 import type { BuilderStep } from "./builderConfig";
+import { useBuilderActions } from "../../hooks/useBuilderActions";
 
 /**
  * Props for the AtomicBuilderPage component
@@ -82,8 +84,15 @@ function AtomicBuilderPageInner({
 }: AtomicBuilderPageProps) {
   const { user } = useUser();
   const router = useRouter();
-  const { builderState, setBuilderState, clearDraft } = useBuilderContext();
+  const { builderState, setBuilderState, clearDraft, mode: contextMode } = useBuilderContext();
   const isEditMode = mode === "edit";
+
+  // Get navigation handlers from useBuilderActions
+  const { handleStepClick } = useBuilderActions({
+    builderState,
+    setBuilderState,
+    mode: contextMode,
+  });
 
   // Country data state
   const [countries, setCountries] = useState<RealCountryData[]>([]);
@@ -98,6 +107,10 @@ function AtomicBuilderPageInner({
 
   // Error state
   const [error, setError] = useState<string | null>(null);
+
+  // Submission lock to prevent double-submits
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submissionLockRef = useRef(false);
 
   // Government structure handlers
   const handleGovernmentStructureChange = useCallback(
@@ -253,10 +266,46 @@ function AtomicBuilderPageInner({
       } catch (error) {
         // Failed to clear saved state
       }
-      router.push(createUrl(`/mycountry`));
+
+      console.log("[Builder] Country created successfully:", country.name);
+
+      // Show success toast
+      toast.success("Nation Created Successfully!", {
+        description: `Welcome to ${country.name}! Redirecting to your country dashboard...`,
+        duration: 3000,
+      });
+
+      // Keep submission lock active during navigation to prevent double-clicks
+      setTimeout(() => {
+        router.push(createUrl(`/mycountry`));
+      }, 1000);
     },
     onError: (error: any) => {
-      setError(error instanceof Error ? error.message : "Failed to create country");
+      const errorMessage = error instanceof Error ? error.message : "Failed to create country";
+      setError(errorMessage);
+      console.error("[Builder] Country creation failed:", errorMessage);
+
+      // Show error toast with helpful guidance
+      if (errorMessage.includes("already exists")) {
+        toast.error("Country Already Exists", {
+          description: "A country with this name already exists. Please choose a different name.",
+          duration: 5000,
+        });
+      } else if (errorMessage.includes("no assigned role")) {
+        toast.error("Account Setup Required", {
+          description: "Your account needs to be configured. Please sign out and sign in again, or contact support.",
+          duration: 6000,
+        });
+      } else {
+        toast.error("Failed to Create Nation", {
+          description: errorMessage,
+          duration: 5000,
+        });
+      }
+
+      // Release submission lock on error
+      submissionLockRef.current = false;
+      setIsSubmitting(false);
     },
   }) || {
     mutateAsync: async () => {
@@ -266,12 +315,39 @@ function AtomicBuilderPageInner({
   };
 
   const handleCreateCountry = useCallback(async () => {
+    // Prevent double-submit with ref-based lock
+    if (submissionLockRef.current || isSubmitting) {
+      console.warn("[Builder] Country creation already in progress, ignoring duplicate request");
+      toast.warning("Creation In Progress", {
+        description: "Please wait while your nation is being created...",
+        duration: 2000,
+      });
+      return;
+    }
+
     if (!builderState.economicInputs || !user) {
-      setError("Missing required data for country creation");
+      const errorMsg = "Missing required data for country creation";
+      setError(errorMsg);
+      toast.error("Incomplete Data", {
+        description: "Please complete all required fields before creating your nation.",
+        duration: 4000,
+      });
       return;
     }
 
     try {
+      // Set submission lock BEFORE any async operations
+      submissionLockRef.current = true;
+      setIsSubmitting(true);
+
+      console.log("[Builder] Creating country:", builderState.economicInputs.countryName);
+
+      // Show initial progress toast
+      toast.info("Creating Your Nation", {
+        description: "Setting up your country, government, and economic systems...",
+        duration: 2000,
+      });
+
       await createCountryMutation.mutateAsync({
         name: builderState.economicInputs.countryName || "New Nation",
         foundationCountry:
@@ -284,8 +360,11 @@ function AtomicBuilderPageInner({
       });
     } catch (error) {
       // Error handled by mutation's onError callback
+      // Release lock on error
+      submissionLockRef.current = false;
+      setIsSubmitting(false);
     }
-  }, [builderState, user, createCountryMutation]);
+  }, [builderState, user, createCountryMutation, isSubmitting]);
 
   // Tutorial handlers
   const handleCompleteTutorial = useCallback(() => {
@@ -400,7 +479,8 @@ function AtomicBuilderPageInner({
         <StepIndicator
           currentStep={builderState.step}
           completedSteps={builderState.completedSteps}
-          onStepClick={(step) => setBuilderState((prev) => ({ ...prev, step }))}
+          onStepClick={handleStepClick}
+          mode={contextMode}
         />
 
         {/* Main Content Area with Animations */}
@@ -442,7 +522,7 @@ function AtomicBuilderPageInner({
             {/* Footer with navigation */}
             <BuilderFooter
               onCreateCountry={handleCreateCountry}
-              isCreating={createCountryMutation?.isLoading}
+              isCreating={createCountryMutation?.isLoading || isSubmitting}
             />
           </StepContent>
         )}

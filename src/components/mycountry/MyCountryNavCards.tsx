@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Command, Brain, Shield, Crown, Users } from "lucide-react";
+import { Command, Brain, Shield, Crown, Users, Map } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 
 interface MyCountryNavCardsProps {
-  currentPage?: "overview" | "executive" | "intelligence" | "defense" | "diplomacy";
+  currentPage?: "overview" | "executive" | "intelligence" | "defense" | "diplomacy" | "map-editor";
   collapsed?: boolean;
 }
 
@@ -51,6 +51,14 @@ export function MyCountryNavCards({ currentPage, collapsed = false }: MyCountryN
       title: "Defense",
       description: "Security",
       gradient: "from-red-500 to-orange-500",
+    },
+    {
+      id: "map-editor" as const,
+      href: "/mycountry/map-editor",
+      icon: Map,
+      title: "Map Editor",
+      description: "Territory",
+      gradient: "from-emerald-500 to-teal-500",
     },
   ];
 

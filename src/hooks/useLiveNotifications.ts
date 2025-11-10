@@ -85,9 +85,10 @@ export function useLiveNotifications(
   );
 
   // Query for unread count
+  // Only enable when user is fully loaded to prevent auth errors
   const { data: unreadData, refetch: refetchUnreadCount } =
     api.notifications.getUnreadCount.useQuery(undefined, {
-      enabled: !!userId,
+      enabled: !!userId && !!user,
       refetchInterval: pollingInterval,
     });
 

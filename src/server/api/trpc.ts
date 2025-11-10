@@ -197,15 +197,28 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 /**
  * Authentication middleware - Validates Clerk authentication
  */
-const authMiddleware = t.middleware(async ({ ctx, next }) => {
+const authMiddleware = t.middleware(async ({ ctx, next, path }) => {
   // Check if user is authenticated via Clerk
   if (!ctx.auth?.userId) {
-    throw new Error("UNAUTHORIZED: Authentication required");
+    console.warn(
+      `[AUTH_MIDDLEWARE] Unauthenticated access attempt to: ${path || "unknown"}, ` +
+      `IP: ${ctx.headers.get("x-forwarded-for") || ctx.headers.get("x-real-ip") || "unknown"}`
+    );
+    throw new Error(
+      "UNAUTHORIZED: Authentication required. Please sign in to access this resource."
+    );
   }
 
   // Ensure user exists in our database
   if (!ctx.user) {
-    throw new Error("UNAUTHORIZED: User not found in system");
+    console.error(
+      `[AUTH_MIDDLEWARE] User ${ctx.auth.userId} authenticated with Clerk but not found in database. ` +
+      `This may indicate a first-time login that failed to create a user record.`
+    );
+    throw new Error(
+      "UNAUTHORIZED: User account not found in system. Please try logging out and logging back in. " +
+      "If the issue persists, contact support."
+    );
   }
 
   return next({
@@ -220,7 +233,7 @@ const authMiddleware = t.middleware(async ({ ctx, next }) => {
 /**
  * Country ownership middleware - Validates user owns a country
  */
-const countryOwnerMiddleware = t.middleware(async ({ ctx, next }) => {
+const countryOwnerMiddleware = t.middleware(async ({ ctx, next, path }) => {
   // First ensure user is authenticated
   if (!ctx.auth?.userId || !ctx.user) {
     throw new Error("UNAUTHORIZED: Authentication required");
@@ -240,13 +253,29 @@ const countryOwnerMiddleware = t.middleware(async ({ ctx, next }) => {
 
   // Check if user has a linked country
   if (!ctx.user.countryId) {
-    throw new Error("FORBIDDEN: Country ownership required");
+    console.warn(
+      `[COUNTRY_OWNERSHIP] User ${ctx.auth.userId} attempted to access country-specific endpoint without a linked country: ${path || "unknown"}`
+    );
+    throw new Error(
+      "FORBIDDEN: Country ownership required. You must create or claim a country before accessing this feature. " +
+      "Visit the Country Builder to get started."
+    );
   }
 
   // Fetch country data since it's not included in UserWithRole type
   const country = await ctx.db.country.findUnique({
     where: { id: ctx.user.countryId },
   });
+
+  if (!country) {
+    console.error(
+      `[COUNTRY_OWNERSHIP] User ${ctx.auth.userId} has countryId ${ctx.user.countryId} but country record not found in database`
+    );
+    throw new Error(
+      "INTERNAL_ERROR: Your linked country could not be found in the database. " +
+      "This may indicate a data integrity issue. Please contact support."
+    );
+  }
 
   return next({
     ctx: {
@@ -492,23 +521,30 @@ const adminMiddleware = t.middleware(async ({ ctx, next }) => {
   // Role assignment must ONLY happen through UserManagementService to prevent privilege escalation
   if (!(user as any).role) {
     console.error(
-      `[ADMIN_MIDDLEWARE] User ${ctx.auth.userId} has no role assigned (roleId: ${(user as any).roleId})`
+      `[ADMIN_MIDDLEWARE] User ${ctx.auth.userId} has no role assigned (roleId: ${(user as any).roleId}). ` +
+      `User record exists but roleId may be NULL or role record may be missing.`
     );
     throw new Error(
-      "FORBIDDEN: User has no assigned role. Contact system administrator for role assignment."
+      "FORBIDDEN: Your account has no assigned role. This usually means your account was created before the role system was implemented. " +
+      "Please try logging out and logging back in, or contact support if the issue persists. " +
+      `(User ID: ${ctx.auth.userId.substring(0, 8)}...)`
     );
   }
 
   // Check for admin roles (level 0-20 are considered admin levels)
   const adminRoles = ["owner", "admin", "staff"];
   const roleLevel = (user as any).role?.level ?? 999;
-  const isAdmin = adminRoles.includes((user as any).role?.name) || roleLevel <= 20;
+  const roleName = (user as any).role?.name || "NO_ROLE";
+  const isAdmin = adminRoles.includes(roleName) || roleLevel <= 20;
 
   if (!isAdmin) {
     console.warn(
-      `[ADMIN_ACCESS_DENIED] User ${ctx.auth.userId} (role: ${(user as any).role?.name || "NO_ROLE"}, level: ${roleLevel}) attempted admin access`
+      `[ADMIN_ACCESS_DENIED] User ${ctx.auth.userId} (role: ${roleName}, level: ${roleLevel}) attempted admin access to: ${ctx.headers.get("x-trpc-path") || "unknown"}`
     );
-    throw new Error("FORBIDDEN: Admin privileges required");
+    throw new Error(
+      `FORBIDDEN: Admin privileges required. Your current role is "${roleName}" (level ${roleLevel}), which does not have admin access. ` +
+      "Contact a system administrator if you believe this is an error."
+    );
   }
 
   if (isSystemOwnerUser) {

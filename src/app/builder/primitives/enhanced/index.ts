@@ -4,6 +4,7 @@
 // Core Input Primitives
 export { EnhancedNumberInput } from "./EnhancedNumberInput";
 export { EnhancedSlider } from "./EnhancedSlider";
+export { SliderWithDirectInput } from "./SliderWithDirectInput";
 export { EnhancedDial } from "./EnhancedDial";
 export { EnhancedToggle } from "./EnhancedToggle";
 export { CurrencySymbolPicker } from "./CurrencySymbolPicker";

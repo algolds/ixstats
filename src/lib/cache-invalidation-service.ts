@@ -2,8 +2,13 @@
 // Intelligent cache invalidation integrated with WebSocket real-time updates
 
 import { intelligenceCache } from "~/lib/intelligence-cache";
-import { optimizedQueryService } from "~/server/services/optimized-query-service";
 import type { IntelligenceUpdate } from "~/lib/websocket/types";
+
+// Lazy load to avoid circular dependencies
+const getOptimizedQueryService = async () => {
+  const { optimizedQueryService } = await import("~/server/services/optimized-query-service");
+  return optimizedQueryService;
+};
 
 // Use any type to avoid importing socket.io during build
 type IntelligenceWebSocketServer = any;
@@ -188,8 +193,13 @@ export class CacheInvalidationService {
     // Invalidate in intelligence cache
     const deletedCount = intelligenceCache.invalidateCountryIntelligence(countryId);
 
-    // Invalidate in optimized query service
-    optimizedQueryService.invalidateCountryCache(countryId);
+    // Invalidate in optimized query service (lazy loaded to avoid circular deps)
+    try {
+      const queryService = await getOptimizedQueryService();
+      queryService.invalidateCountryCache(countryId);
+    } catch (error) {
+      console.warn("Could not invalidate optimized query service cache:", error);
+    }
 
     this.recordInvalidation("country", performance.now() - startTime);
 

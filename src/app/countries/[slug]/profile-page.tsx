@@ -49,17 +49,17 @@ export default function CountryProfilePage({ params }: CountryProfilePageProps) 
     { id: resolvedParams.id },
     { enabled: !!resolvedParams.id }
   );
-  const { data: systemStatus, isLoading: systemStatusLoading } =
-    api.admin.getSystemStatus.useQuery();
+  const { data: ixTimeData, isLoading: ixTimeLoading } =
+    api.system.getCurrentIxTime.useQuery();
   const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
 
   const currentIxTime =
-    typeof systemStatus?.ixTime?.currentIxTime === "number" ? systemStatus.ixTime.currentIxTime : 0;
+    typeof ixTimeData?.currentIxTimeNumber === "number" ? ixTimeData.currentIxTimeNumber : 0;
   const isOwnCountry = Boolean(
     userProfile?.countryId && country?.id && userProfile.countryId === country.id
   );
 
-  if (isLoading || systemStatusLoading) {
+  if (isLoading || ixTimeLoading) {
     return (
       <div className="min-h-screen">
         {/* Header Skeleton */}

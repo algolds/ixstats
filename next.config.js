@@ -173,7 +173,6 @@ const config = {
       config.optimization = {
         ...config.optimization,
         usedExports: true,
-        sideEffects: false,
       };
     }
 

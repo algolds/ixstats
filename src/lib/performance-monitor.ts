@@ -258,10 +258,14 @@ class PerformanceMonitor {
 }
 
 // Singleton instance
-export const perfMonitor = new PerformanceMonitor();
+const perfMonitorInstance = new PerformanceMonitor();
 
-// Export alias for compatibility
-export { perfMonitor as performanceMonitor };
+// Export both names for compatibility
+export const perfMonitor = perfMonitorInstance;
+export const performanceMonitor = perfMonitorInstance;
+
+// Default export for convenience
+export default perfMonitorInstance;
 
 /**
  * Helper: Monitor a tile request

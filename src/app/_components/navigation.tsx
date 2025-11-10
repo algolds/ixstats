@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Activity,
   BarChart3,
+  BookOpen,
   Brain,
   ChevronDown,
   Command,
@@ -133,6 +134,46 @@ const contextualMenus: Record<string, ContextualMenuDefinition> = {
             href: "/countries",
             icon: Globe,
             description: "Research nations and benchmark progress.",
+          },
+        ],
+      },
+    ],
+  },
+  feed: {
+    title: "Activity Feed",
+    description: "Stay connected with real-time platform activity and updates.",
+    groups: [
+      {
+        title: "Feed Views",
+        items: [
+          {
+            name: "Global Activity",
+            href: "/feed",
+            icon: Activity,
+            description: "All platform activity in real-time.",
+          },
+          {
+            name: "ThinkPages Social",
+            href: "/thinkpages",
+            icon: Rss,
+            description: "Social feed and diplomatic communications.",
+          },
+        ],
+      },
+      {
+        title: "Discovery",
+        items: [
+          {
+            name: "Trending Topics",
+            href: "/feed?filter=trending",
+            icon: Zap,
+            description: "See what's trending across the platform.",
+          },
+          {
+            name: "Explore Countries",
+            href: "/countries",
+            icon: Globe,
+            description: "Discover nations and their activity.",
           },
         ],
       },
@@ -389,6 +430,7 @@ function getContextKey(path: string): keyof typeof contextualMenus {
   if (path.startsWith("/builder")) return "builder";
   if (path.startsWith("/countries")) return "explore";
   if (path.startsWith("/leaderboards")) return "leaderboards";
+  if (path.startsWith("/feed")) return "feed";
   if (path.startsWith("/dashboard")) return "dashboard";
   return "default";
 }
@@ -516,6 +558,13 @@ export function Navigation() {
       href: "/dashboard",
       icon: BarChart3,
       requiresAuth: true,
+    },
+    {
+      name: "Feed",
+      href: "/feed",
+      icon: Activity,
+      requiresAuth: false,
+      description: "Real-time platform activity and updates",
     },
     {
       name: "Explore",
@@ -656,6 +705,13 @@ export function Navigation() {
           description: "Conlang Generator",
         },
       ],
+    },
+    {
+      name: "Help",
+      href: "/help",
+      icon: BookOpen,
+      requiresAuth: false,
+      description: "Documentation and guides",
     },
   ];
 
@@ -841,15 +897,19 @@ export function Navigation() {
                                         ? "text-blue-400"
                                         : item.name === "Dashboard"
                                           ? "text-emerald-400"
-                                          : item.name === "Explore"
+                                          : item.name === "Feed"
                                             ? "text-purple-400"
-                                            : item.name === "Intelligence"
-                                              ? "text-indigo-400"
-                                              : item.name === "Admin"
-                                                ? "text-red-400"
-                                                : item.name === "Cards"
-                                                  ? "text-cyan-400"
-                                                  : "text-blue-400"
+                                            : item.name === "Explore"
+                                              ? "text-purple-400"
+                                              : item.name === "Intelligence"
+                                                ? "text-indigo-400"
+                                                : item.name === "Admin"
+                                                  ? "text-red-400"
+                                                  : item.name === "Cards"
+                                                    ? "text-cyan-400"
+                                                    : item.name === "Help"
+                                                      ? "text-orange-400"
+                                                      : "text-blue-400"
                                   }`}
                                 />
                               </div>
@@ -861,15 +921,17 @@ export function Navigation() {
                                       ? "group-hover:text-blue-400"
                                       : item.name === "Dashboard"
                                         ? "group-hover:text-emerald-400"
-                                        : item.name === "Countries"
+                                        : item.name === "Feed"
                                           ? "group-hover:text-purple-400"
-                                          : item.name === "Admin"
-                                            ? "group-hover:text-red-400"
-                                            : item.name === "Dossier"
-                                              ? "group-hover:text-orange-400"
+                                          : item.name === "Countries" || item.name === "Explore"
+                                            ? "group-hover:text-purple-400"
+                                            : item.name === "Admin"
+                                              ? "group-hover:text-red-400"
                                               : item.name === "Cards"
                                                 ? "group-hover:text-cyan-400"
-                                                : "group-hover:text-blue-400"
+                                                : item.name === "Help"
+                                                  ? "group-hover:text-orange-400"
+                                                  : "group-hover:text-blue-400"
                                 }`}
                                 aria-hidden="true"
                               />
@@ -897,15 +959,19 @@ export function Navigation() {
                                       ? ["#3b82f6", "#1d4ed8", "#60a5fa"]
                                       : item.name === "Dashboard"
                                         ? ["#10b981", "#059669", "#34d399"]
-                                        : item.name === "Explore"
+                                        : item.name === "Feed"
                                           ? ["#8b5cf6", "#7c3aed", "#a78bfa"]
-                                          : item.name === "Intelligence"
-                                            ? ["#6366f1", "#4f46e5", "#818cf8"]
-                                            : item.name === "Admin"
-                                              ? ["#ef4444", "#dc2626", "#f87171"]
-                                              : item.name === "Cards"
-                                                ? ["#06b6d4", "#0891b2", "#22d3ee"]
-                                                : ["#3b82f6", "#8b5cf6", "#06b6d4"]
+                                          : item.name === "Explore"
+                                            ? ["#8b5cf6", "#7c3aed", "#a78bfa"]
+                                            : item.name === "Intelligence"
+                                              ? ["#6366f1", "#4f46e5", "#818cf8"]
+                                              : item.name === "Admin"
+                                                ? ["#ef4444", "#dc2626", "#f87171"]
+                                                : item.name === "Cards"
+                                                  ? ["#06b6d4", "#0891b2", "#22d3ee"]
+                                                  : item.name === "Help"
+                                                    ? ["#fb923c", "#f97316", "#fdba74"]
+                                                    : ["#3b82f6", "#8b5cf6", "#06b6d4"]
                                 }
                                 duration={30}
                                 borderWidth={1}
@@ -922,15 +988,19 @@ export function Navigation() {
                                         ? "text-blue-400"
                                         : item.name === "Dashboard"
                                           ? "text-emerald-400"
-                                          : item.name === "Explore"
+                                          : item.name === "Feed"
                                             ? "text-purple-400"
-                                            : item.name === "Intelligence"
-                                              ? "text-indigo-400"
-                                              : item.name === "Admin"
-                                                ? "text-red-400"
-                                                : item.name === "Cards"
-                                                  ? "text-cyan-400"
-                                                  : "text-blue-400"
+                                            : item.name === "Explore"
+                                              ? "text-purple-400"
+                                              : item.name === "Intelligence"
+                                                ? "text-indigo-400"
+                                                : item.name === "Admin"
+                                                  ? "text-red-400"
+                                                  : item.name === "Cards"
+                                                    ? "text-cyan-400"
+                                                    : item.name === "Help"
+                                                      ? "text-orange-400"
+                                                      : "text-blue-400"
                                   }`}
                                 />
                               </div>
@@ -942,15 +1012,17 @@ export function Navigation() {
                                       ? "group-hover:text-blue-400"
                                       : item.name === "Dashboard"
                                         ? "group-hover:text-emerald-400"
-                                        : item.name === "Countries"
+                                        : item.name === "Feed"
                                           ? "group-hover:text-purple-400"
-                                          : item.name === "Admin"
-                                            ? "group-hover:text-red-400"
-                                            : item.name === "Dossier"
-                                              ? "group-hover:text-orange-400"
+                                          : item.name === "Countries" || item.name === "Explore"
+                                            ? "group-hover:text-purple-400"
+                                            : item.name === "Admin"
+                                              ? "group-hover:text-red-400"
                                               : item.name === "Cards"
                                                 ? "group-hover:text-cyan-400"
-                                                : "group-hover:text-blue-400"
+                                                : item.name === "Help"
+                                                  ? "group-hover:text-orange-400"
+                                                  : "group-hover:text-blue-400"
                                 }`}
                                 aria-hidden="true"
                               />
@@ -1071,15 +1143,19 @@ export function Navigation() {
                                         ? "text-blue-400"
                                         : item.name === "Dashboard"
                                           ? "text-emerald-400"
-                                          : item.name === "Explore"
+                                          : item.name === "Feed"
                                             ? "text-purple-400"
-                                            : item.name === "Intelligence"
-                                              ? "text-indigo-400"
-                                              : item.name === "Admin"
-                                                ? "text-red-400"
-                                                : item.name === "Cards"
-                                                  ? "text-cyan-400"
-                                                  : "text-blue-400"
+                                            : item.name === "Explore"
+                                              ? "text-purple-400"
+                                              : item.name === "Intelligence"
+                                                ? "text-indigo-400"
+                                                : item.name === "Admin"
+                                                  ? "text-red-400"
+                                                  : item.name === "Cards"
+                                                    ? "text-cyan-400"
+                                                    : item.name === "Help"
+                                                      ? "text-orange-400"
+                                                      : "text-blue-400"
                                   }`}
                                 />
                               </div>
@@ -1091,15 +1167,17 @@ export function Navigation() {
                                       ? "group-hover:text-blue-400"
                                       : item.name === "Dashboard"
                                         ? "group-hover:text-emerald-400"
-                                        : item.name === "Countries"
+                                        : item.name === "Feed"
                                           ? "group-hover:text-purple-400"
-                                          : item.name === "Admin"
-                                            ? "group-hover:text-red-400"
-                                            : item.name === "Dossier"
-                                              ? "group-hover:text-orange-400"
+                                          : item.name === "Countries" || item.name === "Explore"
+                                            ? "group-hover:text-purple-400"
+                                            : item.name === "Admin"
+                                              ? "group-hover:text-red-400"
                                               : item.name === "Cards"
                                                 ? "group-hover:text-cyan-400"
-                                                : "group-hover:text-blue-400"
+                                                : item.name === "Help"
+                                                  ? "group-hover:text-orange-400"
+                                                  : "group-hover:text-blue-400"
                                 }`}
                                 aria-hidden="true"
                               />
@@ -1127,15 +1205,19 @@ export function Navigation() {
                                       ? ["#3b82f6", "#1d4ed8", "#60a5fa"]
                                       : item.name === "Dashboard"
                                         ? ["#10b981", "#059669", "#34d399"]
-                                        : item.name === "Explore"
+                                        : item.name === "Feed"
                                           ? ["#8b5cf6", "#7c3aed", "#a78bfa"]
-                                          : item.name === "Intelligence"
-                                            ? ["#6366f1", "#4f46e5", "#818cf8"]
-                                            : item.name === "Admin"
-                                              ? ["#ef4444", "#dc2626", "#f87171"]
-                                              : item.name === "Cards"
-                                                ? ["#06b6d4", "#0891b2", "#22d3ee"]
-                                                : ["#3b82f6", "#8b5cf6", "#06b6d4"]
+                                          : item.name === "Explore"
+                                            ? ["#8b5cf6", "#7c3aed", "#a78bfa"]
+                                            : item.name === "Intelligence"
+                                              ? ["#6366f1", "#4f46e5", "#818cf8"]
+                                              : item.name === "Admin"
+                                                ? ["#ef4444", "#dc2626", "#f87171"]
+                                                : item.name === "Cards"
+                                                  ? ["#06b6d4", "#0891b2", "#22d3ee"]
+                                                  : item.name === "Help"
+                                                    ? ["#fb923c", "#f97316", "#fdba74"]
+                                                    : ["#3b82f6", "#8b5cf6", "#06b6d4"]
                                 }
                                 duration={30}
                                 borderWidth={1}
@@ -1152,15 +1234,19 @@ export function Navigation() {
                                         ? "text-blue-400"
                                         : item.name === "Dashboard"
                                           ? "text-emerald-400"
-                                          : item.name === "Explore"
+                                          : item.name === "Feed"
                                             ? "text-purple-400"
-                                            : item.name === "Intelligence"
-                                              ? "text-indigo-400"
-                                              : item.name === "Admin"
-                                                ? "text-red-400"
-                                                : item.name === "Cards"
-                                                  ? "text-cyan-400"
-                                                  : "text-blue-400"
+                                            : item.name === "Explore"
+                                              ? "text-purple-400"
+                                              : item.name === "Intelligence"
+                                                ? "text-indigo-400"
+                                                : item.name === "Admin"
+                                                  ? "text-red-400"
+                                                  : item.name === "Cards"
+                                                    ? "text-cyan-400"
+                                                    : item.name === "Help"
+                                                      ? "text-orange-400"
+                                                      : "text-blue-400"
                                   }`}
                                 />
                               </div>
@@ -1172,15 +1258,17 @@ export function Navigation() {
                                       ? "group-hover:text-blue-400"
                                       : item.name === "Dashboard"
                                         ? "group-hover:text-emerald-400"
-                                        : item.name === "Countries"
+                                        : item.name === "Feed"
                                           ? "group-hover:text-purple-400"
-                                          : item.name === "Admin"
-                                            ? "group-hover:text-red-400"
-                                            : item.name === "Dossier"
-                                              ? "group-hover:text-orange-400"
+                                          : item.name === "Countries" || item.name === "Explore"
+                                            ? "group-hover:text-purple-400"
+                                            : item.name === "Admin"
+                                              ? "group-hover:text-red-400"
                                               : item.name === "Cards"
                                                 ? "group-hover:text-cyan-400"
-                                                : "group-hover:text-blue-400"
+                                                : item.name === "Help"
+                                                  ? "group-hover:text-orange-400"
+                                                  : "group-hover:text-blue-400"
                                 }`}
                                 aria-hidden="true"
                               />

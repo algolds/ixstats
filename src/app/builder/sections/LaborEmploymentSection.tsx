@@ -12,12 +12,12 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import {
-  EnhancedSlider,
   EnhancedDial,
   EnhancedNumberInput,
   EnhancedToggle,
   EnhancedPieChart,
   EnhancedBarChart,
+  SliderWithDirectInput,
 } from "../primitives/enhanced";
 import type { EconomicInputs, LaborEmploymentData } from "../lib/economy-data-service";
 import type { SectionContentProps } from "../types/builder";
@@ -165,7 +165,7 @@ export function LaborEmploymentSection({
     <>
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <EnhancedSlider
+          <SliderWithDirectInput
             label="Unemployment Rate"
             description={
               locks.unemploymentRate?.isLocked
@@ -189,6 +189,8 @@ export function LaborEmploymentSection({
             referenceLabel={referenceCountry?.name}
             showComparison={true}
             disabled={locks.unemploymentRate?.isLocked ?? false}
+            defaultMode="input"
+            allowModeToggle={true}
           />
           {isEditMode && <FieldLockIndicator fieldLock={locks.unemploymentRate} />}
         </div>
@@ -196,7 +198,7 @@ export function LaborEmploymentSection({
 
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <EnhancedSlider
+          <SliderWithDirectInput
             label="Labor Force Participation"
             description={
               locks.laborForceParticipationRate?.isLocked
@@ -217,6 +219,8 @@ export function LaborEmploymentSection({
             showValue={true}
             showRange={true}
             disabled={locks.laborForceParticipationRate?.isLocked ?? false}
+            defaultMode="input"
+            allowModeToggle={true}
           />
           {isEditMode && <FieldLockIndicator fieldLock={locks.laborForceParticipationRate} />}
         </div>
@@ -285,7 +289,7 @@ export function LaborEmploymentSection({
         format={(value) => `$${Number(value).toLocaleString()}`}
       />
 
-      <EnhancedSlider
+      <SliderWithDirectInput
         label="Average Work Week"
         description="Standard hours worked per week across all sectors"
         value={Number(laborEmployment.averageWorkweekHours) || 0}
@@ -300,6 +304,8 @@ export function LaborEmploymentSection({
         tickCount={5}
         showValue={true}
         showRange={true}
+        defaultMode="input"
+        allowModeToggle={true}
       />
 
       <div className="space-y-2">
@@ -334,7 +340,7 @@ export function LaborEmploymentSection({
 
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <EnhancedSlider
+          <SliderWithDirectInput
             label="Employment Rate"
             description={
               locks.employmentRate?.isLocked
@@ -355,6 +361,8 @@ export function LaborEmploymentSection({
             showValue={true}
             showRange={true}
             disabled={locks.employmentRate?.isLocked ?? false}
+            defaultMode="input"
+            allowModeToggle={true}
           />
           {isEditMode && <FieldLockIndicator fieldLock={locks.employmentRate} />}
         </div>
