@@ -1,7 +1,7 @@
 # Diplomatic Messaging Migration Guide
 
 **Last Updated:** November 2025
-**Version:** 1.4.0+ to 2.0.0
+**Version:** 1.42+ to 2.0.0
 **Status:** Migration Complete
 
 ## Overview

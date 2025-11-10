@@ -1,9 +1,9 @@
 # MyCountry Command Suite
 
-**Last updated:** November 2025 (v1.4.2)
+**Last updated:** November 2025 (v1.42)
 **Architecture:** Clear separation of concerns with dedicated pages for each system
 
-The MyCountry experience gives nation owners a unified command environment. After v1.4.2 reorganization, each page serves a single, clear purpose.
+The MyCountry experience gives nation owners a unified command environment. After v1.42 reorganization, each page serves a single, clear purpose.
 
 ## Architecture Overview
 
@@ -198,6 +198,6 @@ MyCountry follows a **clear separation of concerns** principle:
 
 ---
 
-**Architecture Version:** v1.4.2
+**Architecture Version:** v1.42
 **Last Major Update:** November 2025
 **Status:** Production-ready with clear separation of concerns

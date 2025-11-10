@@ -1,4 +1,4 @@
-# IxStats v1.4.0
+# IxStats v1.42
 
 IxStats is a modern nation simulation and worldbuilding platform. The codebase combines a rich React front end with a tRPC API layer, Prisma schema, and a custom server runtime that enables real-time updates for executive intelligence, diplomacy, economics, and collaborative storytelling features.
 

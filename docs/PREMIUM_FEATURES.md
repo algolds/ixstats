@@ -1,6 +1,6 @@
 # IxStats Premium Features Matrix
 
-**Last Updated:** November 2025 (v1.4.0)
+**Last Updated:** November 2025 (v1.42)
 
 This document provides a comprehensive breakdown of features available in the Basic (Free) tier versus the MyCountry Premium tier.
 
@@ -452,4 +452,4 @@ IxStats follows a **generous freemium model**:
 - Discord: [IxStats Community Server]
 
 **Last Review:** November 8, 2025
-**Version:** 1.4.0
+**Version:** 1.42

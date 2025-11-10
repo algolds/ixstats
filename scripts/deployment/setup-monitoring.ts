@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 /**
- * Monitoring Setup Script for IxStats v1.2
+ * Monitoring Setup Script for IxStats v1.42
  * Configures monitoring, alerting, and logging infrastructure
  */
 
@@ -111,7 +111,7 @@ async function testDiscordWebhook(): Promise<boolean> {
 function createDashboardConfig(): string {
   const config = {
     name: "IxStats Production Monitoring",
-    version: "1.2.0",
+    version: "1.42",
     created: new Date().toISOString(),
     metrics: {
       system: {
@@ -205,7 +205,7 @@ function createDashboardConfig(): string {
 function createRateLimitingMonitor(): string {
   const config = {
     name: "Rate Limiting Monitoring",
-    version: "1.2.0",
+    version: "1.42",
     endpoints: [
       {
         path: "/api/trpc/*",
@@ -249,7 +249,7 @@ function createRateLimitingMonitor(): string {
 function createErrorTrackingConfig(): string {
   const config = {
     name: "Error Tracking Configuration",
-    version: "1.2.0",
+    version: "1.42",
     categories: {
       authentication: {
         severity: "high",
@@ -294,7 +294,7 @@ function createErrorTrackingConfig(): string {
 function createPerformanceConfig(): string {
   const config = {
     name: "Performance Monitoring Configuration",
-    version: "1.2.0",
+    version: "1.42",
     metrics: {
       coreWebVitals: {
         enabled: true,
@@ -454,7 +454,7 @@ async function main() {
 
   print("╔═══════════════════════════════════════════════════════╗", "cyan");
   print("║                                                       ║", "cyan");
-  print("║     IxStats v1.2 - Monitoring Setup Script           ║", "cyan");
+  print("║     IxStats v1.42 - Monitoring Setup Script           ║", "cyan");
   print("║                                                       ║", "cyan");
   print("╚═══════════════════════════════════════════════════════╝", "cyan");
 
@@ -537,7 +537,7 @@ async function main() {
 
   const readme = `# IxStats Monitoring Configuration
 
-This directory contains monitoring and alerting configuration for IxStats v1.2.
+This directory contains monitoring and alerting configuration for IxStats v1.42.
 
 ## Configuration Files
 
@@ -650,7 +650,7 @@ All logs are stored in: \`${logsDir}\`
 - Test disaster recovery procedures quarterly
 
 **Created**: ${new Date().toLocaleDateString()}
-**Version**: 1.2.0
+**Version**: 1.42
 `;
 
   writeFileSync(join(configDir, "README.md"), readme);
