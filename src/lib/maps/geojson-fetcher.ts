@@ -48,7 +48,10 @@ const geoJSONCache = new Map<string, GeoJSON.FeatureCollection>();
 export async function fetchLayerGeoJSON(
   layer: LayerName
 ): Promise<GeoJSON.FeatureCollection> {
-  const tableName = `map_layer_${layer}`;
+  // Use Country table for political layer since map_layer_political doesn't exist
+  const tableName = layer === "political" ? "Country" : `map_layer_${layer}`;
+  const geometryColumn = layer === "political" ? "geom_postgis" : "geometry";
+  const nameColumn = layer === "political" ? "name" : "id";
 
   try {
     // Query PostGIS using raw SQL via Prisma
@@ -63,15 +66,15 @@ export async function fetchLayerGeoJSON(
       }>
     >(`
       SELECT
-        ogc_fid,
-        id as name,
-        fill,
-        country_id,
+        ${layer === "political" ? "ROW_NUMBER() OVER ()::integer as ogc_fid" : "ogc_fid"},
+        ${nameColumn} as name,
+        ${layer === "political" ? "NULL" : "fill"} as fill,
+        ${layer === "political" ? "id" : "country_id"} as country_id,
         -- Calculate area in square kilometers using spherical geometry
-        ST_Area(geography(ST_Transform(geometry, 4326))) / 1000000 as area_km2,
-        ST_AsGeoJSON(ST_Transform(geometry, 4326))::json as geojson
-      FROM ${tableName}
-      WHERE geometry IS NOT NULL
+        ST_Area(geography(ST_Transform(${geometryColumn}, 4326))) / 1000000 as area_km2,
+        ST_AsGeoJSON(ST_Transform(${geometryColumn}, 4326))::json as geojson
+      FROM "${tableName}"
+      WHERE ${geometryColumn} IS NOT NULL
     `);
 
     // Transform to GeoJSON FeatureCollection

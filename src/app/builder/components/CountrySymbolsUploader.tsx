@@ -17,6 +17,7 @@ import {
 } from "~/lib/image-color-extractor";
 import { getFlagColors } from "~/lib/flag-color-extractor";
 import { toast } from "sonner";
+import { withBasePath } from "~/lib/base-path";
 
 interface CountrySymbolsUploaderProps {
   flagUrl: string;
@@ -155,7 +156,7 @@ export function CountrySymbolsUploader({
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/upload/image", {
+      const response = await fetch(withBasePath("/api/upload/image"), {
         method: "POST",
         body: formData,
       });
@@ -212,7 +213,7 @@ export function CountrySymbolsUploader({
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/upload/image", {
+      const response = await fetch(withBasePath("/api/upload/image"), {
         method: "POST",
         body: formData,
       });

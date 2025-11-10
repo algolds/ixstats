@@ -74,6 +74,7 @@ function getLayerSource(
     };
   } else {
     // Use vector tiles for mercator/globe
+    // Use logical layer names - the API route will map to Martin table names
     return {
       type: 'vector',
       tiles: [`${origin}${cleanBasePath}/api/tiles/${layer}/{z}/{x}/{y}`],
@@ -216,7 +217,7 @@ export const createGoogleMapsStyle = (
       id: 'countries',
       type: 'fill',
       source: 'political',
-      ...(useGeoJSON ? {} : { 'source-layer': 'map_layer_political' }),
+      ...(useGeoJSON ? {} : { 'source-layer': 'Country' }),
       paint: {
         'fill-color': ['get', 'fill'], // Use color from GeoJSON data
         'fill-opacity': [
@@ -232,7 +233,7 @@ export const createGoogleMapsStyle = (
       id: 'country-borders',
       type: 'line',
       source: 'political',
-      ...(useGeoJSON ? {} : { 'source-layer': 'map_layer_political' }),
+      ...(useGeoJSON ? {} : { 'source-layer': 'Country' }),
       paint: {
         'line-color': [
           'case',

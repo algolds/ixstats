@@ -1,6 +1,8 @@
 // Service for downloading external images and saving to server filesystem
 // Used when users select images from wiki/Unsplash repositories
 
+import { withBasePath } from "~/lib/base-path";
+
 export interface DownloadedImage {
   url: string;
   originalUrl: string;
@@ -20,7 +22,7 @@ export async function downloadAndConvertImage(imageUrl: string): Promise<Downloa
 
   try {
     // Use our API endpoint to download the image with proper CORS handling
-    const response = await fetch("/api/download/external-image", {
+    const response = await fetch(withBasePath("/api/download/external-image"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

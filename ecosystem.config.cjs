@@ -38,3 +38,6 @@ module.exports = {
     }
   ]
 };
+// Note: Martin tile server runs as Docker container with restart policy "unless-stopped"
+// Use: docker ps -f "name=martin-tiles" to check status
+// Use: ./scripts/martin-tiles.sh start/stop/restart to manage

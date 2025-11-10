@@ -668,7 +668,7 @@ export function MapEditorContainer({
         id: "editor-country-fill",
         type: "fill",
         source: "political",
-        "source-layer": "map_layer_political", // Vector tile layer name
+        "source-layer": "Country", // Martin table name for political boundaries
         filter: ["==", ["get", "country_id"], countryId], // Only show this country
         paint: {
           "fill-color": "#d4af37", // Gold
@@ -681,7 +681,7 @@ export function MapEditorContainer({
         id: "editor-country-outline",
         type: "line",
         source: "political",
-        "source-layer": "map_layer_political",
+        "source-layer": "Country",
         filter: ["==", ["get", "country_id"], countryId],
         paint: {
           "line-color": "#d4af37", // Gold

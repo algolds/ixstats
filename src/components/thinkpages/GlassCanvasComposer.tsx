@@ -27,6 +27,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { api } from "~/trpc/react";
 import { toast } from "sonner";
 import { MediaSearchModal } from "~/components/MediaSearchModal";
+import { withBasePath } from "~/lib/base-path";
 
 interface GlassCanvasComposerProps {
   account: any;
@@ -277,7 +278,7 @@ export function GlassCanvasComposer({
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/upload/image", {
+      const response = await fetch(withBasePath("/api/upload/image"), {
         method: "POST",
         body: formData,
       });

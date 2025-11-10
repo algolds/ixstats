@@ -374,7 +374,7 @@ function GoogleMapContainer({
           // Clear previous hover
           if (hoveredCountryId.current !== null) {
             mapInstance.setFeatureState(
-              { source: 'political', id: hoveredCountryId.current, sourceLayer: 'map_layer_political' },
+              { source: 'political', id: hoveredCountryId.current, sourceLayer: 'Country' },
               { hover: false }
             );
           }
@@ -382,7 +382,7 @@ function GoogleMapContainer({
           // Set new hover
           hoveredCountryId.current = featureId;
           mapInstance.setFeatureState(
-            { source: 'political', id: featureId, sourceLayer: 'map_layer_political' },
+            { source: 'political', id: featureId, sourceLayer: 'Country' },
             { hover: true }
           );
         }
@@ -393,7 +393,7 @@ function GoogleMapContainer({
         // Mouse not over any country - clear hover
         if (hoveredCountryId.current !== null) {
           mapInstance.setFeatureState(
-            { source: 'political', id: hoveredCountryId.current, sourceLayer: 'map_layer_political' },
+            { source: 'political', id: hoveredCountryId.current, sourceLayer: 'Country' },
             { hover: false }
           );
           hoveredCountryId.current = null;

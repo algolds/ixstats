@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { api } from "~/trpc/react";
+import { withBasePath } from "~/lib/base-path";
 
 interface UseProfileSettingsProps {
   userProfileCountryId?: string;
@@ -68,7 +69,7 @@ export function useProfileSettings({ userProfileCountryId, userId }: UseProfileS
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/upload/image", {
+      const response = await fetch(withBasePath("/api/upload/image"), {
         method: "POST",
         body: formData,
       });

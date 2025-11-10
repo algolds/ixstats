@@ -149,25 +149,20 @@ export const diplomaticRouter = createTRPCRouter({
           },
           orderBy: { createdAt: "desc" },
           take: 10,
+          include: {
+            country1: { select: { name: true } },
+            country2: { select: { name: true } },
+          },
         });
 
         for (const event of diplomaticEvents) {
-          const targetCountryId =
-            event.country1Id === input.countryId ? event.country2Id : event.country1Id;
-
-          // Get target country name
-          let targetCountryName = "Unknown";
-          if (targetCountryId) {
-            const targetCountry = await ctx.db.country.findUnique({
-              where: { id: targetCountryId },
-              select: { name: true },
-            });
-            targetCountryName = targetCountry?.name || "Unknown";
-          }
+          // Determine target country based on which country is the input
+          const targetCountry =
+            event.country1Id === input.countryId ? event.country2 : event.country1;
 
           changes.push({
             id: event.id,
-            targetCountry: targetCountryName,
+            targetCountry: targetCountry?.name || "Unknown",
             currentStatus: event.eventType,
             updatedAt: event.createdAt.toISOString(),
             changeType: event.eventType,

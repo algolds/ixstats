@@ -72,8 +72,11 @@ export async function GET(
       return NextResponse.json({ error: "Invalid tile coordinates" }, { status: 400 });
     }
 
+    // Map logical layer names to Martin table names
+    const martinTableName = layer === 'political' ? 'Country' : `map_layer_${layer}`;
+
     // Cache key for Redis (Phase 2)
-    const cacheKey = `tile:map_layer_${layer}:${z}:${x}:${y}`;
+    const cacheKey = `tile:${martinTableName}:${z}:${x}:${y}`;
 
     // Try to get from Redis cache first
     const redis = getRedisClient();
@@ -98,7 +101,7 @@ export async function GET(
     }
 
     // Fetch from Martin tile server
-    const martinUrl = `${MARTIN_BASE_URL}/map_layer_${layer}/${z}/${x}/${y}`;
+    const martinUrl = `${MARTIN_BASE_URL}/${martinTableName}/${z}/${x}/${y}`;
     const martinResponse = await fetch(martinUrl, {
       signal: AbortSignal.timeout(5000), // 5 second timeout
     });

@@ -489,15 +489,13 @@ export const mapEditorRouter = createTRPCRouter({
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
-        // Query vector tiles table to get WGS84 centroid
-        // Join with Country table to match CUID with slug
+        // Query Country table to get WGS84 centroid from PostGIS geometry
         const result = await ctx.db.$queryRaw<Array<{ lng: number; lat: number }>>`
           SELECT
-            ST_X(ST_Centroid(p.geometry)) as lng,
-            ST_Y(ST_Centroid(p.geometry)) as lat
-          FROM map_layer_political p
-          JOIN "Country" c ON p.country_id = c.slug
-          WHERE c.id = ${input.countryId}
+            ST_X(ST_Centroid(geom_postgis)) as lng,
+            ST_Y(ST_Centroid(geom_postgis)) as lat
+          FROM "Country"
+          WHERE id = ${input.countryId}
           LIMIT 1
         `;
 

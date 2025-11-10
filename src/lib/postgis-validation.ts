@@ -239,9 +239,9 @@ export async function checkBoundaryIntersection(
         SELECT ST_GeomFromGeoJSON(${geomJson})::geometry as geom
       ),
       country_boundary AS (
-        SELECT geometry
-        FROM map_layer_political
-        WHERE country_id = ${countryId}
+        SELECT geom_postgis as geometry
+        FROM "Country"
+        WHERE id = ${countryId}
         LIMIT 1
       )
       SELECT
@@ -306,9 +306,9 @@ export async function checkPointInCountry(
         SELECT ST_GeomFromGeoJSON(${geomJson})::geometry as geom
       ),
       country_boundary AS (
-        SELECT geometry
-        FROM map_layer_political
-        WHERE country_id = ${countryId}
+        SELECT geom_postgis as geometry
+        FROM "Country"
+        WHERE id = ${countryId}
         LIMIT 1
       )
       SELECT

@@ -22,6 +22,7 @@ import { api } from "~/trpc/react";
 import { toast } from "sonner";
 import { processImageSelection, isExternalImageUrl } from "~/lib/image-download-service";
 import type { BaseImageResult, WikiImageResult } from "~/types/media-search";
+import { withBasePath } from "~/lib/base-path";
 
 interface MediaSearchModalProps {
   isOpen: boolean;
@@ -771,7 +772,7 @@ export function MediaSearchModal({
                             const formData = new FormData();
                             formData.append("file", file);
 
-                            const response = await fetch("/api/upload/image", {
+                            const response = await fetch(withBasePath("/api/upload/image"), {
                               method: "POST",
                               body: formData,
                             });
