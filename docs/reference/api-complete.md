@@ -12,6 +12,7 @@ Comprehensive reference for all 52 tRPC routers with 580+ procedures across the 
 - [Social & Collaboration](#social--collaboration) (5 routers, 120 procedures)
 - [Operations](#operations) (7 routers, 79 procedures)
 - [Maps & Geography](#maps--geography) (5 routers, 54 procedures)
+- [Cards & MyVault](#cards--myvault) (4 routers, 23 procedures)
 
 ---
 
@@ -73,7 +74,12 @@ Comprehensive reference for all 52 tRPC routers with 580+ procedures across the 
 | geo | 8 | 6 | 14 | Country borders, PostGIS integration |
 | mapEditor | 7 | 11 | 18 | Subdivisions, cities, POIs management |
 | mapMonitoring | 5 | 2 | 7 | Map performance monitoring (admin) |
-| **TOTAL** | **290** | **290** | **580** | |
+| **CARDS & MYVAULT** | | | | |
+| vault | 5 | 2 | 7 | IxCredits balance, transactions, bonuses |
+| cards | 5 | 1 | 6 | Card browsing, ownership, stats |
+| cardPacks | 4 | 3 | 7 | Pack purchase, opening, management |
+| nsIntegration | 2 | 1 | 3 | NationStates card import and sync |
+| **TOTAL** | **304** | **299** | **603** | |
 
 **Legend:** Q = Queries, M = Mutations
 
@@ -461,6 +467,503 @@ api.mapMonitoring.getTileStats.useQuery()
 api.mapMonitoring.getCacheStats.useQuery()
 api.mapMonitoring.getMartinStatus.useQuery()
 api.mapMonitoring.getErrorRates.useQuery()
+```
+
+---
+
+## Cards & MyVault
+
+### vault Router (7 procedures)
+
+**Balance & Info:**
+```typescript
+// Get user's vault balance
+api.vault.getBalance.useQuery({ userId: string })
+// Returns: { credits, lifetimeEarned, vaultLevel, loginStreak, todayEarned }
+```
+
+**Input Schema:**
+```typescript
+z.object({
+  userId: z.string()
+})
+```
+
+**Output Schema:**
+```typescript
+{
+  credits: number;
+  lifetimeEarned: number;
+  lifetimeSpent: number;
+  todayEarned: number;
+  vaultLevel: number;
+  vaultXp: number;
+  loginStreak: number;
+  lastLoginDate: Date | null;
+}
+```
+
+**Transactions:**
+```typescript
+// Get transaction history
+api.vault.getTransactions.useQuery({
+  userId: string,
+  limit?: number, // Default 20
+  type?: 'EARN' | 'SPEND' | 'ALL' // Default 'ALL'
+})
+
+// Returns paginated transaction list
+```
+
+**Input Schema:**
+```typescript
+z.object({
+  userId: z.string(),
+  limit: z.number().optional(),
+  type: z.enum(['EARN', 'SPEND', 'ALL']).optional()
+})
+```
+
+**Output Schema:**
+```typescript
+{
+  transactions: Array<{
+    id: string;
+    credits: number;
+    balanceAfter: number;
+    type: VaultTransactionType;
+    source: string;
+    metadata?: Record<string, any>;
+    createdAt: Date;
+  }>;
+}
+```
+
+**Earning IxCredits:**
+```typescript
+// Claim daily login bonus
+api.vault.claimDailyBonus.useMutation()
+// Returns: { credits: number, streak: number, bonus: number }
+
+// Claim streak bonus (7+ days)
+api.vault.claimStreakBonus.useMutation()
+// Returns: { credits: number, streak: number, bonus: number }
+```
+
+**Output Schema (claimDailyBonus):**
+```typescript
+{
+  credits: number; // New balance
+  streak: number; // Current streak days
+  bonus: number; // Bonus amount earned
+}
+```
+
+**Spending IxCredits:**
+```typescript
+// Spend credits
+api.vault.spendCredits.useMutation({
+  amount: number,
+  type: VaultTransactionType, // SPEND_PACKS, SPEND_MARKET, etc.
+  source: string, // Description of what was purchased
+  metadata?: Record<string, any>
+})
+// Returns: { newBalance: number, transaction: Transaction }
+```
+
+**Input Schema:**
+```typescript
+z.object({
+  amount: z.number().positive(),
+  type: z.nativeEnum(VaultTransactionType),
+  source: z.string(),
+  metadata: z.record(z.any()).optional()
+})
+```
+
+**Progression:**
+```typescript
+// Get vault level info
+api.vault.getVaultLevel.useQuery({ userId: string })
+// Returns: { level: number, xp: number, nextLevelXp: number }
+
+// Get earnings summary
+api.vault.getEarningsSummary.useQuery({ userId: string })
+// Returns: { passive, active, cards, social, total }
+```
+
+**Auth:** All endpoints require authentication
+**Rate Limit:** 100 requests per 10 minutes
+
+---
+
+### cards Router (6 procedures)
+
+**Browse & Search:**
+```typescript
+// Get cards with filters
+api.cards.getCards.useQuery({
+  season?: number,
+  rarity?: CardRarity,
+  type?: CardType,
+  search?: string,
+  limit?: number, // Default 50
+  offset?: number // Default 0
+})
+
+// Returns paginated card list
+```
+
+**Input Schema:**
+```typescript
+z.object({
+  season: z.number().optional(),
+  rarity: z.nativeEnum(CardRarity).optional(),
+  type: z.nativeEnum(CardType).optional(),
+  search: z.string().optional(),
+  limit: z.number().default(50),
+  offset: z.number().default(0)
+})
+```
+
+**Output Schema:**
+```typescript
+{
+  cards: Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    artwork: string;
+    cardType: CardType;
+    rarity: CardRarity;
+    season: number;
+    stats: Record<string, number>;
+    marketValue: number;
+    totalSupply: number;
+  }>;
+  total: number;
+  hasMore: boolean;
+}
+```
+
+**Card Details:**
+```typescript
+// Get single card by ID
+api.cards.getCardById.useQuery({ cardId: string })
+// Returns full card details with relationships
+
+// Get card statistics
+api.cards.getCardStats.useQuery({ cardId: string })
+// Returns: { totalSupply, marketValue, recentTrades, owners, ... }
+```
+
+**Output Schema (getCardById):**
+```typescript
+{
+  id: string;
+  title: string;
+  description: string | null;
+  artwork: string;
+  cardType: CardType;
+  rarity: CardRarity;
+  season: number;
+  stats: Record<string, number>;
+  marketValue: number;
+  totalSupply: number;
+  level: number;
+  // Include country relation if NATION type
+  country?: {
+    id: string;
+    name: string;
+    // ... other country fields
+  };
+}
+```
+
+**User Inventory:**
+```typescript
+// Get user's owned cards (MyCards)
+api.cards.getMyCards.useQuery({
+  sortBy?: 'rarity' | 'date' | 'value',
+  filterRarity?: CardRarity
+})
+
+// Returns user's card inventory with ownership details
+```
+
+**Output Schema:**
+```typescript
+{
+  cards: Array<{
+    id: string; // Ownership ID
+    card: Card; // Full card details
+    quantity: number;
+    acquiredDate: Date;
+    acquiredMethod: AcquireMethod;
+    isLeveledUp: boolean;
+    hasAlternateArt: boolean;
+  }>;
+}
+```
+
+**Special Queries:**
+```typescript
+// Get cards by country
+api.cards.getCardsByCountry.useQuery({ countryId: string })
+// Returns all card variants for a nation
+
+// Get featured cards
+api.cards.getFeaturedCards.useQuery()
+// Returns: Array<Card> (trending, new releases, etc.)
+```
+
+**Auth:** Browse endpoints public, ownership endpoints require authentication
+**Rate Limit:** 200 requests per 10 minutes
+
+---
+
+### cardPacks Router (7 procedures)
+
+**Available Packs:**
+```typescript
+// Get all available packs for purchase
+api.cardPacks.getAvailablePacks.useQuery()
+// Returns: Array<CardPack>
+```
+
+**Output Schema:**
+```typescript
+{
+  packs: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    artwork: string;
+    cardCount: number;
+    packType: PackType;
+    priceCredits: number;
+    // Rarity odds
+    commonOdds: number;
+    uncommonOdds: number;
+    rareOdds: number;
+    ultraRareOdds: number;
+    epicOdds: number;
+    legendaryOdds: number;
+    // Availability
+    isAvailable: boolean;
+    limitedQuantity: number | null;
+    purchaseLimit: number | null;
+    expiresAt: Date | null;
+  }>;
+}
+```
+
+**Pack Details:**
+```typescript
+// Get specific pack details
+api.cardPacks.getPackById.useQuery({ packId: string })
+// Returns: CardPack
+```
+
+**User Packs:**
+```typescript
+// Get user's unopened packs
+api.cardPacks.getMyPacks.useQuery()
+// Returns user's unopened pack inventory
+```
+
+**Output Schema:**
+```typescript
+{
+  packs: Array<{
+    id: string; // UserPack ID
+    pack: CardPack; // Full pack details
+    isOpened: boolean;
+    acquiredDate: Date;
+    acquiredMethod: string;
+  }>;
+}
+```
+
+**Purchase Pack:**
+```typescript
+// Purchase a pack
+api.cardPacks.purchasePack.useMutation({
+  packId: string
+})
+
+// Returns: { pack: UserPack, newBalance: number }
+```
+
+**Input Schema:**
+```typescript
+z.object({
+  packId: z.string()
+})
+```
+
+**Output Schema:**
+```typescript
+{
+  pack: {
+    id: string;
+    packId: string;
+    isOpened: false;
+    acquiredDate: Date;
+  };
+  newBalance: number; // IxCredits balance after purchase
+}
+```
+
+**Open Pack:**
+```typescript
+// Open an owned pack
+api.cardPacks.openPack.useMutation({
+  userPackId: string
+})
+
+// Returns: { cards: Array<Card>, bonusCredits: number }
+```
+
+**Input Schema:**
+```typescript
+z.object({
+  userPackId: z.string()
+})
+```
+
+**Output Schema:**
+```typescript
+{
+  cards: Array<{
+    id: string;
+    title: string;
+    artwork: string;
+    rarity: CardRarity;
+    // ... full card details
+  }>;
+  bonusCredits: number; // Lucky pack bonus + daily bonus
+}
+```
+
+**Admin Operations:**
+```typescript
+// Create new pack (admin only)
+api.cardPacks.createPack.useMutation({
+  name: string,
+  description?: string,
+  artwork: string,
+  cardCount: number,
+  packType: PackType,
+  priceCredits: number,
+  // Rarity odds (must sum to 100)
+  commonOdds: number,
+  uncommonOdds: number,
+  // ... other odds
+})
+
+// Update pack availability
+api.cardPacks.updatePack.useMutation({
+  packId: string,
+  isAvailable: boolean
+})
+
+// Deactivate pack
+api.cardPacks.deactivatePack.useMutation({ packId: string })
+```
+
+**Auth:** Browse endpoints public, purchase/open/admin require authentication
+**Rate Limit:** 100 requests per 10 minutes (purchase limited to prevent abuse)
+
+---
+
+### nsIntegration Router (3 procedures)
+
+**Collection Import:**
+```typescript
+// Import user's NationStates collection
+api.nsIntegration.importNSCollection.useMutation({
+  nsNation: string,
+  verificationCode: string
+})
+
+// Returns: { imported: number, skipped: number, totalCards: number, bonusCredits: number }
+```
+
+**Input Schema:**
+```typescript
+z.object({
+  nsNation: z.string(),
+  verificationCode: z.string()
+})
+```
+
+**Output Schema:**
+```typescript
+{
+  imported: number; // Cards successfully imported
+  skipped: number; // Cards not yet synced to IxStats
+  totalCards: number; // Total cards in NS deck
+  bonusCredits: number; // Import bonus awarded (usually 100 IxC)
+}
+```
+
+**Card Data:**
+```typescript
+// Get NS-specific card data
+api.nsIntegration.getNSCardData.useQuery({
+  nsCardId: number,
+  season: number
+})
+
+// Returns NS card metadata
+```
+
+**Output Schema:**
+```typescript
+{
+  nsCardId: number;
+  season: number;
+  nation: string;
+  rarity: string; // NS rarity string
+  type: string; // NS card type
+  flag: string; // Flag artwork URL
+  // ... additional NS-specific fields
+}
+```
+
+**Admin Sync:**
+```typescript
+// Manual NS card sync (admin only)
+api.nsIntegration.syncNSCards.useMutation({
+  season: number
+})
+
+// Returns: { season, totalCards, imported, updated, timestamp }
+```
+
+**Auth:** All endpoints require authentication, syncNSCards requires admin role
+**Rate Limit:** 10 requests per 10 minutes (respects NS API limits)
+
+**Example Usage:**
+```typescript
+// Import NS collection
+const importMutation = api.nsIntegration.importNSCollection.useMutation({
+  onSuccess: (result) => {
+    toast.success(`Imported ${result.imported} cards! +${result.bonusCredits} IxC bonus`);
+  },
+  onError: (error) => {
+    if (error.message.includes("verify")) {
+      toast.error("Could not verify NS nation ownership");
+    }
+  }
+});
+
+// User submits form
+importMutation.mutate({
+  nsNation: "example-nation",
+  verificationCode: "abc123def456"
+});
 ```
 
 ---

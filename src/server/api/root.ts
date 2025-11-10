@@ -52,6 +52,11 @@ import { mapEditorRouter } from "./routers/mapEditor";
 import { mapMonitoringRouter } from "./routers/mapMonitoring";
 import { crisisEventsRouter } from "./routers/crisis-events";
 import { historicalRouter } from "./routers/historical";
+import { systemRouter } from "./routers/system";
+import { cardPacksRouter } from "./routers/card-packs";
+import { vaultRouter } from "./routers/vault";
+import { cardsRouter } from "./routers/cards";
+import { nsIntegrationRouter } from "./routers/ns-integration";
 
 /**
  * This is the primary router for your server.
@@ -62,6 +67,7 @@ export const appRouter = createTRPCRouter({
   countries: countriesRouter,
   admin: adminRouter, // FIXED: Added admin router
   users: usersRouter, // FIXED: Added users router
+  system: systemRouter, // Public system information (IxTime, etc.)
   roles: rolesRouter, // Role and permission management
   // DEPRECATED: Use unifiedIntelligence router instead (will be removed in v2.0.0)
   sdi: sdiRouter,
@@ -110,7 +116,10 @@ export const appRouter = createTRPCRouter({
   mapMonitoring: mapMonitoringRouter, // Map system monitoring and statistics (Admin only)
   crisisEvents: crisisEventsRouter, // Crisis events management (natural disasters, economic crises, diplomatic incidents, etc.)
   historical: historicalRouter, // Historical time-series data and analytics (12 endpoints)
-  system: adminRouter, // Alias for global stats
+  cardPacks: cardPacksRouter, // IxCards pack purchase and opening system (Phase 1 - Card Packs)
+  vault: vaultRouter, // MyVault IxCredits economy system (Phase 1 - MyVault)
+  cards: cardsRouter, // IxCards trading card system (Phase 1 - Card Service & Router)
+  nsIntegration: nsIntegrationRouter, // NationStates API integration for card import and sync (Phase 1 - NS Integration)
 });
 
 // export type definition of API

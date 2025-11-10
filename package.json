@@ -3,6 +3,10 @@
   "version": "1.2.0",
   "private": true,
   "type": "module",
+  "sideEffects": [
+    "src/lib/performance-monitor.ts",
+    "*.css"
+  ],
   "scripts": {
     "build": "./scripts/with-base-path.sh next build",
     "build:no-check": "./scripts/with-base-path.sh next build --no-lint",
@@ -181,6 +185,7 @@
     "echo-editor": "^0.5.0",
     "express": "^5.1.0",
     "fast-average-color": "^9.5.0",
+    "fast-xml-parser": "^5.3.1",
     "framer-motion": "^12.23.12",
     "geojson-vt": "^4.0.2",
     "gsap": "^3.13.0",

@@ -40,6 +40,10 @@ This index mirrors the new documentation structure. Use it as the canonical map 
 | [`systems/achievements.md`](systems/achievements.md) | Achievement unlock logic, leaderboards, notifications, and analytics |
 | [`systems/builder.md`](systems/builder.md) | Nation creation flows, atomic components, wiki importers |
 | [`systems/help.md`](systems/help.md) | Help center architecture, article conventions, and synchronization with `/help` |
+| [`systems/myvault.md`](systems/myvault.md) | MyVault economy system, IxCredits currency, earning/spending mechanics, and vault progression |
+| [`systems/cards.md`](systems/cards.md) | IxCards system, card types (Nation, Lore, NS Import, Special), rarity mechanics, and ownership tracking |
+| [`systems/card-packs.md`](systems/card-packs.md) | Card pack types, rarity distribution, pack opening flow, and bonus mechanics |
+| [`systems/ns-integration.md`](systems/ns-integration.md) | NationStates integration, card dump sync, collection import, and rate limiting compliance |
 
 ### Operations & Processes
 | Document | Summary |
