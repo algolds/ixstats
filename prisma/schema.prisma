@@ -2115,16 +2115,17 @@ model UserSession {
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  userId    String?
-  action    String
-  target    String?
-  details   String?
-  ipAddress String?
-  userAgent String?
-  success   Boolean  @default(true)
-  error     String?
-  timestamp DateTime @default(now())
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  target     String?
+  details    String?
+  ipAddress  String?
+  userAgent  String?
+  success    Boolean  @default(true)
+  error      String?
+  timestamp  DateTime @default(now())
+  entityType String?
 
   @@index([userId])
   @@index([action])
@@ -3746,6 +3747,8 @@ model Card {
   level            Int?            @default(1)
   enhancements     Json?
   artworkVariants  Json?
+  name             String?
+  metadata         Json?
   CardOwnership    CardOwnership[]
 
   @@unique([nsCardId, nsSeason])
@@ -3839,6 +3842,7 @@ model CardOwnership {
   acquiredAt    DateTime      @default(now())
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @default(now())
+  quantity      Int           @default(1)
   CardAuction   CardAuction[]
   cards         Card          @relation(fields: [cardId], references: [id], onDelete: Cascade)
   User          User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
@@ -3849,16 +3853,80 @@ model CardOwnership {
 }
 
 model CardPack {
-  id               String   @id
+  id               String     @id
   name             String
   description      String?
+  artwork          String?
   packType         String
   priceCredits     Int
   cardCount        Int
   guaranteedRarity String?
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @default(now())
+  isActive         Boolean    @default(true)
+  commonOdds       Float      @default(65.0)
+  uncommonOdds     Float      @default(25.0)
+  rareOdds         Float      @default(7.0)
+  ultraRareOdds    Float      @default(2.0)
+  epicOdds         Float      @default(0.9)
+  legendaryOdds    Float      @default(0.1)
+  season           Int?
+  cardType         String?
+  themeFilter      Json?
+  limitedQuantity  Int?
+  purchaseLimit    Int?
+  expiresAt        DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @default(now())
+  UserPack         UserPack[]
+}
+
+model UserPack {
+  id             String    @id @default(cuid())
+  userId         String
+  packId         String
+  isOpened       Boolean   @default(false)
+  acquiredMethod String    @default("PURCHASE")
+  acquiredDate   DateTime  @default(now())
+  openedAt       DateTime?
+  pack           CardPack  @relation(fields: [packId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([packId])
+  @@map("user_packs")
+}
+
+model NSImport {
+  id           String    @id @default(cuid())
+  userId       String
+  nationName   String
+  cardCount    Int
+  totalValue   Float
+  status       String    @default("PENDING")
+  errorMessage String?
+  createdAt    DateTime  @default(now())
+  completedAt  DateTime?
+
+  @@index([userId])
+  @@index([status])
+  @@map("ns_imports")
+}
+
+model SyncLog {
+  id             String    @id @default(cuid())
+  syncType       String
+  status         String
+  itemsProcessed Int       @default(0)
+  itemsFailed    Int       @default(0)
+  errorMessage   String?
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  season         Int?
+  cardsProcessed Int?
+  cardsCreated   Int?
+  cardsUpdated   Int?
+  errors         String?
+
+  @@index([syncType, status])
+  @@map("sync_logs")
 }
 
 model CardTrade {

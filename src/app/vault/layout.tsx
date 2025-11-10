@@ -22,13 +22,13 @@ function VaultLayoutContent({ children }: VaultLayoutProps) {
   const { user } = useUser();
   const isAdmin = useHasRoleLevel(10); // Admin level or higher
 
-  // Fetch user's IxCredits balance
+  // Fetch user's IxCredits balance (always call hook, but conditionally enable)
   const { data: balanceData, isLoading, refetch } = api.vault.getBalance.useQuery(
     { userId: user?.id ?? "" },
     { enabled: !!user?.id && isAdmin }
   );
 
-  // Show access denied if not admin
+  // Show access denied if not admin (after all hooks have been called)
   if (!isAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4">
@@ -56,7 +56,7 @@ function VaultLayoutContent({ children }: VaultLayoutProps) {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
       {/* Header */}
       <VaultHeader
-        balance={balanceData?.balance ?? 0}
+        balance={balanceData?.credits ?? 0}
         loading={isLoading}
         onRefresh={() => void refetch()}
         onMenuClick={() => setMobileNavOpen(true)}

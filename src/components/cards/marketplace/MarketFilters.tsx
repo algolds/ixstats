@@ -47,7 +47,7 @@ const TYPE_OPTIONS: Array<{ value: CardType; label: string }> = [
 ];
 
 /**
- * MarketFilters - Advanced filtering component
+ * MarketFiltersPanel - Advanced filtering component
  *
  * Features:
  * - Rarity checkboxes (all 6 rarities)
@@ -59,13 +59,13 @@ const TYPE_OPTIONS: Array<{ value: CardType; label: string }> = [
  * - Clear all filters button
  *
  * @example
- * <MarketFilters
+ * <MarketFiltersPanel
  *   filters={currentFilters}
  *   onChange={(newFilters) => updateFilters(newFilters)}
  *   collapsible={true}
  * />
  */
-export const MarketFilters = memo<MarketFiltersProps>(
+export const MarketFiltersPanel = memo<MarketFiltersProps>(
   ({ filters, onChange, className, collapsible = false }) => {
     const [isExpanded, setIsExpanded] = useState(!collapsible);
     const [showStatRanges, setShowStatRanges] = useState(false);
@@ -358,4 +358,4 @@ export const MarketFilters = memo<MarketFiltersProps>(
   }
 );
 
-MarketFilters.displayName = "MarketFilters";
+MarketFiltersPanel.displayName = "MarketFiltersPanel";

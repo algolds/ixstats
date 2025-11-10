@@ -136,7 +136,9 @@ export function getCardAspectRatio(size: CardDisplaySize): string {
 export function getCardWidth(size: CardDisplaySize): string {
   const widthMap: Record<CardDisplaySize, string> = {
     small: "w-32",
+    sm: "w-32",
     medium: "w-48",
+    md: "w-48",
     large: "w-64",
   };
   return widthMap[size];
@@ -180,22 +182,22 @@ export function getShimmerEffect(rarity: CardRarity, animated: boolean = true): 
   if (!animated) return "";
 
   // Only shimmer for rare+ cards
-  const shouldShimmer = [
-    CardRarity.RARE,
-    CardRarity.ULTRA_RARE,
-    CardRarity.EPIC,
-    CardRarity.LEGENDARY,
-  ].includes(rarity);
+  const shouldShimmer = ([
+    "RARE" as CardRarity,
+    "ULTRA_RARE" as CardRarity,
+    "EPIC" as CardRarity,
+    "LEGENDARY" as CardRarity,
+  ] as CardRarity[]).includes(rarity);
 
   if (!shouldShimmer) return "";
 
   // Legendary gets rainbow shimmer
-  if (rarity === CardRarity.LEGENDARY) {
+  if (rarity === ("LEGENDARY" as CardRarity)) {
     return "animate-shimmer-rainbow";
   }
 
   // Epic+ gets standard shimmer
-  if ([CardRarity.EPIC, CardRarity.ULTRA_RARE].includes(rarity)) {
+  if ((["EPIC" as CardRarity, "ULTRA_RARE" as CardRarity] as CardRarity[]).includes(rarity)) {
     return "animate-shimmer";
   }
 
@@ -221,14 +223,15 @@ export function getRarityPercentage(rarity: CardRarity): number {
 
 /**
  * Get owner count display string
- * @param owners - Array of card owners
+ * @param owners - Array of card ownerships
  * @returns Formatted owner count
  */
-export function getOwnerCount(owners?: Array<{ userId: string; quantity: number }>): string {
+export function getOwnerCount(owners?: Array<{ userId: string; ownerId: string }>): string {
   if (!owners || owners.length === 0) return "No owners";
 
-  const uniqueOwners = owners.length;
-  const totalCards = owners.reduce((sum, owner) => sum + owner.quantity, 0);
+  // Each CardOwnership record represents one unique card instance
+  const uniqueOwners = new Set(owners.map((o) => o.ownerId)).size;
+  const totalCards = owners.length;
 
   if (uniqueOwners === 1) return "1 owner";
   return `${uniqueOwners} owners (${totalCards} total)`;

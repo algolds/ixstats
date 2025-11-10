@@ -152,20 +152,14 @@ export async function createCard(db: PrismaClient, cardData: CardCreationData) {
         season: cardData.season,
         nsCardId: cardData.nsCardId || null,
         nsSeason: cardData.nsSeason || null,
-        nsData: cardData.nsData || null,
         wikiSource: cardData.wikiSource || null,
         wikiArticleTitle: cardData.wikiArticleTitle || null,
-        wikiUrl: cardData.wikiUrl || null,
         countryId: cardData.countryId || null,
         stats: cardData.stats,
         totalSupply: cardData.totalSupply || 0,
         marketValue: cardData.marketValue || 0,
         level: cardData.level || 1,
-        evolutionStage: cardData.evolutionStage || 0,
         enhancements: cardData.enhancements || null,
-      },
-      include: {
-        country: true,
       },
     });
 
@@ -200,21 +194,12 @@ export async function getCard(db: PrismaClient, cardId: string) {
     const card = await db.card.findUnique({
       where: { id: cardId },
       include: {
-        country: {
-          select: {
-            id: true,
-            name: true,
-            continent: true,
-            region: true,
-            flag: true,
-          },
-        },
-        owners: {
+        CardOwnership: {
           select: {
             userId: true,
-            quantity: true,
-            acquiredDate: true,
-            acquiredMethod: true,
+            ownerId: true,
+            acquiredAt: true,
+            serialNumber: true,
           },
         },
       },
@@ -283,17 +268,6 @@ export async function getCards(
       db.card.count({ where }),
       db.card.findMany({
         where,
-        include: {
-          country: {
-            select: {
-              id: true,
-              name: true,
-              continent: true,
-              region: true,
-              flag: true,
-            },
-          },
-        },
         orderBy: [
           { rarity: "desc" },
           { marketValue: "desc" },
@@ -341,41 +315,29 @@ export async function getUserCards(
     }
 
     const where: any = {
-      userId,
+      ownerId: userId,
     };
 
     if (filterRarity) {
-      where.card = {
+      where.cards = {
         rarity: filterRarity,
       };
     }
 
     let orderBy: any = [];
     if (sortBy === "rarity") {
-      orderBy = [{ card: { rarity: "desc" } }, { card: { marketValue: "desc" } }];
+      orderBy = [{ cards: { rarity: "desc" } }, { cards: { marketValue: "desc" } }];
     } else if (sortBy === "value") {
-      orderBy = [{ card: { marketValue: "desc" } }];
+      orderBy = [{ cards: { marketValue: "desc" } }];
     } else {
       // Default to acquired date
-      orderBy = [{ acquiredDate: "desc" }];
+      orderBy = [{ acquiredAt: "desc" }];
     }
 
     const ownerships = await db.cardOwnership.findMany({
       where,
       include: {
-        card: {
-          include: {
-            country: {
-              select: {
-                id: true,
-                name: true,
-                continent: true,
-                region: true,
-                flag: true,
-              },
-            },
-          },
-        },
+        cards: true,
       },
       orderBy,
     });
@@ -486,9 +448,6 @@ export async function updateCardStats(db: PrismaClient, cardId: string) {
 
     const card = await db.card.findUnique({
       where: { id: cardId },
-      include: {
-        country: true,
-      },
     });
 
     if (!card) {
@@ -499,15 +458,26 @@ export async function updateCardStats(db: PrismaClient, cardId: string) {
     }
 
     // Only update nation cards
-    if (card.cardType !== CardType.NATION || !card.country) {
+    if (card.cardType !== CardType.NATION || !card.countryId) {
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: "Only nation cards can have stats updated from nation data",
       });
     }
 
+    // Fetch country data separately
+    const country = await db.country.findUnique({
+      where: { id: card.countryId },
+    });
+
+    if (!country) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Country not found for this card",
+      });
+    }
+
     // Calculate new stats from country data
-    const country = card.country;
     const newStats = {
       economic: Math.min(
         100,
@@ -524,9 +494,6 @@ export async function updateCardStats(db: PrismaClient, cardId: string) {
       data: {
         stats: newStats,
         updatedAt: new Date(),
-      },
-      include: {
-        country: true,
       },
     });
 
@@ -588,102 +555,34 @@ export async function transferCard(
     }
 
     // Check if source user owns the card
-    const sourceOwnership = await db.cardOwnership.findUnique({
+    const sourceOwnership = await db.cardOwnership.findFirst({
       where: {
-        userId_cardId: {
-          userId: fromUserId,
-          cardId,
-        },
+        ownerId: fromUserId,
+        cardId,
+        isLocked: false,
       },
     });
 
     if (!sourceOwnership) {
       throw new TRPCError({
         code: "NOT_FOUND",
-        message: "User does not own this card",
-      });
-    }
-
-    if (sourceOwnership.quantity < 1) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Insufficient card quantity",
-      });
-    }
-
-    if (sourceOwnership.isLocked) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Card is locked and cannot be transferred",
+        message: "User does not own this card or card is locked",
       });
     }
 
     // Perform transfer in transaction
     const result = await db.$transaction(async (tx) => {
-      // Decrease source quantity
-      if (sourceOwnership.quantity === 1) {
-        // Delete if only 1 card
-        await tx.cardOwnership.delete({
-          where: {
-            userId_cardId: {
-              userId: fromUserId,
-              cardId,
-            },
-          },
-        });
-      } else {
-        // Decrease quantity
-        await tx.cardOwnership.update({
-          where: {
-            userId_cardId: {
-              userId: fromUserId,
-              cardId,
-            },
-          },
-          data: {
-            quantity: {
-              decrement: 1,
-            },
-          },
-        });
-      }
-
-      // Increase or create destination ownership
-      const existingOwnership = await tx.cardOwnership.findUnique({
+      // Update ownership to new owner
+      await tx.cardOwnership.update({
         where: {
-          userId_cardId: {
-            userId: toUserId,
-            cardId,
-          },
+          id: sourceOwnership.id,
+        },
+        data: {
+          ownerId: toUserId,
+          userId: toUserId,
+          lastSaleDate: new Date(),
         },
       });
-
-      if (existingOwnership) {
-        // Increase quantity
-        await tx.cardOwnership.update({
-          where: {
-            userId_cardId: {
-              userId: toUserId,
-              cardId,
-            },
-          },
-          data: {
-            quantity: {
-              increment: 1,
-            },
-          },
-        });
-      } else {
-        // Create new ownership
-        await tx.cardOwnership.create({
-          data: {
-            userId: toUserId,
-            cardId,
-            quantity: 1,
-            acquiredMethod: AcquireMethod.TRADE,
-          },
-        });
-      }
 
       return { success: true };
     });
@@ -722,7 +621,7 @@ export async function getCardMarketValue(
     const card = await db.card.findUnique({
       where: { id: cardId },
       include: {
-        owners: true,
+        CardOwnership: true,
       },
     });
 
@@ -743,10 +642,10 @@ export async function getCardMarketValue(
       [CardRarity.LEGENDARY]: 500,
     };
 
-    let value = baseValues[card.rarity] || 10;
+    let value = baseValues[card.rarity as CardRarity] || 10;
 
     // Supply factor: Lower supply = higher value
-    const totalOwned = card.owners.reduce((sum, o) => sum + o.quantity, 0);
+    const totalOwned = card.CardOwnership.length;
     if (totalOwned > 0) {
       const supplyMultiplier = Math.max(0.5, Math.min(3.0, 100 / totalOwned));
       value *= supplyMultiplier;

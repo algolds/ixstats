@@ -39,7 +39,7 @@ const RARITY_COLORS: Record<CardRarity, string> = {
 };
 
 /**
- * MarketAnalytics - Market intelligence panel
+ * MarketAnalyticsPanel - Market intelligence panel
  *
  * Features:
  * - Price history chart (glass chart with backdrop)
@@ -48,9 +48,9 @@ const RARITY_COLORS: Record<CardRarity, string> = {
  * - Volume statistics (24h volume, total sales)
  *
  * @example
- * <MarketAnalytics timeRange="24h" />
+ * <MarketAnalyticsPanel timeRange="24h" />
  */
-export const MarketAnalytics = memo<MarketAnalyticsProps>(
+export const MarketAnalyticsPanel = memo<MarketAnalyticsProps>(
   ({ timeRange = "24h", className }) => {
     const [selectedRange, setSelectedRange] = useState(timeRange);
 
@@ -286,4 +286,4 @@ export const MarketAnalytics = memo<MarketAnalyticsProps>(
   }
 );
 
-MarketAnalytics.displayName = "MarketAnalytics";
+MarketAnalyticsPanel.displayName = "MarketAnalyticsPanel";

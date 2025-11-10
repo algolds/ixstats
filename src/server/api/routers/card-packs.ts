@@ -9,14 +9,11 @@ import {
   protectedProcedure,
   adminProcedure,
 } from "~/server/api/trpc";
-import { PackType, CardType } from "@prisma/client";
 import {
-  createPack,
   purchasePack,
   openPack,
   getAvailablePacks,
   getUserPacks,
-  validatePackOdds,
 } from "~/lib/card-pack-service";
 
 /**
@@ -73,21 +70,13 @@ export const cardPacksRouter = createTRPCRouter({
         }
 
         // Calculate availability status
-        const now = new Date();
-        const isExpired = pack.expiresAt ? pack.expiresAt < now : false;
-        const isSoldOut = pack.limitedQuantity
-          ? await ctx.db.userPack
-              .count({ where: { packId: pack.id } })
-              .then((count) => count >= (pack.limitedQuantity ?? 0))
-          : false;
+        const canPurchase = pack.isActive;
 
         return {
           success: true,
           pack,
           status: {
-            isExpired,
-            isSoldOut,
-            canPurchase: pack.isAvailable && !isExpired && !isSoldOut,
+            canPurchase,
           },
         };
       } catch (error) {
@@ -229,7 +218,7 @@ export const cardPacksRouter = createTRPCRouter({
         // Format cards with rarity reveal data
         const revealData = cards.map((card) => ({
           id: card.id,
-          name: card.name,
+          name: card.title,
           rarity: card.rarity,
           cardType: card.cardType,
           artwork: card.artwork,
@@ -277,53 +266,27 @@ export const cardPacksRouter = createTRPCRouter({
       z.object({
         name: z.string().min(1).max(100),
         description: z.string().optional(),
-        artwork: z.string().url(),
-        cardCount: z.number().int().min(1).max(20).default(5),
-        packType: z.nativeEnum(PackType),
+        packType: z.string(),
         priceCredits: z.number().positive(),
-        // Rarity odds (must sum to 100)
-        commonOdds: z.number().min(0).max(100).default(65),
-        uncommonOdds: z.number().min(0).max(100).default(25),
-        rareOdds: z.number().min(0).max(100).default(7),
-        ultraRareOdds: z.number().min(0).max(100).default(2),
-        epicOdds: z.number().min(0).max(100).default(0.9),
-        legendaryOdds: z.number().min(0).max(100).default(0.1),
-        // Optional filters
-        season: z.number().int().positive().optional(),
-        cardType: z.nativeEnum(CardType).optional(),
-        themeFilter: z
-          .object({
-            region: z.string().optional(),
-            era: z.string().optional(),
-          })
-          .optional(),
-        // Availability settings
-        isAvailable: z.boolean().default(true),
-        limitedQuantity: z.number().int().positive().optional(),
-        purchaseLimit: z.number().int().positive().optional(),
-        expiresAt: z.date().optional(),
+        cardCount: z.number().int().min(1).max(20).default(5),
+        guaranteedRarity: z.string().optional(),
+        isActive: z.boolean().default(true),
       })
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        // Validate odds before creating
-        const odds = {
-          commonOdds: input.commonOdds,
-          uncommonOdds: input.uncommonOdds,
-          rareOdds: input.rareOdds,
-          ultraRareOdds: input.ultraRareOdds,
-          epicOdds: input.epicOdds,
-          legendaryOdds: input.legendaryOdds,
-        };
-
-        if (!validatePackOdds(odds)) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: `Pack odds validation failed: odds must sum to 100%. Current sum: ${Object.values(odds).reduce((a, b) => a + b, 0).toFixed(2)}%`,
-          });
-        }
-
-        const pack = await createPack(ctx.db, input);
+        const pack = await ctx.db.cardPack.create({
+          data: {
+            id: `pack_${Date.now()}`,
+            name: input.name,
+            description: input.description,
+            packType: input.packType,
+            priceCredits: input.priceCredits,
+            cardCount: input.cardCount,
+            guaranteedRarity: input.guaranteedRarity,
+            isActive: input.isActive,
+          },
+        });
 
         return {
           success: true,
@@ -355,74 +318,16 @@ export const cardPacksRouter = createTRPCRouter({
         updates: z.object({
           name: z.string().min(1).max(100).optional(),
           description: z.string().optional(),
-          artwork: z.string().url().optional(),
           cardCount: z.number().int().min(1).max(20).optional(),
-          packType: z.nativeEnum(PackType).optional(),
+          packType: z.string().optional(),
           priceCredits: z.number().positive().optional(),
-          commonOdds: z.number().min(0).max(100).optional(),
-          uncommonOdds: z.number().min(0).max(100).optional(),
-          rareOdds: z.number().min(0).max(100).optional(),
-          ultraRareOdds: z.number().min(0).max(100).optional(),
-          epicOdds: z.number().min(0).max(100).optional(),
-          legendaryOdds: z.number().min(0).max(100).optional(),
-          season: z.number().int().positive().optional(),
-          cardType: z.nativeEnum(CardType).optional(),
-          themeFilter: z
-            .object({
-              region: z.string().optional(),
-              era: z.string().optional(),
-            })
-            .optional(),
-          isAvailable: z.boolean().optional(),
-          limitedQuantity: z.number().int().positive().optional(),
-          purchaseLimit: z.number().int().positive().optional(),
-          expiresAt: z.date().optional(),
+          guaranteedRarity: z.string().optional(),
+          isActive: z.boolean().optional(),
         }),
       })
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        // If updating odds, validate the final sum
-        if (
-          input.updates.commonOdds !== undefined ||
-          input.updates.uncommonOdds !== undefined ||
-          input.updates.rareOdds !== undefined ||
-          input.updates.ultraRareOdds !== undefined ||
-          input.updates.epicOdds !== undefined ||
-          input.updates.legendaryOdds !== undefined
-        ) {
-          // Get current pack to merge odds
-          const currentPack = await ctx.db.cardPack.findUnique({
-            where: { id: input.packId },
-          });
-
-          if (!currentPack) {
-            throw new TRPCError({
-              code: "NOT_FOUND",
-              message: "Pack not found",
-            });
-          }
-
-          const finalOdds = {
-            commonOdds: input.updates.commonOdds ?? currentPack.commonOdds,
-            uncommonOdds:
-              input.updates.uncommonOdds ?? currentPack.uncommonOdds,
-            rareOdds: input.updates.rareOdds ?? currentPack.rareOdds,
-            ultraRareOdds:
-              input.updates.ultraRareOdds ?? currentPack.ultraRareOdds,
-            epicOdds: input.updates.epicOdds ?? currentPack.epicOdds,
-            legendaryOdds:
-              input.updates.legendaryOdds ?? currentPack.legendaryOdds,
-          };
-
-          if (!validatePackOdds(finalOdds)) {
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message: `Pack odds validation failed: odds must sum to 100%. New sum: ${Object.values(finalOdds).reduce((a, b) => a + b, 0).toFixed(2)}%`,
-            });
-          }
-        }
-
         const pack = await ctx.db.cardPack.update({
           where: { id: input.packId },
           data: input.updates,
@@ -459,7 +364,7 @@ export const cardPacksRouter = createTRPCRouter({
         const pack = await ctx.db.cardPack.update({
           where: { id: input.packId },
           data: {
-            isAvailable: false,
+            isActive: false,
           },
         });
 

@@ -88,9 +88,8 @@ export const AuctionCard = memo<AuctionCardProps>(
         <div className="p-4">
           <CardDisplay
             card={auction.cardInstance}
-            size="md"
-            showStats={true}
-            interactive={false}
+            size="medium"
+            showStatsOnHover={true}
           />
         </div>
 

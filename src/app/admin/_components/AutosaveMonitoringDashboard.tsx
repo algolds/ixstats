@@ -238,7 +238,11 @@ export function AutosaveMonitoringDashboard() {
             <CardDescription>Autosaves by builder section</CardDescription>
           </CardHeader>
           <CardContent>
-            <SectionBreakdownChart data={stats?.sectionBreakdown || []} />
+            <SectionBreakdownChart
+              data={stats?.sectionBreakdown
+                ? Object.entries(stats.sectionBreakdown).map(([section, count]) => ({ section, count }))
+                : []}
+            />
           </CardContent>
         </Card>
       </div>
@@ -284,7 +288,14 @@ export function AutosaveMonitoringDashboard() {
           <CardDescription>Users with recent autosave activity</CardDescription>
         </CardHeader>
         <CardContent>
-          <ActiveUsersTable users={activeUsers?.users || []} />
+          <ActiveUsersTable
+            users={activeUsers?.users.map(u => ({
+              ...u,
+              userName: null,
+              section: null,
+              lastAutosave: u.lastAutosave instanceof Date ? u.lastAutosave.toISOString() : String(u.lastAutosave),
+            })) || []}
+          />
         </CardContent>
       </Card>
     </div>

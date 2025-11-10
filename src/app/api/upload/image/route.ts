@@ -106,6 +106,9 @@ export async function POST(request: NextRequest) {
       uploadedAt: Date.now(),
     });
   } catch (error) {
+    const formData = await request.formData().catch(() => new FormData());
+    const file = formData.get("file") as File | null;
+
     console.error("[ImageUpload] Error:", error);
     console.error("[ImageUpload] Error details:", {
       fileName: file?.name,

@@ -188,9 +188,8 @@ export const CreateAuctionModal = memo<CreateAuctionModalProps>(
                     >
                       <CardDisplay
                         card={card}
-                        size="sm"
-                        showStats={false}
-                        interactive={false}
+                        size="small"
+                        showStatsOnHover={false}
                       />
                     </button>
                   ))
@@ -329,8 +328,7 @@ export const CreateAuctionModal = memo<CreateAuctionModalProps>(
                   <div className="w-24 sm:w-auto mx-auto sm:mx-0">
                     <CardDisplay
                       card={selectedCard}
-                      size="sm"
-                      interactive={false}
+                      size="small"
                     />
                   </div>
                   <div className="flex-1 w-full space-y-2 text-xs sm:text-sm">

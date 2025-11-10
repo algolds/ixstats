@@ -14,7 +14,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
-import type { EconomicInputs, RealCountryData } from "~/app/builder/lib/economy-data-service";
+import type { EconomicInputs, RealCountryData, NationalIdentityData } from "~/app/builder/lib/economy-data-service";
 import {
   BasicInfoForm,
   SymbolsUpload,
@@ -269,8 +269,8 @@ export function NationalIdentitySection({
             </CollapsibleTrigger>
             <CollapsibleContent className="p-6">
               <BasicInfoForm
-                identity={identity}
-                onIdentityChange={handleIdentityChange as any}
+                identity={identity as NationalIdentityData}
+                onIdentityChange={handleIdentityChange}
                 selectedGovernmentType={selectedGovernmentType}
                 customOfficialName={customOfficialName}
                 isEditingCustomName={isEditingCustomName}
@@ -305,8 +305,8 @@ export function NationalIdentitySection({
             </CollapsibleTrigger>
             <CollapsibleContent className="p-6">
               <CultureForm
-                identity={identity}
-                onIdentityChange={handleIdentityChange as any}
+                identity={identity as NationalIdentityData}
+                onIdentityChange={handleIdentityChange}
                 onFieldSave={handleFieldValueSave}
               />
             </CollapsibleContent>
@@ -331,7 +331,7 @@ export function NationalIdentitySection({
               )}
             </CollapsibleTrigger>
             <CollapsibleContent className="p-6">
-              <GeographyForm identity={identity} onIdentityChange={handleIdentityChange as any} />
+              <GeographyForm identity={identity as NationalIdentityData} onIdentityChange={handleIdentityChange} />
             </CollapsibleContent>
           </div>
         </Collapsible>

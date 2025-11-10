@@ -10,7 +10,6 @@ import {
   rateLimitedPublicProcedure,
   adminProcedure,
 } from "~/server/api/trpc";
-import { CardType, CardRarity } from "@prisma/client";
 import {
   createCard,
   getCard,
@@ -21,6 +20,7 @@ import {
   transferCard,
   getCardMarketValue,
 } from "~/lib/card-service";
+import { CardRarity, CardType } from "@prisma/client";
 
 /**
  * Cards router for IxCards system
@@ -35,8 +35,8 @@ export const cardsRouter = createTRPCRouter({
     .input(
       z.object({
         season: z.number().int().min(1).optional(),
-        rarity: z.nativeEnum(CardRarity).optional(),
-        type: z.nativeEnum(CardType).optional(),
+        rarity: z.string().optional(),
+        type: z.string().optional(),
         search: z.string().min(1).max(100).optional(),
         limit: z.number().int().min(1).max(100).optional().default(20),
         offset: z.number().int().min(0).optional().default(0),
@@ -44,10 +44,36 @@ export const cardsRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
+        // Validate and cast rarity enum if provided
+        let rarity: CardRarity | undefined;
+        if (input.rarity) {
+          if (Object.values(CardRarity).includes(input.rarity as CardRarity)) {
+            rarity = input.rarity as CardRarity;
+          } else {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Invalid rarity value: ${input.rarity}`,
+            });
+          }
+        }
+
+        // Validate and cast type enum if provided
+        let type: CardType | undefined;
+        if (input.type) {
+          if (Object.values(CardType).includes(input.type as CardType)) {
+            type = input.type as CardType;
+          } else {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Invalid card type value: ${input.type}`,
+            });
+          }
+        }
+
         const result = await getCards(ctx.db, {
           season: input.season,
-          rarity: input.rarity,
-          type: input.type,
+          rarity,
+          type,
           search: input.search,
           limit: input.limit,
           offset: input.offset,
@@ -100,7 +126,7 @@ export const cardsRouter = createTRPCRouter({
     .input(
       z.object({
         sortBy: z.enum(["rarity", "acquired", "value"]).optional().default("acquired"),
-        filterRarity: z.nativeEnum(CardRarity).optional(),
+        filterRarity: z.string().optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -112,11 +138,24 @@ export const cardsRouter = createTRPCRouter({
           });
         }
 
+        // Validate and cast filterRarity enum if provided
+        let filterRarity: CardRarity | undefined;
+        if (input.filterRarity) {
+          if (Object.values(CardRarity).includes(input.filterRarity as CardRarity)) {
+            filterRarity = input.filterRarity as CardRarity;
+          } else {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `Invalid rarity filter: ${input.filterRarity}`,
+            });
+          }
+        }
+
         const ownerships = await getUserCards(
           ctx.db,
           ctx.user.id,
           input.sortBy,
-          input.filterRarity
+          filterRarity
         );
 
         return ownerships;
@@ -152,12 +191,16 @@ export const cardsRouter = createTRPCRouter({
         // Get recent trades (placeholder - will be implemented when CardTrade model is added)
         const recentTrades: any[] = [];
 
+        // Get owners count from CardOwnership
+        const ownersCount = await ctx.db.cardOwnership.count({
+          where: { cardId: input.cardId },
+        });
+
         return {
           totalSupply: card.totalSupply,
           marketValue,
           recentTrades,
-          ownersCount: card.owners?.length || 0,
-          lastTrade: card.lastTrade,
+          ownersCount,
         };
       } catch (error) {
         console.error("[CARDS_ROUTER] Error in getCardStats:", error);
@@ -209,17 +252,6 @@ export const cardsRouter = createTRPCRouter({
             where: {
               countryId: input.countryId,
             },
-            include: {
-              country: {
-                select: {
-                  id: true,
-                  name: true,
-                  continent: true,
-                  region: true,
-                  flag: true,
-                },
-              },
-            },
             orderBy: [
               { season: "desc" },
               { rarity: "desc" },
@@ -264,21 +296,10 @@ export const cardsRouter = createTRPCRouter({
         const cards = await ctx.db.card.findMany({
           where: {
             OR: [
-              { rarity: CardRarity.LEGENDARY },
-              { rarity: CardRarity.EPIC },
-              { cardType: CardType.SPECIAL },
+              { rarity: "LEGENDARY" },
+              { rarity: "EPIC" },
+              { cardType: "SPECIAL" },
             ],
-          },
-          include: {
-            country: {
-              select: {
-                id: true,
-                name: true,
-                continent: true,
-                region: true,
-                flag: true,
-              },
-            },
           },
           orderBy: [
             { rarity: "desc" },
@@ -371,7 +392,7 @@ export const cardsRouter = createTRPCRouter({
   calculateRarity: adminProcedure
     .input(
       z.object({
-        type: z.nativeEnum(CardType),
+        type: z.string(),
         economicTier: z.number().int().min(1).max(7).optional(),
         leaderboardRank: z.number().int().min(1).optional(),
         achievementCount: z.number().int().min(0).optional(),
@@ -385,8 +406,16 @@ export const cardsRouter = createTRPCRouter({
     )
     .query(async ({ input }) => {
       try {
+        // Validate type enum if provided
+        if (input.type && !Object.values(CardType).includes(input.type as CardType)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Invalid card type: ${input.type}`,
+          });
+        }
+
         const rarity = calculateCardRarity({
-          type: input.type,
+          type: input.type as CardType,
           economicTier: input.economicTier,
           leaderboardRank: input.leaderboardRank,
           achievementCount: input.achievementCount,

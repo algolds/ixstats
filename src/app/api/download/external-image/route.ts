@@ -193,6 +193,9 @@ export async function POST(request: NextRequest) {
       downloadedAt: Date.now(),
     });
   } catch (error) {
+    const body = await request.json().catch(() => ({ imageUrl: "unknown" }));
+    const imageUrl = body.imageUrl || "unknown";
+
     console.error("[ExternalImageDownload] Error:", error);
     console.error("[ExternalImageDownload] Error details:", {
       imageUrl,

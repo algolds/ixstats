@@ -159,7 +159,7 @@ export const vaultRouter = createTRPCRouter({
         amount: z.number().min(0.01, "Amount must be positive"),
         type: vaultTransactionTypeEnum,
         source: z.string().min(1, "Source is required"),
-        metadata: z.record(z.any()).optional(),
+        metadata: z.record(z.string(), z.any()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -352,7 +352,7 @@ export const vaultRouter = createTRPCRouter({
         amount: z.number().min(0.01, "Amount must be positive"),
         type: vaultTransactionTypeEnum,
         source: z.string().min(1, "Source is required"),
-        metadata: z.record(z.any()).optional(),
+        metadata: z.record(z.string(), z.any()).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {

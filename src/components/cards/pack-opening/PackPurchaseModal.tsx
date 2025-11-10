@@ -45,9 +45,10 @@ export const PackPurchaseModal = React.memo<PackPurchaseModalProps>(
     onCancel,
   }) => {
     // Fetch user's vault balance
-    const { data: vaultData } = api.vault.getVaultBalance.useQuery(undefined, {
-      enabled: isOpen,
-    });
+    const { data: vaultData } = api.vault.getBalance.useQuery(
+      { userId: "" }, // TODO: Pass actual userId
+      { enabled: isOpen }
+    );
 
     // Purchase mutation
     const purchaseMutation = api.cardPacks.purchasePack.useMutation({
@@ -62,7 +63,7 @@ export const PackPurchaseModal = React.memo<PackPurchaseModalProps>(
     });
 
     // Calculate if user can afford
-    const balance = vaultData?.balance ?? 0;
+    const balance = vaultData?.credits ?? 0;
     const canAfford = balance >= priceCredits;
     const remainingBalance = balance - priceCredits;
 

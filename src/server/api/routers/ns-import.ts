@@ -249,7 +249,7 @@ export const nsImportRouter = createTRPCRouter({
                   original: nsCard.flag,
                   thumbnail: nsCard.flag,
                   large: nsCard.flag,
-                } : null,
+                } : undefined,
                 cardType: "NATION",
                 rarity: nsCard.rarity,
                 season: parseInt(nsCard.season),
@@ -268,39 +268,36 @@ export const nsImportRouter = createTRPCRouter({
                 marketValue: parseFloat(nsCard.market_value),
                 totalSupply: 1,
                 level: 1,
-                enhancements: null,
+                enhancements: undefined,
               },
             });
           }
 
           // Create or update card ownership for user
-          const existingOwnership = await ctx.db.cardOwnership.findUnique({
+          const existingOwnership = await ctx.db.cardOwnership.findFirst({
             where: {
-              userId_cardId: {
-                userId: ctx.user.id,
-                cardId: card.id,
-              },
+              userId: ctx.user.id,
+              cardId: card.id,
             },
           });
 
-          if (existingOwnership) {
-            // User already has this card, increment quantity
-            await ctx.db.cardOwnership.update({
-              where: { id: existingOwnership.id },
-              data: {
-                quantity: { increment: 1 },
-              },
+          if (!existingOwnership) {
+            // Get next serial number for this card
+            const maxSerial = await ctx.db.cardOwnership.findFirst({
+              where: { cardId: card.id },
+              orderBy: { serialNumber: 'desc' },
+              select: { serialNumber: true },
             });
-          } else {
+            const nextSerial = (maxSerial?.serialNumber || 0) + 1;
+
             // Create new ownership
             await ctx.db.cardOwnership.create({
               data: {
+                id: `own_${Date.now()}_${ctx.user.id}_${card.id}`,
                 userId: ctx.user.id,
                 cardId: card.id,
-                quantity: 1,
-                acquiredMethod: "NS_IMPORT",
-                isLeveledUp: false,
-                hasAlternateArt: false,
+                ownerId: ctx.user.id,
+                serialNumber: nextSerial,
                 isLocked: false,
               },
             });
@@ -317,20 +314,41 @@ export const nsImportRouter = createTRPCRouter({
             },
           });
         } catch (error) {
-          console.error(`[NS Import] Failed to import card ${nsCard.name}:`, error);
-          skippedCards.push(nsCard.name);
+          console.error(`[NS Import] Failed to import card ${nsCard.name ?? "unknown"}:`, error);
+          if (nsCard.name) {
+            skippedCards.push(nsCard.name);
+          }
         }
       }
 
       // Award bonus IxCredits for import
       const bonusAmount = Math.min(importedCards.length * 10, 500); // 10 IxC per card, max 500
       if (bonusAmount > 0) {
+        // Get or create user's vault
+        const vault = await ctx.db.myVault.upsert({
+          where: { userId: ctx.user.id },
+          create: {
+            userId: ctx.user.id,
+            credits: bonusAmount,
+          },
+          update: {
+            credits: { increment: bonusAmount },
+          },
+        });
+
+        // Get updated vault balance
+        const updatedVault = await ctx.db.myVault.findUnique({
+          where: { id: vault.id },
+          select: { credits: true },
+        });
+
         await ctx.db.vaultTransaction.create({
           data: {
             id: `vtx_ns_import_${ctx.user.id}_${Date.now()}`,
-            userId: ctx.user.id,
+            vaultId: vault.id,
+            credits: bonusAmount,
+            balanceAfter: updatedVault?.credits ?? bonusAmount,
             type: "EARN",
-            amount: bonusAmount,
             source: "ns_import_bonus",
             metadata: {
               nationName: nationName,

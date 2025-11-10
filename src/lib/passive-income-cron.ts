@@ -22,8 +22,8 @@ export async function distributePassiveIncome() {
   console.log("[CRON] Starting passive income distribution");
 
   try {
-    // Fetch all countries with active users
-    const countries = await db.country.findMany({
+    // Fetch all countries - we'll query users separately since Country.users relation doesn't exist in schema
+    const countriesData = await db.country.findMany({
       select: {
         id: true,
         name: true,
@@ -31,28 +31,35 @@ export async function distributePassiveIncome() {
         currentPopulation: true,
         economicTier: true,
         adjustedGdpGrowth: true,
-        users: {
-          select: {
-            clerkUserId: true,
-          },
-          where: {
-            clerkUserId: {
-              not: null,
-            },
-          },
-          take: 1, // Only need first user (country leader)
-        },
-      },
-      where: {
-        users: {
-          some: {
-            clerkUserId: {
-              not: null,
-            },
-          },
-        },
       },
     });
+
+    // Get all users with their countryIds
+    const usersMap = new Map<string, string>();
+    const users = await db.user.findMany({
+      where: {
+        countryId: { not: null },
+      },
+      select: {
+        countryId: true,
+        clerkUserId: true,
+      },
+    });
+
+    // Map countryId to first user's clerkUserId (country leader)
+    for (const user of users) {
+      if (user.countryId && user.clerkUserId && !usersMap.has(user.countryId)) {
+        usersMap.set(user.countryId, user.clerkUserId);
+      }
+    }
+
+    // Filter countries to only those with active users and add user data
+    const countries = countriesData
+      .filter((country) => usersMap.has(country.id))
+      .map((country) => ({
+        ...country,
+        users: [{ clerkUserId: usersMap.get(country.id)! }],
+      }));
 
     console.log(`[CRON] Found ${countries.length} countries with active users`);
 

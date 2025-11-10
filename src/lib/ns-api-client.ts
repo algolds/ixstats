@@ -6,7 +6,7 @@
  * API Documentation: https://www.nationstates.net/pages/api.html
  */
 
-interface NSCard {
+export interface NSCard {
   id: string;
   season: string;
   rarity: string;
@@ -101,7 +101,7 @@ export class NSApiClient {
       const cards: NSCard[] = [];
 
       // Extract DECK section
-      const deckMatch = xml.match(/<DECK>(.*?)<\/DECK>/s);
+      const deckMatch = xml.match(/<DECK>(.*?)<\/DECK>/);
       if (!deckMatch) {
         console.log("[NS API] No DECK section found in XML");
         console.log("[NS API] XML preview:", xml.substring(0, 500));
@@ -112,7 +112,7 @@ export class NSApiClient {
       console.log("[NS API] Found DECK section, length:", deckXml.length);
 
       // Extract all CARD elements
-      const cardMatches = Array.from(deckXml.matchAll(/<CARD>(.*?)<\/CARD>/gs));
+      const cardMatches = Array.from(deckXml.matchAll(/<CARD>(.*?)<\/CARD>/g));
       console.log("[NS API] Found", cardMatches.length, "CARD elements");
 
       for (const match of cardMatches) {

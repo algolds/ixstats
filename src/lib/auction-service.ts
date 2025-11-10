@@ -42,36 +42,21 @@ export class AuctionService {
     db: PrismaClient
   ) {
     // 1. Validate card ownership
-    const ownership = await db.cardOwnership.findUnique({
+    const ownership = await db.cardOwnership.findFirst({
       where: {
-        userId_cardId: {
-          userId: params.userId,
-          cardId: params.cardId,
-        },
+        ownerId: params.userId,
+        cardId: params.cardId,
+        isLocked: false,
       },
       include: {
-        card: true,
+        cards: true,
       },
     });
 
     if (!ownership) {
       throw new TRPCError({
         code: "FORBIDDEN",
-        message: "You do not own this card",
-      });
-    }
-
-    if (ownership.quantity < 1) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "You have no copies of this card to auction",
-      });
-    }
-
-    if (ownership.isLocked) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "This card is already locked (auction or trade in progress)",
+        message: "You do not own this card or it is already locked",
       });
     }
 
@@ -131,41 +116,22 @@ export class AuctionService {
       const auction = await db.$transaction(async (tx) => {
         const newAuction = await tx.cardAuction.create({
           data: {
-            cardId: params.cardId,
+            id: `auction_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            cardInstanceId: ownership.id,
             sellerId: params.userId,
-            askPrice: params.startingPrice,
+            startingPrice: params.startingPrice,
             currentBid: params.startingPrice,
             buyoutPrice: params.buyoutPrice,
-            endsAt: new Date(endTime),
+            endTime: new Date(endTime),
             isFeatured: params.isFeatured ?? false,
-            isExpress: params.duration === 30,
             status: "ACTIVE",
-          },
-          include: {
-            card: {
-              select: {
-                id: true,
-                title: true,
-                rarity: true,
-                artwork: true,
-              },
-            },
-            seller: {
-              select: {
-                id: true,
-                clerkUserId: true,
-              },
-            },
           },
         });
 
         // Lock the card ownership
         await tx.cardOwnership.update({
           where: {
-            userId_cardId: {
-              userId: params.userId,
-              cardId: params.cardId,
-            },
+            id: ownership.id,
           },
           data: { isLocked: true },
         });
@@ -218,14 +184,10 @@ export class AuctionService {
     const auction = await db.cardAuction.findUnique({
       where: { id: params.auctionId },
       include: {
-        currentBidder: {
-          select: { id: true, clerkUserId: true },
-        },
-        seller: {
-          select: { id: true, clerkUserId: true },
-        },
-        card: {
-          select: { id: true, title: true },
+        CardOwnership: {
+          include: {
+            cards: true,
+          },
         },
       },
     });
@@ -254,7 +216,7 @@ export class AuctionService {
 
     // Check if auction expired
     const now = IxTime.getCurrentIxTime();
-    if (new Date(auction.endsAt).getTime() < now) {
+    if (new Date(auction.endTime).getTime() < now) {
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: "Auction has expired",
@@ -262,7 +224,7 @@ export class AuctionService {
     }
 
     // 2. Validate bid amount (must exceed current by 5%)
-    const minBid = Math.ceil((auction.currentBid ?? auction.askPrice) * 1.05);
+    const minBid = Math.ceil((auction.currentBid ?? auction.startingPrice) * 1.05);
     if (params.amount < minBid) {
       throw new TRPCError({
         code: "BAD_REQUEST",
@@ -291,7 +253,7 @@ export class AuctionService {
           tx as PrismaClient,
           {
             auctionId: params.auctionId,
-            cardId: auction.cardId,
+            cardInstanceId: auction.cardInstanceId,
           }
         );
 
@@ -306,7 +268,7 @@ export class AuctionService {
         if (auction.currentBidderId && auction.currentBidderId !== params.userId) {
           await vaultService.earnCredits(
             auction.currentBidderId,
-            auction.currentBid ?? auction.askPrice,
+            auction.currentBid ?? auction.startingPrice,
             "EARN_ACTIVE",
             "auction_bid_refund",
             tx as PrismaClient,
@@ -318,14 +280,11 @@ export class AuctionService {
         }
 
         // 5. Extend auction by 1 minute if <5min remaining
-        const timeRemaining = new Date(auction.endsAt).getTime() - now;
+        const timeRemaining = new Date(auction.endTime).getTime() - now;
         const newEndTime =
           timeRemaining < 5 * 60 * 1000
-            ? new Date(new Date(auction.endsAt).getTime() + 60 * 1000) // +1 min
-            : auction.endsAt;
-
-        // Check if this is a snipe bid (last 60 seconds)
-        const wasSnipe = timeRemaining < 60 * 1000;
+            ? new Date(new Date(auction.endTime).getTime() + 60 * 1000) // +1 min
+            : auction.endTime;
 
         // 6. Update auction
         await tx.cardAuction.update({
@@ -333,17 +292,18 @@ export class AuctionService {
           data: {
             currentBid: params.amount,
             currentBidderId: params.userId,
-            endsAt: newEndTime,
+            endTime: newEndTime,
+            bidCount: { increment: 1 },
           },
         });
 
         // 7. Create bid record
         await tx.auctionBid.create({
           data: {
+            id: `bid_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             auctionId: params.auctionId,
             bidderId: params.userId,
             amount: params.amount,
-            wasSnipe,
           },
         });
       });
@@ -391,11 +351,10 @@ export class AuctionService {
     const auction = await db.cardAuction.findUnique({
       where: { id: params.auctionId },
       include: {
-        card: {
-          select: { id: true, title: true, marketValue: true },
-        },
-        seller: {
-          select: { id: true, clerkUserId: true },
+        CardOwnership: {
+          include: {
+            cards: true,
+          },
         },
       },
     });
@@ -421,12 +380,15 @@ export class AuctionService {
       });
     }
 
+    // Extract buyoutPrice for use throughout function
+    const buyoutPrice = auction.buyoutPrice;
+
     // Check buyer balance
     const userBalance = await vaultService.getBalance(params.userId, db);
-    if (userBalance.credits < auction.buyoutPrice) {
+    if (userBalance.credits < buyoutPrice) {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: `Insufficient balance. You have ${userBalance.credits} IxC but need ${auction.buyoutPrice} IxC`,
+        message: `Insufficient balance. You have ${userBalance.credits} IxC but need ${buyoutPrice} IxC`,
       });
     }
 
@@ -437,7 +399,7 @@ export class AuctionService {
         if (auction.currentBidderId) {
           await vaultService.earnCredits(
             auction.currentBidderId,
-            auction.currentBid ?? auction.askPrice,
+            auction.currentBid ?? auction.startingPrice,
             "EARN_ACTIVE",
             "auction_bid_refund",
             tx as PrismaClient,
@@ -450,18 +412,18 @@ export class AuctionService {
 
         // 2. Transfer IxCredits from buyer to seller
         const marketplaceFee =
-          auction.buyoutPrice > 100 ? Math.floor(auction.buyoutPrice * 0.1) : 0; // 10% fee on >100 IxC
-        const sellerProceeds = auction.buyoutPrice - marketplaceFee;
+          buyoutPrice > 100 ? Math.floor(buyoutPrice * 0.1) : 0; // 10% fee on >100 IxC
+        const sellerProceeds = buyoutPrice - marketplaceFee;
 
         const spendResult = await vaultService.spendCredits(
           params.userId,
-          auction.buyoutPrice,
+          buyoutPrice,
           "SPEND_MARKET",
           "card_purchase_buyout",
           tx as PrismaClient,
           {
             auctionId: params.auctionId,
-            cardId: auction.cardId,
+            cardInstanceId: auction.cardInstanceId,
             marketplaceFee,
           }
         );
@@ -481,98 +443,35 @@ export class AuctionService {
           tx as PrismaClient,
           {
             auctionId: params.auctionId,
-            cardId: auction.cardId,
+            cardInstanceId: auction.cardInstanceId,
             marketplaceFee,
-            grossSale: auction.buyoutPrice,
+            grossSale: buyoutPrice,
           }
         );
 
-        // 3. Transfer card ownership
-        // Decrement seller's quantity
-        const sellerOwnership = await tx.cardOwnership.findUnique({
+        // 3. Transfer card ownership - change ownerId
+        await tx.cardOwnership.update({
           where: {
-            userId_cardId: {
-              userId: auction.sellerId,
-              cardId: auction.cardId,
-            },
+            id: auction.cardInstanceId,
+          },
+          data: {
+            ownerId: params.userId,
+            userId: params.userId,
+            isLocked: false,
+            lastSalePrice: buyoutPrice,
+            lastSaleDate: new Date(),
           },
         });
-
-        if (!sellerOwnership || sellerOwnership.quantity < 1) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Seller no longer owns this card",
-          });
-        }
-
-        if (sellerOwnership.quantity === 1) {
-          // Delete ownership if last copy
-          await tx.cardOwnership.delete({
-            where: {
-              userId_cardId: {
-                userId: auction.sellerId,
-                cardId: auction.cardId,
-              },
-            },
-          });
-        } else {
-          // Decrement quantity and unlock
-          await tx.cardOwnership.update({
-            where: {
-              userId_cardId: {
-                userId: auction.sellerId,
-                cardId: auction.cardId,
-              },
-            },
-            data: {
-              quantity: { decrement: 1 },
-              isLocked: false,
-            },
-          });
-        }
-
-        // Create or update buyer ownership
-        const buyerOwnership = await tx.cardOwnership.findUnique({
-          where: {
-            userId_cardId: {
-              userId: params.userId,
-              cardId: auction.cardId,
-            },
-          },
-        });
-
-        if (buyerOwnership) {
-          // Increment existing ownership
-          await tx.cardOwnership.update({
-            where: {
-              userId_cardId: {
-                userId: params.userId,
-                cardId: auction.cardId,
-              },
-            },
-            data: {
-              quantity: { increment: 1 },
-            },
-          });
-        } else {
-          // Create new ownership
-          await tx.cardOwnership.create({
-            data: {
-              userId: params.userId,
-              cardId: auction.cardId,
-              quantity: 1,
-              acquiredMethod: "TRADE",
-            },
-          });
-        }
 
         // 4. Update card market value
-        await tx.card.update({
-          where: { id: auction.cardId },
-          data: {
-            marketValue: auction.buyoutPrice,
-          },
-        });
+        if (auction.CardOwnership?.cards) {
+          await tx.card.update({
+            where: { id: auction.CardOwnership.cards.id },
+            data: {
+              marketValue: buyoutPrice,
+            },
+          });
+        }
 
         // 5. Complete auction
         await tx.cardAuction.update({
@@ -580,14 +479,13 @@ export class AuctionService {
           data: {
             status: "COMPLETED",
             winnerId: params.userId,
-            finalPrice: auction.buyoutPrice,
-            completedAt: new Date(),
+            finalPrice: buyoutPrice,
           },
         });
       });
 
       console.log(
-        `[Auction Service] User ${params.userId} bought card ${auction.cardId} via buyout for ${auction.buyoutPrice} IxC`
+        `[Auction Service] User ${params.userId} bought card instance ${auction.cardInstanceId} via buyout for ${buyoutPrice} IxC`
       );
 
       return { success: true };
@@ -616,14 +514,10 @@ export class AuctionService {
     const auction = await db.cardAuction.findUnique({
       where: { id: auctionId },
       include: {
-        card: {
-          select: { id: true, title: true },
-        },
-        seller: {
-          select: { id: true, clerkUserId: true },
-        },
-        currentBidder: {
-          select: { id: true, clerkUserId: true },
+        CardOwnership: {
+          include: {
+            cards: true,
+          },
         },
       },
     });
@@ -634,7 +528,7 @@ export class AuctionService {
 
     // Check if expired
     const now = IxTime.getCurrentIxTime();
-    if (new Date(auction.endsAt).getTime() > now) {
+    if (new Date(auction.endTime).getTime() > now) {
       return; // Not expired yet
     }
 
@@ -642,7 +536,7 @@ export class AuctionService {
       await db.$transaction(async (tx) => {
         if (auction.currentBidderId) {
           // Auction had bids - transfer card to winner
-          const finalPrice = auction.currentBid ?? auction.askPrice;
+          const finalPrice = auction.currentBid ?? auction.startingPrice;
           const marketplaceFee = finalPrice > 100 ? Math.floor(finalPrice * 0.1) : 0;
           const sellerProceeds = finalPrice - marketplaceFee;
 
@@ -655,93 +549,35 @@ export class AuctionService {
             tx as PrismaClient,
             {
               auctionId,
-              cardId: auction.cardId,
+              cardInstanceId: auction.cardInstanceId,
               marketplaceFee,
               grossSale: finalPrice,
             }
           );
 
-          // Transfer card ownership
-          // Decrement seller's quantity
-          const sellerOwnership = await tx.cardOwnership.findUnique({
+          // Transfer card ownership - change ownerId
+          await tx.cardOwnership.update({
             where: {
-              userId_cardId: {
-                userId: auction.sellerId,
-                cardId: auction.cardId,
-              },
+              id: auction.cardInstanceId,
+            },
+            data: {
+              ownerId: auction.currentBidderId,
+              userId: auction.currentBidderId,
+              isLocked: false,
+              lastSalePrice: finalPrice,
+              lastSaleDate: new Date(),
             },
           });
-
-          if (!sellerOwnership || sellerOwnership.quantity < 1) {
-            throw new Error("Seller no longer owns this card");
-          }
-
-          if (sellerOwnership.quantity === 1) {
-            // Delete ownership if last copy
-            await tx.cardOwnership.delete({
-              where: {
-                userId_cardId: {
-                  userId: auction.sellerId,
-                  cardId: auction.cardId,
-                },
-              },
-            });
-          } else {
-            // Decrement quantity and unlock
-            await tx.cardOwnership.update({
-              where: {
-                userId_cardId: {
-                  userId: auction.sellerId,
-                  cardId: auction.cardId,
-                },
-              },
-              data: {
-                quantity: { decrement: 1 },
-                isLocked: false,
-              },
-            });
-          }
-
-          // Create or update winner ownership
-          const winnerOwnership = await tx.cardOwnership.findUnique({
-            where: {
-              userId_cardId: {
-                userId: auction.currentBidderId,
-                cardId: auction.cardId,
-              },
-            },
-          });
-
-          if (winnerOwnership) {
-            await tx.cardOwnership.update({
-              where: {
-                userId_cardId: {
-                  userId: auction.currentBidderId,
-                  cardId: auction.cardId,
-                },
-              },
-              data: {
-                quantity: { increment: 1 },
-              },
-            });
-          } else {
-            await tx.cardOwnership.create({
-              data: {
-                userId: auction.currentBidderId,
-                cardId: auction.cardId,
-                quantity: 1,
-                acquiredMethod: "TRADE",
-              },
-            });
-          }
 
           // Update card market value
-          await tx.card.update({
-            where: { id: auction.cardId },
-            data: {
-              marketValue: finalPrice,
-            },
-          });
+          if (auction.CardOwnership?.cards) {
+            await tx.card.update({
+              where: { id: auction.CardOwnership.cards.id },
+              data: {
+                marketValue: finalPrice,
+              },
+            });
+          }
 
           // Complete auction
           await tx.cardAuction.update({
@@ -750,7 +586,6 @@ export class AuctionService {
               status: "COMPLETED",
               winnerId: auction.currentBidderId,
               finalPrice,
-              completedAt: new Date(),
             },
           });
 
@@ -761,10 +596,7 @@ export class AuctionService {
           // No bids - return card to seller, refund 50% of listing fee
           await tx.cardOwnership.update({
             where: {
-              userId_cardId: {
-                userId: auction.sellerId,
-                cardId: auction.cardId,
-              },
+              id: auction.cardInstanceId,
             },
             data: { isLocked: false },
           });
@@ -774,7 +606,6 @@ export class AuctionService {
             where: { id: auctionId },
             data: {
               status: "CANCELLED",
-              completedAt: new Date(),
             },
           });
 
@@ -821,7 +652,7 @@ export class AuctionService {
     const auction = await db.cardAuction.findUnique({
       where: { id: params.auctionId },
       include: {
-        bids: true,
+        AuctionBid: true,
       },
     });
 
@@ -839,7 +670,7 @@ export class AuctionService {
       });
     }
 
-    if (auction.bids.length > 0) {
+    if (auction.AuctionBid.length > 0) {
       throw new TRPCError({
         code: "BAD_REQUEST",
         message: "Cannot cancel auction with bids. Let it expire or wait for buyout.",
@@ -851,10 +682,7 @@ export class AuctionService {
         // Unlock card
         await tx.cardOwnership.update({
           where: {
-            userId_cardId: {
-              userId: params.userId,
-              cardId: auction.cardId,
-            },
+            id: auction.cardInstanceId,
           },
           data: { isLocked: false },
         });
@@ -864,7 +692,6 @@ export class AuctionService {
           where: { id: params.auctionId },
           data: {
             status: "CANCELLED",
-            completedAt: new Date(),
           },
         });
 
@@ -922,35 +749,37 @@ export class AuctionService {
     const sales = await db.cardAuction.findMany({
       where: {
         status: "COMPLETED",
-        ...(params.cardId ? { cardId: params.cardId } : {}),
-        completedAt: { gte: since },
         finalPrice: { not: null },
+        updatedAt: { gte: since },
       },
       include: {
-        card: {
-          select: {
-            id: true,
-            title: true,
-            rarity: true,
+        CardOwnership: {
+          include: {
+            cards: true,
           },
         },
       },
-      orderBy: { completedAt: "desc" },
+      orderBy: { updatedAt: "desc" },
     });
 
-    const totalVolume = sales.reduce((sum, s) => sum + (s.finalPrice ?? 0), 0);
-    const averagePrice = sales.length > 0 ? totalVolume / sales.length : 0;
+    // Filter by cardId if provided
+    const filteredSales = params.cardId
+      ? sales.filter((s) => s.CardOwnership?.cards?.id === params.cardId)
+      : sales;
+
+    const totalVolume = filteredSales.reduce((sum, s) => sum + (s.finalPrice ?? 0), 0);
+    const averagePrice = filteredSales.length > 0 ? totalVolume / filteredSales.length : 0;
 
     return {
-      totalSales: sales.length,
+      totalSales: filteredSales.length,
       totalVolume,
       averagePrice: Math.round(averagePrice * 100) / 100,
-      priceHistory: sales.map((s) => ({
-        timestamp: s.completedAt?.toISOString() ?? s.createdAt.toISOString(),
+      priceHistory: filteredSales.map((s) => ({
+        timestamp: s.updatedAt.toISOString(),
         price: s.finalPrice ?? 0,
-        cardId: s.card.id,
-        cardTitle: s.card.title,
-        cardRarity: s.card.rarity,
+        cardId: s.CardOwnership?.cards?.id ?? "",
+        cardTitle: s.CardOwnership?.cards?.title ?? "Unknown",
+        cardRarity: s.CardOwnership?.cards?.rarity ?? "COMMON",
       })),
     };
   }
@@ -977,7 +806,6 @@ export class AuctionService {
 
     const where = {
       status: "ACTIVE" as const,
-      ...(params.cardId ? { cardId: params.cardId } : {}),
       ...(params.sellerId ? { sellerId: params.sellerId } : {}),
       ...(params.isFeatured !== undefined ? { isFeatured: params.isFeatured } : {}),
     };
@@ -987,41 +815,30 @@ export class AuctionService {
       db.cardAuction.findMany({
         where,
         include: {
-          card: {
-            select: {
-              id: true,
-              title: true,
-              rarity: true,
-              artwork: true,
-              marketValue: true,
+          CardOwnership: {
+            include: {
+              cards: true,
             },
           },
-          seller: {
-            select: {
-              id: true,
-              clerkUserId: true,
-            },
-          },
-          currentBidder: {
-            select: {
-              id: true,
-              clerkUserId: true,
-            },
-          },
-          bids: {
-            orderBy: { timestamp: "desc" },
+          AuctionBid: {
+            orderBy: { createdAt: "desc" },
             take: 1,
           },
         },
-        orderBy: [{ isFeatured: "desc" }, { endsAt: "asc" }],
+        orderBy: [{ isFeatured: "desc" }, { endTime: "asc" }],
         take: limit,
         skip: offset,
       }),
     ]);
 
+    // Filter by cardId if provided
+    const filteredAuctions = params.cardId
+      ? auctions.filter((a) => a.CardOwnership?.cards?.id === params.cardId)
+      : auctions;
+
     return {
-      auctions,
-      total,
+      auctions: filteredAuctions,
+      total: filteredAuctions.length,
       hasMore: offset + limit < total,
     };
   }

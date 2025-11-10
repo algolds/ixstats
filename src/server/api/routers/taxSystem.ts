@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "~/server/api/trpc";
+import { TRPCError } from "@trpc/server";
 import type { TaxBuilderState } from "~/hooks/useTaxBuilderState";
 import type { GovernmentBuilderState } from "~/types/government";
 import {

@@ -87,7 +87,10 @@ export function useEarnCredits() {
       },
       {
         onSuccess: (data) => options.onSuccess?.(data.newBalance),
-        onError: (error) => options.onError?.(error as Error),
+        onError: (error) => {
+          const err = error instanceof Error ? error : new Error(String(error));
+          options.onError?.(err);
+        },
       }
     );
   };

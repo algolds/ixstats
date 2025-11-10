@@ -13,7 +13,7 @@
  *   cron.schedule('* * * * *', processExpiredAuctions);
  */
 
-import { prisma } from "~/server/db";
+import { db } from "~/server/db";
 import { auctionService } from "./auction-service";
 import { IxTime } from "./ixtime";
 
@@ -31,15 +31,15 @@ export async function processExpiredAuctions() {
 
   try {
     // Find all active auctions that have expired
-    const expiredAuctions = await prisma.cardAuction.findMany({
+    const expiredAuctions = await db.cardAuction.findMany({
       where: {
         status: "ACTIVE",
-        endsAt: { lt: new Date(now) },
+        endTime: { lt: new Date(now) },
       },
       select: {
         id: true,
-        endsAt: true,
-        cardId: true,
+        endTime: true,
+        cardInstanceId: true,
         sellerId: true,
         currentBidderId: true,
       },
@@ -64,10 +64,10 @@ export async function processExpiredAuctions() {
 
     for (const auction of expiredAuctions) {
       try {
-        await auctionService.completeAuction(auction.id, prisma);
+        await auctionService.completeAuction(auction.id, db);
         successCount++;
         console.log(
-          `[CRON] ✓ Completed auction ${auction.id} (card: ${auction.cardId}, winner: ${auction.currentBidderId ?? "none"})`
+          `[CRON] ✓ Completed auction ${auction.id} (card: ${auction.cardInstanceId}, winner: ${auction.currentBidderId ?? "none"})`
         );
       } catch (error) {
         failCount++;
@@ -117,37 +117,42 @@ export async function getAuctionCronStatus() {
     const now = IxTime.getCurrentIxTime();
 
     // Count active auctions
-    const activeCount = await prisma.cardAuction.count({
+    const activeCount = await db.cardAuction.count({
       where: { status: "ACTIVE" },
     });
 
     // Count expired but not processed
-    const expiredCount = await prisma.cardAuction.count({
+    const expiredCount = await db.cardAuction.count({
       where: {
         status: "ACTIVE",
-        endsAt: { lt: new Date(now) },
+        endTime: { lt: new Date(now) },
       },
     });
 
     // Count completed in last hour
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const recentCompletions = await prisma.cardAuction.count({
+    const recentCompletions = await db.cardAuction.count({
       where: {
         status: "COMPLETED",
-        completedAt: { gte: oneHourAgo },
+        updatedAt: { gte: oneHourAgo },
       },
     });
 
     // Get next expiring auction
-    const nextExpiring = await prisma.cardAuction.findFirst({
+    const nextExpiring = await db.cardAuction.findFirst({
       where: { status: "ACTIVE" },
-      orderBy: { endsAt: "asc" },
+      orderBy: { endTime: "asc" },
       select: {
         id: true,
-        endsAt: true,
-        card: {
+        endTime: true,
+        cardInstanceId: true,
+        CardOwnership: {
           select: {
-            title: true,
+            cards: {
+              select: {
+                title: true,
+              },
+            },
           },
         },
       },
@@ -160,9 +165,9 @@ export async function getAuctionCronStatus() {
       nextExpiring: nextExpiring
         ? {
             auctionId: nextExpiring.id,
-            cardTitle: nextExpiring.card.title,
-            endsAt: nextExpiring.endsAt.toISOString(),
-            timeRemaining: new Date(nextExpiring.endsAt).getTime() - now,
+            cardTitle: nextExpiring.CardOwnership?.cards?.title ?? "Unknown",
+            endsAt: nextExpiring.endTime.toISOString(),
+            timeRemaining: new Date(nextExpiring.endTime).getTime() - now,
           }
         : null,
     };
@@ -201,10 +206,10 @@ export async function cleanupOldAuctions() {
   try {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-    const result = await prisma.cardAuction.updateMany({
+    const result = await db.cardAuction.updateMany({
       where: {
         status: { in: ["COMPLETED", "CANCELLED"] },
-        completedAt: { lt: thirtyDaysAgo },
+        updatedAt: { lt: thirtyDaysAgo },
       },
       data: {
         // Could add an 'archived' flag if needed

@@ -177,8 +177,7 @@ export const BidPanel = memo<BidPanelProps>(
             <div className="border-b border-white/10 p-4 sm:p-6">
               <CardDisplay
                 card={auction.cardInstance}
-                size="sm"
-                interactive={false}
+                size="small"
                 className="mx-auto"
               />
             </div>

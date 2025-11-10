@@ -6,7 +6,7 @@ import { useBuilderTheming } from "~/hooks/useBuilderTheming";
 import { useCountryFlagRouteAware } from "~/hooks/useCountryFlagRouteAware";
 import { useNationalIdentityAutoSync } from "~/hooks/useNationalIdentityAutoSync";
 import { wikiCommonsFlagService } from "~/lib/wiki-commons-flag-service";
-import type { EconomicInputs, RealCountryData } from "~/app/builder/lib/economy-data-service";
+import type { EconomicInputs, RealCountryData, NationalIdentityData } from "~/app/builder/lib/economy-data-service";
 
 export function useNationalIdentityState(
   inputs: EconomicInputs,
@@ -75,7 +75,7 @@ export function useNationalIdentityState(
     nationalDay: "",
     callingCode: "",
     internetTLD: "",
-    drivingSide: "right",
+    drivingSide: "right" as "left" | "right",
     timeZone: "",
     isoCode: "",
     coordinatesLatitude: "",
@@ -84,7 +84,7 @@ export function useNationalIdentityState(
     postalCodeFormat: "",
     nationalSport: "",
     weekStartDay: "monday",
-  }, [inputs.nationalIdentity, inputs.countryName]);
+  } satisfies NationalIdentityData, [inputs.nationalIdentity, inputs.countryName]);
 
   // Auto-sync for national identity (edit mode only)
   const autoSync = useNationalIdentityAutoSync(countryId, identity, {
@@ -108,37 +108,15 @@ export function useNationalIdentityState(
     }
   }, [inputs.nationalIdentity, isEditingCustomName]);
 
-  // Fetch coat of arms from foundation country
-  useEffect(() => {
-    const fetchCoatOfArms = async () => {
-      if (foundationCountryName) {
-        try {
-          const coatOfArmsResult =
-            await wikiCommonsFlagService.getCoatOfArmsUrl(foundationCountryName);
-          if (coatOfArmsResult) setFoundationCoatOfArmsUrl(coatOfArmsResult);
-        } catch (error) {
-          console.error("Error fetching coat of arms:", error);
-        }
-      }
-    };
-    fetchCoatOfArms();
-  }, [foundationCountryName]);
-
-  // Auto-fill flag and coat of arms from foundation country
-  useEffect(() => {
-    if (flag?.flagUrl && !inputs.flagUrl) {
-      handleFlagUrlChange(flag.flagUrl);
-    }
-    if (foundationCoatOfArmsUrl && !inputs.coatOfArmsUrl) {
-      handleCoatOfArmsUrlChange(foundationCoatOfArmsUrl);
-    }
-  }, [flag?.flagUrl, foundationCoatOfArmsUrl, inputs.flagUrl, inputs.coatOfArmsUrl]);
-
   // Event handlers - use refs to prevent recreation when inputs change
   const handleIdentityChange = useCallback((field: string | number | symbol, value: any) => {
     const currentInputs = inputsRef.current;
     const currentIdentity = currentInputs.nationalIdentity || identity;
-    const newIdentity = { ...currentIdentity, [field]: value };
+    const newIdentity: NationalIdentityData = { 
+      ...currentIdentity, 
+      [field]: value,
+      drivingSide: field === "drivingSide" ? (value as "left" | "right") : (currentIdentity.drivingSide ?? "right" as "left" | "right")
+    };
 
     if (field === "countryName" && value && !newIdentity.demonym) {
       let demonym = value.toString();
@@ -168,6 +146,32 @@ export function useNationalIdentityState(
   const handleFieldValueSave = useCallback((fieldName: string, value: string) => {
     upsertFieldValue.mutate({ fieldName, value });
   }, [upsertFieldValue]);
+
+  // Fetch coat of arms from foundation country
+  useEffect(() => {
+    const fetchCoatOfArms = async () => {
+      if (foundationCountryName) {
+        try {
+          const coatOfArmsResult =
+            await wikiCommonsFlagService.getCoatOfArmsUrl(foundationCountryName);
+          if (coatOfArmsResult) setFoundationCoatOfArmsUrl(coatOfArmsResult);
+        } catch (error) {
+          console.error("Error fetching coat of arms:", error);
+        }
+      }
+    };
+    fetchCoatOfArms();
+  }, [foundationCountryName]);
+
+  // Auto-fill flag and coat of arms from foundation country
+  useEffect(() => {
+    if (flag?.flagUrl && !inputs.flagUrl) {
+      handleFlagUrlChange(flag.flagUrl);
+    }
+    if (foundationCoatOfArmsUrl && !inputs.coatOfArmsUrl) {
+      handleCoatOfArmsUrlChange(foundationCoatOfArmsUrl);
+    }
+  }, [flag?.flagUrl, foundationCoatOfArmsUrl, inputs.flagUrl, inputs.coatOfArmsUrl, handleFlagUrlChange, handleCoatOfArmsUrlChange]);
 
   return {
     // State

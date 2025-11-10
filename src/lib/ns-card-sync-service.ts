@@ -18,11 +18,10 @@
  */
 
 import { db } from "~/server/db";
-import {
-  fetchCardDump,
-  parseNSDump,
-  type NSCard,
-} from "./ns-api-client";
+import type { NSCard } from "./ns-api-client";
+
+// TODO: Implement these functions in ns-api-client.ts
+// import { fetchCardDump, parseNSDump } from "./ns-api-client";
 
 /**
  * Sync status for monitoring
@@ -75,9 +74,18 @@ export async function performSync(season: number): Promise<SyncStatus> {
   console.log(`[NS Card Sync] Starting sync for season ${season}`);
 
   try {
-    // Fetch and parse card dump
-    const xmlData = await fetchCardDump(season);
-    const nsCards = parseNSDump(xmlData);
+    // TODO: Implement fetchCardDump and parseNSDump in ns-api-client.ts
+    // const xmlData = await fetchCardDump(season);
+    // const nsCards = parseNSDump(xmlData);
+
+    status.errors.push("NS card dump sync functions (fetchCardDump, parseNSDump) not yet implemented");
+    status.status = "failed";
+    status.endTime = new Date();
+    await logSyncStatus(status);
+    return status;
+
+    /* IMPLEMENTATION PLACEHOLDER
+    const nsCards: NSCard[] = []; // Replace with actual implementation
 
     console.log(`[NS Card Sync] Processing ${nsCards.length} cards for season ${season}`);
 
@@ -187,6 +195,16 @@ export async function performSync(season: number): Promise<SyncStatus> {
 
     logSyncStatus(status);
     return status;
+    */
+  } catch (error) {
+    const errorMsg = `Fatal sync error: ${error}`;
+    console.error(`[NS Card Sync] ${errorMsg}`);
+    status.errors.push(errorMsg);
+    status.endTime = new Date();
+    status.status = "failed";
+
+    await logSyncStatus(status);
+    return status;
   }
 }
 
@@ -217,7 +235,7 @@ export function resolveConflicts(
 
   // Check if data actually changed
   const hasChanges =
-    ixCard.title !== nsCard.nation ||
+    ixCard.title !== nsCard.name ||
     ixCard.rarity !== nsCard.rarity ||
     ixCard.artwork !== nsCard.flag;
 
@@ -271,15 +289,15 @@ export function logSyncStatus(status: SyncStatus): void {
   try {
     db.syncLog?.create({
       data: {
-        service: "ns-card-sync",
-        season: status.season,
+        syncType: "ns-card-sync",
+        season: status.season ?? null,
         status: status.status,
-        cardsProcessed: status.cardsProcessed,
-        cardsCreated: status.cardsCreated,
-        cardsUpdated: status.cardsUpdated,
-        errorCount: status.errors.length,
-        errors: JSON.stringify(status.errors),
-        duration: duration,
+        cardsProcessed: status.cardsProcessed ?? null,
+        cardsCreated: status.cardsCreated ?? null,
+        cardsUpdated: status.cardsUpdated ?? null,
+        itemsProcessed: status.cardsProcessed ?? 0,
+        itemsFailed: status.errors.length,
+        errorMessage: status.errors.length > 0 ? JSON.stringify(status.errors) : null,
         startedAt: status.startTime,
         completedAt: status.endTime || null,
       },
@@ -302,7 +320,7 @@ export async function getLatestSyncStatus(season: number): Promise<SyncStatus | 
     // Note: Actual SyncLog model needs to be defined in Prisma schema
     const latestLog = await db.syncLog?.findFirst({
       where: {
-        service: "ns-card-sync",
+        syncType: "ns-card-sync",
         season,
       },
       orderBy: {
@@ -315,14 +333,14 @@ export async function getLatestSyncStatus(season: number): Promise<SyncStatus | 
     }
 
     return {
-      season: latestLog.season,
+      season: latestLog.season ?? season,
       startTime: latestLog.startedAt,
       endTime: latestLog.completedAt || undefined,
-      cardsProcessed: latestLog.cardsProcessed,
-      cardsCreated: latestLog.cardsCreated,
-      cardsUpdated: latestLog.cardsUpdated,
+      cardsProcessed: latestLog.cardsProcessed ?? 0,
+      cardsCreated: latestLog.cardsCreated ?? 0,
+      cardsUpdated: latestLog.cardsUpdated ?? 0,
       conflictsResolved: 0, // Not stored in basic log
-      errors: latestLog.errors ? JSON.parse(latestLog.errors) : [],
+      errors: latestLog.errorMessage ? JSON.parse(latestLog.errorMessage) : [],
       status: latestLog.status as "running" | "completed" | "failed",
     };
   } catch (error) {

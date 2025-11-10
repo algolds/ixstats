@@ -160,7 +160,15 @@ async function createAuditLog(
   }
 ) {
   try {
-    await db.mapEditLog.create({ data });
+    await db.auditLog.create({ 
+      data: {
+        entityType: data.entityType,
+        target: data.entityId,
+        action: data.action,
+        userId: data.userId,
+        details: data.changes ? JSON.stringify(data.changes) : null,
+      }
+    });
   } catch (error) {
     // Audit logging failure should not fail the mutation
     console.warn("[mapEditor] Audit log creation failed (non-critical):", error);
@@ -612,21 +620,17 @@ export const mapEditorRouter = createTRPCRouter({
         });
 
         // Create audit log entry
-        await ctx.db.mapEditLog.create({
+        await ctx.db.auditLog.create({
           data: {
             entityType: "subdivision",
-            entityId: subdivision.id,
+            target: subdivision.id,
             action: "create",
             userId: ctx.auth!.userId!,
-            changes: {
+            details: JSON.stringify({
               name: input.name,
               type: input.type,
               level: input.level,
-            },
-            metadata: {
-              countryId: input.countryId,
-              countryName: country.name,
-            },
+            }),
           },
         });
 
@@ -715,16 +719,16 @@ export const mapEditorRouter = createTRPCRouter({
         });
 
         // Create audit log entry
-        await ctx.db.mapEditLog.create({
+        await ctx.db.auditLog.create({
           data: {
             entityType: "subdivision",
-            entityId: input.id,
+            target: input.id,
             action: "update",
             userId: ctx.auth!.userId!,
-            changes: {
+            details: JSON.stringify({
               old: { name: existing.name },
               new: input,
-            },
+            }),
           },
         });
 
@@ -793,15 +797,15 @@ export const mapEditorRouter = createTRPCRouter({
         });
 
         // Create audit log entry
-        await ctx.db.mapEditLog.create({
+        await ctx.db.auditLog.create({
           data: {
             entityType: "subdivision",
-            entityId: input.id,
+            target: input.id,
             action: "delete",
             userId: ctx.auth!.userId!,
-            changes: {
+            details: JSON.stringify({
               name: existing.name,
-            },
+            }),
           },
         });
 
@@ -974,7 +978,7 @@ export const mapEditorRouter = createTRPCRouter({
                 },
               },
             },
-            orderBy: { createdAt: "desc" },
+            orderBy: { updatedAt: "desc" },
             take: input.limit,
             skip: input.offset,
           }),
@@ -1046,16 +1050,16 @@ export const mapEditorRouter = createTRPCRouter({
         });
 
         // Create audit log entry
-        await ctx.db.mapEditLog.create({
+        await ctx.db.auditLog.create({
           data: {
             entityType: "subdivision",
-            entityId: input.id,
+            target: input.id,
             action: "modify",
             userId: ctx.auth!.userId!,
-            changes: {
+            details: JSON.stringify({
               old: { status: existing.status },
               new: { status: "pending" },
-            },
+            }),
           },
         });
 
@@ -1287,16 +1291,16 @@ export const mapEditorRouter = createTRPCRouter({
         });
 
         // Create audit log entry
-        await ctx.db.mapEditLog.create({
+        await ctx.db.auditLog.create({
           data: {
             entityType: "city",
-            entityId: input.id,
+            target: input.id,
             action: "update",
             userId: ctx.auth!.userId!,
-            changes: {
+            details: JSON.stringify({
               old: { name: existing.name },
               new: input,
-            },
+            }),
           },
         });
 
@@ -1365,15 +1369,15 @@ export const mapEditorRouter = createTRPCRouter({
         });
 
         // Create audit log entry
-        await ctx.db.mapEditLog.create({
+        await ctx.db.auditLog.create({
           data: {
             entityType: "city",
-            entityId: input.id,
+            target: input.id,
             action: "delete",
             userId: ctx.auth!.userId!,
-            changes: {
+            details: JSON.stringify({
               name: existing.name,
-            },
+            }),
           },
         });
 
@@ -1643,7 +1647,7 @@ export const mapEditorRouter = createTRPCRouter({
                 },
               },
             },
-            orderBy: { createdAt: "desc" },
+            orderBy: { updatedAt: "desc" },
             take: input.limit,
             skip: input.offset,
           }),
@@ -1715,16 +1719,16 @@ export const mapEditorRouter = createTRPCRouter({
         });
 
         // Create audit log entry
-        await ctx.db.mapEditLog.create({
+        await ctx.db.auditLog.create({
           data: {
             entityType: "city",
-            entityId: input.id,
+            target: input.id,
             action: "modify",
             userId: ctx.auth!.userId!,
-            changes: {
+            details: JSON.stringify({
               old: { status: existing.status },
               new: { status: "pending" },
-            },
+            }),
           },
         });
 
@@ -1818,20 +1822,16 @@ export const mapEditorRouter = createTRPCRouter({
         });
 
         // Create audit log entry
-        await ctx.db.mapEditLog.create({
+        await ctx.db.auditLog.create({
           data: {
             entityType: "poi",
-            entityId: poi.id,
+            target: poi.id,
             action: "create",
             userId: ctx.auth!.userId!,
-            changes: {
+            details: JSON.stringify({
               name: input.name,
               category: input.category,
-            },
-            metadata: {
-              countryId: input.countryId,
-              countryName: country.name,
-            },
+            }),
           },
         });
 
@@ -1927,16 +1927,16 @@ export const mapEditorRouter = createTRPCRouter({
         });
 
         // Create audit log entry
-        await ctx.db.mapEditLog.create({
+        await ctx.db.auditLog.create({
           data: {
             entityType: "poi",
-            entityId: input.id,
+            target: input.id,
             action: "update",
             userId: ctx.auth!.userId!,
-            changes: {
+            details: JSON.stringify({
               old: { name: existing.name },
               new: input,
-            },
+            }),
           },
         });
 
@@ -2005,15 +2005,15 @@ export const mapEditorRouter = createTRPCRouter({
         });
 
         // Create audit log entry
-        await ctx.db.mapEditLog.create({
+        await ctx.db.auditLog.create({
           data: {
             entityType: "poi",
-            entityId: input.id,
+            target: input.id,
             action: "delete",
             userId: ctx.auth!.userId!,
-            changes: {
+            details: JSON.stringify({
               name: existing.name,
-            },
+            }),
           },
         });
 
@@ -2184,7 +2184,7 @@ export const mapEditorRouter = createTRPCRouter({
                 },
               },
             },
-            orderBy: { createdAt: "desc" },
+            orderBy: { updatedAt: "desc" },
             take: input.limit,
             skip: input.offset,
           }),
@@ -2256,16 +2256,16 @@ export const mapEditorRouter = createTRPCRouter({
         });
 
         // Create audit log entry
-        await ctx.db.mapEditLog.create({
+        await ctx.db.auditLog.create({
           data: {
             entityType: "poi",
-            entityId: input.id,
+            target: input.id,
             action: "modify",
             userId: ctx.auth!.userId!,
-            changes: {
+            details: JSON.stringify({
               old: { status: existing.status },
               new: { status: "pending" },
-            },
+            }),
           },
         });
 
@@ -2501,17 +2501,17 @@ export const mapEditorRouter = createTRPCRouter({
         });
 
         // Create audit log entry
-        await ctx.db.mapEditLog.create({
+        await ctx.db.auditLog.create({
           data: {
             entityType,
-            entityId,
+            target: entityId,
             action: "approve",
             userId: ctx.auth!.userId!,
-            reason,
-            changes: {
+            details: JSON.stringify({
+              reason,
               old: { status: "pending" },
               new: { status: "approved" },
-            },
+            }),
           },
         });
 
@@ -2583,17 +2583,17 @@ export const mapEditorRouter = createTRPCRouter({
         });
 
         // Create audit log entry
-        await ctx.db.mapEditLog.create({
+        await ctx.db.auditLog.create({
           data: {
             entityType,
-            entityId,
+            target: entityId,
             action: "reject",
             userId: ctx.auth!.userId!,
-            reason,
-            changes: {
+            details: JSON.stringify({
+              reason,
               old: { status: "pending" },
               new: { status: "rejected", reason },
-            },
+            }),
           },
         });
 
@@ -2647,20 +2647,18 @@ export const mapEditorRouter = createTRPCRouter({
       // Create audit log entries
       await Promise.all(
         entityIds.map((entityId) =>
-          ctx.db.mapEditLog.create({
+          ctx.db.auditLog.create({
             data: {
               entityType,
-              entityId,
+              target: entityId,
               action: "approve",
               userId: ctx.auth!.userId!,
-              changes: {
-                old: { status: "pending" },
-                new: { status: "approved" },
-              },
-              metadata: {
+              details: JSON.stringify({
                 bulkOperation: true,
                 totalItems: entityIds.length,
-              },
+                old: { status: "pending" },
+                new: { status: "approved" },
+              }),
             },
           })
         )
@@ -2720,7 +2718,7 @@ export const mapEditorRouter = createTRPCRouter({
         }
 
         if (input.entityId) {
-          where.entityId = input.entityId;
+          where.target = input.entityId;
         }
 
         if (input.userId) {
@@ -2732,17 +2730,19 @@ export const mapEditorRouter = createTRPCRouter({
         }
 
         const [logs, total] = await Promise.all([
-          ctx.db.mapEditLog.findMany({
+          ctx.db.auditLog.findMany({
             where,
-            orderBy: { createdAt: "desc" },
+            orderBy: { timestamp: "desc" },
             take: input.limit,
             skip: input.offset,
           }),
-          ctx.db.mapEditLog.count({ where }),
+          ctx.db.auditLog.count({ where }),
         ]);
 
         // Fetch user information for logs
-        const uniqueUserIds = new Set(logs.map((log) => log.userId));
+        const uniqueUserIds = new Set(
+          logs.map((log) => log.userId).filter((id): id is string => id !== null)
+        );
         const users = await ctx.db.user.findMany({
           where: {
             clerkUserId: { in: Array.from(uniqueUserIds) },
@@ -2758,7 +2758,7 @@ export const mapEditorRouter = createTRPCRouter({
 
         const enrichedLogs = logs.map((log) => ({
           ...log,
-          userName: userMap.get(log.userId) || log.userId,
+          userName: log.userId ? (userMap.get(log.userId) || log.userId) : "Unknown User",
         }));
 
         return {
@@ -2858,10 +2858,10 @@ export const mapEditorRouter = createTRPCRouter({
         );
 
         // Batch create audit logs
-        await ctx.db.mapEditLog.createMany({
+        await ctx.db.auditLog.createMany({
           data: results.map((sub) => ({
             entityType: "subdivision",
-            entityId: sub.id,
+            target: sub.id,
             action: "create",
             userId: ctx.auth!.userId!,
           })),
@@ -2963,10 +2963,10 @@ export const mapEditorRouter = createTRPCRouter({
         );
 
         // Batch audit logs
-        await ctx.db.mapEditLog.createMany({
+        await ctx.db.auditLog.createMany({
           data: results.map((city) => ({
             entityType: "city",
-            entityId: city.id,
+            target: city.id,
             action: "create",
             userId: ctx.auth!.userId!,
           })),
@@ -3067,10 +3067,10 @@ export const mapEditorRouter = createTRPCRouter({
         );
 
         // Batch audit logs
-        await ctx.db.mapEditLog.createMany({
+        await ctx.db.auditLog.createMany({
           data: results.map((poi) => ({
             entityType: "poi",
-            entityId: poi.id,
+            target: poi.id,
             action: "create",
             userId: ctx.auth!.userId!,
           })),
@@ -3202,17 +3202,17 @@ export const mapEditorRouter = createTRPCRouter({
             });
 
             // Create audit log
-            await ctx.db.mapEditLog.create({
+            await ctx.db.auditLog.create({
               data: {
                 entityType: "subdivision",
-                entityId: subdivision.id,
+                target: subdivision.id,
                 action: "modify",
                 userId: ctx.auth!.userId!,
-                changes: {
+                details: JSON.stringify({
                   old: { geometry: "INVALID" },
                   new: { geometry: "AUTO_FIXED" },
-                },
-                reason: `Auto-fixed geometry: ${validation.errors.join(", ")}`,
+                  reason: `Auto-fixed geometry: ${validation.errors.join(", ")}`,
+                }),
               },
             });
 

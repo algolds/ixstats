@@ -9,7 +9,7 @@ import type { CardRarity, CardType } from "@prisma/client";
 /**
  * Card display size options
  */
-export type CardDisplaySize = "small" | "medium" | "large";
+export type CardDisplaySize = "small" | "sm" | "medium" | "md" | "large";
 
 /**
  * Card instance interface (matches Prisma Card model)

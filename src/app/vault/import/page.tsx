@@ -7,7 +7,7 @@ import { Input } from "~/components/ui/input";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
-import { Loader2, Download, CheckCircle, XCircle, ExternalLink, Copy, ShieldCheck } from "lucide-react";
+import { Loader2, Download, CheckCircle, XCircle, ExternalLink, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 type ImportStep = "idle" | "verifying_nation" | "pending_verification" | "checking" | "importing" | "success" | "error";
@@ -228,7 +228,7 @@ export default function ImportPage() {
                   placeholder="Paste the code from NationStates here"
                   value={checksum}
                   onChange={(e) => setChecksum(e.target.value)}
-                  disabled={step === "checking" || step === "importing"}
+                  disabled={(step as ImportStep) === "checking" || (step as ImportStep) === "importing"}
                   className="glass-hierarchy-interactive font-mono"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
@@ -241,16 +241,16 @@ export default function ImportPage() {
               <div className="flex gap-3">
                 <Button
                   onClick={handleCheckVerification}
-                  disabled={step === "checking" || step === "importing"}
+                  disabled={(step as ImportStep) === "checking" || (step as ImportStep) === "importing"}
                   className="flex-1"
                   size="lg"
                 >
-                  {step === "checking" ? (
+                  {(step as ImportStep) === "checking" ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Verifying...
                     </>
-                  ) : step === "importing" ? (
+                  ) : (step as ImportStep) === "importing" ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Importing Cards...

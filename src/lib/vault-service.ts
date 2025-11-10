@@ -222,7 +222,7 @@ export class VaultService {
             balanceAfter: updatedVault.credits,
             type,
             source,
-            metadata: metadata ? JSON.stringify(metadata) : null,
+            metadata: metadata ? (JSON.stringify(metadata) as any) : null,
           },
         });
 
@@ -292,7 +292,7 @@ export class VaultService {
             balanceAfter: updatedVault.credits,
             type,
             source,
-            metadata: metadata ? JSON.stringify(metadata) : null,
+            metadata: metadata ? (JSON.stringify(metadata) as any) : null,
           },
         });
 
@@ -559,14 +559,14 @@ export class VaultService {
       }
 
       // Economic tier multipliers
-      const tierMultipliers: Record<number, number> = {
-        1: 3.0,
-        2: 2.0,
-        3: 1.5,
-        4: 1.0,
+      const tierMultipliers: Record<string, number> = {
+        "1": 3.0,
+        "2": 2.0,
+        "3": 1.5,
+        "4": 1.0,
       };
 
-      const tierMultiplier = tierMultipliers[country.economicTier] || 1.0;
+      const tierMultiplier = (tierMultipliers as Record<string, number>)[country.economicTier] || 1.0;
 
       // Base rate: (GDP Per Capita / 10000) * Economic Tier Multiplier
       const baseRate = (country.currentGdpPerCapita / 10000) * tierMultiplier;

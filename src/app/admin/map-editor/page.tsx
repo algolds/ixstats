@@ -641,7 +641,7 @@ export default function MapEditorAdminPage() {
           <div className="text-slate-600 dark:text-slate-400 text-sm">Loading audit log...</div>
         ) : (
           <div className="space-y-2">
-            {auditData?.logs.slice(0, 10).map((log) => (
+            {auditData?.logs.slice(0, 10).map((log: any) => (
               <div
                 key={log.id}
                 className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400 py-1"

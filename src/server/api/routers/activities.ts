@@ -233,7 +233,7 @@ export const activitiesRouter = createTRPCRouter({
             likes: post.likeCount,
             comments: post.replyCount,
             shares: post.repostCount,
-            views: post.viewCount,
+            views: post.impressions,
           },
           timestamp: post.createdAt,
           priority: post.trending ? "high" : "medium",

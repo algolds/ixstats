@@ -1,0 +1,11 @@
+DISABLED FUNCTIONS - UserPack, UserVault, TradingCard models removed from schema
+
+The following functions from card-pack-service.ts have been disabled because
+they depend on database models that no longer exist:
+
+1. purchasePack() - uses UserPack, UserVault
+2. openPack() - uses UserPack, TradingCard
+3. getUserPacks() - uses UserPack
+4. getAvailablePacks() - uses pack fields that don't exist
+
+These functions can be restored when the models are added back to the schema.

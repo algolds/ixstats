@@ -108,6 +108,7 @@ export async function createPack(
   // Create pack with validated odds
   return db.cardPack.create({
     data: {
+      id: `pack_${Date.now()}_${Math.random().toString(36).substring(7)}`,
       name: packData.name,
       description: packData.description,
       artwork: packData.artwork,
@@ -118,7 +119,7 @@ export async function createPack(
       season: packData.season,
       cardType: packData.cardType,
       themeFilter: packData.themeFilter,
-      isAvailable: packData.isAvailable ?? true,
+      isActive: packData.isAvailable ?? true,
       limitedQuantity: packData.limitedQuantity,
       purchaseLimit: packData.purchaseLimit,
       expiresAt: packData.expiresAt,
@@ -146,7 +147,7 @@ export async function purchasePack(
     }
 
     // 2. Validate availability
-    if (!pack.isAvailable) {
+    if (!pack.isActive) {
       throw new Error("Pack is not available for purchase");
     }
 
@@ -183,7 +184,7 @@ export async function purchasePack(
     }
 
     // 3. Get user vault to check balance
-    const userVault = await tx.userVault.findUnique({
+    const userVault = await tx.myVault.findUnique({
       where: { userId },
     });
 
@@ -191,17 +192,17 @@ export async function purchasePack(
       throw new Error("User vault not found");
     }
 
-    if (userVault.balance < pack.priceCredits) {
+    if (userVault.credits < pack.priceCredits) {
       throw new Error(
-        `Insufficient credits. Required: ${pack.priceCredits} IxC, Available: ${userVault.balance} IxC`
+        `Insufficient credits. Required: ${pack.priceCredits} IxC, Available: ${userVault.credits} IxC`
       );
     }
 
     // 4. Deduct credits and create transaction record
-    await tx.userVault.update({
+    await tx.myVault.update({
       where: { userId },
       data: {
-        balance: {
+        credits: {
           decrement: pack.priceCredits,
         },
       },
@@ -209,11 +210,12 @@ export async function purchasePack(
 
     await tx.vaultTransaction.create({
       data: {
-        userId,
+        id: `tx_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        vaultId: userVault.id,
+        credits: -pack.priceCredits,
         type: "PACK_PURCHASE",
-        amount: -pack.priceCredits,
-        balanceAfter: userVault.balance - pack.priceCredits,
-        description: `Purchased ${pack.name}`,
+        source: "PACK_PURCHASE",
+        balanceAfter: userVault.credits - pack.priceCredits,
         metadata: {
           packId: pack.id,
           packName: pack.name,
@@ -317,7 +319,7 @@ export async function openPack(
       }
 
       // Get random card of this rarity
-      const cardCount = await tx.tradingCard.count({ where });
+      const cardCount = await tx.card.count({ where });
 
       if (cardCount === 0) {
         throw new Error(
@@ -328,7 +330,7 @@ export async function openPack(
       // Random offset for variety
       const randomOffset = Math.floor(Math.random() * cardCount);
 
-      const card = await tx.tradingCard.findFirst({
+      const card = await tx.card.findFirst({
         where,
         skip: randomOffset,
         take: 1,
@@ -341,13 +343,22 @@ export async function openPack(
       cards.push(card);
 
       // 6. Create CardOwnership record
+      const maxSerial = await tx.cardOwnership.findFirst({
+        where: { cardId: card.id },
+        orderBy: { serialNumber: 'desc' },
+        select: { serialNumber: true },
+      });
+      const nextSerial = (maxSerial?.serialNumber || 0) + 1;
+
       await tx.cardOwnership.create({
         data: {
+          id: `co_${Date.now()}_${userId}_${card.id}`,
           userId,
           cardId: card.id,
-          quantity: 1,
-          acquiredMethod: "PACK_OPENING",
-          acquiredFrom: userPack.pack.name,
+          ownerId: userId,
+          serialNumber: nextSerial,
+          level: 1,
+          experience: 0,
         },
       });
     }
@@ -373,7 +384,7 @@ export async function getAvailablePacks(db: PrismaClient) {
 
   return db.cardPack.findMany({
     where: {
-      isAvailable: true,
+      isActive: true,
       OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
     },
     orderBy: [{ packType: "asc" }, { priceCredits: "asc" }],

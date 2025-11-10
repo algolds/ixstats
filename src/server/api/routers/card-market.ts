@@ -268,51 +268,37 @@ export const cardMarketRouter = createTRPCRouter({
         const auction = await ctx.db.cardAuction.findUnique({
           where: { id: input.auctionId },
           include: {
-            card: {
-              select: {
-                id: true,
-                title: true,
-                description: true,
-                artwork: true,
-                rarity: true,
-                cardType: true,
-                season: true,
-                marketValue: true,
-                country: {
+            CardOwnership: {
+              include: {
+                cards: {
                   select: {
                     id: true,
-                    name: true,
-                    flag: true,
+                    title: true,
+                    description: true,
+                    artwork: true,
+                    rarity: true,
+                    cardType: true,
+                    season: true,
+                    marketValue: true,
+                    countryId: true,
                   },
                 },
               },
             },
-            seller: {
+            User: {
               select: {
                 id: true,
-                username: true,
+                clerkUserId: true,
               },
             },
-            currentBidder: {
-              select: {
-                id: true,
-                username: true,
-              },
-            },
-            winner: {
-              select: {
-                id: true,
-                username: true,
-              },
-            },
-            bids: {
-              orderBy: { timestamp: "desc" },
+            AuctionBid: {
+              orderBy: { createdAt: "desc" },
               take: 10,
               include: {
-                bidder: {
+                User: {
                   select: {
                     id: true,
-                    username: true,
+                    clerkUserId: true,
                   },
                 },
               },
@@ -355,13 +341,13 @@ export const cardMarketRouter = createTRPCRouter({
       try {
         const bids = await ctx.db.auctionBid.findMany({
           where: { auctionId: input.auctionId },
-          orderBy: { timestamp: "desc" },
+          orderBy: { createdAt: "desc" },
           take: input.limit,
           include: {
-            bidder: {
+            User: {
               select: {
                 id: true,
-                username: true,
+                clerkUserId: true,
               },
             },
           },
@@ -396,26 +382,24 @@ export const cardMarketRouter = createTRPCRouter({
           status: "ACTIVE",
         },
         include: {
-          card: {
-            select: {
-              id: true,
-              title: true,
-              artwork: true,
-              rarity: true,
+          CardOwnership: {
+            include: {
+              cards: {
+                select: {
+                  id: true,
+                  title: true,
+                  artwork: true,
+                  rarity: true,
+                },
+              },
             },
           },
-          currentBidder: {
-            select: {
-              id: true,
-              username: true,
-            },
-          },
-          bids: {
-            orderBy: { timestamp: "desc" },
+          AuctionBid: {
+            orderBy: { createdAt: "desc" },
             take: 1,
           },
         },
-        orderBy: { endsAt: "asc" },
+        orderBy: { endTime: "asc" },
       });
 
       return { auctions };
@@ -451,22 +435,26 @@ export const cardMarketRouter = createTRPCRouter({
           status: "ACTIVE",
         },
         include: {
-          card: {
-            select: {
-              id: true,
-              title: true,
-              artwork: true,
-              rarity: true,
+          CardOwnership: {
+            include: {
+              cards: {
+                select: {
+                  id: true,
+                  title: true,
+                  artwork: true,
+                  rarity: true,
+                },
+              },
             },
           },
-          seller: {
+          User: {
             select: {
               id: true,
-              username: true,
+              clerkUserId: true,
             },
           },
         },
-        orderBy: { endsAt: "asc" },
+        orderBy: { endTime: "asc" },
       });
 
       return { auctions };
@@ -498,8 +486,7 @@ export const cardMarketRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       try {
         const where = {
-          status: { in: ["COMPLETED", "CANCELLED"] as const },
-          ...(input.cardId ? { cardId: input.cardId } : {}),
+          status: { in: ["COMPLETED", "CANCELLED"] },
           ...(input.userId ? { sellerId: input.userId } : {}),
         };
 
@@ -508,28 +495,26 @@ export const cardMarketRouter = createTRPCRouter({
           ctx.db.cardAuction.findMany({
             where,
             include: {
-              card: {
-                select: {
-                  id: true,
-                  title: true,
-                  artwork: true,
-                  rarity: true,
+              CardOwnership: {
+                include: {
+                  cards: {
+                    select: {
+                      id: true,
+                      title: true,
+                      artwork: true,
+                      rarity: true,
+                    },
+                  },
                 },
               },
-              seller: {
+              User: {
                 select: {
                   id: true,
-                  username: true,
-                },
-              },
-              winner: {
-                select: {
-                  id: true,
-                  username: true,
+                  clerkUserId: true,
                 },
               },
             },
-            orderBy: { completedAt: "desc" },
+            orderBy: { updatedAt: "desc" },
             take: input.limit,
             skip: input.offset,
           }),
@@ -598,30 +583,28 @@ export const cardMarketRouter = createTRPCRouter({
             isFeatured: true,
           },
           include: {
-            card: {
-              select: {
-                id: true,
-                title: true,
-                artwork: true,
-                rarity: true,
-                cardType: true,
-                marketValue: true,
+            CardOwnership: {
+              include: {
+                cards: {
+                  select: {
+                    id: true,
+                    title: true,
+                    artwork: true,
+                    rarity: true,
+                    cardType: true,
+                    marketValue: true,
+                  },
+                },
               },
             },
-            seller: {
+            User: {
               select: {
                 id: true,
-                username: true,
-              },
-            },
-            currentBidder: {
-              select: {
-                id: true,
-                username: true,
+                clerkUserId: true,
               },
             },
           },
-          orderBy: { endsAt: "asc" },
+          orderBy: { endTime: "asc" },
           take: input.limit,
         });
 
@@ -653,34 +636,32 @@ export const cardMarketRouter = createTRPCRouter({
         const auctions = await ctx.db.cardAuction.findMany({
           where: {
             status: "ACTIVE",
-            endsAt: {
+            endTime: {
               gte: now,
               lte: soon,
             },
           },
           include: {
-            card: {
-              select: {
-                id: true,
-                title: true,
-                artwork: true,
-                rarity: true,
+            CardOwnership: {
+              include: {
+                cards: {
+                  select: {
+                    id: true,
+                    title: true,
+                    artwork: true,
+                    rarity: true,
+                  },
+                },
               },
             },
-            seller: {
+            User: {
               select: {
                 id: true,
-                username: true,
-              },
-            },
-            currentBidder: {
-              select: {
-                id: true,
-                username: true,
+                clerkUserId: true,
               },
             },
           },
-          orderBy: { endsAt: "asc" },
+          orderBy: { endTime: "asc" },
           take: input.limit,
         });
 

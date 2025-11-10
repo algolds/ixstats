@@ -14,7 +14,7 @@
  *   initializeMarketWebSocket(httpServer);
  */
 
-import { WebSocketServer, type WebSocket } from "ws";
+import { WebSocketServer, WebSocket } from "ws";
 import type { IncomingMessage } from "http";
 
 /**
